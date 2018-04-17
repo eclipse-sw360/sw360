@@ -1,0 +1,117 @@
+//
+// Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
+//
+// All rights reserved. This configuration file is provided to you under the
+// terms and conditions of the Eclipse Distribution License v1.0 which
+// accompanies this distribution, and is available at
+// http://www.eclipse.org/org/documents/edl-v10.php
+//
+
+[[resources-components]]
+=== Components
+
+The Components resource is used to create and list components.
+
+
+[[resources-components-list]]
+==== Listing components
+
+A `GET` request will list all of the service's components.
+
+===== Response structure
+
+include::{snippets}/should_document_get_components/response-fields.adoc[]
+
+===== Example request
+
+include::{snippets}/should_document_get_components/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_get_components/http-response.adoc[]
+
+===== Links
+
+include::{snippets}/should_document_get_components/links.adoc[]
+
+[[resources-components-list-by-name]]
+==== Listing by name
+
+A `GET` request will list all of the service's components by component name. +
+Please set the request parameter `&name=<NAME>`.
+
+===== Response structure
+
+include::{snippets}/should_document_get_components_by_name/response-fields.adoc[]
+
+===== Example request
+
+include::{snippets}/should_document_get_components_by_name/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_get_components_by_name/http-response.adoc[]
+
+===== Links
+
+include::{snippets}/should_document_get_components_by_name/links.adoc[]
+
+[[resources-components-list-by-type]]
+==== Listing by type
+
+A `GET` request will list all of the service's components by component type. +
+Component types = `{INTERNAL, OSS, COTS, FREESOFTWARE, INNER_SOURCE, SERVICE}`
+
+===== Response structure
+
+include::{snippets}/should_document_get_components_by_type/response-fields.adoc[]
+
+===== Example request
+
+include::{snippets}/should_document_get_components_by_type/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_get_components_by_type/http-response.adoc[]
+
+===== Links
+
+include::{snippets}/should_document_get_components_by_type/links.adoc[]
+
+[[resources-component-get]]
+==== Get a single component
+
+A `GET` request will get a single component.
+
+===== Response structure
+
+include::{snippets}/should_document_get_component/response-fields.adoc[]
+
+===== Example request
+
+include::{snippets}/should_document_get_component/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_get_component/http-response.adoc[]
+
+===== Links
+
+include::{snippets}/should_document_get_component/links.adoc[]
+
+[[resources-components-create]]
+==== Creating a component
+
+A `POST` request is used to create a component
+
+===== Request structure
+
+include::{snippets}/should_document_create_component/request-fields.adoc[]
+
+===== Example request
+
+include::{snippets}/should_document_create_component/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_create_component/http-response.adoc[]

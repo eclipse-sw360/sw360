@@ -1,0 +1,77 @@
+//
+// Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+//
+// All rights reserved. This configuration file is provided to you under the
+// terms and conditions of the Eclipse Distribution License v1.0 which
+// accompanies this distribution, and is available at
+// http://www.eclipse.org/org/documents/edl-v10.php
+//
+
+[[resources-vendors]]
+=== Vendors
+
+The Vendors resource is used to create and list vendors.
+
+
+[[resources-vendors-list]]
+==== Listing vendors
+
+A `GET` request will list all of the service's vendors.
+
+===== Response structure
+
+include::{snippets}/should_document_get_vendors/response-fields.adoc[]
+
+===== Example request
+
+include::{snippets}/should_document_get_vendors/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_get_vendors/http-response.adoc[]
+
+===== Links
+
+include::{snippets}/should_document_get_vendors/links.adoc[]
+
+[[resources-vendor-get]]
+==== Get a single vendor
+
+A `GET` request will get a single vendor.
+
+===== Response structure
+
+include::{snippets}/should_document_get_vendor/response-fields.adoc[]
+
+===== Example request
+
+include::{snippets}/should_document_get_vendor/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_get_vendor/http-response.adoc[]
+
+===== Links
+
+include::{snippets}/should_document_get_vendor/links.adoc[]
+
+
+////
+[[resources-vendors-create]]
+==== Creating a vendor
+
+A `POST` request is used to create a vendor
+
+===== Request structure
+
+include::{snippets}/should_document_create_vendor/request-fields.adoc[]
+
+===== Example request
+
+include::{snippets}/should_document_create_vendor/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_create_vendor/http-response.adoc[]
+////
+

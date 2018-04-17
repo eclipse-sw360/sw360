@@ -1,0 +1,186 @@
+//
+// Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
+//
+// All rights reserved. This configuration file is provided to you under the
+// terms and conditions of the Eclipse Distribution License v1.0 which
+// accompanies this distribution, and is available at
+// http://www.eclipse.org/org/documents/edl-v10.php
+//
+
+[[resources-projects]]
+=== Projects
+
+The Projects resource is used to create and list projects.
+
+
+[[resources-projects-list]]
+==== Listing projects
+
+A `GET` request will list all of the service's projects.
+
+===== Response structure
+
+include::{snippets}/should_document_get_projects/response-fields.adoc[]
+
+===== Example request
+
+include::{snippets}/should_document_get_projects/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_get_projects/http-response.adoc[]
+
+===== Links
+
+include::{snippets}/should_document_get_projects/links.adoc[]
+
+[[resources-projects-list-by-name]]
+==== Listing by name
+
+A `GET` request will list all of the service's projects by project name. +
+Please set the request parameter `&name=<NAME>`.
+
+===== Response structure
+
+include::{snippets}/should_document_get_projects_by_name/response-fields.adoc[]
+
+===== Example request
+
+include::{snippets}/should_document_get_projects_by_name/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_get_projects_by_name/http-response.adoc[]
+
+===== Links
+
+include::{snippets}/should_document_get_projects_by_name/links.adoc[]
+
+[[resources-projects-list-by-type]]
+==== Listing by type
+
+A `GET` request will list all of the service's projects by project type. +
+Project types = `{CUSTOMER, INTERNAL, PRODUCT, SERVICE, INNER_SOURCE}`
+
+===== Response structure
+
+include::{snippets}/should_document_get_projects_by_type/response-fields.adoc[]
+
+===== Example request
+
+include::{snippets}/should_document_get_projects_by_type/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_get_projects_by_type/http-response.adoc[]
+
+===== Links
+
+include::{snippets}/should_document_get_projects_by_type/links.adoc[]
+
+
+[[resources-project-get]]
+==== Get a single project
+
+A `GET` request will get a single project.
+
+===== Response structure
+
+include::{snippets}/should_document_get_project/response-fields.adoc[]
+
+===== Example request
+
+include::{snippets}/should_document_get_project/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_get_project/http-response.adoc[]
+
+===== Links
+
+include::{snippets}/should_document_get_project/links.adoc[]
+
+[[resources-project-get-project-releases]]
+==== Listing releases
+
+A `GET` request will get releases of a single project. +
+Only linked releases without any releases of sub-projects `&transitive=false`.
+
+===== Response structure
+
+include::{snippets}/should_document_get_project_releases/response-fields.adoc[]
+
+===== Example request
+
+include::{snippets}/should_document_get_project_releases/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_get_project_releases/http-response.adoc[]
+
+===== Links
+
+include::{snippets}/should_document_get_project_releases/links.adoc[]
+
+[[resources-project-get-project-releases-transitive]]
+==== Listing releases (transitive)
+
+A `GET` request will get all releases of a single project (transitive). +
+Please set the request parameter `&transitive=true`.
+
+===== Response structure
+
+include::{snippets}/should_document_get_project_releases_transitive/response-fields.adoc[]
+
+===== Example request
+
+include::{snippets}/should_document_get_project_releases_transitive/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_get_project_releases_transitive/http-response.adoc[]
+
+===== Links
+
+include::{snippets}/should_document_get_project_releases_transitive/links.adoc[]
+
+[[resources-project-get-project-releases-ecc-information]]
+==== Listing releases with ECC
+
+A `GET` request will get all releases with ECC information of a single project.
+This works also with the transitive request parameter (&transitive=true)
+
+===== Response structure
+
+include::{snippets}/should_document_get_project_releases_ecc_information/response-fields.adoc[]
+
+===== Example request
+
+include::{snippets}/should_document_get_project_releases_ecc_information/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_get_project_releases_ecc_information/http-response.adoc[]
+
+===== Links
+
+include::{snippets}/should_document_get_project_releases_ecc_information/links.adoc[]
+
+////
+[[resources-projects-create]]
+==== Creating a project
+
+A `POST` request is used to create a project
+
+===== Request structure
+
+include::{snippets}/should_document_create_project/request-fields.adoc[]
+
+===== Example request
+
+include::{snippets}/should_document_create_project/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_create_project/http-response.adoc[]
+////

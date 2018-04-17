@@ -1,0 +1,65 @@
+//
+// Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+//
+// All rights reserved. This configuration file is provided to you under the
+// terms and conditions of the Eclipse Distribution License v1.0 which
+// accompanies this distribution, and is available at
+// http://www.eclipse.org/org/documents/edl-v10.php
+//
+
+[[resources-users]]
+=== Users
+
+The Users resource is used to get and list users.
+
+
+[[resources-users-list]]
+==== Listing users
+
+A `GET` request will list all of the service's users.
+
+===== Response structure
+
+include::{snippets}/should_document_get_users/response-fields.adoc[]
+
+===== Example request
+
+include::{snippets}/should_document_get_users/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_get_users/http-response.adoc[]
+
+===== Links
+
+include::{snippets}/should_document_get_users/links.adoc[]
+
+[[resources-user-get]]
+==== Get a single user
+
+A `GET` request will get a single user.
+
+===== Response structure
+
+include::{snippets}/should_document_get_user/response-fields.adoc[]
+
+===== Example request
+
+include::{snippets}/should_document_get_user/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_get_user/http-response.adoc[]
+
+===== Links
+
+include::{snippets}/should_document_get_user/links.adoc[]
+
+
+[[resources-users-create]]
+==== Creating a user
+
+Creating a user is currently not supported by the REST API.
+A `POST` request will result in an error.
+
+

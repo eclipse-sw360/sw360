@@ -1,0 +1,56 @@
+//
+// Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+//
+// All rights reserved. This configuration file is provided to you under the
+// terms and conditions of the Eclipse Distribution License v1.0 which
+// accompanies this distribution, and is available at
+// http://www.eclipse.org/org/documents/edl-v10.php
+//
+
+[[resources-attachments]]
+=== Attachments
+
+The Attachments resource is used to create and list attachments.
+
+
+[[resources-attachment-get]]
+==== Get a single attachment
+
+A `GET` request will get a single attachment.
+
+===== Response structure
+
+include::{snippets}/should_document_get_attachment/response-fields.adoc[]
+
+===== Example request
+
+include::{snippets}/should_document_get_attachment/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_get_attachment/http-response.adoc[]
+
+===== Links
+
+include::{snippets}/should_document_get_attachment/links.adoc[]
+
+
+////
+[[resources-attachments-create]]
+==== Creating a attachment
+
+A `POST` request is used to create a attachment
+
+===== Request structure
+
+include::{snippets}/should_document_create_attachment/request-fields.adoc[]
+
+===== Example request
+
+include::{snippets}/should_document_create_attachment/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_create_attachment/http-response.adoc[]
+////
+

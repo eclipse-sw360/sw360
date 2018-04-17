@@ -1,0 +1,12 @@
+#
+# Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+#
+# All rights reserved. This configuration file is provided to you under the
+# terms and conditions of the Eclipse Distribution License v1.0 which
+# accompanies this distribution, and is available at
+# http://www.eclipse.org/org/documents/edl-v10.php
+#
+
+sw360:
+  test-user-id: admin@sw360.org
+  test-user-password: sw360-admin-password

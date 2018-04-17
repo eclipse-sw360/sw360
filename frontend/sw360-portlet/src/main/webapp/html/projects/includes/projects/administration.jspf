@@ -1,0 +1,106 @@
+<%--
+  ~ Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+
+<table class="table info_table" id="clearing">
+    <thead>
+    <tr>
+        <th colspan="2">Clearing</th>
+    </tr>
+    </thead>
+    <tr>
+        <td>Project clearing state:</td>
+        <td><sw360:DisplayEnum value="${project.clearingState}"/></td>
+    </tr>
+    <tr>
+        <td>Clearing details:</td>
+        <td>
+            New releases:
+            <span class="minWidth">
+                <sw360:out value="${project.releaseClearingStateSummary.newRelease}" default="--"/>
+            </span>,
+
+            Under clearing:
+            <span class="minWidth">
+                <sw360:out value="${project.releaseClearingStateSummary.underClearingByProjectTeam}" default="--"/>
+            </span>
+            (and <sw360:out value="${project.releaseClearingStateSummary.underClearing}" default="--"/> by other teams),
+
+            Report available:
+            <span class="minWidth">
+                <sw360:out value="${project.releaseClearingStateSummary.reportAvailable}" default="--"/>
+            </span>,
+
+            Approved:
+            <span class="minWidth">
+                <sw360:out value="${project.releaseClearingStateSummary.approved}" default="--"/>
+            </span>
+        </td>
+    </tr>
+    <tr>
+        <td>Clearing team:</td>
+        <td><sw360:out value="${project.clearingTeam}"/></td>
+    </tr>
+    <tr>
+        <td>Deadline for pre-evaluation:</td>
+        <td><sw360:out value="${project.preevaluationDeadline}"/></td>
+    </tr>
+</table>
+
+<table class="table info_table" id="lifecycle">
+    <thead>
+    <tr>
+        <th colspan="2">Lifecycle</th>
+    </tr>
+    </thead>
+    <tr>
+        <td>Project state:</td>
+        <td><sw360:DisplayEnum value="${project.state}"/></td>
+    </tr>
+    <tr>
+        <td>System test begin:</td>
+        <td><sw360:out value="${project.systemTestStart}"/></td>
+    </tr>
+    <tr>
+        <td>System test end:</td>
+        <td><sw360:out value="${project.systemTestEnd}"/></td>
+    </tr>
+    <tr>
+        <td>Delivery start:</td>
+        <td><sw360:out value="${project.deliveryStart}"/></td>
+    </tr>
+    <tr>
+        <td>Phase-out since:</td>
+        <td><sw360:out value="${project.phaseOutSince}"/></td>
+    </tr>
+</table>
+
+<table class="table info_table" id="LicenseInfoHeader" title="License Info Header">
+    <thead>
+    <tr>
+        <th class="headlabel">License Info Header</th>
+    </tr>
+    </thead>
+    <tr>
+        <td>
+            <textarea class="projectLicenseInfoHeaderText" id="licenseInfoHeaderText" readonly><sw360:DisplayLicenseInfoHeader project="${project}" defaultText="${defaultLicenseInfoHeaderText}"/></textarea>
+        </td>
+    </tr>
+</table>
+
+<script>
+    require(['jquery'], function($) {
+
+        Liferay.on('allPortletsReady', function() {
+            $('#licenseInfoHeaderText').height($('#licenseInfoHeaderText').prop('scrollHeight'));
+        });
+
+    });
+</script>

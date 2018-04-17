@@ -1,0 +1,576 @@
+/**
+*
+* Modifications applied by Siemens AG 2014-2017.
+* Modifications for supporting own infrastructure.
+*
+* Original file from: Liferay Inc.
+*
+* Description: Styles for Navigation bar in Theme
+*
+* Authors: nunifar.ms@siemens.com, puspa.panda@siemens.com
+*/
+@import "compass";
+
+@import url(custom_common.css);
+
+@import url(color_schemes/green.css);
+
+@import url(color_schemes/orange.css);
+
+/* ---------- Base styles ---------- */
+
+.portlet-borderless-bar{
+	background:#ffffff;
+	padding:0px;
+}
+
+body {
+	background: #ffffff;
+	font-size: 12px;
+}
+
+a {
+	color: #5B677D;
+	text-decoration: none;
+}
+
+a:hover {
+	color: #06C;
+	text-decoration: none;
+}
+
+hr, .separator {
+	border-color: #BFBFBF transparent #FFF;
+	border-style: solid;
+	border-width: 1px 0;
+}
+
+#wrapper {
+	background: none;
+	margin: 0 auto;
+	max-width: 90%;
+	min-width: 960px;
+	position: relative;
+}
+
+.ie6 #wrapper {
+	width: 90%;
+}
+
+#banner {
+	background: none;
+	height: auto;
+	/*height:130px;*/
+	margin-top: 1.4em;
+	position: relative;
+}
+
+.site-title .site-name {
+	background: #555 url(../images/common/site_icon.png) no-repeat 15px 50%;
+	color: #FFF;
+	display: block;
+	float: right;
+	font-size: 1em;
+	font-weight: bold;
+	margin: 15px 0 0 20px;
+	padding: 7px 17px 7px 40px;
+	position: relative;
+	text-shadow: 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.page-template .site-title .site-name {
+	background-image: url(../images/common/page_template.png);
+}
+
+.site-template .site-title .site-name {
+	background-image: url(../images/common/site_template.png);
+}
+
+.company-site .site-title .site-name {
+	background-image: url(../images/common/folder.png);
+}
+
+.organization-site .site-title .site-name {
+	background-image: url(../images/common/organization_icon_white.png);
+}
+
+.user-site .site-title .site-name {
+	background-image: url(../images/common/user_icon_white.png);
+}
+
+.private-page .site-title .site-name:after {
+	background-image: url(../images/common/key_small.png);
+	content: '';
+	display: block;
+	height: 10px;
+	left: 24px;
+	position: absolute;
+	top: 50%;
+	width: 10px;
+}
+
+#skip-to-content:focus {
+	clip: rect(auto auto auto auto);
+	right: 0;
+	z-index: 200;
+}
+
+#sign-in {
+	background: url(../images/common/key.png) no-repeat 3px 50%;
+	font-weight: bold;
+	padding: 5px 5px 5px 25px;
+	position: absolute;
+	right: 0;
+	top: -1.2em;
+}
+
+.ie6 #banner {
+	height: 1%;
+}
+
+.ie6 #banner h1.logo {
+	height: 1%;
+}
+
+/* ---------- Main navigation ---------- */
+
+#navigation {
+	background: #f8f7f7 url(../images/custom/header_bg.png) repeat-x 0 0;
+	clear: both;
+	margin: 0 auto 5px;
+	min-height: 2.2em;
+	padding: 0 5px;
+	position: relative;
+	z-index: 1;
+}
+#navigation1 {
+	background: url(../images/navigation/bgheader2.png) repeat-x 0 0;
+	clear: both;
+	margin: 0 auto 5px;
+	min-height: 2.2em;
+	padding: 0 5px;
+	position: relative;
+	z-index: 1;
+}
+
+#navigation ul {
+	list-style: none;
+	margin: 0;
+	padding: 3px;
+	border-bottom:1px solid #cccccc;
+}
+
+#navigation .searchBttn {
+		padding:3px;
+		float:right;
+		font-size:14px;
+		font-family:arial;
+		background-color:#666666;
+		color:white;
+		margin-right:50px;
+		margin-left:10px;
+		margin-top:1px;
+		height:23px;
+		border:1px solid #ffffff; 
+		    
+}
+#navigation .contactsBttn{
+		padding:3px;		
+		font-size:14px;
+		font-family:arial;
+		background-color:#999999;
+		color:white;		
+		margin-top:1px;
+		height:23px;		
+}
+
+.ie7 #navigation ul {
+	padding: 2px;
+}
+
+#navigation li, #navigation a {
+	display: inline-block;
+	/*margin-top:6px;*/
+}
+
+.ie6 #navigation li, .ie7 #navigation li, .ie6 #navigation a, .ie7 #navigation a {
+	display: inline;
+	zoom: 1;
+	z-index: 200;
+}
+
+#navigation li {
+	position: relative;
+	vertical-align: top;
+}
+#navigation a {
+	font-family:Arial;
+    color:#444444; 
+    text-align:center;
+	font-size: 14px;
+	font-family:Arial;
+	/*font-weight:bold;*/
+	margin: 4px 1px;
+	/*padding: 6px 4px;*/
+	text-decoration: none;
+}
+
+
+.header0 {
+	font-family:Arial;
+    text-align:center;
+	font-size: 14px;
+	font-family:Arial;
+	margin: 0 1px;
+	padding: 30px 5px;
+	text-decoration: none;
+}
+
+
+
+.ie6 #navigation a, .ie7 #navigation a {
+	padding: 4px 15px;
+}
+
+#navigation .yui3-dd-drop a {
+	cursor: move;
+}
+
+#navigation .selected a, #navigation li.hover a, #navigation a:hover, #navigation a:focus, #navigation .child-menu li a, #navigation .yui3-dd-dragging, .lfr-navigation-proxy {
+	/*background: #313334;*/
+	color: #444;
+	outline: 0;
+	border-bottom:2px solid #e95850;
+	/*text-shadow: -1px -1px #000;*/
+}
+
+#navigation li.hover .child-menu {
+	background: #FFFFFF;
+	display: block;
+	position: absolute;
+	width: 200px;
+	z-index: 250;
+}
+
+.ie6 #navigation ul.child-menu-visible, .ie6 #navigation li.hover .child-menu, .ie7 #navigation ul.child-menu-visible, .ie7 #navigation li.hover ul.child-menu {
+	left: 0;
+	top: 25px;
+}
+
+#navigation .child-menu {
+	display: none;
+}
+
+#navigation .child-menu li {
+	border-width: 0 0 1px;
+	display: block;
+	float: none;
+	margin: 0px;
+}
+
+#navigation .child-menu li a {
+	cursor: pointer !important;
+}
+
+.ie7 #navigation .child-menu li a {
+	zoom: 1;
+}
+
+#navigation .child-menu li a:hover, #navigation li a.active {
+	background-color: #FFF;
+}
+
+#navigation .child-menu .selected a {
+	background: #FFF url(../images/navigation/bullet_selected.png) no-repeat 5px 50%;
+}
+
+.nav-menu-style-arrows ul {
+	list-style-image: url(../images/navigation/bullet_selected.png);
+}
+
+/* ---------- Portlet wrapper and icons ---------- */
+
+.portlet {
+	background-color: #EEF0F2;
+	border: 1px solid #C8C9CA;
+	margin: 0 0 10px;
+	padding: 3px;
+	text-align: left;
+}
+
+.portlet-topper {
+	background: #D4D4D4 url(../images/portlet/header_bg.png) repeat-x 0 0;
+	border: 1px solid;
+	border-color: #C8C9CA #9E9E9E #9E9E9E #C8C9CA;
+	font-size: 1.1em;
+}
+
+.portlet-title {
+	float: none;
+	font-weight: bold;
+	min-width: 50%;
+	padding: 5px;
+	text-shadow: 1px 1px #FFF;
+}
+
+.signed-in.controls-visible .portlet-title {
+	padding-right: 80px;
+}
+
+.lfr-portlet-title-editable {
+	margin-top: -4px;
+	z-index: 9999;
+}
+
+.ie .lfr-portlet-title-editable {
+	margin-top: -6px;
+}
+
+.lfr-portlet-title-editable-content {
+	padding: 0;
+}
+
+.ie .lfr-portlet-title-editable-content {
+	margin-top: 4px;
+}
+
+.portlet-icons {
+	float: none;
+}
+
+.portlet-icons .portlet-close-icon {
+	border-width: 0;
+}
+
+.page-maximized .portlet-icons {
+	font-size: 11px;
+}
+
+.portlet-icon-back {
+}
+
+.ie .portlet-title {
+	padding-bottom: 5px;
+}
+
+.ie6 .portlet-topper {
+	zoom: 1;
+}
+
+/* ---------- Footer ---------- */
+
+#footer {
+	/*position:inherit;
+	margin-top:20px;
+	font-size:14px;
+	font-family:arial;
+	text-align: left;
+	border-top:1px solid #cccccc;
+	background-color:#f8f7f7;
+	height:30px;*/
+	
+	background-color:#f8f7f7;
+	border-top:1px solid #cccccc;
+    position:fixed;
+    bottom:0px;
+    left:70px;
+    right:70px;
+    height:26px;
+    padding-top:6px;
+    margin-bottom:0px;
+    font-size:14px;
+	font-family:arial;
+	text-align: left;
+
+}
+
+/* ---------- Site breadcrumbs ---------- */
+
+.site-breadcrumbs {
+	margin: 0 0 5px;
+	width: auto;
+	min-height:28px;
+}
+
+.site-breadcrumbs ul {
+	background-color: #FFF;
+	/*border: 1px solid #DEDEDE;
+	border-color: #C0C2C5;*/
+	margin: 0;
+}
+
+.site-breadcrumbs li {
+	background-image: none;
+	margin-right: 0;
+	padding-left: 0.75em;
+	padding-right: 0;
+}
+
+.site-breadcrumbs li span {
+	background: url(../images/arrows/09_right.png) no-repeat 100% 50%;
+	display: block;
+	padding: 0.5em 15px 0.5em 0.5em;
+}
+
+.site-breadcrumbs li span a {
+	text-decoration: none;
+}
+
+.site-breadcrumbs li.first a {
+	color: #e95856;
+	font-weight: bold;
+}
+
+.site-breadcrumbs li.last a {
+	color: #4B5567;
+	font-size: 12px;
+}
+
+.site-breadcrumbs .last {
+	font-size: 1em;
+	margin-top: 0;
+	padding-right: 0;
+}
+
+.site-breadcrumbs .last span {
+	background-image: none;
+	padding: 0;
+}
+
+/* ---------- Hudcrumbs ---------- */
+
+.lfr-hudcrumbs {
+	position: fixed;
+	top: 0;
+	z-index: 440;
+}
+
+.lfr-hudcrumbs ul {
+	background: #414445;
+	background: rgba(0, 0, 0, 0.8);
+}
+
+.lfr-hudcrumbs .breadcrumbs li a, .lfr-hudcrumbs .breadcrumbs li span {
+	color: #FFF;
+}
+
+.lfr-hudcrumbs li span {
+	background-image: url(../images/common/breadcrumbs_hud.png);
+}
+
+/* ---------- Misc. ---------- */
+
+.lfr-panel-container {
+	background-color: transparent;
+}
+
+.aui-combobox .aui-field-input {
+	padding: 4px 3px 3px;
+	font-size: 11px;
+	height: 15px;
+}
+
+.aui-combobox .aui-field {
+	float: left;
+	line-height: 0;
+}
+
+.lfr-portlet-title-editable-content .aui-field {
+	float: none;
+	display: inline;
+}
+
+/* ---------- Extras ---------- */
+
+#banner .site-name {
+	@include box-shadow(inset 0 0 5px rgba(0, 0, 0, 0.8), 1px 1px 1px #FFF);
+}
+
+.portlet-borderless-bar {
+	-moz-border-radius: 20px;
+	-moz-box-shadow: inset 0 1px 3px #000;
+	-webkit-border-radius: 20px;
+	-webkit-box-shadow: inset 0 1px 3px #000;
+	border-radius: 20px;
+	box-shadow: inset 0 1px 3px #000;
+}
+
+.portlet-topper {
+	-moz-box-shadow: 1px 1px 0 #FFF;
+	-webkit-box-shadow: 1px 1px 0 #FFF;
+	box-shadow: 1px 1px 0 #FFF;
+}
+
+#banner .site-name {
+	@include border-radius(4px);
+	@include box-shadow(inset 0 0 5px rgba(0, 0, 0, 0.8), 1px 1px 1px #FFF);
+}
+
+#navigation li.selected a {
+	/*-moz-box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8);
+	-webkit-box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8);
+	box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8);*/
+}
+
+.aui-combobox .aui-toolbar-first {
+	-moz-border-radius-topleft: 0;
+	-moz-border-radius-bottomleft: 0;
+	-webkit-border-top-left-radius: 0;
+	-webkit-border-bottom-left-radius: 0;
+	border-top-left-radius: 0;
+	border-bottom-left-radius: 0;
+}
+
+.pageHeader {
+	border-bottom: 1px solid #cccccc;
+}
+
+.pageHeaderBigSpan {
+	color: black;
+	font-family: arial-black, sans-serif;
+	font-size: 24px;
+	display: inline;
+	border-bottom: none;
+}
+
+.pageHeaderMediumSpan {
+	color: red;
+	font-family: arial-black, sans-serif;
+	font-size: 18px;
+	display: inline;
+	border-bottom: none;
+}
+.pageHeaderSmallSpan {
+	color: red;
+	font-family: arial-black, sans-serif;
+	font-size: 12px;
+	display: inline;
+	border-bottom: none;
+}
+
+div.content1 {
+	padding: 0px;
+	float: left;
+	left: 3%;
+	top: 90px;
+	width: 20%;
+	margin-right: 2%;
+	overflow: auto;
+}
+
+div.content2 {
+	padding: 0px;
+	float: right;
+	/*min-height:500px;*/
+	left: 25%;
+	top: 90px;
+	width: 78%;
+	overflow: auto;
+	/*min-height:480px;
+	margin-right: 3%;*/
+}
+
+.infopic {
+	padding: 0px 10px 0px 0px;
+	cursor:pointer;
+}

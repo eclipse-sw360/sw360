@@ -1,0 +1,176 @@
+## All rights reserved. This configuration file is provided to you under the
+## terms and conditions of the Eclipse Distribution License v1.0 which
+## accompanies this distribution, and is available at
+## http://www.eclipse.org/org/documents/edl-v10.php
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <style type="text/css">
+        * {
+            font-family: Arial;
+            font-size: 14px;
+        }
+
+        h1 {
+            font-size: 18px;
+        }
+
+        h2 {
+            font-size: 16px;
+        }
+
+        h3 {
+            font-size: 14px;
+        }
+
+        p {
+            font-weight: normal
+        }
+
+        body {
+            background: #ffffff;
+        }
+
+        .top {
+            text-decoration: none;
+            color: blue;
+            padding: 0px 1em;
+        }
+
+        .inset {
+            margin: 0.7em;
+            padding: 0.7em;
+            background: white;
+            border-top: 1px solid silver;
+            xborder-right: 1px solid silver;
+        }
+
+        .inset p {
+            white-space: pre-wrap;
+        }
+
+        .inset .groupId {
+            color: black;
+            font-size: 12px;
+        }
+
+        .title {
+            visibility: hidden;
+        }
+
+        .error {
+            background: #e95850;
+        }
+
+    </style>
+    <title>
+        Open Source Software
+    </title>
+</head>
+<body>
+    <h1>$projectTitle</h1>
+    <h2>Open Source Software</h2>
+    $licenseInfoHeader
+
+    <h2 id="releaseHeader">Releases</h2>
+
+    #if($licenseInfoResults.keySet().size() > 0)
+        <ul id="releaseOverview">
+            #foreach($releaseName in $licenseInfoResults.keySet())
+                <li>
+                    <a href="#h3$esc.xml($releaseName).replace(" ","_").replace(",","-")">$esc.xml($releaseName)</a>
+                </li>
+            #end
+        </ul>
+
+        <ul id="releases" style="list-style-type:none">
+            #foreach($releaseName in $licenseInfoResults.keySet())
+                <li id="$esc.xml($releaseName).replace(" ","_").replace(",","-")" class="release" title="$esc.xml($releaseName)">
+                    #foreach($errorResult in $licenseInfoErrorResults.get($releaseName))
+                        <div class="inset error">ERROR when reading license information from file $esc.xml($errorResult.licenseInfo.filenames[0]): $esc.xml($errorResult.message)</div>
+                    #end
+                    <div class="inset">
+                        <h3 id="h3$esc.xml($releaseName).replace(" ","_").replace(",","-")">$esc.xml($releaseName)
+                            <a class="top" href="#releaseHeader">&#8679;</a>
+                        </h3>
+                    </div>
+
+                        #set($copyrights = [])
+                        #if(${licenseInfoResults.get($releaseName).licenseInfo})
+                            #set($copyrights = $licenseInfoResults.get($releaseName).licenseInfo.copyrights)
+    <pre class="copyrights">
+#foreach($copyright in ${copyrights})
+$esc.xml($copyright)
+#end
+    </pre>
+                        #end
+
+                    #if(${acknowledgements.get($releaseName)})
+                        Acknowledgements:<br/>
+                            #set($acks = [])
+                            #set($acks = $acknowledgements.get($releaseName))
+    <pre class="acknowledgements">
+#foreach($ack in ${acks})
+$esc.xml($ack)
+#end
+    </pre>
+                    #end
+
+                    Licenses:<br/>
+                    #set($licenses = [])
+                    #if(${licenseInfoResults.get($releaseName).licenseInfo})
+                        #set($licenses = $licenseInfoResults.get($releaseName).licenseInfo.licenseNamesWithTexts)
+                        #if($licenses.size() > 0)
+                            <ul style="list-style-type:none" class="licenseEntries">
+                            #foreach($license in ${licenses})
+                                #set($licenseName = "&lt;no license name available&gt;")
+                                #if($license.licenseName)
+                                    #set($licenseName = $esc.xml($license.licenseName))
+                                #end
+                                #set($licenseId = $licenseNameWithTextToReferenceId.get($license))
+                                <li class="licenseEntry" id="licenseEntry$licenseId" title="$licenseName">
+                                    <a href="#licenseTextItem$licenseId">$licenseName ($licenseId)</a>
+                               </li>
+                            #end
+                            </ul>
+                        #end
+                    #end
+                </li>
+            #end
+        </ul>
+    #end
+
+    <div class="inset">
+        <br/><br/>
+        <h2>License texts</h2>
+    </div>
+
+    #if($allLicenseNamesWithTexts.size() > 0)
+        <ul id="licenseTexts" style="list-style-type:none">
+        #foreach($license in $allLicenseNamesWithTexts)
+            #set($licenseName = "&lt;no license name available&gt;")
+            #if($license.licenseName)
+                #set($licenseName = $esc.xml($license.licenseName))
+            #end
+
+            #set($licenseText = "&lt;no license text available&gt;")
+            #if($license.licenseText)
+                #set($licenseText = $esc.xml($license.licenseText))
+            #end
+
+            #set($licenseId = $licenseNameWithTextToReferenceId.get($license))
+            <li id="licenseTextItem$licenseId">
+                <h3>$licenseId: $licenseName<a class="top" href="#releaseHeader">&#8679;</a></h3>
+    <pre class="licenseText" id="licenseText$licenseId">
+$licenseText
+    </pre>
+            </li>
+        #end
+        </ul>
+    #end
+
+</body>
+</html>

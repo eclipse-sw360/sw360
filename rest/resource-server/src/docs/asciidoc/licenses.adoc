@@ -1,0 +1,77 @@
+//
+// Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+//
+// All rights reserved. This configuration file is provided to you under the
+// terms and conditions of the Eclipse Distribution License v1.0 which
+// accompanies this distribution, and is available at
+// http://www.eclipse.org/org/documents/edl-v10.php
+//
+
+[[resources-licenses]]
+=== Licenses
+
+The Licenses resource is used to create and list licenses.
+
+
+[[resources-licenses-list]]
+==== Listing licenses
+
+A `GET` request will list all of the service's licenses.
+
+===== Response structure
+
+include::{snippets}/should_document_get_licenses/response-fields.adoc[]
+
+===== Example request
+
+include::{snippets}/should_document_get_licenses/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_get_licenses/http-response.adoc[]
+
+===== Links
+
+include::{snippets}/should_document_get_licenses/links.adoc[]
+
+[[resources-license-get]]
+==== Get a single license
+
+A `GET` request will get a single license.
+
+===== Response structure
+
+include::{snippets}/should_document_get_license/response-fields.adoc[]
+
+===== Example request
+
+include::{snippets}/should_document_get_license/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_get_license/http-response.adoc[]
+
+===== Links
+
+include::{snippets}/should_document_get_license/links.adoc[]
+
+
+////
+[[resources-licenses-create]]
+==== Creating a license
+
+A `POST` request is used to create a license
+
+===== Request structure
+
+include::{snippets}/should_document_create_license/request-fields.adoc[]
+
+===== Example request
+
+include::{snippets}/should_document_create_license/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_create_license/http-response.adoc[]
+////
+

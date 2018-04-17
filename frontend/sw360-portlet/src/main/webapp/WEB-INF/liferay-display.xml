@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<!--
+  ~ Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+  ~ With modifications by Bosch Software Innovations GmbH, 2016.
+  ~
+  ~ All rights reserved. This configuration file is provided to you under the
+  ~ terms and conditions of the Eclipse Distribution License v1.0 which
+  ~ accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/org/documents/edl-v10.php
+  -->
+<!DOCTYPE display PUBLIC "-//Liferay//DTD Display 6.2.0//EN" "http://www.liferay.com/dtd/liferay-display_6_2_0.dtd">
+
+<display>
+	<category name="SW360">
+		<portlet id="licenses"/>
+		<portlet id="components"/>
+		<portlet id="vendors"/>
+		<portlet id="projects"/>
+		<portlet id="search"/>
+		<portlet id="users"/>
+		<portlet id="componentImport"/>
+		<portlet id="welcome"/>
+		<portlet id="moderation"/>
+		<portlet id="recentcomponents"/>
+		<portlet id="recentreleases"/>
+		<portlet id="mysubscriptions"/>
+		<portlet id="mycomponents"/>
+		<portlet id="myprojects"/>
+		<portlet id="ProjectImportPortlet"/>
+		<portlet id="mytaskassignments"/>
+		<portlet id="mytasksubmissions"/>
+		<portlet id="fossologyadmin"/>
+		<portlet id="scheduleadmin"/>
+		<portlet id="attachmentVacuum"/>
+		<portlet id="databaseSanitation"/>
+		<portlet id="bulkReleaseEdit"/>
+		<portlet id="signup"/>
+		<portlet id="vulnerabilities"/>
+		<portlet id="ecc"/>
+	</category>
+</display>

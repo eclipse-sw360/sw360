@@ -1,0 +1,142 @@
+<%--
+  ~ Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+  --%>
+
+<%@ page import="org.eclipse.sw360.datahandler.thrift.projects.Project" %>
+
+<table class="table info_table" id="ProjectClearingInfo" title="Clearing">
+    <thead>
+    <tr>
+        <th colspan="3" class="headlabel">Clearing</th>
+    </tr>
+    </thead>
+    <tr>
+        <td width="33%">
+            <label class="textlabel stackedLabel" for="proj_projectclearingstate">Project clearing state</label>
+            <select class="toplabelledInput" id="proj_projectclearingstate"
+                    name="<portlet:namespace/><%=Project._Fields.CLEARING_STATE%>"
+                    style="min-width: 162px; min-height: 28px;">
+
+                <sw360:DisplayEnumOptions type="<%=ProjectClearingState.class%>" selected="${project.clearingState}"/>
+            </select>
+            <sw360:DisplayEnumInfo type="<%=ProjectClearingState.class%>"/>
+        </td>
+        <td width="33%">
+            <label class="textlabel stackedLabel mandatory" for="clearingTeam">Clearing team</label>
+            <select class="toplabelledInput" id="clearingTeam"
+                    name="<portlet:namespace/><%=Project._Fields.CLEARING_TEAM%>"
+                    style="min-width: 162px; min-height: 28px;">
+                <option value="<%=CLEARING_TEAM_UNKNOWN%>"
+                        <core_rt:if test='${empty project.clearingTeam}'>
+                            selected="selected"
+                        </core_rt:if>><%=CLEARING_TEAM_UNKNOWN%></option>
+                <core_rt:forEach items="${clearingTeamsStringSet}" var="entry">
+                    <option value="${entry}" class="textlabel stackedLabel"
+                            <core_rt:if test='${project.clearingTeam == entry}'>
+                                selected="selected"
+                            </core_rt:if>>
+                            ${entry}
+                    </option>
+                </core_rt:forEach>
+            </select>
+        </td>
+        <td width="33%">
+            <label class="textlabel stackedLabel" for="proj_deadline">Deadline for pre-evaluation</label>
+            <input class="toplabelledInput datepicker" id="proj_deadline"
+                   name="<portlet:namespace/><%=Project._Fields.PREEVALUATION_DEADLINE%>" type="text" pattern="\d{4}-\d{2}-\d{2}"
+                   value="<sw360:out value="${project.preevaluationDeadline}"/>" placeholder="Pre-evaluation date YYYY-MM-DD"/>
+        </td>
+    </tr>
+</table>
+
+<table class="table info_table" id="ProjectLifecycleInfo" title="Lifecycle">
+    <thead>
+    <tr>
+        <th colspan="3" class="headlabel">Lifecycle</th>
+    </tr>
+    </thead>
+    <tr>
+        <td width="33%">
+            <label class="textlabel stackedLabel mandatory" for="projectState">Project state</label>
+            <select class="toplabelledInput" id="projectState" name="<portlet:namespace/><%=Project._Fields.STATE%>"
+                    style="min-width: 162px; min-height: 28px;">
+                <sw360:DisplayEnumOptions type="<%=ProjectState.class%>" selected="${project.state}"/>
+            </select>
+            <sw360:DisplayEnumInfo type="<%=ProjectState.class%>"/>
+        </td>
+        <td width="33%">
+            <label class="textlabel stackedLabel" for="proj_systemTestStart">System test begin</label>
+            <input class="toplabelledInput datepicker" id="proj_systemTestStart"
+                   name="<portlet:namespace/><%=Project._Fields.SYSTEM_TEST_START%>" type="text" pattern="\d{4}-\d{2}-\d{2}"
+                   value="<sw360:out value="${project.systemTestStart}"/>" placeholder="System test begin date YYYY-MM-DD"/>
+        </td>
+        <td width="33%">
+            <label class="textlabel stackedLabel" for="proj_systemTestEnd">System test end</label>
+            <input class="toplabelledInput datepicker" id="proj_systemTestEnd"
+                   name="<portlet:namespace/><%=Project._Fields.SYSTEM_TEST_END%>" type="text" pattern="\d{4}-\d{2}-\d{2}"
+                   value="<sw360:out value="${project.systemTestEnd}"/>" placeholder="System test end date YYYY-MM-DD"/>
+        </td>
+    </tr>
+    <tr>
+        <td width="33%">
+            <label class="textlabel stackedLabel" for="proj_delivery">Delivery start date</label>
+            <input class="toplabelledInput datepicker" id="proj_delivery"
+                   name="<portlet:namespace/><%=Project._Fields.DELIVERY_START%>" type="text" pattern="\d{4}-\d{2}-\d{2}"
+                   value="<sw360:out value="${project.deliveryStart}"/>" placeholder="Delivery start date YYYY-MM-DD"/>
+        </td>
+        <td width="33%">
+            <label class="textlabel stackedLabel" for="proj_phaseout">Phase-out date</label>
+            <input class="toplabelledInput datepicker" id="proj_phaseout"
+                   name="<portlet:namespace/><%=Project._Fields.PHASE_OUT_SINCE%>" type="text" pattern="\d{4}-\d{2}-\d{2}"
+                   value="<sw360:out value="${project.phaseOutSince}"/>" placeholder="Phase out since YYYY-MM-DD"/>
+        </td>
+        <td width="33%">
+        </td>
+    </tr>
+</table>
+
+<table class="table info_table" id="LicenseInfoHeader" title="License Info Header">
+    <thead>
+    <tr>
+        <th class="headlabel">License Info Header</th>
+    </tr>
+    </thead>
+    <tr>
+        <td>
+            <textarea name="<portlet:namespace/><%=Project._Fields.LICENSE_INFO_HEADER_TEXT%>" class="projectLicenseInfoHeaderText" id="licenseInfoHeaderText" data-defaulttext="${defaultLicenseInfoHeaderText}"><sw360:DisplayLicenseInfoHeader project="${project}" defaultText="${defaultLicenseInfoHeaderText}"/></textarea>
+        </td>
+    </tr>
+</table>
+<input id="setToDefaultLicenseInfoHeaderTextButton" type="button" class="addButton pull-right" value="Set To Default Text">
+
+<script>
+    require(['jquery', /* jquery-plugins */ 'jquery-ui'], function($) {
+
+        Liferay.on('allPortletsReady', function() {
+            <core_rt:if test="${addMode}" >
+            setDefaultLicenseInfoHeaderText();
+            </core_rt:if>
+
+            $('.projectLicenseInfoHeaderText').each(function() {
+                $(this).height($(this).prop('scrollHeight'));
+            });
+
+            $('#setToDefaultLicenseInfoHeaderTextButton').on('click', setDefaultLicenseInfoHeaderText);
+
+            $('.datepicker').datepicker({dateFormat: "yy-mm-dd"});
+        });
+
+       function setDefaultLicenseInfoHeaderText() {
+           $('#licenseInfoHeaderText').val($('#licenseInfoHeaderText').data("defaulttext"));
+       }
+
+    });
+</script>
+

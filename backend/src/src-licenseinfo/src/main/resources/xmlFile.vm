@@ -1,0 +1,29 @@
+## All rights reserved. This configuration file is provided to you under the
+## terms and conditions of the Eclipse Distribution License v1.0 which
+## accompanies this distribution, and is available at
+## http://www.eclipse.org/org/documents/edl-v10.php
+<?xml version="1.0"?>
+<releases>
+    #foreach($releaseName in $licenseInfos.keySet())
+        <release name="$esc.xml($releaseName)">
+            <copyrights>
+                #foreach($copyright in ${licenseInfos.get($releaseName).copyrights})
+                    <copyright>
+                        <![CDATA[
+                        $copyright.replace("]]>", "]]]]><![CDATA[>")
+                        ]]>
+                    </copyright>
+                #end
+            </copyrights>
+            <licenses>
+                #foreach($license in ${licenseInfos.get($releaseName).licenses})
+                    <license>
+                        <![CDATA[
+                        $license.licenseText.replace("]]>", "]]]]><![CDATA[>")
+                        ]]>
+                    </license>
+                #end
+            </licenses>
+        </release>
+    #end
+</releases>

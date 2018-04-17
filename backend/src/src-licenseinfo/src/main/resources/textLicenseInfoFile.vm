@@ -1,0 +1,114 @@
+## All rights reserved. This configuration file is provided to you under the
+## terms and conditions of the Eclipse Distribution License v1.0 which
+## accompanies this distribution, and is available at
+## http://www.eclipse.org/org/documents/edl-v10.php
+$projectTitle
+
+
+Open Source Software
+====================
+$licenseInfoHeader
+
+Open Source Software Contained in this Product/Device:
+======================================================
+#foreach($releaseName in $licenseInfoResults.keySet()) #set($errorResults=[])
+* $releaseName #foreach($errorResult in $licenseInfoErrorResults.get($releaseName))
+(ERROR when reading license information from file $errorResult.licenseInfo.filenames[0]: $errorResult.message) #end
+#end
+
+
+#if($licenseInfoResults.keySet().size() > 0)
+Details
+========
+
+##
+##
+## Copyrights
+##
+#foreach($releaseName in $licenseInfoResults.keySet())
+#set($copyrights = [])
+#if(${licenseInfoResults.get($releaseName).licenseInfo})
+#set($copyrights = $licenseInfoResults.get($releaseName).licenseInfo.copyrights)
+#if($copyrights.size() > 0)
+Copyright Notices for $releaseName
+-----------------
+#foreach($copyright in ${copyrights})
+$copyright
+#end## foreach($copyright in ${copyrights})
+
+
+#end## if($copyrights.size() > 0)
+#end## if(${licenseInfoResults.get($releaseName).licenseInfo})
+##
+##
+## Acknowledgments
+##
+#set($acks = [])
+#if(${acknowledgements.get($releaseName)})
+#if($acks.size() > 0)
+Acknowledgements for $releaseName
+----------------
+#set($acks = $acknowledgements.get($releaseName))
+#foreach($ack in ${acks})
+$ack
+#end## foreach($ack in ${acks})
+
+
+#end## if($acks.size() > 0)
+#end## if(${acknowledgements.get($releaseName)})
+##
+##
+## Licenses
+##
+#set($licenses = [])
+#if(${licenseInfoResults.get($releaseName).licenseInfo})
+#set($licenses = $licenseInfoResults.get($releaseName).licenseInfo.licenseNamesWithTexts)
+Licenses for $releaseName
+--------
+#if($licenses.size() == 0)
+<No licenses found>
+#else## if($licenses.size() > 0)
+#foreach($license in ${licenses})
+#set($licenseName = "<no license name available>")
+#if($license.licenseName)
+#set($licenseName = $license.licenseName)
+#end## if($license.licenseName)
+#set($licenseId = $licenseNameWithTextToReferenceId.get($license))
+* $licenseName ($licenseId)
+#end## foreach($license in ${licenses})
+#end## if($licenses.size() > 0)
+
+
+#end## if(${licenseInfoResults.get($releaseName).licenseInfo})
+##
+#end## foreach($releaseName in $licenseInfoResults.keySet())
+#end## if($licenseInfoResults.keySet().size() > 0)
+##
+##
+## List of all licenses
+##
+#if($allLicenseNamesWithTexts.size() > 0)
+Open Source Software Licenses
+=============================
+
+#foreach($license in $allLicenseNamesWithTexts)
+#set($licenseName = "<no license name available>")
+#if($license.licenseName)
+#set($licenseName = $license.licenseName)
+#end## if($license.licenseName)
+##
+#set($licenseText = "<no license text available>")
+#if($license.licenseText)
+#set($licenseText = $license.licenseText)
+#end## if($license.licenseText)
+##
+#set($licenseId = $licenseNameWithTextToReferenceId.get($license))
+($licenseId) $licenseName.trim()
+$licenseText.trim()
+
+#end## foreach($license in $allLicenseNamesWithTexts)
+
+#end## if($allLicenseNamesWithTexts.size() > 0)
+Definition of Open Source Software
+==================================
+As used herein, the term “Open Source Software” means any software that is licensed royalty-free (i.e., fees for exercising the licensed rights are prohibited, whereas fees for reimbursement of costs incurred by licensor are generally permitted) under any license terms which allow all users to modify such software. “Open Source Software” as used here may require, as a condition of modification and/or distribution that the source code of such software be made available to all users of the software for purposes of information and modification.

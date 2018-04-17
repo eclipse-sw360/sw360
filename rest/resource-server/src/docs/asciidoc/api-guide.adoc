@@ -1,0 +1,268 @@
+//
+// Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
+//
+// All rights reserved. This configuration file is provided to you under the
+// terms and conditions of the Eclipse Distribution License v1.0 which
+// accompanies this distribution, and is available at
+// http://www.eclipse.org/org/documents/edl-v10.php
+//
+
+= sw360 REST API Guide
+Documentation; Version {project-version}
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 3
+:sectlinks:
+:numbered:
+
+[[overview]]
+== Overview
+
+[[overview-introduction]]
+=== Introduction
+This guide provides you with a detailed description how to use the RESTful sw360 services.
+
+[[overview-http-verbs]]
+=== HTTP verbs
+
+The sw360 REST API tries to adhere as closely as possible to standard HTTP and REST conventions in its
+use of HTTP verbs.
+
+|===
+| Verb | Usage
+
+| `GET`
+| Used to retrieve a resource
+
+| `POST`
+| Used to create a new resource
+
+| `PUT`
+| Used to update an existing resource (complete update)
+
+// | `PATCH`
+// | Used to update an existing resource (partial updates)
+
+// | `DELETE`
+// | Used to delete an existing resource
+|===
+
+[[overview-http-status-codes]]
+=== HTTP status codes
+
+The sw360 REST API tries to adhere as closely as possible to standard HTTP and REST conventions in its
+use of HTTP status codes.
+
+|===
+| Status code | Usage
+
+| `200 OK`
+| The request completed successfully
+
+| `201 Created`
+| A new resource has been created successfully. The resource's URI is available from the response's
+`Location` header
+
+| `204 No Content`
+| An update to an existing resource has been applied successfully
+
+| `400 Bad Request`
+| The request was malformed. The response body will include an error providing further information
+
+| `401 Unauthorized`
+| Similar to 403 Forbidden, but specifically for use when authentication is required and has failed or has not yet been provided
+
+| `403 Forbidden`
+| The request was valid, but the server is refusing action. The user might not have the necessary permissions for a resource, or may need an account of some sort
+
+| `404 Not Found`
+| The requested resource did not exist
+
+| `405 Method Not Allowed`
+| A request method is not supported for the requested resource
+
+| `409 Conflict`
+| A conflict can occur, when a resource shall be created and a resource with the same unique attribute (e.g. name) already exists
+
+| `415 Unsupported Media Type`
+| The request entity has a media type which the server or resource does not support
+
+| `500 Internal Server Error`
+| An internal server error occurred. Information about the cause can be found in the response body
+|===
+
+[[overview-headers]]
+=== Headers
+
+Every response has the following header(s):
+
+include::{snippets}/should_document_headers/response-headers.adoc[]
+
+[[overview-errors]]
+=== Errors
+
+Whenever an error response (status code >= 400) is returned, the body will contain a JSON object
+that describes the problem. The error object has the following structure:
+
+include::{snippets}/should_document_error_internal_error/response-fields.adoc[]
+
+For example, a request that attempts to get a non-existent project will produce a
+`500 Internal Server Error` response:
+
+include::{snippets}/should_document_error_internal_error/http-response.adoc[]
+
+[[overview-hypermedia]]
+=== Hypermedia
+
+The sw360 REST API's RESTful web service uses hypermedia and resources include links to other resources in their
+responses. Responses are in http://stateless.co/hal_specification.html[Hypertext Application Language (HAL)]
+format. Links can be found beneath the `_links` key. Users of the API should
+not create URIs themselves, instead they should use the above-described links to navigate
+
+[[token]]
+== Token
+
+This chapter provides information about the sw360 authorization token.
+
+[[token-request]]
+=== Token Request
+
+Access tokens are issued via OAuth 2.0 endpoints: /authorize and /oauth/token. +
+You can use cURL command line tool in the Terminal
+
+Request
+----
+curl
+    -X POST
+    --user 'client-id:client-secret'
+    -d 'grant_type=password&username=<USERNAME>&password=<PASSWORD>' https://sw360.org/authorization/oauth/token -k
+----
+
+The 'client-id' and 'client-secret' can be found in the https://github.com/sw360/sw360portal/blob/master/rest/authorization-server/src/main/resources/application.yml[application.yml] configuration.
+client-id: trusted-sw360-client
+client-secret: sw360-secret
+
+The <USERNAME> and <PASSWORD> are the credentials of your liferay login.
+e.g. admin@sw360.org, 12345
+
+[[token-response]]
+=== Token Response
+
+Response
+----
+{
+    "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsic3czNjAtUkVTVC1BUEkiXSwidXNlcl9uYW1lIjoiYWRtaW5Ac3czNjAub3JnIiwic2NvcGUiOlsiYWxsIl0sImV4cCI6MTUxNjQwMjMwNywiYXV0aG9yaXRpZXMiOlsiUkVBRCIsIldSSVRFIl0sImp0aSI6IjVjZjc5NTI2LTBmNWQtNGIxMC1iZDA0LTBkY2U2Yjc5OGQwNSIsImNsaWVudF9pZCI6InRydXN0ZWQtc3czNjAtY2xpZW50In0.jkEcRzYsf7o3Bu3Jn1DVyR6gWHAcygFcZZY_3CPY56Fh7rN24JU8aym2nRifN_PRpVL47yd_RMCuU9ILRDIIFjGe2eIjiyxrfQ6kAhdoaq77gviENzwagdRYQ9D6ttFviF4Qyx1fk3-A0S0FcdQud6kgGGd59xjdVBjnr5GiiYbHlSSUqlk84wOxmc6e47OyqMIdZXhffvNM9Q9o1TLfnGPpaZKqX5djit78HQi7HiXwUFpsJ51xNAEVtiQg31QJmTg0cx7OHunqC9zcYhEQ3eI5_2-6FBD3DZptH1bBzkAHNzngCK_KVbieZeDZ0JivNORRe06cqmlnWIDvtxfQww",
+    "token_type": "bearer",
+    "expires_in": 3600,
+    "scope": "all",
+    "jti": "699c2af1-562b-4468-990f-2612b37bf7c9"
+}
+----
+
+Token response elements
+|===
+||
+| `access_token`
+| Provides the requested access token. You can use this token to call the sw360 resource APIs.
+
+| `token_type`
+| Indicates that the generated access token is a bearer token.
+
+| `expires_in`
+| Indicates that the generated access token expires in 3600 seconds, 60 minutes, or 1 hours.
+
+| `scope`
+| The scope defines what the access token can do and what resources it can access (default: all).
+
+| `jti`
+| The identifier of the token.
+|===
+
+[[token-jwt]]
+=== JSON Web Tokens
+
+http://jwt.io[JWT.IO] allows you to decode and verify your sw360 authorization token.
+
+Decoded Header:
+----
+{
+  "alg": "RS256",
+  "typ": "JWT"
+}
+----
+
+Decoded Payload:
+----
+{
+  "aud": [
+    "sw360-REST-API"
+  ],
+  "user_name": "admin@sw360.org",
+  "scope": [
+    "all"
+  ],
+  "exp": 1516402307,
+  "authorities": [
+    "READ",
+    "WRITE"
+  ],
+  "jti": "5cf79526-0f5d-4b10-bd04-0dce6b798d05",
+  "client_id": "trusted-sw360-client"
+}
+----
+
+[[token-additional]]
+=== Additional
+
+Please note: Read / Write access to the REST API is controlled by sw360 Granted Authority.
+You can configure the sw360 Granted Authority by changing the properties file (sw360.properties).
+
+Token response elements
+|===
+| Name | Configuration | Default Value
+
+| `Token Validity`
+| rest.token.access.validity
+| 3600 (seconds)
+
+| `Write Access`
+| rest.write.access.usergroup
+| SW360_ADMIN
+|===
+
+[[resources]]
+== Resources
+
+[[resources-index]]
+=== Index
+
+The index provides the entry point into the service.
+
+[[resources-index-access]]
+==== Accessing the index
+
+A `GET` request is used to access the index
+
+===== Response structure
+
+include::{snippets}/should_document_index/response-fields.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_index/http-response.adoc[]
+
+[[resources-index-links]]
+===== Links
+
+include::{snippets}/should_document_index/links.adoc[]
+
+include::users.adoc[]
+include::projects.adoc[]
+include::components.adoc[]
+include::releases.adoc[]
+include::attachments.adoc[]
+include::vendors.adoc[]
+include::licenses.adoc[]
+include::vulnerabilities.adoc[]
