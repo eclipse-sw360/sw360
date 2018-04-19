@@ -115,7 +115,7 @@ public class AttachmentStreamConnector {
                     ZipEntry zipEntry = new ZipEntry(attachment.getFilename());
                     zip.putNextEntry(zipEntry);
 
-                    try(InputStream attachmentStream = getAttachmentStream(attachment, user, context)) {
+                    try(InputStream attachmentStream = unsafeGetAttachmentStream(attachment)) {
                         while ((length = attachmentStream.read(buffer)) >= 0) {
                             zip.write(buffer, 0, length);
                         }
