@@ -16,8 +16,8 @@ Documentation; Version {project-version}
 SW360 is the upcoming tool for our OSS management and clearing activities. +
 Here you find information about the REST API for SW360.
 
-The REST API is in early stage, link:https://github.com/sw360/sw360portal/issues[feedback/issues] is very welcome. +
+The REST API is in early stage, link:https://github.com/eclipse/sw360/issues[feedback/issues] is very welcome. +
 
 * link:api-guide.html[API Guide]
-* link:https://github.com/sw360/sw360portal[Git Repository]
+* link:https://github.com/eclipse/sw360[Git Repository]
 * link:../api/browser/index.html#/resource/api[Interactive API Browser]

@@ -65,8 +65,8 @@ $theme.include($body_top_include)
 
 	<footer id="footer" role="contentinfo">
 		<p class="powered-by">
-			#language("SW360 |") <a href="http://www.github.com/sw360/sw360portal" rel="external"> &copy; Siemens AG 2013-2017, Bosch Software Innovations GmbH 2017</a> |
-            <a href="https://github.com/sw360/sw360portal/issues" rel="external"> Report an issue.</a> | Version: $sw360Version | Branch: $gitBranch ($buildNumber) | Build time: $buildTime
+			#language("SW360 |") <a href="http://www.github.com/eclipse/sw360" rel="external"> &copy; Siemens AG 2013-2017, Bosch Software Innovations GmbH 2017</a> |
+            <a href="https://github.com/eclipse/sw360/issues" rel="external"> Report an issue.</a> | Version: $sw360Version | Branch: $gitBranch ($buildNumber) | Build time: $buildTime
             
 		</p>
 	</footer>

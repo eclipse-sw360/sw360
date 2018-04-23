@@ -140,7 +140,7 @@ curl
     -d 'grant_type=password&username=<USERNAME>&password=<PASSWORD>' https://sw360.org/authorization/oauth/token -k
 ----
 
-The 'client-id' and 'client-secret' can be found in the https://github.com/sw360/sw360portal/blob/master/rest/authorization-server/src/main/resources/application.yml[application.yml] configuration.
+The 'client-id' and 'client-secret' can be found in the https://github.com/eclipse/sw360/blob/master/rest/authorization-server/src/main/resources/application.yml[application.yml] configuration.
 client-id: trusted-sw360-client
 client-secret: sw360-secret
 

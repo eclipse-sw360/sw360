@@ -22,13 +22,13 @@
     </licenses>
 
     <scm>
-      <connection>scm:git:https://github.com/sw360/sw360portal</connection>
+      <connection>scm:git:https://github.com/eclipse/sw360</connection>
     </scm>
 
     <distributionManagement>
       <repository>
         <id>artifact-repository</id>
-        <url>https://github.com/sw360/sw360portal</url>
+        <url>https://github.com/eclipse/sw360</url>
       </repository>
     </distributionManagement>
 
