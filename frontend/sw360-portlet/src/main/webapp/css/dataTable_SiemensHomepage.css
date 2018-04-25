@@ -321,7 +321,7 @@ div.dataTables_info {
 }
 
 .paging_full_numbers, .paging_simple_numbers {
-	width: 400px;
+	width: 500px;
 	height: 22px;
 	line-height: 22px;
 }

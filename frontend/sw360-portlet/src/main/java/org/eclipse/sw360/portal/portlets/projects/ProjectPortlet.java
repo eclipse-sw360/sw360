@@ -21,6 +21,7 @@ import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.portlet.PortletResponseUtil;
 import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.model.Organization;
+import com.liferay.portal.util.PortalUtil;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
@@ -46,6 +47,8 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.exporter.ProjectExporter;
 import org.eclipse.sw360.exporter.ReleaseExporter;
 import org.eclipse.sw360.portal.common.*;
+import org.eclipse.sw360.portal.common.datatables.PaginationParser;
+import org.eclipse.sw360.portal.common.datatables.data.PaginationParameters;
 import org.eclipse.sw360.portal.portlets.FossologyAwarePortlet;
 import org.eclipse.sw360.portal.users.LifeRayUserSession;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
@@ -53,6 +56,7 @@ import org.eclipse.sw360.portal.users.UserUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.portlet.*;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -68,6 +72,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.liferay.portal.kernel.json.JSONFactoryUtil.createJSONArray;
 import static com.liferay.portal.kernel.json.JSONFactoryUtil.createJSONObject;
+import static java.lang.Math.min;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.CONTENT_TYPE_OPENXML_SPREADSHEET;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
@@ -90,6 +95,14 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     private static final String LICENSE_NAME_WITH_TEXT_TEXT = "text";
     private static final String LICENSE_NAME_WITH_TEXT_ERROR = "error";
     private static final String LICENSE_NAME_WITH_TEXT_FILE = "file";
+
+    // Project view datatables, index of columns
+    private static final int PROJECT_DT_ROW_NAME = 0;
+    private static final int PROJECT_DT_ROW_DESCRIPTION = 1;
+    private static final int PROJECT_DT_ROW_RESPONSIBLE = 2;
+    private static final int PROJECT_DT_ROW_STATE = 3;
+    private static final int PROJECT_DT_ROW_CLEARING_STATE = 4;
+    private static final int PROJECT_DT_ROW_ACTION = 5;
 
     private static final ImmutableList<Project._Fields> projectFilteredFields = ImmutableList.of(
             Project._Fields.BUSINESS_UNIT,
@@ -134,6 +147,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
         if (PortalConstants.VIEW_LINKED_PROJECTS.equals(action)) {
             serveLinkedProjects(request, response);
+        } else if (PortalConstants.LOAD_PROJECT_LIST.equals(action)) {
+            serveProjectList(request, response);
         } else if (PortalConstants.REMOVE_PROJECT.equals(action)) {
             serveRemoveProject(request, response);
         } else if (PortalConstants.VIEW_LINKED_RELEASES.equals(action)) {
@@ -657,18 +672,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     }
 
     private void prepareStandardView(RenderRequest request) throws IOException {
-        List<Project> projectList = getFilteredProjectList(request);
-
-        // The data should be sorted like it will be initially sorted on the client
-        // side. That way additional data can be loaded in order the data is visible to
-        // the user.
-        // As we currently use no defined sorting on the client, jquery dataTables
-        // default sorting is used. This is for the first column and case insensitive.
-        // So we duplicate that sorting here.
-        List<Project> sortedProjectList = projectList.stream()
-                .sorted(Comparator.comparing(p -> SW360Utils.printName(p).toLowerCase())).collect(Collectors.toList());
-        request.setAttribute(PROJECT_LIST, sortedProjectList);
-
         List<Organization> organizations = UserUtils.getOrganizations(request);
         request.setAttribute(PortalConstants.ORGANIZATIONS, organizations);
     }
@@ -1162,5 +1165,106 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             log.error("Could not load default license info header text from backend.", e);
             return "";
         }
+    }
+
+    private void serveProjectList(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
+        HttpServletRequest originalServletRequest = PortalUtil.getOriginalServletRequest(PortalUtil.getHttpServletRequest(request));
+        PaginationParameters paginationParameters = PaginationParser.parametersFrom(originalServletRequest);
+        List<Project> projectList = getFilteredProjectList(request);
+
+        JSONArray jsonProjects = getProjectData(projectList, paginationParameters);
+        JSONObject jsonResult = createJSONObject();
+        jsonResult.put(DATATABLE_RECORDS_TOTAL, projectList.size());
+        jsonResult.put(DATATABLE_RECORDS_FILTERED, projectList.size());
+        jsonResult.put(DATATABLE_DISPLAY_DATA, jsonProjects);
+
+        try {
+            writeJSON(request, response, jsonResult);
+        } catch (IOException e) {
+            log.error("Problem rendering RequestStatus", e);
+        }
+    }
+
+    public JSONArray getProjectData(List<Project> projectList, PaginationParameters projectParameters) {
+        List<Project> sortedProjects = sortProjectList(projectList, projectParameters);
+        int count = getProjectDataCount(projectParameters, projectList.size());
+
+        JSONArray projectData = createJSONArray();
+        for (int i = projectParameters.getDisplayStart(); i < count; i++) {
+            JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+            Project project = sortedProjects.get(i);
+            jsonObject.put("id", project.getId());
+            jsonObject.put("DT_RowId", project.getId());
+            jsonObject.put("name", SW360Utils.printName(project));
+            jsonObject.put("desc", nullToEmptyString(project.getDescription()));
+            jsonObject.put("state", nullToEmptyString(project.getState()));
+            jsonObject.put("cState", nullToEmptyString(project.getClearingState()));
+            jsonObject.put("clearing", "Not loaded yet");
+            jsonObject.put("resp", nullToEmptyString(project.getProjectResponsible()));
+            jsonObject.put("lProjSize", String.valueOf(project.getLinkedProjectsSize()));
+            jsonObject.put("lRelsSize", String.valueOf(project.getReleaseIdToUsageSize()));
+            jsonObject.put("attsSize", String.valueOf(project.getAttachmentsSize()));
+            projectData.put(jsonObject);
+        }
+
+        return projectData;
+    }
+
+    private int getProjectDataCount(PaginationParameters projectParameters, int maxSize) {
+        if (projectParameters.getDisplayLength() == -1) {
+            return maxSize;
+        } else {
+            return min(projectParameters.getDisplayStart() + projectParameters.getDisplayLength(), maxSize);
+        }
+    }
+
+    private List<Project> sortProjectList(List<Project> projectList, PaginationParameters projectParameters) {
+
+        switch (projectParameters.getSortingColumn()) {
+            case PROJECT_DT_ROW_NAME:
+                Collections.sort(projectList, compareByName(projectParameters.isAscending()));
+                break;
+            case PROJECT_DT_ROW_DESCRIPTION:
+                Collections.sort(projectList, compareByDescription(projectParameters.isAscending()));
+                break;
+            case PROJECT_DT_ROW_RESPONSIBLE:
+                Collections.sort(projectList, compareByResponsible(projectParameters.isAscending()));
+                break;
+            case PROJECT_DT_ROW_STATE:
+                Collections.sort(projectList, compareByState(projectParameters.isAscending()));
+                break;
+            case PROJECT_DT_ROW_CLEARING_STATE:
+                break;
+            case PROJECT_DT_ROW_ACTION:
+                break;
+            default:
+                break;
+        }
+
+        return projectList;
+    }
+
+    private Comparator<Project> compareByName(boolean isAscending) {
+        Comparator<Project> comparator = Comparator.comparing(
+                p -> SW360Utils.printName(p).toLowerCase());
+        return isAscending ? comparator : comparator.reversed();
+    }
+
+    private Comparator<Project> compareByDescription(boolean isAscending) {
+        Comparator<Project> comparator = Comparator.comparing(
+                p -> nullToEmptyString(p.getDescription()));
+        return isAscending ? comparator : comparator.reversed();
+    }
+
+    private Comparator<Project> compareByResponsible(boolean isAscending) {
+        Comparator<Project> comparator = Comparator.comparing(
+                p -> nullToEmptyString(p.getProjectResponsible()));
+        return isAscending ? comparator : comparator.reversed();
+    }
+
+    private Comparator<Project> compareByState(boolean isAscending) {
+        Comparator<Project> comparator = Comparator.comparing(
+                p -> nullToEmptyString(p.getState()));
+        return isAscending ? comparator : comparator.reversed();
     }
 }

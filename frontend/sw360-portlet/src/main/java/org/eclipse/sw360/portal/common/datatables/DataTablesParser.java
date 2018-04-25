@@ -26,6 +26,7 @@ import java.util.Set;
 
 import static com.google.common.collect.Lists.transform;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.startsWith;
+import static org.eclipse.sw360.portal.common.datatables.DataTablesUtils.*;
 
 /**
  * @author daniele.fognini@tngtech.com
@@ -37,6 +38,7 @@ public class DataTablesParser {
         int start = getSimpleInt(parameterMap, "start");
         List<DataTablesOrder> orders = getOrders(parameterMap);
         List<DataTablesColumn> columns = getColumns(parameterMap);
+
         DataTablesSearch search = getSearch(parameterMap, "search");
         return new DataTablesParameters(draw, length, start, orders, columns, search);
     }
@@ -68,71 +70,16 @@ public class DataTablesParser {
     }
 
     private static Function<Map<String, String[]>, DataTablesColumn> getColumn() {
-        return new Function<Map<String, String[]>, DataTablesColumn>() {
-            @Override
-            public DataTablesColumn apply(Map<String, String[]> input) {
-                return new DataTablesColumn(getSearch(input, "[search]")); // TODO add other parameters
-            }
+        return input -> {
+            return new DataTablesColumn(getSearch(input, "[search]")); // TODO add other parameters
         };
     }
 
     private static Function<Map<String, String[]>, DataTablesOrder> getOrder() {
-        return new Function<Map<String, String[]>, DataTablesOrder>() {
-            @Override
-            public DataTablesOrder apply(Map<String, String[]> input) {
-                int column = getSimpleInt(input, "[column]");
-                boolean ascending = "asc".equalsIgnoreCase(getSimple(input, "[dir]"));
-                return new DataTablesOrder(column, ascending);
-            }
+        return input -> {
+            int column = getSimpleInt(input, "[column]");
+            boolean ascending = "asc".equalsIgnoreCase(getSimple(input, "[dir]"));
+            return new DataTablesOrder(column, ascending);
         };
     }
-
-    protected static List<Map<String, String[]>> vectorize(Map<String, String[]> parametersMap) {
-        int i = 0;
-        ImmutableList.Builder<Map<String, String[]>> builder = ImmutableList.builder();
-        Set<String> parametersName = parametersMap.keySet();
-
-        while (Iterables.any(parametersName, startsWith("[" + i + "]"))) {
-            builder.add(unprefix(parametersMap, "[" + i + "]"));
-            i++;
-        }
-
-        return builder.build();
-    }
-
-    protected static Map<String, String[]> unprefix(Map<String, String[]> parametersMap, String prefix) {
-        ImmutableMap.Builder<String, String[]> builder = ImmutableMap.builder();
-        for (Map.Entry<String, String[]> entry : parametersMap.entrySet()) {
-            String key = entry.getKey();
-            if (key.startsWith(prefix)) {
-                builder.put(key.substring(prefix.length()), entry.getValue());
-            }
-        }
-
-        return builder.build();
-    }
-
-    private static String getSimple(Map<String, String[]> parameterMap, String parameterName) {
-        String[] parameterValues = parameterMap.get(parameterName);
-
-        if (parameterValues == null || parameterValues.length != 1) {
-            throw new IllegalArgumentException("bad value for parameter " + parameterName);
-        }
-
-        return parameterValues[0];
-    }
-
-    private static int getSimpleInt(Map<String, String[]> parameterMap, String parameterName) {
-        try {
-            return Integer.valueOf(getSimple(parameterMap, parameterName));
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("not integer value for parameter " + parameterName, e);
-        }
-    }
-
-    private static boolean getSimpleBoolean(Map<String, String[]> parameterMap, String parameterName) {
-        return Boolean.valueOf(getSimple(parameterMap, parameterName));
-    }
-
-
 }

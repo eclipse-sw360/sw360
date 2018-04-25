@@ -103,7 +103,7 @@ public class DataTablesParserTest {
 
         Map<String, String[]> map = objectBuilder.build();
 
-        Map<String, String[]> unprefixed = DataTablesParser.unprefix(map, "pre");
+        Map<String, String[]> unprefixed = DataTablesUtils.unprefix(map, "pre");
 
         assertThat(unprefixed.keySet(), containsInAnyOrder("", "a", "ab", "ac"));
 

@@ -286,6 +286,7 @@ public class PortalConstants {
     public static final String DOWNLOAD_SOURCE_CODE_BUNDLE = "DownloadSourceCodeBundle";
     public static final String GET_LICENCES_FROM_ATTACHMENT = "GetLicensesFromAttachment";
     public static final String LOAD_LICENSE_INFO_ATTACHMENT_USAGE = "LoadLicenseInfoAttachmentUsage";
+    public static final String LOAD_PROJECT_LIST = "load_project_list";
 
     //component actions
     public static final String ADD_VENDOR = "add_vendor";
@@ -297,6 +298,7 @@ public class PortalConstants {
     public static final String SUBSCRIBE_RELEASE = "subscribe_release";
     public static final String UNSUBSCRIBE = "unsubscribe";
     public static final String UNSUBSCRIBE_RELEASE = "unsubscribe_release";
+    public static final String LOAD_COMPONENT_LIST = "load_component_list";
 
     // fossology actions
     public static final String FOSSOLOGY_PREFIX = "fossology";
@@ -351,11 +353,16 @@ public class PortalConstants {
     //! request status
     public static final String REQUEST_STATUS = "request_status";
 
+
     // friendly url placeholder values
     public static final String FRIENDLY_URL_PREFIX = "friendlyUrl";
     public static final String FRIENDLY_URL_PLACEHOLDER_PAGENAME = FRIENDLY_URL_PREFIX + "Pagename";
-    public static final String FRIENDLY_URL_PLACEHOLDER_PROJECT_ID = FRIENDLY_URL_PREFIX + "ProjectId";
-    public static final String FRIENDLY_URL_PLACEHOLDER_COMPONENT_ID = FRIENDLY_URL_PREFIX + "ComponentId";
+    public static final String FRIENDLY_URL_PLACEHOLDER_ID = FRIENDLY_URL_PREFIX + "Id";
+
+    // datatables attributes for pagination
+    public static final String DATATABLE_DISPLAY_DATA = "aaData";
+    public static final String DATATABLE_RECORDS_TOTAL = "recordsTotal";
+    public static final String DATATABLE_RECORDS_FILTERED = "recordsFiltered";
 
     //
     public static String PROJECTIMPORT_HOSTS;

@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
   ~ With modifications by Bosch Software Innovations GmbH, 2016.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
@@ -11,9 +11,8 @@
   --%>
 <%@ page import="com.liferay.portlet.PortletURLFactoryUtil" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.components.Component" %>
-<%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
-<%@ page import="javax.portlet.PortletRequest" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.components.ComponentType" %>
+<%@ page import="javax.portlet.PortletRequest" %>
 
 <%@ taglib prefix="tags" tagdir="/WEB-INF/tags" %>
 
@@ -24,9 +23,6 @@
 <portlet:defineObjects/>
 <liferay-theme:defineObjects/>
 
-<jsp:useBean id="componentList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.components.Component>"
-             scope="request"/>
-
 <jsp:useBean id="categories" class="java.lang.String" scope="request"/>
 <jsp:useBean id="languages" class="java.lang.String" scope="request"/>
 <jsp:useBean id="softwarePlatforms" class="java.lang.String" scope="request"/>
@@ -36,7 +32,6 @@
 <jsp:useBean id="vendorNames" class="java.lang.String" scope="request"/>
 <jsp:useBean id="mainLicenseIds" class="java.lang.String" scope="request"/>
 <jsp:useBean id="name" class="java.lang.String" scope="request"/>
-<jsp:useBean id="viewSize" type="java.lang.Integer" scope="request"/>
 <jsp:useBean id="totalRows" type="java.lang.Integer" scope="request"/>
 
 <core_rt:set var="programmingLanguages" value='<%=PortalConstants.PROGRAMMING_LANGUAGES%>'/>
@@ -49,16 +44,24 @@
 
 <portlet:renderURL var="friendlyComponentURL">
     <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>"/>
-    <portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_COMPONENT_ID%>"/>
+    <portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>"/>
 </portlet:renderURL>
 
 <portlet:resourceURL var="deleteAjaxURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.DELETE_COMPONENT%>'/>
 </portlet:resourceURL>
 
+<portlet:resourceURL var="loadComponentsURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.LOAD_COMPONENT_LIST%>'/>
+</portlet:resourceURL>
+
 <portlet:actionURL var="applyFiltersURL" name="applyFilters">
 </portlet:actionURL>
 
+<liferay-portlet:renderURL var="friendlyLicenseURL" portletName="licenses_WAR_sw360portlet">
+    <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>"/>
+    <portlet:param name="<%=PortalConstants.LICENSE_ID%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>"/>
+</liferay-portlet:renderURL>
 
 <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/1.12.1/jquery-ui.css">
 <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/github-com-craftpip-jquery-confirm/3.0.1/jquery-confirm.min.css">
@@ -69,38 +72,15 @@
 <div id="header"></div>
 <p class="pageHeader">
     <span class="pageHeaderBigSpan">Components</span>
-    <span class="pageHeaderMediumSpan">(<core_rt:if test="${componentList.size() == totalRows}"><span id="componentCounter">${totalRows}</span></core_rt:if><core_rt:if test="${componentList.size() != totalRows}"><span id="componentCounter1">${componentList.size()}</span> latest of <span id="componentCounter2">${totalRows}</span></core_rt:if>)</span>
+    <span class="pageHeaderMediumSpan">
+        <span id="componentCounter">(${totalRows})</span>
     <span class="pull-right">
           <input type="button" class="addButton" onclick="window.location.href='<%=addComponentURL%>'"
-                value="Add Component">
+                 value="Add Component">
     </span>
 </p>
 
 <div id="searchInput" class="content1">
-     <table>
-         <thead>
-         <tr>
-             <th class="infoheading">
-                 Loading
-             </th>
-         </tr>
-         </thead>
-         <tbody style="background-color: #f8f7f7; border: none;">
-         <tr>
-             <td>
-                 <select class="searchbar" id="view_size" name="<portlet:namespace/><%=PortalConstants.VIEW_SIZE%>">
-                     <option value="200" <core_rt:if test="${viewSize == 200}">selected</core_rt:if>>200 latest</option>
-                     <option value="500" <core_rt:if test="${viewSize == 500}">selected</core_rt:if>>500 latest</option>
-                     <option value="1000" <core_rt:if test="${viewSize == 1000}">selected</core_rt:if>>1000 latest</option>
-                     <option value="-1" <core_rt:if test="${viewSize == -1}">selected</core_rt:if>>All</option>
-                 </select>
-             </td>
-         </tr>
-         </tbody>
-     </table>
-
-    <%@ include file="/html/utils/includes/quickfilter.jspf" %>
-
     <form action="<%=applyFiltersURL%>" method="post">
         <table>
             <thead>
@@ -205,7 +185,7 @@
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;
 
-        require(['jquery', 'utils/includes/quickfilter', 'modules/autocomplete', 'modules/confirm', /* jquery-plugins: */ 'datatables', 'datatables_buttons', 'buttons.print'], function($, quickfilter, autocomplete, confirm) {
+        require(['jquery', 'modules/autocomplete', 'modules/confirm', /* jquery-plugins: */ 'datatables', 'datatables_buttons', 'buttons.print'], function($, autocomplete, confirm) {
             var componentsTable;
 
             // initializing
@@ -223,9 +203,6 @@
             $('#exportSpreadsheetButton').on('click', function() {
                 exportSpreadsheet();
             });
-            $('#view_size').on('change', function() {
-                reloadViewSize();
-            });
 
             // helper functions
             function load() {
@@ -233,12 +210,7 @@
                 autocomplete.prepareForMultipleHits('software_platforms', ${softwarePlatformsAutoC});
                 autocomplete.prepareForMultipleHits('operating_systems', ${operatingSystemsAutoC});
                 autocomplete.prepareForMultipleHits('vendor_names', ${vendorList});
-
                 componentsTable = createComponentsTable();
-                quickfilter.addTable(componentsTable, function(searchTerm) {
-                    var searchRegex = $.fn.dataTable.util.escapeRegex(searchTerm);
-                    this.columns(1).search(searchRegex, true).draw();
-                });
             }
 
             // catch ctrl+p and print dataTable
@@ -249,15 +221,7 @@
                 }
             });
 
-            function createDetailURLfromComponentId(componentId) {
-                var portletURL = PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>')
-                        .setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_DETAIL%>').setParameter('<%=PortalConstants.COMPONENT_ID%>', componentId);
-                return portletURL.toString();
-            }
-
             function exportSpreadsheet(){
-                quickfilter.setSearchTerm('');
-
                 var portletURL = PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>')
                         .setParameter('<%=PortalConstants.ACTION%>', '<%=PortalConstants.EXPORT_TO_EXCEL%>');
                 portletURL.setParameter('<%=Component._Fields.NAME%>', $('#component_name').val());
@@ -273,32 +237,18 @@
                 window.location.href=portletURL.toString();
             }
 
-            function reloadViewSize(){
-                var portletURL = PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>');
-                portletURL.setParameter('<%=PortalConstants.VIEW_SIZE%>', $('#view_size').val());
-                window.location.href=portletURL.toString();
-            }
-
             function createComponentsTable() {
-                var componentsTable,
-                    result = [];
+                var componentsTable;
 
-                <core_rt:forEach items="${componentList}" var="component">
-                <core_rt:set var="licenseCollectionTagOutput"><sw360:DisplayLicenseCollection licenseIds="${component.mainLicenseIds}" scopeGroupId="${pageContext.getAttribute('scopeGroupId')}"/></core_rt:set>
-                    result.push({
-                        "DT_RowId": "${component.id}",
-                        "id": "${component.id}",
-                        "vndrs": '<sw360:DisplayCollection value="${component.vendorNames}"/>',
-                        "name": '<sw360:ComponentName component="${component}"/>',
-                        "lics": "<tags:TrimLineBreaks input="${licenseCollectionTagOutput}"/>",
-                        "cType": "<sw360:DisplayEnum value="${component.componentType}"/>",
-                        "lRelsSize": "${component.releaseIdsSize}",
-                        "attsSize": "${component.attachmentsSize}"
-                    });
-                </core_rt:forEach>
-
+                $.fn.DataTable.ext.pager.numbers_length = 8;
                 componentsTable = $('#componentsTable').DataTable({
                     "pagingType": "simple_numbers",
+                    "bPaginate": true,
+                    "bInfo": true,
+                    "iDisplayStart": 0,
+                    "bProcessing": true,
+                    "bServerSide": true,
+                    "sAjaxSource": '<%=loadComponentsURL%>',
                     "dom": 'lBrtip',
                     "buttons": [
                         {
@@ -312,19 +262,17 @@
                         }
                     ],
                     "pageLength": 25,
-                    "data": result,
+                    "searching": false,
                     "columns": [
                         {"title": "Vendor", data: "vndrs"},
                         {"title": "Component Name", data: "name", render: {display: renderComponentNameLink}},
-                        {"title": "Main Licenses", data: "lics"},
+                        {"title": "Main Licenses", data: "lics", render: {display: renderLicenseLink}},
                         {"title": "Component Type", data: "cType"},
                         {"title": "Actions", data: "id", render: {display: renderComponentActions}}
                     ],
-                    order: [[1, 'asc']],
-                    language: {
-                        lengthMenu: "_MENU_ entries per page"
-                    },
-                    autoWidth: false
+                    "order": [[1, 'asc']],
+                    "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+                    "autoWidth": false
                 });
 
                 return componentsTable;
@@ -342,14 +290,24 @@
             }
 
             function renderComponentNameLink(name, type, row) {
-                return renderLinkTo(makeComponentFriendlyUrl(row.id, '<%=PortalConstants.PAGENAME_DETAIL%>'), name);
+                return renderLinkTo(replaceFriendlyUrlParameter('<%=friendlyComponentURL%>', row.id, '<%=PortalConstants.PAGENAME_DETAIL%>'), name);
             }
 
-            function makeComponentFriendlyUrl(componentId, page) {
-                var portletURL = '<%=friendlyComponentURL%>'
+            function renderLicenseLink(lics, type, row) {
+                var licensePortletURL = '<%=friendlyLicenseURL%>'
+                    .replace(/components/g, "licenses");// DIRTY WORKAROUND
+
+                for (var i = 0; i < lics.length; i++) {
+                    lics[i] = renderLinkTo(replaceFriendlyUrlParameter(licensePortletURL.toString(), lics[i], '<%=PortalConstants.PAGENAME_DETAIL%>'), lics[i]);
+                }
+
+                return lics;
+            }
+
+            function replaceFriendlyUrlParameter(portletUrl, id, page) {
+                return portletUrl
                     .replace('<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>', page)
-                    .replace('<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_COMPONENT_ID%>', componentId);
-                return portletURL;
+                    .replace('<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>', id);
             }
 
             function makeComponentUrl(componentId, page) {
@@ -404,5 +362,6 @@
         });
     });
 </script>
+
 <%@include file="/html/utils/includes/modal.jspf" %>
 <%@include file="/html/utils/includes/vulnerabilityModal.jspf" %>
