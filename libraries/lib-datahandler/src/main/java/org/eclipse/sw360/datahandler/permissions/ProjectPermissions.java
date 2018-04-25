@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2014-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2014-2018. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -68,7 +68,7 @@ public class ProjectPermissions extends DocumentPermissions<Project> {
               && !isNullOrEmpty(document.getBusinessUnit()) && document.getBusinessUnit().startsWith(buFromOrganisation);
     }
 
-    public static boolean userIsEquivalentToModeratorinProject(Project input, String user) {
+    public static boolean userIsEquivalentToModeratorInProject(Project input, String user) {
         final HashSet<String> allowedUsers = new HashSet<>();
         if (input.isSetCreatedBy()) allowedUsers.add(input.getCreatedBy());
         if (input.isSetLeadArchitect()) allowedUsers.add(input.getLeadArchitect());
@@ -82,19 +82,19 @@ public class ProjectPermissions extends DocumentPermissions<Project> {
     @NotNull
     public static Predicate<Project> isVisible(final User user) {
         return input -> {
-            Visibility visbility = input.getVisbility();
-            if (visbility == null) {
-                visbility = Visibility.BUISNESSUNIT_AND_MODERATORS; // the current default
+            Visibility visibility = input.getVisbility();
+            if (visibility == null) {
+                visibility = Visibility.BUISNESSUNIT_AND_MODERATORS; // the current default
             }
 
-            switch (visbility) {
+            switch (visibility) {
                 case PRIVATE:
                     return user.getEmail().equals(input.getCreatedBy());
                 case ME_AND_MODERATORS: {
-                    return userIsEquivalentToModeratorinProject(input, user.getEmail());
+                    return userIsEquivalentToModeratorInProject(input, user.getEmail());
                 }
                 case BUISNESSUNIT_AND_MODERATORS: {
-                    return isUserInBU(input, user.getDepartment()) || userIsEquivalentToModeratorinProject(input, user.getEmail()) || isUserAtLeast(CLEARING_ADMIN, user);
+                    return isUserInBU(input, user.getDepartment()) || userIsEquivalentToModeratorInProject(input, user.getEmail()) || isUserAtLeast(CLEARING_ADMIN, user);
                 }
                 case EVERYONE:
                     return true;
