@@ -1,0 +1,47 @@
+# -----------------------------------------------------------------------------
+# Copyright Siemens AG, 2016-2017.
+# Copyright Bosch Software Innovations GmbH, 2017.
+# Part of the SW360 Portal Project.
+#
+# All rights reserved. This configuration file is provided to you under the
+# terms and conditions of the Eclipse Distribution License v1.0 which
+# accompanies this distribution, and is available at
+# http://www.eclipse.org/org/documents/edl-v10.php
+#
+# initial author: maximilian.huber@tngtech.com
+# -----------------------------------------------------------------------------
+
+sudo: required
+dist: trusty
+language: java
+jdk: openjdk8
+
+cache:
+  apt: true
+  directories:
+    - $HOME/.m2
+    - /tmp/
+
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -y couchdb
+  - sudo ./scripts/install-thrift.sh --no-cleanup
+  - sudo service couchdb restart
+install: mvn dependency:resolve || true
+
+env: MVN_ARGS="package"
+script: mvn --fail-at-end $MVN_ARGS
+
+matrix:
+  include:
+    - env: MVN_ARGS="package"
+    - env: MVN_ARGS="validate"
+      before_install:
+    - env: MVN_ARGS="dependency:analyze -DfailOnWarning"
+      install: mvn package -DskipTests
+    - before_install: true
+      install: true
+      script: .travis/testForLicenseHeaders.sh
+      env: DESC="test for license headers"
+  allow_failures:
+    - env: MVN_ARGS="dependency:analyze -DfailOnWarning"
