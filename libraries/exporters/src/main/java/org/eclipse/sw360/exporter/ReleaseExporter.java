@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -91,6 +91,7 @@ public class ReleaseExporter extends ExcelExporter<Release, ReleaseHelper> {
     private static List<String> makeHeadersForExtendedExport() {
         List<String> additionalHeaders = new ArrayList<>();
         additionalHeaders.add(displayNameFor("project origin", nameToDisplayName));
+        additionalHeaders.add(displayNameFor("project mainline state", nameToDisplayName));
 
         List<String> completeHeaders = new ArrayList<>();
         completeHeaders.addAll(makeHeaders());

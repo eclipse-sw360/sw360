@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -135,15 +135,20 @@ class ReleaseHelper implements ExporterHelper<Release> {
                     row.add(ThriftEnumUtils.enumToString(component.getComponentType()));
                 }
 
-                // and project origin only if wanted
+                // project origin and project mainline state only if wanted
                 if (addAdditionalData()) {
                     if (releaseClearingStatusDataByRelease.containsKey(release)) {
-                        row.add(releaseClearingStatusDataByRelease.get(release).getProjectNames());
+                        ReleaseClearingStatusData releaseClearingData = releaseClearingStatusDataByRelease.get(release);
+                        row.add(releaseClearingData.getProjectNames());
+                        row.add(releaseClearingData.getMainlineStates());
                     } else {
+                        row.add("");
                         row.add("");
                     }
                 }
+
                 break;
+
             case VENDOR:
                 addVendorToRow(release.getVendor(), row);
                 break;
