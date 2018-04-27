@@ -89,9 +89,7 @@ public class AttachmentContentDownloaderTest {
                 } catch (ExecutionException e) {
                     Throwable futureException = e.getCause();
                     assertThat(futureException, is(notNullValue()));
-                    assertTrue(futureException instanceof SocketException ||
-                            futureException instanceof SocketTimeoutException ||
-                            futureException instanceof IOException);
+                    assertTrue(futureException instanceof IOException);
                 }
             } catch (TimeoutException e) {
                 fail("downloader got stuck on a black hole");
