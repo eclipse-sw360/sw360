@@ -55,7 +55,7 @@ public class ComponentTest extends TestIntegrationBase {
         given(this.componentServiceMock.getComponentsForUser(anyObject())).willReturn(componentList);
 
         User user = new User();
-        user.setId("admin@sw360.org");
+        user.setId("123456789");
         user.setEmail("admin@sw360.org");
         user.setFullname("John Doe");
 

@@ -166,7 +166,6 @@ class JacksonCustomizations {
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonIgnoreProperties({
-                "id",
                 "revision",
                 "externalid",
                 "wantsMailNotification",
@@ -183,6 +182,9 @@ class JacksonCustomizations {
                 "setDepartment",
                 "notificationPreferencesSize",
                 "setNotificationPreferences",
+                "formerEmailAddressesSize",
+                "formerEmailAddressesIterator",
+                "setFormerEmailAddresses",
                 "setCommentMadeDuringModerationRequest"
         })
         static abstract class UserMixin extends User {

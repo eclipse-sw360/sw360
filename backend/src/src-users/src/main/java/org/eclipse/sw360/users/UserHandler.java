@@ -10,16 +10,15 @@
  */
 package org.eclipse.sw360.users;
 
+import org.apache.log4j.Logger;
+import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.users.db.UserDatabaseHandler;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.List;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotEmpty;
@@ -41,16 +40,25 @@ public class UserHandler implements UserService.Iface {
     }
 
     @Override
+    public User getUser(String id) throws TException {
+        return db.getUser(id);
+    }
+
+    @Override
     public User getByEmail(String email) throws TException {
         StackTraceElement stackTraceElement = Thread.currentThread().getStackTrace()[2];
         assertNotEmpty(email, "Invalid empty email " + stackTraceElement.getFileName() + ": "  + stackTraceElement.getLineNumber());
 
         if (log.isTraceEnabled()) log.trace("getByEmail: " + email);
 
-        // Get user from database
-        User user = db.getByEmail(email);
+        return db.getByEmail(email);
+    }
+
+    @Override
+    public User getByEmailOrExternalId(String email, String externalId) throws TException {
+        User user = getByEmail(email);
         if (user == null) {
-            log.info("User does not exist in DB");
+            user = db.getByExternalId(externalId);
         }
         return user;
     }

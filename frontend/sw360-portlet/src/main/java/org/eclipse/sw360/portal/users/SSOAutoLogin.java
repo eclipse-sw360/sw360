@@ -21,6 +21,7 @@ import com.liferay.portal.security.auth.AutoLoginException;
 import com.liferay.portal.service.UserLocalServiceUtil;
 import com.liferay.portal.util.PortalUtil;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,31 +44,29 @@ public class SSOAutoLogin implements AutoLogin {
     private static final Logger log = LoggerFactory.getLogger(SSOAutoLogin.class);
     
     public static final String PROPERTIES_FILE_PATH = "/sw360.properties";
-    private Properties props;
-    
+
     public static final String AUTH_EMAIL_KEY = "key.auth.email";
-    public static String authEmailHeader = "EMAIL";
+    public static final String AUTH_EMAIL_HEADER;
     public static final String AUTH_EXTID_KEY = "key.auth.extid";
-    public static String authExtidHeader = "EXTID";
+    public static final String AUTH_EXTID_HEADER;
     public static final String AUTH_GIVEN_NAME_KEY = "key.auth.givenname";
-    public static String authGivenNameHeader = "GIVENNAME";
+    public static final String AUTH_GIVEN_NAME_HEADER;
     public static final String AUTH_SURNAME_KEY = "key.auth.surname";
-    public static String authSurnameHeader = "SURNAME";
+    public static final String AUTH_SURNAME_HEADER;
     public static final String AUTH_DEPARTMENT_KEY = "key.auth.department";
-    public static String authDepartmentHeader = "DEPARTMENT";
+    public static final String AUTH_DEPARTMENT_HEADER;
 
     private static final OrganizationHelper orgHelper = new OrganizationHelper();
 
-    public SSOAutoLogin() {
-    	super();
+    static {
         Properties props = CommonUtils.loadProperties(SSOAutoLogin.class, PROPERTIES_FILE_PATH);
-        authEmailHeader = props.getProperty(AUTH_EMAIL_KEY, authEmailHeader);
-        authExtidHeader = props.getProperty(AUTH_EXTID_KEY, authExtidHeader);
-        authGivenNameHeader = props.getProperty(AUTH_GIVEN_NAME_KEY, authGivenNameHeader);
-        authSurnameHeader = props.getProperty(AUTH_SURNAME_KEY, authSurnameHeader);
-        authDepartmentHeader = props.getProperty(AUTH_DEPARTMENT_KEY, authDepartmentHeader);
+        AUTH_EMAIL_HEADER = props.getProperty(AUTH_EMAIL_KEY, "EMAIL");
+        AUTH_EXTID_HEADER = props.getProperty(AUTH_EXTID_KEY, "EXTID");
+        AUTH_GIVEN_NAME_HEADER = props.getProperty(AUTH_GIVEN_NAME_KEY, "GIVENNAME");
+        AUTH_SURNAME_HEADER = props.getProperty(AUTH_SURNAME_KEY, "SURNAME");
+        AUTH_DEPARTMENT_HEADER = props.getProperty(AUTH_DEPARTMENT_KEY, "DEPARTMENT");
         log.info(String.format("Expecting the following header values for auto login email: '%s', external ID: '%s', given name: '%s', surname: '%s', group: %s",
-                authEmailHeader, authExtidHeader, authGivenNameHeader, authSurnameHeader, authDepartmentHeader));
+                AUTH_EMAIL_HEADER, AUTH_EXTID_HEADER, AUTH_GIVEN_NAME_HEADER, AUTH_SURNAME_HEADER, AUTH_DEPARTMENT_HEADER));
     }
 
     @Override
@@ -78,18 +77,17 @@ public class SSOAutoLogin implements AutoLogin {
 
     @Override
     public String[] login(HttpServletRequest request, HttpServletResponse response) throws AutoLoginException {
-        String emailId = request.getHeader(authEmailHeader);
-        String extid = request.getHeader(authExtidHeader);
-        String givenName = request.getHeader(authGivenNameHeader);
-        String surname = request.getHeader(authSurnameHeader);
-        String department = request.getHeader(authDepartmentHeader);
+        dumpHeadersToLog(request);
+        String email = request.getHeader(AUTH_EMAIL_HEADER);
+        String extId = request.getHeader(AUTH_EXTID_HEADER);
+        String givenName = request.getHeader(AUTH_GIVEN_NAME_HEADER);
+        String surname = request.getHeader(AUTH_SURNAME_HEADER);
+        String department = request.getHeader(AUTH_DEPARTMENT_HEADER);
 
         log.info(String.format("Attempting auto login for email: '%s', external ID: '%s', given name: '%s', surname: '%s', group: %s",
-                emailId, extid, givenName, surname, department));
+                email, extId, givenName, surname, department));
 
-        dumpHeadersToLog(request);
-
-        if (isNullEmptyOrWhitespace(emailId)) {
+        if (isNullEmptyOrWhitespace(email)) {
             log.error("Empty credentials, auto login impossible.");
             return new String[]{};
         }
@@ -100,23 +98,9 @@ public class SSOAutoLogin implements AutoLogin {
             String organizationName = orgHelper.mapOrganizationName(department);
             Organization organization = orgHelper.addOrGetOrganization(organizationName, companyId);
             log.info(String.format("Mapped orgcode %s to %s", department, organizationName));
-            User user;
-            try {
-                user = UserLocalServiceUtil.getUserByEmailAddress(companyId, emailId);
-            } catch (NoSuchUserException e) {
-                log.error("Could not find user with email: '" + emailId + "'. Will create one with a random password.");
-                String password = UUID.randomUUID().toString();
-
-                user = UserPortletUtils.addLiferayUser(request, givenName, surname, emailId,
-                        organizationName, RoleConstants.USER, false, extid, password, false, true);
-                if (user == null) {
-                    throw new AutoLoginException("Couldn't create user for '" + emailId + "' and company id: '" + companyId + "'");
-                }
-                log.info("Created user " + user);
-            }
-
+            User user = findOrCreateLiferayUser(request, email, extId, givenName, surname, companyId, organizationName);
+            user = updateLiferayUserEmailIfNecessary(email, user);
             orgHelper.reassignUserToOrganizationIfNecessary(user, organization);
-
             // Create a return credentials object
             return new String[]{
                     String.valueOf(user.getUserId()),
@@ -124,9 +108,40 @@ public class SSOAutoLogin implements AutoLogin {
                     Boolean.TRUE.toString() // True: password is encrypted
             };
         } catch (SystemException | PortalException e) {
-            log.error("Exception during login of user: '" + emailId + "' and company id: '" + companyId + "'", e);
+            log.error("Exception during login of user: '" + email + "' and company id: '" + companyId + "'", e);
             throw new AutoLoginException(e);
         }
+    }
+
+    private User updateLiferayUserEmailIfNecessary(String email, User user) throws PortalException, SystemException {
+        if (!email.equals(user.getEmailAddress())){
+            user = UserLocalServiceUtil.updateEmailAddress(user.getUserId(), user.getPasswordUnencrypted(), email, email);
+        }
+        return user;
+    }
+
+    private User findOrCreateLiferayUser(HttpServletRequest request, String email, String extId, String givenName, String surname, long companyId, String organizationName) throws SystemException, PortalException {
+        User user;
+        try {
+            user = UserUtils.findLiferayUser(new HttpServletRequestAdapter(request), email, extId);
+        } catch (NoSuchUserException e) {
+            user = createLiferayUser(request, email, extId, givenName, surname, companyId, organizationName);
+        }
+        return user;
+    }
+
+    @NotNull
+    public User createLiferayUser(HttpServletRequest request, String emailId, String extid, String givenName, String surname, long companyId, String organizationName) throws SystemException, PortalException {
+        User user;
+        String password = UUID.randomUUID().toString();
+
+        user = UserPortletUtils.addLiferayUser(request, givenName, surname, emailId,
+                organizationName, RoleConstants.USER, false, extid, password, false, true);
+        if (user == null) {
+            throw new AutoLoginException("Couldn't create user for '" + emailId + "' and company id: '" + companyId + "'");
+        }
+        log.info("Created user %s", user);
+        return user;
     }
 
     private void dumpHeadersToLog(HttpServletRequest request) {

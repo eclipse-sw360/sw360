@@ -10,15 +10,14 @@
  */
 package org.eclipse.sw360.portal.users;
 
-import com.google.common.base.Function;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Maps;
+import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
-import org.apache.thrift.TException;
 
 import java.util.Collections;
 import java.util.List;
@@ -51,13 +50,8 @@ public class UserCache {
                 .expireAfterWrite(1, TimeUnit.DAYS)
                 .build(loader);
 
-        if(allUsers.size()>0) {
-            cache.putAll(Maps.uniqueIndex(allUsers, new Function<User, String>() {
-                @Override
-                public String apply(User input) {
-                    return input.getEmail();
-                }
-            }));
+        if(!allUsers.isEmpty()) {
+            cache.putAll(Maps.uniqueIndex(allUsers, User::getEmail));
         }
     }
 
@@ -72,17 +66,19 @@ public class UserCache {
 
     private static class UserLoader extends CacheLoader<String, User> {
 
+        private UserService.Iface createUserClient() {
+            ThriftClients thriftClients =  new ThriftClients();
+            return thriftClients.makeUserClient();
+        }
+
         @Override
         public User load(String email) throws TException {
-            ThriftClients thriftClients =  new ThriftClients();
-            UserService.Iface client = thriftClients.makeUserClient();
+            UserService.Iface client = createUserClient();
             return client.getByEmail(email);
         }
 
         private List<User> getAllUsers() throws TException {
-            ThriftClients thriftClients =  new ThriftClients();
-            UserService.Iface client = thriftClients.makeUserClient();
-
+            UserService.Iface client = createUserClient();
             return client.getAllUsers();
         }
     }

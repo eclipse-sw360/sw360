@@ -13,15 +13,12 @@ package org.eclipse.sw360.portal.common;
 
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
-import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.model.ResourceConstants;
 import com.liferay.portal.model.Role;
 import com.liferay.portal.model.RoleConstants;
 import com.liferay.portal.security.permission.ActionKeys;
 import com.liferay.portal.service.ResourcePermissionLocalServiceUtil;
 import com.liferay.portal.service.RoleLocalServiceUtil;
-import com.liferay.portal.service.UserLocalServiceUtil;
-import com.liferay.portal.theme.ThemeDisplay;
 import com.liferay.portlet.expando.model.ExpandoBridge;
 import com.liferay.portlet.expando.model.ExpandoColumn;
 import com.liferay.portlet.expando.model.ExpandoColumnConstants;
@@ -29,6 +26,7 @@ import com.liferay.portlet.expando.model.ExpandoTableConstants;
 import com.liferay.portlet.expando.service.ExpandoColumnLocalServiceUtil;
 import org.apache.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.portal.users.UserUtils;
 
 import javax.portlet.PortletRequest;
 
@@ -83,17 +81,11 @@ public class CustomFieldHelper {
     }
 
     private static ExpandoBridge getUserExpandoBridge(PortletRequest request, User user) throws PortalException, SystemException {
-        com.liferay.portal.model.User liferayUser = getLiferayUser(request, user);
+        com.liferay.portal.model.User liferayUser = UserUtils.findLiferayUser(request, user);
         ensureUserCustomFieldExists(liferayUser, CUSTOM_FIELD_PROJECT_GROUP_FILTER, ExpandoColumnConstants.STRING);
         ensureUserCustomFieldExists(liferayUser, CUSTOM_FIELD_COMPONENTS_VIEW_SIZE, ExpandoColumnConstants.INTEGER);
         ensureUserCustomFieldExists(liferayUser, CUSTOM_FIELD_VULNERABILITIES_VIEW_SIZE, ExpandoColumnConstants.INTEGER);
         return liferayUser.getExpandoBridge();
-    }
-
-    private static com.liferay.portal.model.User getLiferayUser(PortletRequest request, User user) throws PortalException, SystemException {
-        ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
-        long companyId = themeDisplay.getCompanyId();
-        return UserLocalServiceUtil.getUserByEmailAddress(companyId, user.email);
     }
 
     private static void ensureUserCustomFieldExists(com.liferay.portal.model.User liferayUser, String customFieldName, int customFieldType) throws PortalException, SystemException {

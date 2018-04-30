@@ -30,8 +30,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
@@ -66,18 +66,29 @@ public class UserController implements ResourceProcessor<RepositoryLinksResource
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
-    @RequestMapping(value = USERS_URL + "/{id:.+}", method = RequestMethod.GET)
-    public ResponseEntity<Resource<User>> getUser(
-            @PathVariable("id") String id) {
-        byte[] base64decodedBytes = Base64.getDecoder().decode(id);
-        String decodedId;
+    // '/users/{xyz}' searches by email, as opposed to by id, as is customary,
+    // for compatibility with older version of the REST API
+    @RequestMapping(value = USERS_URL + "/{email:.+}", method = RequestMethod.GET)
+    public ResponseEntity<Resource<User>> getUserByEmail(
+            @PathVariable("email") String email) {
+
+        String decodedEmail;
         try {
-            decodedId = new String(base64decodedBytes, "utf-8");
+            decodedEmail = URLDecoder.decode(email, "UTF-8");
         } catch (UnsupportedEncodingException e) {
-            throw (new RuntimeException(e));
+            throw new RuntimeException(e);
         }
 
-        User sw360User = userService.getUserByEmail(decodedId);
+        User sw360User = userService.getUserByEmail(decodedEmail);
+        HalResource<User> halResource = createHalUser(sw360User);
+        return new ResponseEntity<>(halResource, HttpStatus.OK);
+    }
+
+    // unusual URL mapping for compatibility with older version of the REST API (see getUserByEmail())
+    @RequestMapping(value = USERS_URL + "/byid/{id:.+}", method = RequestMethod.GET)
+    public ResponseEntity<Resource<User>> getUser(
+            @PathVariable("id") String id) {
+        User sw360User = userService.getUser(id);
         HalResource<User> halResource = createHalUser(sw360User);
         return new ResponseEntity<>(halResource, HttpStatus.OK);
     }

@@ -18,7 +18,7 @@ import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.ResourceProcessor;
 import org.springframework.stereotype.Component;
 
-import java.util.Base64;
+import java.net.URLEncoder;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
@@ -31,8 +31,7 @@ class UserResourceProcessor implements ResourceProcessor<Resource<User>> {
     public Resource<User> process(Resource<User> resource) {
         try {
             User user = resource.getContent();
-            String userUUID = Base64.getEncoder().encodeToString(user.getEmail().getBytes("utf-8"));
-            Link selfLink = linkTo(UserController.class).slash("api/users/" + userUUID).withSelfRel();
+            Link selfLink = linkTo(UserController.class).slash("api/users/" + URLEncoder.encode(user.getId(), "UTF-8")).withSelfRel();
             resource.add(selfLink);
             return resource;
         } catch (Exception e) {

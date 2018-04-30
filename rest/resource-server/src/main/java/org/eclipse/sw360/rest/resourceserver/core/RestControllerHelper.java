@@ -40,7 +40,7 @@ import org.springframework.hateoas.Resource;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.stereotype.Service;
 
-import java.util.Base64;
+import java.net.URLEncoder;
 import java.util.List;
 import java.util.Set;
 
@@ -97,8 +97,7 @@ public class RestControllerHelper {
         User embeddedUser = convertToEmbeddedUser(user);
         Resource<User> embeddedUserResource = new Resource<>(embeddedUser);
         try {
-            String userUUID = Base64.getEncoder().encodeToString(user.getEmail().getBytes("utf-8"));
-            Link userLink = linkTo(UserController.class).slash("api/users/" + userUUID).withSelfRel();
+            Link userLink = linkTo(UserController.class).slash("api/users/" + URLEncoder.encode(user.getId(), "UTF-8")).withSelfRel();
             embeddedUserResource.add(userLink);
         } catch (Exception e) {
             LOGGER.error("cannot create embedded user with email: " + user.getEmail());
