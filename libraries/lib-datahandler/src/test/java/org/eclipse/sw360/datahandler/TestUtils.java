@@ -52,7 +52,7 @@ import static org.mockito.Mockito.mock;
  * @author daniele.fognini@tngtech.com
  */
 public class TestUtils {
-    public static final String BLACK_HOLE_ADDRESS = "192.0.2.0";
+    public static final String BLACK_HOLE_ADDRESS = "100::/64";
 
     private static final List<String> dbNames = ImmutableList.of(
             DatabaseSettings.COUCH_DB_DATABASE,

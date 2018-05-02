@@ -19,6 +19,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.SocketException;
@@ -88,7 +89,7 @@ public class AttachmentContentDownloaderTest {
                 } catch (ExecutionException e) {
                     Throwable futureException = e.getCause();
                     assertThat(futureException, is(notNullValue()));
-                    assertTrue(futureException instanceof SocketException || futureException instanceof SocketTimeoutException);
+                    assertTrue(futureException instanceof IOException);
                 }
             } catch (TimeoutException e) {
                 fail("downloader got stuck on a black hole");
