@@ -16,6 +16,7 @@
 <%@ page import="org.eclipse.sw360.datahandler.thrift.components.ComponentType" %>
 
 <%@ taglib prefix="tags" tagdir="/WEB-INF/tags" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%@ include file="/html/init.jsp" %>
 <%-- the following is needed by liferay to display error messages--%>
@@ -59,6 +60,8 @@
 <portlet:actionURL var="applyFiltersURL" name="applyFilters">
 </portlet:actionURL>
 
+<c:set var="autocompleteUrl" value="<%=PortalConstants.CODESCOOP_URL%>"/>
+<c:set var="autocompleteToken" value="<%=PortalConstants.CODESCOOP_TOKEN%>"/>
 
 <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/1.12.1/jquery-ui.css">
 <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/github-com-craftpip-jquery-confirm/3.0.1/jquery-confirm.min.css">
@@ -202,12 +205,38 @@
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
+    var tableData =
+        [<core_rt:forEach items="${componentList}" var="component">
+            <core_rt:set var="licenseCollectionTagOutput"><sw360:DisplayLicenseCollection licenseIds="${component.mainLicenseIds}" scopeGroupId="${pageContext.getAttribute('scopeGroupId')}"/></core_rt:set>
+            {"DT_RowId": "${component.id}", "id": "${component.id}", "vndrs": '<sw360:DisplayCollection value="${component.vendorNames}"/>', "name": '<sw360:ComponentName component="${component}"/>', "lics": "<tags:TrimLineBreaks input="${licenseCollectionTagOutput}"/>", "cType": "<sw360:DisplayEnum value="${component.componentType}"/>", "lRelsSize": "${component.releaseIdsSize}", "attsSize": "${component.attachmentsSize}"},
+            </core_rt:forEach>];
+    var renderCallback = function () {
+    };
+</script>
+<core_rt:if test="${not empty autocompleteUrl && not empty autocompleteToken}">
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            require(['modules/codeScoop'], function(codeScoop) {
+                var api = new codeScoop('<%=PortalConstants.CODESCOOP_URL%>', '<%=PortalConstants.CODESCOOP_TOKEN%>');
+                api.activateIndexes('componentsTable', tableData);
+                renderCallback = api.updateIndexes;
+            });
+        });
+    </script>
+</core_rt:if>
+<script>
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;
+        require([
+            'jquery',
+            'utils/includes/quickfilter',
+            'modules/autocomplete',
+            'modules/confirm',
+            'datatables',
+            'datatables_buttons',
+            'buttons.print'], function($, quickfilter, autocomplete, confirm) {
 
-        require(['jquery', 'utils/includes/quickfilter', 'modules/autocomplete', 'modules/confirm', /* jquery-plugins: */ 'datatables', 'datatables_buttons', 'buttons.print'], function($, quickfilter, autocomplete, confirm) {
             var componentsTable;
-
             // initializing
             load();
 
@@ -280,24 +309,7 @@
             }
 
             function createComponentsTable() {
-                var componentsTable,
-                    result = [];
-
-                <core_rt:forEach items="${componentList}" var="component">
-                <core_rt:set var="licenseCollectionTagOutput"><sw360:DisplayLicenseCollection licenseIds="${component.mainLicenseIds}" scopeGroupId="${pageContext.getAttribute('scopeGroupId')}"/></core_rt:set>
-                    result.push({
-                        "DT_RowId": "${component.id}",
-                        "id": "${component.id}",
-                        "vndrs": '<sw360:DisplayCollection value="${component.vendorNames}"/>',
-                        "name": '<sw360:ComponentName component="${component}"/>',
-                        "lics": "<tags:TrimLineBreaks input="${licenseCollectionTagOutput}"/>",
-                        "cType": "<sw360:DisplayEnum value="${component.componentType}"/>",
-                        "lRelsSize": "${component.releaseIdsSize}",
-                        "attsSize": "${component.attachmentsSize}"
-                    });
-                </core_rt:forEach>
-
-                componentsTable = $('#componentsTable').DataTable({
+                var componentsTable = $('#componentsTable').DataTable({
                     "pagingType": "simple_numbers",
                     "dom": 'lBrtip',
                     "buttons": [
@@ -312,7 +324,7 @@
                         }
                     ],
                     "pageLength": 25,
-                    "data": result,
+                    "data": tableData,
                     "columns": [
                         {"title": "Vendor", data: "vndrs"},
                         {"title": "Component Name", data: "name", render: {display: renderComponentNameLink}},
@@ -324,7 +336,8 @@
                     language: {
                         lengthMenu: "_MENU_ entries per page"
                     },
-                    autoWidth: false
+                    autoWidth: false,
+                    "drawCallback": renderCallback
                 });
 
                 return componentsTable;
