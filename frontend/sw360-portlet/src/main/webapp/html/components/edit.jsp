@@ -60,6 +60,9 @@
 <c:set var="DELETE" value="<%=RequestedAction.DELETE%>"/>
 <c:set var="hasWritePermissions" value="${component.permissions[WRITE]}"/>
 
+<c:set var="autocompleteUrl" value="<%=PortalConstants.CODESCOOP_URL%>"/>
+<c:set var="autocompleteToken" value="<%=PortalConstants.CODESCOOP_TOKEN%>"/>
+
 <%@include file="/html/utils/includes/logError.jspf" %>
 <core_rt:if test="${empty attributeNotFoundException}">
     <core_rt:set var="softwarePlatformsAutoC" value='<%=PortalConstants.SOFTWARE_PLATFORMS%>'/>
@@ -128,105 +131,120 @@
 
     <jsp:include page="/html/utils/includes/searchAndSelectUsers.jsp" />
     <jsp:include page="/html/utils/includes/searchUsers.jsp" />
+    <core_rt:if test="${not empty autocompleteUrl && not empty autocompleteToken}">
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                require(["modules/codeScoop"], function(codeScoop) {
+                    var api = new codeScoop("<%=PortalConstants.CODESCOOP_URL%>", "<%=PortalConstants.CODESCOOP_TOKEN%>");
+                    api.activateAutoFill();
+                });
+            });
+        </script>
+    </core_rt:if>
 </core_rt:if>
 
 <script>
     /* variables used in releaseTools.js ... */
-    var releaseIdInURL = '<%=PortalConstants.RELEASE_ID%>',
-        compIdInURL = '<%=PortalConstants.COMPONENT_ID%>',
-        componentId = '${component.id}',
-        pageName = '<%=PortalConstants.PAGENAME%>',
-        pageDetail = '<%=PortalConstants.PAGENAME_EDIT_RELEASE%>',
+    var releaseIdInURL = "<%=PortalConstants.RELEASE_ID%>",
+        compIdInURL = "<%=PortalConstants.COMPONENT_ID%>",
+        componentId = "${component.id}",
+        pageName = "<%=PortalConstants.PAGENAME%>",
+        pageDetail = "<%=PortalConstants.PAGENAME_EDIT_RELEASE%>",
         /* baseUrl also used in method in require block */
-        baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
+        baseUrl = "<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>";
 
-require(['jquery', 'modules/sw360Validate', 'modules/autocomplete', 'modules/confirm' ], function($, sw360Validate, autocomplete, confirm) {
+    require([
+        "jquery",
+        "modules/sw360Validate",
+        "modules/autocomplete",
+        "modules/confirm" ], function($, sw360Validate, autocomplete, confirm) {
 
-    Liferay.on('allPortletsReady', function() {
-        var contextpath = '<%=request.getContextPath()%>',
-            deletionMessage;
+        Liferay.on("allPortletsReady", function() {
+            var contextpath = "<%=request.getContextPath()%>",
+                deletionMessage;
 
-        $('#moderationRequestCommentSendButton').on('click', submitModerationRequest);
-        $('#componentEditCancelButton').on('click', cancel);
-        $('#deleteComponentButton').on('click', openDeleteDialog);
+            $("#moderationRequestCommentSendButton").on("click", submitModerationRequest);
+            $("#componentEditCancelButton").on("click", cancel);
+            $("#deleteComponentButton").on("click", openDeleteDialog);
 
-        autocomplete.prepareForMultipleHits('comp_platforms', ${softwarePlatformsAutoC});
-        autocomplete.prepareForMultipleHits('comp_categories', ${componentCategoriesAutocomplete});
+            autocomplete.prepareForMultipleHits("comp_platforms", ${softwarePlatformsAutoC});
+            autocomplete.prepareForMultipleHits("comp_categories", ${componentCategoriesAutocomplete});
 
-        sw360Validate.validateWithInvalidHandler('#componentEditForm');
+            sw360Validate.validateWithInvalidHandler("#componentEditForm");
 
-        $('#formSubmit').click(
-            function () {
-                <core_rt:choose>
-                <core_rt:when test="${componentDivAddMode || component.permissions[WRITE]}">
-                $('#componentEditForm').submit();
-                </core_rt:when>
-                <core_rt:otherwise>
-                showCommentField();
-                </core_rt:otherwise>
-                </core_rt:choose>
-            }
-        );
-    });
+            $("#formSubmit").click(
+                function () {
+                    <core_rt:choose>
+                    <core_rt:when test="${componentDivAddMode || component.permissions[WRITE]}">
+                    $("#componentEditForm").submit();
+                    </core_rt:when>
+                    <core_rt:otherwise>
+                    showCommentField();
+                    </core_rt:otherwise>
+                    </core_rt:choose>
+                }
+            );
+        });
 
+        function cancel() {
+            deleteAttachmentsOnCancel();
 
-    function cancel() {
-        deleteAttachmentsOnCancel();
-
-        var portletURL = Liferay.PortletURL.createURL(baseUrl);
-        <core_rt:choose>
+            var portletURL = Liferay.PortletURL.createURL(baseUrl);
+            <core_rt:choose>
             <core_rt:when test="${not empty component.id}">
-                portletURL.setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_DETAIL%>')
-                          .setParameter('<%=PortalConstants.COMPONENT_ID%>', '${component.id}');
+            portletURL
+                .setParameter("<%=PortalConstants.PAGENAME%>", "<%=PortalConstants.PAGENAME_DETAIL%>")
+                .setParameter("<%=PortalConstants.COMPONENT_ID%>", "${component.id}");
             </core_rt:when>
             <core_rt:otherwise>
-                portletURL.setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_VIEW%>');
+            portletURL
+                .setParameter("<%=PortalConstants.PAGENAME%>", "<%=PortalConstants.PAGENAME_VIEW%>");
             </core_rt:otherwise>
-        </core_rt:choose>
-        window.location = portletURL.toString();
-    }
+            </core_rt:choose>
+            window.location = portletURL.toString();
+        }
 
-    function deleteAttachmentsOnCancel() {
-        $.ajax({
-            type: 'POST',
-            url: '<%=deleteAttachmentsOnCancelURL%>',
-            cache: false,
-            data: {
-                "<portlet:namespace/><%=PortalConstants.DOCUMENT_ID%>": "${component.id}"
-            },
-        });
-    }
+        function deleteAttachmentsOnCancel() {
+            $.ajax({
+                type: "POST",
+                url: "<%=deleteAttachmentsOnCancelURL%>",
+                cache: false,
+                data: {
+                    "<portlet:namespace/><%=PortalConstants.DOCUMENT_ID%>": "${component.id}"
+                }
+            });
+        }
 
-    function openDeleteDialog() {
-        var htmlDialog  = '' + '<div>' +
-            'Do you really want to delete the component <b><sw360:out value="${component.name}"/></b> ?' +
-            '<core_rt:if test="${not empty component.attachments}" ><br/><br/>The component <b><sw360:out value="${component.name}"/></b>contains<br/><ul><li><sw360:out value="${component.attachmentsSize}"/> attachments</li></ul></core_rt:if>' +
-            '</div>' +
-            '<div ' + styleAsHiddenIfNeccessary(${component.permissions[DELETE] == true}) + '><hr><label class=\'textlabel stackedLabel\'>Comment your changes</label><textarea id=\'moderationDeleteCommentField\' class=\'moderationCreationComment\' placeholder=\'Comment on request...\'></textarea></div>';
-        deleteConfirmed(htmlDialog, deleteComponent);
-    }
+        function openDeleteDialog() {
+            var htmlDialog  = '<div>' +
+                'Do you really want to delete the component <b><sw360:out value="${component.name}"/></b> ?' +
+                '<core_rt:if test="${not empty component.attachments}" ><br/><br/>The component <b><sw360:out value="${component.name}"/></b>contains<br/><ul><li><sw360:out value="${component.attachmentsSize}"/> attachments</li></ul></core_rt:if>' +
+                '</div>' +
+                '<div ' + styleAsHiddenIfNeccessary(${component.permissions[DELETE] == true})
+                + '><hr><label class=\'textlabel stackedLabel\'>Comment your changes</label>' +
+                '<textarea id=\'moderationDeleteCommentField\' class=\'moderationCreationComment\' placeholder=\'Comment on request...\'></textarea></div>';
+            deleteConfirmed(htmlDialog, deleteComponent);
+        }
 
-    function deleteComponent() {
-        var commentText_encoded = btoa($("#moderationDeleteCommentField").val());
-        var baseUrl = '<%=deleteComponentURL%>';
-        var deleteURL = Liferay.PortletURL.createURL( baseUrl ).setParameter('<%=PortalConstants.MODERATION_REQUEST_COMMENT%>',commentText_encoded);
-        window.location.href = deleteURL;
-    }
+        function deleteComponent() {
+            var commentText_encoded = btoa($("#moderationDeleteCommentField").val());
+            var baseUrl = "<%=deleteComponentURL%>";
+            window.location.href = Liferay.PortletURL.createURL( baseUrl )
+                .setParameter("<%=PortalConstants.MODERATION_REQUEST_COMMENT%>",commentText_encoded);
+        }
 
-    function focusOnCommentField() {
-        $("#moderationRequestCommentField").focus();
-        $("#moderationRequestCommentField").select();
-    }
+        function focusOnCommentField() {
+            $("#moderationRequestCommentField").focus().select();
+        }
 
-    function showCommentField() {
-        $("#moderationRequestCommentDialog").show();
-        $("#formSubmit").attr("disabled","disabled");
-        focusOnCommentField();
-    }
+        function showCommentField() {
+            $("#moderationRequestCommentDialog").show();
+            $("#formSubmit").attr("disabled","disabled");
+            focusOnCommentField();
+        }
 
-    function submitModerationRequest() {
-        $('#componentEditForm').submit();
-    }
-
-});
+        function submitModerationRequest() {
+            $("#componentEditForm").submit();
+        }
+    });
 </script>
