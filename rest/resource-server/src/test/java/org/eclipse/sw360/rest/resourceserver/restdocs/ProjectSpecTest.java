@@ -86,6 +86,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project.setExternalIds(Collections.singletonMap("mainline-id-project", "515432"));
         project.setOwnerAccountingUnit("4822");
         project.setOwnerCountry("DE");
+        project.setDeliveryStart("2018-05-01");
         project.setOwnerGroup("AA BB 123 GHV2-DE");
         project.setTag("project test tag 1");
         project.setPreevaluationDeadline("2018-07-17");
@@ -109,6 +110,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project2.setBusinessUnit("sw360 EX DF");
         project2.setOwnerAccountingUnit("5661");
         project2.setOwnerCountry("FR");
+        project2.setDeliveryStart("2018-05-01");
         project2.setOwnerGroup("SIM-KA12");
         project2.setTag("project test tag 2");
         project2.setPreevaluationDeadline("2018-07-17");
@@ -215,6 +217,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("ownerGroup").description("The owner group of the project"),
                                 fieldWithPath("ownerCountry").description("The owner country of the project"),
                                 fieldWithPath("tag").description("The project tag"),
+                                fieldWithPath("deliveryStart").description("The project delivery start date"),
                                 fieldWithPath("preevaluationDeadline").description("The project preevaluation deadline"),
                                 fieldWithPath("systemTestStart").description("Date of the project system begin phase"),
                                 fieldWithPath("systemTestEnd").description("Date of the project system end phase"),
