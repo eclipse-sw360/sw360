@@ -22,36 +22,28 @@
 <core_rt:forEach items="${releaseList}" var="releaseLink" varStatus="loop">
     <core_rt:set var="uuid" value="${releaseLink.id}"/>
     <tr id="releaseLinkRow${uuid}" >
-        <td width="23%">
-            <label class="textlabel stackedLabel" for="releaseVendor">Vendor name</label>
-            <input id="releaseVendor" type="text" class="toplabelledInput" placeholder="Enter vendor"
+        <td>
+            <input id="releaseVendor" type="text" placeholder="Enter vendor"
                    value="<sw360:out value="${releaseLink.vendor}"/>" readonly/>
         </td>
-        <td width="23%">
+        <td>
             <input type="hidden" value="${releaseLink.id}" name="<portlet:namespace/><%=Release._Fields.RELEASE_ID_TO_RELATIONSHIP%><%=ReleaseLink._Fields.ID%>">
-            <label class="textlabel stackedLabel" for="releaseName">Release name</label>
-            <input id="releaseName" type="text" class="toplabelledInput" placeholder="Enter release"
+            <input id="releaseName" type="text" placeholder="Enter release"
                    value="<sw360:out value="${releaseLink.name}"/>" readonly/>
         </td>
-
-        <td width="23%">
-            <label class="textlabel stackedLabel" for="releaseVersion">Release version</label>
-            <input id="releaseVersion" type="text" class="toplabelledInput" placeholder="Enter version"
+        <td>
+            <input id="releaseVersion" type="text" placeholder="Enter version"
                    value="<sw360:out value="${releaseLink.version}"/>" readonly/>
         </td>
-        <td width="23%">
-            <label class="textlabel stackedLabel mandatory" for="releaseRelation">Release relation</label>
-            <select class="toplabelledInput" id="releaseRelation"
+        <td>
+            <select id="releaseRelation"
                     name="<portlet:namespace/><%=Release._Fields.RELEASE_ID_TO_RELATIONSHIP%><%=ReleaseLink._Fields.RELEASE_RELATIONSHIP%>"
-                    style="min-width: 162px; min-height: 28px;">
-
+                    style="min-height: 28px;">
                 <sw360:DisplayEnumOptions type="<%=ReleaseRelationship.class%>" selected="${releaseLink.releaseRelationship}"/>
             </select>
-            <sw360:DisplayEnumInfo type="<%=ReleaseRelationship.class%>"/>
         </td>
         <td class="deletor">
             <img src="<%=request.getContextPath()%>/images/Trash.png" onclick="deleteReleaseLink('releaseLinkRow${uuid}')" alt="Delete">
         </td>
-
     </tr>
 </core_rt:forEach>
