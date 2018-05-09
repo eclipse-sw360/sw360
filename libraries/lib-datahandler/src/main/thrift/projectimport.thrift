@@ -13,6 +13,7 @@
 /*
      @author Maximilian.Huber@tngtech.com
      @author Andreas.Reichel@tngtech.com
+     @author ksoranko@verifa.io
 */
 
 include "projects.thrift"
@@ -31,6 +32,12 @@ struct RemoteCredentials {
 1:  string username,
 2:  string password,
 3:  string serverUrl,
+}
+
+struct TokenCredentials {
+1:  string token,
+2:  string serverUrl,
+3:  string userKey
 }
 
 service ProjectImportService {
@@ -57,5 +64,11 @@ service ProjectImportService {
    ImportStatus importDatasources(1: list<string> projectIds, 2: User user, 3: RemoteCredentials reCred);
 
    string getIdName();
+
+   /**
+   *  imports projects from external source specified by `projectIds` with credentials `tokenCred` and set user as creating
+   *  user in SW360
+   **/
+   ImportStatus importData(1: list<string> projectIds, 2: User user, 3: TokenCredentials tokenCred);
 }
 
