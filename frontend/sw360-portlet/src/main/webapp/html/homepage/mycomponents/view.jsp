@@ -25,6 +25,10 @@
 
 <div id="myComponentsDiv" class="homepageListingTable">
     <table id="myComponentsTable" cellpadding="0" cellspacing="0" border="0" class="display">
+         <colgroup>
+               <col style="width: 60%;"/>
+               <col style="width: 40%;"/>
+         </colgroup>
     </table>
 </div>
 
@@ -38,7 +42,7 @@
         result.push({
             "DT_RowId": "${component.id}",
             "0": "<sw360:DisplayComponentLink component="${component}"/>",
-            "1": '<sw360:out value="${component.description}" maxChar="30"/>'
+            "1": '<sw360:out value="${component.description}"/>'
         });
 
         </core_rt:forEach>

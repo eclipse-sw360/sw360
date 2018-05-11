@@ -31,6 +31,10 @@
 
 <div id="taskassignmentDiv" class="homepageListingTable">
     <table id="taskassignmentTable" cellpadding="0" cellspacing="0" border="0" class="display">
+         <colgroup>
+               <col style="width: 60%;"/>
+               <col style="width: 40%;"/>
+         </colgroup>
     </table>
 </div>
 
