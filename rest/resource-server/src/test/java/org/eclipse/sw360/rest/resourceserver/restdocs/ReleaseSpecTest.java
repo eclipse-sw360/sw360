@@ -104,7 +104,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         given(this.releaseServiceMock.getReleaseForUserById(eq(release.getId()), anyObject())).willReturn(release);
 
         User user = new User();
-        user.setId("admin@sw360.org");
+        user.setId("123456789");
         user.setEmail("admin@sw360.org");
         user.setFullname("John Doe");
 

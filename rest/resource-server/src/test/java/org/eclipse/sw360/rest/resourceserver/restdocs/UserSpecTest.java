@@ -8,6 +8,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
+import com.google.common.collect.Sets;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
@@ -49,25 +50,27 @@ public class UserSpecTest extends TestRestDocsSpecBase {
     private User user;
 
     @Before
-    public void before() throws UnsupportedEncodingException {
+    public void before() {
         List<User> userList = new ArrayList<>();
 
         user = new User();
         user.setEmail("admin@sw360.org");
-        user.setId(Base64.getEncoder().encodeToString(user.getEmail().getBytes("utf-8")));
+        user.setId("4784587578e87989");
         user.setUserGroup(UserGroup.ADMIN);
         user.setFullname("John Doe");
         user.setGivenname("John");
         user.setLastname("Doe");
         user.setDepartment("SW360 Administration");
         user.setWantsMailNotification(true);
+        user.setFormerEmailAddresses(Sets.newHashSet("admin_bachelor@sw360.org"));
         userList.add(user);
 
         given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(user);
+        given(this.userServiceMock.getUser("4784587578e87989")).willReturn(user);
 
         User user2 = new User();
         user2.setEmail("jane@sw360.org");
-        user2.setId(Base64.getEncoder().encodeToString(user.getEmail().getBytes("utf-8")));
+        user2.setId("frwey45786rwe");
         user2.setUserGroup(UserGroup.USER);
         user2.setFullname("Jane Doe");
         user2.setGivenname("Jane");
@@ -98,9 +101,9 @@ public class UserSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
-    public void should_document_get_user() throws Exception {
+    public void should_document_get_user_by_id() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        mockMvc.perform(get("/api/users/" + user.getId())
+        mockMvc.perform(get("/api/users/byid/" + user.getId())
                 .header("Authorization", "Bearer " + accessToken)
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
@@ -109,12 +112,38 @@ public class UserSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("self").description("The <<resources-users,User resource>>")
                         ),
                         responseFields(
+                                fieldWithPath("id").description("The user's id"),
                                 fieldWithPath("email").description("The user's email"),
                                 fieldWithPath("userGroup").description("The user group, possible values are: " + Arrays.asList(UserGroup.values())),
                                 fieldWithPath("fullName").description("The users's full name"),
                                 fieldWithPath("givenName").description("The user's given name"),
                                 fieldWithPath("lastName").description("The user's last name"),
                                 fieldWithPath("department").description("The user's company department"),
+                                fieldWithPath("formerEmailAddresses").description("The user's former email addresses"),
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_user() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/users/" + user.getEmail())
+                .header("Authorization", "Bearer " + accessToken)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        links(
+                                linkWithRel("self").description("The <<resources-users,User resource>>")
+                        ),
+                        responseFields(
+                                fieldWithPath("id").description("The user's id"),
+                                fieldWithPath("email").description("The user's email"),
+                                fieldWithPath("userGroup").description("The user group, possible values are: " + Arrays.asList(UserGroup.values())),
+                                fieldWithPath("fullName").description("The users's full name"),
+                                fieldWithPath("givenName").description("The user's given name"),
+                                fieldWithPath("lastName").description("The user's last name"),
+                                fieldWithPath("department").description("The user's company department"),
+                                fieldWithPath("formerEmailAddresses").description("The user's former email addresses"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }

@@ -21,7 +21,6 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.ektorp.http.HttpClient;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -49,7 +48,11 @@ public class UserDatabaseHandler {
     }
 
     public User getByEmail(String email) {
-        return db.get(User.class, email);
+        return repository.getByEmail(email);
+    }
+
+    public User getUser(String id) {
+        return db.get(User.class, id);
     }
 
     private void prepareUser(User user) throws SW360Exception {
@@ -86,5 +89,9 @@ public class UserDatabaseHandler {
 
     public List<User> searchUsers(String searchText) {
         return userSearch.searchByNameAndEmail(searchText);
+    }
+
+    public User getByExternalId(String externalId) {
+        return repository.getByExternalId(externalId);
     }
 }

@@ -96,7 +96,7 @@ public class AttachmentSpecTest extends TestRestDocsSpecBase {
         given(this.attachmentServiceMock.getAttachmentByIdForUser(eq(attachment.getAttachmentContentId()), anyObject())).willReturn(attachmentInfo);
 
         User user = new User();
-        user.setId("admin@sw360.org");
+        user.setId("123456789");
         user.setEmail("admin@sw360.org");
         user.setFullname("John Doe");
 

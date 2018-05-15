@@ -11,6 +11,7 @@
  */
 package org.eclipse.sw360.portal.users;
 
+import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -26,17 +27,16 @@ import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
+import org.jetbrains.annotations.NotNull;
 
 import javax.portlet.PortletRequest;
 import javax.portlet.RenderRequest;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.TYPE_USER;
 
 /**
@@ -58,32 +58,49 @@ public class UserUtils {
         thriftClients = new ThriftClients();
     }
 
-    public static <T> org.eclipse.sw360.datahandler.thrift.users.User synchronizeUserWithDatabase(T source, ThriftClients thriftClients, Supplier<String> emailSupplier, BiConsumer<org.eclipse.sw360.datahandler.thrift.users.User, T> synchronizer) {
+    public static <T> org.eclipse.sw360.datahandler.thrift.users.User synchronizeUserWithDatabase(
+            T source, ThriftClients thriftClients, Supplier<String> emailSupplier,
+            Supplier<String> extIdSupplier, BiConsumer<org.eclipse.sw360.datahandler.thrift.users.User, T> synchronizer) {
         UserService.Iface client = thriftClients.makeUserClient();
 
-        org.eclipse.sw360.datahandler.thrift.users.User thriftUser = null;
+        org.eclipse.sw360.datahandler.thrift.users.User existingThriftUser = null;
 
+        String email = emailSupplier.get();
         try {
-            thriftUser = client.getByEmail(emailSupplier.get());
+            existingThriftUser = client.getByEmailOrExternalId(email, extIdSupplier.get());
         } catch (TException e) {
             //This occurs for every new user, so there is not necessarily something wrong
-            log.trace("User does not exist in DB yet.");
+            log.trace("User not found by email or external ID");
         }
 
+        org.eclipse.sw360.datahandler.thrift.users.User resultUser = null;
         try {
-            if (thriftUser == null) {
+            if (existingThriftUser == null) {
                 log.info("Creating new user.");
-                thriftUser = new org.eclipse.sw360.datahandler.thrift.users.User();
-                synchronizer.accept(thriftUser, source);
-                client.addUser(thriftUser);
+                resultUser = new org.eclipse.sw360.datahandler.thrift.users.User();
+                synchronizer.accept(resultUser, source);
+                client.addUser(resultUser);
             } else {
-                synchronizer.accept(thriftUser, source);
-                client.updateUser(thriftUser);
+                resultUser = existingThriftUser;
+                if (!existingThriftUser.getEmail().equals(email)) { // email has changed
+                    resultUser.setFormerEmailAddresses(prepareFormerEmailAddresses(existingThriftUser, email));
+                }
+                synchronizer.accept(resultUser, source);
+                client.updateUser(resultUser);
             }
         } catch (TException e) {
             log.error("Thrift exception when saving the user", e);
         }
-        return thriftUser;
+        return resultUser;
+    }
+
+    @NotNull
+    private static Set<String> prepareFormerEmailAddresses(org.eclipse.sw360.datahandler.thrift.users.User thriftUser, String email) {
+        Set<String> formerEmailAddresses = nullToEmptySet(thriftUser.getFormerEmailAddresses()).stream()
+                .filter(e -> !e.equals(email)) // make sure the current email is not in the former addresses
+                .collect(Collectors.toCollection(HashSet::new));
+        formerEmailAddresses.add(thriftUser.getEmail());
+        return formerEmailAddresses;
     }
 
     public static String displayUser(String email, org.eclipse.sw360.datahandler.thrift.users.User user) {
@@ -108,52 +125,56 @@ public class UserUtils {
         return organizations;
     }
 
-    public static void activateLiferayUser(PortletRequest request, org.eclipse.sw360.datahandler.thrift.users.User user){
-        Optional<User> liferayUser = findLiferayUser(request, user);
+    public static void activateLiferayUser(PortletRequest request, org.eclipse.sw360.datahandler.thrift.users.User user) {
         try {
-            if (liferayUser.isPresent()) {
-                UserLocalServiceUtil.updateStatus(liferayUser.get().getUserId(), WorkflowConstants.STATUS_APPROVED);
-            }
+            User liferayUser = findLiferayUser(request, user);
+            UserLocalServiceUtil.updateStatus(liferayUser.getUserId(), WorkflowConstants.STATUS_APPROVED);
         } catch (SystemException | PortalException e) {
             log.error("Could not activate Liferay user", e);
         }
 
     }
 
-    public static void deleteLiferayUser(PortletRequest request, org.eclipse.sw360.datahandler.thrift.users.User user){
-        Optional<User> liferayUser = findLiferayUser(request, user);
+    public static void deleteLiferayUser(PortletRequest request, org.eclipse.sw360.datahandler.thrift.users.User user) {
         try {
-            if (liferayUser.isPresent()){
-                UserLocalServiceUtil.deleteUser(liferayUser.get());
-            }
+            User liferayUser = findLiferayUser(request, user);
+            UserLocalServiceUtil.deleteUser(liferayUser);
         } catch (PortalException | SystemException e) {
             log.error("Could not delete Liferay user", e);
         }
 
     }
 
-    private static Optional<User> findLiferayUser(PortletRequest request, org.eclipse.sw360.datahandler.thrift.users.User user) {
-        long companyId = getCompanyId(request);
-        User liferayUser = null;
-        try {
-            liferayUser = UserLocalServiceUtil.getUserByEmailAddress(companyId, user.getEmail());
-        } catch (PortalException | SystemException e) {
-            log.error("Could not find Liferay user", e);
-        }
-        return Optional.ofNullable(liferayUser);
+    public static User findLiferayUser(PortletRequest request, org.eclipse.sw360.datahandler.thrift.users.User user) throws PortalException, SystemException {
+        return findLiferayUser(new PortletRequestAdapter(request), user.getEmail(), user.getExternalid());
     }
 
-    private static long getCompanyId(PortletRequest request) {
+    public static User findLiferayUser(RequestAdapter requestAdapter, String email, String externalId) throws SystemException, PortalException {
+        long companyId = requestAdapter.getCompanyId();
+        try {
+            return UserLocalServiceUtil.getUserByEmailAddress(companyId, email);
+        } catch (NoSuchUserException e) {
+            log.info("Could not find user with email: '" + email + "'. Will try searching by external id.");
+            try {
+                return UserLocalServiceUtil.getUserByOpenId(companyId, externalId);
+            } catch (NoSuchUserException nsue) {
+                log.info("Could not find user with externalId: '" + externalId);
+                throw new NoSuchUserException("Couldn't find user either with email or external id", nsue);
+            }
+        }
+    }
+
+
+    public static long getCompanyId(PortletRequest request) {
         ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
         return themeDisplay.getCompanyId();
     }
 
     public void synchronizeUserWithDatabase(User user) {
         String userEmailAddress = user.getEmailAddress();
-
         org.eclipse.sw360.datahandler.thrift.users.User refreshed = UserCacheHolder.getRefreshedUserFromEmail(userEmailAddress);
         if (!equivalent(refreshed, user)) {
-            synchronizeUserWithDatabase(user, thriftClients, user::getEmailAddress, UserUtils::fillThriftUserFromLiferayUser);
+            synchronizeUserWithDatabase(user, thriftClients, user::getEmailAddress, user::getOpenId, UserUtils::fillThriftUserFromLiferayUser);
             UserCacheHolder.getRefreshedUserFromEmail(userEmailAddress);
         }
     }
@@ -166,7 +187,6 @@ public class UserUtils {
 
     public static void fillThriftUserFromUserCSV(final org.eclipse.sw360.datahandler.thrift.users.User thriftUser, final UserCSV userCsv) {
         thriftUser.setEmail(userCsv.getEmail());
-        thriftUser.setId(userCsv.getEmail());
         thriftUser.setType(TYPE_USER);
         thriftUser.setUserGroup(UserGroup.valueOf(userCsv.getGroup()));
         thriftUser.setExternalid(userCsv.getGid());
@@ -179,7 +199,6 @@ public class UserUtils {
 
     public static void fillThriftUserFromLiferayUser(final org.eclipse.sw360.datahandler.thrift.users.User thriftUser, final User user) {
         thriftUser.setEmail(user.getEmailAddress());
-        thriftUser.setId(user.getEmailAddress());
         thriftUser.setType(TYPE_USER);
         thriftUser.setUserGroup(getUserGroupFromLiferayUser(user));
         thriftUser.setExternalid(user.getOpenId());
@@ -191,7 +210,7 @@ public class UserUtils {
 
     public static void fillThriftUserFromThriftUser(final org.eclipse.sw360.datahandler.thrift.users.User thriftUser, final org.eclipse.sw360.datahandler.thrift.users.User user) {
         thriftUser.setEmail(user.getEmail());
-        thriftUser.setId(user.getEmail());
+        thriftUser.setId(user.getId());
         thriftUser.setType(TYPE_USER);
         thriftUser.setUserGroup(user.getUserGroup());
         thriftUser.setExternalid(user.getExternalid());

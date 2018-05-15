@@ -37,7 +37,7 @@
             <td><sw360:out value="${sw360User.fullname}"/></td>
         </tr>
         <tr>
-            <td>Id (E-Mail):</td>
+            <td>E-mail:</td>
             <td><sw360:DisplayUserEmail email="${sw360User.email}" bare="true"/></td>
         </tr>
         <tr>

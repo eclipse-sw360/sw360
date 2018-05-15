@@ -13,13 +13,10 @@ package org.eclipse.sw360.portal.users;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.servlet.SessionMessages;
-import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.service.ServiceContext;
 import com.liferay.portal.service.ServiceContextFactory;
-import com.liferay.portal.theme.ThemeDisplay;
 
 import javax.portlet.PortletRequest;
-import javax.servlet.http.HttpServletRequest;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -33,8 +30,7 @@ class PortletRequestAdapter implements RequestAdapter {
 
     @Override
     public long getCompanyId() {
-        ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
-        return themeDisplay.getCompanyId();
+        return UserUtils.getCompanyId(request);
     }
 
     @Override

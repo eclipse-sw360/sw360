@@ -53,7 +53,7 @@ public class OrganizationHelper {
     public void reassignUserToOrganizationIfNecessary(User user, Organization organization) throws PortalException, SystemException {
         if (organization != null && userIsNotInOrganization(user, organization.getOrganizationId())) {
             removeUserFromOtherOrganizations(user);
-            log.debug("OrganizationHelper adds user " + user.getEmailAddress() + " to the organization " + organization.getName());
+            log.info("OrganizationHelper adds user " + user.getEmailAddress() + " to the organization " + organization.getName());
             UserLocalServiceUtil.addOrganizationUsers(organization.getOrganizationId(), Collections.singletonList(user));
         }
     }

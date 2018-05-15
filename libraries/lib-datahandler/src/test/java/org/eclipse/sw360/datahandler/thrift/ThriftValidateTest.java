@@ -17,6 +17,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.prepareUser;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 
 public class ThriftValidateTest {
     final String DUMMY_EMAIL_ADDRESS = "dummy.name@dummy.domain.tld";
@@ -36,8 +37,8 @@ public class ThriftValidateTest {
         user.setCommentMadeDuringModerationRequest(DUMMY_MODERATION_COMMENT);
         prepareUser(user);
 
-        assertEquals(user.getEmail(), user.getId());
-        assertEquals(TYPE_USER,user.getType());
+        assertNull(user.getId());
+        assertEquals(TYPE_USER, user.getType());
         assertFalse(user.isSetCommentMadeDuringModerationRequest());
     }
 }

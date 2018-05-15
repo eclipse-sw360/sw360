@@ -56,14 +56,25 @@ struct User {
     11: optional bool wantsMailNotification,
     12: optional string commentMadeDuringModerationRequest,
     13: optional map<string, bool> notificationPreferences,
+    14: optional set<string> formerEmailAddresses,
 }
 
 service UserService {
 
     /**
-     * returns SW360-user with id equal to email
+     * returns SW360-user with given id
+     **/
+    User getUser(1:string id);
+
+    /**
+     * returns SW360-user with given email
      **/
     User getByEmail(1:string email);
+
+    /**
+     * searches for a SW360 user by email, or, if no such user is found, by externalId
+     **/
+    User getByEmailOrExternalId(1:string email, 2:string externalId);
 
     /**
      * get list of all SW360-users in database with name equal to parameter name

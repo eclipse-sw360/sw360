@@ -58,8 +58,8 @@ public class ComponentDatabaseHandlerTest {
     private static final String email1 = "cedric.bodet@tngtech.com";
     private static final String email2 = "johannes.najjar@tngtech.com";
 
-    private static final User user1 = new User().setEmail(email1).setDepartment("AB CD EF").setId(email1);
-    private static final User user2 = new User().setEmail(email2).setDepartment("AB CD EF").setId(email2);
+    private static final User user1 = new User().setEmail(email1).setDepartment("AB CD EF").setId("481489458");
+    private static final User user2 = new User().setEmail(email2).setDepartment("AB CD EF").setId("4786487647680");
 
     @Rule
     public final ExpectedException exception = ExpectedException.none();

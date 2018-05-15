@@ -101,7 +101,7 @@ public class SignupPortlet extends Sw360Portlet {
         try {
             com.liferay.portal.model.User liferayUser = registrant.addLifeRayUser(request);
             if (liferayUser != null) {
-                user = UserUtils.synchronizeUserWithDatabase(registrant, thriftClients, registrant::getEmail, UserUtils::fillThriftUserFromThriftUser);
+                user = UserUtils.synchronizeUserWithDatabase(registrant, thriftClients, registrant::getEmail, registrant::getExternalid, UserUtils::fillThriftUserFromThriftUser);
             }
         } catch (PortalException | SystemException e) {
             log.error(e);

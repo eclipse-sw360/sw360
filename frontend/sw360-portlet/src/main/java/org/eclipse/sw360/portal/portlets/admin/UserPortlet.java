@@ -19,14 +19,16 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.portlet.PortletResponseUtil;
 import com.liferay.portal.kernel.upload.UploadPortletRequest;
-import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.model.*;
-import com.liferay.portal.model.User;
 import com.liferay.portal.service.*;
-import com.liferay.portal.theme.ThemeDisplay;
 import com.liferay.portal.util.PortalUtil;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.csv.CSVRecord;
+import org.apache.log4j.Logger;
+import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.portal.common.PortalConstants;
@@ -35,12 +37,6 @@ import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.users.UserCSV;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 import org.eclipse.sw360.portal.users.UserUtils;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVPrinter;
-import org.apache.commons.csv.CSVRecord;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
 
 import javax.portlet.*;
 import java.io.*;
@@ -222,19 +218,13 @@ public class UserPortlet extends Sw360Portlet {
     }
 
     @UsedAsLiferayAction
-    public void updateUsers(ActionRequest request, ActionResponse response) throws PortletException, IOException {
+    public void updateUsers(ActionRequest request, ActionResponse response) throws IOException {
 
-        List<UserCSV> users;
-        try {
-            users = getUsersFromRequest(request, "file");
-        } catch (TException e) {
-            log.error("Error processing csv file", e);
-            users = Collections.emptyList();
-        }
+        List<UserCSV> users = getUsersFromRequest(request, "file");
 
         try {
             createOrganizations(request, users);
-        } catch (SW360Exception | SystemException | PortalException e) {
+        } catch (SystemException | PortalException e) {
             log.error("Error creating organizations", e);
         }
 
@@ -251,7 +241,7 @@ public class UserPortlet extends Sw360Portlet {
 
     }
 
-    private void createOrganizations(PortletRequest request, List<UserCSV> users) throws SW360Exception, SystemException, PortalException {
+    private void createOrganizations(PortletRequest request, List<UserCSV> users) throws SystemException, PortalException {
 
         /* Find the departments of the users, create the head departments and then create the organizations */
 
@@ -260,13 +250,12 @@ public class UserPortlet extends Sw360Portlet {
         createOrganizations(request, departments);
     }
 
-    public void createOrganizations(PortletRequest request, Iterable<String> departments) throws PortalException, SystemException {
+    private void createOrganizations(PortletRequest request, Iterable<String> departments) throws PortalException, SystemException {
         ImmutableSet<String> headDepartments = FluentIterable.from(departments).transform(department -> extractHeadDept(department)).toSet();
 
         Map<String, Long> organizationIds = new HashMap<>();
         ServiceContext serviceContext = ServiceContextFactory.getInstance(request);
-        ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
-        long companyId = themeDisplay.getCompanyId();
+        long companyId = UserUtils.getCompanyId(request);
         for (String headDepartment : headDepartments) {
 
             long organizationId;
@@ -311,20 +300,7 @@ public class UserPortlet extends Sw360Portlet {
         );
     }
 
-    private User getCurrentUser(PortletRequest request) throws SW360Exception {
-        User user;
-        ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
-
-        if (themeDisplay.isSignedIn())
-            user = themeDisplay.getUser();
-        else {
-            throw new SW360Exception("Broken portlet!");
-        }
-        return user;
-    }
-
-
-    private List<UserCSV> getUsersFromRequest(PortletRequest request, String fileUploadFormId) throws IOException, TException {
+    private List<UserCSV> getUsersFromRequest(PortletRequest request, String fileUploadFormId) throws IOException {
 
         final UploadPortletRequest uploadPortletRequest = PortalUtil.getUploadPortletRequest(request);
 
@@ -362,7 +338,7 @@ public class UserPortlet extends Sw360Portlet {
         try {
             user = userRec.addLifeRayUser(request);
             if (user != null) {
-                UserUtils.synchronizeUserWithDatabase(userRec, thriftClients, userRec::getEmail, UserUtils::fillThriftUserFromUserCSV);
+                UserUtils.synchronizeUserWithDatabase(userRec, thriftClients, userRec::getEmail, userRec::getGid, UserUtils::fillThriftUserFromUserCSV);
             }
         } catch (SystemException | PortalException e) {
             log.error("Error creating a new user", e);

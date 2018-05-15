@@ -11,13 +11,16 @@
 package org.eclipse.sw360.datahandler.db;
 
 import org.eclipse.sw360.components.summary.UserSummary;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.ektorp.support.View;
+import org.ektorp.support.Views;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 /**
  * CRUD access for the User class
@@ -26,7 +29,24 @@ import java.util.List;
  * @author Johannes.Najjar@tngtech.com
  */
 
-@View(name = "all", map = "function(doc) { if (doc.type == 'user') emit(null, doc._id) }")
+@Views({
+        @View(name = "all",
+                map = "function(doc) { if (doc.type == 'user') emit(null, doc._id) }"),
+        @View(name = "byExternalId",
+                map = "function(doc) { if (doc.type == 'user') emit(doc.externalid, doc._id) }"),
+        @View(name = "byEmail",
+                map = "function(doc) { " +
+                        "  if (doc.type == 'user') {" +
+                        "    emit(doc.email, doc._id); " +
+                        "    if (doc.formerEmailAddresses && Array.isArray(doc.formerEmailAddresses)) {" +
+                        "      var arr = doc.formerEmailAddresses;" +
+                        "      for (var i = 0; i < arr.length; i++){" +
+                        "        emit(arr[i], doc._id);" +
+                        "      }" +
+                        "    }" +
+                        "  }" +
+                        "}"),
+})
 public class UserRepository extends SummaryAwareRepository<User> {
     public UserRepository(DatabaseConnector databaseConnector) {
         super(User.class, databaseConnector, new UserSummary());
@@ -36,5 +56,19 @@ public class UserRepository extends SummaryAwareRepository<User> {
     @Override
     public List<User> get(Collection<String> ids) {
         return getConnector().get(User.class, ids, true);
+    }
+
+    public User getByExternalId(String externalId) {
+        final Set<String> userIds = queryForIdsAsValue("byExternalId", externalId);
+        if (userIds != null && !userIds.isEmpty())
+            return get(CommonUtils.getFirst(userIds));
+        return null;
+    }
+
+    public User getByEmail(String email) {
+        final Set<String> userIds = queryForIdsAsValue("byEmail", email);
+        if (userIds != null && !userIds.isEmpty())
+            return get(CommonUtils.getFirst(userIds));
+        return null;
     }
 }
