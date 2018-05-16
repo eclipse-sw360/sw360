@@ -24,6 +24,10 @@
 </div>
 <div id="myProjectsDiv" class="homepageListingTable">
     <table id="myProjectsTable" cellpadding="0" cellspacing="0" border="0" class="display">
+         <colgroup>
+               <col style="width: 60%;"/>
+               <col style="width: 40%;"/>
+         </colgroup>
     </table>
 </div>
 
@@ -36,7 +40,7 @@
         result.push({
             "DT_RowId": "${project.id}",
             "0": "<sw360:DisplayProjectLink project="${project}"/>",
-            "1": '<sw360:out value="${project.description}" maxChar="30"/>'
+            "1": '<sw360:out value="${project.description}"/>'
         });
         </core_rt:forEach>
 

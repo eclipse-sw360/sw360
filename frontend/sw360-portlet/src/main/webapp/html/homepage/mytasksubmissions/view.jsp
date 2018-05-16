@@ -31,6 +31,11 @@
 </div>
 <div id="tasksubmissionDiv" class="homepageListingTable">
     <table id="tasksubmissionTable" cellpadding="0" cellspacing="0" border="0" class="display">
+         <colgroup>
+               <col style="width: 60%;"/>
+               <col style="width: 40%;"/>
+               <col style="width: 80px;"/>
+         </colgroup>
     </table>
 </div>
 
