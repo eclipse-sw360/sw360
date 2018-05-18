@@ -9,11 +9,30 @@
   ~ http://www.eclipse.org/legal/epl-v10.html
 --%>
 
+<%@ page import="org.eclipse.sw360.datahandler.thrift.MainlineState" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.ReleaseRelationship" %>
+
 <table class="table info_table" id="LinkedReleasesInfo">
+       <colgroup>
+           <col style="width: 20%;" />
+           <col style="width: 20%;" />
+           <col style="width: 20%;" />
+           <col style="width: 20%;" />
+           <col style="width: 20%;" />
+           <col style="width: 45px;" /> <!-- width of one action (25) with padding of 10 for the column-->
+       </colgroup>
     <thead>
-    <tr>
-        <th colspan="6" class="headlabel">Linked Releases</th>
-    </tr>
+        <tr>
+            <th class="headLabel" colspan="6">Linked Releases</th>
+        </tr>
+        <tr>
+            <th class="headlabel" rowspan="2">Vendor Name</th>
+            <th class="headlabel" rowspan="2">Release Name</th>
+            <th class="headlabel" rowspan="2">Release Version</th>
+            <th class="headlabel" rowspan="2">Release Relation <sw360:DisplayEnumInfo type="<%=ReleaseRelationship.class%>"/></th>
+            <th class="headlabel" rowspan="2">Project Mainline State <sw360:DisplayEnumInfo type="<%=MainlineState.class%>"/></th>
+            <th class="headlabel" rowspan="2"></th>
+        </tr>
     </thead>
     <tbody>
         <jsp:include page="/html/utils/ajax/linkedReleasesAjax.jsp" />

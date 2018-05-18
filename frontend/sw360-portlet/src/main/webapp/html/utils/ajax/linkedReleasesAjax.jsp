@@ -12,7 +12,6 @@
 <%@ page import="com.liferay.portlet.PortletURLFactoryUtil" %>
 <%@include file="/html/init.jsp" %>
 
-
 <portlet:defineObjects/>
 <liferay-theme:defineObjects/>
 
@@ -27,45 +26,34 @@
     <core_rt:set var="uuid" value="${releaseLink.id}"/>
     <tr id="releaseLinkRow${uuid}" >
         <td>
-            <label class="textlabel stackedLabel" for="releaseVendor">Vendor name</label>
-            <input id="releaseVendor" type="text" class="toplabelledInput" placeholder="No vendor"
+            <input id="releaseVendor" type="text" placeholder="No vendor"
                    value="<sw360:out value="${releaseLink.vendor}"/>" readonly/>
         </td>
         <td>
             <input type="hidden" value="${releaseLink.id}" name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ReleaseLink._Fields.ID%>">
-            <label class="textlabel stackedLabel" for="releaseName">Release name</label>
-            <input id="releaseName" type="text" class="toplabelledInput" placeholder="Enter release"
+            <input id="releaseName" type="text" placeholder="Enter release"
                    value="<sw360:out value="${releaseLink.name}"/>" readonly/>
         </td>
         <td>
-            <label class="textlabel stackedLabel" for="releaseVersion">Release version</label>
-            <input id="releaseVersion" type="text" class="toplabelledInput" placeholder="Enter version"
+            <input id="releaseVersion" type="text" placeholder="Enter version"
                    value="<sw360:out value="${releaseLink.version}"/>" readonly/>
         </td>
         <td>
-            <label class="textlabel stackedLabel" for="releaseRelation">Release relation</label>
-            <select class="toplabelledInput" id="releaseRelation"
+            <select  id="releaseRelation"
                     name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.RELEASE_RELATION%>"
                     style="min-height: 28px;">
-
                 <sw360:DisplayEnumOptions type="<%=ReleaseRelationship.class%>" selected="${releaseLink.releaseRelationship}"/>
             </select>
-            <sw360:DisplayEnumInfo type="<%=ReleaseRelationship.class%>"/>
         </td>
         <td>
-            <label class="textlabel stackedLabel" for="mainlineState">Project Mainline state</label>
-            <select class="toplabelledInput" id="mainlineState"
+            <select class= id="mainlineState"
                     name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.MAINLINE_STATE%>"
                     style="min-height: 28px;">
-
                 <sw360:DisplayEnumOptions type="<%=MainlineState.class%>" selected="${releaseLink.mainlineState}"/>
             </select>
-            <sw360:DisplayEnumInfo type="<%=MainlineState.class%>"/>
         </td>
-
         <td class="deletor">
             <img src="<%=request.getContextPath()%>/images/Trash.png" onclick="deleteReleaseLink('releaseLinkRow${uuid}','<sw360:out value='${releaseLink.longName}' jsQuoting="true"/>')" alt="Delete">
         </td>
-
     </tr>
 </core_rt:forEach>
