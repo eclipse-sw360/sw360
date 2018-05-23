@@ -169,6 +169,11 @@ service ProjectService {
     // Search functions
 
     /**
+     * global search function to list projects which match the text argument
+     */
+    list<Project> search(1: string text);
+
+    /**
      * returns a list of projects which match `text` and the
      * `subQueryRestrictions` and are visible to the `user`
      */

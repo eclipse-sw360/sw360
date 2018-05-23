@@ -12,7 +12,7 @@ package org.eclipse.sw360.users.db;
 
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.db.UserRepository;
-import org.eclipse.sw360.datahandler.db.UserSearch;
+import org.eclipse.sw360.datahandler.db.UserSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftValidate;
@@ -38,13 +38,13 @@ public class UserDatabaseHandler {
      */
     private DatabaseConnector db;
     private UserRepository repository;
-    private UserSearch userSearch;
+    private UserSearchHandler userSearchHandler;
 
     public UserDatabaseHandler(Supplier<HttpClient> httpClient, String dbName) throws IOException {
         // Create the connector
         db = new DatabaseConnector(httpClient, dbName);
         repository = new UserRepository(db);
-        userSearch = new UserSearch(db);
+        userSearchHandler = new UserSearchHandler(db);
     }
 
     public User getByEmail(String email) {
@@ -88,7 +88,7 @@ public class UserDatabaseHandler {
     }
 
     public List<User> searchUsers(String searchText) {
-        return userSearch.searchByNameAndEmail(searchText);
+        return userSearchHandler.searchByNameAndEmail(searchText);
     }
 
     public User getByExternalId(String externalId) {

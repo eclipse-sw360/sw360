@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import static org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector.prepareWildcardQuery;
+
 public class ProjectSearchHandler {
 
     private static final LuceneSearchView luceneSearchView = new LuceneSearchView("lucene", "projects",
@@ -80,6 +82,10 @@ public class ProjectSearchHandler {
 
     public List<Project> search(String text, final Map<String , Set<String > > subQueryRestrictions, User user ){
         return connector.searchProjectViewWithRestrictionsAndFilter(luceneSearchView, text, subQueryRestrictions, user);
+    }
+
+    public List<Project> search(String searchText) {
+        return connector.searchView(Project.class, luceneSearchView, prepareWildcardQuery(searchText));
     }
 
 }
