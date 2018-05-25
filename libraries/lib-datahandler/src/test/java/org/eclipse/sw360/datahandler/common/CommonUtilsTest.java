@@ -21,6 +21,7 @@ import java.util.Set;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -243,5 +244,14 @@ public class CommonUtilsTest {
         assertThat(getIntOrDefault("-25", 25), is(-25));
         assertThat(getIntOrDefault("25z", 6), is(6));
         assertThat(getIntOrDefault( null, 42), is(42));
+    }
+
+    @Test
+    public void testGetFileNameExtension() {
+        assertThat(getExtensionFromFileName("example.doc"), is("doc"));
+        assertThat(getExtensionFromFileName("source.TAR.gz"), is("TAR.gz"));
+        assertThat(getExtensionFromFileName("testfile.test.V1 12.jpg"), is("jpg"));
+        assertThat(getExtensionFromFileName("testfile-without-extension"), is(""));
+        assertNull(getExtensionFromFileName(null));
     }
 }

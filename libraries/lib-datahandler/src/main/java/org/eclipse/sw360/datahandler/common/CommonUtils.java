@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2014-2016.
+ * Copyright Siemens AG, 2014-2018.
  * With modifications by Bosch Software Innovations GmbH, 2016
  * Part of the SW360 Portal Project.
  *
@@ -56,6 +56,7 @@ import static org.apache.log4j.LogManager.getLogger;
 public class CommonUtils {
 
     public static final String SYSTEM_CONFIGURATION_PATH = "/etc/sw360";
+    private static List<String> MULTIPLE_FILE_EXTENSIONS = Arrays.asList(".tar.gz", ".tar.bz2", ".tar.xz", ".tar.lz", ".tar.lzma");
 
     private CommonUtils() {
         // Utility class with only static functions
@@ -729,6 +730,19 @@ public class CommonUtils {
         return map.entrySet().stream()
                 .map(e -> ((Map.Entry<String, Set<Object>>) e).getValue())
                 .filter(s -> !s.isEmpty()).findAny();
+    }
+
+    public static String getExtensionFromFileName(String fileName) {
+        if (fileName == null) {
+            return null;
+        }
+        for (String multipleExtension : MULTIPLE_FILE_EXTENSIONS) {
+            if (fileName.toLowerCase().endsWith(multipleExtension)) {
+                int lastIndex = fileName.toLowerCase().lastIndexOf(multipleExtension);
+                return fileName.substring(lastIndex + 1);
+            }
+        }
+        return FilenameUtils.getExtension(fileName);
     }
 
 }

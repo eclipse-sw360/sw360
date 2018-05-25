@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2014-2016. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2014-2018. Part of the SW360 Portal Project.
  * With contributions by Bosch Software Innovations GmbH, 2017.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -11,6 +11,7 @@
  */
 package org.eclipse.sw360.datahandler.couchdb;
 
+import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.ConcatClosingInputStream;
@@ -19,7 +20,6 @@ import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.apache.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.ektorp.AttachmentInputStream;
 import org.ektorp.DocumentNotFoundException;
@@ -29,11 +29,14 @@ import java.io.InputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.net.MalformedURLException;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import static org.eclipse.sw360.datahandler.common.CommonUtils.getExtensionFromFileName;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 
 /**
@@ -106,15 +109,26 @@ public class AttachmentStreamConnector {
         PipedOutputStream out = new PipedOutputStream(in);
 
         new Thread(() -> {
+            Map<String, Integer> fileNameUsageMap = new HashMap<>();
             byte[] buffer = new byte[1024];
             int length;
 
             try(ZipOutputStream zip = new ZipOutputStream(out)){
                 for(AttachmentContent attachment : attachments) {
-                    // TODO: handle attachments with equal name
-                    ZipEntry zipEntry = new ZipEntry(attachment.getFilename());
-                    zip.putNextEntry(zipEntry);
+                    ZipEntry zipEntry;
 
+                    String originalFileName = attachment.getFilename();
+                    if (!fileNameUsageMap.containsKey(originalFileName)) {
+                        fileNameUsageMap.put(originalFileName, 0);
+                        zipEntry = new ZipEntry(originalFileName);
+                    } else {
+                        int count = fileNameUsageMap.get(originalFileName);
+                        count += 1;
+                        fileNameUsageMap.put(originalFileName, count);
+                        zipEntry = getDeduplicatedZipEntry(originalFileName, fileNameUsageMap);
+                    }
+
+                    zip.putNextEntry(zipEntry);
                     try(InputStream attachmentStream = unsafeGetAttachmentStream(attachment)) {
                         while ((length = attachmentStream.read(buffer)) >= 0) {
                             zip.write(buffer, 0, length);
@@ -131,6 +145,24 @@ public class AttachmentStreamConnector {
         }).start();
 
         return in;
+    }
+
+    protected ZipEntry getDeduplicatedZipEntry(String fileName, Map<String, Integer> fileNameUsageMap) {
+        if (fileNameUsageMap.containsKey(fileName)) {
+            return new ZipEntry(printAcceptedZipEntryName(fileName, fileNameUsageMap.get(fileName)));
+        } else {
+            return new ZipEntry(fileName);
+        }
+    }
+
+    protected String printAcceptedZipEntryName(String fileName, int count) {
+        String fileExtension = getExtensionFromFileName(fileName);
+        if (fileExtension.length() > 0) {
+            fileExtension = "." + fileExtension;
+            return fileName.substring(0, fileName.lastIndexOf(fileExtension)) + String.format(" (%d)", count) + fileExtension;
+        } else {
+            return fileName + String.format(" (%d)", count);
+        }
     }
 
     private AttachmentContent downloadRemoteAttachmentAndUpdate(AttachmentContent attachmentContent) throws SW360Exception {
