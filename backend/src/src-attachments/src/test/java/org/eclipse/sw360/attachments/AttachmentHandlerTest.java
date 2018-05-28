@@ -83,13 +83,13 @@ public class AttachmentHandlerTest {
 
     @Test
     public void testVacuum_OnlyAdminCanRun() throws Exception {
-        final RequestSummary requestSummary = handler.vacuumAttachmentDB(new User("a", "a", "a").setUserGroup(UserGroup.USER), ImmutableSet.of("A1", "A2"));
+        final RequestSummary requestSummary = handler.vacuumAttachmentDB(new User("a", "a").setUserGroup(UserGroup.USER), ImmutableSet.of("A1", "A2"));
         assertThat(requestSummary.requestStatus, is(RequestStatus.FAILURE));
     }
 
     @Test
     public void testVacuum_AllIdsUsedIsNoop() throws Exception {
-        final RequestSummary requestSummary = handler.vacuumAttachmentDB(new User("a", "a", "a").setUserGroup(UserGroup.ADMIN), ImmutableSet.of("A1", "A2"));
+        final RequestSummary requestSummary = handler.vacuumAttachmentDB(new User("a", "a").setUserGroup(UserGroup.ADMIN), ImmutableSet.of("A1", "A2"));
         assertThat(requestSummary.requestStatus, is(RequestStatus.SUCCESS));
         assertThat(requestSummary.totalElements, is(2));
         assertThat(requestSummary.totalAffectedElements, is(0));
@@ -103,7 +103,7 @@ public class AttachmentHandlerTest {
 
     @Test
     public void testVacuum_UnusedIdIsDeleted() throws Exception {
-        final RequestSummary requestSummary = handler.vacuumAttachmentDB(new User("a", "a", "a").setUserGroup(UserGroup.ADMIN), ImmutableSet.of("A1"));
+        final RequestSummary requestSummary = handler.vacuumAttachmentDB(new User("a", "a").setUserGroup(UserGroup.ADMIN), ImmutableSet.of("A1"));
         assertThat(requestSummary.requestStatus, is(RequestStatus.SUCCESS));
         assertThat(requestSummary.totalElements, is(2));
         assertThat(requestSummary.totalAffectedElements, is(1));
