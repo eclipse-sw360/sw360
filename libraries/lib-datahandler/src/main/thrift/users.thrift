@@ -43,7 +43,7 @@ enum RequestedAction {
 
 struct User {
 
-    1: required string id,
+    1: optional string id,
     2: optional string revision,
     3: optional string type = "user",
     4: required string email,

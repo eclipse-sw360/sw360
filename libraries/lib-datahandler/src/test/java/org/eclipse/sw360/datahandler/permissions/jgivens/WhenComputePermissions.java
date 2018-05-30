@@ -35,10 +35,8 @@ public class WhenComputePermissions  extends Stage<WhenComputePermissions> {
     @ProvidedScenarioState
     List<RequestedAction> allowedActions;
 
-    private static String DUMMY_ID = "DAU";
-
     public WhenComputePermissions the_highest_allowed_action_is_computed_for_user_$_with_user_group_$_and_department_$(@Quoted String userEmail, @TEnumToString UserGroup userGroup, @Quoted String userDept) {
-        final User user = new User(DUMMY_ID, userEmail, userDept).setUserGroup(userGroup);
+        final User user = new User(userEmail, userDept).setUserGroup(userGroup);
 
         final DocumentPermissions<Project> projectDocumentPermissions = PermissionUtils.makePermission(project, user);
 
