@@ -29,7 +29,10 @@ import org.mockito.runners.MockitoJUnitRunner;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.ZipEntry;
 
 import static org.eclipse.sw360.datahandler.common.Duration.durationOf;
 import static org.hamcrest.CoreMatchers.is;
@@ -190,6 +193,24 @@ public class AttachmentStreamConnectorTest {
         }
 
         verify(part1).close();
+    }
+
+    @Test
+    public void testPrintAcceptedZipEntryName() {
+        assertThat(attachmentStreamConnector.printAcceptedZipEntryName("source.zip", 0), is("source (0).zip"));
+        assertThat(attachmentStreamConnector.printAcceptedZipEntryName("source.JPG", 2), is("source (2).JPG"));
+        assertThat(attachmentStreamConnector.printAcceptedZipEntryName("source..v1.001.tar.xz", 3), is("source..v1.001 (3).tar.xz"));
+        assertThat(attachmentStreamConnector.printAcceptedZipEntryName("source", 4), is("source (4)"));
+    }
+
+    @Test
+    public void testGetDeduplicatedZipEntry() {
+        Map<String, Integer> fileNameUsageMap = new HashMap<>();
+        ZipEntry zipEntry =  attachmentStreamConnector.getDeduplicatedZipEntry("source.zip", fileNameUsageMap);
+        assertThat(zipEntry.getName(), is("source.zip"));
+        fileNameUsageMap.put("source.zip", 1);
+        ZipEntry zipEntry2 =  attachmentStreamConnector.getDeduplicatedZipEntry("source.zip", fileNameUsageMap);
+        assertThat(zipEntry2.getName(), is("source (1).zip"));
     }
 
 }

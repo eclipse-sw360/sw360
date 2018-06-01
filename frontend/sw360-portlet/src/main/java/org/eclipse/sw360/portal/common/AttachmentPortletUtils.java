@@ -127,8 +127,7 @@ public class AttachmentPortletUtils extends AttachmentFrontendUtils {
         String filename;
         String contentType;
         if(attachments.size() == 1){
-            filename = downloadFileName
-                    .orElse(attachments.get(0).getFilename());
+            filename = attachments.get(0).getFilename();
             contentType = attachments.get(0).getContentType();
         } else {
             filename = downloadFileName

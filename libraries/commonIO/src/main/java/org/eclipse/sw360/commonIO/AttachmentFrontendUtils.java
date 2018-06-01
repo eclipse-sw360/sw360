@@ -53,7 +53,8 @@ public class AttachmentFrontendUtils {
         if(attachments == null || attachments.size() == 0){
             throw new SW360Exception("Tried to download empty set of Attachments");
         }else if(attachments.size() == 1){
-            return getConnector().getAttachmentStream(attachments.stream().findAny().get(), user, context);
+            // Temporary solutions, permission check needs to be implemented (getAttachmentStream)
+            return getConnector().unsafeGetAttachmentStream(attachments.iterator().next());
         } else {
             return getConnector().getAttachmentBundleStream(new HashSet<>(attachments), user, context);
         }
