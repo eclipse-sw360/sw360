@@ -10,10 +10,10 @@
  */
 package org.eclipse.sw360.fossology.ssh;
 
+import org.apache.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.components.FossologyStatus;
-import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -24,9 +24,9 @@ import java.io.OutputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotEmpty;
-import static org.eclipse.sw360.datahandler.common.SW360Assert.fail;
 import static org.apache.log4j.Logger.getLogger;
+import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
+import static org.eclipse.sw360.datahandler.thrift.projects.projectsConstants.CLEARING_TEAM_UNKNOWN;
 
 /**
  * @author daniele.fognini@tngtech.com
@@ -75,8 +75,8 @@ public class FossologyUploader {
             final String id = attachment.getId();
 
             assertNotEmpty(id);
-            assertNotEmpty(clearingTeam);
             assertNotEmpty(attachmentFilename);
+            validateClearingTeam(clearingTeam);
 
             final String command = String.format(FOSSOLOGY_COMMAND_UPLOAD, sanitizeQuotes(id), sanitizeQuotes(clearingTeam), sanitizeQuotes(attachmentFilename));
 
@@ -114,7 +114,8 @@ public class FossologyUploader {
             if (uploadId < 0) {
                 throw fail("bad Upload Id");
             }
-            assertNotEmpty(clearingTeam);
+
+            validateClearingTeam(clearingTeam);
 
             final String command = String.format(FOSSOLOGY_COMMAND_GET_STATUS, uploadId, sanitizeQuotes(clearingTeam));
 
@@ -167,5 +168,10 @@ public class FossologyUploader {
         public String getContent() {
             return new String(os.toByteArray());
         }
+    }
+
+    private void validateClearingTeam(String clearingTeam) throws SW360Exception {
+        assertNotEmpty(clearingTeam);
+        failIf(CLEARING_TEAM_UNKNOWN.equals(clearingTeam), "Clearing team " + CLEARING_TEAM_UNKNOWN + " not supported.");
     }
 }

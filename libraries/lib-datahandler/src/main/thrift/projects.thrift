@@ -104,7 +104,7 @@ struct Project {
     31: optional map<string, ProjectReleaseRelationship> releaseIdToUsage,
 
     // Admin data
-    40: optional string clearingTeam = CLEARING_TEAM_UNKNOWN,
+    40: optional string clearingTeam;
     41: optional string preevaluationDeadline,
     42: optional string systemTestStart,
     43: optional string systemTestEnd,
