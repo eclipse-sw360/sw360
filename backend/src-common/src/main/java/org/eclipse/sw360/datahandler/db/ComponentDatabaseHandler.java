@@ -59,9 +59,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.fail;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import static org.eclipse.sw360.datahandler.thrift.ThriftUtils.copyFields;
-import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.ensureEccInformationIsSet;
-import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.prepareComponents;
-import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.prepareReleases;
+import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.*;
 
 /**
  * Class for accessing Component information from the database
@@ -677,9 +675,13 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void autosetEccFieldsForReleaseWithDownloadUrl(Release release) {
-        // For unmodified OSS, ECC classification can be done automatically: sw360/sw360portal#773
+        // For unmodified OSS, ECC classification can be done automatically
+        // This release has to be an OSS component and should have a valid Url address
+        Component parentComponent = componentRepository.get(release.getComponentId());
+        ComponentType compType = parentComponent.getComponentType();
+
         String url = release.getDownloadurl();
-        if (!isNullOrEmpty(url)) {
+        if (!isNullOrEmpty(url) && ComponentType.OSS.equals(compType)) {
             if (CommonUtils.isValidUrl(url)) {
                 ensureEccInformationIsSet(release);
                 EccInformation eccInfo = release.getEccInformation();
