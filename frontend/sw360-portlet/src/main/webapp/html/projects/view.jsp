@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
   ~ With modifications by Bosch Software Innovations GmbH, 2016.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
@@ -21,9 +21,6 @@
 
 <portlet:defineObjects/>
 <liferay-theme:defineObjects/>
-
-<jsp:useBean id="projectList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.projects.Project>"
-             scope="request"/>
 
 <jsp:useBean id="projectType" class="java.lang.String" scope="request"/>
 <jsp:useBean id="project" class="org.eclipse.sw360.datahandler.thrift.projects.Project" scope="request"/>
@@ -55,7 +52,7 @@
 
 <portlet:renderURL var="friendlyProjectURL">
     <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>"/>
-    <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PROJECT_ID%>"/>
+    <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>"/>
 </portlet:renderURL>
 
 <portlet:resourceURL var="projectReleasesAjaxURL">
@@ -74,6 +71,9 @@
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.GET_CLEARING_STATE_SUMMARY%>'/>
 </portlet:resourceURL>
 
+<portlet:resourceURL var="loadProjectsURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.LOAD_PROJECT_LIST%>'/>
+</portlet:resourceURL>
 
 <div id="header"></div>
 <p class="pageHeader">
@@ -84,8 +84,6 @@
 </p>
 
 <div id="searchInput" class="content1">
-    <%@ include file="/html/utils/includes/quickfilter.jspf" %>
-
     <form action="<%=applyFiltersURL%>" method="post">
         <table>
             <thead>
@@ -202,11 +200,16 @@
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
 
+    String.prototype.trunc = String.prototype.trunc ||
+        function (n) {
+            return (this.length > n) ? this.substr(0, n - 1) + '&hellip;' : this;
+        };
+
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;
         const clearingSummaryColumnIndex = 4;
 
-        require(['jquery', 'utils/includes/quickfilter', 'modules/autocomplete', 'modules/confirm', /* jquery-plugins */ 'datatables', 'datatables_buttons', 'buttons.print'], function($, quickfilter, autocomplete, confirm) {
+        require(['jquery', 'modules/autocomplete', 'modules/confirm', /* jquery-plugins */ 'datatables', 'datatables_buttons', 'buttons.print'], function($, autocomplete, confirm) {
             var projectsTable;
 
              // initializing
@@ -233,7 +236,6 @@
             });
             $('#fossologyClearingForm input[name=close]').on('click', closeOpenDialogs);
 
-
              // helper functions
             function makeProjectUrl(projectId, page) {
                 var portletURL = PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>')
@@ -242,10 +244,10 @@
                 return portletURL.toString();
             }
 
-            function makeProjectFriendlyUrl(projectId, page) {
+            function replaceFriendlyUrlParameter(projectId, page) {
                 var portletURL = '<%=friendlyProjectURL%>'
                     .replace('<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>', page)
-                    .replace('<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PROJECT_ID%>', projectId);
+                    .replace('<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>', projectId);
                 return portletURL;
             }
 
@@ -271,45 +273,32 @@
                         "",
                         "<img src='<%=request.getContextPath()%>/images/ic_clone.png' alt='Duplicate' title='Duplicate'>")
                     +   "<img class='delete' src='<%=request.getContextPath()%>/images/Trash.png'" +
-                              " data-project-id='" + id + "' data-project-name='" + replaceSingleQuote(row.name) + "' data-linked-projects-count='" + replaceSingleQuote(row.linkedProjectsSize) + "' data-linked-releases-count='" + replaceSingleQuote(row.linkedReleasesSize) + "' data-project-attachment-count='" + replaceSingleQuote(row.attachmentsSize) + "' alt='Delete' title='Delete'/>";
+                    " data-project-id='" + id + "' data-project-name='" + replaceSingleQuote(row.name) + "' data-linked-projects-count='" + replaceSingleQuote(row.lProjSize) + "' data-linked-releases-count='" + replaceSingleQuote(row.lRelsSize) + "' data-project-attachment-count='" + replaceSingleQuote(row.attsSize) + "' alt='Delete' title='Delete'/>";
             }
 
 		    function renderProjectNameLink(name, type, row) {
-		        return renderLinkTo(makeProjectFriendlyUrl(row.id, '<%=PortalConstants.PAGENAME_DETAIL%>'), name);
+                return renderLinkTo(replaceFriendlyUrlParameter(row.id, '<%=PortalConstants.PAGENAME_DETAIL%>'), name);
 		    }
 
             function load() {
                 autocomplete.prepareForMultipleHits('state', ${stateAutoC});
                 autocomplete.prepareForMultipleHits('project_type', ${projectTypeAutoC});
-
-                createProjectsTable();
-                quickfilter.addTable(projectsTable);
-
-                loadClearingStateSummaries();
-
+                projectsTable = createProjectsTable();
             }
+
             function createProjectsTable() {
-                var result = [];
+                var projectsTable;
 
-                <core_rt:forEach items="${projectList}" var="project">
-                result.push({
-                    "DT_RowId": "${project.id}",
-                    "id": '${project.id}',
-                    "name": '<sw360:ProjectName project="${project}"/>',
-                    "description": '<sw360:out value="${project.description}" maxChar="140" jsQuoting="true" bare="true"/>',
-                    "state": '<sw360:DisplayStateBoxes project="${project}"/>',
-                    "clearing": 'Not loaded yet',
-                    "responsible": '<sw360:DisplayUserEmail email="${project.projectResponsible}" bare="true"/>',
-                    "linkedProjectsSize": '${project.linkedProjectsSize}',
-                    "linkedReleasesSize": '${project.releaseIdToUsageSize}',
-                    "attachmentsSize": '${project.attachmentsSize}'
-                });
-                </core_rt:forEach>
-
+                $.fn.DataTable.ext.pager.numbers_length = 8;
                 projectsTable = $('#projectsTable').DataTable({
                     "pagingType": "simple_numbers",
-                    "data": result,
-                    "dom": "lBrtip",
+                    "bPaginate": true,
+                    "bInfo": true,
+                    "iDisplayStart": 0,
+                    "bProcessing": true,
+                    "bServerSide": true,
+                    "sAjaxSource": '<%=loadProjectsURL%>',
+                    "dom": 'lBrtip',
                     "buttons": [
                         {
                             extend: 'print',
@@ -321,17 +310,78 @@
                             }
                         }
                     ],
+                    "pageLength": 10,
                     "search": {smart: false},
+                    "searching": false,
+                    "columnDefs": [
+                        {
+                            "width": "90px", "targets": [5]
+                        }
+                    ],
                     "columns": [
                         {title: "Project Name", data: "name", render: {display: renderProjectNameLink}},
-                        {title: "Description", data: "description"},
-                        {title: "Project Responsible", data: "responsible"},
-                        {title: "State", data: "state"},
+                        {title: "Description", data: "desc", render: {display: renderDescription}},
+                        {title: "Project Responsible", data: "resp", render: {display: renderProjectResponsible}},
+                        {title: "State", data: "state", render: {display: renderStateBoxes}},
                         {title: "<span title=\"Release clearing state\">Clearing Status</span>", data: "clearing"},
                         {title: "Actions", data: "id", render: {display: renderProjectActions}}
                     ],
-                    "autoWidth": false
+                    "order": [[0, 'asc']],
+                    "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+                    "autoWidth": false,
+                    "fnDrawCallback": function (oSettings) {
+                        loadClearingStateSummaries();
+                    }
                 });
+
+                return projectsTable;
+            }
+
+            function renderStateBoxes(state, type, row) {
+                var projectStateBackgroundColour = getProjectStateBackgroundColour(state);
+                var clearingStateBackgroundColour = getClearingStateBackgroundColour(row);
+
+                var box_PS = "<div class=\"stateBox capsuleLeft " + projectStateBackgroundColour + "\" title=\"Project state: " + "Test Title" + "\"> PS </div>";
+                var box_CS = "<div class=\"stateBox capsuleRight " + clearingStateBackgroundColour + "\" title=\"Project clearing state: " + "Test Title" + "\"> CS </div>";
+                return box_PS + box_CS;
+            }
+
+            function getProjectStateBackgroundColour(state) {
+                if (state != null && state === 'ACTIVE') { // -> green
+                    return '<%=PortalConstants.PROJECT_STATE_ACTIVE__CSS%>';
+                } else {
+                    return '<%=PortalConstants.PROJECT_STATE_INACTIVE__CSS%>';
+                }
+            }
+
+            function getClearingStateBackgroundColour(row) {
+                if (row != null && row.cState != null) {
+                    switch (row.cState) {
+                        case 'CLOSED': // -> green
+                            return '<%=PortalConstants.CLEARING_STATE_CLOSED__CSS%>';
+                        case 'IN_PROGRESS': // -> yellow
+                            return '<%=PortalConstants.CLEARING_STATE_INPROGRESS__CSS%>';
+                        case 'OPEN': // -> red
+                            return '<%=PortalConstants.CLEARING_STATE_OPEN__CSS%>';
+                    }
+                }
+                return '<%=PortalConstants.CLEARING_STATE_UNKNOWN__CSS%>';
+            }
+
+            function renderDescription(description, type, row) {
+                if (description) {
+                    return description.trunc(140);
+                } else {
+                    return "";
+                }
+            }
+
+            function renderProjectResponsible(responsible, type, row) {
+                if (responsible) {
+                    return renderUserEmail(responsible);
+                } else {
+                    return "";
+                }
             }
 
             function loadClearingStateSummaries() {
@@ -350,7 +400,6 @@
                         /* make sure last page is handled correctly as it might not be a full page */
                         if (tableData[idx]) {
                             pageIds.push(tableData[idx].id);
-
                             cell = projectsTable.cell(idx, clearingSummaryColumnIndex);
                             cell.data("Loading...");
                         } else {
@@ -421,8 +470,6 @@
             }
 
             function exportSpreadsheet() {
-                quickfilter.setSearchTerm('');
-
                 var portletURL = PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>')
                     .setParameter('<%=PortalConstants.ACTION%>', '<%=PortalConstants.EXPORT_TO_EXCEL%>');
                 portletURL.setParameter('<%=Project._Fields.NAME%>', $('#project_name').val());

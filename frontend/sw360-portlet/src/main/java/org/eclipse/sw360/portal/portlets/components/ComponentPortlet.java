@@ -12,11 +12,11 @@
 package org.eclipse.sw360.portal.portlets.components;
 
 import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
+import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.portlet.LiferayPortletURL;
@@ -54,11 +54,14 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
 import org.eclipse.sw360.exporter.ComponentExporter;
 import org.eclipse.sw360.portal.common.*;
+import org.eclipse.sw360.portal.common.datatables.PaginationParser;
+import org.eclipse.sw360.portal.common.datatables.data.PaginationParameters;
 import org.eclipse.sw360.portal.portlets.FossologyAwarePortlet;
 import org.eclipse.sw360.portal.users.LifeRayUserSession;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 
 import javax.portlet.*;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -67,6 +70,9 @@ import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Strings.nullToEmpty;
+import static com.liferay.portal.kernel.json.JSONFactoryUtil.createJSONArray;
+import static com.liferay.portal.kernel.json.JSONFactoryUtil.createJSONObject;
+import static java.lang.Math.min;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.CONTENT_TYPE_OPENXML_SPREADSHEET;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
@@ -88,6 +94,13 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
     private static final JsonFactory JSON_FACTORY = new JsonFactory();
     private static final TSerializer JSON_THRIFT_SERIALIZER = new TSerializer(new TSimpleJSONProtocol.Factory());
+
+    // Component view datatables, index of columns
+    private static final int COMPONENT_DT_ROW_VENDOR = 0;
+    private static final int COMPONENT_DT_ROW_NAME = 1;
+    private static final int COMPONENT_DT_ROW_MAIN_LICENSES = 2;
+    private static final int COMPONENT_DT_ROW_TYPE = 3;
+    private static final int COMPONENT_DT_ROW_ACTION = 4;
 
     private boolean typeIsComponent(String documentType) {
         return SW360Constants.TYPE_COMPONENT.equals(documentType);
@@ -136,6 +149,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             serveDeleteComponent(request, response);
         } else if (DELETE_RELEASE.equals(action)) {
             serveDeleteRelease(request, response);
+        } else if (LOAD_COMPONENT_LIST.equals(action)) {
+            serveComponentList(request, response);
         } else if (SUBSCRIBE.equals(action)) {
             serveSubscribe(request, response);
         } else if (SUBSCRIBE_RELEASE.equals(action)) {
@@ -946,8 +961,6 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     }
 
     private void prepareStandardView(RenderRequest request) throws IOException {
-        List<Component> componentList = getFilteredComponentList(request);
-
         Set<String> vendorNames;
 
         try {
@@ -963,34 +976,48 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 .collect(Collectors.toList());
 
         request.setAttribute(VENDOR_LIST, new ThriftJsonSerializer().toJson(vendorNames));
-        request.setAttribute(COMPONENT_LIST, componentList);
         request.setAttribute(COMPONENT_TYPE_LIST, new ThriftJsonSerializer().toJson(componentTypeNames));
-
+        setComponentViewFilterAttributes(request);
     }
 
-    private List<Component> getFilteredComponentList(PortletRequest request) throws IOException {
-        List<Component> componentList;
-        Map<String, Set<String>> filterMap = new HashMap<>();
-
+    private void setComponentViewFilterAttributes(PortletRequest request) {
         for (Component._Fields filteredField : componentFilteredFields) {
             String parameter = request.getParameter(filteredField.toString());
-            if (!isNullOrEmpty(parameter) &&
-                    !(filteredField.equals(Component._Fields.COMPONENT_TYPE) && parameter.equals(PortalConstants.NO_FILTER))) {
+            request.setAttribute(filteredField.getFieldName(), nullToEmpty(parameter));
+        }
+        try {
+            final User user = UserCacheHolder.getUserFromRequest(request);
+            ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+            request.setAttribute(PortalConstants.TOTAL_ROWS, componentClient.getTotalComponentsCount(user));
+        } catch (TException e) {
+            log.error("Could not get component total count in backend ", e);
+        }
+    }
+
+    private Map<String, Set<String>> getComponentFilterMap(PortletRequest request) {
+        Map<String, Set<String>> filterMap = new HashMap<>();
+        for (Component._Fields filteredField : componentFilteredFields) {
+            String parameter = request.getParameter(filteredField.toString());
+            if (!isNullOrEmpty(parameter) && !(filteredField.equals(Component._Fields.COMPONENT_TYPE)
+                    && parameter.equals(PortalConstants.NO_FILTER))) {
                 Set<String> values = CommonUtils.splitToSet(parameter);
                 if (filteredField.equals(Component._Fields.NAME)) {
                     values = values.stream().map(v -> v + "*").collect(Collectors.toSet());
                 }
                 filterMap.put(filteredField.getFieldName(), values);
             }
-            request.setAttribute(filteredField.getFieldName(), nullToEmpty(parameter));
         }
+        return filterMap;
+    }
+
+    private List<Component> getFilteredComponentList(PortletRequest request) {
+        Map<String, Set<String>> filterMap = getComponentFilterMap(request);
+        List<Component> componentList;
 
         try {
             final User user = UserCacheHolder.getUserFromRequest(request);
             int limit = CustomFieldHelper.loadAndStoreStickyViewSize(request, user, CUSTOM_FIELD_COMPONENTS_VIEW_SIZE);
             ComponentService.Iface componentClient = thriftClients.makeComponentClient();
-            request.setAttribute(PortalConstants.TOTAL_ROWS, componentClient.getTotalComponentsCount(user));
-
             if (filterMap.isEmpty()) {
                 componentList = componentClient.getRecentComponentsSummary(limit, user);
             } else {
@@ -1000,6 +1027,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             log.error("Could not search components in backend ", e);
             componentList = Collections.emptyList();
         }
+
         return componentList;
     }
 
@@ -1238,5 +1266,127 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         responseData.put(PortalConstants.REQUEST_STATUS, requestStatus.toString());
         PrintWriter writer = response.getWriter();
         writer.write(responseData.toString());
+    }
+
+    private void serveComponentList(ResourceRequest request, ResourceResponse response) throws PortletException {
+        HttpServletRequest originalServletRequest = PortalUtil.getOriginalServletRequest(PortalUtil.getHttpServletRequest(request));
+        PaginationParameters paginationParameters = PaginationParser.parametersFrom(originalServletRequest);
+        List<Component> componentList = getFilteredComponentList(request);
+        JSONArray jsonComponents = getComponentData(componentList, paginationParameters);
+
+        JSONObject jsonResult = createJSONObject();
+        jsonResult.put(DATATABLE_RECORDS_TOTAL, componentList.size());
+        jsonResult.put(DATATABLE_RECORDS_FILTERED, componentList.size());
+        jsonResult.put(DATATABLE_DISPLAY_DATA, jsonComponents);
+
+        try {
+            writeJSON(request, response, jsonResult);
+        } catch (IOException e) {
+            log.error("Problem rendering RequestStatus", e);
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "500");
+        }
+    }
+
+    public JSONArray getComponentData(List<Component> componentList, PaginationParameters componentParameters) {
+        List<Component> sortedComponents = sortComponentList(componentList, componentParameters);
+        int count = getComponentDataCount(componentParameters, componentList.size());
+
+        JSONArray componentData = createJSONArray();
+        for (int i = componentParameters.getDisplayStart(); i < count; i++) {
+            JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+            Component comp = sortedComponents.get(i);
+            jsonObject.put("id", comp.getId());
+            jsonObject.put("DT_RowId", comp.getId());
+            jsonObject.put("name", SW360Utils.printName(comp));
+            jsonObject.put("cType", nullToEmptyString(comp.getComponentType()));
+            jsonObject.put("lRelsSize", String.valueOf(comp.getReleaseIdsSize()));
+            jsonObject.put("attsSize", String.valueOf(comp.getAttachmentsSize()));
+
+            JSONArray vendorArray = createJSONArray();
+            if (comp.isSetVendorNames()) {
+                comp.getVendorNames().stream().sorted().forEach(vendorArray::put);
+            }
+
+            JSONArray licenseArray = createJSONArray();
+            if (comp.isSetMainLicenseIds()) {
+                comp.getMainLicenseIds().stream().sorted().forEach(licenseArray::put);
+            }
+
+            jsonObject.put("vndrs", vendorArray);
+            jsonObject.put("lics", licenseArray);
+            componentData.put(jsonObject);
+        }
+
+        return componentData;
+    }
+
+    private int getComponentDataCount(PaginationParameters componentParameters, int maxSize) {
+        if (componentParameters.getDisplayLength() == -1) {
+            return maxSize;
+        } else {
+            return min(componentParameters.getDisplayStart() + componentParameters.getDisplayLength(), maxSize);
+        }
+    }
+
+    private List<Component> sortComponentList(List<Component> componentList, PaginationParameters componentParameters) {
+
+        switch (componentParameters.getSortingColumn()) {
+            case COMPONENT_DT_ROW_VENDOR:
+                Collections.sort(componentList, compareByVendor(componentParameters.isAscending()));
+                break;
+            case COMPONENT_DT_ROW_NAME:
+                Collections.sort(componentList, compareByName(componentParameters.isAscending()));
+                break;
+            case COMPONENT_DT_ROW_MAIN_LICENSES:
+                Collections.sort(componentList, compareByMainLicenses(componentParameters.isAscending()));
+                break;
+            case COMPONENT_DT_ROW_TYPE:
+                Collections.sort(componentList, compareByComponentType(componentParameters.isAscending()));
+                break;
+            case COMPONENT_DT_ROW_ACTION:
+                Collections.sort(componentList, compareById(componentParameters.isAscending()));
+                break;
+            default:
+                break;
+        }
+
+        return componentList;
+    }
+
+    private Comparator<Component> compareByVendor(boolean isAscending) {
+        Comparator<Component> comparator = Comparator.comparing(
+                c -> sortAndConcat(c.getVendorNames()));
+        return isAscending ? comparator : comparator.reversed();
+    }
+
+    private Comparator<Component> compareByName(boolean isAscending) {
+        Comparator<Component> comparator = Comparator.comparing(
+                c -> SW360Utils.printName(c).toLowerCase());
+        return isAscending ? comparator : comparator.reversed();
+    }
+
+    private Comparator<Component> compareByMainLicenses(boolean isAscending) {
+        Comparator<Component> comparator = Comparator.comparing(
+                c -> sortAndConcat(c.getMainLicenseIds()));
+        return isAscending ? comparator : comparator.reversed();
+    }
+
+    private Comparator<Component> compareByComponentType(boolean isAscending) {
+        Comparator<Component> comparator = Comparator.comparing(
+                c -> nullToEmptyString(c.getComponentType()));
+        return isAscending ? comparator : comparator.reversed();
+    }
+
+    private Comparator<Component> compareById(boolean isAscending) {
+        Comparator<Component> comparator = Comparator.comparing(c -> c.getId());
+        return isAscending ? comparator : comparator.reversed();
+    }
+
+    private String sortAndConcat(Set<String> strings) {
+        if (strings == null || strings.isEmpty()) {
+            return "";
+        } else {
+            return CommonUtils.COMMA_JOINER.join(strings.stream().sorted().collect(Collectors.toList()));
+        }
     }
 }
