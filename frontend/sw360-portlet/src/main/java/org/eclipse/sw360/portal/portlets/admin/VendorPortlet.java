@@ -12,6 +12,7 @@ package org.eclipse.sw360.portal.portlets.admin;
 
 import com.google.common.collect.Sets;
 import com.liferay.portal.kernel.portlet.PortletResponseUtil;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -72,8 +73,8 @@ public class VendorPortlet extends Sw360Portlet {
         try {
             VendorService.Iface client = thriftClients.makeVendorClient();
             List<Vendor> vendors = client.getAllVendors();
-
-            PortletResponseUtil.sendFile(request, response, "Vendors.xlsx", exporter.makeExcelExport(vendors), CONTENT_TYPE_OPENXML_SPREADSHEET);
+            String filename = String.format("vendors-%s.xlsx", SW360Utils.getCreatedOn());
+            PortletResponseUtil.sendFile(request, response, filename, exporter.makeExcelExport(vendors), CONTENT_TYPE_OPENXML_SPREADSHEET);
         } catch (IOException | TException e) {
             log.error("An error occurred while generating the Excel export", e);
             response.setProperty(ResourceResponse.HTTP_STATUS_CODE,

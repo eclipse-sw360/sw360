@@ -349,7 +349,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             List<Component> components = getFilteredComponentList(request);
             ComponentExporter exporter = new ComponentExporter(thriftClients.makeComponentClient(), components, user,
                     extendedByReleases);
-            PortletResponseUtil.sendFile(request, response, "Components.xlsx", exporter.makeExcelExport(components),
+            String filename = String.format("components-%s.xlsx", SW360Utils.getCreatedOn());
+            PortletResponseUtil.sendFile(request, response, filename, exporter.makeExcelExport(components),
                     CONTENT_TYPE_OPENXML_SPREADSHEET);
         } catch (IOException | SW360Exception e) {
             log.error("An error occurred while generating the Excel export", e);
