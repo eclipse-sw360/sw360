@@ -57,8 +57,8 @@ public class ComponentCSVRecord extends ComponentAwareCSVRecord {
     private final String CPEId;
     private final String releaseCreatedOn;
     private final String releaseCreatedBy;
-    private final String releaseRepostitoryURL;
-    private final String releaseRepostitoryType;
+    private final String releaseRepositoryURL;
+    private final String releaseRepositoryType;
     private final String releaseMainlineState;
     private final String releaseClearingState;
     private final String releaseContributors;
@@ -109,8 +109,8 @@ public class ComponentCSVRecord extends ComponentAwareCSVRecord {
                        String componentMailingList, String componentWiki, String componentBlog,
                        String componentWikipedia, String componentOpenHub,
                        String releaseName, String releaseVersion, String releaseDate, String CPEId,
-                       String releaseCreatedOn, String releaseCreatedBy, String releaseRepostitoryURL,
-                       String releaseRepostitoryType, String releaseMainlineState, String releaseClearingState,
+                       String releaseCreatedOn, String releaseCreatedBy, String releaseRepositoryURL,
+                       String releaseRepositoryType, String releaseMainlineState, String releaseClearingState,
                        String releaseContributors, String releaseModerators, String releaseSubscribers,
                        String releaseLanguages, String releaseOperatingSystems, String releaseMainLicenseIds,
                        String releaseDownloadURL, String vendorName, String vendorShortname, String vendorUrl,
@@ -148,8 +148,8 @@ public class ComponentCSVRecord extends ComponentAwareCSVRecord {
         this.CPEId = CPEId;
         this.releaseCreatedOn = releaseCreatedOn;
         this.releaseCreatedBy = releaseCreatedBy;
-        this.releaseRepostitoryURL = releaseRepostitoryURL;
-        this.releaseRepostitoryType = releaseRepostitoryType;
+        this.releaseRepositoryURL = releaseRepositoryURL;
+        this.releaseRepositoryType = releaseRepositoryType;
         this.releaseMainlineState = releaseMainlineState;
         this.releaseClearingState = releaseClearingState;
         this.releaseContributors = releaseContributors;
@@ -209,7 +209,7 @@ public class ComponentCSVRecord extends ComponentAwareCSVRecord {
     }
 
     public boolean isSetRepository() {
-        return isSetRelease() && !isNullOrEmpty(releaseRepostitoryURL);
+        return isSetRelease() && !isNullOrEmpty(releaseRepositoryURL);
     }
 
     public boolean isSetAttachmentContent() {return isValidUrl(releaseDownloadURL);}
@@ -472,13 +472,13 @@ public class ComponentCSVRecord extends ComponentAwareCSVRecord {
 
 
     public Repository getRepository() {
-        if(releaseRepostitoryURL == null) return null;
+        if(releaseRepositoryURL == null) return null;
 
         final Repository repository = new Repository();
-        repository.setUrl(releaseRepostitoryURL);
+        repository.setUrl(releaseRepositoryURL);
 
-        if (!isNullOrEmpty(releaseRepostitoryType)) {
-            final RepositoryType repositoryType = ThriftEnumUtils.stringToEnum(releaseRepostitoryType, RepositoryType.class);
+        if (!isNullOrEmpty(releaseRepositoryType)) {
+            final RepositoryType repositoryType = ThriftEnumUtils.stringToEnum(releaseRepositoryType, RepositoryType.class);
             if (repositoryType != null)
                 repository.setRepositorytype(repositoryType);
         }
@@ -651,8 +651,8 @@ public class ComponentCSVRecord extends ComponentAwareCSVRecord {
         elements.add(nullToEmptyString(CPEId));
         elements.add(nullToEmptyString(releaseCreatedOn));
         elements.add(nullToEmptyString(releaseCreatedBy));
-        elements.add(nullToEmptyString(releaseRepostitoryURL));
-        elements.add(nullToEmptyString(releaseRepostitoryType));
+        elements.add(nullToEmptyString(releaseRepositoryURL));
+        elements.add(nullToEmptyString(releaseRepositoryType));
         elements.add(nullToEmptyString(releaseMainlineState));
         elements.add(nullToEmptyString(releaseClearingState));
         elements.add(nullToEmptyString(releaseContributors));
@@ -798,8 +798,8 @@ public class ComponentCSVRecord extends ComponentAwareCSVRecord {
         elements.add("CPEId");
         elements.add("releaseCreatedOn");
         elements.add("releaseCreatedBy");
-        elements.add("releaseRepostitoryURL");
-        elements.add("releaseRepostitoryType");
+        elements.add("releaseRepositoryURL");
+        elements.add("releaseRepositoryType");
         elements.add("releaseMainlineState");
         elements.add("releaseClearingState");
         elements.add("releaseContributors");
@@ -878,8 +878,8 @@ public class ComponentCSVRecord extends ComponentAwareCSVRecord {
                 ", CPEId='" + CPEId + '\'' +
                 ", releaseCreatedOn='" + releaseCreatedOn + '\'' +
                 ", releaseCreatedBy='" + releaseCreatedBy + '\'' +
-                ", releaseRepostitoryURL='" + releaseRepostitoryURL + '\'' +
-                ", releaseRepostitoryType='" + releaseRepostitoryType + '\'' +
+                ", releaseRepositoryURL='" + releaseRepositoryURL + '\'' +
+                ", releaseRepositoryType='" + releaseRepositoryType + '\'' +
                 ", releaseMainlineState='" + releaseMainlineState + '\'' +
                 ", releaseClearingState='" + releaseClearingState + '\'' +
                 ", releaseContributors='" + releaseContributors + '\'' +

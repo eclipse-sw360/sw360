@@ -41,8 +41,8 @@ public class ComponentCSVRecordBuilder extends  CustomizedCSVRecordBuilder<Compo
     private String CPEId;
     private String releaseCreatedOn;
     private String releaseCreatedBy;
-    private String releaseRepostitoryURL;
-    private String releaseRepostitoryType;
+    private String releaseRepositoryURL;
+    private String releaseRepositoryType;
     private String releaseMainlineState;
     private String releaseClearingState;
     private String releaseContributors;
@@ -107,8 +107,8 @@ public class ComponentCSVRecordBuilder extends  CustomizedCSVRecordBuilder<Compo
                 componentMailingList, componentWiki, componentBlog, componentWikipedia,
                 componentOpenHub,
                 releaseName, releaseVersion, releaseDate, CPEId,
-                releaseCreatedOn, releaseCreatedBy, releaseRepostitoryURL,
-                releaseRepostitoryType, releaseMainlineState, releaseClearingState,
+                releaseCreatedOn, releaseCreatedBy, releaseRepositoryURL,
+                releaseRepositoryType, releaseMainlineState, releaseClearingState,
                 releaseContributors, releaseModerators, releaseSubscribers,
                 releaseLanguages, releaseOperatingSystems, releaseMainLicenseNames,
                 releaseDownloadURL, vendorName, vendorShortname, vendorUrl, cIExternalSupplierID, cIAdditionalInfo, cIEvaluated,
@@ -144,8 +144,8 @@ public class ComponentCSVRecordBuilder extends  CustomizedCSVRecordBuilder<Compo
         CPEId = null;
         releaseCreatedOn = null;
         releaseCreatedBy = null;
-        releaseRepostitoryURL = null;
-        releaseRepostitoryType = null;
+        releaseRepositoryURL = null;
+        releaseRepositoryType = null;
         releaseMainlineState = null;
         releaseClearingState = null;
         releaseContributors = null;
@@ -216,8 +216,8 @@ public class ComponentCSVRecordBuilder extends  CustomizedCSVRecordBuilder<Compo
         CPEId = record.get(i++);
         releaseCreatedOn = record.get(i++);
         releaseCreatedBy = record.get(i++);
-        releaseRepostitoryURL = record.get(i++);
-        releaseRepostitoryType = record.get(i++);
+        releaseRepositoryURL = record.get(i++);
+        releaseRepositoryType = record.get(i++);
         releaseMainlineState = record.get(i++);
         releaseClearingState = record.get(i++);
         releaseContributors = record.get(i++);
@@ -349,8 +349,8 @@ public class ComponentCSVRecordBuilder extends  CustomizedCSVRecordBuilder<Compo
     }
 
     public ComponentCSVRecordBuilder fill(Repository repository) {
-        setReleaseRepostitoryType(getEnumStringOrNull(repository.getRepositorytype()));
-        setReleaseRepostitoryURL(repository.getUrl());
+        setReleaseRepositoryType(getEnumStringOrNull(repository.getRepositorytype()));
+        setReleaseRepositoryURL(repository.getUrl());
         return this;
     }
 
@@ -461,12 +461,12 @@ public class ComponentCSVRecordBuilder extends  CustomizedCSVRecordBuilder<Compo
         this.releaseCreatedBy = releaseCreatedBy;
     }
 
-    public void setReleaseRepostitoryURL(String releaseRepostitoryURL) {
-        this.releaseRepostitoryURL = releaseRepostitoryURL;
+    public void setReleaseRepositoryURL(String releaseRepositoryURL) {
+        this.releaseRepositoryURL = releaseRepositoryURL;
     }
 
-    public void setReleaseRepostitoryType(String releaseRepostitoryType) {
-        this.releaseRepostitoryType = releaseRepostitoryType;
+    public void setReleaseRepositoryType(String releaseRepositoryType) {
+        this.releaseRepositoryType = releaseRepositoryType;
     }
 
     public void setReleaseMainlineState(String releaseMainlineState) {
