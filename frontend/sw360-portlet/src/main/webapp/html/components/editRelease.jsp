@@ -112,8 +112,8 @@
                             <core_rt:set var="inputSubtitle" value="Enter mail address"/>
                             <core_rt:set var="customMap" value="${release.roles}"/>
                             <%@include file="/html/utils/includes/mapEdit.jspf" %>
-
                             <core_rt:set var="externalIdsSet" value="${release.externalIds.entrySet()}"/>
+                            <core_rt:set var="externalIdKeys" value="<%=PortalConstants.RELEASE_EXTERNAL_ID_KEYS%>"/>
                             <%@include file="/html/utils/includes/editExternalIds.jsp" %>
                             <%@include file="/html/components/includes/releases/editReleaseRepository.jspf" %>
                         </div>

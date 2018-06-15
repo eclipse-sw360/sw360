@@ -103,6 +103,7 @@ public class PortalConstants {
     public static final String COMPONENT_SELECTION = "componentSelection";
     public static final String COMPONENT_SOURCE_ID = "componentSourceId";
     public static final String COMPONENT_TARGET_ID = "componentTargetId";
+    public static final Set<String> COMPONENT_EXTERNAL_ID_KEYS;
 
     //! Specialized keys for releases
     public static final String RELEASE_ID = "releaseId";
@@ -115,6 +116,7 @@ public class PortalConstants {
     public static final String PAGENAME_DUPLICATE_RELEASE = "duplicateRelease";
     public static final String RELEASE_ROLES;
     public static final String RELEASE_EXTERNAL_IDS;
+    public static final Set<String> RELEASE_EXTERNAL_ID_KEYS;
 
     //! Specialized keys for vendors
     public static final String VENDOR = "vendor";
@@ -154,6 +156,7 @@ public class PortalConstants {
     public static final String PROJECT_ROLES;
     public static final String DEFAULT_LICENSE_INFO_HEADER_TEXT = "defaultLicenseInfoHeaderText";
     public static final String DEFAULT_LICENSE_INFO_HEADER_TEXT_FOR_DISPALY = "--default text--";
+    public static final Set<String> PROJECT_EXTERNAL_ID_KEYS;
 
     public static final String FOSSOLOGY_FINGER_PRINTS = "fingerPrints";
     public static final String USER_LIST = "userList";
@@ -376,12 +379,15 @@ public class PortalConstants {
         SET_CLEARING_TEAMS_STRING = CommonUtils.splitToSet(props.getProperty("clearing.teams", "org1,org2,org3"));
         STATE = props.getProperty("state","[ \"Active\", \"Phase out\", \"Unknown\"]");
         PROJECT_TYPE = props.getProperty("project.type","[ \"Customer Project\", \"Internal Project\", \"Product\", \"Service\", \"Inner Source\"]");
+        PROJECT_EXTERNAL_ID_KEYS = CommonUtils.splitToSet(props.getProperty("project.externalkeys", "internal.id"));
         LICENSE_IDENTIFIERS = props.getProperty("license.identifiers", "[]");
         COMPONENT_CATEGORIES = props.getProperty("component.categories", "[ \"framework\", \"SDK\", \"big-data\", \"build-management\", \"cloud\", \"content\", \"database\", \"graphics\", \"http\", \"javaee\", \"library\", \"mail\", \"mobile\", \"security\", \"testing\", \"virtual-machine\", \"web-framework\", \"xml\"]");
+        COMPONENT_EXTERNAL_ID_KEYS = CommonUtils.splitToSet(props.getProperty("component.externalkeys", "com.github.id,com.gitlab.id,purl.id"));
         PROJECT_ROLES = props.getProperty("custommap.project.roles", "Stakeholder,Analyst,Contributor,Accountant,End user,Quality manager,Test manager,Technical writer,Key user");
         COMPONENT_ROLES = props.getProperty("custommap.component.roles", "Committer,Contributor,Expert");
         RELEASE_ROLES = props.getProperty("custommap.release.roles", "Committer,Contributor,Expert");
         RELEASE_EXTERNAL_IDS = props.getProperty("custommap.release.externalIds", "[]");
+        RELEASE_EXTERNAL_ID_KEYS = CommonUtils.splitToSet(props.getProperty("release.externalkeys", "org.maven.id,com.github.id,com.gitlab.id,purl.id"));
         PROJECTIMPORT_HOSTS = props.getProperty("projectimport.hosts", "");
         PREFERRED_COUNTRY_CODES = props.getProperty("preferred.country.codes", "DE,AT,CH,US");
     }

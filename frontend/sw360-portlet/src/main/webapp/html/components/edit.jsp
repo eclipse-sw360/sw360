@@ -116,6 +116,7 @@
         <form id="componentEditForm" name="componentEditForm" action="<%=updateComponentURL%>" method="post">
             <%@include file="/html/components/includes/components/editBasicInfo.jspf" %>
             <core_rt:set var="externalIdsSet" value="${component.externalIds.entrySet()}"/>
+            <core_rt:set var="externalIdKeys" value="<%=PortalConstants.COMPONENT_EXTERNAL_ID_KEYS%>"/>
             <%@include file="/html/utils/includes/editExternalIds.jsp" %>
             <core_rt:if test="${not componentDivAddMode}">
                 <%@include file="/html/utils/includes/editAttachments.jspf" %>

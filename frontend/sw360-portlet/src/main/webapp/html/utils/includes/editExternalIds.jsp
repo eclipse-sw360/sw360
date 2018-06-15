@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -36,8 +36,7 @@
         function deleteIDItem(rowIdOne) {
             function deleteMapItemInternal() {
                 $('#' + rowIdOne).remove();
-            };
-
+            }
             deleteConfirmed("Do you really want to remove this item?", deleteMapItemInternal);
         }
 
@@ -46,21 +45,31 @@
                 var rowId = "externalIdsTableRow" + Date.now();
             }
             if ((!key) && (!value)) {
-                    var key = "", value = "";
-                }
+                var key = "", value = "";
+            }
+
             var newRowAsString =
                 '<tr id="' + rowId + '" class="bodyRow">' +
                 '<td width="46%">' +
-                '<input class="keyClass" id="<%=PortalConstants.EXTERNAL_ID_KEY%>' + rowId + '" name="<portlet:namespace/><%=PortalConstants.EXTERNAL_ID_KEY%>' + rowId + '" required="" minlength="1" class="toplabelledInput" placeholder="Enter external id key" title="Input name" value="' + key + '"/>' +
+                '<input list="externalKeyList" class="keyClass" id="<%=PortalConstants.EXTERNAL_ID_KEY%>' + rowId + '" name="<portlet:namespace/><%=PortalConstants.EXTERNAL_ID_KEY%>' + rowId + '" required="" minlength="1" class="toplabelledInput" placeholder="Enter external id key" title="external id name" value="' + key + '"/>' +
+                prepareKeyDatalist() + // creates a datalist with preferred key names
                 '</td>' +
                 '<td width="46%">' +
-                '<input class="valueClass" id="<%=PortalConstants.EXTERNAL_ID_VALUE%>' + rowId + '" name="<portlet:namespace/><%=PortalConstants.EXTERNAL_ID_VALUE%>' + rowId + '" required="" minlength="1" class="toplabelledInput" placeholder="Enter external id value" title="Input id" value="' + value + '"/>' +
+                '<input class="valueClass" id="<%=PortalConstants.EXTERNAL_ID_VALUE%>' + rowId + '" name="<portlet:namespace/><%=PortalConstants.EXTERNAL_ID_VALUE%>' + rowId + '" required="" minlength="1" class="toplabelledInput" placeholder="Enter external id value" title="external id value" value="' + value + '"/>' +
                 '</td>' +
                 '<td class="deletor" width="8%">' +
                 '<img src="<%=request.getContextPath()%>/images/Trash.png" onclick="deleteMapItem(\'' + rowId + '\')" alt="Delete">' +
                 '</td>' +
                 '</tr>';
             $('#externalIdsTable tr:last').after(newRowAsString);
+        }
+
+        function prepareKeyDatalist() {
+            var datalist = '<datalist id="externalKeyList">';
+            <core_rt:forEach items="${externalIdKeys}" var="externalIdKey">
+                datalist += '<option value="' + "${externalIdKey}" + '">';
+            </core_rt:forEach>
+            return datalist + '</datalist>';
         }
 
         function createExternalIdsTable() {
