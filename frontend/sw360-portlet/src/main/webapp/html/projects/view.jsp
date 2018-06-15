@@ -105,21 +105,21 @@
                 <td>
                     <label for="project_version">Project Version</label>
                     <input type="text" class="searchbar" name="<portlet:namespace/><%=Project._Fields.VERSION%>"
-                           value="${version}" id="project_version" class="filterInput">
+                           value="<sw360:out value="${version}"/>" id="project_version" class="filterInput">
                 </td>
             </tr>
             <tr>
                 <td>
                     <label for="project_type">Project Type</label>
                     <input type="text" class="searchbar" name="<portlet:namespace/><%=Project._Fields.PROJECT_TYPE%>"
-                           value="${projectType}" id="project_type" class="filterInput">
+                           value="<sw360:out value="${projectType}"/>" id="project_type" class="filterInput">
                 </td>
             </tr>
             <tr>
                 <td>
                     <label for="project_responsible">Project Responsible (Email)</label>
                     <input type="text" class="searchbar" name="<portlet:namespace/><%=Project._Fields.PROJECT_RESPONSIBLE%>"
-                           value="${projectResponsible}" id="project_responsible" class="filterInput">
+                           value="<sw360:out value="${projectResponsible}"/>" id="project_responsible" class="filterInput">
                 </td>
             </tr>
             <tr>
@@ -130,9 +130,9 @@
                                 <core_rt:if test="${empty businessUnit}"> selected="selected"</core_rt:if>
                         ></option>
                         <core_rt:forEach items="${organizations}" var="org">
-                            <option value="${org.name}" class="textlabel stackedLabel"
+                            <option value="<sw360:out value="${org.name}"/>" class="textlabel stackedLabel"
                                     <core_rt:if test="${org.name == businessUnit}"> selected="selected"</core_rt:if>
-                            >${org.name}</option>
+                            ><sw360:out value="${org.name}"/></option>
                         </core_rt:forEach>
                     </select>
                 </td>
@@ -141,14 +141,14 @@
                 <td>
                     <label for="state">State</label>
                     <input type="text" class="searchbar" name="<portlet:namespace/><%=Project._Fields.STATE%>"
-                           value="${state}" id="state" class="filterInput">
+                           value="<sw360:out value="${state}"/>" id="state" class="filterInput">
                 </td>
             </tr>
             <tr>
                 <td>
                     <label for="tag">Tag</label>
                     <input type="text" class="searchbar" name="<portlet:namespace/><%=Project._Fields.TAG%>"
-                           value="${tag}" id="tag" class="filterInput">
+                           value="<sw360:out value="${tag}"/>" id="tag" class="filterInput">
                 </td>
             </tr>
 

@@ -78,7 +78,7 @@
         var firstRunForReleasesTable = true;
 
         Liferay.on('allPortletsReady', function() {
-                bindkeyPressToClick('searchrelease', 'searchbuttonrelease');}
+                bindkeyPressToClick('searchrelease', 'releaseSearchButton');}
         );
 
         function destroyReleaseDataTable() {

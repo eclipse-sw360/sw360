@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -13,48 +13,47 @@ package org.eclipse.sw360.datahandler.db;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneSearchView;
-import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Set;
 
-/**
- * Lucence search for the Vendor class
- *
- * @author cedric.bodet@tngtech.com
- * @author johannes.najjar@tngtech.com
- * @author gerrit.grenzebach@tngtech.com
- */
-public class VendorSearch {
+import static org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector.prepareFuzzyQuery;
+
+public class UserSearchHandler {
 
     private static final LuceneSearchView luceneSearchView
-            = new LuceneSearchView("lucene", "vendors",
+            = new LuceneSearchView("lucene", "users",
             "function(doc) {" +
-                    "  if(doc.type == 'vendor') { " +
+                    "  if(doc.type == 'user') { " +
                     "      var ret = new Document();" +
-                    "      ret.add(doc.shortname);  " +
-                    "      ret.add(doc.fullname);  " +
+                    "      ret.add(doc.givenname);  " +
+                    "      ret.add(doc.lastname);  " +
+                    "      ret.add(doc.email);  " +
                     "      return ret;" +
                     "  }" +
                     "}");
 
     private final LuceneAwareDatabaseConnector connector;
 
-    public VendorSearch(DatabaseConnector databaseConnector) throws IOException {
+    public UserSearchHandler(DatabaseConnector databaseConnector) throws IOException {
         // Creates the database connector and adds the lucene search view
         connector = new LuceneAwareDatabaseConnector(databaseConnector);
         connector.addView(luceneSearchView);
     }
 
-    public List<Vendor> search(String searchText) {
-        // Query the search view for the provided text
-        return connector.searchView(Vendor.class, luceneSearchView, searchText+"*");
+    private String cleanUp(String searchText) {
+        // Lucene seems to split email addresses at an '@' when indexing
+        // so in this case we only search for the user name in front of the '@'
+        return searchText.split("@")[0];
     }
 
-    public Set<String> searchIds(String searchText) {
+    public List<User> searchByNameAndEmail(String searchText) {
         // Query the search view for the provided text
-        return connector.searchIds(Vendor.class, luceneSearchView, searchText+"*");
+        if(searchText == null) {
+            searchText = "";
+        }
+        String queryString = prepareFuzzyQuery(cleanUp(searchText));
+        return connector.searchView(User.class, luceneSearchView, queryString);
     }
 }
-

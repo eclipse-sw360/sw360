@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2014-2016. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2014-2018. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -33,6 +33,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.common.base.Strings.nullToEmpty;
 import static org.eclipse.sw360.datahandler.common.ThriftEnumUtils.enumByString;
 
 
@@ -109,7 +110,6 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
         }
 
         LuceneQuery query = new LuceneQuery(function.searchView, function.searchFunction);
-
         query.setQuery(queryString);
         query.setIncludeDocs(includeDocs);
         setQueryLimit(query);
@@ -162,15 +162,16 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
 
             final Set<String> filterSet =restriction.getValue();
 
-            if(!filterSet.isEmpty()) {
-                final String fieldname = restriction.getKey();
-                String subQuery = formatSubquery(filterSet, fieldname);
+            if (!filterSet.isEmpty()) {
+                final String fieldName = restriction.getKey();
+                String subQuery = formatSubquery(filterSet, fieldName);
                 subQueries.add(subQuery);
             }
         }
 
-        if(!isNullOrEmpty(text))
-            subQueries.add( text + "*");
+        if (!isNullOrEmpty(text)) {
+            subQueries.add(prepareWildcardQuery(text));
+        }
 
         String query  = AND.join(subQueries);
         return searchView(type, luceneSearchView, query);
@@ -183,16 +184,16 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
         return projectList.stream().filter(ProjectPermissions.isVisible(user)).collect(Collectors.toList());
     }
 
-    private static String formatSubquery(Set<String> filterSet, final String fieldname) {
+    private static String formatSubquery(Set<String> filterSet, final String fieldName) {
         final Function<String, String> addType = input -> {
-            if (fieldname.equals("state")) {
-                return fieldname + ":\"" + (enumByString(input, ProjectState.class).toString()) + "\"";
-            } else if (fieldname.equals("projectType")) {
-                return fieldname + ":\"" + (enumByString(input, ProjectType.class).toString()) + "\"";
+            if (fieldName.equals("state")) {
+                return fieldName + ":\"" + (enumByString(input, ProjectState.class).toString()) + "\"";
+            } else if (fieldName.equals("projectType")) {
+                return fieldName + ":\"" + (enumByString(input, ProjectType.class).toString()) + "\"";
             } else if (input.contains(" ")){
-                return fieldname + ":\"" + input + "\"";
+                return fieldName + ":\"" + input + "\"";
             } else {
-                return fieldname + ":" + input;
+                return fieldName + ":" + input;
             }
         };
 
@@ -200,4 +201,17 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
         return "( " + OR.join(searchFilters) + " ) ";
     }
 
+    public static String prepareWildcardQuery(String query) {
+        return sanitizeQueryInput(query) + "*";
+    }
+
+    public static String prepareFuzzyQuery(String query) {
+        return sanitizeQueryInput(query) + "~";
+    }
+
+    private static String sanitizeQueryInput(String input) {
+        // p{L}:  matches any kind of letter from any language, such as accented character (é ä î...)
+        // p{nD}: matches a digit zero through nine in any script except ideographic scripts.
+        return nullToEmpty(input).replaceAll("[^\\p{L}\\p{Nd}]+", " ").trim();
+    }
 }

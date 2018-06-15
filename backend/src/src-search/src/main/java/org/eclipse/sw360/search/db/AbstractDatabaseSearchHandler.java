@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector.prepareWildcardQuery;
+
 /**
  * Class for accessing the Lucene connector on the CouchDB database
  *
@@ -68,7 +70,7 @@ public abstract class AbstractDatabaseSearchHandler {
      * Search the database for a given string
      */
     public List<SearchResult> search(String text, User user) {
-        String queryString = text + "*";
+        String queryString = prepareWildcardQuery(text);
         return getSearchResults(queryString, user);
     }
 
@@ -81,14 +83,8 @@ public abstract class AbstractDatabaseSearchHandler {
             return search(text, user);
         }
 
-        final Function<String, String> addType = new Function<String, String>() {
-            @Override
-            public String apply(String input) {
-                return "type:"+input;
-            }
-        };
-
-        String query  = "( "+ Joiner.on(" OR ").join(FluentIterable.from(typeMask).transform(addType)) + " ) AND " +text+"*";
+        final Function<String, String> addType = input -> "type:" + input;
+        String query = "( " + Joiner.on(" OR ").join(FluentIterable.from(typeMask).transform(addType)) + " ) AND " + prepareWildcardQuery(text);
         return getSearchResults(query, user);
     }
 

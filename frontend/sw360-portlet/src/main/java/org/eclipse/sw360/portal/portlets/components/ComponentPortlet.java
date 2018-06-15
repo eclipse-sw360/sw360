@@ -35,6 +35,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
+import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -245,7 +246,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             // \W = a non word character, so not in [a-zA-Z_0-9]
             Set<String> splitCName = Sets.newHashSet(cName.split("\\W"));
             // to find tomcat even on a cName of tomca, add * to the search term
-            Set<String> splitExtendedCName = splitCName.stream().map(v -> v + "*").collect(Collectors.toSet());
+            Set<String> splitExtendedCName = splitCName.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
 
             try {
                 // thrift service does not support OR queries at the moment, so we have to query
@@ -421,30 +422,10 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     }
 
     private void serveReleaseSearch(ResourceRequest request, ResourceResponse response, String searchText) throws IOException, PortletException {
-        List<Release> searchResult;
-
-        try {
-            ComponentService.Iface componentClient = thriftClients.makeComponentClient();
-
-            searchResult = componentClient.searchReleaseByNamePrefix(searchText);
-
-            if(searchText != "") {
-                final VendorService.Iface vendorClient = thriftClients.makeVendorClient();
-                final Set<String> vendorIds = vendorClient.searchVendorIds(searchText);
-                if (vendorIds != null && vendorIds.size() > 0) {
-                    searchResult.addAll(componentClient.getReleasesFromVendorIds(vendorIds));
-                }
-            }
-        } catch (TException e) {
-            log.error("Error searching linked releases", e);
-            searchResult = Collections.emptyList();
-        }
-
+        List<Release> searchResult = serveReleaseListBySearchText(searchText);
         request.setAttribute(PortalConstants.RELEASE_SEARCH, searchResult);
-
         include("/html/utils/ajax/searchReleasesAjax.jsp", request, response, PortletRequest.RESOURCE_PHASE);
     }
-
 
     //! VIEW and helpers
     @Override
@@ -1003,7 +984,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                     && parameter.equals(PortalConstants.NO_FILTER))) {
                 Set<String> values = CommonUtils.splitToSet(parameter);
                 if (filteredField.equals(Component._Fields.NAME)) {
-                    values = values.stream().map(v -> v + "*").collect(Collectors.toSet());
+                    values = values.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
                 }
                 filterMap.put(filteredField.getFieldName(), values);
             }

@@ -10,14 +10,14 @@
  */
 package org.eclipse.sw360.vendors;
 
+import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
+import org.eclipse.sw360.datahandler.db.VendorSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
-import org.eclipse.sw360.datahandler.db.VendorSearch;
-import org.apache.thrift.TException;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -35,12 +35,12 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
 public class VendorHandler implements VendorService.Iface {
 
     private final VendorDatabaseHandler vendorDatabaseHandler;
-    private final VendorSearch vendorSearch;
+    private final VendorSearchHandler vendorSearchHandler;
 
     public VendorHandler() throws IOException {
         DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE);
         vendorDatabaseHandler = new VendorDatabaseHandler(databaseConnector);
-        vendorSearch = new VendorSearch(databaseConnector);     // Remove release id from component
+        vendorSearchHandler = new VendorSearchHandler(databaseConnector);     // Remove release id from component
     }
 
     @Override
@@ -72,12 +72,12 @@ public class VendorHandler implements VendorService.Iface {
 
     @Override
     public List<Vendor> searchVendors(String searchText) throws TException {
-        return vendorSearch.search(searchText);
+        return vendorSearchHandler.search(searchText);
     }
 
     @Override
     public Set<String> searchVendorIds(String searchText) throws TException {
-        return vendorSearch.searchIds(searchText);
+        return vendorSearchHandler.searchIds(searchText);
     }
 
 

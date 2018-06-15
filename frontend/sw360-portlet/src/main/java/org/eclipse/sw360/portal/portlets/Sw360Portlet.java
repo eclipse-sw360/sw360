@@ -21,16 +21,18 @@ import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.bridges.mvc.MVCPortlet;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
+import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.eclipse.sw360.portal.common.ErrorMessages;
 import org.eclipse.sw360.portal.common.PortalConstants;
 
@@ -318,5 +320,27 @@ abstract public class Sw360Portlet extends MVCPortlet {
         }
 
         SessionMessages.add(request, "request_processed", Joiner.on(" ").join(msgs));
+    }
+
+    protected List<Release> serveReleaseListBySearchText(String searchText) {
+        List<Release> searchResult;
+
+        try {
+            ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+            searchResult = componentClient.searchReleases(searchText);
+
+            if (searchText != "") {
+                final VendorService.Iface vendorClient = thriftClients.makeVendorClient();
+                final Set<String> vendorIds = vendorClient.searchVendorIds(searchText);
+                if (vendorIds != null && vendorIds.size() > 0) {
+                    searchResult.addAll(componentClient.getReleasesFromVendorIds(vendorIds));
+                }
+            }
+        } catch (TException e) {
+            log.error("Error searching linked releases", e);
+            searchResult = Collections.emptyList();
+        }
+
+        return searchResult;
     }
 }

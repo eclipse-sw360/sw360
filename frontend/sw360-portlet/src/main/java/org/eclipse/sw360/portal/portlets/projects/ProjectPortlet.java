@@ -28,6 +28,7 @@ import org.apache.thrift.TSerializer;
 import org.apache.thrift.protocol.TSimpleJSONProtocol;
 import org.eclipse.sw360.datahandler.common.*;
 import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
+import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
@@ -42,7 +43,6 @@ import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
-import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.exporter.ProjectExporter;
 import org.eclipse.sw360.exporter.ReleaseExporter;
@@ -76,7 +76,9 @@ import static java.lang.Math.min;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.CONTENT_TYPE_OPENXML_SPREADSHEET;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
+import static org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector.prepareWildcardQuery;
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
+
 
 /**
  * Project portlet implementation
@@ -438,7 +440,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         include("/html/projects/ajax/linkedProjectsAjax.jsp", request, response, PortletRequest.RESOURCE_PHASE);
     }
 
-
     @SuppressWarnings("Duplicates")
     private void serveNewTableRowLinkedRelease(ResourceRequest request, ResourceResponse response, String[] linkedIds) throws IOException, PortletException {
         final User user = UserCacheHolder.getUserFromRequest(request);
@@ -471,7 +472,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             if (isNullOrEmpty(searchText)) {
                 searchResult = client.getAccessibleProjectsSummary(user);
             } else {
-                searchResult = client.searchByName(searchText, user);
+                searchResult = client.search(searchText);
             }
         } catch (TException e) {
             log.error("Error searching projects", e);
@@ -487,38 +488,11 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         serveReleaseSearch(request, response, searchText);
     }
 
-    @SuppressWarnings("Duplicates")
     private void serveReleaseSearch(ResourceRequest request, ResourceResponse response, String searchText) throws IOException, PortletException {
-        List<Release> searchResult;
-
-        try {
-
-            ComponentService.Iface componentClient = thriftClients.makeComponentClient();
-
-            // First: Search by name:
-            searchResult = componentClient.searchReleaseByNamePrefix(searchText);
-
-            // If one is searching for everything, then it makes no sense to search also by vendors, as 'searchResult' already contains all releases.
-            if(searchText != "") {
-                // Second: Search by vendor and append:
-                //  Note: The search-by-vendor by definition does not give results if the search string is empty.
-                //        Therefore, an empty-string search does not introduce duplicated results, which is nice.
-                final VendorService.Iface vendorClient = thriftClients.makeVendorClient();
-                final Set<String> vendorIds = vendorClient.searchVendorIds(searchText);
-                if (vendorIds != null && vendorIds.size() > 0) {
-                    searchResult.addAll(componentClient.getReleasesFromVendorIds(vendorIds));
-                }
-            }
-        } catch (TException e) {
-            log.error("Error searching projects", e);
-            searchResult = Collections.emptyList();
-        }
-
+        List<Release> searchResult = serveReleaseListBySearchText(searchText);
         request.setAttribute(PortalConstants.RELEASE_SEARCH, searchResult);
-
         include("/html/utils/ajax/searchReleasesAjax.jsp", request, response, PortletRequest.RESOURCE_PHASE);
     }
-
 
     private void serveReleasesFromLinkedProjects(ResourceRequest request, ResourceResponse response, String projectId) throws IOException, PortletException {
         List<Release> searchResult;
@@ -680,6 +654,10 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     private void prepareStandardView(RenderRequest request) throws IOException {
         List<Organization> organizations = UserUtils.getOrganizations(request);
         request.setAttribute(PortalConstants.ORGANIZATIONS, organizations);
+        for (Project._Fields filteredField : projectFilteredFields) {
+            String parameter = request.getParameter(filteredField.toString());
+            request.setAttribute(filteredField.getFieldName(), nullToEmpty(parameter));
+        }
     }
 
     private List<Project> getFilteredProjectList(PortletRequest request) throws IOException {
@@ -729,7 +707,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             if (!isNullOrEmpty(parameter)) {
                 Set<String> values = CommonUtils.splitToSet(parameter);
                 if (filteredField.equals(Project._Fields.NAME)) {
-                    values = values.stream().map(v -> v + "*").collect(Collectors.toSet());
+                    values = values.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
                 }
                 filterMap.put(filteredField.getFieldName(), values);
             }

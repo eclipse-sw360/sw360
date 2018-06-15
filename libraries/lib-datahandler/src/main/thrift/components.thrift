@@ -352,7 +352,12 @@ service ComponentService {
     /**
      * search components in database that match subQueryRestrictions
      **/
-    list<Component> refineSearch(1: string text, 2: map<string ,  set<string > > subQueryRestrictions);
+    list<Component> refineSearch(1: string text, 2: map<string, set<string>> subQueryRestrictions);
+
+    /**
+     * global search function to list releases which match the text argument
+     */
+    list<Release> searchReleases(1: string text);
 
     /**
      * get short summary of release by release name prefix

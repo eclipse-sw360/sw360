@@ -14,6 +14,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ComponentSearchHandler;
+import org.eclipse.sw360.datahandler.db.ReleaseSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
@@ -29,10 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import static org.eclipse.sw360.datahandler.common.SW360Assert.assertId;
-import static org.eclipse.sw360.datahandler.common.SW360Assert.assertIdUnset;
-import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
-import static org.eclipse.sw360.datahandler.common.SW360Assert.assertUser;
+import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
 
 /**
  * Implementation of the Thrift service
@@ -43,7 +41,8 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.assertUser;
 public class ComponentHandler implements ComponentService.Iface {
 
     private final ComponentDatabaseHandler handler;
-    private final ComponentSearchHandler searchHandler;
+    private final ComponentSearchHandler componentSearchHandler;
+    private final ReleaseSearchHandler releaseSearchHandler;
 
     public ComponentHandler() throws IOException {
         this(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
@@ -51,7 +50,8 @@ public class ComponentHandler implements ComponentService.Iface {
 
     ComponentHandler(Supplier<HttpClient> httpClient, String dbName, String attachmentDbName) throws IOException {
         handler = new ComponentDatabaseHandler(httpClient, dbName, attachmentDbName);
-        searchHandler = new ComponentSearchHandler(httpClient, dbName);
+        componentSearchHandler = new ComponentSearchHandler(httpClient, dbName);
+        releaseSearchHandler = new ReleaseSearchHandler(httpClient, dbName);
     }
 
     // TODO use dependency injection instead of this constructors mess
@@ -61,7 +61,8 @@ public class ComponentHandler implements ComponentService.Iface {
 
     ComponentHandler(Supplier<HttpClient> httpClient, String dbName, String attachmentDbName, ThriftClients thriftClients) throws IOException {
         handler = new ComponentDatabaseHandler(httpClient, dbName, attachmentDbName, thriftClients);
-        searchHandler = new ComponentSearchHandler(httpClient, dbName);
+        componentSearchHandler = new ComponentSearchHandler(httpClient, dbName);
+        releaseSearchHandler = new ReleaseSearchHandler(httpClient, dbName);
     }
 
     /////////////////////
@@ -101,15 +102,19 @@ public class ComponentHandler implements ComponentService.Iface {
 
     @Override
     public List<Component> refineSearch(String text, Map<String, Set<String>> subQueryRestrictions) throws TException {
-        return searchHandler.search(text, subQueryRestrictions);
+        return componentSearchHandler.search(text, subQueryRestrictions);
     }
-
 
     @Override
     public List<Component> getMyComponents(User user) throws TException {
         assertUser(user);
 
         return handler.getMyComponents(user.getEmail());
+    }
+
+    @Override
+    public List<Release> searchReleases(String searchText) throws TException {
+        return releaseSearchHandler.search(searchText);
     }
 
     @Override
