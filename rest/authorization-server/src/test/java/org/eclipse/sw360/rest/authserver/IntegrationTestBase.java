@@ -26,6 +26,9 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
 
+import static org.eclipse.sw360.rest.authserver.Sw360AuthorizationServer.CONFIG_CLIENT_ID;
+import static org.eclipse.sw360.rest.authserver.Sw360AuthorizationServer.CONFIG_CLIENT_SECRET;
+import static org.eclipse.sw360.rest.authserver.security.Sw360SecurityEncryptor.decrypt;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
@@ -43,8 +46,10 @@ abstract public class IntegrationTestBase {
     @Value("${security.oauth2.client.client-secret}")
     private String clientSecret;
 
-    protected ResponseEntity<String> getTokenWithParameters(String parameters) {
+    protected ResponseEntity<String> getTokenWithParameters(String parameters) throws IOException {
         String url = "http://localhost:" + port + "/oauth/token?" + parameters;
+        clientId = CONFIG_CLIENT_ID != null ? CONFIG_CLIENT_ID : clientId;
+        clientSecret = CONFIG_CLIENT_SECRET != null ? decrypt(CONFIG_CLIENT_SECRET) : clientSecret;
         return new TestRestTemplate(clientId, clientSecret).postForEntity(url, null, String.class);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -11,7 +11,6 @@
 
 package org.eclipse.sw360.rest.authserver.security;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -28,12 +27,15 @@ import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenCo
 import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
 import org.springframework.security.oauth2.provider.token.store.KeyStoreKeyFactory;
 
-import static org.eclipse.sw360.rest.authserver.Sw360AuthorizationServer.TOKEN_ACCESS_VALIDITY;
+import javax.annotation.PostConstruct;
+import java.io.IOException;
+
+import static org.eclipse.sw360.rest.authserver.Sw360AuthorizationServer.*;
 import static org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority.BASIC;
+import static org.eclipse.sw360.rest.authserver.security.Sw360SecurityEncryptor.decrypt;
 
 @Configuration
 @EnableAuthorizationServer
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360AuthorizationServerConfiguration extends AuthorizationServerConfigurerAdapter {
     private final AuthenticationManager authenticationManager;
 
@@ -51,6 +53,27 @@ public class Sw360AuthorizationServerConfiguration extends AuthorizationServerCo
 
     @Value("${security.oauth2.client.client-secret}")
     private String clientSecret;
+
+    @Value("${security.oauth2.client.access-token-validity-seconds}")
+    private Integer accessTokenValiditySeconds;
+
+    @Autowired
+    public Sw360AuthorizationServerConfiguration(AuthenticationManager authenticationManager) {
+        this.authenticationManager = authenticationManager;
+    }
+
+    @PostConstruct
+    public void postSw360AuthorizationServerConfiguration() throws IOException {
+        if (CONFIG_CLIENT_ID != null) {
+            clientId = CONFIG_CLIENT_ID;
+        }
+        if (CONFIG_CLIENT_SECRET != null) {
+            clientSecret = decrypt(CONFIG_CLIENT_SECRET);
+        }
+        if (CONFIG_ACCESS_TOKEN_VALIDITY_SECONDS != null) {
+            accessTokenValiditySeconds = Integer.parseInt(CONFIG_ACCESS_TOKEN_VALIDITY_SECONDS);
+        }
+    }
 
     @Override
     public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
@@ -75,7 +98,7 @@ public class Sw360AuthorizationServerConfiguration extends AuthorizationServerCo
                 .authorities(BASIC.getAuthority())
                 .scopes(scopes)
                 .resourceIds(resourceIds)
-                .accessTokenValiditySeconds(TOKEN_ACCESS_VALIDITY)
+                .accessTokenValiditySeconds(accessTokenValiditySeconds)
                 .secret(clientSecret);
     }
 

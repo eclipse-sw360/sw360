@@ -34,7 +34,7 @@ public class ClientCredentialsGrantTest extends IntegrationTestBase {
     private String clientId;
 
     @Before
-    public void before() {
+    public void before() throws IOException {
         String parameters = "client_id=%s&grant_type=%s";
         responseEntity = getTokenWithParameters(String.format(parameters, clientId, PARAMETER_GRANT_TYPE));
     }
