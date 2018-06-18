@@ -35,6 +35,7 @@ import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.eclipse.sw360.portal.common.ErrorMessages;
 import org.eclipse.sw360.portal.common.PortalConstants;
+import org.eclipse.sw360.portal.users.UserCacheHolder;
 
 import javax.portlet.*;
 import java.io.IOException;
@@ -322,25 +323,30 @@ abstract public class Sw360Portlet extends MVCPortlet {
         SessionMessages.add(request, "request_processed", Joiner.on(" ").join(msgs));
     }
 
-    protected List<Release> serveReleaseListBySearchText(String searchText) {
-        List<Release> searchResult;
+    protected void serveReleaseSearch(ResourceRequest request, ResourceResponse response, String searchText) throws IOException, PortletException {
+        final User user = UserCacheHolder.getUserFromRequest(request);
+        List<Release> searchResult = serveReleaseListBySearchText(searchText, user);
+        request.setAttribute(PortalConstants.RELEASE_SEARCH, searchResult);
+        include("/html/utils/ajax/searchReleasesAjax.jsp", request, response, PortletRequest.RESOURCE_PHASE);
+    }
 
+    protected List<Release> serveReleaseListBySearchText(String searchText, User user) {
         try {
             ComponentService.Iface componentClient = thriftClients.makeComponentClient();
-            searchResult = componentClient.searchReleases(searchText);
-
-            if (searchText != "") {
+            if (isNullOrEmpty(searchText)) {
+                return componentClient.getReleaseSummary(user);
+            } else {
+                List<Release> searchResult = componentClient.searchReleases(searchText);
                 final VendorService.Iface vendorClient = thriftClients.makeVendorClient();
                 final Set<String> vendorIds = vendorClient.searchVendorIds(searchText);
                 if (vendorIds != null && vendorIds.size() > 0) {
                     searchResult.addAll(componentClient.getReleasesFromVendorIds(vendorIds));
                 }
+                return searchResult;
             }
         } catch (TException e) {
             log.error("Error searching linked releases", e);
-            searchResult = Collections.emptyList();
+            return Collections.emptyList();
         }
-
-        return searchResult;
     }
 }

@@ -76,7 +76,6 @@ import static java.lang.Math.min;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.CONTENT_TYPE_OPENXML_SPREADSHEET;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
-import static org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector.prepareWildcardQuery;
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
 
 
@@ -486,12 +485,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
     private void serveReleaseSearchResults(ResourceRequest request, ResourceResponse response, String searchText) throws IOException, PortletException {
         serveReleaseSearch(request, response, searchText);
-    }
-
-    private void serveReleaseSearch(ResourceRequest request, ResourceResponse response, String searchText) throws IOException, PortletException {
-        List<Release> searchResult = serveReleaseListBySearchText(searchText);
-        request.setAttribute(PortalConstants.RELEASE_SEARCH, searchResult);
-        include("/html/utils/ajax/searchReleasesAjax.jsp", request, response, PortletRequest.RESOURCE_PHASE);
     }
 
     private void serveReleasesFromLinkedProjects(ResourceRequest request, ResourceResponse response, String projectId) throws IOException, PortletException {
