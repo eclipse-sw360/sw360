@@ -11,8 +11,6 @@
 
 package org.eclipse.sw360.rest.authserver.security;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -22,10 +20,13 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 
 @Configuration
 @EnableWebSecurity
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     private final Sw360AuthenticationProvider sw360AuthenticationProvider;
+
+    public Sw360WebSecurityConfiguration(Sw360AuthenticationProvider sw360AuthenticationProvider) {
+        this.sw360AuthenticationProvider = sw360AuthenticationProvider;
+    }
 
     @Override
     protected void configure(AuthenticationManagerBuilder authenticationManagerBuilder) {

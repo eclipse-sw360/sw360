@@ -38,7 +38,7 @@ public class ResourceOwnerCredentialsGrantTest extends IntegrationTestBase {
     private ResponseEntity<String> responseEntity;
 
     @Before
-    public void before() {
+    public void before() throws IOException {
         String parameters = "grant_type=password&username=%s&password=%s";
         responseEntity = getTokenWithParameters(String.format(parameters, testUserId, testUserPassword));
     }

@@ -37,7 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import static org.eclipse.sw360.rest.authserver.Sw360AuthorizationServer.WRITE_ACCESS_USERGROUP;
+import static org.eclipse.sw360.rest.authserver.Sw360AuthorizationServer.CONFIG_WRITE_ACCESS_USERGROUP;
 import static org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority.READ;
 import static org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority.WRITE;
 
@@ -134,7 +134,7 @@ public class Sw360AuthenticationProvider implements AuthenticationProvider {
     private Authentication createAuthenticationToken(String name, String password, User user) {
         List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
         grantedAuthorities.add(new SimpleGrantedAuthority(READ.getAuthority()));
-        if (!Objects.isNull(user) && PermissionUtils.isUserAtLeast(WRITE_ACCESS_USERGROUP, user)) {
+        if (!Objects.isNull(user) && PermissionUtils.isUserAtLeast(CONFIG_WRITE_ACCESS_USERGROUP, user)) {
             grantedAuthorities.add(new SimpleGrantedAuthority(WRITE.getAuthority()));
         }
         return new UsernamePasswordAuthenticationToken(name, password, grantedAuthorities);

@@ -224,7 +224,7 @@ Token response elements
 | Name | Configuration | Default Value
 
 | `Token Validity`
-| rest.token.access.validity
+| rest.access.token.validity.seconds
 | 3600 (seconds)
 
 | `Write Access`

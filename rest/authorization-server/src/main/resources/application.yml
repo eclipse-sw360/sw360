@@ -23,4 +23,5 @@ security:
       client-secret: sw360-secret
       resource-ids: sw360-REST-API
       authorized-grant-types: client_credentials,password
+      access-token-validity-seconds: 3600
       scope: all
