@@ -97,6 +97,7 @@
                         <%@include file="/html/utils/includes/usingProjectsTable.jspf" %>
                         <%@include file="/html/utils/includes/usingComponentsTable.jspf"%>
                         <core_rt:set var="externalIdsSet" value="${project.externalIds.entrySet()}"/>
+                        <core_rt:set var="externalIdKeys" value="<%=PortalConstants.PROJECT_EXTERNAL_ID_KEYS%>"/>
                         <%@include file="/html/utils/includes/editExternalIds.jsp" %>
                     </div>
                     <div id="tab-Administration" >
