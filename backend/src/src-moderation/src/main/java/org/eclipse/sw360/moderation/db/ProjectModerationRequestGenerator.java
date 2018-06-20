@@ -12,7 +12,6 @@
 package org.eclipse.sw360.moderation.db;
 
 import org.apache.thrift.protocol.TType;
-import org.eclipse.sw360.datahandler.thrift.components.ClearingInformation;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
@@ -67,6 +66,9 @@ public class ProjectModerationRequestGenerator extends ModerationRequestGenerato
                         break;
                     case RELEASE_ID_TO_USAGE:
                         dealWithStringKeyedMap(Project._Fields.RELEASE_ID_TO_USAGE);
+                        break;
+                    case EXTERNAL_IDS:
+                        dealWithStringtoStringMap(Project._Fields.EXTERNAL_IDS);
                         break;
                     case ROLES:
                         dealWithCustomMap(Project._Fields.ROLES);
