@@ -421,12 +421,6 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         serveReleaseSearch(request, response, searchText);
     }
 
-    private void serveReleaseSearch(ResourceRequest request, ResourceResponse response, String searchText) throws IOException, PortletException {
-        List<Release> searchResult = serveReleaseListBySearchText(searchText);
-        request.setAttribute(PortalConstants.RELEASE_SEARCH, searchResult);
-        include("/html/utils/ajax/searchReleasesAjax.jsp", request, response, PortletRequest.RESOURCE_PHASE);
-    }
-
     //! VIEW and helpers
     @Override
     public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
