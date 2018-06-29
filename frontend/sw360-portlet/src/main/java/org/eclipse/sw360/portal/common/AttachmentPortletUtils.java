@@ -129,8 +129,7 @@ public class AttachmentPortletUtils extends AttachmentFrontendUtils {
         if(attachments.size() == 1){
             filename = attachments.get(0).getFilename();
             contentType = attachments.get(0).getContentType();
-            if (contentType.equalsIgnoreCase("application/gzip")) ;
-            {
+            if (contentType.equalsIgnoreCase("application/gzip")) {
                 // In case of downloads with gzip file extension (e.g. *.tar.gz)
                 // the client should receive the origin file.
                 // Set http header 'Content-Encoding' to 'identity'
