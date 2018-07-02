@@ -12,6 +12,7 @@
 package org.eclipse.sw360.portal.common;
 
 import com.liferay.portal.kernel.portlet.PortletResponseUtil;
+import com.liferay.portal.kernel.servlet.HttpHeaders;
 import com.liferay.portal.kernel.upload.UploadPortletRequest;
 import com.liferay.portal.util.PortalUtil;
 import org.apache.log4j.Logger;
@@ -32,7 +33,6 @@ import org.ektorp.DocumentNotFoundException;
 import javax.portlet.PortletRequest;
 import javax.portlet.ResourceRequest;
 import javax.portlet.ResourceResponse;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
@@ -129,6 +129,13 @@ public class AttachmentPortletUtils extends AttachmentFrontendUtils {
         if(attachments.size() == 1){
             filename = attachments.get(0).getFilename();
             contentType = attachments.get(0).getContentType();
+            if (contentType.equalsIgnoreCase("application/gzip")) {
+                // In case of downloads with gzip file extension (e.g. *.tar.gz)
+                // the client should receive the origin file.
+                // Set http header 'Content-Encoding' to 'identity'
+                // to prevent auto encoding content (chrome).
+                response.setProperty(HttpHeaders.CONTENT_ENCODING, "identity");
+            }
         } else {
             filename = downloadFileName
                     .orElse(DEFAULT_ATTACHMENT_BUNDLE_NAME);
