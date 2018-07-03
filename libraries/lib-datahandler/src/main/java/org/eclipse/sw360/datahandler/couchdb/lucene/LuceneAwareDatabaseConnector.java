@@ -18,6 +18,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.FluentIterable;
 import org.apache.log4j.Logger;
+import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -70,6 +71,7 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
     public LuceneAwareDatabaseConnector(DatabaseConnector connector) throws IOException {
         super(connector.getDbName(), connector.getInstance());
         this.connector = connector;
+        setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
     }
 
     public boolean addView(LuceneSearchView function) {
