@@ -101,6 +101,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("fullName").description("The full name of the license"),
                                 fieldWithPath("shortName").description("The short name of the license, optional"),
                                 fieldWithPath("text").description("The license's original text"),
+                                fieldWithPath("checked").description("The information, whether the license is already checked, optional and defaults to true"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }

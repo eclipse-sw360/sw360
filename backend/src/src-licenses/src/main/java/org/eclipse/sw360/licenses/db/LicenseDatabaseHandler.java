@@ -43,6 +43,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.*;
+import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.CLEARING_ADMIN;
 
 /**
  * Class for accessing the CouchDB database
@@ -219,7 +220,7 @@ public class LicenseDatabaseHandler {
      * @return ID of the added todo.
      */
     public String addTodo(@NotNull Todo todo, User user) throws SW360Exception {
-        if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)){
+        if (!PermissionUtils.isUserAtLeast(CLEARING_ADMIN, user)){
             return null;
         }
         prepareTodo(todo);
@@ -379,38 +380,44 @@ public class LicenseDatabaseHandler {
     }
 
     public RequestStatus updateLicense(License inputLicense, User user, User requestingUser) throws SW360Exception {
+        if (! makePermission(inputLicense, user).isActionAllowed(RequestedAction.CLEARING)) {
+            inputLicense.setChecked(false);
+        }
         if (makePermission(inputLicense, user).isActionAllowed(RequestedAction.WRITE)) {
 
             String businessUnit = SW360Utils.getBUFromOrganisation(requestingUser.getDepartment());
 
-            License dbLicense = null;
-            boolean isNewLicense;
+            Optional<License> oldLicense = Optional.ofNullable(inputLicense.getId())
+                    .map(id -> licenseRepository.get(inputLicense.getId()));
+            boolean isNewLicense = ! oldLicense.isPresent();
 
-            if(inputLicense.isSetId()) {
-                dbLicense = licenseRepository.get(inputLicense.getId());
-            }
-            if(dbLicense == null){
-                dbLicense = new License();
-                isNewLicense = true;
+            if(isNewLicense){
                 validateNewLicense(inputLicense);
             } else {
-                isNewLicense = false;
                 validateExistingLicense(inputLicense);
             }
 
-            dbLicense = updateLicenseFromInputLicense(dbLicense, inputLicense, businessUnit, user);
+            boolean oldLicenseWasChecked = oldLicense.map(License::isChecked).orElse(false);
+
+            License resultLicense = updateLicenseFromInputLicense(oldLicense, inputLicense, businessUnit, user);
+
+            if (oldLicenseWasChecked && ! resultLicense.isChecked()){
+                log.debug("reject license update due to: an already checked license is not allowed to become unchecked again");
+                return RequestStatus.FAILURE;
+            }
 
             if(isNewLicense) {
-                licenseRepository.add(dbLicense);
+                licenseRepository.add(resultLicense);
             } else {
-                licenseRepository.update(dbLicense);
+                licenseRepository.update(resultLicense);
             }
             return RequestStatus.SUCCESS;
         }
         return RequestStatus.FAILURE;
     }
 
-    private License updateLicenseFromInputLicense(License license, License inputLicense, String businessUnit, User user){
+    private License updateLicenseFromInputLicense(Optional<License> oldLicense, License inputLicense, String businessUnit, User user){
+        License license = oldLicense.orElse(new License());
         if(inputLicense.isSetTodos()) {
             for (Todo todo : inputLicense.getTodos()) {
                 if (isTemporaryTodo(todo)) {
@@ -446,6 +453,7 @@ public class LicenseDatabaseHandler {
         license.setGPLv3Compat(Optional.ofNullable(inputLicense.getGPLv3Compat())
                 .orElse(Ternary.UNDEFINED));
         license.setExternalLicenseLink(inputLicense.getExternalLicenseLink());
+        license.setChecked(inputLicense.isChecked());
 
         return license;
     }
@@ -523,7 +531,7 @@ public class LicenseDatabaseHandler {
     }
 
     public List<RiskCategory> addRiskCategories(List<RiskCategory> riskCategories, User user) throws SW360Exception {
-        if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)){
+        if (!PermissionUtils.isUserAtLeast(CLEARING_ADMIN, user)){
             return null;
         }
         for (RiskCategory riskCategory : riskCategories) {
@@ -537,7 +545,7 @@ public class LicenseDatabaseHandler {
     }
 
     public List<Risk> addRisks(List<Risk> risks, User user) throws SW360Exception {
-        if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)){
+        if (!PermissionUtils.isUserAtLeast(CLEARING_ADMIN, user)){
             return null;
         }
         for (Risk risk : risks) {
@@ -551,7 +559,7 @@ public class LicenseDatabaseHandler {
     }
 
     public List<LicenseType> addLicenseTypes(List<LicenseType> licenseTypes, User user) {
-        if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)){
+        if (!PermissionUtils.isUserAtLeast(CLEARING_ADMIN, user)){
             return null;
         }
         final List<DocumentOperationResult> documentOperationResults = licenseTypeRepository.executeBulk(licenseTypes);
@@ -561,10 +569,11 @@ public class LicenseDatabaseHandler {
     }
 
     public List<License> addLicenses(List<License> licenses, User user) throws SW360Exception {
-        if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)){
-            return null;
-        }
         for (License license : licenses) {
+            if(! makePermission(license, user).isActionAllowed(RequestedAction.CLEARING)){
+                license.setChecked(false);
+            }
+
             validateNewLicense(license);
             prepareLicense(license);
         }
@@ -576,7 +585,7 @@ public class LicenseDatabaseHandler {
     }
 
     public List<Obligation> addObligations(List<Obligation> obligations, User user) throws SW360Exception {
-        if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)){
+        if (!PermissionUtils.isUserAtLeast(CLEARING_ADMIN, user)){
             return null;
         }
         for (Obligation obligation : obligations) {
@@ -590,7 +599,7 @@ public class LicenseDatabaseHandler {
     }
 
     public List<Todo> addTodos(List<Todo> todos, User user) throws SW360Exception {
-        if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)){
+        if (!PermissionUtils.isUserAtLeast(CLEARING_ADMIN, user)){
             return null;
         }
         for (Todo todo : todos) {

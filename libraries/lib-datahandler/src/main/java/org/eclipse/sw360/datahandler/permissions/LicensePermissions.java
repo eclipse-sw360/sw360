@@ -41,8 +41,9 @@ public class LicensePermissions extends DocumentPermissions<License> {
     public boolean isActionAllowed(RequestedAction action) {
         switch (action) {
             case READ:
-                return true;
             case WRITE:
+                return true;
+            case CLEARING:
             case DELETE:
                 return PermissionUtils.isUserAtLeast(CLEARING_ADMIN, user);
             default:

@@ -20,9 +20,12 @@
 <portlet:defineObjects />
 <liferay-theme:defineObjects />
 
-<jsp:useBean id="isUserAtLeastClearingAdmin" class="java.lang.String" scope="request" />
-<jsp:useBean id="licenseList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenses.License>"
-             scope="request"/>
+<c:catch var="attributeNotFoundException">
+    <jsp:useBean id="isUserAtLeastClearingAdmin" class="java.lang.String" scope="request" />
+    <jsp:useBean id="licenseList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenses.License>"
+                 scope="request"/>
+</c:catch>
+<%@include file="/html/utils/includes/logError.jspf" %>
 
 <portlet:resourceURL var="exportLicensesURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.EXPORT_TO_EXCEL%>"/>
@@ -42,9 +45,7 @@
     <span class="pull-right">
         <input type="button" class="addButton" onclick="window.location.href='<%=exportLicensesURL%>'"
                value="Export Licenses">
-        <core_rt:if test="${isUserAtLeastClearingAdmin == 'Yes'}">
-            <input type="button" class="addButton" onclick="window.location.href='<%=addLicenseURL%>'" value="Add License">
-        </core_rt:if>
+        <input type="button" class="addButton" onclick="window.location.href='<%=addLicenseURL%>'" value="Add License">
     </span>
 </p>
 
@@ -56,9 +57,10 @@
     <table id="licensesTable" cellpadding="0" cellspacing="0" border="0" class="display">
         <tfoot>
         <tr>
-            <th style="width:30%;"></th>
-            <th style="width:40%;"></th>
-            <th style="width:30%;"></th>
+            <th style="width: 25%;"></th>
+            <th style="width: 35%;"></th>
+            <th style="width: 20%;"></th>
+            <th style="width: 20%;"></th>
         </tr>
         </tfoot>
     </table>
@@ -92,7 +94,13 @@
                     <%-- "DT_RowId": '${license.id}',--%>
                     "0": "<sw360:DisplayLicenseLink licenseId="${license.id}"/>",
                     "1": '<sw360:out value="${license.fullname}"/>',
-                    "2": '<sw360:out value="${license.licenseType.licenseType}" default="--"/>'
+                    <core_rt:if test="${license.checked}">
+                    "2": '',
+                    </core_rt:if>
+                    <core_rt:if test="${not license.checked}">
+                    "2": 'UNCHECKED',
+                    </core_rt:if>
+                    "3": '<sw360:out value="${license.licenseType.licenseType}" default="--"/>'
                 });
             </core_rt:forEach>
 
@@ -121,6 +129,7 @@
                 "columns": [
                   { "title": "License Shortname" },
                   { "title": "License Fullname" },
+                  { "title": "Is checked?" },
                   { "title": "License Type" }
                   ],
                 "autoWidth": false
