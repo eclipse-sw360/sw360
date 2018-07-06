@@ -27,6 +27,7 @@ import org.eclipse.sw360.portal.users.UserCacheHolder;
 import javax.portlet.PortletRequest;
 import javax.portlet.ResourceRequest;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.newDefaultEccInformation;
@@ -123,21 +124,23 @@ public abstract class ComponentPortletUtils {
     }
 
     static void updateComponentFromRequest(PortletRequest request, Component component) {
-        for (Component._Fields field : Component._Fields.values()) {
-
-            switch (field) {
-                case ATTACHMENTS:
-                    component.setAttachments(PortletUtils.updateAttachmentsFromRequest(request, component.getAttachments()));
-                    break;
-                case ROLES:
-                    component.setRoles(PortletUtils.getCustomMapFromRequest(request));
-                case EXTERNAL_IDS:
-                    component.setExternalIds(PortletUtils.getExternalIdMapFromRequest(request));
-
-                default:
-                    setFieldValue(request, component, field);
-            }
+        List<String> requestParams = Collections.list(request.getParameterNames());
+        for (Component._Fields field : extractFieldsForComponentUpdate(requestParams, component)) {
+            setFieldValue(request, component, field);
         }
+        if (!requestParams.contains("updateOnlyRequested")) {
+            component.setAttachments(PortletUtils.updateAttachmentsFromRequest(request, component.getAttachments()));
+            component.setRoles(PortletUtils.getCustomMapFromRequest(request));
+            component.setExternalIds(PortletUtils.getExternalIdMapFromRequest(request));
+        }
+    }
+
+    private static List<Component._Fields> extractFieldsForComponentUpdate(List<String> requestParams, Component component) {
+        return component.getId() == null
+                ? Arrays.asList(Component._Fields.values())
+                : Arrays.stream(Component._Fields.values())
+                .filter(f -> requestParams.contains(f.name()))
+                .collect(Collectors.toList());
     }
 
     public static void updateVendorFromRequest(PortletRequest request, Vendor vendor) {
