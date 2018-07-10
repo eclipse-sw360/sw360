@@ -20,6 +20,7 @@ import org.spdx.rdfparser.license.LicenseInfoFactory;
 import org.spdx.rdfparser.license.SpdxListedLicense;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -54,7 +55,8 @@ public class SpdxConnector {
                 .setShortname(spdxListedLicense.getLicenseId())
                 .setFullname(spdxListedLicense.getName())
                 .setText(spdxListedLicense.getLicenseText())
-                .setExternalLicenseLink("https://spdx.org/licenses/" + spdxListedLicense.getLicenseId()+ ".html");
+                .setExternalLicenseLink("https://spdx.org/licenses/" + spdxListedLicense.getLicenseId()+ ".html")
+                .setExternalIds(Collections.singletonMap("SPDX-License-Identifier", spdxListedLicense.getLicenseId()));
         return Optional.of(license);
     }
 

@@ -9,7 +9,7 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-package org.eclipse.sw360.commonIO;
+package org.eclipse.sw360.exporter.utils;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
@@ -29,8 +29,7 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.eclipse.sw360.commonIO.ConvertRecord.PropertyWithValue;
-import static org.eclipse.sw360.commonIO.ConvertRecord.putToTodos;
+import static org.eclipse.sw360.exporter.utils.ConvertRecord.putToTodos;
 
 /**
  * @author johannes.najjar@tngtech.com
@@ -224,14 +223,14 @@ public class TypeMappings {
     }
 
     @NotNull
-    public static Map<Integer, Todo> updateTodoMapWithCustomPropertiesAndWriteToDatabase(LicenseService.Iface licenseClient, Map<Integer, Todo> todoMap, Map<Integer, PropertyWithValue> customPropertiesMap, Map<Integer, Set<Integer>> todoPropertiesMap, User user) throws TException {
+    public static Map<Integer, Todo> updateTodoMapWithCustomPropertiesAndWriteToDatabase(LicenseService.Iface licenseClient, Map<Integer, Todo> todoMap, Map<Integer, ConvertRecord.PropertyWithValue> customPropertiesMap, Map<Integer, Set<Integer>> todoPropertiesMap, User user) throws TException {
         for(Integer todoId : todoPropertiesMap.keySet()){
             Todo todo = todoMap.get(todoId);
             if(! todo.isSetCustomPropertyToValue()){
                 todo.setCustomPropertyToValue(new HashMap<>());
             }
             for(Integer propertyWithValueId : todoPropertiesMap.get(todoId)){
-                PropertyWithValue propertyWithValue = customPropertiesMap.get(propertyWithValueId);
+                ConvertRecord.PropertyWithValue propertyWithValue = customPropertiesMap.get(propertyWithValueId);
                 todo.getCustomPropertyToValue().put(propertyWithValue.getProperty(), propertyWithValue.getValue());
             }
         }
@@ -246,7 +245,7 @@ public class TypeMappings {
         return todoMap;
     }
 
-    public static  Map<Integer, PropertyWithValue> getCustomPropertiesWithValuesByIdAndWriteMissingToDatabase(LicenseService.Iface licenseClient, InputStream inputStream, User user) throws TException {
+    public static  Map<Integer, ConvertRecord.PropertyWithValue> getCustomPropertiesWithValuesByIdAndWriteMissingToDatabase(LicenseService.Iface licenseClient, InputStream inputStream, User user) throws TException {
         List<CSVRecord> records = ImportCSV.readAsCSVRecords(inputStream);
         Optional<CustomProperties> dbCustomProperties = CommonUtils.wrapThriftOptionalReplacement(licenseClient.getCustomProperties(SW360Constants.TYPE_TODO));
         CustomProperties customProperties;
@@ -258,7 +257,7 @@ public class TypeMappings {
         Map<String, Set<String>> propertyToValuesToAdd = ConvertRecord.convertCustomProperties(records);
         customProperties.setPropertyToValues(CommonUtils.mergeMapIntoMap(propertyToValuesToAdd, customProperties.getPropertyToValues()));
         licenseClient.updateCustomProperties(customProperties, user);
-        Map<Integer, PropertyWithValue> propertiesWithValuesById = ConvertRecord.convertCustomPropertiesById(records);
+        Map<Integer, ConvertRecord.PropertyWithValue> propertiesWithValuesById = ConvertRecord.convertCustomPropertiesById(records);
         return propertiesWithValuesById;
     }
 }

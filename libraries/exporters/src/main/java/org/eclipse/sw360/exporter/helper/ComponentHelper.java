@@ -8,11 +8,12 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-package org.eclipse.sw360.exporter;
+package org.eclipse.sw360.exporter.helper;
 
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.exporter.utils.SubTable;
 
 import java.util.*;
 
@@ -23,12 +24,12 @@ import static org.eclipse.sw360.exporter.ComponentExporter.COMPONENT_RENDERED_FI
 import static org.eclipse.sw360.exporter.ComponentExporter.HEADERS;
 import static org.eclipse.sw360.exporter.ComponentExporter.HEADERS_EXTENDED_BY_RELEASES;
 
-class ComponentHelper implements ExporterHelper<Component> {
+public class ComponentHelper implements ExporterHelper<Component> {
 
     private ReleaseHelper releaseHelper;
     private boolean extendedByReleases;
 
-    ComponentHelper(boolean extendedByReleases, ReleaseHelper releaseHelper) {
+    public ComponentHelper(boolean extendedByReleases, ReleaseHelper releaseHelper) {
         this.extendedByReleases = extendedByReleases;
         this.releaseHelper = releaseHelper;
     }
@@ -55,7 +56,7 @@ class ComponentHelper implements ExporterHelper<Component> {
         if (releases.size() > 0) {
             for (Release release : releases) {
                 List<String> currentRow = makeRowForComponent(component);
-                currentRow.addAll(releaseHelper.makeRows(release).elements.get(0));
+                currentRow.addAll(releaseHelper.makeRows(release).getRow(0));
                 table.addRow(currentRow);
             }
         } else {
@@ -105,7 +106,7 @@ class ComponentHelper implements ExporterHelper<Component> {
         return getReleases(nullToEmptySet(component.releaseIds));
     }
 
-    List<Release> getReleases(Set<String> ids) throws SW360Exception {
+    public List<Release> getReleases(Set<String> ids) throws SW360Exception {
         return releaseHelper.getReleases(ids);
     }
 

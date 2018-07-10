@@ -20,6 +20,9 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.exporter.helper.ExporterHelper;
+import org.eclipse.sw360.exporter.helper.ProjectHelper;
+import org.eclipse.sw360.exporter.helper.ReleaseHelper;
 
 import java.util.*;
 import java.util.function.Function;
@@ -73,13 +76,13 @@ public class ProjectExporter extends ExcelExporter<Project, ProjectHelper> {
             .filter(k -> ! PROJECT_IGNORED_FIELDS.contains(k))
             .collect(Collectors.toList());
 
-    static List<String> HEADERS = PROJECT_RENDERED_FIELDS
+    public static List<String> HEADERS = PROJECT_RENDERED_FIELDS
             .stream()
             .map(Project._Fields::getFieldName)
             .map(n -> SW360Utils.displayNameFor(n, nameToDisplayName))
             .collect(Collectors.toList());
 
-    static List<String> HEADERS_EXTENDED_BY_RELEASES = ExporterHelper.addSubheadersWithPrefixesAsNeeded(HEADERS, ReleaseExporter.HEADERS, "release: ");
+    public static List<String> HEADERS_EXTENDED_BY_RELEASES = ExporterHelper.addSubheadersWithPrefixesAsNeeded(HEADERS, ReleaseExporter.HEADERS, "release: ");
 
     public ProjectExporter(ComponentService.Iface componentClient, ProjectService.Iface projectClient, User user, List<Project> projects, boolean extendedByReleases) throws SW360Exception {
         super(new ProjectHelper(projectClient, user, extendedByReleases, new ReleaseHelper(componentClient, user)));

@@ -115,7 +115,12 @@
             <artifactId>exporters</artifactId>
             <version>${project.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.eclipse.sw360</groupId>
+            <artifactId>license-importer</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
 
         <dependency>
             <groupId>org.webjars</groupId>

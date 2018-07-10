@@ -26,11 +26,7 @@
         <header-portlet-css>/css/main.css</header-portlet-css>
         <header-portlet-css>/css/print.css</header-portlet-css>
         <header-portlet-css>/css/tooltips.css</header-portlet-css>
-        <!--<header-portlet-css>/css/dataTable_Siemens.css</header-portlet-css>-->
-        <!--<header-portlet-css>/css/licenses.css</header-portlet-css>-->
         <header-portlet-javascript>/js/main.js</header-portlet-javascript>
-        <!--<header-portlet-javascript>/js/jquery-1.11.1.min.js</header-portlet-javascript>-->
-        <!--<header-portlet-javascript>/js/jquery.dataTables-1.9.4.js</header-portlet-javascript>-->
         <css-class-wrapper>licenses-portlet</css-class-wrapper>
     </portlet>
 
@@ -64,6 +60,16 @@
         <header-portlet-css>/css/main.css</header-portlet-css>
         <header-portlet-css>/css/print.css</header-portlet-css>
         <header-portlet-css>/css/tooltips.css</header-portlet-css>
+        <header-portlet-javascript>/js/main.js</header-portlet-javascript>
+    </portlet>
+
+    <portlet>
+        <portlet-name>licenseAdmin</portlet-name>
+        <icon>/icon.png</icon>
+        <use-default-template>false</use-default-template>
+        <instanceable>false</instanceable>
+        <header-portlet-css>/css/main.css</header-portlet-css>
+        <header-portlet-css>/css/print.css</header-portlet-css>
         <header-portlet-javascript>/js/main.js</header-portlet-javascript>
     </portlet>
 

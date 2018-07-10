@@ -8,7 +8,7 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-package org.eclipse.sw360.exporter;
+package org.eclipse.sw360.exporter.helper;
 
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
@@ -20,6 +20,7 @@ import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.exporter.utils.SubTable;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -31,7 +32,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Utils.putReleaseNamesInM
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exception;
 import static org.eclipse.sw360.exporter.ReleaseExporter.*;
 
-class ReleaseHelper implements ExporterHelper<Release> {
+public class ReleaseHelper implements ExporterHelper<Release> {
 
     private static final Logger log = Logger.getLogger(ReleaseHelper.class);
 
@@ -57,7 +58,7 @@ class ReleaseHelper implements ExporterHelper<Release> {
      *            a {@link ComponentService.Iface} implementation
      * @throws SW360Exception
      */
-    protected ReleaseHelper(ComponentService.Iface cClient, User user) throws SW360Exception {
+    public ReleaseHelper(ComponentService.Iface cClient, User user) throws SW360Exception {
         this(cClient, user, null);
     }
 
@@ -74,7 +75,7 @@ class ReleaseHelper implements ExporterHelper<Release> {
      *            map otherwise
      * @throws SW360Exception
      */
-    protected ReleaseHelper(ComponentService.Iface cClient, User user,
+    public ReleaseHelper(ComponentService.Iface cClient, User user,
                             List<ReleaseClearingStatusData> releaseClearingStatuses) throws SW360Exception {
         this.cClient = cClient;
         this.user = user;
@@ -268,7 +269,7 @@ class ReleaseHelper implements ExporterHelper<Release> {
         }
     }
 
-    List<Release> getReleases(Set<String> ids) throws SW360Exception {
+    public List<Release> getReleases(Set<String> ids) throws SW360Exception {
         if (preloadedLinkedReleases != null){
             return getPreloadedReleases(ids);
         }

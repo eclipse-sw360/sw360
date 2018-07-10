@@ -9,7 +9,7 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-package org.eclipse.sw360.commonIO;
+package org.eclipse.sw360.exporter.utils;
 
 import com.google.common.base.Function;
 import com.google.common.base.Strings;
@@ -17,6 +17,7 @@ import com.google.common.collect.*;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import org.eclipse.sw360.commonIO.ConvertUtil;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.licenses.*;
 import org.apache.commons.csv.CSVRecord;
@@ -39,7 +40,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhit
  */
 public class ConvertRecord {
 
-    public static Gson gson = new GsonBuilder().create();
+    private static Gson gson = new GsonBuilder().create();
 
     private ConvertRecord() {
         // Utility class with only static functions
@@ -370,7 +371,7 @@ public class ConvertRecord {
             String identifier = record.get(0);
             String fullname = record.get(1);
 
-            License license = new License().setId(identifier).setFullname(fullname);
+            License license = new License().setId(identifier).setShortname(identifier).setFullname(fullname);
 
 
             String typeString = record.get(2);
@@ -579,27 +580,6 @@ public class ConvertRecord {
             }
         }
         return licenseToRisk;
-    }
-
-    public static void addLicenses(LicenseService.Iface licenseClient, List<License> licensesToAdd, Logger log, User user) {
-
-        try {
-            final List<License> licenses = licenseClient.getLicenses();
-            final Set<String> knownLicenseNames = Sets.newHashSet(FluentIterable.from(licenses).transform(TypeMappings.getLicenseIdentifier()));
-            final ImmutableList<License> filteredLicenses = TypeMappings.getElementsWithIdentifiersNotInSet(TypeMappings.getLicenseIdentifier(), knownLicenseNames, licensesToAdd);
-
-            log.debug("Sending " + filteredLicenses.size() + " Licenses to the database!");
-            final List<License> addedLicenses = licenseClient.addLicenses(filteredLicenses, user);
-
-            if (addedLicenses == null) {
-                log.debug("There were errors.");
-            } else {
-                log.debug("Everything went fine.");
-            }
-
-        } catch (TException e) {
-            log.error("Error getting licenses from DB", e);
-        }
     }
 
     public interface Serializer<T> {

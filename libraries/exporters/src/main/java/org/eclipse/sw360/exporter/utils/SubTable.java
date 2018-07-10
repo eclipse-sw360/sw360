@@ -9,7 +9,7 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-package org.eclipse.sw360.exporter;
+package org.eclipse.sw360.exporter.utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +22,7 @@ public class SubTable {
         return elements.size();
     }
 
-    List<String> getRow(int rowNumber) {
+    public List<String> getRow(int rowNumber) {
         return elements.get(rowNumber);
     }
 

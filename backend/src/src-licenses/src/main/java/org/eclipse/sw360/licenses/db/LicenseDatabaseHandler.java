@@ -568,20 +568,38 @@ public class LicenseDatabaseHandler {
         } else return null;
     }
 
-    public List<License> addLicenses(List<License> licenses, User user) throws SW360Exception {
+    public List<License> addOrOverwriteLicenses(List<License> licenses, User user, boolean allowOverwriting) throws SW360Exception {
+        final List<License> knownLicenses = licenseRepository.getAll();
         for (License license : licenses) {
             if(! makePermission(license, user).isActionAllowed(RequestedAction.CLEARING)){
                 license.setChecked(false);
             }
 
-            validateNewLicense(license);
+            if(! license.isSetId()){
+                validateNewLicense(license);
+            } else {
+                if(allowOverwriting) {
+                    knownLicenses.stream()
+                            .filter(kl -> license.getId().equals(kl.getId()))
+                            .findFirst()
+                            .map(License::getRevision)
+                            .ifPresent(license::setRevision);
+                } else {
+                    license.unsetRevision();
+                }
+                validateExistingLicense(license);
+            }
             prepareLicense(license);
         }
 
         final List<DocumentOperationResult> documentOperationResults = licenseRepository.executeBulk(licenses);
         if (documentOperationResults.isEmpty()) {
             return licenses;
-        } else return null;
+        } else {
+            documentOperationResults.forEach(dor ->
+                    log.error("Adding license=[" + dor.getId() + "] produced an [" + dor.getError() + "] due to: " + dor.getReason()));
+            return null;
+        }
     }
 
     public List<Obligation> addObligations(List<Obligation> obligations, User user) throws SW360Exception {
@@ -614,6 +632,9 @@ public class LicenseDatabaseHandler {
 
     public List<License> getLicenses() {
         final List<License> licenses = licenseRepository.getAll();
+        if (licenses == null) {
+            return Collections.emptyList();
+        }
         final List<Todo> todos = getTodosFromLicenses(licenses);
         final List<LicenseType> licenseTypes = getLicenseTypesFromLicenses(licenses);
         final List<Risk> risks = getRisksFromLicenses(licenses);
@@ -858,7 +879,7 @@ public class LicenseDatabaseHandler {
         }
 
         try {
-            addLicenses(newLicenses,user);
+            addOrOverwriteLicenses(newLicenses,user, false);
 
             if (mismatchedLicenses.size() > 0){
                 requestSummary.setMessage("The following licenses did not match their SPDX equivalent: " + COMMA_JOINER.join(mismatchedLicenses));

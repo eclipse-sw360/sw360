@@ -9,7 +9,7 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-package org.eclipse.sw360.exporter;
+package org.eclipse.sw360.exporter.helper;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -17,6 +17,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.exporter.utils.SubTable;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -29,7 +30,7 @@ import static org.eclipse.sw360.exporter.ProjectExporter.HEADERS;
 import static org.eclipse.sw360.exporter.ProjectExporter.HEADERS_EXTENDED_BY_RELEASES;
 import static org.eclipse.sw360.exporter.ProjectExporter.PROJECT_RENDERED_FIELDS;
 
-class ProjectHelper implements ExporterHelper<Project> {
+public class ProjectHelper implements ExporterHelper<Project> {
 
     private final ProjectService.Iface projectClient;
     private final User user;
@@ -37,7 +38,7 @@ class ProjectHelper implements ExporterHelper<Project> {
     private ReleaseHelper releaseHelper;
     private Map<String, Project> preloadedLinkedProjects;
 
-    ProjectHelper(ProjectService.Iface projectClient, User user, boolean extendedByReleases, ReleaseHelper releaseHelper) {
+    public ProjectHelper(ProjectService.Iface projectClient, User user, boolean extendedByReleases, ReleaseHelper releaseHelper) {
         this.projectClient = projectClient;
         this.user = user;
         this.extendedByReleases = extendedByReleases;
@@ -66,7 +67,7 @@ class ProjectHelper implements ExporterHelper<Project> {
         if (releases.size() > 0) {
             for (Release release : releases) {
                 List<String> currentRow = makeRowForProject(project);
-                currentRow.addAll(releaseHelper.makeRows(release).elements.get(0));
+                currentRow.addAll(releaseHelper.makeRows(release).getRow(0));
                 table.addRow(currentRow);
             }
         } else {
@@ -123,14 +124,14 @@ class ProjectHelper implements ExporterHelper<Project> {
         releaseHelper.setPreloadedLinkedReleases(preloadedLinkedReleases, componentsNeeded);
     }
 
-    List<Release> getReleases(Project project) throws SW360Exception {
+    public List<Release> getReleases(Project project) throws SW360Exception {
         return getReleases(nullToEmptyMap(project.getReleaseIdToUsage()).keySet());
     }
-    List<Release> getReleases(Set<String> ids) throws SW360Exception {
+    public List<Release> getReleases(Set<String> ids) throws SW360Exception {
         return releaseHelper.getReleases(ids);
     }
 
-    List<Project> getProjects(Set<String> ids, User user) throws SW360Exception {
+    public List<Project> getProjects(Set<String> ids, User user) throws SW360Exception {
         if (preloadedLinkedProjects != null) {
             return getPreloadedProjects(ids);
         }
@@ -147,7 +148,7 @@ class ProjectHelper implements ExporterHelper<Project> {
         return ids.stream().map(preloadedLinkedProjects::get).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
-    void setPreloadedLinkedProjects(Map<String, Project> preloadedLinkedProjects) {
+    public void setPreloadedLinkedProjects(Map<String, Project> preloadedLinkedProjects) {
         this.preloadedLinkedProjects = preloadedLinkedProjects;
     }
 }

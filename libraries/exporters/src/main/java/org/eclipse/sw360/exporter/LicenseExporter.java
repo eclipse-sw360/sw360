@@ -11,17 +11,20 @@
  */
 package org.eclipse.sw360.exporter;
 
-import org.eclipse.sw360.commonIO.ConvertRecord;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
 import org.apache.log4j.Logger;
+import org.eclipse.sw360.exporter.helper.ExporterHelper;
+import org.eclipse.sw360.exporter.utils.ConvertRecord;
+import org.eclipse.sw360.exporter.utils.SubTable;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static org.eclipse.sw360.commonIO.ConvertRecord.licenseSerializer;
+import static org.eclipse.sw360.exporter.utils.ConvertRecord.licenseSerializer;
+
 
 /**
  * Created by bodet on 10/02/15.

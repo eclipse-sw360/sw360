@@ -19,6 +19,7 @@
 		<portlet id="search"/>
 		<portlet id="users"/>
 		<portlet id="componentImport"/>
+		<portlet id="licenseAdmin"/>
 		<portlet id="welcome"/>
 		<portlet id="moderation"/>
 		<portlet id="recentcomponents"/>
