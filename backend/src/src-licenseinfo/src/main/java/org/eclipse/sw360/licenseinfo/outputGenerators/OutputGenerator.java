@@ -32,7 +32,9 @@ import org.jetbrains.annotations.NotNull;
 import java.io.StringWriter;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public abstract class OutputGenerator<T> {
     protected static final String VELOCITY_TOOLS_FILE = "velocity-tools.xml";
@@ -119,11 +121,36 @@ public abstract class OutputGenerator<T> {
                 !getComponentLongName(r1).equals(getComponentLongName(r2))){
             throw new IllegalArgumentException("Only successful parsing results for the same release can be merged");
         }
+
         LicenseInfoParsingResult r = new LicenseInfoParsingResult(r1);
-        r.getLicenseInfo().getLicenseNamesWithTexts().addAll(r2.getLicenseInfo().getLicenseNamesWithTexts());
-        r.getLicenseInfo().getCopyrights().addAll(r2.getLicenseInfo().getCopyrights());
-        r.getLicenseInfo().getFilenames().addAll(r2.getLicenseInfo().getFilenames());
+
+        if (r.isSetLicenseInfo()) {
+            r.getLicenseInfo().setLicenseNamesWithTexts(Stream.concat(
+                    getCollectionStream(r, LicenseInfo::getLicenseNamesWithTexts, Collections::emptySet),
+                    getCollectionStream(r2, LicenseInfo::getLicenseNamesWithTexts, Collections::emptySet))
+                    .collect(Collectors.toSet()));
+
+            r.getLicenseInfo().setCopyrights(Stream.concat(
+                    getCollectionStream(r, LicenseInfo::getCopyrights, Collections::emptySet),
+                    getCollectionStream(r2, LicenseInfo::getCopyrights, Collections::emptySet))
+                    .collect(Collectors.toSet()));
+
+            r.getLicenseInfo().setFilenames(Stream.concat(
+                    getCollectionStream(r, LicenseInfo::getFilenames, Collections::emptyList),
+                    getCollectionStream(r2, LicenseInfo::getFilenames, Collections::emptyList))
+                    .collect(Collectors.toList()));
+        } else {
+            r.setLicenseInfo(r2.getLicenseInfo());
+        }
+
         return r;
+    }
+
+    private <T extends Collection<U>, U> Stream<U> getCollectionStream(LicenseInfoParsingResult r, Function<LicenseInfo, T> collectionExtractor, Supplier<T> defaultEmpty) {
+        return Optional.of(r)
+                .map(LicenseInfoParsingResult::getLicenseInfo)
+                .map(collectionExtractor)
+                .orElse(defaultEmpty.get()).stream();
     }
 
     @NotNull
