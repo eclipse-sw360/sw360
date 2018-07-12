@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -76,7 +76,7 @@ public class VendorHandler implements VendorService.Iface {
     }
 
     @Override
-    public Set<String> searchVendorIds(String searchText) throws TException {
+    public List<String> searchVendorIds(String searchText) throws TException {
         return vendorSearchHandler.searchIds(searchText);
     }
 

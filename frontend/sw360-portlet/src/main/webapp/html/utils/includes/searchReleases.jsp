@@ -101,6 +101,7 @@
                     "bFilter": false,
                     "language": {"processing":     "Processing..."},
                     "processing": true,
+                    "aaSorting": [],
                     "initComplete": toggleReleasesSearchNotification
                 });
         }

@@ -270,7 +270,7 @@
                         {"title": "Component Type", data: "cType"},
                         {"title": "Actions", data: "id", render: {display: renderComponentActions}}
                     ],
-                    "order": [[1, 'asc']],
+                    "aaSorting": [],
                     "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
                     "autoWidth": false
                 });
