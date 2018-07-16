@@ -281,7 +281,7 @@ class JacksonCustomizations {
         })
         static abstract class ComponentMixin extends Component {
             @Override
-            @JsonProperty("vendors")
+            @JsonProperty(PropertyKeyMapping.COMPONENT_VENDOR_KEY_JSON)
             abstract public Set<String> getVendorNames();
         }
 

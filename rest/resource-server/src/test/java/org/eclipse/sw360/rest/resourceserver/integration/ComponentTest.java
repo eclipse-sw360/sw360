@@ -27,6 +27,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.BDDMockito.given;
@@ -49,6 +50,8 @@ public class ComponentTest extends TestIntegrationBase {
         List<Component> componentList = new ArrayList<>();
         Component component = new Component();
         component.setName("Component name");
+        component.setHomepage("http://example-component.com");
+        component.setOwnerGroup("ownerGroup1");
         component.setDescription("Component description");
         componentList.add(component);
 
@@ -73,6 +76,20 @@ public class ComponentTest extends TestIntegrationBase {
         assertEquals(HttpStatus.OK, response.getStatusCode());
 
         TestHelper.checkResponse(response.getBody(), "components", 1);
+    }
+
+    @Test
+    public void should_get_all_components_with_field() throws IOException {
+        String extraField = "ownerGroup";
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/components?fields=" + extraField,
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, headers),
+                        String.class);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        TestHelper.checkResponse(response.getBody(), "components", 1, Collections.singletonList(extraField));
     }
 
 }

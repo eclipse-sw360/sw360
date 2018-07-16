@@ -34,6 +34,27 @@ include::{snippets}/should_document_get_components/http-response.adoc[]
 
 include::{snippets}/should_document_get_components/links.adoc[]
 
+[[resources-components-list-with-fields]]
+==== Listing components with fields
+
+A `GET` request will list all of the service's components. The `fields` parameter defines which component object properties should be contained in the response.
+
+===== Response structure
+
+include::{snippets}/should_document_get_components_with_fields/response-fields.adoc[]
+
+===== Example request
+
+include::{snippets}/should_document_get_components_with_fields/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_get_components_with_fields/http-response.adoc[]
+
+===== Links
+
+include::{snippets}/should_document_get_components_with_fields/links.adoc[]
+
 [[resources-components-list-by-name]]
 ==== Listing by name
 

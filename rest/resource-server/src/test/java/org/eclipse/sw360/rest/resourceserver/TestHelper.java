@@ -31,24 +31,27 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.runner.RunWith;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.util.Base64Utils;
 
+import java.util.List;
 import java.io.IOException;
 
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 public class TestHelper {
 
     static public void checkResponse(String responseBody, String linkRelation, int embeddedArraySize) throws IOException {
+        TestHelper.checkResponse(responseBody, linkRelation, embeddedArraySize, null);
+    }
+
+    static public void checkResponse(String responseBody, String linkRelation, int embeddedArraySize, List<String> fields) throws IOException {
         JsonNode responseBodyJsonNode = new ObjectMapper().readTree(responseBody);
 
         assertThat(responseBodyJsonNode.has("_embedded"), is(true));
@@ -59,6 +62,12 @@ public class TestHelper {
         JsonNode sw360UsersNode = embeddedNode.get("sw360:" + linkRelation);
         assertThat(sw360UsersNode.isArray(),is(true));
         assertThat(sw360UsersNode.size(),is(embeddedArraySize));
+        if(fields != null && embeddedArraySize > 0) {
+            JsonNode itemNode = sw360UsersNode.get(0);
+            for(String field:fields) {
+                assertTrue(itemNode.has(field));
+            }
+        }
 
         assertThat(responseBodyJsonNode.has("_links"), is(true));
 

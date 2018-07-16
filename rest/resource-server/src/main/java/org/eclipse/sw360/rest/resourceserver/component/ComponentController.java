@@ -73,6 +73,7 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
     @RequestMapping(value = COMPONENTS_URL, method = RequestMethod.GET)
     public ResponseEntity<Resources<Resource<Component>>> getComponents(@RequestParam(value = "name", required = false) String name,
                                                                         @RequestParam(value = "type", required = false) String componentType,
+                                                                        @RequestParam(value = "fields", required = false) List<String> fields,
                                                                         OAuth2Authentication oAuth2Authentication) throws TException {
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
@@ -87,7 +88,7 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
         sw360Components.stream()
                 .filter(component -> componentType == null || componentType.equals(component.componentType.name()))
                 .forEach(c -> {
-                    Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c);
+                    Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c, fields);
                     componentResources.add(new Resource<>(embeddedComponent));
                 });
 
