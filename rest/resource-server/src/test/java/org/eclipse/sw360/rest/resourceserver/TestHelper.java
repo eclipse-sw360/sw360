@@ -1,37 +1,21 @@
 /*
  * Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+ * Copyright Bosch Software Innovations GmbH, 2018.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-
-/*
- * Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- */
-
-/*
- * Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- */
-
 package org.eclipse.sw360.rest.resourceserver;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.util.Base64Utils;
@@ -41,6 +25,7 @@ import java.io.IOException;
 
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -99,6 +84,18 @@ public class TestHelper {
         return new ObjectMapper()
                 .readValue(response.getContentAsByteArray(), OAuthToken.class)
                 .accessToken;
+    }
+
+    public static void handleBatchDeleteResourcesResponse(ResponseEntity<String> response, String resourceId, int statusCode) throws IOException {
+        assertEquals(HttpStatus.MULTI_STATUS, response.getStatusCode());
+
+        JsonNode responseNode = new ObjectMapper().readTree(response.getBody());
+        assertThat(responseNode.isArray(), is(true));
+        assertThat(responseNode.size(), is(1));
+
+        JsonNode firstResponseResult = responseNode.get(0);
+        assertThat(firstResponseResult.get("status").asInt(), is(statusCode));
+        assertThat(firstResponseResult.get("resourceId").asText(), is(resourceId));
     }
 
 
