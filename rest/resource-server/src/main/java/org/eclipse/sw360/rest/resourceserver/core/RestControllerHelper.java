@@ -41,8 +41,7 @@ import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.stereotype.Service;
 
 import java.net.URLEncoder;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
@@ -220,6 +219,16 @@ public class RestControllerHelper {
                 .slash("api" + ProjectController.PROJECTS_URL + "/" + project.getId()).withSelfRel();
         halProject.add(projectLink);
         halResource.addEmbeddedResource("sw360:projects", halProject);
+    }
+
+    public Component updateComponent(Component componentToUpdate, Component requestBodyComponent) {
+        for(Component._Fields field:Component._Fields.values()) {
+            Object fieldValue = requestBodyComponent.getFieldValue(field);
+            if(fieldValue != null) {
+                componentToUpdate.setFieldValue(field, fieldValue);
+            }
+        }
+        return componentToUpdate;
     }
 
     public Project convertToEmbeddedProject(Project project) {

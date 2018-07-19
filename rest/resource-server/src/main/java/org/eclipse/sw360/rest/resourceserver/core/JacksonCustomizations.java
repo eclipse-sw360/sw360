@@ -202,7 +202,7 @@ class JacksonCustomizations {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
-        @JsonIgnoreProperties({
+        @JsonIgnoreProperties(value = {
                 "id",
                 "revision",
                 "attachments",
