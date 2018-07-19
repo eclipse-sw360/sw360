@@ -105,6 +105,8 @@ struct License {
 	23: optional set<string> riskDatabaseIds,
     25: optional string text,
 
+    30: optional bool checked = true;
+
     90: optional DocumentState documentState,
 
 	200: optional map<RequestedAction, bool> permissions

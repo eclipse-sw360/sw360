@@ -38,6 +38,7 @@
 </portlet:actionURL>
 
 <c:catch var="attributeNotFoundException">
+    <jsp:useBean id="isUserAtLeastClearingAdmin" class="java.lang.String" scope="request" />
     <jsp:useBean id="licenseDetail" type="org.eclipse.sw360.datahandler.thrift.licenses.License" scope="request" />
     <jsp:useBean id="licenseTypeChoice" class="java.util.ArrayList" scope="request" />
     <core_rt:set  var="addMode"  value="${empty licenseDetail.id}" />

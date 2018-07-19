@@ -454,7 +454,8 @@ class JacksonCustomizations {
                 "risksIterator",
                 "setRisks",
                 "setText",
-                "mainLicenseIdsIterator"
+                "mainLicenseIdsIterator",
+                "setChecked"
         })
         static abstract class LicenseMixin extends License {
             @Override
