@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2014-2016. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2014-2018. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -10,13 +10,12 @@
  */
 package org.eclipse.sw360.datahandler.common;
 
-import java.net.MalformedURLException;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.function.Supplier;
-
 import org.ektorp.http.HttpClient;
 import org.ektorp.http.StdHttpClient;
+
+import java.net.MalformedURLException;
+import java.util.Properties;
+import java.util.function.Supplier;
 
 /**
  * Constants for the database address
@@ -36,6 +35,7 @@ public class DatabaseSettings {
     public static final String COUCH_DB_VM;
 
     public static final int LUCENE_SEARCH_LIMIT;
+    public static final boolean LUCENE_LEADING_WILDCARD;
 
     private static final String COUCH_DB_USERNAME;
     private static final String COUCH_DB_PASSWORD;
@@ -53,6 +53,7 @@ public class DatabaseSettings {
         COUCH_DB_VM = props.getProperty("couchdb.vulnerability_management", "sw360vm");
 
         LUCENE_SEARCH_LIMIT = Integer.parseInt(props.getProperty("lucenesearch.limit", "25"));
+        LUCENE_LEADING_WILDCARD = Boolean.parseBoolean(props.getProperty("lucenesearch.leading.wildcard", "false"));
     }
 
     public static Supplier<HttpClient> getConfiguredHttpClient() throws MalformedURLException {

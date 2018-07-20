@@ -15,6 +15,7 @@ package org.eclipse.sw360.portal.portlets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
+import com.google.common.collect.Sets;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.servlet.SessionErrors;
@@ -39,7 +40,10 @@ import org.eclipse.sw360.portal.users.UserCacheHolder;
 
 import javax.portlet.*;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 
@@ -338,9 +342,9 @@ abstract public class Sw360Portlet extends MVCPortlet {
             } else {
                 List<Release> searchResult = componentClient.searchReleases(searchText);
                 final VendorService.Iface vendorClient = thriftClients.makeVendorClient();
-                final Set<String> vendorIds = vendorClient.searchVendorIds(searchText);
+                List<String> vendorIds = vendorClient.searchVendorIds(searchText);
                 if (vendorIds != null && vendorIds.size() > 0) {
-                    searchResult.addAll(componentClient.getReleasesFromVendorIds(vendorIds));
+                    searchResult.addAll(componentClient.getReleasesFromVendorIds(Sets.newHashSet(vendorIds)));
                 }
                 return searchResult;
             }

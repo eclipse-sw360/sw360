@@ -98,6 +98,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     private static final String LICENSE_NAME_WITH_TEXT_FILE = "file";
 
     // Project view datatables, index of columns
+    private static final int PROJECT_NO_SORT = -1;
     private static final int PROJECT_DT_ROW_NAME = 0;
     private static final int PROJECT_DT_ROW_DESCRIPTION = 1;
     private static final int PROJECT_DT_ROW_RESPONSIBLE = 2;
@@ -1147,6 +1148,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     private void serveProjectList(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
         HttpServletRequest originalServletRequest = PortalUtil.getOriginalServletRequest(PortalUtil.getHttpServletRequest(request));
         PaginationParameters paginationParameters = PaginationParser.parametersFrom(originalServletRequest);
+        handlePaginationSortOrder(request, paginationParameters);
         List<Project> projectList = getFilteredProjectList(request);
 
         JSONArray jsonProjects = getProjectData(projectList, paginationParameters);
@@ -1159,6 +1161,17 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             writeJSON(request, response, jsonResult);
         } catch (IOException e) {
             log.error("Problem rendering RequestStatus", e);
+        }
+    }
+
+    private void handlePaginationSortOrder(ResourceRequest request, PaginationParameters paginationParameters) {
+        if (!paginationParameters.getSortingColumn().isPresent()) {
+            for (Project._Fields filteredField : projectFilteredFields) {
+                if (!isNullOrEmpty(request.getParameter(filteredField.toString()))) {
+                    paginationParameters.setSortingColumn(Optional.of(PROJECT_NO_SORT));
+                    break;
+                }
+            }
         }
     }
 
@@ -1196,19 +1209,20 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     }
 
     private List<Project> sortProjectList(List<Project> projectList, PaginationParameters projectParameters) {
+        boolean isAsc = projectParameters.isAscending().orElse(true);
 
-        switch (projectParameters.getSortingColumn()) {
+        switch (projectParameters.getSortingColumn().orElse(PROJECT_DT_ROW_NAME)) {
             case PROJECT_DT_ROW_NAME:
-                Collections.sort(projectList, compareByName(projectParameters.isAscending()));
+                Collections.sort(projectList, compareByName(isAsc));
                 break;
             case PROJECT_DT_ROW_DESCRIPTION:
-                Collections.sort(projectList, compareByDescription(projectParameters.isAscending()));
+                Collections.sort(projectList, compareByDescription(isAsc));
                 break;
             case PROJECT_DT_ROW_RESPONSIBLE:
-                Collections.sort(projectList, compareByResponsible(projectParameters.isAscending()));
+                Collections.sort(projectList, compareByResponsible(isAsc));
                 break;
             case PROJECT_DT_ROW_STATE:
-                Collections.sort(projectList, compareByState(projectParameters.isAscending()));
+                Collections.sort(projectList, compareByState(isAsc));
                 break;
             case PROJECT_DT_ROW_CLEARING_STATE:
                 break;
