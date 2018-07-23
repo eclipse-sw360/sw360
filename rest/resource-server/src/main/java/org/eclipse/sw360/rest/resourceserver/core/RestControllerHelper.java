@@ -240,6 +240,20 @@ public class RestControllerHelper {
         return embeddedComponent;
     }
 
+    public Component convertToEmbeddedComponent(Component component, List<String> fields) {
+        Component embeddedComponent = this.convertToEmbeddedComponent(component);
+        if (fields != null) {
+            for(String fieldName:fields) {
+                String thriftField = PropertyKeyMapping.componentThriftKeyFromJSONKey(fieldName);
+                Component._Fields componentField = Component._Fields.findByName(thriftField);
+                if(componentField != null) {
+                    embeddedComponent.setFieldValue(componentField, component.getFieldValue(componentField));
+                }
+            }
+        }
+        return embeddedComponent;
+    }
+
     public Release convertToEmbeddedRelease(Release release) {
         Release embeddedRelease = new Release();
         embeddedRelease.setId(release.getId());

@@ -165,6 +165,27 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
+    public void should_document_get_components_with_fields() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/components?fields=ownerGroup,ownerCountry")
+                .header("Authorization", "Bearer " + accessToken)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation")
+                        ),
+                        responseFields(
+                                fieldWithPath("_embedded.sw360:components[]name").description("The name of the component"),
+                                fieldWithPath("_embedded.sw360:components[]ownerGroup").description("The ownerGroup of the component"),
+                                fieldWithPath("_embedded.sw360:components[]ownerCountry").description("The ownerCountry of the component"),
+                                fieldWithPath("_embedded.sw360:components[]componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
+                                fieldWithPath("_embedded.sw360:components").description("An array of <<resources-components, Components resources>>"),
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
+
+    @Test
     public void should_document_get_component() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/components/17653524")
