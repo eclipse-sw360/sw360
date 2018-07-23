@@ -91,7 +91,8 @@
         'modules/confirm',
         'datatables',
         'datatables_buttons',
-        'buttons.print'], function ($, fossology, confirm) {
+        'buttons.print',
+        'datatables_sorting'], function ($, fossology, confirm) {
 
         var releaseTable;
 
@@ -134,7 +135,11 @@
                     {"sTitle": "Actions"}
                 ],
                 "autoWidth": false,
-                "drawCallback": renderCallback
+                "drawCallback": renderCallback,
+                "order": [1, 'desc'],
+                "columnDefs" : [
+                    { type: 'natural-nohtml', targets: 1 }
+                ]
             });
         };
 

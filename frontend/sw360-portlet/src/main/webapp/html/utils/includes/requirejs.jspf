@@ -25,12 +25,14 @@
             "datatables_buttons":    [ "/sw360-portlet/webjars/datatables.net-buttons/1.1.2/js/dataTables.buttons.min" ],
             "buttons.print":         [ "/sw360-portlet/webjars/datatables.net-buttons/1.1.2/js/buttons.print.min" ],
             "datatables_select":     [ "/sw360-portlet/webjars/datatables.net-select/1.2.2/js/dataTables.select.min" ],
+            "datatables_sorting":    [ "/sw360-portlet/webjars/datatables-plugins/1.10.16/sorting/natural" ],
             "resumable":             [ "/sw360-portlet/webjars/resumable.js/1.0.3/resumable" ],
         },
         shim: {
             // only for libraries that do not support RequireJS out of the box
             "jquery-confirm": [ "jquery" ],
             "jquery-treetable": [ "jquery" ],
+            "datatables_sorting": [ "jquery" ],
             "resumable": [ "jquery" ]
         },
         map: {
