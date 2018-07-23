@@ -128,11 +128,10 @@ public abstract class ComponentPortletUtils {
         for (Component._Fields field : extractFieldsForComponentUpdate(requestParams, component)) {
             setFieldValue(request, component, field);
         }
-        if (!requestParams.contains("updateOnlyRequested")) {
-            component.setAttachments(PortletUtils.updateAttachmentsFromRequest(request, component.getAttachments()));
-            component.setRoles(PortletUtils.getCustomMapFromRequest(request));
-            component.setExternalIds(PortletUtils.getExternalIdMapFromRequest(request));
-        }
+
+        component.setAttachments(PortletUtils.updateAttachmentsFromRequest(request, component.getAttachments()));
+        component.setRoles(PortletUtils.getCustomMapFromRequest(request));
+        component.setExternalIds(PortletUtils.getExternalIdMapFromRequest(request));
     }
 
     private static List<Component._Fields> extractFieldsForComponentUpdate(List<String> requestParams, Component component) {
