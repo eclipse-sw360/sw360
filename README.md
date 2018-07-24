@@ -72,9 +72,7 @@ There is a vagrant project for one-step-deployment. See the project wiki for det
 Apart from the vagrant way, the software can be deployed using the provided scripts.
 
 ### Commands
-Most commands are using maven which is a dependency to build SW360. Additionally
-there is rake-support which wraps parts of maven and adds docker support for
-compilation as well as fpm support for building **.deb** and **.rpm** packages.
+Most commands are using maven which is a dependency to build SW360.
 
 #### Compiling, testing and deploying
 
@@ -84,14 +82,12 @@ Actually, there is a hierarchy of maven files, in general
   - `mvn clean`
 
 2. to run all targets including build the .war file at the end
-  - using maven: `mvn install`
-  - using rake wrapper around maven: `MAVEN_PARAMETERS="" rake compile`
+  - `mvn install`
 
   this needs a couchdb running on the host on port 5984
 
 3. to install without running the tests
-  - using maven: `mvn install -DskipTests`
-  - using rake wrapper around maven: `rake compile`
+  - `mvn install -DskipTests`
 
 For deployment run the command
 ```
@@ -110,27 +106,6 @@ mvn install -Pdeploy \
     -Ddeploy.dir=/ABSOLUTE/PATH/TO/DEPLOY/FOLDER \
     -Dwebapps.dir=/ABSOLUTE/PATH/TO/WEBAPPS/FOLDER
 ```
-  
-#### Packaging
-The packaging mechanisms are able to produce **.deb**, **.rpm** and **.tar.gz**
-packages for the war files of SW360, which will be deployed to the tomcat
-containing SW360. These packages can be created via the command
-```
-rake package
-```
-which will compile SW360 and use fpm to create the packages which will be placed
-in this folder.
-By default this will be done within an docker container and this behaviour can
-be modified using the environmental variable `DOCKERIZE`.
-
-If one, for example, wants to build only the debian package without
-dockerization, one could use
-```
-DOCKERIZE=false rake package:deb
-```
-
-**Note:** the debian and rpm packages depend on the package `sw360_dependencies`
-which has to be built somewhere else.
 
 ### Liferay Configuration
 
