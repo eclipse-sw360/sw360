@@ -106,6 +106,20 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = COMPONENTS_URL + "/{id}", method = RequestMethod.PATCH)
+    public ResponseEntity<Resource<Component>> patchComponent(
+            @PathVariable("id") String id,
+            @RequestBody Component updateComponent,
+            OAuth2Authentication oAuth2Authentication) throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
+        Component sw360Component = componentService.getComponentForUserById(id, user);
+        sw360Component = this.restControllerHelper.updateComponent(sw360Component, updateComponent);
+        componentService.updateComponent(sw360Component, user);
+        HalResource<Component> userHalResource = createHalComponent(sw360Component, user);
+        return new ResponseEntity<>(userHalResource, HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = COMPONENTS_URL, method = RequestMethod.POST)
     public ResponseEntity<Resource<Component>> createComponent(
             OAuth2Authentication oAuth2Authentication,

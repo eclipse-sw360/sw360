@@ -9,7 +9,10 @@
 
 package org.eclipse.sw360.rest.resourceserver.integration;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
@@ -26,12 +29,17 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doThrow;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class ComponentTest extends TestIntegrationBase {
@@ -45,14 +53,18 @@ public class ComponentTest extends TestIntegrationBase {
     @MockBean
     private Sw360ComponentService componentServiceMock;
 
+    private Component component;
+    private final String componentId = "123456789";
+
     @Before
     public void before() throws TException {
         List<Component> componentList = new ArrayList<>();
-        Component component = new Component();
+        component = new Component();
         component.setName("Component name");
         component.setHomepage("http://example-component.com");
         component.setOwnerGroup("ownerGroup1");
         component.setDescription("Component description");
+        component.setId(componentId);
         componentList.add(component);
 
         given(this.componentServiceMock.getComponentsForUser(anyObject())).willReturn(componentList);
@@ -76,6 +88,44 @@ public class ComponentTest extends TestIntegrationBase {
         assertEquals(HttpStatus.OK, response.getStatusCode());
 
         TestHelper.checkResponse(response.getBody(), "components", 1);
+    }
+
+    @Test
+    public void should_update_component_valid() throws IOException, TException {
+        String updatedComponentName = "updatedComponentName";
+        given(this.componentServiceMock.updateComponent(anyObject(), anyObject())).willReturn(RequestStatus.SUCCESS);
+        given(this.componentServiceMock.getComponentForUserById(eq(componentId), anyObject())).willReturn(component);
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        Map<String, String> body = new HashMap<>();
+        body.put("name", updatedComponentName);
+        body.put("invalid_property", "abcde123");
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/components/" + componentId,
+                        HttpMethod.PATCH,
+                        new HttpEntity<>(body, headers),
+                        String.class);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        JsonNode responseBodyJsonNode = new ObjectMapper().readTree(response.getBody());
+        assertEquals(responseBodyJsonNode.get("name").textValue(), updatedComponentName);
+        assertNull(responseBodyJsonNode.get("invalid_property"));
+
+    }
+
+    @Test
+    public void should_update_component_invalid() throws IOException, TException {
+        doThrow(TException.class).when(this.componentServiceMock).getComponentForUserById(anyObject(), anyObject());
+        String updatedComponentName = "updatedComponentName";
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        Map<String, String> body = new HashMap<>();
+        body.put("name", updatedComponentName);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/components/someRandomId123",
+                        HttpMethod.PATCH,
+                        new HttpEntity<>(body, headers),
+                        String.class);
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
     }
 
     @Test
