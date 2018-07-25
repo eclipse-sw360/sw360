@@ -1,5 +1,6 @@
 /*
  * Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
+ * Copyright Bosch Software Innovations GmbH, 2018.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -91,6 +92,20 @@ public class ComponentTest extends TestIntegrationBase {
     }
 
     @Test
+    public void should_get_all_components_with_field() throws IOException {
+        String extraField = "ownerGroup";
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/components?fields=" + extraField,
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, headers),
+                        String.class);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        TestHelper.checkResponse(response.getBody(), "components", 1, Collections.singletonList(extraField));
+    }
+
+    @Test
     public void should_update_component_valid() throws IOException, TException {
         String updatedComponentName = "updatedComponentName";
         given(this.componentServiceMock.updateComponent(anyObject(), anyObject())).willReturn(RequestStatus.SUCCESS);
@@ -129,17 +144,28 @@ public class ComponentTest extends TestIntegrationBase {
     }
 
     @Test
-    public void should_get_all_components_with_field() throws IOException {
-        String extraField = "ownerGroup";
+    public void should_delete_component_valid() throws IOException, TException {
+        given(this.componentServiceMock.deleteComponent(eq(componentId), anyObject())).willReturn(RequestStatus.SUCCESS);
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
-                new TestRestTemplate().exchange("http://localhost:" + port + "/api/components?fields=" + extraField,
-                        HttpMethod.GET,
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/components/" + componentId,
+                        HttpMethod.DELETE,
                         new HttpEntity<>(null, headers),
                         String.class);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        TestHelper.handleBatchDeleteResourcesResponse(response, componentId, 200);
+    }
 
-        TestHelper.checkResponse(response.getBody(), "components", 1, Collections.singletonList(extraField));
+    @Test
+    public void should_delete_component_invalid() throws IOException, TException {
+        String invalidComponentId = "2734982743928374";
+        given(this.componentServiceMock.deleteComponent(anyObject(), anyObject())).willReturn(RequestStatus.FAILURE);
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/components/" + invalidComponentId,
+                        HttpMethod.DELETE,
+                        new HttpEntity<>(null, headers),
+                        String.class);
+        TestHelper.handleBatchDeleteResourcesResponse(response, invalidComponentId, 500);
     }
 
 }
