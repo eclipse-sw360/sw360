@@ -101,6 +101,20 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = RELEASES_URL + "/{id}", method = RequestMethod.PATCH)
+    public ResponseEntity<Resource<Release>> patchComponent(
+            @PathVariable("id") String id,
+            @RequestBody Release updateRelease,
+            OAuth2Authentication oAuth2Authentication) throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
+        Release sw360Release = releaseService.getReleaseForUserById(id, user);
+        sw360Release = this.restControllerHelper.updateRelease(sw360Release, updateRelease);
+        releaseService.updateRelease(sw360Release, user);
+        HalResource<Release> halRelease = restControllerHelper.createHalReleaseResource(sw360Release, true);
+        return new ResponseEntity<>(halRelease, HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = RELEASES_URL, method = RequestMethod.POST)
     public ResponseEntity<Resource<Release>> createRelease(
             OAuth2Authentication oAuth2Authentication,
