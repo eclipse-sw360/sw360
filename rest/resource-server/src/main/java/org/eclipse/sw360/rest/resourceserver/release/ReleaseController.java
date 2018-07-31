@@ -17,12 +17,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
+import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
@@ -102,6 +104,25 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
         Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
         HalResource halRelease = restControllerHelper.createHalReleaseResource(sw360Release, true);
         return new ResponseEntity<>(halRelease, HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = RELEASES_URL + "/{ids}", method = RequestMethod.DELETE)
+    public ResponseEntity<List<MultiStatus>> deleteReleases(
+            @PathVariable("ids") List<String> idsToDelete, OAuth2Authentication oAuth2Authentication) throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
+        List<MultiStatus> results = new ArrayList<>();
+        for(String id:idsToDelete) {
+            RequestStatus requestStatus = releaseService.deleteRelease(id, user);
+            if(requestStatus == RequestStatus.SUCCESS) {
+                results.add(new MultiStatus(id, HttpStatus.OK));
+            } else if(requestStatus == RequestStatus.IN_USE) {
+                results.add(new MultiStatus(id, HttpStatus.CONFLICT));
+            } else {
+                results.add(new MultiStatus(id, HttpStatus.INTERNAL_SERVER_ERROR));
+            }
+        }
+        return new ResponseEntity<>(results, HttpStatus.MULTI_STATUS);
     }
 
     @PreAuthorize("hasAuthority('WRITE')")

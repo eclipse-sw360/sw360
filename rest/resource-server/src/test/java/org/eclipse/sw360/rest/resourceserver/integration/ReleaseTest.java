@@ -19,6 +19,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
+import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.Before;
@@ -32,8 +33,8 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -114,4 +115,35 @@ public class ReleaseTest extends TestIntegrationBase {
                         String.class);
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
     }
+
+    public void should_delete_releases() throws IOException, TException {
+        String unknownReleaseId = "abcde12345";
+        given(this.releaseServiceMock.deleteRelease(eq(releaseId), anyObject())).willReturn(RequestStatus.SUCCESS);
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/releases/" + releaseId + "," + unknownReleaseId,
+                        HttpMethod.DELETE,
+                        new HttpEntity<>(null, headers),
+                        String.class);
+        List<MultiStatus> multiStatusList = new ArrayList<>();
+        multiStatusList.add(new MultiStatus(releaseId, HttpStatus.OK));
+        multiStatusList.add(new MultiStatus(unknownReleaseId, HttpStatus.INTERNAL_SERVER_ERROR));
+        TestHelper.handleBatchDeleteResourcesResponse(response, multiStatusList);
+    }
+
+    @Test
+    public void should_delete_release() throws IOException, TException {
+        String unknownReleaseId = "abcde12345";
+        given(this.releaseServiceMock.deleteRelease(anyObject(), anyObject())).willReturn(RequestStatus.FAILURE);
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/releases/" + unknownReleaseId,
+                        HttpMethod.DELETE,
+                        new HttpEntity<>(null, headers),
+                        String.class);
+        List<MultiStatus> multiStatusList = new ArrayList<>();
+        multiStatusList.add(new MultiStatus(unknownReleaseId, HttpStatus.INTERNAL_SERVER_ERROR));
+        TestHelper.handleBatchDeleteResourcesResponse(response, multiStatusList);
+    }
+
 }

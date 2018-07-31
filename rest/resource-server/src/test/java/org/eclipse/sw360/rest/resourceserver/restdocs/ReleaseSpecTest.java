@@ -12,6 +12,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
@@ -40,6 +41,7 @@ import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.li
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -125,6 +127,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
         given(this.releaseServiceMock.getReleasesForUser(anyObject())).willReturn(releaseList);
         given(this.releaseServiceMock.getReleaseForUserById(eq(release.getId()), anyObject())).willReturn(release);
+        given(this.releaseServiceMock.deleteRelease(eq(release.getId()), anyObject())).willReturn(RequestStatus.SUCCESS);
 
         User user = new User();
         user.setId("123456789");
@@ -183,7 +186,23 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
-    public void should_update_release() throws Exception {
+    public void should_document_delete_releases() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(delete("/api/releases/" + release.getId())
+                .header("Authorization", "Bearer " + accessToken)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isMultiStatus())
+                .andDo(this.documentationHandler.document(
+                        responseFields(
+                                fieldWithPath("[].resourceId").description("id of the deleted resource"),
+                                fieldWithPath("[].status").description("status of the delete operation")
+                        )
+                ));
+    }
+
+
+    @Test
+    public void should_document_update_release() throws Exception {
         Release updateRelease = new Release();
         release.setName("Updated release");
 

@@ -13,6 +13,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +21,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.util.Base64Utils;
 
+import java.util.Collections;
 import java.util.List;
 import java.io.IOException;
 
@@ -87,15 +89,22 @@ public class TestHelper {
     }
 
     public static void handleBatchDeleteResourcesResponse(ResponseEntity<String> response, String resourceId, int statusCode) throws IOException {
+        handleBatchDeleteResourcesResponse(response, Collections.singletonList(new MultiStatus(resourceId, HttpStatus.valueOf(statusCode))));
+    }
+
+    public static void handleBatchDeleteResourcesResponse(ResponseEntity<String> response, List<MultiStatus> responseStatusList) throws IOException {
         assertEquals(HttpStatus.MULTI_STATUS, response.getStatusCode());
 
         JsonNode responseNode = new ObjectMapper().readTree(response.getBody());
         assertThat(responseNode.isArray(), is(true));
-        assertThat(responseNode.size(), is(1));
+        assertThat(responseNode.size(), is(responseStatusList.size()));
 
-        JsonNode firstResponseResult = responseNode.get(0);
-        assertThat(firstResponseResult.get("status").asInt(), is(statusCode));
-        assertThat(firstResponseResult.get("resourceId").asText(), is(resourceId));
+        for (int i = 0; i < responseStatusList.size(); i++) {
+            MultiStatus multiStatus = responseStatusList.get(i);
+            JsonNode jsonResult = responseNode.get(i);
+            assertThat(jsonResult.get("status").asInt(), is(multiStatus.getStatusCode()));
+            assertThat(jsonResult.get("resourceId").asText(), is(multiStatus.getResourceId()));
+        }
     }
 
 

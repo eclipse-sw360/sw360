@@ -72,6 +72,11 @@ public class Sw360ReleaseService {
         return requestStatus;
     }
 
+    public RequestStatus deleteRelease(String releaseId, User sw360User) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        return sw360ComponentClient.deleteRelease(releaseId, sw360User);
+    }
+
     private ComponentService.Iface getThriftComponentClient() throws TTransportException {
         THttpClient thriftClient = new THttpClient(thriftServerUrl + "/components/thrift");
         TProtocol protocol = new TCompactProtocol(thriftClient);
