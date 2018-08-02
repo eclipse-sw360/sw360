@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -9,7 +9,7 @@
  * http://www.eclipse.org/legal/epl-v10.html
  */
 
-package org.eclipse.sw360.attachments.db;
+package org.eclipse.sw360.datahandler.db;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.base.Strings;
@@ -22,6 +22,7 @@ import org.ektorp.ComplexKey;
 import org.ektorp.ViewQuery;
 import org.ektorp.ViewResult;
 import org.ektorp.support.View;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Map;
@@ -64,13 +65,35 @@ public class AttachmentUsageRepository extends DatabaseRepository<AttachmentUsag
     }
 
     public Map<Map<String, String>, Integer> getAttachmentUsageCount(Map<String, Set<String>> attachments, String filter) {
+        ViewQuery viewQuery = createUsagesByAttachmentQuery(filter);
+        List<ComplexKey> complexKeys = prepareKeys(attachments, filter);
+        ViewResult result = getConnector().queryView(viewQuery.reduce(true).group(true).keys(complexKeys));
+        // result is: { ..., rows: [ { key: [ "releaseId", "attachmentId" ], value: 3 }, ... ] }
+        return result.getRows().stream().collect(Collectors.toMap(row -> {
+            ArrayNode key = (ArrayNode) row.getKeyAsNode();
+            return ImmutableMap.of(key.get(0).asText(), key.get(1).asText());
+        }, row -> row.getValueAsInt()));
+    }
+
+    public List<AttachmentUsage> getUsageForAttachments(Map<String, Set<String>> attachments, String filter) {
+        ViewQuery viewQuery = createUsagesByAttachmentQuery(filter);
+        viewQuery.includeDocs(true).reduce(false);
+        List<ComplexKey> complexKeys = prepareKeys(attachments, filter);
+        return queryView(viewQuery.keys(complexKeys));
+    }
+
+    private ViewQuery createUsagesByAttachmentQuery(String filter) {
         ViewQuery viewQuery;
         if (Strings.isNullOrEmpty(filter)) {
             viewQuery = createQuery("usagesByAttachment");
         } else {
             viewQuery = createQuery("usagesByAttachmentUsageType");
         }
+        return viewQuery;
+    }
 
+    @NotNull
+    private List<ComplexKey> prepareKeys(Map<String, Set<String>> attachments, String filter) {
         List<ComplexKey> complexKeys = Lists.newArrayList();
         for(Entry<String, Set<String>> entry : attachments.entrySet()) {
             for(String attachmentId: entry.getValue()) {
@@ -81,12 +104,6 @@ public class AttachmentUsageRepository extends DatabaseRepository<AttachmentUsag
                 }
             }
         }
-
-        ViewResult result = getConnector().queryView(viewQuery.reduce(true).group(true).keys(complexKeys));
-        // result is: { ..., rows: [ { key: [ "releaseId", "attachmentId" ], value: 3 }, ... ] }
-        return result.getRows().stream().collect(Collectors.toMap(row -> {
-            ArrayNode key = (ArrayNode) row.getKeyAsNode();
-            return ImmutableMap.of(key.get(0).asText(), key.get(1).asText());
-        }, row -> row.getValueAsInt()));
+        return complexKeys;
     }
 }

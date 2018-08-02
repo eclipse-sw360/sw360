@@ -60,6 +60,10 @@ public abstract class FossologyAwarePortlet extends LinkedReleasesAndProjectsAwa
 
     }
 
+    public FossologyAwarePortlet(ThriftClients clients) {
+        super(clients);
+    }
+
     protected abstract void dealWithFossologyAction(ResourceRequest request, ResourceResponse response, String action) throws IOException, PortletException;
 
     protected void serveSendToFossology(ResourceRequest request, ResourceResponse response) throws PortletException {

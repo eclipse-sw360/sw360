@@ -19,7 +19,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.attachments.db.AttachmentDatabaseHandler;
+import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
@@ -62,7 +62,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
     protected Cache<String, List<LicenseInfoParsingResult>> licenseInfoCache;
 
     public LicenseInfoHandler() throws MalformedURLException {
-        this(new AttachmentDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_ATTACHMENTS),
+        this(new AttachmentDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS),
                 new ComponentDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS));
     }
 

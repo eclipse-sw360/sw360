@@ -9,7 +9,7 @@
  * http://www.eclipse.org/legal/epl-v10.html
  */
 
-package org.eclipse.sw360.attachments.db;
+package org.eclipse.sw360.datahandler.db;
 
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;

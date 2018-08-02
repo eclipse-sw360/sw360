@@ -13,7 +13,7 @@ package org.eclipse.sw360.importer;
 
 import com.google.common.collect.FluentIterable;
 import org.eclipse.sw360.attachments.AttachmentHandler;
-import org.eclipse.sw360.attachments.db.AttachmentRepository;
+import org.eclipse.sw360.datahandler.db.AttachmentRepository;
 import org.eclipse.sw360.components.ComponentHandler;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.ImportCSV;

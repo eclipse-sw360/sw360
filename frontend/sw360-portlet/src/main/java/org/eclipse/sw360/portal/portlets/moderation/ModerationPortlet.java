@@ -411,7 +411,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             }
         }
         request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_COMPONENT);
-        setAttachmentsInRequest(request, actualComponent.getAttachments());
+        setAttachmentsInRequest(request, actualComponent);
         request.setAttribute(USING_PROJECTS, nullToEmptySet(usingProjects));
         request.setAttribute(ALL_USING_PROJECTS_COUNT, allUsingProjectsCount);
     }
@@ -462,7 +462,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
         String actualReleaseId = actualRelease.getId();
         request.setAttribute(DOCUMENT_ID, actualReleaseId);
         request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_RELEASE);
-        setAttachmentsInRequest(request, actualRelease.getAttachments());
+        setAttachmentsInRequest(request, actualRelease);
         try {
             ProjectService.Iface projectClient = thriftClients.makeProjectClient();
             Set<Project> usingProjects = projectClient.searchByReleaseId(actualReleaseId, user);
@@ -526,7 +526,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             request.setAttribute(ALL_USING_PROJECTS_COUNT, allUsingProjectsCount);
             putReleasesAndProjectIntoRequest(request, actual_project.getId(), user);
             request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_PROJECT);
-            setAttachmentsInRequest(request, actual_project.getAttachments());
+            setAttachmentsInRequest(request, actual_project);
         } catch (TException e) {
             log.error("Error fetching project from backend!", e);
         }
