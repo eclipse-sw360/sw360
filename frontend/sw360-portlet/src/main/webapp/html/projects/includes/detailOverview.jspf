@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -16,6 +16,9 @@
                 <li <core_rt:if test="${selectedTab == 'Administration'}"> class="active" </core_rt:if>><a href="#tab-Administration">Administration</a></li>
                 <li <core_rt:if test="${selectedTab == 'Linked Projects'}"> class="active" </core_rt:if>><a href="#tab-linkedProjects">Linked Releases And Projects</a></li>
                 <li <core_rt:if test="${selectedTab == 'Linked Releases'}"> class="active" </core_rt:if>><a href="#tab-linkedReleases">Linked Releases Hierarchy</a></li>
+                <core_rt:if test="${inProjectDetailsContext}">
+                <li <core_rt:if test="${selectedTab == 'Attachment Usages'}"> class="active" </core_rt:if>><a href="#tab-attachmentUsages">Attachment Usages</a></li>
+                </core_rt:if>
                 <li <core_rt:if test="${selectedTab == 'Clearing Status'}"> class="active" </core_rt:if>><a href="#tab-ClearingStatus">Clearing Status</a></li>
                 <li <core_rt:if test="${selectedTab == 'ECC Status'}"> class="active" </core_rt:if>><a href="#tab-ECCStatus">ECC Status</a></li>
                 <li <core_rt:if test="${selectedTab == 'Attachments'}"> class="active" </core_rt:if>><a href="#tab-Attachments">Attachments</a></li>
@@ -50,6 +53,11 @@
                 <div id="tab-linkedReleases" >
                     <%@include file="/html/utils/includes/linkedReleaseDetails.jspf" %>
                 </div>
+                <core_rt:if test="${inProjectDetailsContext}">
+                <div id="tab-attachmentUsages" >
+                    <%@include file="/html/projects/includes/attachmentUsages.jspf" %>
+                </div>
+                </core_rt:if>
                 <div id="tab-ClearingStatus" >
                     <%@include file="/html/projects/includes/projects/clearingStatus.jspf" %>
                 </div>

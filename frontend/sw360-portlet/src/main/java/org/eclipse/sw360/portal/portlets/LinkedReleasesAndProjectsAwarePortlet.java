@@ -33,10 +33,12 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyString;
 import static org.eclipse.sw360.portal.common.PortalConstants.PARENT_BRANCH_ID;
 import static org.eclipse.sw360.portal.common.PortalConstants.PROJECT_LIST;
 import static org.eclipse.sw360.portal.common.PortalConstants.RELEASE_LIST;
@@ -133,28 +135,36 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
     }
 
     protected void serveLoadLinkedProjectsRows(ResourceRequest request, ResourceResponse response) throws PortletException, IOException {
+        prepareLinkedProjects(request);
+        include("/html/utils/ajax/linkedProjectsRows.jsp", request, response, PortletRequest.RESOURCE_PHASE);
+    }
+
+    protected void prepareLinkedProjects(ResourceRequest request) throws PortletException {
         final User user = UserCacheHolder.getUserFromRequest(request);
         String branchId = request.getParameter(PARENT_BRANCH_ID);
+        Optional<String> projectIdOpt = getProjectIdFromBranchId(branchId);
         request.setAttribute(PARENT_BRANCH_ID, branchId);
-        if (branchId != null) {
-            String id = branchId.split("_")[0];
+        final Project project;
+        if (projectIdOpt.isPresent()) {
             try {
                 ProjectService.Iface client = thriftClients.makeProjectClient();
-                Project project = client.getProjectById(id, user);
-                List<ProjectLink> mappedProjectLinks = createLinkedProjects(project, user);
-                request.setAttribute(PROJECT_LIST, mappedProjectLinks);
-
+                project = client.getProjectById(projectIdOpt.get(), user);
             } catch (TException e) {
                 log.error("Error getting projects!", e);
-                throw new PortletException("cannot get projects", e);
+                throw new PortletException("cannot load project " + projectIdOpt.get(), e);
             }
         } else {
-            List<ProjectLink> mappedProjectLinks = createLinkedProjects(new Project(), user);
-            request.setAttribute(PROJECT_LIST, mappedProjectLinks);
+            project = new Project();
         }
 
+        List<ProjectLink> mappedProjectLinks = createLinkedProjects(project, user);
+        request.setAttribute(PROJECT_LIST, mappedProjectLinks);
         request.setAttribute(PortalConstants.PARENT_SCOPE_GROUP_ID, request.getParameter(PortalConstants.PARENT_SCOPE_GROUP_ID));
-        include("/html/utils/ajax/linkedProjectsRows.jsp", request, response, PortletRequest.RESOURCE_PHASE);
+    }
+
+    protected Optional<String> getProjectIdFromBranchId(String branchId) {
+        String[] split = nullToEmptyString(branchId).split("_");
+        return split.length > 0 ? Optional.of(split[0]) : Optional.empty();
     }
 
     protected void serveLoadLinkedReleasesRows(ResourceRequest request, ResourceResponse response) throws PortletException, IOException {

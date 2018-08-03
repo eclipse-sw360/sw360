@@ -10,38 +10,27 @@
  */
 package org.eclipse.sw360.attachments;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.attachments.db.AttachmentRepository;
-import org.eclipse.sw360.attachments.db.AttachmentUsageRepository;
-import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.ektorp.BulkDeleteDocument;
-import org.ektorp.DocumentOperationResult;
 
 import java.net.MalformedURLException;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.concurrent.TimeUnit;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.eclipse.sw360.datahandler.common.Duration.durationOf;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
 import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.validateAttachment;
 
@@ -53,88 +42,60 @@ import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.validateAttach
  */
 public class AttachmentHandler implements AttachmentService.Iface {
 
-    public static final String ATTACHMENTS_FIELD_NAME = "attachments";
     private static final Logger log = Logger.getLogger(AttachmentHandler.class);
-
-    private final AttachmentRepository attachmentRepository;
-    private final AttachmentUsageRepository attachmentUsageRepository;
-    private final AttachmentConnector attachmentConnector;
+    private final AttachmentDatabaseHandler handler;
 
 
     public AttachmentHandler() throws MalformedURLException {
-        DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_ATTACHMENTS);
-        attachmentConnector = new AttachmentConnector(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_ATTACHMENTS, durationOf(30, TimeUnit.SECONDS));
-        attachmentRepository = new AttachmentRepository(databaseConnector);
-
-        DatabaseConnector stdDatabaseConnector = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(),
-                DatabaseSettings.COUCH_DB_DATABASE);
-        attachmentUsageRepository = new AttachmentUsageRepository(stdDatabaseConnector);
+        handler = new AttachmentDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
     }
 
     @Override
     public AttachmentContent makeAttachmentContent(AttachmentContent attachmentContent) throws TException {
         validateAttachment(attachmentContent);
         assertIdUnset(attachmentContent.getId());
-
-        attachmentRepository.add(attachmentContent);
-        return attachmentContent;
-
+        return handler.add(attachmentContent);
     }
 
     @Override
     public List<AttachmentContent> makeAttachmentContents(List<AttachmentContent> attachmentContents) throws TException {
-        final List<DocumentOperationResult> documentOperationResults = attachmentRepository.executeBulk(attachmentContents);
-        if (!documentOperationResults.isEmpty())
-            log.error("Failed Attachment store results " + documentOperationResults);
-
-        return FluentIterable.from(attachmentContents).filter(new Predicate<AttachmentContent>() {
-            @Override
-            public boolean apply(AttachmentContent input) {
-                return input.isSetId();
-            }
-        }).toList();
+        return handler.makeAttachmentContents(attachmentContents);
     }
 
     @Override
     public AttachmentContent getAttachmentContent(String id) throws TException {
         assertNotEmpty(id);
-
-        AttachmentContent attachment = attachmentRepository.get(id);
-        assertNotNull(attachment, "Cannot find "+ id + " in database.");
-        validateAttachment(attachment);
-
-        return attachment;
+        return handler.getAttachmentContent(id);
     }
 
     @Override
     public void updateAttachmentContent(AttachmentContent attachment) throws TException {
         validateAttachment(attachment);
-        attachmentConnector.updateAttachmentContent(attachment);
+        handler.updateAttachmentContent(attachment);
     }
 
     @Override
     public RequestSummary bulkDelete(List<String> ids) throws TException {
-        final List<DocumentOperationResult> documentOperationResults = attachmentRepository.deleteIds(ids);
-        return CommonUtils.getRequestSummary(ids, documentOperationResults);
-
+        assertNotNull(ids);
+        return handler.bulkDelete(ids);
     }
 
     @Override
     public RequestStatus deleteAttachmentContent(String attachmentId) throws TException {
-        attachmentConnector.deleteAttachment(attachmentId);
-
-        return RequestStatus.SUCCESS;
+        return handler.deleteAttachmentContent(attachmentId);
     }
 
     @Override
     public RequestSummary vacuumAttachmentDB(User user, Set<String> usedIds) throws TException {
         assertUser(user);
-        return attachmentRepository.vacuumAttachmentDB(user, usedIds);
+        return handler.vacuumAttachmentDB(user, usedIds);
     }
 
     @Override
-    public String getSha1FromAttachmentContentId(String attachmentContentId){
-        return attachmentConnector.getSha1FromAttachmentContentId(attachmentContentId);
+    public String getSha1FromAttachmentContentId(String attachmentContentId) throws TException {
+        assertNotNull(attachmentContentId);
+        assertNotEmpty(attachmentContentId);
+        return handler.getSha1FromAttachmentContentId(attachmentContentId);
     }
 
     @Override
@@ -142,20 +103,16 @@ public class AttachmentHandler implements AttachmentService.Iface {
         assertNotNull(attachmentUsage);
         assertIdUnset(attachmentUsage.getId());
 
-        attachmentUsageRepository.add(attachmentUsage);
-        return attachmentUsage;
+        return handler.makeAttachmentUsage(attachmentUsage);
     }
 
     @Override
     public void makeAttachmentUsages(List<AttachmentUsage> attachmentUsages) throws TException {
         assertNotNull(attachmentUsages);
         assertNotEmpty(attachmentUsages);
-        assertIdsUnset(attachmentUsages, attachmentUsage -> attachmentUsage.isSetId());
+        assertIdsUnset(attachmentUsages, AttachmentUsage::isSetId);
 
-        List<DocumentOperationResult> results = attachmentUsageRepository.executeBulk(attachmentUsages);
-        if (!results.isEmpty()) {
-            throw new SW360Exception("Some of the usage documents could not be created: " + results);
-        }
+        handler.makeAttachmentUsages(attachmentUsages);
     }
 
     @Override
@@ -163,10 +120,7 @@ public class AttachmentHandler implements AttachmentService.Iface {
         assertNotNull(id);
         assertNotEmpty(id);
 
-        AttachmentUsage attachmentUsage = attachmentUsageRepository.get(id);
-        assertNotNull(attachmentUsage);
-
-        return attachmentUsage;
+        return handler.getAttachmentUsage(id);
     }
 
     @Override
@@ -174,20 +128,16 @@ public class AttachmentHandler implements AttachmentService.Iface {
         assertNotNull(attachmentUsage);
         assertId(attachmentUsage.getId());
 
-        attachmentUsageRepository.update(attachmentUsage);
-        return attachmentUsage;
+        return handler.updateAttachmentUsage(attachmentUsage);
     }
 
     @Override
     public void updateAttachmentUsages(List<AttachmentUsage> attachmentUsages) throws TException {
         assertNotNull(attachmentUsages);
         assertNotEmpty(attachmentUsages);
-        assertIds(attachmentUsages, attachmentUsage -> attachmentUsage.isSetId());
+        assertIds(attachmentUsages, AttachmentUsage::isSetId);
 
-        List<DocumentOperationResult> results = attachmentUsageRepository.executeBulk(attachmentUsages);
-        if (!results.isEmpty()) {
-            throw new SW360Exception("Some of the usage documents could not be updated: " + results);
-        }
+        handler.updateAttachmentUsages(attachmentUsages);
     }
 
     @Override
@@ -195,7 +145,7 @@ public class AttachmentHandler implements AttachmentService.Iface {
         assertNotNull(attachmentUsage);
         assertId(attachmentUsage.getId());
 
-        attachmentUsageRepository.remove(attachmentUsage);
+        handler.deleteAttachmentUsage(attachmentUsage);
     }
 
     @Override
@@ -204,26 +154,7 @@ public class AttachmentHandler implements AttachmentService.Iface {
         assertNotEmpty(attachmentUsages);
         assertIds(attachmentUsages, AttachmentUsage::isSetId);
 
-        List<DocumentOperationResult> results = attachmentUsageRepository.executeBulk(
-                attachmentUsages.stream().map(attachmentUsage -> BulkDeleteDocument.of(attachmentUsage)).collect(Collectors.toList()));
-        if (!results.isEmpty()) {
-            throw new SW360Exception("Some of the usage documents could not be deleted: " + results);
-        }
-    }
-
-    private void deleteAttachmentUsagesByUsageDataTypes(Source usedBy, Set<UsageData._Fields> typesToReplace, boolean deleteWithEmptyType) throws TException {
-        List<AttachmentUsage> existingUsages = attachmentUsageRepository.getUsedAttachments(usedBy.getFieldValue().toString());
-        List<AttachmentUsage> usagesToDelete = existingUsages.stream().filter(usage -> {
-            if (usage.isSetUsageData()) {
-                return typesToReplace.contains(usage.getUsageData().getSetField());
-            } else {
-                return deleteWithEmptyType;
-            }
-        }).collect(Collectors.toList());
-
-        if (!usagesToDelete.isEmpty()) {
-            deleteAttachmentUsages(usagesToDelete);
-        }
+        handler.deleteAttachmentUsages(attachmentUsages);
     }
 
     @Override
@@ -231,7 +162,7 @@ public class AttachmentHandler implements AttachmentService.Iface {
         assertNotNull(usedBy);
         assertTrue(usedBy.isSet());
         Set<UsageData._Fields> usageDataTypes = usageData == null ? Collections.emptySet() : ImmutableSet.of(usageData.getSetField());
-        deleteAttachmentUsagesByUsageDataTypes(usedBy, usageDataTypes, usageData == null);
+        handler.deleteAttachmentUsagesByUsageDataTypes(usedBy, usageDataTypes, usageData == null);
     }
 
     @Override
@@ -241,12 +172,17 @@ public class AttachmentHandler implements AttachmentService.Iface {
         assertNotNull(attachmentContentId);
         assertNotEmpty(attachmentContentId);
 
-        if (filter != null && filter.isSet()) {
-            return attachmentUsageRepository.getUsageForAttachment(owner.getFieldValue().toString(), attachmentContentId,
-                    filter.getSetField().toString());
-        } else {
-            return attachmentUsageRepository.getUsageForAttachment(owner.getFieldValue().toString(), attachmentContentId);
-        }
+        return handler.getAttachmentUsages(owner, attachmentContentId, filter);
+    }
+
+    @Override
+    public List<AttachmentUsage> getAttachmentsUsages(Source owner, Set<String> attachmentContentIds, UsageData filter) throws TException {
+        assertNotNull(owner);
+        assertTrue(owner.isSet());
+        assertNotNull(attachmentContentIds);
+        assertNotEmpty(attachmentContentIds);
+
+        return handler.getAttachmentUsages(owner, attachmentContentIds, filter);
     }
 
     @Override
@@ -254,11 +190,7 @@ public class AttachmentHandler implements AttachmentService.Iface {
         assertNotNull(usedBy);
         assertTrue(usedBy.isSet());
 
-        if (filter != null && filter.isSet()) {
-            return attachmentUsageRepository.getUsedAttachments(usedBy.getFieldValue().toString(), filter.getSetField().toString());
-        } else {
-            return attachmentUsageRepository.getUsedAttachments(usedBy.getFieldValue().toString());
-        }
+        return handler.getUsedAttachments(usedBy, filter);
     }
 
     @Override
@@ -276,35 +208,16 @@ public class AttachmentHandler implements AttachmentService.Iface {
                 .collect(Collectors.toSet());
 
         // delete all the existing usages of the types given
-        deleteAttachmentUsagesByUsageDataTypes(usedBy, typesToReplace, hasEmptyUsageDataType);
+        handler.deleteAttachmentUsagesByUsageDataTypes(usedBy, typesToReplace, hasEmptyUsageDataType);
 
         // then save the new ones
-        List<DocumentOperationResult> results = attachmentUsageRepository.executeBulk(attachmentUsages);
-        if (!results.isEmpty()) {
-            throw new SW360Exception("Some of the usage documents could not be updated: " + results);
-        }
+        handler.makeAttachmentUsages(attachmentUsages);
     }
 
     @Override
     public Map<Map<Source, String>, Integer> getAttachmentUsageCount(Map<Source, Set<String>> attachments, UsageData filter)
             throws TException {
-        Map<String, Source._Fields> idToType = Maps.newHashMap();
-        Map<String, Set<String>> queryFor = attachments.entrySet().stream()
-                .collect(Collectors.toMap(entry -> {
-                    idToType.put(entry.getKey().getFieldValue().toString(), entry.getKey().getSetField());
-                    return entry.getKey().getFieldValue().toString();
-           }, entry -> entry.getValue()));
-
-        Map<Map<String, String>, Integer> results;
-        if (filter != null && filter.isSet()) {
-            results = attachmentUsageRepository.getAttachmentUsageCount(queryFor, filter.getSetField().toString());
-        } else {
-            results = attachmentUsageRepository.getAttachmentUsageCount(queryFor, null);
-        }
-
-        return results.entrySet().stream().collect(Collectors.toMap(entry -> {
-            Entry<String, String> key = entry.getKey().entrySet().iterator().next();
-            return ImmutableMap.of(new Source(idToType.get(key.getKey()), key.getKey()), key.getValue());
-        }, entry -> entry.getValue()));
+        assertNotNull(attachments);
+        return handler.getAttachmentUsageCount(attachments, filter);
     }
 }

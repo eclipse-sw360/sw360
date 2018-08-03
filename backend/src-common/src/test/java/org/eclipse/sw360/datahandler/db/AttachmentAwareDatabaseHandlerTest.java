@@ -11,28 +11,39 @@
 
 package org.eclipse.sw360.datahandler.db;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.when;
 
+@RunWith(MockitoJUnitRunner.class)
 public class AttachmentAwareDatabaseHandlerTest {
 
     AttachmentAwareDatabaseHandler handler;
 
+    @Mock
+    AttachmentDatabaseHandler attachmentDatabaseHandler;
+
     @Before
     public void setUp() throws Exception {
 
-        handler = new AttachmentAwareDatabaseHandler() {
+        handler = new AttachmentAwareDatabaseHandler(attachmentDatabaseHandler) {
             @Override
-            public Set<Attachment> getAllAttachmentsToKeep(Set<Attachment> originalAttachments, Set<Attachment> changedAttachments) {
-                return super.getAllAttachmentsToKeep(originalAttachments, changedAttachments);
+            public Set<Attachment> getAllAttachmentsToKeep(Source owner, Set<Attachment> originalAttachments, Set<Attachment> changedAttachments) {
+                return super.getAllAttachmentsToKeep(owner, originalAttachments, changedAttachments);
             }
         };
     }
@@ -49,7 +60,7 @@ public class AttachmentAwareDatabaseHandlerTest {
         attachmentsBefore.add(attachmentRejected);
         Set<Attachment> attachmentsAfter = new HashSet<>();
 
-        Set<Attachment> attachmentsToKeep = handler.getAllAttachmentsToKeep(attachmentsBefore, attachmentsAfter);
+        Set<Attachment> attachmentsToKeep = handler.getAllAttachmentsToKeep(Source.releaseId("dummy"), attachmentsBefore, attachmentsAfter);
 
         assertEquals(1, attachmentsToKeep.size());
         assertTrue(attachmentsToKeep.contains(attachmentAccepted));
@@ -65,10 +76,33 @@ public class AttachmentAwareDatabaseHandlerTest {
         attachmentsAfter = new HashSet<>();
         attachmentsAfter.add(changedAttachment);
 
-        attachmentsToKeep = handler.getAllAttachmentsToKeep(attachmentsBefore, attachmentsAfter);
+        attachmentsToKeep = handler.getAllAttachmentsToKeep(Source.releaseId("dummy"), attachmentsBefore, attachmentsAfter);
 
         assertEquals(1, attachmentsToKeep.size());
         assertTrue(attachmentsToKeep.contains(changedAttachment));
+    }
+
+    @Test
+    public void testGetAllAttachmentsToKeepPreservesUsedAttachments() throws Exception {
+
+        // Try to delete one used and two unused attachments.
+        //  -> the used one should not be deleted.
+        Attachment attachmentUsed = new Attachment().setAttachmentContentId("usedAtt").setFilename("att1.file").setCheckStatus(CheckStatus.NOTCHECKED);
+        Attachment attachmentUnused = new Attachment().setAttachmentContentId("unusedAtt").setFilename("att2.file").setCheckStatus(CheckStatus.NOTCHECKED);
+        Attachment attachmentUnused2 = new Attachment().setAttachmentContentId("unusedAtt2").setFilename("att3.file").setCheckStatus(CheckStatus.NOTCHECKED);
+        Set<Attachment> attachmentsBefore = ImmutableSet.of(attachmentUsed, attachmentUnused, attachmentUnused2);
+        Set<Attachment> attachmentsAfter = new HashSet<>();
+
+        when(attachmentDatabaseHandler.getAttachmentUsageCount(ImmutableMap.of(Source.releaseId("releaseId"), ImmutableSet.of("usedAtt", "unusedAtt", "unusedAtt2")), null))
+                .thenReturn(ImmutableMap.of(ImmutableMap.of(Source.releaseId("releaseId"), "usedAtt"), 2,
+                        ImmutableMap.of(Source.releaseId("releaseId"), "unusedAtt"), 0));
+
+        Set<Attachment> attachmentsToKeep = handler.getAllAttachmentsToKeep(Source.releaseId("releaseId"), attachmentsBefore, attachmentsAfter);
+
+        assertEquals(1, attachmentsToKeep.size());
+        assertTrue(attachmentsToKeep.contains(attachmentUsed));
+        assertFalse(attachmentsToKeep.contains(attachmentUnused));
+        assertFalse(attachmentsToKeep.contains(attachmentUnused2));
     }
 
     @Test
@@ -85,7 +119,7 @@ public class AttachmentAwareDatabaseHandlerTest {
         attachments.add(attachmentRejected1);
         attachments.add(attachmentRejected2);
 
-        Set<Attachment> attachmentsToKeep = handler.getAllAttachmentsToKeep(attachments, null);
+        Set<Attachment> attachmentsToKeep = handler.getAllAttachmentsToKeep(Source.releaseId("dummy"), attachments, null);
         assertEquals(1, attachmentsToKeep.size());
         assertTrue(attachmentsToKeep.contains(attachmentAccepted1));
         assertFalse(attachmentsToKeep.contains(attachmentRejected1));
@@ -93,7 +127,7 @@ public class AttachmentAwareDatabaseHandlerTest {
 
         // Test what happens if `originalAttachments` are `null`  (this means adding of attachments)
         //  ->  all should be added
-        attachmentsToKeep = handler.getAllAttachmentsToKeep(null, attachments);
+        attachmentsToKeep = handler.getAllAttachmentsToKeep(Source.releaseId("dummy"), null, attachments);
         assertEquals(3, attachmentsToKeep.size());
         assertTrue(attachmentsToKeep.contains(attachmentAccepted1));
         assertTrue(attachmentsToKeep.contains(attachmentRejected1));

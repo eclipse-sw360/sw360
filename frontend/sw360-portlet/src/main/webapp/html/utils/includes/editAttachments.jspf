@@ -122,7 +122,7 @@
               /*  8 */ { data: "checkedTeam", defaultContent: "", render: $.fn.dataTable.render.ellipsis },
               /*  9 */ { data: "checkedBy", defaultContent: "", render: $.fn.dataTable.render.ellipsis },
               /* 10 */ { data: "checkedOn", defaultContent: "" },
-              /* 11 */ { data: "actions", orderable: false, render: $.fn.dataTable.render.actions( [{ key: 'attachmentContentId', 'class': 'delete-attachment', icon: 'Trash', title: 'Delete Attachment', approvalKey: 'checkStatus'}] ) }
+              /* 11 */ { data: "actions", orderable: false, render: $.fn.dataTable.render.actions( [{ key: 'attachmentContentId', 'class': 'delete-attachment', icon: 'Trash', title: 'Delete Attachment', approvalKey: 'checkStatus', usageCountsKey: 'usageCounts'}] ) }
             ],
             columnDefs: [{
                   targets: 1,
@@ -175,10 +175,19 @@
 
         $('#attachmentInfo').on('click', 'img.delete-attachment', function(event) {
             var data = $(event.currentTarget).data();
-            if(data.approvalstate != <%=CheckStatus.ACCEPTED.getValue()%>) {
-                deleteAttachment(data.key);
+            var warningMessage;
+            var usagesCount = data.usagesCount;
+            if(data.approvalstate == <%=CheckStatus.ACCEPTED.getValue()%>) {
+                warningMessage = "<p>An attachment cannot be deleted while it is approved. You have to reject the approval first.</p>";
+                <core_rt:if test="${hasWritePermissions == false}">
+                warningMessage += "<p>For this, you have to create a moderation request.</p>";
+                </core_rt:if>
+                displayDeleteNotAllowedWarning(warningMessage);
+            } else if (typeof usagesCount === 'number' && usagesCount !== 0){
+                warningMessage = "<p>An attachment cannot be deleted while it is used by some projects. You have to delete the usages first.</p>";
+                displayDeleteNotAllowedWarning(warningMessage);
             } else {
-                displayDeleteNotAllowedWarning();
+                deleteAttachment(data.key);
             }
         });
 
@@ -204,11 +213,7 @@
             confirm.confirmDeletion("Do you really want to delete attachment <b>" + attachmentName + "</b> (" + attachmentId + ")?", deleteAttachmentInternal);
         }
 
-        function displayDeleteNotAllowedWarning() {
-            var warningMessage = "<p>An attachment cannot be deleted while it is approved. You have to reject the approval first.</p>";
-            <core_rt:if test="${hasWritePermissions == false}">
-                warningMessage += "<p>For this, you have to create a moderation request.</p>";
-            </core_rt:if>
+        function displayDeleteNotAllowedWarning(warningMessage) {
             $.confirm({
                 title: 'Warning',
                 content: warningMessage,

@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -12,6 +12,8 @@ package org.eclipse.sw360.portal.portlets.projects;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import org.eclipse.sw360.datahandler.thrift.Source;
+import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
@@ -24,8 +26,14 @@ import org.mockito.runners.MockitoJUnitRunner;
 import javax.portlet.PortletSession;
 import javax.portlet.ResourceRequest;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.eclipse.sw360.portal.common.PortalConstants.PROJECT_ID;
+import static org.eclipse.sw360.portal.common.PortalConstants.PROJECT_SELECTED_ATTACHMENT_USAGES;
+import static org.eclipse.sw360.portal.common.PortalConstants.PROJECT_SELECTED_ATTACHMENT_USAGES_SHADOWS;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ProjectPortletUtilsTest {
@@ -90,5 +98,37 @@ public class ProjectPortletUtilsTest {
         licenseNameWithText.setLicenseName(name);
         licenseNameWithText.setLicenseText(text);
         return licenseNameWithText;
+    }
+
+    @Test
+    public void testMakeAttachmentUsagesToDeleteFromRequest() {
+        Mockito.when(request.getParameter(PROJECT_ID)).thenReturn("p1");
+        Mockito.when(request.getParameterValues(PROJECT_SELECTED_ATTACHMENT_USAGES))
+                .thenReturn(new String[]{"r1_licenseInfo_att1", "r4_licenseInfo_att4"});
+        Mockito.when(request.getParameterValues(PROJECT_SELECTED_ATTACHMENT_USAGES_SHADOWS))
+                .thenReturn(new String[]{"r1_licenseInfo_att1", "r2_sourcePackage_att2", "r3_manuallySet_att3"});
+        List<AttachmentUsage> attachmentUsages = ProjectPortletUtils.makeAttachmentUsagesToDeleteFromRequest(request);
+        Assert.assertThat(attachmentUsages, Matchers.containsInAnyOrder(
+                new AttachmentUsage(Source.releaseId("r2"), "att2", Source.projectId("p1"))
+                        .setUsageData(UsageData.sourcePackage(new SourcePackageUsage())),
+                new AttachmentUsage(Source.releaseId("r3"), "att3", Source.projectId("p1"))
+                        .setUsageData(UsageData.manuallySet(new ManuallySetUsage()))
+        ));
+    }
+
+    @Test
+    public void testMakeAttachmentUsagesToCreateFromRequest() {
+        Mockito.when(request.getParameter(PROJECT_ID)).thenReturn("p1");
+        Mockito.when(request.getParameterValues(PROJECT_SELECTED_ATTACHMENT_USAGES))
+                .thenReturn(new String[]{"r1_licenseInfo_att1", "r2_sourcePackage_att2", "r3_manuallySet_att3"});
+        Mockito.when(request.getParameterValues(PROJECT_SELECTED_ATTACHMENT_USAGES_SHADOWS))
+                .thenReturn(new String[]{"r1_licenseInfo_att1", "r2_sourcePackage_att2", "r4_sourcePackage_att4"});
+        List<AttachmentUsage> attachmentUsages = ProjectPortletUtils.makeAttachmentUsagesToCreateFromRequest(request);
+        Assert.assertThat(attachmentUsages, Matchers.containsInAnyOrder(
+                new AttachmentUsage(Source.releaseId("r1"), "att1", Source.projectId("p1"))
+                        .setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(Collections.emptySet()))),
+                new AttachmentUsage(Source.releaseId("r2"), "att2", Source.projectId("p1"))
+                        .setUsageData(UsageData.sourcePackage(new SourcePackageUsage()))
+        ));
     }
 }

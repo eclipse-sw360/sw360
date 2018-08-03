@@ -16,6 +16,7 @@ import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
+import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
@@ -217,7 +218,9 @@ public class ProjectHandlerTest {
     public void testUpdateProject2_1() throws Exception {
         ProjectModerator moderator = Mockito.mock(ProjectModerator.class);
 
-        ProjectDatabaseHandler handler = new ProjectDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), dbName, attachmentDbName, moderator, new ComponentDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), dbName, attachmentDbName));
+        ProjectDatabaseHandler handler = new ProjectDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), dbName, attachmentDbName, moderator,
+                new ComponentDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), dbName, attachmentDbName),
+                new AttachmentDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), dbName, attachmentDbName));
         Project project2 = handler.getProjectById("P2", user1);
         project2.setName("Project2new");
 

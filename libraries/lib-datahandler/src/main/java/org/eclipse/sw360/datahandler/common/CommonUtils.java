@@ -163,6 +163,9 @@ public class CommonUtils {
         return in != null ? in : ImmutableList.<T>of();
     }
 
+    public static <T> List<T> arrayToList(T[] in) {
+        return in==null ? Collections.emptyList() : Arrays.asList(in);
+    }
 
     public static <T> Collection<T> nullToEmptyCollection(Collection<T> in) {
         return in != null ? in : ImmutableList.<T>of();
