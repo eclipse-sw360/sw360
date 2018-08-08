@@ -17,6 +17,8 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.resourcelists.*;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
@@ -32,6 +34,8 @@ import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
+import org.springframework.data.domain.Pageable;
+import org.springframework.hateoas.PagedResources;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.ResourceProcessor;
 import org.springframework.hateoas.Resources;
@@ -73,29 +77,38 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
     @NonNull
     private final RestControllerHelper restControllerHelper;
 
+    @NonNull
+    private final ResourceListController resourceListController = new ResourceListController();
+
     @RequestMapping(value = COMPONENTS_URL, method = RequestMethod.GET)
-    public ResponseEntity<Resources<Resource<Component>>> getComponents(@RequestParam(value = "name", required = false) String name,
+    public ResponseEntity<Resources<Resource<Component>>> getComponents(Pageable pageable,
+                                                                        @RequestParam(value = "name", required = false) String name,
                                                                         @RequestParam(value = "type", required = false) String componentType,
                                                                         @RequestParam(value = "fields", required = false) List<String> fields,
-                                                                        OAuth2Authentication oAuth2Authentication) throws TException {
+                                                                        OAuth2Authentication oAuth2Authentication) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
-        List<Component> sw360Components = new ArrayList<>();
+
+        List<Component> allComponents = new ArrayList<>();
         if (name != null && !name.isEmpty()) {
-            sw360Components.addAll(componentService.searchComponentByName(name));
+            allComponents.addAll(componentService.searchComponentByName(name));
         } else {
-            sw360Components.addAll(componentService.getComponentsForUser(sw360User));
+            allComponents.addAll(componentService.getComponentsForUser(sw360User));
         }
 
+        PaginationOptions paginationOptions = restControllerHelper.paginationOptionsFromPageable(pageable, SW360Constants.TYPE_COMPONENT);
+        PaginationResult paginationResult = resourceListController.applyPagingToList(allComponents, paginationOptions);
+        allComponents = paginationResult.getResources();
+
         List<Resource<Component>> componentResources = new ArrayList<>();
-        sw360Components.stream()
+        allComponents.stream()
                 .filter(component -> componentType == null || componentType.equals(component.componentType.name()))
                 .forEach(c -> {
                     Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c, fields);
                     componentResources.add(new Resource<>(embeddedComponent));
                 });
 
-        Resources<Resource<Component>> resources = new Resources<>(componentResources);
+        PagedResources<Resource<Component>> resources = restControllerHelper.generatePagesResource(paginationResult, componentResources);
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 

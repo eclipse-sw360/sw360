@@ -25,6 +25,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.http.*;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -39,6 +40,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.anyObject;
+import static org.mockito.Mockito.when;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
 
@@ -89,6 +91,18 @@ public class ComponentTest extends TestIntegrationBase {
         assertEquals(HttpStatus.OK, response.getStatusCode());
 
         TestHelper.checkResponse(response.getBody(), "components", 1);
+    }
+
+    @Test
+    public void should_get_all_components_wrong_page() throws IOException, TException {
+        when(this.componentServiceMock.getComponentsForUser(anyObject())).thenThrow(ResourceNotFoundException.class);
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/components?page=5&page_entries=10",
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, headers),
+                        String.class);
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     }
 
     @Test

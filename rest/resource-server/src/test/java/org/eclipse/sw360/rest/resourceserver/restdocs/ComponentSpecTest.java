@@ -41,7 +41,9 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.restdocs.request.RequestDocumentation.requestParameters;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class ComponentSpecTest extends TestRestDocsSpecBase {
@@ -156,30 +158,57 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/components")
                 .header("Authorization", "Bearer " + accessToken)
+                .param("page","0")
+                .param("page_entries", "5")
+                .param("sort","name,desc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("page").description("Page of components"),
+                                parameterWithName("page_entries").description("Amount of components per page"),
+                                parameterWithName("sort").description("Defines order of the components")
+                        ),
                         links(
-                                linkWithRel("curies").description("Curies are used for online documentation")
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
                         ),
                         responseFields(
                                 fieldWithPath("_embedded.sw360:components[]name").description("The name of the component"),
                                 fieldWithPath("_embedded.sw360:components[]componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
                                 fieldWithPath("_embedded.sw360:components").description("An array of <<resources-components, Components resources>>"),
-                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of components per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all existing components"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
                         )));
     }
 
     @Test
     public void should_document_get_components_with_fields() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        mockMvc.perform(get("/api/components?fields=ownerGroup,ownerCountry")
+        mockMvc.perform(get("/api/components")
                 .header("Authorization", "Bearer " + accessToken)
+                .param("fields", "ownerGroup,ownerCountry")
+                .param("page","0")
+                .param("page_entries", "5")
+                .param("sort","name,desc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("fields").description("Properties which should be present for each component in the result"),
+                                parameterWithName("page").description("Page of components"),
+                                parameterWithName("page_entries").description("Amount of components per page"),
+                                parameterWithName("sort").description("Defines order of the components")
+                        ),
                         links(
-                                linkWithRel("curies").description("Curies are used for online documentation")
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
                         ),
                         responseFields(
                                 fieldWithPath("_embedded.sw360:components[]name").description("The name of the component"),
@@ -187,7 +216,12 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("_embedded.sw360:components[]ownerCountry").description("The ownerCountry of the component"),
                                 fieldWithPath("_embedded.sw360:components[]componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
                                 fieldWithPath("_embedded.sw360:components").description("An array of <<resources-components, Components resources>>"),
-                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of components per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all existing components"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
                         )));
     }
 
@@ -267,17 +301,33 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/components?type=" + angularComponent.getComponentType())
                 .header("Authorization", "Bearer " + accessToken)
+                .param("page","0")
+                .param("page_entries", "5")
+                .param("sort","name,desc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("type").description("Filter for type"),
+                                parameterWithName("page").description("Page of components"),
+                                parameterWithName("page_entries").description("Amount of components per page"),
+                                parameterWithName("sort").description("Defines order of the components")
+                        ),
                         links(
-                                linkWithRel("curies").description("Curies are used for online documentation")
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
                         ),
                         responseFields(
                                 fieldWithPath("_embedded.sw360:components[]name").description("The name of the component"),
                                 fieldWithPath("_embedded.sw360:components[]componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
                                 fieldWithPath("_embedded.sw360:components").description("An array of <<resources-components, Components resources>>"),
-                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of components per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all existing components"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
                         )));
     }
 
@@ -286,17 +336,33 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/components?name=" + angularComponent.getName())
                 .header("Authorization", "Bearer " + accessToken)
+                .param("page","0")
+                .param("page_entries", "5")
+                .param("sort","name,desc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("name").description("Filter for name"),
+                                parameterWithName("page").description("Page of components"),
+                                parameterWithName("page_entries").description("Amount of components per page"),
+                                parameterWithName("sort").description("Defines order of the components")
+                        ),
                         links(
-                                linkWithRel("curies").description("Curies are used for online documentation")
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
                         ),
                         responseFields(
                                 fieldWithPath("_embedded.sw360:components[]name").description("The name of the component"),
                                 fieldWithPath("_embedded.sw360:components[]componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
                                 fieldWithPath("_embedded.sw360:components").description("An array of <<resources-components, Components resources>>"),
-                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of components per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all existing components"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
                         )));
     }
 
