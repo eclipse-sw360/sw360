@@ -9,6 +9,7 @@
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
@@ -18,6 +19,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
+import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.Before;
 import org.junit.Test;
@@ -57,6 +59,9 @@ public class AttachmentSpecTest extends TestRestDocsSpecBase {
     @MockBean
     private Sw360AttachmentService attachmentServiceMock;
 
+    @MockBean
+    private Sw360ReleaseService releaseServiceMock;
+
     private Attachment attachment;
 
     @Before
@@ -91,9 +96,13 @@ public class AttachmentSpecTest extends TestRestDocsSpecBase {
         release.setComponentId("678dstzd8");
         release.setClearingState(ClearingState.APPROVED);
 
-        AttachmentInfo attachmentInfo = new AttachmentInfo(attachment, release);
+        AttachmentInfo attachmentInfo = new AttachmentInfo(attachment);
+        Source owner = new Source();
+        owner.setReleaseId(release.getId());
+        attachmentInfo.setOwner(owner);
 
-        given(this.attachmentServiceMock.getAttachmentByIdForUser(eq(attachment.getAttachmentContentId()), anyObject())).willReturn(attachmentInfo);
+        given(this.attachmentServiceMock.getAttachmentById(eq(attachment.getAttachmentContentId()))).willReturn(attachmentInfo);
+        given(this.releaseServiceMock.getReleaseForUserById(eq(release.getId()), anyObject())).willReturn(release);
 
         User user = new User();
         user.setId("123456789");
@@ -113,7 +122,7 @@ public class AttachmentSpecTest extends TestRestDocsSpecBase {
                 .andDo(this.documentationHandler.document(
                         links(
                                 linkWithRel("self").description("The <<resources-projects,Projects resource>>"),
-                                linkWithRel("sw360:release").description("The release this attachment belongs to"),
+                                linkWithRel("sw360:downloadLink").description("The download link (URL) of the resource"),
                                 linkWithRel("curies").description("Curies are used for online documentation")
                         ),
                         responseFields(

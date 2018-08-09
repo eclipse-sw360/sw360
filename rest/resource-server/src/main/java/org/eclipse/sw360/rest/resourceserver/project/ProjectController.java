@@ -15,19 +15,20 @@ package org.eclipse.sw360.rest.resourceserver.project;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
+import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -61,7 +62,6 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
@@ -70,6 +70,7 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ProjectController implements ResourceProcessor<RepositoryLinksResource> {
     public static final String PROJECTS_URL = "/projects";
+    private static final Logger log = Logger.getLogger(ProjectController.class);
 
     @NonNull
     private final Sw360ProjectService projectService;
@@ -296,6 +297,16 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         response.setContentType(outputFormatInfo.getMimeType());
         response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", filename));
         FileCopyUtils.copy(byteContent, response.getOutputStream());
+    }
+
+    @RequestMapping(value = PROJECTS_URL + "/{id}/attachments", method = RequestMethod.GET)
+    public ResponseEntity<Resources<Resource<Attachment>>> getProjectAttachments(
+            @PathVariable("id") String id,
+            OAuth2Authentication oAuth2Authentication) throws TException {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
+        final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+        final Resources<Resource<Attachment>> resources = attachmentService.getResourcesFromList(sw360Project.getAttachments());
+        return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
     @RequestMapping(value = PROJECTS_URL + "/{projectId}/attachments/{attachmentId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)

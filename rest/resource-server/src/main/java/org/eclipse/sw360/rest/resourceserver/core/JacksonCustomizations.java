@@ -296,6 +296,7 @@ class JacksonCustomizations {
         @JsonIgnoreProperties({
                 "id",
                 "revision",
+                "attachments",
                 "permissions",
                 "createdBy",
                 "moderators",
@@ -315,6 +316,7 @@ class JacksonCustomizations {
                 "setDownloadurl",
                 "setPermissions",
                 "externalIdsSize",
+                "attachmentsIterator",
                 "attachmentsSize",
                 "setMainlineState",
                 "setClearingState",

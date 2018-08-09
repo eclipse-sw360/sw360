@@ -254,11 +254,6 @@ public class RestControllerHelper {
                 this.addEmbeddedModerators(halRelease, moderators);
                 release.setModerators(null);
             }
-            if (release.getAttachments() != null) {
-                Set<Attachment> attachments = release.getAttachments();
-                this.addEmbeddedAttachments(halRelease, attachments);
-                release.setAttachments(null);
-            }
             if (release.getVendor() != null) {
                 Vendor vendor = release.getVendor();
                 HalResource<Vendor> vendorHalResource = this.addEmbeddedVendor(vendor.getFullname());
@@ -302,7 +297,7 @@ public class RestControllerHelper {
         }
     }
 
-    private void addEmbeddedProject(HalResource halResource, Project project) {
+    public void addEmbeddedProject(HalResource halResource, Project project) {
         Project embeddedProject = convertToEmbeddedProject(project);
         HalResource<Project> halProject = new HalResource<>(embeddedProject);
         Link projectLink = linkTo(ProjectController.class)
@@ -338,6 +333,15 @@ public class RestControllerHelper {
         embeddedProject.setVersion(project.getVersion());
         embeddedProject.setType(null);
         return embeddedProject;
+    }
+
+    public void addEmbeddedComponent(HalResource halResource, Component component) {
+        Component embeddedComponent = convertToEmbeddedComponent(component);
+        HalResource<Component> halComponent = new HalResource<>(embeddedComponent);
+        Link componentLink = linkTo(ComponentController.class)
+                .slash("api" + ComponentController.COMPONENTS_URL + "/" + component.getId()).withSelfRel();
+        halComponent.add(componentLink);
+        halResource.addEmbeddedResource("sw360:components", halComponent);
     }
 
     public Component convertToEmbeddedComponent(Component component) {

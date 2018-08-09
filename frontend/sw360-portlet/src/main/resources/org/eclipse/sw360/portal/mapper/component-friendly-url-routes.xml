@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-  ~ Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -36,5 +36,38 @@
         <pattern>/add</pattern>
         <implicit-parameter name="p_p_id">components_WAR_sw360portlet</implicit-parameter>
         <implicit-parameter name="pagename">edit</implicit-parameter>
+    </route>
+    <route>
+        <pattern>/release/{id}/{releaseId}/attachment/{contextId}/{attachmentId}</pattern>
+        <generated-parameter name="attachmentId">{attachmentId}</generated-parameter>
+        <generated-parameter name="componentid">{id}</generated-parameter>
+        <generated-parameter name="releaseId">{id}</generated-parameter>
+        <generated-parameter name="context_id">{contextId}</generated-parameter>
+        <implicit-parameter name="pagename">detailRelease</implicit-parameter>
+        <implicit-parameter name="context_type">release</implicit-parameter>
+        <implicit-parameter name="action">AttachmentDownload</implicit-parameter>
+        <implicit-parameter name="p_p_id">components_WAR_sw360portlet</implicit-parameter>
+        <implicit-parameter name="p_p_lifecycle">2</implicit-parameter>
+        <implicit-parameter name="p_p_state">normal</implicit-parameter>
+        <implicit-parameter name="p_p_mode">view</implicit-parameter>
+        <implicit-parameter name="p_p_cacheability">cacheLevelPage</implicit-parameter>
+        <implicit-parameter name="p_p_col_id">column-1</implicit-parameter>
+        <implicit-parameter name="p_p_col_count">1</implicit-parameter>
+    </route>
+    <route>
+        <pattern>/{id}/attachment/{contextId}/{attachmentId}</pattern>
+        <generated-parameter name="attachmentId">{attachmentId}</generated-parameter>
+        <generated-parameter name="componentid">{id}</generated-parameter>
+        <generated-parameter name="context_id">{contextId}</generated-parameter>
+        <implicit-parameter name="pagename">detail</implicit-parameter>
+        <implicit-parameter name="context_type">component</implicit-parameter>
+        <implicit-parameter name="action">AttachmentDownload</implicit-parameter>
+        <implicit-parameter name="p_p_id">components_WAR_sw360portlet</implicit-parameter>
+        <implicit-parameter name="p_p_lifecycle">2</implicit-parameter>
+        <implicit-parameter name="p_p_state">normal</implicit-parameter>
+        <implicit-parameter name="p_p_mode">view</implicit-parameter>
+        <implicit-parameter name="p_p_cacheability">cacheLevelPage</implicit-parameter>
+        <implicit-parameter name="p_p_col_id">column-1</implicit-parameter>
+        <implicit-parameter name="p_p_col_count">1</implicit-parameter>
     </route>
 </routes>

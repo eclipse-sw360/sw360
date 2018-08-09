@@ -42,11 +42,11 @@ use of HTTP verbs.
 | `PUT`
 | Used to update an existing resource (complete update)
 
-// | `PATCH`
-// | Used to update an existing resource (partial updates)
+| `PATCH`
+| Used to update an existing resource (partial updates)
 
-// | `DELETE`
-// | Used to delete an existing resource
+| `DELETE`
+| Used to delete an existing resource
 |===
 
 [[overview-http-status-codes]]
@@ -222,11 +222,15 @@ You can configure the sw360 Granted Authority by changing the properties file (s
 Token response elements
 |===
 | Name | Configuration | Default Value
-
+| `API Client Id`
+| rest.security.client.id
+| trusted-sw360-client
+| `API Client Secret Key`
+| rest.security.client.secret
+| sw360-secret
 | `Token Validity`
 | rest.access.token.validity.seconds
 | 3600 (seconds)
-
 | `Write Access`
 | rest.write.access.usergroup
 | SW360_ADMIN

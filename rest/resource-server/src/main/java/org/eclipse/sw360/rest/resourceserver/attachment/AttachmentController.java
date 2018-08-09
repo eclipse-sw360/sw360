@@ -15,11 +15,19 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
+import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.project.ProjectController;
+import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
+import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
@@ -48,22 +56,16 @@ public class AttachmentController implements ResourceProcessor<RepositoryLinksRe
     private final Sw360AttachmentService attachmentService;
 
     @NonNull
+    private final Sw360ProjectService projectService;
+
+    @NonNull
+    private final Sw360ReleaseService releaseService;
+
+    @NonNull
+    private final Sw360ComponentService componentService;
+
+    @NonNull
     private final RestControllerHelper restControllerHelper;
-
-    @RequestMapping(value = ATTACHMENTS_URL, params = "sha1", method = RequestMethod.GET)
-    public ResponseEntity<Resource<Attachment>> getAttachmentForSha1(
-            OAuth2Authentication oAuth2Authentication,
-            @RequestParam String sha1) throws TException {
-
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
-        AttachmentInfo attachmentInfo = attachmentService.getAttachmentBySha1ForUser(sha1, sw360User);
-        HalResource<Attachment> attachmentResource =
-                createHalAttachment(
-                        attachmentInfo.getAttachment(),
-                        attachmentInfo.getRelease(),
-                        sw360User);
-        return new ResponseEntity<>(attachmentResource, HttpStatus.OK);
-    }
 
     @RequestMapping(value = ATTACHMENTS_URL + "/{id}", method = RequestMethod.GET)
     public ResponseEntity<Resource<Attachment>> getAttachmentForId(
@@ -71,30 +73,48 @@ public class AttachmentController implements ResourceProcessor<RepositoryLinksRe
             OAuth2Authentication oAuth2Authentication) throws TException {
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
-        AttachmentInfo attachmentInfo =
-                attachmentService.getAttachmentByIdForUser(id, sw360User);
-
-        HalResource<Attachment> attachmentResource =
-                createHalAttachment(attachmentInfo.getAttachment(),
-                        attachmentInfo.getRelease(),
-                        sw360User);
+        AttachmentInfo attachmentInfo = attachmentService.getAttachmentById(id);
+        HalResource<Attachment> attachmentResource = createHalAttachment(attachmentInfo, sw360User);
         return new ResponseEntity<>(attachmentResource, HttpStatus.OK);
     }
 
-    private HalResource<Attachment> createHalAttachment(
-            Attachment sw360Attachment,
-            Release sw360Release,
-            User sw360User) {
+    @RequestMapping(value = ATTACHMENTS_URL, params = "sha1", method = RequestMethod.GET)
+    public ResponseEntity<Resource<Attachment>> getAttachmentForSha1(
+            OAuth2Authentication oAuth2Authentication,
+            @RequestParam String sha1) throws TException {
 
-        HalResource<Attachment> halAttachment = new HalResource<>(sw360Attachment);
-        String componentUUID = sw360Attachment.getAttachmentContentId();
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
+        AttachmentInfo attachmentInfo = attachmentService.getAttachmentBySha1(sha1);
+        HalResource<Attachment> attachmentResource = createHalAttachment(attachmentInfo, sw360User);
+        return new ResponseEntity<>(attachmentResource, HttpStatus.OK);
+    }
 
-        Link releaseLink = linkTo(AttachmentController.class).slash("api/releases/" + sw360Release.getId()).withRel("release");
-        halAttachment.add(releaseLink);
+    private HalResource<Attachment> createHalAttachment(AttachmentInfo attachmentInfo, User sw360User) throws TException {
+        HalResource<Attachment> halAttachment = new HalResource<>(attachmentInfo.getAttachment());
+        Source owner = attachmentInfo.getOwner();
+        String attachmendId = attachmentInfo.getAttachment().getAttachmentContentId();
+        Link downloadLink = null;
 
-        restControllerHelper.addEmbeddedRelease(halAttachment, sw360Release);
+        switch (owner.getSetField()) {
+            case PROJECT_ID:
+                Project sw360Project = projectService.getProjectForUserById(owner.getProjectId(), sw360User);
+                restControllerHelper.addEmbeddedProject(halAttachment, sw360Project);
+                downloadLink = linkTo(ProjectController.class).slash(sw360Project.getId() + "/attachment/" + sw360Project.getId() + "/" + attachmendId).withRel("downloadLink");
+                break;
+            case COMPONENT_ID:
+                Component sw360Component = componentService.getComponentForUserById(owner.getComponentId(), sw360User);
+                restControllerHelper.addEmbeddedComponent(halAttachment, sw360Component);
+                downloadLink = linkTo(ComponentController.class).slash(sw360Component.getId() + "/attachment/" + sw360Component.getId() + "/" + attachmendId).withRel("downloadLink");
+                break;
+            case RELEASE_ID:
+                Release sw360Release = releaseService.getReleaseForUserById(owner.getReleaseId(), sw360User);
+                restControllerHelper.addEmbeddedRelease(halAttachment, sw360Release);
+                downloadLink = linkTo(ComponentController.class).slash("/release/" + sw360Release.getComponentId() + "/" + sw360Release.getId() + "/attachment/" + sw360Release.getId() + "/" + attachmendId).withRel("downloadLink");
+                break;
+        }
+
+        halAttachment.add(downloadLink);
         restControllerHelper.addEmbeddedUser(halAttachment, sw360User, "createdBy");
-
         return halAttachment;
     }
 

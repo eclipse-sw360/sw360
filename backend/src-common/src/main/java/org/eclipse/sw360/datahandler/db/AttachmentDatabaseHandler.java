@@ -19,6 +19,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Source;
+import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
@@ -48,17 +49,22 @@ import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.validateAttach
  */
 public class AttachmentDatabaseHandler {
     private final DatabaseConnector db;
-    private final AttachmentRepository repository;
+    private final AttachmentContentRepository attachmentContentRepository;
     private final AttachmentConnector attachmentConnector;
     private final AttachmentUsageRepository attachmentUsageRepository;
+    private final AttachmentRepository attachmentRepository;
+    private final AttachmentOwnerRepository attachmentOwnerRepository;
+
 
     private static final Logger log = Logger.getLogger(AttachmentDatabaseHandler.class);
 
     public AttachmentDatabaseHandler(Supplier<HttpClient> httpClient, String dbName, String attachmentDbName) throws MalformedURLException {
         db = new DatabaseConnector(httpClient, attachmentDbName);
         attachmentConnector = new AttachmentConnector(httpClient, attachmentDbName, durationOf(30, TimeUnit.SECONDS));
-        repository = new AttachmentRepository(db);
+        attachmentContentRepository = new AttachmentContentRepository(db);
         attachmentUsageRepository = new AttachmentUsageRepository(new DatabaseConnector(httpClient, dbName));
+        attachmentRepository = new AttachmentRepository(new DatabaseConnector(httpClient, dbName));
+        attachmentOwnerRepository = new AttachmentOwnerRepository(new DatabaseConnector(httpClient, dbName));
     }
 
     public AttachmentConnector getAttachmentConnector(){
@@ -66,18 +72,18 @@ public class AttachmentDatabaseHandler {
     }
 
     public AttachmentContent add(AttachmentContent attachmentContent){
-        repository.add(attachmentContent);
+        attachmentContentRepository.add(attachmentContent);
         return attachmentContent;
     }
     public List<AttachmentContent> makeAttachmentContents(List<AttachmentContent> attachmentContents) throws TException {
-        final List<DocumentOperationResult> documentOperationResults = repository.executeBulk(attachmentContents);
+        final List<DocumentOperationResult> documentOperationResults = attachmentContentRepository.executeBulk(attachmentContents);
         if (!documentOperationResults.isEmpty())
             log.error("Failed Attachment store results " + documentOperationResults);
 
         return attachmentContents.stream().filter(AttachmentContent::isSetId).collect(Collectors.toList());
     }
     public AttachmentContent getAttachmentContent(String id) throws TException {
-        AttachmentContent attachment = repository.get(id);
+        AttachmentContent attachment = attachmentContentRepository.get(id);
         assertNotNull(attachment, "Cannot find "+ id + " in database.");
         validateAttachment(attachment);
 
@@ -87,7 +93,7 @@ public class AttachmentDatabaseHandler {
         attachmentConnector.updateAttachmentContent(attachment);
     }
     public RequestSummary bulkDelete(List<String> ids) {
-        final List<DocumentOperationResult> documentOperationResults = repository.deleteIds(ids);
+        final List<DocumentOperationResult> documentOperationResults = attachmentContentRepository.deleteIds(ids);
         return CommonUtils.getRequestSummary(ids, documentOperationResults);
     }
     public RequestStatus deleteAttachmentContent(String attachmentId) throws TException {
@@ -96,7 +102,7 @@ public class AttachmentDatabaseHandler {
         return RequestStatus.SUCCESS;
     }
     public RequestSummary vacuumAttachmentDB(User user, Set<String> usedIds) throws TException {
-        return repository.vacuumAttachmentDB(user, usedIds);
+        return attachmentContentRepository.vacuumAttachmentDB(user, usedIds);
     }
     public String getSha1FromAttachmentContentId(String attachmentContentId){
         return attachmentConnector.getSha1FromAttachmentContentId(attachmentContentId);
@@ -227,5 +233,15 @@ public class AttachmentDatabaseHandler {
             Map.Entry<String, String> key = entry.getKey().entrySet().iterator().next();
             return ImmutableMap.of(new Source(idToType.get(key.getKey()), key.getKey()), key.getValue());
         }, Map.Entry::getValue));
+    }
+
+    public List<Attachment> getAttachmentsByIds(Set<String> ids) {
+        return attachmentRepository.getAttachmentsByIds(ids);
+    }
+    public List<Attachment> getAttachmentsBySha1s(Set<String> sha1s) {
+        return attachmentRepository.getAttachmentsBySha1s(sha1s);
+    }
+    public List<Source> getAttachmentOwnersByIds(Set<String> ids) {
+        return attachmentOwnerRepository.getOwnersByIds(ids);
     }
 }
