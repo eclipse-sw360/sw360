@@ -15,6 +15,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.resourcelists.PaginationOptions;
+import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
+import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
+import org.eclipse.sw360.datahandler.resourcelists.ResourceComparatorGenerator;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -35,13 +39,19 @@ import org.eclipse.sw360.rest.resourceserver.user.UserController;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.vendor.VendorController;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.hateoas.Link;
+import org.springframework.hateoas.PagedResources;
 import org.springframework.hateoas.Resource;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URLEncoder;
 import java.util.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
@@ -58,11 +68,91 @@ public class RestControllerHelper {
     @NonNull
     private final Sw360LicenseService licenseService;
 
+    @NonNull
+    private final ResourceComparatorGenerator resourceComparatorGenerator = new ResourceComparatorGenerator();
+
     private static final Logger LOGGER = Logger.getLogger(RestControllerHelper.class);
+
+    private static final String PAGINATION_KEY_FIRST = "first";
+    private static final String PAGINATION_KEY_PREVIOUS = "previous";
+    private static final String PAGINATION_KEY_NEXT = "next";
+    private static final String PAGINATION_KEY_LAST = "last";
+    private static final String PAGINATION_PARAM_PAGE = "page";
+    public static final String PAGINATION_PARAM_PAGE_ENTRIES = "page_entries";
 
     public User getSw360UserFromAuthentication(OAuth2Authentication oAuth2Authentication) {
         String userId = oAuth2Authentication.getName();
         return userService.getUserByEmail(userId);
+    }
+
+    public PagedResources generatePagesResource(PaginationResult paginationResult, List resources) throws URISyntaxException {
+        PaginationOptions paginationOptions = paginationResult.getPaginationOptions();
+        List<Link> pagingLinks = this.getPaginationLinks(paginationResult, this.getAPIBaseUrl());
+        PagedResources.PageMetadata pageMetadata = new PagedResources.PageMetadata(
+                paginationOptions.getPageSize(),
+                paginationOptions.getPageNumber(),
+                paginationResult.getTotalCount(),
+                paginationResult.getTotalPageCount());
+        return new PagedResources<>(resources, pageMetadata, pagingLinks);
+    }
+
+    private List<Link> getPaginationLinks(PaginationResult paginationResult, String baseUrl) {
+        PaginationOptions paginationOptions = paginationResult.getPaginationOptions();
+        List<Link> paginationLinks = new ArrayList<>();
+
+        paginationLinks.add(new Link(createPaginationLink(baseUrl, 0, paginationOptions.getPageSize()),PAGINATION_KEY_FIRST));
+        if(paginationOptions.getPageNumber() > 0) {
+            paginationLinks.add(new Link(createPaginationLink(baseUrl, paginationOptions.getPageNumber() - 1, paginationOptions.getPageSize()),PAGINATION_KEY_PREVIOUS));
+        }
+        if(paginationOptions.getOffset() + paginationOptions.getPageSize() < paginationResult.getTotalCount()) {
+            paginationLinks.add(new Link(createPaginationLink(baseUrl, paginationOptions.getPageNumber() + 1, paginationOptions.getPageSize()),PAGINATION_KEY_NEXT));
+        }
+        paginationLinks.add(new Link(createPaginationLink(baseUrl, paginationResult.getTotalPageCount() - 1, paginationOptions.getPageSize()),PAGINATION_KEY_LAST));
+
+        return paginationLinks;
+    }
+
+    private String createPaginationLink(String baseUrl, int page, int pageSize) {
+        return baseUrl + "?" + PAGINATION_PARAM_PAGE + "=" + page + "&" + PAGINATION_PARAM_PAGE_ENTRIES + "=" + pageSize;
+    }
+
+    private String getAPIBaseUrl() throws URISyntaxException {
+        URI uri = ServletUriComponentsBuilder.fromCurrentRequest().build().toUri();
+        return new URI(uri.getScheme(),
+                uri.getAuthority(),
+                uri.getPath(),
+                null,
+                uri.getFragment()).toString();
+    }
+
+    public PaginationOptions paginationOptionsFromPageable(Pageable pageable, String resourceClassName) throws ResourceClassNotFoundException {
+        Comparator comparator = this.comparatorFromPageable(pageable, resourceClassName);
+        return new PaginationOptions(pageable.getPageNumber(), pageable.getPageSize(), comparator);
+    }
+
+    private Comparator comparatorFromPageable(Pageable pageable,  String resourceClassName) throws ResourceClassNotFoundException {
+        Sort.Order order = firstOrderFromPageable(pageable);
+        if(order == null) {
+            return resourceComparatorGenerator.generateComparator(resourceClassName);
+        }
+        Comparator comparator = resourceComparatorGenerator.generateComparator(resourceClassName, order.getProperty());
+        if(order.isDescending()) {
+            comparator = comparator.reversed();
+        }
+        return comparator;
+    }
+
+    private Sort.Order firstOrderFromPageable(Pageable pageable) {
+        Sort sort = pageable.getSort();
+        if(sort == null) {
+            return null;
+        }
+        Iterator<Sort.Order> orderIterator = sort.iterator();
+        if(orderIterator.hasNext()) {
+            return orderIterator.next();
+        } else {
+            return null;
+        }
     }
 
     public void addEmbeddedModerators(HalResource halResource, Set<String> moderators) {

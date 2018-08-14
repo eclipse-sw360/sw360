@@ -14,6 +14,8 @@ package org.eclipse.sw360.rest.resourceserver.core;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
+import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.rest.resourceserver.core.serializer.JsonInstantSerializer;
 import org.apache.thrift.TException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -33,7 +35,7 @@ import java.time.Instant;
 @ControllerAdvice
 public class RestExceptionHandler {
 
-    @ExceptionHandler({Exception.class, TException.class})
+    @ExceptionHandler({Exception.class, TException.class, ResourceClassNotFoundException.class})
     public ResponseEntity<ErrorMessage> handleException(Exception e) {
         return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.INTERNAL_SERVER_ERROR), HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -43,8 +45,8 @@ public class RestExceptionHandler {
         return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.FORBIDDEN), HttpStatus.FORBIDDEN);
     }
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorMessage> handleResourceNotFound(ResourceNotFoundException e) {
+    @ExceptionHandler({ResourceNotFoundException.class, PaginationParameterException.class})
+    public ResponseEntity<ErrorMessage> handleResourceNotFound(Exception e) {
         return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.NOT_FOUND), HttpStatus.NOT_FOUND);
     }
 
