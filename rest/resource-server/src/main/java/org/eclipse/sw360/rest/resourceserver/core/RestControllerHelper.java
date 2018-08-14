@@ -321,6 +321,16 @@ public class RestControllerHelper {
         return componentToUpdate;
     }
 
+    public Release updateRelease(Release releaseToUpdate, Release requestBodyRelease) {
+        for(Release._Fields field:Release._Fields.values()) {
+            Object fieldValue = requestBodyRelease.getFieldValue(field);
+            if(fieldValue != null) {
+                releaseToUpdate.setFieldValue(field, fieldValue);
+            }
+        }
+        return releaseToUpdate;
+    }
+
     public Project convertToEmbeddedProject(Project project) {
         Project embeddedProject = new Project(project.getName());
         embeddedProject.setId(project.getId());

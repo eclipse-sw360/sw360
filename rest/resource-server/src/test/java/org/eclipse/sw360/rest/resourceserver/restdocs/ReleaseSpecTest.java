@@ -36,6 +36,7 @@ import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.li
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -55,6 +56,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     private Release release;
 
+    private String releaseId = "3765276512";
+
     @Before
     public void before() throws TException {
         Component component = new Component();
@@ -69,7 +72,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
         List<Release> releaseList = new ArrayList<>();
         release = new Release();
-        release.setId("3765276512");
+        release.setId(releaseId);
         release.setName("Angular");
         release.setCpeid("cpe:/a:Google:Angular:2.3.0:");
         release.setReleaseDate("2016-12-07");
@@ -158,4 +161,40 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
+
+    @Test
+    public void should_update_release() throws Exception {
+        Release updateRelease = new Release();
+        release.setName("Updated release");
+
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(patch("/api/releases/" + releaseId)
+                .contentType(MediaTypes.HAL_JSON)
+                .content(this.objectMapper.writeValueAsString(updateRelease))
+                .header("Authorization", "Bearer" + accessToken)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        links(
+                                linkWithRel("self").description("The <<resources-release,Release resource>>"),
+                                linkWithRel("sw360:component").description("The link to the corresponding component"),
+                                linkWithRel("curies").description("The curies for documentation")
+                        ),
+                        responseFields(
+                                fieldWithPath("name").description("The name of the release, optional"),
+                                fieldWithPath("version").description("The version of the release"),
+                                fieldWithPath("cpeId").description("CpeId of the release"),
+                                fieldWithPath("clearingState").description("The clearing of the release, possible values are " + Arrays.asList(ClearingState.values())),
+                                fieldWithPath("cpeId").description("The CPE id"),
+                                fieldWithPath("releaseDate").description("The date of this release"),
+                                fieldWithPath("createdOn").description("The creation date of the internal sw360 release"),
+                                fieldWithPath("mainlineState").description("the mainline state of the release, possible values are: " + Arrays.asList(MainlineState.values())),
+                                fieldWithPath("downloadurl").description("the download url of the release"),
+                                fieldWithPath("externalIds").description("When releases are imported from other tools, the external ids can be stored here"),
+                                fieldWithPath("_embedded.sw360:moderators").description("An array of all release moderators with email and link to their <<resources-user-get,User resource>>"),
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )
+                ));
+    }
+
 }
