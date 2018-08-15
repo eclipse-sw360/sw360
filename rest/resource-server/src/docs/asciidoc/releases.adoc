@@ -101,16 +101,16 @@ include::{snippets}/should_document_get_release/links.adoc[]
 A `PATCH` request is used to update an existing release
 
 ===== Response structure
-include::{snippets}/should_update_release/response-fields.adoc[]
+include::{snippets}/should_document_update_release/response-fields.adoc[]
 
 ===== Example request
-include::{snippets}/should_update_release/curl-request.adoc[]
+include::{snippets}/should_document_update_release/curl-request.adoc[]
 
 ===== Example response
-include::{snippets}/should_update_release/http-response.adoc[]
+include::{snippets}/should_document_update_release/http-response.adoc[]
 
 ===== Links
-include::{snippets}/should_update_release/links.adoc[]
+include::{snippets}/should_document_update_release/links.adoc[]
 
 
 [[resources-release-delete]]

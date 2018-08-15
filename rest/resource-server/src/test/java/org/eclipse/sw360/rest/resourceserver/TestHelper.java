@@ -62,7 +62,7 @@ public class TestHelper {
         assertThat(linksNode.has("curies"), is(true));
 
         JsonNode curiesNode = linksNode.get("curies").get(0);
-        assertThat(curiesNode.get("href").asText(), endsWith("docs/html5/{rel}.html"));
+        assertThat(curiesNode.get("href").asText(), endsWith("docs/{rel}.html"));
         assertThat(curiesNode.get("name").asText(), is("sw360"));
         assertThat(curiesNode.get("templated").asBoolean(), is(true));
     }
