@@ -15,6 +15,7 @@ package org.eclipse.sw360.rest.resourceserver.release;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -42,15 +43,18 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
 @BasePathAwareController
-@Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ReleaseController implements ResourceProcessor<RepositoryLinksResource> {
     public static final String RELEASES_URL = "/releases";
+    private static final Logger log = Logger.getLogger(ReleaseController.class);
 
     @NonNull
     private Sw360ReleaseService releaseService;
@@ -59,7 +63,7 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
     private Sw360AttachmentService attachmentService;
 
     @NonNull
-    private final RestControllerHelper restControllerHelper;
+    private RestControllerHelper restControllerHelper;
 
     @RequestMapping(value = RELEASES_URL, method = RequestMethod.GET)
     public ResponseEntity<Resources<Resource>> getReleasesForUser(
@@ -87,8 +91,8 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
     }
 
     private Release searchReleaseBySha1(String sha1, User sw360User) throws TException {
-        AttachmentInfo sw360AttachmentInfo = attachmentService.getAttachmentBySha1ForUser(sha1, sw360User);
-        return sw360AttachmentInfo.getRelease();
+        AttachmentInfo sw360AttachmentInfo = attachmentService.getAttachmentBySha1(sha1);
+        return releaseService.getReleaseForUserById(sw360AttachmentInfo.getOwner().getReleaseId(), sw360User);
     }
 
     @RequestMapping(value = RELEASES_URL + "/{id}", method = RequestMethod.GET)
@@ -154,6 +158,16 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
                 .buildAndExpand(sw360Release.getId()).toUri();
 
         return ResponseEntity.created(location).body(halResource);
+    }
+
+    @RequestMapping(value = RELEASES_URL + "/{id}/attachments", method = RequestMethod.GET)
+    public ResponseEntity<Resources<Resource<Attachment>>> getReleaseAttachments(
+            @PathVariable("id") String id,
+            OAuth2Authentication oAuth2Authentication) throws TException {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
+        final Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
+        final Resources<Resource<Attachment>> resources = attachmentService.getResourcesFromList(sw360Release.getAttachments());
+        return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
     @RequestMapping(value = RELEASES_URL + "/{releaseId}/attachments", method = RequestMethod.POST, consumes = {"multipart/mixed", "multipart/form-data"})

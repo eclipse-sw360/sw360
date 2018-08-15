@@ -49,7 +49,6 @@ public class ThriftUtils {
     private static final Logger log = Logger.getLogger(ThriftUtils.class);
 
     public static final List<Class<?>> THRIFT_CLASSES = ImmutableList.<Class<?>>builder()
-            .add(Attachment.class) // Attachment service
             .add(AttachmentContent.class) // Attachment service
             .add(AttachmentUsage.class) // Attachment service
             .add(Component.class).add(Release.class) // Component service
@@ -65,6 +64,7 @@ public class ThriftUtils {
             .build();
 
     public static final List<Class<?>> THRIFT_NESTED_CLASSES = ImmutableList.<Class<?>>builder()
+            .add(Attachment.class) // Attachment service
             .add(Source.class)
             .add(UsageData.class)
             .add(LicenseInfoUsage.class)

@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -11,14 +11,32 @@
 
 package org.eclipse.sw360.rest.resourceserver.attachment;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
+import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
 
 @Data
-@AllArgsConstructor
 public class AttachmentInfo {
     private Attachment attachment;
-    private Release release;
+    private Source owner;
+
+    public AttachmentInfo(Attachment attachment) {
+        this.attachment = attachment;
+    }
+
+    public Attachment getAttachment() {
+        return attachment;
+    }
+
+    public void setAttachment(Attachment attachment) {
+        this.attachment = attachment;
+    }
+
+    public Source getOwner() {
+        return owner;
+    }
+
+    public void setOwner(Source owner) {
+        this.owner = owner;
+    }
 }

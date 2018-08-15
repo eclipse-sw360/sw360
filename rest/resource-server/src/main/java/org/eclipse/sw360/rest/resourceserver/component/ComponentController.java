@@ -16,6 +16,7 @@ package org.eclipse.sw360.rest.resourceserver.component;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.resourcelists.*;
@@ -61,6 +62,7 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ComponentController implements ResourceProcessor<RepositoryLinksResource> {
     public static final String COMPONENTS_URL = "/components";
+    private static final Logger log = Logger.getLogger(ComponentController.class);
 
     @NonNull
     private final Sw360ComponentService componentService;
@@ -183,6 +185,16 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
                 .buildAndExpand(sw360Component.getId()).toUri();
 
         return ResponseEntity.created(location).body(halResource);
+    }
+
+    @RequestMapping(value = COMPONENTS_URL + "/{id}/attachments", method = RequestMethod.GET)
+    public ResponseEntity<Resources<Resource<Attachment>>> getComponentAttachments(
+            @PathVariable("id") String id,
+            OAuth2Authentication oAuth2Authentication) throws TException {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
+        final Component sw360Component = componentService.getComponentForUserById(id, sw360User);
+        final Resources<Resource<Attachment>> resources = attachmentService.getResourcesFromList(sw360Component.getAttachments());
+        return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
     @RequestMapping(value = COMPONENTS_URL + "/{componentId}/attachments", method = RequestMethod.POST, consumes = {"multipart/mixed", "multipart/form-data"})

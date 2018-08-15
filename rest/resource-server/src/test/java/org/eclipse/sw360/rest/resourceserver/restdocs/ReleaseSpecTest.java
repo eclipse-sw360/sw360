@@ -10,12 +10,15 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
+import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
+import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.Before;
@@ -24,6 +27,8 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
+import org.springframework.hateoas.Resource;
+import org.springframework.hateoas.Resources;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.*;
@@ -54,12 +59,26 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
     @MockBean
     private Sw360ReleaseService releaseServiceMock;
 
+    @MockBean
+    private Sw360AttachmentService attachmentServiceMock;
+
     private Release release;
+    private Attachment attachment;
 
     private String releaseId = "3765276512";
 
     @Before
     public void before() throws TException {
+        Set<Attachment> attachmentList = new HashSet<>();
+        List<Resource<Attachment>> attachmentResources = new ArrayList<>();
+        attachment = new Attachment("1231231254", "spring-core-4.3.4.RELEASE.jar");
+        attachment.setSha1("da373e491d3863477568896089ee9457bc316783");
+        attachmentList.add(attachment);
+        attachmentResources.add(new Resource<>(attachment));
+
+        given(this.attachmentServiceMock.getAttachmentContent(anyObject())).willReturn(new AttachmentContent().setId("1231231254").setFilename("spring-core-4.3.4.RELEASE.jar").setContentType("binary"));
+        given(this.attachmentServiceMock.getResourcesFromList(anyObject())).willReturn(new Resources<>(attachmentResources));
+
         Component component = new Component();
         component.setId("17653524");
         component.setName("Angular");
@@ -85,6 +104,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         release.setClearingState(ClearingState.APPROVED);
         release.setMainlineState(MainlineState.OPEN);
         release.setExternalIds(Collections.singletonMap("mainline-id-component", "1432"));
+        release.setAttachments(attachmentList);
         releaseList.add(release);
 
         Release release2 = new Release();
@@ -197,4 +217,30 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                 ));
     }
 
+
+    @Test
+    public void should_document_get_release_attachment_info() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/releases/" + release.getId() + "/attachments")
+                .header("Authorization", "Bearer " + accessToken)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        responseFields(
+                                fieldWithPath("_embedded.sw360:attachments").description("An array of <<resources-attachment, Attachments resources>>"),
+                                fieldWithPath("_embedded.sw360:attachments[]filename").description("The attachment filename"),
+                                fieldWithPath("_embedded.sw360:attachments[]sha1").description("The attachment sha1 value"),
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_release_attachment() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/releases/" + release.getId() + "/attachments/" + attachment.getAttachmentContentId())
+                .header("Authorization", "Bearer " + accessToken)
+                .accept("application/*"))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document());
+    }
 }

@@ -13,7 +13,7 @@ package org.eclipse.sw360.importer;
 
 import com.google.common.collect.FluentIterable;
 import org.eclipse.sw360.attachments.AttachmentHandler;
-import org.eclipse.sw360.datahandler.db.AttachmentRepository;
+import org.eclipse.sw360.datahandler.db.AttachmentContentRepository;
 import org.eclipse.sw360.components.ComponentHandler;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.ImportCSV;
@@ -49,7 +49,7 @@ public class ComponentAndAttachmentAwareDBTest {
     protected ComponentService.Iface componentClient;
     protected VendorService.Iface vendorClient;
     protected AttachmentService.Iface attachmentClient;
-    protected AttachmentRepository attachmentRepository;
+    protected AttachmentContentRepository attachmentContentRepository;
     protected User user;
 
     protected  static  DatabaseConnector getDBConnector(String couchDbDatabase) throws MalformedURLException {
@@ -57,8 +57,8 @@ public class ComponentAndAttachmentAwareDBTest {
     }
 
 
-    protected static AttachmentRepository getAttachmentRepository() throws MalformedURLException {
-        return new AttachmentRepository(getDBConnector(DatabaseSettings.COUCH_DB_ATTACHMENTS));
+    protected static AttachmentContentRepository getAttachmentContentRepository() throws MalformedURLException {
+        return new AttachmentContentRepository(getDBConnector(DatabaseSettings.COUCH_DB_ATTACHMENTS));
     }
 
     protected static FluentIterable<ComponentCSVRecord> getCompCSVRecordsFromTestFile(String fileName) throws IOException {
@@ -110,7 +110,7 @@ public class ComponentAndAttachmentAwareDBTest {
         componentClient = thriftClients.makeComponentClient();
         vendorClient = thriftClients.makeVendorClient();
         attachmentClient = thriftClients.makeAttachmentClient();
-        attachmentRepository = getAttachmentRepository();
+        attachmentContentRepository = getAttachmentContentRepository();
         user = getAdminUser(getClass());
 
 

@@ -18,10 +18,7 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.Source;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
-import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
+import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import java.net.MalformedURLException;
@@ -42,9 +39,7 @@ import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.validateAttach
  */
 public class AttachmentHandler implements AttachmentService.Iface {
 
-    private static final Logger log = Logger.getLogger(AttachmentHandler.class);
     private final AttachmentDatabaseHandler handler;
-
 
     public AttachmentHandler() throws MalformedURLException {
         handler = new AttachmentDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
@@ -167,12 +162,7 @@ public class AttachmentHandler implements AttachmentService.Iface {
 
     @Override
     public List<AttachmentUsage> getAttachmentUsages(Source owner, String attachmentContentId, UsageData filter) throws TException {
-        assertNotNull(owner);
-        assertTrue(owner.isSet());
-        assertNotNull(attachmentContentId);
-        assertNotEmpty(attachmentContentId);
-
-        return handler.getAttachmentUsages(owner, attachmentContentId, filter);
+        return getAttachmentsUsages(owner, Collections.singleton(attachmentContentId), filter);
     }
 
     @Override
@@ -220,4 +210,21 @@ public class AttachmentHandler implements AttachmentService.Iface {
         assertNotNull(attachments);
         return handler.getAttachmentUsageCount(attachments, filter);
     }
+
+    @Override
+    public List<Attachment> getAttachmentsByIds(Set<String> ids) throws TException {
+        assertNotEmpty(ids);
+        return handler.getAttachmentsByIds(ids);
+    }
+    @Override
+    public List<Attachment> getAttachmentsBySha1s(Set<String> sha1s) throws TException {
+        assertNotEmpty(sha1s);
+        return handler.getAttachmentsBySha1s(sha1s);
+    }
+    @Override
+    public List<Source> getAttachmentOwnersByIds(Set<String> ids) throws TException {
+        assertNotEmpty(ids);
+        return handler.getAttachmentOwnersByIds(ids);
+    }
+
 }

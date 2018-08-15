@@ -11,7 +11,6 @@
 package org.eclipse.sw360.importer;
 
 import com.google.common.collect.FluentIterable;
-import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
@@ -76,10 +75,10 @@ public class ComponentImportUtilsTest extends ComponentAndAttachmentAwareDBTest 
         final AttachmentContent overwriter = new AttachmentContent().setId(OVERRIDING_ID).setOnlyRemote(true).setRemoteUrl(REMOTE_URL).setType(TYPE_ATTACHMENT);
         final AttachmentContent addition = new AttachmentContent().setId(ADDITIONAL_ID).setOnlyRemote(true).setRemoteUrl(REMOTE_URL).setType(TYPE_ATTACHMENT);
 
-        attachmentRepository.add(overwriter);
-        attachmentRepository.add(addition);
+        attachmentContentRepository.add(overwriter);
+        attachmentContentRepository.add(addition);
 
-        assertThat(attachmentRepository.getAll(), Matchers.hasSize(3));
+        assertThat(attachmentContentRepository.getAll(), Matchers.hasSize(3));
         FluentIterable<ComponentAttachmentCSVRecord> compAttachmentCSVRecords = getCompAttachmentCSVRecordsFromTestFile(attachmentsFilename);
 
         ComponentImportUtils.writeAttachmentsToDatabase(compAttachmentCSVRecords,user,componentClient,attachmentClient);
@@ -92,7 +91,7 @@ public class ComponentImportUtilsTest extends ComponentAndAttachmentAwareDBTest 
             assertThat(((SW360Exception)e).getWhy(), is("Cannot find "+ attachmentContentId + " in database."));
         }
 
-        assertThat(attachmentRepository.getAll(), Matchers.hasSize(2) );
+        assertThat(attachmentContentRepository.getAll(), Matchers.hasSize(2) );
         final AttachmentContent attachmentContent = attachmentClient.getAttachmentContent(getCreatedAttachmentContentId());
 
         assertThat(attachmentContent, is(overwriter));
@@ -135,10 +134,10 @@ public class ComponentImportUtilsTest extends ComponentAndAttachmentAwareDBTest 
 
         assertThat(componentClient.getComponentSummary(user), hasSize(0));
         assertThat(componentClient.getReleaseSummary(user), hasSize(0));
-        assertThat(attachmentRepository.getAll(), Matchers.hasSize(0) );
+        assertThat(attachmentContentRepository.getAll(), Matchers.hasSize(0) );
 
         ComponentImportUtils.writeToDatabase(compCSVRecords, componentClient, vendorClient, attachmentClient, user);
-        assertThat(attachmentRepository.getAll(), Matchers.hasSize(1) );
+        assertThat(attachmentContentRepository.getAll(), Matchers.hasSize(1) );
         List<Component> componentSummaryAfterFirst = componentClient.getComponentSummary(user);
         List<Release> releaseSummaryAfterFirst = componentClient.getReleaseSummary(user);
 
@@ -146,7 +145,7 @@ public class ComponentImportUtilsTest extends ComponentAndAttachmentAwareDBTest 
 
         ComponentImportUtils.writeToDatabase(compCSVRecords, componentClient, vendorClient, attachmentClient, user);
         assertExpectedComponentsInDb();
-        assertThat(attachmentRepository.getAll(), Matchers.hasSize(1) );
+        assertThat(attachmentContentRepository.getAll(), Matchers.hasSize(1) );
         assertThat(componentClient.getComponentSummary(user), is(componentSummaryAfterFirst));
         assertThat(componentClient.getReleaseSummary(user), is(releaseSummaryAfterFirst));
 

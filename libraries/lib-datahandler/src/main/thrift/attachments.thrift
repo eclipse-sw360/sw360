@@ -269,4 +269,19 @@ service AttachmentService {
      * is used for the filter.
      */
     list<AttachmentUsage> getUsedAttachments(1: Source usedBy, 2: UsageData filter);
+
+    /**
+     * Returns attachments based on its attachmentContentId value
+     */
+    list<Attachment> getAttachmentsByIds(1: set<string> ids);
+
+    /**
+     * Returns attachments based on its sha1 value
+     */
+    list<Attachment> getAttachmentsBySha1s(1: set<string> sha1s);
+
+    /**
+     * Returns the sources/owners (project, component, release) of the attachment by attachmentContentId
+     */
+    list<Source> getAttachmentOwnersByIds(1: set<string> ids)
 }

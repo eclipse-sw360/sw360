@@ -19,20 +19,17 @@ The Users resource is used to get and list users.
 A `GET` request will list all of the service's users.
 
 ===== Response structure
-
 include::{snippets}/should_document_get_users/response-fields.adoc[]
 
 ===== Example request
-
 include::{snippets}/should_document_get_users/curl-request.adoc[]
 
 ===== Example response
-
 include::{snippets}/should_document_get_users/http-response.adoc[]
 
 ===== Links
-
 include::{snippets}/should_document_get_users/links.adoc[]
+
 
 [[resources-user-get]]
 ==== Get a single user
@@ -40,19 +37,15 @@ include::{snippets}/should_document_get_users/links.adoc[]
 A `GET` request will get a single user.
 
 ===== Response structure
-
 include::{snippets}/should_document_get_user/response-fields.adoc[]
 
 ===== Example request
-
 include::{snippets}/should_document_get_user/curl-request.adoc[]
 
 ===== Example response
-
 include::{snippets}/should_document_get_user/http-response.adoc[]
 
 ===== Links
-
 include::{snippets}/should_document_get_user/links.adoc[]
 
 

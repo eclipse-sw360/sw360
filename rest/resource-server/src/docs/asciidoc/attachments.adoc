@@ -10,47 +10,22 @@
 [[resources-attachments]]
 === Attachments
 
-The Attachments resource is used to create and list attachments.
+The Attachments resource is used to list attachment information.
 
 
-[[resources-attachment-get]]
-==== Get a single attachment
+[[resources-attachment-information-get]]
+==== Get attachment info
 
-A `GET` request will get a single attachment.
+A `GET` request will get attachment information.
 
 ===== Response structure
-
 include::{snippets}/should_document_get_attachment/response-fields.adoc[]
 
 ===== Example request
-
 include::{snippets}/should_document_get_attachment/curl-request.adoc[]
 
 ===== Example response
-
 include::{snippets}/should_document_get_attachment/http-response.adoc[]
 
 ===== Links
-
 include::{snippets}/should_document_get_attachment/links.adoc[]
-
-
-////
-[[resources-attachments-create]]
-==== Creating a attachment
-
-A `POST` request is used to create a attachment
-
-===== Request structure
-
-include::{snippets}/should_document_create_attachment/request-fields.adoc[]
-
-===== Example request
-
-include::{snippets}/should_document_create_attachment/curl-request.adoc[]
-
-===== Example response
-
-include::{snippets}/should_document_create_attachment/http-response.adoc[]
-////
-
