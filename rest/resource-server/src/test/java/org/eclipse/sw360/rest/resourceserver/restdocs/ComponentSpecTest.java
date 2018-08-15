@@ -255,6 +255,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("self").description("The <<resources-components,Component resource>>")
                         ),
                         responseFields(
+                                fieldWithPath("id").description("The resource object identifier of the component"),
                                 fieldWithPath("name").description("The name of the component"),
                                 fieldWithPath("componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
                                 fieldWithPath("description").description("The component description"),
@@ -298,6 +299,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values()))
                         ),
                         responseFields(
+                                fieldWithPath("id").description("The resource object identifier of the component"),
                                 fieldWithPath("name").description("The name of the component"),
                                 fieldWithPath("componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
                                 fieldWithPath("componentOwner").description("The owner name of the component"),
@@ -401,6 +403,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("self").description("The <<resources-components,Component resource>>")
                         ),
                         responseFields(
+                                fieldWithPath("id").description("The resource object identifier of the component"),
                                 fieldWithPath("name").description("The name of the component"),
                                 fieldWithPath("componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
                                 fieldWithPath("description").description("The component description"),

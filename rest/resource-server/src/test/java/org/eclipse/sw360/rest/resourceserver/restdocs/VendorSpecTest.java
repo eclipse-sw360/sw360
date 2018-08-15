@@ -97,6 +97,7 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("self").description("The <<resources-vendors,Vendors resource>>")
                         ),
                         responseFields(
+                                fieldWithPath("id").description("The resource object identifier of the vendor"),
                                 fieldWithPath("fullName").description("The full name of the vendor"),
                                 fieldWithPath("shortName").description("The short name of the vendor, optional"),
                                 fieldWithPath("url").description("The vendor's home page URL"),

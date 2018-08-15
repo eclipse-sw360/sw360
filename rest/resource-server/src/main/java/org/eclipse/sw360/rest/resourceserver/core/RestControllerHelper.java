@@ -48,10 +48,10 @@ import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.net.URLEncoder;
-import java.util.*;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
+import java.util.*;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
@@ -59,6 +59,7 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class RestControllerHelper {
+
     @NonNull
     private final Sw360UserService userService;
 
@@ -328,7 +329,6 @@ public class RestControllerHelper {
 
     public Project convertToEmbeddedProject(Project project) {
         Project embeddedProject = new Project(project.getName());
-        embeddedProject.setId(project.getId());
         embeddedProject.setProjectType(project.getProjectType());
         embeddedProject.setVersion(project.getVersion());
         embeddedProject.setType(null);
@@ -346,7 +346,6 @@ public class RestControllerHelper {
 
     public Component convertToEmbeddedComponent(Component component) {
         Component embeddedComponent = new Component();
-        embeddedComponent.setId(component.getId());
         embeddedComponent.setName(component.getName());
         embeddedComponent.setComponentType(component.getComponentType());
         embeddedComponent.setType(null);
@@ -369,7 +368,6 @@ public class RestControllerHelper {
 
     public Release convertToEmbeddedRelease(Release release) {
         Release embeddedRelease = new Release();
-        embeddedRelease.setId(release.getId());
         embeddedRelease.setName(release.getName());
         embeddedRelease.setVersion(release.getVersion());
         embeddedRelease.setType(null);
