@@ -31,6 +31,24 @@ include::{snippets}/should_document_get_releases/http-response.adoc[]
 include::{snippets}/should_document_get_releases/links.adoc[]
 
 
+[[resources-releases-list-with-fields]]
+==== Listing releases with fields
+
+A `GET` request will list all of the service's releases. The `fields` parameter defines which component object properties should be contained in the response.
+
+===== Response structure
+include::{snippets}/should_document_get_releases_with_fields/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_releases_with_fields/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_releases_with_fields/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_releases_with_fields/links.adoc[]
+
+
 [[resources-release-attachment-info-get]]
 ==== Listing attachment info
 

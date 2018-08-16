@@ -17,10 +17,22 @@ class PropertyKeyMapping {
     private static final String COMPONENT_VENDOR_KEY_THRIFT = "vendorNames";
     static final String COMPONENT_VENDOR_KEY_JSON = "vendors";
 
+    private static final String RELEASE_CPEID_KEY_THRIFT = "cpeid";
+    static final String RELEASE_CPEID_KEY_JSON = "cpeId";
+
     static String componentThriftKeyFromJSONKey(String jsonKey) {
         switch (jsonKey) {
             case COMPONENT_VENDOR_KEY_JSON:
                 return COMPONENT_VENDOR_KEY_THRIFT;
+            default:
+                return jsonKey;
+        }
+    }
+
+    static String releaseThriftKeyFromJSONKey(String jsonKey) {
+        switch (jsonKey) {
+            case RELEASE_CPEID_KEY_JSON:
+                return RELEASE_CPEID_KEY_THRIFT;
             default:
                 return jsonKey;
         }
