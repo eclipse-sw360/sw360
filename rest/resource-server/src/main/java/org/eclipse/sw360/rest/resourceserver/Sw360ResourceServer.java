@@ -34,7 +34,7 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
 
     public @Bean
     CurieProvider curieProvider() {
-        return new DefaultCurieProvider(CURIE_NAMESPACE, new UriTemplate("/docs/html5/{rel}.html"));
+        return new DefaultCurieProvider(CURIE_NAMESPACE, new UriTemplate("/docs/{rel}.html"));
     }
 
     @Override
