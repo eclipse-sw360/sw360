@@ -33,9 +33,10 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -67,6 +68,7 @@ public class ReleaseTest extends TestIntegrationBase {
         release.setId(releaseId);
         release.setComponentId("component123");
         release.setVersion("1.0.4");
+        release.setCpeid("cpe:id-1231");
         releaseList.add(release);
 
         given(this.releaseServiceMock.getReleasesForUser(anyObject())).willReturn(releaseList);
@@ -116,6 +118,20 @@ public class ReleaseTest extends TestIntegrationBase {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
     }
 
+    @Test
+    public void should_get_all_releases_with_fields() throws IOException {
+        String extraField = "cpeId";
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/releases?fields=" + extraField,
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, headers),
+                        String.class);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        TestHelper.checkResponse(response.getBody(), "releases", 1, Collections.singletonList(extraField));
+    }
+
+    @Test
     public void should_delete_releases() throws IOException, TException {
         String unknownReleaseId = "abcde12345";
         given(this.releaseServiceMock.deleteRelease(eq(releaseId), anyObject())).willReturn(RequestStatus.SUCCESS);

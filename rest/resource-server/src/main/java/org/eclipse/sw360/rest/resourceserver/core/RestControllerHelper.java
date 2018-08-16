@@ -376,6 +376,20 @@ public class RestControllerHelper {
         return embeddedRelease;
     }
 
+    public Release convertToEmbeddedRelease(Release release, List<String> fields) {
+        Release embeddedRelease = this.convertToEmbeddedRelease(release);
+        if (fields != null) {
+            for(String fieldName:fields) {
+                String thriftField = PropertyKeyMapping.releaseThriftKeyFromJSONKey(fieldName);
+                Release._Fields releaseField = Release._Fields.findByName(thriftField);
+                if(releaseField != null) {
+                    embeddedRelease.setFieldValue(releaseField, release.getFieldValue(releaseField));
+                }
+            }
+        }
+        return embeddedRelease;
+    }
+
     public License convertToEmbeddedLicense(License license) {
         License embeddedLicense = new License();
         embeddedLicense.setId(license.getId());

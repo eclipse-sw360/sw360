@@ -157,6 +157,27 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
+    public void should_document_get_releases_with_fields() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/releases?fields=cpeId,releaseDate")
+                .header("Authorization", "Bearer " + accessToken)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation")
+                        ),
+                        responseFields(
+                                fieldWithPath("_embedded.sw360:releases[]name").description("The name of the release, optional"),
+                                fieldWithPath("_embedded.sw360:releases[]version").description("The version of the release"),
+                                fieldWithPath("_embedded.sw360:releases[]cpeId").description("The cpeId of the release, optional"),
+                                fieldWithPath("_embedded.sw360:releases[]releaseDate").description("The releaseDate of the release, optional"),
+                                fieldWithPath("_embedded.sw360:releases").description("An array of <<resources-releases, Releases resources>>"),
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
+
+    @Test
     public void should_document_get_release() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/releases/" + release.getId())

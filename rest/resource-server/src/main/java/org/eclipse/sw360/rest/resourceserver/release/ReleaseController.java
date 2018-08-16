@@ -70,6 +70,7 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
     @RequestMapping(value = RELEASES_URL, method = RequestMethod.GET)
     public ResponseEntity<Resources<Resource>> getReleasesForUser(
             @RequestParam(value = "sha1", required = false) String sha1,
+            @RequestParam(value = "fields", required = false) List<String> fields,
             OAuth2Authentication oAuth2Authentication) throws TException {
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
@@ -83,7 +84,7 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
 
         List<Resource> releaseResources = new ArrayList<>();
         for (Release sw360Release : sw360Releases) {
-            Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(sw360Release);
+            Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(sw360Release, fields);
             Resource<Release> releaseResource = new Resource<>(embeddedRelease);
             releaseResources.add(releaseResource);
         }
