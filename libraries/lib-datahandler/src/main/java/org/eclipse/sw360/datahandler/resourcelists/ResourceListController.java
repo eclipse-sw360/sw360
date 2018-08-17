@@ -19,15 +19,22 @@ import java.util.List;
 
 public class ResourceListController<T> {
 
+    private static final String PAGINATION_PARAMETER_EXCEPTION_MESSAGE = "The given page index is bigger than the actual number of pages";
+
     public PaginationResult<T> applyPagingToList(List<T> resources, PaginationOptions<T> paginationOptions) throws PaginationParameterException {
+        if(resources.size() == 0) {
+            if(paginationOptions.getPageNumber() == 0) {
+                return new PaginationResult<>(resources, 0, paginationOptions);
+            } else {
+                throw new PaginationParameterException(PAGINATION_PARAMETER_EXCEPTION_MESSAGE);
+            }
+        }
         List<T> sortedResources = this.sortList(resources, paginationOptions.getSortComparator());
 
         int fromIndex = paginationOptions.getOffset();
         int toIndex = paginationOptions.getPageEndIndex();
-        if(fromIndex == 0 && sortedResources.size() == 0) {
-            return new PaginationResult<>(new ArrayList<>(), 0, paginationOptions);
-        } else if(fromIndex >= sortedResources.size()) {
-             throw new PaginationParameterException("The page size of " + fromIndex + " exceeds the list size of " + sortedResources.size() + ".");
+        if(fromIndex >= sortedResources.size()) {
+            throw new PaginationParameterException(PAGINATION_PARAMETER_EXCEPTION_MESSAGE);
         } else if (toIndex > sortedResources.size()) {
             toIndex = sortedResources.size();
         }

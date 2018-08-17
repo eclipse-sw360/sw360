@@ -13,7 +13,9 @@ package org.eclipse.sw360.rest.resourceserver.core;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.log4j.Logger;
+import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
+import org.apache.thrift.TFieldIdEnum;
 import org.eclipse.sw360.datahandler.resourcelists.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
@@ -45,6 +47,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.hateoas.core.EmbeddedWrapper;
+import org.springframework.hateoas.core.EmbeddedWrappers;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -110,19 +114,31 @@ public class RestControllerHelper<T> {
         return request.getParameterMap().containsKey(PAGINATION_PARAM_PAGE) || request.getParameterMap().containsKey(PAGINATION_PARAM_PAGE_ENTRIES);
     }
 
-    public Resources<Resource<T>> generateResources(PaginationResult<T> paginationResult, List<Resource<T>> resources) throws URISyntaxException {
+    public <T extends TBase<?, ? extends TFieldIdEnum>> Resources<Resource<T>> generatePagesResource(PaginationResult paginationResult, List<Resource<T>> resources) throws URISyntaxException {
         if (paginationResult.isPagingActive()) {
-            PaginationOptions paginationOptions = paginationResult.getPaginationOptions();
-            PagedResources.PageMetadata pageMetadata = new PagedResources.PageMetadata(
-                    paginationOptions.getPageSize(),
-                    paginationOptions.getPageNumber(),
-                    paginationResult.getTotalCount(),
-                    paginationResult.getTotalPageCount());
+            PagedResources.PageMetadata pageMetadata = createPageMetadata(paginationResult);
             List<Link> pagingLinks = this.getPaginationLinks(paginationResult, this.getAPIBaseUrl());
             return new PagedResources<>(resources, pageMetadata, pagingLinks);
         } else {
             return new Resources<>(resources);
         }
+    }
+
+    public PagedResources emptyPageResource(Class resourceClass, PaginationResult paginationResult) {
+        EmbeddedWrappers embeddedWrappers = new EmbeddedWrappers(true);
+        EmbeddedWrapper embeddedWrapper = embeddedWrappers.emptyCollectionOf(resourceClass);
+        List<EmbeddedWrapper> list = Collections.singletonList(embeddedWrapper);
+        PagedResources.PageMetadata pageMetadata = createPageMetadata(paginationResult);
+        return new PagedResources<>(list, pageMetadata, new ArrayList<>());
+    }
+
+    private PagedResources.PageMetadata createPageMetadata(PaginationResult paginationResult) {
+        PaginationOptions paginationOptions = paginationResult.getPaginationOptions();
+        return new PagedResources.PageMetadata(
+                paginationOptions.getPageSize(),
+                paginationOptions.getPageNumber(),
+                paginationResult.getTotalCount(),
+                paginationResult.getTotalPageCount());
     }
 
     private List<Link> getPaginationLinks(PaginationResult paginationResult, String baseUrl) {

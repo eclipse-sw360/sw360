@@ -28,8 +28,8 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
-import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
+import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
@@ -37,6 +37,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
+import org.springframework.hateoas.PagedResources;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.ResourceProcessor;
 import org.springframework.hateoas.Resources;
@@ -44,6 +45,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -84,7 +86,7 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
     private final RestControllerHelper<Component> restControllerHelper;
 
     @RequestMapping(value = COMPONENTS_URL, method = RequestMethod.GET)
-    public ResponseEntity<Resources<Resource<Component>>> getComponents(Pageable pageable,
+    public ResponseEntity<Resources> getComponents(Pageable pageable,
                                                                         @RequestParam(value = "name", required = false) String name,
                                                                         @RequestParam(value = "type", required = false) String componentType,
                                                                         @RequestParam(value = "fields", required = false) List<String> fields,
@@ -109,7 +111,12 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
                     componentResources.add(new Resource<>(embeddedComponent));
                 });
 
-        Resources<Resource<Component>> resources = restControllerHelper.generateResources(paginationResult, componentResources);
+        Resources resources;
+        if (componentResources.size() == 0) {
+            resources = restControllerHelper.emptyPageResource(Component.class, paginationResult);
+        } else {
+            resources = restControllerHelper.generatePagesResource(paginationResult, componentResources);
+        }
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
