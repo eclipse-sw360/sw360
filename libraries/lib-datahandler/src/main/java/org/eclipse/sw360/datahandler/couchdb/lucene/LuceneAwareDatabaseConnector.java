@@ -194,6 +194,8 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
                 return fieldName + ":\"" + (enumByString(input, ProjectState.class).toString()) + "\"";
             } else if (fieldName.equals("projectType")) {
                 return fieldName + ":\"" + (enumByString(input, ProjectType.class).toString()) + "\"";
+            } else if (fieldName.equals("businessUnit") || fieldName.equals("tag")) {
+                return fieldName + ":\"" + input + "\"";
             } else {
                 return fieldName + ":" + input;
             }
