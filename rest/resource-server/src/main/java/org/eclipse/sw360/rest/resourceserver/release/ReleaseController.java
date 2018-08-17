@@ -14,8 +14,11 @@ package org.eclipse.sw360.rest.resourceserver.release;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.resourcelists.*;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -28,8 +31,10 @@ import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
+import org.springframework.hateoas.PagedResources;
 import org.springframework.hateoas.Link;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.ResourceProcessor;
@@ -43,6 +48,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URI;
@@ -55,6 +61,7 @@ import java.util.Set;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
 @BasePathAwareController
+@Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ReleaseController implements ResourceProcessor<RepositoryLinksResource> {
     public static final String RELEASES_URL = "/releases";
@@ -67,12 +74,17 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
     private Sw360AttachmentService attachmentService;
 
     @NonNull
-    private RestControllerHelper restControllerHelper;
+    private final RestControllerHelper restControllerHelper;
+
+    @NonNull
+    private final ResourceListController resourceListController = new ResourceListController();
 
     @RequestMapping(value = RELEASES_URL, method = RequestMethod.GET)
-    public ResponseEntity<Resources<Resource>> getReleasesForUser(
+    public ResponseEntity<Resources<Resource<Release>>> getReleasesForUser(
+            Pageable pageable,
             @RequestParam(value = "sha1", required = false) String sha1,
-            @RequestParam(value = "fields", required = false) List<String> fields) throws TException {
+            @RequestParam(value = "fields", required = false) List<String> fields,
+            HttpServletRequest request) throws TException, ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<Release> sw360Releases = new ArrayList<>();
@@ -83,14 +95,15 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
             sw360Releases.addAll(releaseService.getReleasesForUser(sw360User));
         }
 
+        PaginationResult<Release> paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Releases, SW360Constants.TYPE_RELEASE);
+
         List<Resource> releaseResources = new ArrayList<>();
         for (Release sw360Release : sw360Releases) {
             Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(sw360Release, fields);
             Resource<Release> releaseResource = new Resource<>(embeddedRelease);
             releaseResources.add(releaseResource);
         }
-        Resources<Resource> resources = new Resources<>(releaseResources);
-
+        Resources<Resource<Release>> resources = restControllerHelper.generateResources(paginationResult, releaseResources);
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 

@@ -44,6 +44,8 @@ import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.li
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
+import static org.springframework.restdocs.request.RequestDocumentation.requestParameters;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -157,30 +159,57 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/releases")
                 .header("Authorization", "Bearer " + accessToken)
+                .param("page","0")
+                .param("page_entries", "5")
+                .param("sort","name,desc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("page").description("Page of releases"),
+                                parameterWithName("page_entries").description("Amount of releases per page"),
+                                parameterWithName("sort").description("Defines order of the releases")
+                        ),
                         links(
-                                linkWithRel("curies").description("Curies are used for online documentation")
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
                         ),
                         responseFields(
                                 fieldWithPath("_embedded.sw360:releases[]name").description("The name of the release, optional"),
                                 fieldWithPath("_embedded.sw360:releases[]version").description("The version of the release"),
                                 fieldWithPath("_embedded.sw360:releases").description("An array of <<resources-releases, Releases resources>>"),
-                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of releases per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all existing releases"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
                         )));
     }
 
     @Test
     public void should_document_get_releases_with_fields() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        mockMvc.perform(get("/api/releases?fields=cpeId,releaseDate")
+        mockMvc.perform(get("/api/releases")
                 .header("Authorization", "Bearer " + accessToken)
+                .param("page","0")
+                .param("page_entries", "5")
+                .param("sort","name,desc")
+                .param("fields","cpeId,releaseDate")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("page").description("Page of releases"),
+                                parameterWithName("page_entries").description("Amount of releases per page"),
+                                parameterWithName("sort").description("Defines order of the releases"),
+                                parameterWithName("fields").description("Properties which should be present for each release in the result")
+                        ),
                         links(
-                                linkWithRel("curies").description("Curies are used for online documentation")
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
                         ),
                         responseFields(
                                 fieldWithPath("_embedded.sw360:releases[]name").description("The name of the release, optional"),
@@ -188,7 +217,12 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("_embedded.sw360:releases[]cpeId").description("The cpeId of the release, optional"),
                                 fieldWithPath("_embedded.sw360:releases[]releaseDate").description("The releaseDate of the release, optional"),
                                 fieldWithPath("_embedded.sw360:releases").description("An array of <<resources-releases, Releases resources>>"),
-                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of releases per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all existing releases"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
                         )));
     }
 
