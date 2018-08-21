@@ -349,11 +349,6 @@
                         $('<td>', {
                             colspan: 4
                         }).append(
-                            $('<input/>', {
-                                type:     'hidden',
-                                name:     portletNamespace + attachmentContentId + '_text',
-                                value:    license.text
-                            }),
                             $('<span/>', {
                                 'class': 'license-text sw360-ellipsis',
                                 title: license.text ? license.text : '',
