@@ -210,6 +210,8 @@ public class AttachmentHandlerTest {
 
         Assert.assertThat(handler.getAttachmentsUsages(Source.releaseId("r1"), ImmutableSet.of("a11", "a12"), null),
                 Matchers.containsInAnyOrder(usage1, usage2, usage4, usage5));
+        Assert.assertThat(handler.getAttachmentsUsages(Source.releaseId("r1"), Collections.emptySet(), null),
+                Matchers.empty());
     }
 
     @Test
