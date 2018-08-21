@@ -14,21 +14,23 @@ package org.eclipse.sw360.rest.resourceserver.release;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
+import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
+import org.springframework.hateoas.Link;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.ResourceProcessor;
 import org.springframework.hateoas.Resources;
@@ -103,7 +105,7 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
             @PathVariable("id") String id, OAuth2Authentication oAuth2Authentication) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
         Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
-        HalResource halRelease = restControllerHelper.createHalReleaseResource(sw360Release, true);
+        HalResource halRelease = createHalReleaseResource(sw360Release, true);
         return new ResponseEntity<>(halRelease, HttpStatus.OK);
     }
 
@@ -136,7 +138,7 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
         Release sw360Release = releaseService.getReleaseForUserById(id, user);
         sw360Release = this.restControllerHelper.updateRelease(sw360Release, updateRelease);
         releaseService.updateRelease(sw360Release, user);
-        HalResource<Release> halRelease = restControllerHelper.createHalReleaseResource(sw360Release, true);
+        HalResource<Release> halRelease = createHalReleaseResource(sw360Release, true);
         return new ResponseEntity<>(halRelease, HttpStatus.OK);
     }
 
@@ -173,7 +175,7 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
         }
 
         Release sw360Release = releaseService.createRelease(release, sw360User);
-        HalResource<Release> halResource = restControllerHelper.createHalReleaseResource(sw360Release, true);
+        HalResource<Release> halResource = createHalReleaseResource(sw360Release, true);
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest().path("/{id}")
@@ -210,7 +212,7 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
         release.addToAttachments(attachment);
         releaseService.updateRelease(release, sw360User);
 
-        final HalResource halRelease = restControllerHelper.createHalReleaseResource(release, true);
+        final HalResource halRelease = createHalReleaseResource(release, true);
 
         return new ResponseEntity<>(halRelease, HttpStatus.OK);
     }
@@ -230,5 +232,37 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
         resource.add(linkTo(ReleaseController.class).slash("api" + RELEASES_URL).withRel("releases"));
         return resource;
+    }
+
+    private HalResource<Release> createHalReleaseResource(Release release, boolean verbose) {
+        HalResource<Release> halRelease = new HalResource<>(release);
+        Link componentLink = linkTo(ReleaseController.class)
+                .slash("api" + ComponentController.COMPONENTS_URL + "/" + release.getComponentId()).withRel("component");
+        halRelease.add(componentLink);
+        release.setComponentId(null);
+
+        if (verbose) {
+            if (release.getModerators() != null) {
+                Set<String> moderators = release.getModerators();
+                restControllerHelper.addEmbeddedModerators(halRelease, moderators);
+                release.setModerators(null);
+            }
+            if (release.getAttachments() != null) {
+                Set<Attachment> attachments = release.getAttachments();
+                restControllerHelper.addEmbeddedAttachments(halRelease, attachments);
+                release.setAttachments(null);
+            }
+            if (release.getVendor() != null) {
+                Vendor vendor = release.getVendor();
+                HalResource<Vendor> vendorHalResource = restControllerHelper.addEmbeddedVendor(vendor.getFullname());
+                halRelease.addEmbeddedResource("sw360:vendors", vendorHalResource);
+                release.setVendor(null);
+            }
+            if (release.getMainLicenseIds() != null) {
+                restControllerHelper.addEmbeddedLicenses(halRelease, release.getMainLicenseIds());
+                release.setMainLicenseIds(null);
+            }
+        }
+        return halRelease;
     }
 }
