@@ -64,7 +64,7 @@ public class Sw360AuthenticationProvider implements AuthenticationProvider {
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         String email = authentication.getName();
-        String password = authentication.getCredentials().toString();
+        String password = (String) authentication.getCredentials();
 
         if (isDevEnvironment() && testUserId != null && testUserPassword != null) {
             // For easy testing without having a Liferay portal running, we mock an existing sw360 user

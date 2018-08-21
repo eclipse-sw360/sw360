@@ -40,7 +40,6 @@ enum RequestedAction {
     ATTACHMENTS = 6,
     WRITE_ECC = 7,
 }
-
 struct User {
 
     1: optional string id,
@@ -57,6 +56,15 @@ struct User {
     12: optional string commentMadeDuringModerationRequest,
     13: optional map<string, bool> notificationPreferences,
     14: optional set<string> formerEmailAddresses,
+    20: optional list<RestApiToken> restApiTokens
+}
+
+struct RestApiToken {
+    1: optional string token,
+    2: optional string name,
+    3: optional string createdOn
+    4: optional i32 numberOfDaysValid,
+    5: optional set<string> authorities,
 }
 
 service UserService {
@@ -70,6 +78,11 @@ service UserService {
      * returns SW360-user with given email
      **/
     User getByEmail(1:string email);
+
+    /**
+     * returns SW360-user with given token
+     **/
+    User getByApiToken(1:string token);
 
     /**
      * searches for a SW360 user by email, or, if no such user is found, by externalId

@@ -90,8 +90,7 @@ public class Sw360AttachmentService {
         return attachments.get(0);
     }
 
-    public void downloadAttachmentWithContext(Object context, String attachmentId, HttpServletResponse response, OAuth2Authentication oAuth2Authentication) {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
+    public void downloadAttachmentWithContext(Object context, String attachmentId, HttpServletResponse response, User sw360User) {
         AttachmentContent attachmentContent = getAttachmentContent(attachmentId);
 
         String filename = attachmentContent.getFilename();

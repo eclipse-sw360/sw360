@@ -195,7 +195,11 @@ class JacksonCustomizations {
                 "formerEmailAddressesSize",
                 "formerEmailAddressesIterator",
                 "setFormerEmailAddresses",
-                "setCommentMadeDuringModerationRequest"
+                "setCommentMadeDuringModerationRequest",
+                "restApiTokens",
+                "restApiTokensSize",
+                "setRestApiTokens",
+                "restApiTokensIterator"
         })
         static abstract class UserMixin extends User {
             @Override

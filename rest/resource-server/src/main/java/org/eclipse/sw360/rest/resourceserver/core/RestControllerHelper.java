@@ -12,11 +12,8 @@ package org.eclipse.sw360.rest.resourceserver.core;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.log4j.Logger;
-import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
-import org.apache.thrift.TFieldIdEnum;
 import org.eclipse.sw360.datahandler.resourcelists.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
@@ -44,7 +41,8 @@ import org.springframework.hateoas.Link;
 import org.springframework.hateoas.PagedResources;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.Resources;
-import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -57,10 +55,10 @@ import java.util.*;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class RestControllerHelper<T> {
+
     @NonNull
     private final Sw360UserService userService;
 
@@ -85,9 +83,13 @@ public class RestControllerHelper<T> {
     private static final String PAGINATION_PARAM_PAGE = "page";
     public static final String PAGINATION_PARAM_PAGE_ENTRIES = "page_entries";
 
-    public User getSw360UserFromAuthentication(OAuth2Authentication oAuth2Authentication) {
-        String userId = oAuth2Authentication.getName();
-        return userService.getUserByEmail(userId);
+    public User getSw360UserFromAuthentication() {
+        try {
+            String userId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            return userService.getUserByEmail(userId);
+        } catch (RuntimeException e) {
+            throw new AuthenticationServiceException("Could not load user from authentication.");
+        }
     }
 
     public PaginationResult<T> createPaginationResult(HttpServletRequest request, Pageable pageable, List<T> resources, String resourceType) throws ResourceClassNotFoundException, PaginationParameterException {

@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -11,27 +11,42 @@
 
 package org.eclipse.sw360.rest.resourceserver.security;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
-import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
-import javax.servlet.http.HttpServletRequest;
-
+@Profile("!SECURITY_MOCK")
 @Configuration
+@EnableWebSecurity
 @EnableResourceServer
 @EnableGlobalMethodSecurity(prePostEnabled = true, proxyTargetClass = true)
 public class ResourceServerConfiguration extends WebSecurityConfigurerAdapter implements ResourceServerConfigurer {
 
+    @Autowired
+    private ApiTokenAuthenticationFilter filter;
+
+    @Autowired
+    private ResourceAuthenticationProvider authProvider;
+
     @Value("${security.oauth2.resource.id:sw360-REST-API}")
     private String resourceId;
+
+    @Override
+    protected void configure(AuthenticationManagerBuilder authenticationManagerBuilder) {
+        authenticationManagerBuilder.authenticationProvider(this.authProvider);
+    }
 
     @Override
     public void configure(ResourceServerSecurityConfigurer resources) {
@@ -39,7 +54,7 @@ public class ResourceServerConfiguration extends WebSecurityConfigurerAdapter im
     }
 
     @Override
-    public void configure(WebSecurity web) throws Exception {
+    public void configure(WebSecurity web) {
         web.ignoring().antMatchers("/", "/**/*.html", "/**/*.css", "/**/*.js", "/**/*.json", "/**/*.png", "/**/*.gif");
     }
 
@@ -47,8 +62,12 @@ public class ResourceServerConfiguration extends WebSecurityConfigurerAdapter im
     public void configure(HttpSecurity http) throws Exception {
         // TODO Thomas Maier 15-12-2017
         // Use Sw360GrantedAuthority from authorization server
+
         http
-                .httpBasic().and()
+                .addFilterBefore(filter, BasicAuthenticationFilter.class)
+                .authenticationProvider(authProvider)
+                .httpBasic()
+                .and()
                 .authorizeRequests()
                 .antMatchers(HttpMethod.GET, "/api").permitAll()
                 .antMatchers(HttpMethod.GET, "/api/**").hasAuthority("READ")
@@ -56,12 +75,5 @@ public class ResourceServerConfiguration extends WebSecurityConfigurerAdapter im
                 .antMatchers(HttpMethod.PUT, "/api/**").hasAuthority("WRITE")
                 .antMatchers(HttpMethod.PATCH, "/api/**").hasAuthority("WRITE").and()
                 .csrf().disable();
-    }
-
-    private static class OAuthRequestedMatcher implements RequestMatcher {
-        public boolean matches(HttpServletRequest httpServletRequest) {
-            String authorizationHeaderValue = httpServletRequest.getHeader("Authorization");
-            return (authorizationHeaderValue != null) && authorizationHeaderValue.startsWith("Bearer");
-        }
     }
 }

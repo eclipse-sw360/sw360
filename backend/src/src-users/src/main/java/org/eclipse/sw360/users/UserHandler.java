@@ -64,6 +64,12 @@ public class UserHandler implements UserService.Iface {
     }
 
     @Override
+    public User getByApiToken(String token) throws TException {
+        assertNotEmpty(token);
+        return db.getByApiToken(token);
+    }
+
+    @Override
     public List<User> searchUsers(String searchText) throws TException {
         return db.searchUsers(searchText);
     }

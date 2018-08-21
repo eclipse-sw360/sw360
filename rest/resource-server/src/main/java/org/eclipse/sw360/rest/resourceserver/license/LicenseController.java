@@ -56,7 +56,7 @@ public class LicenseController implements ResourceProcessor<RepositoryLinksResou
     private final RestControllerHelper restControllerHelper;
 
     @RequestMapping(value = LICENSES_URL, method = RequestMethod.GET)
-    public ResponseEntity<Resources<Resource<License>>> getLicenses(OAuth2Authentication oAuth2Authentication) throws TException {
+    public ResponseEntity<Resources<Resource<License>>> getLicenses() throws TException {
         List<License> sw360Licenses = licenseService.getLicenses();
 
         List<Resource<License>> licenseResources = new ArrayList<>();
@@ -72,7 +72,7 @@ public class LicenseController implements ResourceProcessor<RepositoryLinksResou
 
     @RequestMapping(value = LICENSES_URL + "/{id:.+}", method = RequestMethod.GET)
     public ResponseEntity<Resource<License>> getLicense(
-            @PathVariable("id") String id, OAuth2Authentication oAuth2Authentication) throws TException {
+            @PathVariable("id") String id) throws TException {
         License sw360License = licenseService.getLicenseById(id);
         HalResource<License> licenseHalResource = createHalLicense(sw360License);
         return new ResponseEntity<>(licenseHalResource, HttpStatus.OK);
@@ -81,9 +81,8 @@ public class LicenseController implements ResourceProcessor<RepositoryLinksResou
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = LICENSES_URL, method = RequestMethod.POST)
     public ResponseEntity<Resource<License>> createLicense(
-            OAuth2Authentication oAuth2Authentication,
             @RequestBody License license) throws URISyntaxException, TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         license = licenseService.createLicense(license, sw360User);
         HalResource<License> halResource = createHalLicense(license);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -10,29 +10,42 @@
  */
 package org.eclipse.sw360.portal.portlets.preferences;
 
+import org.apache.commons.lang.RandomStringUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
+import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
+import org.eclipse.sw360.portal.common.ErrorMessages;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.common.PortletUtils;
 import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 
 import javax.portlet.*;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
+
+import static org.eclipse.sw360.portal.common.PortalConstants.*;
 
 /**
  * @author alex.borodin@evosoft.com
+ * @author thomas.maier@evosoft.com
  */
 public class UserPreferencesPortlet extends Sw360Portlet {
 
     private static final Logger log = Logger.getLogger(UserPreferencesPortlet.class);
+    private static final String AUTHORITIES_READ = "AUTHORITIESREAD";
+    private static final String AUTHORITIES_WRITE = "AUTHORITIESWRITE";
 
     @Override
     public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
@@ -44,12 +57,62 @@ public class UserPreferencesPortlet extends Sw360Portlet {
         final User user = UserCacheHolder.getRefreshedUserFromEmail(UserCacheHolder.getUserFromRequest(request).getEmail());
         SW360Utils.initializeMailNotificationsPreferences(user);
         request.setAttribute(PortalConstants.SW360_USER, user);
-
         request.setAttribute("eventsConfig", SW360Constants.NOTIFIABLE_ROLES_BY_OBJECT_TYPE);
+        request.setAttribute("accessTokenList", CommonUtils.nullToEmptyList(user.getRestApiTokens()));
     }
 
     @UsedAsLiferayAction
-    public void savePreferences(ActionRequest request, ActionResponse response) throws IOException, PortletException {
+    public void createToken(ActionRequest request, ActionResponse response) {
+        User user = UserCacheHolder.getRefreshedUserFromEmail(UserCacheHolder.getUserFromRequest(request).getEmail());
+        UserService.Iface userClient = thriftClients.makeUserClient();
+        RestApiToken restApiToken = getApiTokenInfoFromRequest(request);
+
+        if (isDuplicateTokenName(user, restApiToken.getName())) {
+            log.error("Token name [" + restApiToken.getName() + "] already exists for user " + user.getEmail());
+            setSW360SessionError(request, ErrorMessages.REST_API_TOKEN_NAME_DUPLICATE);
+            return;
+        }
+
+        if (!isValidExpireDays(restApiToken)) {
+            log.error("Token expiration days [" + restApiToken.getNumberOfDaysValid() + "] is not valid for user " + user.getEmail());
+            setSW360SessionError(request, ErrorMessages.REST_API_EXPIRE_DATE_NOT_VALID);
+            return;
+        }
+
+        String token = RandomStringUtils.random(20, true, true);
+        restApiToken.setToken(BCrypt.hashpw(token, API_TOKEN_HASH_SALT));
+        restApiToken.setCreatedOn(SW360Utils.getCreatedOnTime());
+        user.addToRestApiTokens(restApiToken);
+
+        try {
+            userClient.updateUser(user);
+            request.setAttribute("accessToken", token);
+            request.setAttribute("accessTokenList", user.getRestApiTokens());
+        } catch (TException e) {
+            log.error("Could not generate REST API token for user " + user.getEmail(), e);
+            setSW360SessionError(request, ErrorMessages.REST_API_TOKEN_ERROR);
+        }
+    }
+
+    @UsedAsLiferayAction
+    public void deleteToken(ActionRequest request, ActionResponse response) {
+        User user = UserCacheHolder.getRefreshedUserFromEmail(UserCacheHolder.getUserFromRequest(request).getEmail());
+        UserService.Iface userClient = thriftClients.makeUserClient();
+        String tokenName = request.getParameter(API_TOKEN_ID);
+        user.getRestApiTokens().removeIf(t -> t.getName().equals(tokenName));
+
+        try {
+            userClient.updateUser(user);
+            log.info("Token successfully deleted for user " + user.getEmail());
+            request.setAttribute("accessTokenList", CommonUtils.nullToEmptyList(user.getRestApiTokens()));
+        } catch (TException e) {
+            log.error("Could not delete REST API token for user " + user.getEmail(), e);
+            setSW360SessionError(request, ErrorMessages.REST_API_TOKEN_ERROR);
+        }
+    }
+
+    @UsedAsLiferayAction
+    public void savePreferences(ActionRequest request, ActionResponse response) {
         User sessionUser = UserCacheHolder.getUserFromRequest(request);
         UserService.Iface userClient = thriftClients.makeUserClient();
         try {
@@ -73,5 +136,60 @@ public class UserPreferencesPortlet extends Sw360Portlet {
             response.setProperty(ResourceResponse.HTTP_STATUS_CODE,
                     Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
         }
+    }
+
+    private RestApiToken getApiTokenInfoFromRequest(PortletRequest request) {
+        RestApiToken restApiToken = new RestApiToken();
+        Arrays.stream(RestApiToken._Fields.values()).forEach(f -> setApiFieldValue(request, restApiToken, f));
+        restApiToken.setNumberOfDaysValid(getNumberOfExpireDays(request));
+        restApiToken.setAuthorities(getApiAuthorities(request));
+        return restApiToken;
+    }
+
+    private void setApiFieldValue(PortletRequest request, RestApiToken restApiToken, RestApiToken._Fields field) {
+        PortletUtils.setFieldValue(request, restApiToken, field, RestApiToken.metaDataMap.get(field), "");
+    }
+
+    private boolean isDuplicateTokenName(User user, String tokenName) {
+        return CommonUtils.nullToEmptyList(user.getRestApiTokens()).stream().anyMatch(t -> t.getName().equals(tokenName));
+    }
+
+    private boolean isValidExpireDays(RestApiToken restApiToken) {
+        String configExpireDays = restApiToken.getAuthorities().contains("WRITE") ?
+                API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS : API_TOKEN_MAX_VALIDITY_READ_IN_DAYS;
+
+        try {
+            return restApiToken.getNumberOfDaysValid() >= 0 &&
+                   restApiToken.getNumberOfDaysValid() <= Integer.parseInt(configExpireDays);
+        } catch (NumberFormatException e) {
+            log.error("Could not parse REST API token expire days", e);
+            return false;
+        }
+    }
+
+    private Set<String> getApiAuthorities(PortletRequest request) {
+        User user = UserCacheHolder.getRefreshedUserFromEmail(UserCacheHolder.getUserFromRequest(request).getEmail());
+        List<String> requestParams = Collections.list(request.getParameterNames());
+        Set<String> authorities = new HashSet<>();
+
+        if (requestParams.contains(AUTHORITIES_READ)) {
+            authorities.add("READ");
+        }
+
+        if (requestParams.contains(AUTHORITIES_WRITE)) {
+            // User needs at least the role which is defined in sw360.properties (default admin)
+            if (PermissionUtils.isUserAtLeast(API_WRITE_ACCESS_USERGROUP, user)) {
+                authorities.add("WRITE");
+            } else {
+                log.info("User permission [WRITE] is not allowed for user " + user.getEmail());
+            }
+        }
+
+        return authorities;
+    }
+
+    private int getNumberOfExpireDays(PortletRequest request) {
+        LocalDate expirationDate = LocalDate.parse(request.getParameter("expirationDate"));
+        return (int) (long) ChronoUnit.DAYS.between(LocalDate.now(), expirationDate);
     }
 }
