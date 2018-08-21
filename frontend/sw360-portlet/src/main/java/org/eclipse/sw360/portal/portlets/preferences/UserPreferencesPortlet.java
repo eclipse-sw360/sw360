@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -10,22 +10,36 @@
  */
 package org.eclipse.sw360.portal.portlets.preferences;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.thrift.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
+import org.eclipse.sw360.portal.common.ErrorMessages;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.common.PortletUtils;
 import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
 
 import javax.portlet.*;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.*;
+
+import static org.eclipse.sw360.portal.common.PortalConstants.AUTHORIZATION_REST_API_TOKEN_URL;
 
 /**
  * @author alex.borodin@evosoft.com
@@ -42,10 +56,38 @@ public class UserPreferencesPortlet extends Sw360Portlet {
 
     private void prepareStandardView(RenderRequest request) {
         final User user = UserCacheHolder.getRefreshedUserFromEmail(UserCacheHolder.getUserFromRequest(request).getEmail());
+
         SW360Utils.initializeMailNotificationsPreferences(user);
         request.setAttribute(PortalConstants.SW360_USER, user);
-
         request.setAttribute("eventsConfig", SW360Constants.NOTIFIABLE_ROLES_BY_OBJECT_TYPE);
+    }
+
+    @UsedAsLiferayAction
+    public void generateToken(ActionRequest request, ActionResponse response) {
+        final User user = UserCacheHolder.getRefreshedUserFromEmail(UserCacheHolder.getUserFromRequest(request).getEmail());
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<User> entity = new HttpEntity<>(user, headers);
+
+        try {
+            RestApiToken restApiToken = configureRestTemplate().postForObject(AUTHORIZATION_REST_API_TOKEN_URL, entity, RestApiToken.class);
+            request.setAttribute("accessToken", restApiToken);
+        } catch (HttpClientErrorException httpException) {
+            if (httpException.getStatusCode() != HttpStatus.CREATED) {
+                log.error("Could not generate REST API token for user " + user.getEmail(), httpException);
+                setSW360SessionError(request, ErrorMessages.REST_API_TOKEN_NOT_GENERATED);
+            }
+        }
+    }
+
+    private RestTemplate configureRestTemplate() {
+        ObjectMapper objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        MappingJackson2HttpMessageConverter httpMessageConverter = new MappingJackson2HttpMessageConverter();
+        httpMessageConverter.setObjectMapper(objectMapper);
+        List<HttpMessageConverter<?>> list = new ArrayList<>(Collections.singleton(httpMessageConverter));
+        RestTemplate restTemplate = new RestTemplate();
+        restTemplate.setMessageConverters(list);
+        return restTemplate;
     }
 
     @UsedAsLiferayAction

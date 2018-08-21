@@ -135,3 +135,10 @@ union Source {
   2: string componentId
   3: string releaseId
 }
+
+struct RestApiToken {
+    1: optional string value,
+    2: optional string scope,
+    3: optional string authorities,
+    4: optional string expiration,
+}

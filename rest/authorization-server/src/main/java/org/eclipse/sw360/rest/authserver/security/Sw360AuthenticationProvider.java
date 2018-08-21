@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -28,18 +28,23 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.common.OAuth2AccessToken;
+import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerEndpointsConfiguration;
+import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.security.oauth2.provider.OAuth2Request;
+import org.springframework.security.oauth2.provider.token.AuthorizationServerTokenServices;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import javax.annotation.PostConstruct;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
+import static org.eclipse.sw360.rest.authserver.Sw360AuthorizationServer.CONFIG_CLIENT_ID;
 import static org.eclipse.sw360.rest.authserver.Sw360AuthorizationServer.CONFIG_WRITE_ACCESS_USERGROUP;
-import static org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority.READ;
-import static org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority.WRITE;
+import static org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority.*;
 
 @Component
 public class Sw360AuthenticationProvider implements AuthenticationProvider {
@@ -56,10 +61,28 @@ public class Sw360AuthenticationProvider implements AuthenticationProvider {
     @Value("${sw360.sw360-liferay-company-id}")
     private String sw360LiferayCompanyId;
 
-    @Autowired
-    Environment environment;
+    @Value("${security.oauth2.client.client-id}")
+    private String clientId;
 
+    @Value("${security.oauth2.client.authorized-grant-types}")
+    private String[] authorizedGrantTypes;
+
+    @Value("${security.oauth2.client.scope}")
+    private String[] scopes;
+
+    @Autowired
+    private AuthorizationServerEndpointsConfiguration configuration;
+
+    @Autowired
+    private Environment environment;
     private static final String ENVIRONMENT_DEV_PROFILE = "dev";
+
+    @PostConstruct
+    public void postSw360AuthenticationProvider() {
+        if (CONFIG_CLIENT_ID != null) {
+            clientId = CONFIG_CLIENT_ID;
+        }
+    }
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
@@ -152,5 +175,33 @@ public class Sw360AuthenticationProvider implements AuthenticationProvider {
 
     private boolean isValidString(String string) {
         return string != null && string.trim().length() != 0;
+    }
+
+    public OAuth2AccessToken generateAccessTokenByUser(User user) {
+        Authentication authenticationToken = createAuthenticationToken(user.getEmail(), "...", user);
+        OAuth2Authentication auth = new OAuth2Authentication(createOAuth2Request(), authenticationToken);
+        AuthorizationServerTokenServices tokenService = getTokenServices();
+        OAuth2AccessToken accessToken = tokenService.createAccessToken(auth);
+        accessToken.getAdditionalInformation().put("authorities", authenticationToken.getAuthorities());
+        return accessToken;
+    }
+
+    private AuthorizationServerTokenServices getTokenServices() {
+        return configuration.getEndpointsConfigurer().getTokenServices();
+    }
+
+    private OAuth2Request createOAuth2Request() {
+        HashMap<String, String> authorizationParameters = new HashMap<>();
+        authorizationParameters.put("scope", Arrays.stream(scopes).collect(Collectors.joining(",")));
+        authorizationParameters.put("grant", Arrays.stream(authorizedGrantTypes).collect(Collectors.joining(",")));
+        authorizationParameters.put("client_id", clientId);
+        Set<GrantedAuthority> authorities = new HashSet<>();
+        authorities.add(new SimpleGrantedAuthority(BASIC.getAuthority()));
+        Set<String> responseType = new HashSet<>(Arrays.asList(authorizedGrantTypes));
+        Set<String> scopes = new HashSet<>(Arrays.asList(this.scopes));
+        OAuth2Request oauth2Request = new OAuth2Request(
+                authorizationParameters, "trusted-sw360-client", authorities, true,
+                scopes, null, "", responseType, null);
+        return oauth2Request;
     }
 }

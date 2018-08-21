@@ -16,10 +16,12 @@
 <portlet:defineObjects/>
 <liferay-theme:defineObjects/>
 
+<portlet:actionURL var="generateTokenURL" name="generateToken"></portlet:actionURL>
+<portlet:actionURL var="saveUserPreferencesURL" name="savePreferences"></portlet:actionURL>
+
 <jsp:useBean id="sw360User" type="org.eclipse.sw360.datahandler.thrift.users.User" scope="request"/>
 <jsp:useBean id="eventsConfig" type="java.util.Map<java.lang.String, java.util.List<java.util.Map.Entry<java.lang.String, java.lang.String>>>" scope="request"/>
-
-<portlet:actionURL var="saveUserPreferencesURL" name="savePreferences"/>
+<jsp:useBean id="accessToken" class="org.eclipse.sw360.datahandler.thrift.RestApiToken" scope="request"/>
 
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
 
@@ -53,6 +55,33 @@
             <td><sw360:DisplayEnum value="${sw360User.userGroup}"/></td>
         </tr>
     </table>
+    <form action="<%=generateTokenURL%>" method="post">
+    <table class="table info_table" id="readOnlyUserData-rest">
+        <thead>
+        <tr>
+            <th colspan="2">SW360 REST API Token</th>
+        </tr>
+        </thead>
+        <tr>
+            <td>Token (Authorization Header):</td>
+            <td><sw360:out value="${accessToken.value}"/></td>
+        </tr>
+        <tr>
+            <td>Authorities:</td>
+            <td><sw360:out value="${accessToken.authorities}"/></td>
+        </tr>
+        <tr>
+            <td>Scope:</td>
+            <td><sw360:out value="${accessToken.scope}"/></td>
+        </tr>
+        <tr>
+            <td>Expiration:</td>
+            <td><sw360:out value="${accessToken.expiration}"/></td>
+        </tr>
+    </table>
+        <input type="submit" class="addButton" value="Generate Token">
+    </form>
+    <br/>
     <form action="<%=saveUserPreferencesURL%>" id="preferences_form" method="post">
         <h4>E-Mail Notification Preferences</h4>
         <p>

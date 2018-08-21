@@ -381,6 +381,9 @@ public class PortalConstants {
     //
     public static String PROJECTIMPORT_HOSTS;
 
+    // rest api token generation
+    public static final String AUTHORIZATION_REST_API_TOKEN_URL = "http://localhost:8080/authorization/generateToken";
+
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);
 

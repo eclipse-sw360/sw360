@@ -45,6 +45,7 @@ public class ErrorMessages {
     public static final String DOCUMENT_NOT_AVAILABLE = "The requested document is not available.";
     public static final String LICENSE_SHORTNAME_TAKEN = "License shortname is already taken.";
     public static final String UPDATE_FAILED_SANITY_CHECK = "Document update has been rejected; cannot delete all linked releases or projects at once.";
+    public static final String REST_API_TOKEN_NOT_GENERATED = "REST API Token could not generated. Please verify if service is available.";
 
     //this map is used in errorKeyToMessage.jspf to generate key-value pairs for the liferay-ui error tag
     public static final ImmutableList<String> allErrorMessages = ImmutableList.<String>builder()
@@ -76,6 +77,7 @@ public class ErrorMessages {
             .add(ERROR_GETTING_LICENSE)
             .add(LICENSE_SHORTNAME_TAKEN)
             .add(UPDATE_FAILED_SANITY_CHECK)
+            .add(REST_API_TOKEN_NOT_GENERATED)
             .build();
 
     private ErrorMessages() {
