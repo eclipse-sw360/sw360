@@ -78,6 +78,9 @@ public class ProjectSummaryTest {
                 case ENABLE_SVM:
                     project.enableSvm = true;
                     break;
+                case ENABLE_VULNERABILITIES_DISPLAY:
+                    project.enableVulnerabilitiesDisplay = true;
+                    break;
                 default: //most fields are string
                     project.setFieldValue(renderedField, "asd");
                     break;

@@ -112,6 +112,7 @@ struct Project {
     45: optional string phaseOutSince,
     46: optional bool enableSvm, // flag for enabling Security Vulnerability Monitoring
     47: optional string licenseInfoHeaderText;
+    48: optional bool enableVulnerabilitiesDisplay, // flag for enabling displaying vulnerabilities in project view
 
     // Urls for the project
     50: optional string homepage,
