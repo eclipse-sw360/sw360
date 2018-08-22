@@ -191,6 +191,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("curies").description("The curies for documentation")
                         ),
                         responseFields(
+                                fieldWithPath("id").description("The resource object identifier of the release"),
                                 fieldWithPath("name").description("The name of the release, optional"),
                                 fieldWithPath("version").description("The version of the release"),
                                 fieldWithPath("cpeId").description("CpeId of the release"),
@@ -241,6 +242,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("curies").description("The curies for documentation")
                         ),
                         responseFields(
+                                fieldWithPath("id").description("The resource object identifier of the release"),
                                 fieldWithPath("name").description("The name of the release, optional"),
                                 fieldWithPath("version").description("The version of the release"),
                                 fieldWithPath("cpeId").description("CpeId of the release"),

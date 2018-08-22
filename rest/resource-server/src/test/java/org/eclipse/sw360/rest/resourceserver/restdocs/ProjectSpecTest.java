@@ -226,6 +226,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("self").description("The <<resources-projects,Projects resource>>")
                         ),
                         responseFields(
+                                fieldWithPath("id").description("The resource object identifier of the project"),
                                 fieldWithPath("name").description("The name of the project"),
                                 fieldWithPath("version").description("The project version"),
                                 fieldWithPath("createdOn").description("The date the project was created"),

@@ -126,6 +126,7 @@ public class AttachmentSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("curies").description("Curies are used for online documentation")
                         ),
                         responseFields(
+                                fieldWithPath("attachmentContentId").description("The resource object identifier of the attachment content"),
                                 fieldWithPath("filename").description("The filename of the attachment"),
                                 fieldWithPath("sha1").description("The attachment's file contents sha1 hash"),
                                 fieldWithPath("attachmentType").description("The attachment type, possible values are " + Arrays.asList(AttachmentType.values())),

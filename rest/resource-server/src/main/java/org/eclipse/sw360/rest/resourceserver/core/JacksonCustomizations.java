@@ -73,7 +73,6 @@ class JacksonCustomizations {
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonIgnoreProperties({
-                "id",
                 "revision",
                 "attachments",
                 "createdBy",
@@ -165,10 +164,6 @@ class JacksonCustomizations {
             @JsonSerialize(using = JsonReleaseRelationSerializer.class)
             @JsonProperty("linkedReleases")
             abstract public Map<String, ProjectReleaseRelationship> getReleaseIdToUsage();
-
-            @Override
-            @JsonProperty("id")
-            abstract public String getId();
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -210,7 +205,6 @@ class JacksonCustomizations {
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonIgnoreProperties(value = {
-                "id",
                 "revision",
                 "attachments",
                 "createdBy",
@@ -294,7 +288,6 @@ class JacksonCustomizations {
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonIgnoreProperties({
-                "id",
                 "revision",
                 "attachments",
                 "permissions",
@@ -371,7 +364,6 @@ class JacksonCustomizations {
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonIgnoreProperties({
-                "attachmentContentId",
                 "setAttachmentContentId",
                 "setAttachmentType",
                 "setCreatedComment",
@@ -395,7 +387,6 @@ class JacksonCustomizations {
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonIgnoreProperties({
-                "id",
                 "revision",
                 "permissionsSize",
                 "setId",
@@ -418,7 +409,6 @@ class JacksonCustomizations {
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonIgnoreProperties({
-                "id",
                 "revision",
                 "licenseType",
                 "licenseTypeDatabaseId",
@@ -527,10 +517,6 @@ class JacksonCustomizations {
         })
         static abstract class VulnerabilityDTOMixin extends VulnerabilityDTO {
             @Override
-            @JsonProperty("id")
-            abstract public String getId();
-
-            @Override
             @JsonProperty("intReleaseId")
             abstract public String getIntReleaseId();
 
@@ -609,9 +595,6 @@ class JacksonCustomizations {
                 "accessSize",
         })
         static abstract class VulnerabilityMixin extends Vulnerability {
-            @Override
-            @JsonProperty("id")
-            abstract public String getId();
         }
 
         @JsonInclude(JsonInclude.Include.NON_EMPTY)

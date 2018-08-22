@@ -98,6 +98,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("self").description("The <<resources-licenses,Licenses resource>>")
                         ),
                         responseFields(
+                                fieldWithPath("id").description("The resource object identifier of the license"),
                                 fieldWithPath("fullName").description("The full name of the license"),
                                 fieldWithPath("shortName").description("The short name of the license, optional"),
                                 fieldWithPath("text").description("The license's original text"),
