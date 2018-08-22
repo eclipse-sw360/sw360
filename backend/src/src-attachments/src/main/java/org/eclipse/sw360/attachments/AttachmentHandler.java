@@ -11,7 +11,6 @@
 package org.eclipse.sw360.attachments;
 
 import com.google.common.collect.ImmutableSet;
-import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
@@ -170,8 +169,9 @@ public class AttachmentHandler implements AttachmentService.Iface {
         assertNotNull(owner);
         assertTrue(owner.isSet());
         assertNotNull(attachmentContentIds);
-        assertNotEmpty(attachmentContentIds);
-
+        if (attachmentContentIds.isEmpty()) {
+            return Collections.emptyList();
+        }
         return handler.getAttachmentUsages(owner, attachmentContentIds, filter);
     }
 
