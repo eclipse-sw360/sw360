@@ -69,6 +69,22 @@ include::{snippets}/should_document_get_projects_by_type/http-response.adoc[]
 include::{snippets}/should_document_get_projects_by_type/links.adoc[]
 
 
+[[resources-project-get-project-by-externalids]]
+==== Listing by external ids
+
+A `GET` request will get all projects corresponding to external ids +
+The request parameter supports MultiValueMap (allows to add duplicate keys with different values)
+
+===== Response structure
+include::{snippets}/should_document_get_projects_by_external-ids/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_projects_by_external-ids/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_projects_by_external-ids/http-response.adoc[]
+
+
 [[resources-project-attachment-info-get]]
 ==== Listing attachment info
 

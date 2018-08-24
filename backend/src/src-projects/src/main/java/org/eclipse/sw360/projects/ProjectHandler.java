@@ -156,6 +156,14 @@ public class ProjectHandler implements ProjectService.Iface {
         return handler.getCountByProjectId(id);
     }
 
+    @Override
+    public Set<Project> searchByExternalIds(Map<String, Set<String>> externalIds, User user) throws TException {
+        assertNotNull(externalIds);
+        assertUser(user);
+
+        return handler.searchByExternalIds(externalIds, user);
+    }
+
     ////////////////////////////
     // ADD INDIVIDUAL OBJECTS //
     ////////////////////////////

@@ -453,6 +453,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return repository.getCountByProjectId(id);
     }
 
+    public Set<Project> searchByExternalIds(Map<String, Set<String>> externalIds, User user) {
+        return repository.searchByExternalIds(externalIds, user);
+    }
+
     public Set<Project> getAccessibleProjects(User user) {
         return repository.getAccessibleProjects(user);
     }
