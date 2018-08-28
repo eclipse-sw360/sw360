@@ -14,11 +14,10 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.log4j.Logger;
+import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.resourcelists.PaginationOptions;
-import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
-import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
-import org.eclipse.sw360.datahandler.resourcelists.ResourceComparatorGenerator;
+import org.apache.thrift.TFieldIdEnum;
+import org.eclipse.sw360.datahandler.resourcelists.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -44,10 +43,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.hateoas.Link;
 import org.springframework.hateoas.PagedResources;
 import org.springframework.hateoas.Resource;
+import org.springframework.hateoas.Resources;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -59,7 +60,7 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 @Slf4j
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class RestControllerHelper {
+public class RestControllerHelper<T> {
     @NonNull
     private final Sw360UserService userService;
 
@@ -70,7 +71,10 @@ public class RestControllerHelper {
     private final Sw360LicenseService licenseService;
 
     @NonNull
-    private final ResourceComparatorGenerator resourceComparatorGenerator = new ResourceComparatorGenerator();
+    private final ResourceComparatorGenerator<T> resourceComparatorGenerator = new ResourceComparatorGenerator<>();
+
+    @NonNull
+    private final ResourceListController<T> resourceListController = new ResourceListController<>();
 
     private static final Logger LOGGER = Logger.getLogger(RestControllerHelper.class);
 
@@ -86,15 +90,34 @@ public class RestControllerHelper {
         return userService.getUserByEmail(userId);
     }
 
-    public PagedResources generatePagesResource(PaginationResult paginationResult, List resources) throws URISyntaxException {
-        PaginationOptions paginationOptions = paginationResult.getPaginationOptions();
-        List<Link> pagingLinks = this.getPaginationLinks(paginationResult, this.getAPIBaseUrl());
-        PagedResources.PageMetadata pageMetadata = new PagedResources.PageMetadata(
-                paginationOptions.getPageSize(),
-                paginationOptions.getPageNumber(),
-                paginationResult.getTotalCount(),
-                paginationResult.getTotalPageCount());
-        return new PagedResources<>(resources, pageMetadata, pagingLinks);
+    public PaginationResult<T> createPaginationResult(HttpServletRequest request, Pageable pageable, List<T> resources, String resourceType) throws ResourceClassNotFoundException, PaginationParameterException {
+        PaginationResult<T> paginationResult;
+        if (requestContainsPaging(request)) {
+            PaginationOptions<T> paginationOptions = paginationOptionsFromPageable(pageable, resourceType);
+            paginationResult = resourceListController.applyPagingToList(resources, paginationOptions);
+        } else {
+            paginationResult = new PaginationResult<>(resources);
+        }
+        return paginationResult;
+    }
+
+    private boolean requestContainsPaging(HttpServletRequest request) {
+        return request.getParameterMap().containsKey(PAGINATION_PARAM_PAGE) || request.getParameterMap().containsKey(PAGINATION_PARAM_PAGE_ENTRIES);
+    }
+
+    public Resources<Resource<T>> generateResources(PaginationResult<T> paginationResult, List<Resource<T>> resources) throws URISyntaxException {
+        if (paginationResult.isPagingActive()) {
+            PaginationOptions paginationOptions = paginationResult.getPaginationOptions();
+            PagedResources.PageMetadata pageMetadata = new PagedResources.PageMetadata(
+                    paginationOptions.getPageSize(),
+                    paginationOptions.getPageNumber(),
+                    paginationResult.getTotalCount(),
+                    paginationResult.getTotalPageCount());
+            List<Link> pagingLinks = this.getPaginationLinks(paginationResult, this.getAPIBaseUrl());
+            return new PagedResources<>(resources, pageMetadata, pagingLinks);
+        } else {
+            return new Resources<>(resources);
+        }
     }
 
     private List<Link> getPaginationLinks(PaginationResult paginationResult, String baseUrl) {
@@ -126,17 +149,17 @@ public class RestControllerHelper {
                 uri.getFragment()).toString();
     }
 
-    public PaginationOptions paginationOptionsFromPageable(Pageable pageable, String resourceClassName) throws ResourceClassNotFoundException {
-        Comparator comparator = this.comparatorFromPageable(pageable, resourceClassName);
-        return new PaginationOptions(pageable.getPageNumber(), pageable.getPageSize(), comparator);
+    private PaginationOptions<T> paginationOptionsFromPageable(Pageable pageable, String resourceClassName) throws ResourceClassNotFoundException {
+        Comparator<T> comparator = this.comparatorFromPageable(pageable, resourceClassName);
+        return new PaginationOptions<T>(pageable.getPageNumber(), pageable.getPageSize(), comparator);
     }
 
-    private Comparator comparatorFromPageable(Pageable pageable,  String resourceClassName) throws ResourceClassNotFoundException {
+    private Comparator<T> comparatorFromPageable(Pageable pageable,  String resourceClassName) throws ResourceClassNotFoundException {
         Sort.Order order = firstOrderFromPageable(pageable);
         if(order == null) {
             return resourceComparatorGenerator.generateComparator(resourceClassName);
         }
-        Comparator comparator = resourceComparatorGenerator.generateComparator(resourceClassName, order.getProperty());
+        Comparator<T> comparator = resourceComparatorGenerator.generateComparator(resourceClassName, order.getProperty());
         if(order.isDescending()) {
             comparator = comparator.reversed();
         }

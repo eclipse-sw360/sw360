@@ -12,21 +12,31 @@
 
 package org.eclipse.sw360.datahandler.resourcelists;
 
+import java.util.Comparator;
 import java.util.List;
 
-public class PaginationResult {
+public class PaginationResult<T> {
 
-    private final List resources;
+    private final List<T> resources;
     private final int totalCount;
-    private final PaginationOptions paginationOptions;
+    private final PaginationOptions<T> paginationOptions;
+    private final Boolean pagingActive;
 
-    PaginationResult(List resources, int totalCount, PaginationOptions paginationOptions) {
+    public PaginationResult(List<T> resources) {
+        this.resources = resources;
+        totalCount = resources.size();
+        paginationOptions = new PaginationOptions<>(1, totalCount, Comparator.comparing(x -> true));
+        pagingActive = false;
+    }
+
+    PaginationResult(List<T> resources, int totalCount, PaginationOptions<T> paginationOptions) {
         this.resources = resources;
         this.totalCount = totalCount;
         this.paginationOptions = paginationOptions;
+        pagingActive = true;
     }
 
-    public List getResources() {
+    public List<T> getResources() {
         return resources;
     }
 
@@ -34,7 +44,7 @@ public class PaginationResult {
         return totalCount;
     }
 
-    public PaginationOptions getPaginationOptions() {
+    public PaginationOptions<T> getPaginationOptions() {
         return paginationOptions;
     }
 
@@ -42,5 +52,9 @@ public class PaginationResult {
         int numberOfFullPages = getTotalCount() / paginationOptions.getPageSize();
         boolean hasAdditionalNotFullPage = getTotalCount() % paginationOptions.getPageSize() != 0;
         return numberOfFullPages + (hasAdditionalNotFullPage ? 1 : 0);
+    }
+
+    public boolean isPagingActive() {
+        return pagingActive;
     }
 }
