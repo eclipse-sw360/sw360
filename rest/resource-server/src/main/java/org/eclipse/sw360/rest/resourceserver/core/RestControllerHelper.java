@@ -48,6 +48,7 @@ import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
@@ -156,10 +157,16 @@ public class RestControllerHelper {
     }
 
     public void addEmbeddedModerators(HalResource halResource, Set<String> moderators) {
+        User sw360User;
         for (String moderatorEmail : moderators) {
-            User user = new User();
-            user.setEmail(moderatorEmail);
-            addEmbeddedUser(halResource, user, "sw360:moderators");
+            try {
+                sw360User = userService.getUserByEmail(moderatorEmail);
+            } catch (RuntimeException e) {
+                sw360User = new User();
+                sw360User.setId(moderatorEmail).setEmail(moderatorEmail);
+                LOGGER.debug("Could not get user object from backend with email: " + moderatorEmail);
+            }
+            addEmbeddedUser(halResource, sw360User, "sw360:moderators");
         }
     }
 
@@ -188,11 +195,10 @@ public class RestControllerHelper {
         try {
             Link userLink = linkTo(UserController.class).slash("api/users/" + URLEncoder.encode(user.getId(), "UTF-8")).withSelfRel();
             embeddedUserResource.add(userLink);
-        } catch (Exception e) {
-            LOGGER.error("cannot create embedded user with email: " + user.getEmail());
+            halResource.addEmbeddedResource(relation, embeddedUserResource);
+        } catch (UnsupportedEncodingException e) {
+            LOGGER.error("cannot create embedded user with email: " + user.getEmail(), e);
         }
-
-        halResource.addEmbeddedResource(relation, embeddedUserResource);
     }
 
     public void addEmbeddedVendors(HalResource<Component> halComponent, Set<String> vendors) {

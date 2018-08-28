@@ -33,7 +33,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.Resources;
-import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.*;
@@ -185,13 +184,10 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.releaseServiceMock.getReleaseForUserById(eq(release.getId()), anyObject())).willReturn(release);
         given(this.releaseServiceMock.getReleaseForUserById(eq(release2.getId()), anyObject())).willReturn(release2);
 
-        User user = new User();
-        user.setId("123456789");
-        user.setEmail("admin@sw360.org");
-        user.setFullname("John Doe");
-        user.setDepartment("sw360");
-
-        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(user);
+        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(
+                new User("admin@sw360.org", "sw360").setId("123456789"));
+        given(this.userServiceMock.getUserByEmail("jane@sw360.org")).willReturn(
+                new User("jane@sw360.org", "sw360").setId("209582812"));
     }
 
     @Test

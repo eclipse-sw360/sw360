@@ -135,13 +135,12 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         given(this.componentServiceMock.searchComponentByName(eq(angularComponent.getName()))).willReturn(componentListByName);
         given(this.componentServiceMock.deleteComponent(eq(angularComponent.getId()), anyObject())).willReturn(RequestStatus.SUCCESS);
 
-        User user = new User();
-        user.setId("123456789");
-        user.setEmail("admin@sw360.org");
-        user.setFullname("John Doe");
-        user.setDepartment("sw360");
-
-        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(user);
+        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(
+                new User("admin@sw360.org", "sw360").setId("123456789"));
+        given(this.userServiceMock.getUserByEmail("jane@sw360.org")).willReturn(
+                new User("jane@sw360.org", "sw360").setId("209582812"));
+        given(this.userServiceMock.getUserByEmail("john@sw360.org")).willReturn(
+                new User("john@sw360.org", "sw360").setId("74427996"));
 
         List<Release> releaseList = new ArrayList<>();
         Release release = new Release();
