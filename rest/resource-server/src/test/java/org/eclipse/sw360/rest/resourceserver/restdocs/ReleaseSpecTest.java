@@ -202,6 +202,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("downloadurl").description("the download url of the release"),
                                 fieldWithPath("externalIds").description("When releases are imported from other tools, the external ids can be stored here"),
                                 fieldWithPath("_embedded.sw360:moderators").description("An array of all release moderators with email and link to their <<resources-user-get,User resource>>"),
+                                fieldWithPath("_embedded.sw360:attachments").description("An array of all release attachments and link to their <<resources-attachment-get,Attachment resource>>"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
@@ -252,6 +253,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("downloadurl").description("the download url of the release"),
                                 fieldWithPath("externalIds").description("When releases are imported from other tools, the external ids can be stored here"),
                                 fieldWithPath("_embedded.sw360:moderators").description("An array of all release moderators with email and link to their <<resources-user-get,User resource>>"),
+                                fieldWithPath("_embedded.sw360:attachments").description("An array of all release attachments and link to their <<resources-attachment-get,Attachment resource>>"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )
                 ));

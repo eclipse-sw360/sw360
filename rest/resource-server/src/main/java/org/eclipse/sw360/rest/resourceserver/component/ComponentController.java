@@ -261,6 +261,10 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
             sw360Component.setVendorNames(null);
         }
 
+        if (sw360Component.getAttachments() != null) {
+            restControllerHelper.addEmbeddedAttachments(halComponent, sw360Component.getAttachments());
+        }
+
         restControllerHelper.addEmbeddedUser(halComponent, user, "createdBy");
 
         return halComponent;
