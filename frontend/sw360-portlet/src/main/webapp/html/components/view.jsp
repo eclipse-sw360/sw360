@@ -182,6 +182,33 @@
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
+    var renderCallback = function () {
+    };
+    var dataGetter = function(field) {
+    };
+</script>
+
+<core_rt:set var="CODESCOOP_URL" value="<%=PortalConstants.CODESCOOP_URL%>"/>
+<core_rt:set var="CODESCOOP_TOKEN" value="<%=PortalConstants.CODESCOOP_TOKEN%>"/>
+<core_rt:if test="${not empty CODESCOOP_URL && not empty CODESCOOP_TOKEN}">
+    <script>
+        window.codescoopEnabled = true;
+        document.addEventListener("DOMContentLoaded", function() {
+            require(['modules/codeScoop' ], function(codeScoop) {
+                var api = new codeScoop('<%=PortalConstants.CODESCOOP_URL%>', '<%=PortalConstants.CODESCOOP_TOKEN%>');
+                api.activateIndexes("componentsTable", "<%=loadComponentsURL%>");
+                renderCallback = api.updateIndexes;
+                dataGetter = api.getData;
+            });
+            document
+                .getElementById("componentsTable")
+                .getElementsByTagName("tfoot")[0]
+                .getElementsByTagName("th")[0]
+                .setAttribute("colspan", 10)
+        });
+    </script>
+</core_rt:if>
+<script>
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;
 
@@ -238,6 +265,43 @@
             }
 
             function createComponentsTable() {
+                var columns = [
+                    {"title": "Vendor", data: "vndrs"},
+                    {"title": "Component Name", data: "name", render: {display: renderComponentNameLink}},
+                    {"title": "Main Licenses", data: "lics", render: {display: renderLicenseLink}},
+                    {"title": "Component Type", data: "cType"},
+                    {"title": "Actions", data: "id", render: {display: renderComponentActions}}
+                ];
+                var order = [[1, 'asc']];
+                var columnDefs =  [];
+
+                if (window.codescoopEnabled) {
+                    columns = [
+                        {"title": "Logo", data: function(row, type, val, meta){
+                                return dataGetter(row.DT_RowId, 'logo');
+                            }},
+                        {"title": "Vendor", data: "vndrs"},
+                        {"title": "Component Name", data: "name", render: {display: renderComponentNameLink}},
+                        {"title": "Main Licenses", data: "lics"},
+                        {"title": "Rate", data: function(row, type, val, meta){
+                                return dataGetter(row.DT_RowId, 'rate');
+                            }},
+                        {"title": "Interest", data: function(row, type, val, meta){
+                                return dataGetter(row.DT_RowId, 'compositeIndex', 'interestPercent');
+                            }},
+                        {"title": "Activity", data: function(row, type, val, meta){
+                                return dataGetter(row.DT_RowId, 'compositeIndex', 'activityPercent');
+                            }},
+                        {"title": "Health", data: function(row, type, val, meta){
+                                return dataGetter(row.DT_RowId, 'compositeIndex', 'healthPercent');
+                            }},
+                        {"title": "Component Type", data: "cType"},
+                        {"title": "Actions", data: "id", render: {display: renderComponentActions}}
+                    ];
+                    order = [[2, 'asc']];
+                    columnDefs = [{ "orderable": false, "targets": [0, 4, 5, 6 ,7] }];
+                }
+
                 var componentsTable;
 
                 $.fn.DataTable.ext.pager.numbers_length = 8;
@@ -263,16 +327,13 @@
                     ],
                     "pageLength": 25,
                     "searching": false,
-                    "columns": [
-                        {"title": "Vendor", data: "vndrs"},
-                        {"title": "Component Name", data: "name", render: {display: renderComponentNameLink}},
-                        {"title": "Main Licenses", data: "lics", render: {display: renderLicenseLink}},
-                        {"title": "Component Type", data: "cType"},
-                        {"title": "Actions", data: "id", render: {display: renderComponentActions}}
-                    ],
+                    "columns": columns,
+                    "order": order,
                     "aaSorting": [],
                     "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
-                    "autoWidth": false
+                    "autoWidth": false,
+                    "columnDefs": columnDefs,
+                    "drawCallback": renderCallback
                 });
 
                 return componentsTable;

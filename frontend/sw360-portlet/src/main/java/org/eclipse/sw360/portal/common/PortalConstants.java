@@ -381,6 +381,10 @@ public class PortalConstants {
     //
     public static String PROJECTIMPORT_HOSTS;
 
+    // CodeScoop integration
+    public static final String CODESCOOP_URL;
+    public static final String CODESCOOP_TOKEN;
+
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);
 
@@ -401,6 +405,9 @@ public class PortalConstants {
         RELEASE_EXTERNAL_ID_KEYS = CommonUtils.splitToSet(props.getProperty("release.externalkeys", "org.maven.id,com.github.id,com.gitlab.id,purl.id"));
         PROJECTIMPORT_HOSTS = props.getProperty("projectimport.hosts", "");
         PREFERRED_COUNTRY_CODES = props.getProperty("preferred.country.codes", "DE,AT,CH,US");
+
+        CODESCOOP_URL = props.getProperty("codescoop.url", "");
+        CODESCOOP_TOKEN = props.getProperty("codescoop.token", "");
     }
 
     private PortalConstants() {
