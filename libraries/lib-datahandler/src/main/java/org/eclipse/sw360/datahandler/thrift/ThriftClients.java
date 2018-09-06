@@ -1,6 +1,7 @@
 /*
  * Copyright Siemens AG, 2014-2016. Part of the SW360 Portal Project.
  * With modifications by Bosch Software Innovations GmbH, 2016.
+ * With modifications by Verifa Oy, 2018.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -65,6 +66,7 @@ public class ThriftClients {
     private static final String PROJECTIMPORT_SERVICE_URL = "/bdpimport/thrift";
     private static final String VULNERABILITY_SERVICE_URL = "/vulnerabilities/thrift";
     private static final String SCHEDULE_SERVICE_URL = "/schedule/thrift";
+    private static final String WSIMPORT_SERVICE_URL = "/wsimport/thrift";
 
     // A service which has to be scheduled by the scheduler should be registered here!
     // names of services that can be scheduled by the schedule service, i.e. that have an "update" method
@@ -147,5 +149,9 @@ public class ThriftClients {
 
     public ScheduleService.Iface makeScheduleClient() {
         return new ScheduleService.Client(makeProtocol(BACKEND_URL, SCHEDULE_SERVICE_URL));
+    }
+
+    public ProjectImportService.Iface makeWsImportClient() {
+        return new ProjectImportService.Client(makeProtocol(BACKEND_URL, WSIMPORT_SERVICE_URL));
     }
 }

@@ -1,6 +1,7 @@
 /*
  * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
  * With contributions by Bosch Software Innovations GmbH, 2017.
+ * With contributions by Verifa Oy, 2018.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -16,6 +17,10 @@ package org.eclipse.sw360.portal.portlets.projectimport;
  */
 public class ProjectImportConstants {
 
+    private ProjectImportConstants() {
+        throw new IllegalStateException("Utility class");
+    }
+
     // Project Import:
     public static final String CHECKED_PROJECT = "projectImport_checked_project";
 
@@ -24,6 +29,8 @@ public class ProjectImportConstants {
     public static final String PASSWORD = "projectImport_import_pass";
     public static final String SERVER_URL = "projectImport_import_url";
     public static final String PROJECT_NAME = "projectImport_import_project_name";
+    public static final String TOKEN = "projectImport_import_token";
+    public static final String USER_KEY = "projectImport_import_user_key";
 
     // Project Import: user actions
     public static final String USER_ACTION__IMPORT = "projectImport_import_action";

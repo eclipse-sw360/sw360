@@ -37,5 +37,6 @@
 		<portlet id="signup"/>
 		<portlet id="vulnerabilities"/>
 		<portlet id="ecc"/>
+		<portlet id="WsImport"/>
 	</category>
 </display>
