@@ -148,7 +148,9 @@ class JacksonCustomizations {
                 "setLicenseInfoHeaderText",
                 "setProjectOwner",
                 "enableSvm",
-                "setEnableSvm"
+                "setEnableSvm",
+                "enableVulnerabilitiesDisplay",
+                "setEnableVulnerabilitiesDisplay"
         })
         static abstract class ProjectMixin extends Project {
 

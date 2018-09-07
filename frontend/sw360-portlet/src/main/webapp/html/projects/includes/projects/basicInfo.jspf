@@ -107,7 +107,15 @@
                 />
                 Enable Security Vulnerability Monitoring</label>
         </td>
-        <td width="33%"></td>
+        <td width="33%">
+            <label class="checkboxlabel" for="enable_vulnerabilities_display">
+                <input id="enable_vulnerabilities_display" type="checkbox"
+                       name="<portlet:namespace/><%=Project._Fields.ENABLE_VULNERABILITIES_DISPLAY%>"
+                       value="<sw360:out value="${project.enableVulnerabilitiesDisplay}"/>"
+                        <core_rt:if test="${project.enableVulnerabilitiesDisplay}"> checked="checked" </core_rt:if>
+                />
+                Enable Displaying Vulnerabilities</label>
+        </td>
         <td width="33%"></td>
     </tr>
 </table>

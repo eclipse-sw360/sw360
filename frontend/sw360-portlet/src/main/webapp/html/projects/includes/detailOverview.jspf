@@ -28,10 +28,11 @@
                             Vulnerabilities
                             <div id="numberOfVulnerabilitiesDiv"
                                     <core_rt:if
-                                            test="${numberOfUncheckedVulnerabilities.intValue() == 0 || !project.enableSvm}"> class="notificationBulletSpan backgroundGrey" </core_rt:if>
+                                            test="${numberOfUncheckedVulnerabilities.intValue() == 0 || !project.enableSvm || !project.enableVulnerabilitiesDisplay}"> class="notificationBulletSpan backgroundGrey" </core_rt:if>
                                     <core_rt:if
                                             test="${numberOfUncheckedVulnerabilities.intValue() > 0 && project.enableSvm}"> class="notificationBulletSpan backgroundAlert" </core_rt:if>>
-                                    ${numberOfUncheckedVulnerabilities} / ${numberOfVulnerabilities}
+                                <core_rt:if test="${project.enableVulnerabilitiesDisplay}">${numberOfUncheckedVulnerabilities} / ${numberOfVulnerabilities}</core_rt:if>
+                                <core_rt:if test="${not project.enableVulnerabilitiesDisplay}">? / ?</core_rt:if>
                             </div>
                         </a>
                     </li>
