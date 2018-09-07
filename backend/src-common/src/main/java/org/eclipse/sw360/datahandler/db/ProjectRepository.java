@@ -132,6 +132,15 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
                     "  }" +
                     "}";
 
+    private static final String BY_EXTERNAL_IDS =
+            "function(doc) {" +
+                    "  if (doc.type == 'project') {" +
+                    "    for (var externalId in doc.externalIds) {" +
+                    "       emit( [externalId, doc.externalIds[externalId]] , doc._id);" +
+                    "    }" +
+                    "  }" +
+                    "}";
+
     public ProjectRepository(DatabaseConnector db) {
         super(Project.class, db, new ProjectSummary());
         initStandardDesignDocument();
@@ -218,6 +227,12 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         // Filter BU to first three blocks
         String bu = getBUFromOrganisation(organisation);
         return queryByPrefix("buprojects", bu);
+    }
+
+    @View(name = "byexternalids", map = BY_EXTERNAL_IDS)
+    public Set<Project> searchByExternalIds(Map<String, Set<String>> externalIds, User user) {
+        Set<String> searchIds = queryForIdsAsComplexValues("byexternalids", externalIds);
+        return filterAccessibleProjectsByIds(user, searchIds);
     }
 
     public List<Project> getBUProjectsSummary(String organisation) {

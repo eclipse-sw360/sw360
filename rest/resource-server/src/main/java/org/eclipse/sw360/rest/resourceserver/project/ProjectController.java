@@ -52,6 +52,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.util.FileCopyUtils;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -368,6 +369,29 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         final HalResource<Project> halResource = createHalProject(project, sw360User);
         return new ResponseEntity<>(halResource, HttpStatus.OK);
     }
+
+    @RequestMapping(value = PROJECTS_URL + "/searchByExternalIds", method = RequestMethod.GET)
+    public ResponseEntity searchByExternalIds(OAuth2Authentication oAuth2Authentication,
+                                              @RequestParam MultiValueMap<String, String> externalIdsMultiMap) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
+        List<Resource<Project>> projectResources = new ArrayList<>();
+        Map<String, Set<String>> externalIds = new HashMap<>();
+
+        for (String externalIdKey : externalIdsMultiMap.keySet()) {
+            externalIds.put(externalIdKey, new HashSet<>(externalIdsMultiMap.get(externalIdKey)));
+        }
+
+        Set<Project> sw360Projects = projectService.searchByExternalIds(externalIds, sw360User);
+        sw360Projects.stream().forEach(p -> {
+            Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
+            embeddedProject.setExternalIds(p.getExternalIds());
+            projectResources.add(new Resource<>(embeddedProject));
+        });
+
+        Resources<Resource<Project>> resources = new Resources<>(projectResources);
+        return new ResponseEntity<>(resources, HttpStatus.OK);
+    }
+
 
     @Override
     public RepositoryLinksResource process(RepositoryLinksResource resource) {

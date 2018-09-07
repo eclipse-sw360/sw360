@@ -33,6 +33,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -105,6 +106,11 @@ public class Sw360ProjectService {
             final Project project = getProjectForUserById(projectId, sw360User);
             return project.getReleaseIdToUsage().keySet();
         }
+    }
+
+    public Set<Project> searchByExternalIds(Map<String, Set<String>> externalIds, User sw360User) throws TException {
+        final ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        return sw360ProjectClient.searchByExternalIds(externalIds, sw360User);
     }
 
     private ProjectService.Iface getThriftProjectClient() throws TTransportException {
