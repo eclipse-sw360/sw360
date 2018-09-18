@@ -14,7 +14,7 @@ package org.eclipse.sw360.wsimport.service;
 import com.google.gson.JsonSyntaxException;
 import org.apache.log4j.Logger;
 import org.eclipse.sw360.wsimport.domain.WsProject;
-import org.eclipse.sw360.wsimport.rest.WsImportProjectService;
+import org.eclipse.sw360.wsimport.rest.WsImportService;
 import org.eclipse.sw360.wsimport.thrift.ThriftUploader;
 import org.eclipse.sw360.wsimport.utility.TranslationConstants;
 import org.apache.thrift.TException;
@@ -39,7 +39,7 @@ public class WsImportHandler implements ProjectImportService.Iface {
     public synchronized ImportStatus importData(List<String> projectTokens, User user, TokenCredentials tokenCredentials) throws TException, JsonSyntaxException {
         List<WsProject> toImport = projectTokens
                 .stream()
-                .map(t -> new WsImportProjectService().getWsProject(t, tokenCredentials))
+                .map(t -> new WsImportService().getWsProject(t, tokenCredentials))
                 .collect(Collectors.toList());
 
         return new ThriftUploader().importWsProjects(toImport, user, tokenCredentials);

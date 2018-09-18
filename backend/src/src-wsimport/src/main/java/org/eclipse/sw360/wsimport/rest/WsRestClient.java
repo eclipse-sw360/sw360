@@ -64,7 +64,6 @@ public class WsRestClient {
         String input = generateRequestBody(requestString, tokenCredentials.getUserKey(), type, token);
         HttpClient httpClient = getConfiguredHttpClient();
         HttpResponse response = getWsConnection(input, httpClient, tokenCredentials.getServerUrl());
-        String result = IOUtils.toString(response.getEntity().getContent(), "UTF-8");
-        return result;
+        return IOUtils.toString(response.getEntity().getContent(), "UTF-8");
     }
 }

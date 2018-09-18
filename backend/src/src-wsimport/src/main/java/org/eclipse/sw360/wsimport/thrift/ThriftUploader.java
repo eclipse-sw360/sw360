@@ -14,17 +14,15 @@ package org.eclipse.sw360.wsimport.thrift;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonSyntaxException;
+import org.apache.commons.lang.ArrayUtils;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.wsimport.domain.WsLibrary;
-import org.eclipse.sw360.wsimport.domain.WsLicense;
-import org.eclipse.sw360.wsimport.domain.WsProject;
+import org.eclipse.sw360.wsimport.domain.*;
 import org.eclipse.sw360.wsimport.entitytranslation.WsLibraryToSw360ComponentTranslator;
 import org.eclipse.sw360.wsimport.entitytranslation.WsLibraryToSw360ReleaseTranslator;
 import org.eclipse.sw360.wsimport.entitytranslation.WsLicenseToSw360LicenseTranslator;
 import org.eclipse.sw360.wsimport.entitytranslation.WsProjectToSw360ProjectTranslator;
 import org.eclipse.sw360.wsimport.entitytranslation.helper.ReleaseRelation;
-import org.eclipse.sw360.wsimport.rest.WsImportProjectService;
+import org.eclipse.sw360.wsimport.rest.WsImportService;
 import org.eclipse.sw360.wsimport.thrift.helper.ProjectImportError;
 import org.eclipse.sw360.wsimport.thrift.helper.ProjectImportResult;
 import org.apache.log4j.Logger;
@@ -58,19 +56,6 @@ public class ThriftUploader {
     private final WsProjectToSw360ProjectTranslator projectToProjectTranslator = new WsProjectToSw360ProjectTranslator();
 
     private ThriftExchange thriftExchange;
-//    private final ThriftClients thriftClients;
-    //private ThriftClients thriftClients;
-
-/*
-    public ThriftUploader(ThriftClients thriftClients) {
-        this.thriftClients = thriftClients;
-        this.thriftExchange = new ThriftExchange(this.thriftClients);
-    }
-*/
-    //public ThriftUploader() {
-        //this.thriftClients = thriftClients;
-    //    this.thriftExchange = thriftExchange;
-    //}
 
     public ThriftUploader() {
         this.thriftExchange = new ThriftExchange();
@@ -236,15 +221,33 @@ public class ThriftUploader {
     private Set<ReleaseRelation> createReleases(WsProject wsProject, User sw360User, TokenCredentials tokenCredentials) {
         WsLibrary[] libraries = null;
         try {
-            libraries =  new WsImportProjectService().getProjectLicenses(wsProject.getProjectToken(), tokenCredentials);
+            libraries =  new WsImportService().getProjectLicenses(wsProject.getProjectToken(), tokenCredentials);
         } catch (JsonSyntaxException jse) {
             LOGGER.error(jse);
         }
-
-        List<WsLibrary> libraryList = Arrays.asList(libraries);
-
-        if (libraryList == null) {
+        List<WsLibrary> libraryList;
+        if (libraries == null) {
             return ImmutableSet.of();
+        } else {
+            libraryList = new ArrayList<>(Arrays.asList(libraries));
+        }
+
+        WsProjectVitalInformation[] projectVitalInformations = null;
+        List<String> projectNameList = new ArrayList<>();
+        try {
+            projectVitalInformations =  new WsImportService().getOrganizationalProjectVitals(tokenCredentials);
+        } catch (JsonSyntaxException jse) {
+            LOGGER.error(jse);
+        }
+        if(projectVitalInformations != null) {
+            projectNameList = Arrays.stream(projectVitalInformations)
+                    .map(WsProjectVitalInformation::getName)
+                    .collect(Collectors.toList());
+        }
+        for (String project : projectNameList) {
+            project = project.trim();
+            String toBeRemoved = project.contains(" ") ? project.split(" ")[0] : project;
+            libraryList.removeIf(library -> library.getName().equals(toBeRemoved));
         }
 
         Set<ReleaseRelation> releases = libraryList.stream()

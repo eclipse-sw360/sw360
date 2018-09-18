@@ -19,12 +19,17 @@ import org.eclipse.sw360.wsimport.utility.WsTokenType;
 
 import java.io.IOException;
 
+import static org.eclipse.sw360.wsimport.utility.TranslationConstants.REQUEST__GET_PROJECT_VITALS;
+import static org.eclipse.sw360.wsimport.utility.TranslationConstants.REQUEST__GET_PROJECT_LICENSES;
+import static org.eclipse.sw360.wsimport.utility.TranslationConstants.REQUEST__GET_ORGANIZATION_PROJECT_VITALS;
+
+
 /**
  * @author ksoranko@verifa.io
  */
-public class WsImportProjectService {
+public class WsImportService {
 
-    private static final Logger LOGGER = Logger.getLogger(WsImportProjectService.class);
+    private static final Logger LOGGER = Logger.getLogger(WsImportService.class);
     private static final WsRestClient restClient = new WsRestClient();
     private static final Gson gson = new Gson();
 
@@ -32,9 +37,9 @@ public class WsImportProjectService {
         String projectVitalString;
         WsProjectVitalInformation projectVitalInformation = null;
         try {
-            projectVitalString = restClient.getData("getProjectVitals", projectToken, WsTokenType.PROJECT, tokenCredentials);
+            projectVitalString = restClient.getData(REQUEST__GET_PROJECT_VITALS, projectToken, WsTokenType.PROJECT, tokenCredentials);
         } catch (IOException ioe) {
-            LOGGER.error(ioe);
+            LOGGER.error("Exception with " + REQUEST__GET_PROJECT_VITALS + " request to " + tokenCredentials.getServerUrl() + ", with message:" + ioe);
             return null;
         }
         WsProjectVitals wsProjectVitals = gson.fromJson(projectVitalString, WsProjectVitals.class);
@@ -49,6 +54,7 @@ public class WsImportProjectService {
                     projectVitalInformation.getToken(),
                     projectVitalInformation.getCreationDate());
         } else {
+            LOGGER.error("WsProjectVitalInformation is empty...");
             return null;
         }
     }
@@ -56,18 +62,36 @@ public class WsImportProjectService {
     public WsLibrary[] getProjectLicenses(String projectToken, TokenCredentials tokenCredentials) throws JsonSyntaxException {
         String projectLibsString = null;
         try {
-            projectLibsString = restClient.getData("getProjectLicenses", projectToken, WsTokenType.PROJECT, tokenCredentials);
+            projectLibsString = restClient.getData(REQUEST__GET_PROJECT_LICENSES, projectToken, WsTokenType.PROJECT, tokenCredentials);
         } catch (IOException ioe) {
-            LOGGER.error(ioe);
+            LOGGER.error("Exception with " + REQUEST__GET_PROJECT_LICENSES + " request to " + tokenCredentials.getServerUrl() + ", with message:" + ioe);
             return null;
         }
         WsProjectLibs wsProjectLibs = gson.fromJson(projectLibsString, WsProjectLibs.class);
         if (wsProjectLibs != null) {
             return wsProjectLibs.getLibraries();
         } else {
+            LOGGER.error("WsProjectLibs is empty...");
             return null;
         }
 
+    }
+
+    public  WsProjectVitalInformation[] getOrganizationalProjectVitals(TokenCredentials tokenCredentials) throws JsonSyntaxException {
+        String projectVitalString;
+        try {
+            projectVitalString = restClient.getData(REQUEST__GET_ORGANIZATION_PROJECT_VITALS, tokenCredentials.getToken(), WsTokenType.ORGANIZATION, tokenCredentials);
+        } catch (IOException ioe) {
+            LOGGER.error("Exception with " + REQUEST__GET_ORGANIZATION_PROJECT_VITALS + " request to " + tokenCredentials.getServerUrl() + ", with message:" + ioe);
+            return null;
+        }
+        WsProjectVitals wsProjectVitals = gson.fromJson(projectVitalString, WsProjectVitals.class);
+        if (wsProjectVitals.getProjectVitals() != null) {
+            return wsProjectVitals.getProjectVitals();
+        } else {
+            LOGGER.error("WsProjectVitals is empty...");
+            return null;
+        }
     }
 
 }

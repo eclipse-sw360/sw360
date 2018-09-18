@@ -27,8 +27,8 @@ public class WsLicenseToSw360LicenseTranslator implements EntityTranslator<WsLic
 
     @Override
     public License apply(WsLicense wsLicense) {
-        String license = wsLicense.getName().replaceFirst(SUSPECTED, "");
-        String licenseWithDashes = license.replaceAll("\\s+","-").trim();
+        String license = wsLicense.getName().replaceFirst(SUSPECTED, "").trim();
+        String licenseWithDashes = license.replaceAll("[\\s+/]","-");
 
         License sw360License = new License();
         sw360License.setId(licenseWithDashes);

@@ -20,6 +20,7 @@ public class WsProjectVitalInformation {
     private String token;
     private String creationDate;
     private String lastUpdatedDate;
+    private String pluginName;
 
     public int getId() {
         return id;
@@ -59,5 +60,13 @@ public class WsProjectVitalInformation {
 
     public void setLastUpdatedDate(String lastUpdatedDate) {
         this.lastUpdatedDate = lastUpdatedDate;
+    }
+
+    public String getPluginName() {
+        return pluginName;
+    }
+
+    public void setPluginName(String pluginName) {
+        this.pluginName = pluginName;
     }
 }
