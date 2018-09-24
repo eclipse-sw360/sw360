@@ -10,6 +10,7 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
@@ -148,10 +149,21 @@ public class AttachmentDatabaseHandler {
     }
 
     public void makeAttachmentUsages(List<AttachmentUsage> attachmentUsages) throws TException {
-        List<DocumentOperationResult> results = attachmentUsageRepository.executeBulk(attachmentUsages);
+        List<AttachmentUsage> sanitizedUsages = distinctAttachmentUsages(attachmentUsages);
+        List<DocumentOperationResult> results = attachmentUsageRepository.executeBulk(sanitizedUsages);
         if (!results.isEmpty()) {
             throw new SW360Exception("Some of the usage documents could not be created: " + results);
         }
+    }
+
+    private List<AttachmentUsage> distinctAttachmentUsages(List<AttachmentUsage> attachmentUsages) {
+        return attachmentUsages.stream()
+                .filter(CommonUtils.distinctByKey(au -> ImmutableList.of(
+                        au.getOwner(),
+                        au.getUsedBy(),
+                        au.getAttachmentContentId(),
+                        au.isSetUsageData() ? au.getUsageData().getSetField() : "")))
+                .collect(Collectors.toList());
     }
 
     public AttachmentUsage getAttachmentUsage(String id) throws TException {

@@ -309,11 +309,11 @@ public class ProjectPortletUtils {
         return attachments;
     }
 
-    public static List<AttachmentUsage> makeAttachmentUsagesToDeleteFromRequest(ResourceRequest request) {
+    public static List<AttachmentUsage> deselectedAttachmentUsagesFromRequest(ResourceRequest request) {
         return makeAttachmentUsagesFromRequestParameters(request, Sets::difference);
     }
 
-    public static List<AttachmentUsage> makeAttachmentUsagesToCreateFromRequest(ResourceRequest request) {
+    public static List<AttachmentUsage> selectedAttachmentUsagesFromRequest(ResourceRequest request) {
         return makeAttachmentUsagesFromRequestParameters(request, Sets::intersection);
     }
 
@@ -368,5 +368,44 @@ public class ProjectPortletUtils {
                 usage.getOwner().equals(equivalentUsage.getOwner()) &&
                 usage.getUsedBy().equals(equivalentUsage.getUsedBy()) &&
                 usage.getUsageData().getSetField().equals(equivalentUsage.getUsageData().getSetField());
+    }
+
+    static AttachmentUsage mergeAttachmentUsages(AttachmentUsage u1, AttachmentUsage u2) {
+        if (u1.getUsageData() == null) {
+            if (u2.getUsageData() == null) {
+                return u1;
+            } else {
+                throw new IllegalArgumentException("Cannot merge attachment usages of different usage types");
+            }
+        } else {
+            if (!u1.getUsageData().getSetField().equals(u2.getUsageData().getSetField())) {
+                throw new IllegalArgumentException("Cannot merge attachment usages of different usage types");
+            }
+        }
+        AttachmentUsage mergedUsage = u1.deepCopy();
+        switch (u1.getUsageData().getSetField()) {
+            case LICENSE_INFO:
+                mergedUsage.getUsageData().getLicenseInfo().setExcludedLicenseIds(
+                        Sets.union(Optional.of(u1)
+                                        .map(AttachmentUsage::getUsageData)
+                                        .map(UsageData::getLicenseInfo)
+                                        .map(LicenseInfoUsage::getExcludedLicenseIds)
+                                        .orElse(Collections.emptySet()),
+                                Optional.of(u2)
+                                        .map(AttachmentUsage::getUsageData)
+                                        .map(UsageData::getLicenseInfo)
+                                        .map(LicenseInfoUsage::getExcludedLicenseIds)
+                                        .orElse(Collections.emptySet())));
+                break;
+            case SOURCE_PACKAGE:
+            case MANUALLY_SET:
+                // do nothing
+                // source package and manual usages do not have any information to be merged
+                break;
+            default:
+                throw new IllegalArgumentException("Unexpected UsageData type: " + u1.getUsageData().getSetField());
+        }
+
+        return mergedUsage;
     }
 }

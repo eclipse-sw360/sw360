@@ -63,10 +63,7 @@ import java.io.PrintWriter;
 import java.net.URLConnection;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Predicate;
+import java.util.function.*;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -198,16 +195,20 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     private void saveAttachmentUsages(ResourceRequest request, ResourceResponse response) throws IOException {
         final String projectId = request.getParameter(PROJECT_ID);
         AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
-        List<AttachmentUsage> equivalentUsagesToDelete = ProjectPortletUtils.makeAttachmentUsagesToDeleteFromRequest(request);
-        List<AttachmentUsage> usagesToCreate = ProjectPortletUtils.makeAttachmentUsagesToCreateFromRequest(request);
         try {
             Project project = getProjectFromRequest(request);
             User user = UserCacheHolder.getUserFromRequest(request);
             if (PermissionUtils.makePermission(project, user).isActionAllowed(RequestedAction.WRITE)) {
+                List<AttachmentUsage> deselectedUsagesFromRequest = ProjectPortletUtils.deselectedAttachmentUsagesFromRequest(request);
+                List<AttachmentUsage> selectedUsagesFromRequest = ProjectPortletUtils.selectedAttachmentUsagesFromRequest(request);
                 List<AttachmentUsage> allUsagesByProject = attachmentClient.getUsedAttachments(Source.projectId(projectId), null);
                 List<AttachmentUsage> usagesToDelete = allUsagesByProject.stream()
-                        .filter(usage -> equivalentUsagesToDelete.stream()
+                        .filter(usage -> deselectedUsagesFromRequest.stream()
                                 .anyMatch(isUsageEquivalent(usage)))
+                        .collect(Collectors.toList());
+                List<AttachmentUsage> usagesToCreate = selectedUsagesFromRequest.stream()
+                        .filter(usage -> allUsagesByProject.stream()
+                                .noneMatch(isUsageEquivalent(usage)))
                         .collect(Collectors.toList());
 
                 if (!usagesToDelete.isEmpty()) {
@@ -241,7 +242,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
             List<AttachmentUsage> attachmentUsages = wrapTException(() -> attachmentClient.getUsedAttachments(Source.projectId(projectId), null));
             Collector<AttachmentUsage, ?, Map<String, AttachmentUsage>> attachmentUsageMapCollector =
-                    Collectors.toMap(AttachmentUsage::getAttachmentContentId, Function.identity());
+                    Collectors.toMap(AttachmentUsage::getAttachmentContentId, Function.identity(), ProjectPortletUtils::mergeAttachmentUsages);
             BiFunction<List<AttachmentUsage>, UsageData._Fields, Map<String, AttachmentUsage>> filterAttachmentUsages = (attUsages, type) ->
                     attUsages.stream()
                     .filter(attUsage -> attUsage.getUsageData().getSetField().equals(type))
