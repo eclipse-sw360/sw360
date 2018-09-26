@@ -73,7 +73,10 @@ public class ResourceComparatorGenerator {
     private Comparator<Component> componentComparator(List<Component._Fields> fields) {
         Comparator<Component> comparator = Comparator.comparing(x -> true);
         for (Component._Fields field:fields) {
-            comparator = comparator.thenComparing(componentMap.get(field));
+            Comparator<Component> fieldComparator = componentMap.get(field);
+            if(fieldComparator != null) {
+                comparator = comparator.thenComparing(fieldComparator);
+            }
         }
         comparator = comparator.thenComparing(defaultComponentComparator());
         return comparator;
