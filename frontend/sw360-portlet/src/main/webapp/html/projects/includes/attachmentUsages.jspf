@@ -98,10 +98,8 @@
 
         function attachCheckboxEventHandlers(){
             $("#attachmentUsagesForm .trackChange").change(function() {
-                $box = $("#" + this.id);
                 $shadow = $("#" + this.id + "_shadow");
-                var val = $box.prop('defaultChecked') !== $box.prop('checked');
-                $shadow.prop('checked', val);
+                $shadow.prop('checked', true);
             });
         }
 

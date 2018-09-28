@@ -107,7 +107,7 @@ public class ProjectPortletUtilsTest {
                 .thenReturn(new String[]{"r1_licenseInfo_att1", "r4_licenseInfo_att4"});
         Mockito.when(request.getParameterValues(PROJECT_SELECTED_ATTACHMENT_USAGES_SHADOWS))
                 .thenReturn(new String[]{"r1_licenseInfo_att1", "r2_sourcePackage_att2", "r3_manuallySet_att3"});
-        List<AttachmentUsage> attachmentUsages = ProjectPortletUtils.makeAttachmentUsagesToDeleteFromRequest(request);
+        List<AttachmentUsage> attachmentUsages = ProjectPortletUtils.deselectedAttachmentUsagesFromRequest(request);
         Assert.assertThat(attachmentUsages, Matchers.containsInAnyOrder(
                 new AttachmentUsage(Source.releaseId("r2"), "att2", Source.projectId("p1"))
                         .setUsageData(UsageData.sourcePackage(new SourcePackageUsage())),
@@ -123,7 +123,7 @@ public class ProjectPortletUtilsTest {
                 .thenReturn(new String[]{"r1_licenseInfo_att1", "r2_sourcePackage_att2", "r3_manuallySet_att3"});
         Mockito.when(request.getParameterValues(PROJECT_SELECTED_ATTACHMENT_USAGES_SHADOWS))
                 .thenReturn(new String[]{"r1_licenseInfo_att1", "r2_sourcePackage_att2", "r4_sourcePackage_att4"});
-        List<AttachmentUsage> attachmentUsages = ProjectPortletUtils.makeAttachmentUsagesToCreateFromRequest(request);
+        List<AttachmentUsage> attachmentUsages = ProjectPortletUtils.selectedAttachmentUsagesFromRequest(request);
         Assert.assertThat(attachmentUsages, Matchers.containsInAnyOrder(
                 new AttachmentUsage(Source.releaseId("r1"), "att1", Source.projectId("p1"))
                         .setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(Collections.emptySet()))),

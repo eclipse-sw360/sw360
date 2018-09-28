@@ -13,6 +13,7 @@ package org.eclipse.sw360.portal.portlets.projects;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
@@ -89,16 +90,22 @@ public class ProjectPortletTest {
     @Test
     public void testPutAttachmentUsagesToRequest() throws PortletException, TException {
         AttachmentUsage licInfoUsage1 = new AttachmentUsage(Source.releaseId("r1"), "att1", Source.projectId("p1"))
-                .setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(Collections.emptySet())));
+                .setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(ImmutableSet.of("lic1"))));
+        AttachmentUsage licInfoUsage2 = new AttachmentUsage(Source.releaseId("r1"), "att1", Source.projectId("p1"))
+                .setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(ImmutableSet.of("lic2"))));
         AttachmentUsage srcPackageUsage1 = new AttachmentUsage(Source.releaseId("r2"), "att2", Source.projectId("p1"))
+                .setUsageData(UsageData.sourcePackage(new SourcePackageUsage()));
+        AttachmentUsage srcPackageUsage2 = new AttachmentUsage(Source.releaseId("r2"), "att2", Source.projectId("p1"))
                 .setUsageData(UsageData.sourcePackage(new SourcePackageUsage()));
         AttachmentUsage manualUsage1 = new AttachmentUsage(Source.releaseId("r3"), "att3", Source.projectId("p1"))
                 .setUsageData(UsageData.manuallySet(new ManuallySetUsage()));
         when(attachmentClient.getUsedAttachments(Source.projectId("p1"), null)).thenReturn(
-                ImmutableList.of(licInfoUsage1, srcPackageUsage1, manualUsage1)
+                ImmutableList.of(licInfoUsage1, licInfoUsage2, srcPackageUsage1, srcPackageUsage2, manualUsage1)
         );
 
-        Map<String, AttachmentUsage> licInfoUsages = ImmutableMap.of("att1", licInfoUsage1);
+        AttachmentUsage mergedLicInfoUsage = new AttachmentUsage(Source.releaseId("r1"), "att1", Source.projectId("p1"))
+                .setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(ImmutableSet.of("lic1", "lic2"))));
+        Map<String, AttachmentUsage> licInfoUsages = ImmutableMap.of("att1", mergedLicInfoUsage);
         Map<String, AttachmentUsage> srcCodeUsages = ImmutableMap.of("att2", srcPackageUsage1);
         Map<String, AttachmentUsage> manualUsages = ImmutableMap.of("att3", manualUsage1);
 
