@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -17,7 +17,6 @@ import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Set;
 
 import static org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector.prepareWildcardQuery;
 
@@ -54,7 +53,7 @@ public class VendorSearchHandler {
         return connector.searchView(Vendor.class, luceneSearchView, prepareWildcardQuery(searchText));
     }
 
-    public Set<String> searchIds(String searchText) {
+    public List<String> searchIds(String searchText) {
         // Query the search view for the provided text
         return connector.searchIds(Vendor.class, luceneSearchView, prepareWildcardQuery(searchText));
     }

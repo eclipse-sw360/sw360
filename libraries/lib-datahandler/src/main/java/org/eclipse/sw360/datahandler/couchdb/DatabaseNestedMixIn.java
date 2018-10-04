@@ -23,9 +23,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Constants.KEY_REV;
  *
  * @author cedric.bodet@tngtech.com
  */
-@JsonPropertyOrder({KEY_ID, KEY_REV})
-// Always put _id and _rev upfront. Not required, but serialized objects then look nicer.
-@JsonIgnoreProperties({"optionals", "_attachments"})
+@JsonIgnoreProperties({KEY_ID, KEY_REV})
 @SuppressWarnings("unused")
 public class DatabaseNestedMixIn {
 

@@ -19,6 +19,7 @@ spring:
   data:
     rest:
       base-path: /api
+      default-page-size: 10
 
 # logging:
 #   level:

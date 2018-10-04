@@ -86,11 +86,16 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private Instant cachedAllProjectsIdMapLoadingInstant;
 
     public ProjectDatabaseHandler(Supplier<HttpClient> httpClient, String dbName, String attachmentDbName) throws MalformedURLException {
-        this(httpClient, dbName, attachmentDbName, new ProjectModerator(), new ComponentDatabaseHandler(httpClient,dbName,attachmentDbName));
+        this(httpClient, dbName, attachmentDbName, new ProjectModerator(),
+                new ComponentDatabaseHandler(httpClient,dbName,attachmentDbName),
+                new AttachmentDatabaseHandler(httpClient, dbName, attachmentDbName));
     }
 
     @VisibleForTesting
-    public ProjectDatabaseHandler(Supplier<HttpClient> httpClient, String dbName, String attachmentDbName, ProjectModerator moderator, ComponentDatabaseHandler componentDatabaseHandler) throws MalformedURLException {
+    public ProjectDatabaseHandler(Supplier<HttpClient> httpClient, String dbName, String attachmentDbName, ProjectModerator moderator,
+                                  ComponentDatabaseHandler componentDatabaseHandler,
+                                  AttachmentDatabaseHandler attachmentDatabaseHandler) throws MalformedURLException {
+        super(attachmentDatabaseHandler);
         DatabaseConnector db = new DatabaseConnector(httpClient, dbName);
 
         // Create the repositories
@@ -184,7 +189,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return RequestStatus.FAILED_SANITY_CHECK;
         } else if (makePermission(actual, user).isActionAllowed(RequestedAction.WRITE)) {
             copyImmutableFields(project,actual);
-            project.setAttachments( getAllAttachmentsToKeep(actual.getAttachments(), project.getAttachments()) );
+            project.setAttachments( getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), project.getAttachments()) );
+            deleteAttachmentUsagesOfUnlinkedReleases(project, actual);
             repository.update(project);
 
             //clean up attachments in database
@@ -194,6 +200,13 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         } else {
             return moderator.updateProject(project, user);
         }
+    }
+
+    private void deleteAttachmentUsagesOfUnlinkedReleases(Project updated, Project actual) throws SW360Exception {
+        Source usedBy = Source.projectId(updated.getId());
+        Set<String> updatedLinkedReleaseIds = nullToEmptyMap(updated.getReleaseIdToUsage()).keySet();
+        Set<String> actualLinkedReleaseIds = nullToEmptyMap(actual.getReleaseIdToUsage()).keySet();
+        deleteAttachmentUsagesOfUnlinkedReleases(usedBy, updatedLinkedReleaseIds, actualLinkedReleaseIds);
     }
 
     private boolean changePassesSanityCheck(Project updated, Project current) {
@@ -257,8 +270,9 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
        return !usingProjects.isEmpty();
     }
 
-    private void removeProjectAndCleanUp(Project project) {
+    private void removeProjectAndCleanUp(Project project) throws SW360Exception {
         attachmentConnector.deleteAttachments(project.getAttachments());
+        attachmentDatabaseHandler.deleteUsagesBy(Source.projectId(project.getId()));
         repository.remove(project);
         moderator.notifyModeratorOnDelete(project.getId());
     }
@@ -437,6 +451,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public int getCountByProjectId(String id) {
         return repository.getCountByProjectId(id);
+    }
+
+    public Set<Project> searchByExternalIds(Map<String, Set<String>> externalIds, User user) {
+        return repository.searchByExternalIds(externalIds, user);
     }
 
     public Set<Project> getAccessibleProjects(User user) {

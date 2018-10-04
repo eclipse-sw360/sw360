@@ -326,7 +326,7 @@
                         {title: "<span title=\"Release clearing state\">Clearing Status</span>", data: "clearing"},
                         {title: "Actions", data: "id", render: {display: renderProjectActions}}
                     ],
-                    "order": [[0, 'asc']],
+                    "aaSorting": [],
                     "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
                     "autoWidth": false,
                     "fnDrawCallback": function (oSettings) {

@@ -810,4 +810,44 @@
             <role-name>user</role-name>
         </security-role-ref>
     </portlet>
+
+    <portlet>
+        <portlet-name>WsImport</portlet-name>
+        <display-name>WsImport</display-name>
+        <portlet-class>
+            org.eclipse.sw360.portal.portlets.projectimport.WsImportPortlet
+        </portlet-class>
+        <init-param>
+            <name>view-template</name>
+            <value>/html/projects/wsimport.jsp</value>
+        </init-param>
+        <expiration-cache>0</expiration-cache>
+        <supports>
+            <mime-type>text/html</mime-type>
+            <portlet-mode>view</portlet-mode>
+        </supports>
+        <portlet-info>
+            <title>WsImport</title>
+            <short-title>WsImport</short-title>
+            <keywords/>
+        </portlet-info>
+        <portlet-preferences>
+            <preference>
+                <name>portlet-setup-show-borders</name>
+                <value>false</value>
+            </preference>
+        </portlet-preferences>
+        <security-role-ref>
+            <role-name>administrator</role-name>
+        </security-role-ref>
+        <security-role-ref>
+            <role-name>guest</role-name>
+        </security-role-ref>
+        <security-role-ref>
+            <role-name>power-user</role-name>
+        </security-role-ref>
+        <security-role-ref>
+            <role-name>user</role-name>
+        </security-role-ref>
+    </portlet>
 </portlet-app>

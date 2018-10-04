@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2016-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2016-2018. Part of the SW360 Portal Project.
   ~ Copyright Bosch Software Innovations GmbH, 2017.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
@@ -18,16 +18,17 @@
 <portlet:resourceURL var="downloadLicenseInfoStateURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.LOAD_LICENSE_INFO_ATTACHMENT_USAGE%>'/>
 </portlet:resourceURL>
+<portlet:resourceURL var="downloadSourcePackageStateURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.LOAD_SOURCE_PACKAGE_ATTACHMENT_USAGE%>'/>
+</portlet:resourceURL>
 
 <%--These variables are used as a trick to allow referencing constant values in EL expressions below--%>
 <c:set var="tableModeLicenseInfo" value="<%=PortalConstants.PROJECT_LINK_TABLE_MODE_LICENSE_INFO%>"/>
 <c:set var="tableModeSourceBundle" value="<%=PortalConstants.PROJECT_LINK_TABLE_MODE_SOURCE_BUNDLE%>"/>
 
-<core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo}">
-    <div id="infobar" class="infobar backgroundGrey">
-        <div class="spinner">Loading selected licenses and exclusions...</div>
-    </div>
-</core_rt:if>
+<div id="infobar" class="infobar backgroundGrey">
+    <div class="spinner">Loading previously stored selection...</div>
+</div>
 
 <table class="table info_table" id="LinkedProjectsInfo"
     data-table-mode="${projectLinkTableMode}"
@@ -36,6 +37,7 @@
     data-portlet-namespace="<portlet:namespace/>"
     data-license-info-base-url="<%=downloadLicenseInfoURL%>"
     data-license-info-state-url="<%=downloadLicenseInfoStateURL%>"
+    data-source-package-state-url="<%=downloadSourcePackageStateURL%>"
     data-attachment-id-parameter-name="<%=PortalConstants.ATTACHMENT_ID%>"
     data-release-id-parameter-name="<%=PortalConstants.RELEASE_ID%>"
 >
@@ -118,7 +120,7 @@
             <core_rt:forEach items="${releaseLink.attachments}" var="attachment" varStatus="attachmentloop">
                 <tr id="attachmentRow${loop.count}_${releaseloop.count}_${attachmentloop.count}" data-tt-id="${releaseLink.nodeId}_${attachment.attachmentContentId}"
                     data-tt-parent-id="${releaseLink.nodeId}"
-                    data-tt-branch="true"
+                <core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo}">data-tt-branch="true"</core_rt:if>
                     data-row-type="attachment"
                     data-tree-level="${projectLink.treeLevel + 1}"
                     data-release-id="${releaseLink.id}"
@@ -142,7 +144,6 @@
                         <sw360:out value="${attachment.filename}"/>
                     </td>
                     <td colspan="2">
-                        <core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo}">
                             <c:set var="mapKey">${releaseLink.id.concat("_").concat(attachment.attachmentContentId)}</c:set>
                             <core_rt:choose>
                                 <core_rt:when test="${attachmenUsageCountMap[mapKey] != null}">
@@ -152,7 +153,6 @@
                                   <i>not used in any project yet</i>
                                 </core_rt:otherwise>
                             </core_rt:choose>
-                        </core_rt:if>
                     </td>
                     <td>
                         <sw360:DisplayUserEmail email="${attachment.createdBy}" bare="true"/>
@@ -188,9 +188,10 @@
 
                 if(data.tableMode === data.tableModeLicenseInfo) {
                     initializeTableForLicenseInfo($linkedProjectsInfoTable);
-                    loadSavedLicenseInfoState($linkedProjectsInfoTable);
+                    loadSavedSelectionState($linkedProjectsInfoTable);
                 } else if(data.tableMode === data.tableModeSourceBundle) {
                     initializeTableForSourceBundle($linkedProjectsInfoTable);
+                    loadSavedSelectionState($linkedProjectsInfoTable);
                 } else {
                     $linkedProjectsInfoTable.before($('<div/>', {
                         'class': 'error foregroundAlert',
@@ -348,11 +349,6 @@
                         $('<td>', {
                             colspan: 4
                         }).append(
-                            $('<input/>', {
-                                type:     'hidden',
-                                name:     portletNamespace + attachmentContentId + '_text',
-                                value:    license.text
-                            }),
                             $('<span/>', {
                                 'class': 'license-text sw360-ellipsis',
                                 title: license.text ? license.text : '',
@@ -390,22 +386,28 @@
                     $linkedProjectsInfoTable.find('tr[data-tt-id=' + ttId + '_loader] td .spinner').hide();
                 }
 
-                function loadSavedLicenseInfoState($linkedProjectsInfoTable) {
+                function loadSavedSelectionState($linkedProjectsInfoTable) {
                     var config = $linkedProjectsInfoTable.data();
+                    var url;
+                    if(config.tableMode === config.tableModeLicenseInfo) {
+                        url = config.licenseInfoStateUrl;
+                    } else {
+                        url = config.sourcePackageStateUrl;
+                    }
 
                     $.ajax({
                         type: 'GET',
-                        url: config.licenseInfoStateUrl,
+                        url: url,
                     }).done(function(result) {
                         if(!result || result.length == 0) {
                             $('#infobar').removeClass('backgroundWarning').addClass('backgroundOK').html($('<span>', {
-                                text: "No previous selection found. If you have writing permissions to this project, your selection will be stored automatically when downloading the license info file."
+                                text: "No previous selection found. If you have writing permissions to this project, your selection will be stored automatically when downloading."
                             }));
                         } else {
-                            restoreSelectedLicenses($linkedProjectsInfoTable, result, function(error, warnings) {
+                            restoreSelection($linkedProjectsInfoTable, result, function(error, warnings) {
                                 if(error) {
                                     $('#infobar').removeClass('backgroundGrey').addClass('backgroundAlert').html($('<span>', {
-                                        text: "Cannot load selected licenses and exclusions: " + error
+                                        text: "Cannot restore previous selection: " + error
                                     }));
                                 } else if(warnings && warnings.length > 0) {
                                     $('#infobar').removeClass('backgroundGrey').addClass('backgroundWarning').html($('<div>').append(
@@ -422,7 +424,7 @@
                         }
                     }).error(function(error) {
                         $('#infobar').removeClass('backgroundWarning').addClass('backgroundAlert').html($('<span>', {
-                            text: "Cannot load selected licenses and exclusions: " + error.statusText + ' (' + error.status + ')'
+                            text: "Cannot load previous selection: " + error.statusText + ' (' + error.status + ')'
                         }));
                     });
                 }
@@ -458,7 +460,7 @@
                     return $list;
                 }
 
-                function restoreSelectedLicenses($linkedProjectsInfoTable, attachmentUsages, readyCallback) {
+                function restoreSelection($linkedProjectsInfoTable, attachmentUsages, readyCallback) {
                     var warnings = [],
                         loadCountdown = countdown(attachmentUsages.length, function() { readyCallback(null, warnings); }),
                         config = $linkedProjectsInfoTable.data();
@@ -467,7 +469,7 @@
                     attachmentUsages.forEach(function(usage) {
                         $linkedProjectsInfoTable.find('tr input[value="' + usage.owner.releaseId + ':' + usage.attachmentContentId + '"]:first').prop('checked', true).trigger('change');
 
-                        if(usage.usageData.licenseInfo.excludedLicenseIds.length > 0) {
+                        if(usage.usageData.licenseInfo && usage.usageData.licenseInfo.excludedLicenseIds.length > 0) {
                             expandLicenseFile($linkedProjectsInfoTable, findNode($linkedProjectsInfoTable, usage), function(error) {
                                 if(error) {
                                     readyCallback(error);

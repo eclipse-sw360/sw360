@@ -12,6 +12,7 @@
 <%@ page import="javax.portlet.PortletRequest" %>
 <%@ page import="com.liferay.portlet.PortletURLFactoryUtil" %>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.components.Component" %>
 
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
@@ -35,6 +36,9 @@
     <portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="${component.id}"/>
 </portlet:resourceURL>
 
+<portlet:actionURL var="updateComponentURL" name="updateComponent">
+    <portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="${component.id}"/>
+</portlet:actionURL>
 <c:catch var="attributeNotFoundException">
     <jsp:useBean id="component" class="org.eclipse.sw360.datahandler.thrift.components.Component" scope="request"/>
     <jsp:useBean id="selectedTab" class="java.lang.String" scope="request"/>
@@ -123,3 +127,24 @@
         }
     });
 </script>
+<c:set var="CODESCOOP_URL" value="<%=PortalConstants.CODESCOOP_URL%>"/>
+<c:set var="CODESCOOP_TOKEN" value="<%=PortalConstants.CODESCOOP_TOKEN%>"/>
+<c:if test="${not empty CODESCOOP_URL && not empty CODESCOOP_TOKEN}">
+    <form id="component_edit_form" name="componentEditForm" action="<%=updateComponentURL%>&updateOnlyRequested" method="post" style="display: none;">
+    </form>
+    <script>
+        var edit_form_fields = {
+            description: '<portlet:namespace/><%=Component._Fields.DESCRIPTION%>',
+            homepage: '<portlet:namespace/><%=Component._Fields.HOMEPAGE%>',
+            categories: '<portlet:namespace/><%=Component._Fields.CATEGORIES%>',
+            languages: '<portlet:namespace/><%=Component._Fields.LANGUAGES%>',
+            licenses: '<portlet:namespace/><%=Component._Fields.MAIN_LICENSE_IDS%>'
+        };
+        document.addEventListener("DOMContentLoaded", function() {
+            require(['modules/codeScoop' ], function(codeScoop) {
+                var api = new codeScoop('<%=PortalConstants.CODESCOOP_URL%>', '<%=PortalConstants.CODESCOOP_TOKEN%>');
+                api.activateMerge();
+            });
+        });
+    </script>
+</c:if>

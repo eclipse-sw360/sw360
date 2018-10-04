@@ -118,6 +118,8 @@ public class LicensesPortlet extends Sw360Portlet {
         String id = request.getParameter(LICENSE_ID);
         User user = UserCacheHolder.getUserFromRequest(request);
         LicenseService.Iface client = thriftClients.makeLicenseClient();
+        boolean isAtLeastClearingAdmin = PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user);
+        request.setAttribute(IS_USER_AT_LEAST_CLEARING_ADMIN, isAtLeastClearingAdmin ? "Yes" : "No");
 
         try {
             licenseTypes = client.getLicenseTypes();
@@ -137,11 +139,13 @@ public class LicensesPortlet extends Sw360Portlet {
                 setSW360SessionError(request, ErrorMessages.ERROR_GETTING_LICENSE);
             }
         } else {
-            if (request.getAttribute(KEY_LICENSE_DETAIL) == null){
+            if(isAtLeastClearingAdmin) {
                 SessionMessages.add(request, "request_processed", "New License");
-                License license = new License();
-                request.setAttribute(KEY_LICENSE_DETAIL, license);
+            } else {
+                SessionMessages.add(request, "request_processed", "You will create a new and UNCHECKED license");
             }
+            License license = new License();
+            request.setAttribute(KEY_LICENSE_DETAIL, license);
         }
     }
 
@@ -280,6 +284,7 @@ public class LicensesPortlet extends Sw360Portlet {
         String shortname = request.getParameter(License._Fields.SHORTNAME.name());
         Ternary gpl2compatibility = Ternary.findByValue(Integer.parseInt(request.getParameter(License._Fields.GPLV2_COMPAT.toString())));
         Ternary gpl3compatibility = Ternary.findByValue(Integer.parseInt(request.getParameter(License._Fields.GPLV3_COMPAT.toString())));
+        boolean checked = "true".equals(request.getParameter(License._Fields.CHECKED.toString()));
         String licenseTypeString =
                 request.getParameter(License._Fields.LICENSE_TYPE.toString() + LicenseType._Fields.LICENSE_TYPE.toString());
         license.setText(CommonUtils.nullToEmptyString(text));
@@ -287,6 +292,7 @@ public class LicensesPortlet extends Sw360Portlet {
         license.setShortname((CommonUtils.nullToEmptyString(shortname)));
         license.setGPLv2Compat(gpl2compatibility);
         license.setGPLv3Compat(gpl3compatibility);
+        license.setChecked(checked);
         try {
             Optional<String> licenseTypeDatabaseId = getDatabaseIdFromLicenseType(licenseTypeString);
             if(licenseTypeDatabaseId.isPresent()) {

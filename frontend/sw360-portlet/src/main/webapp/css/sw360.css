@@ -652,3 +652,24 @@ input[readonly].clickable {
    float:right;
  }
 
+ .wsimport_content {
+    padding: 0px;
+    float: left;
+    width: 47%;
+    overflow: auto;
+    margin-left: 15px;
+}
+
+.wsimport_table {
+    border: 1px solid rgb(204, 204, 204);
+    background-color: rgb(248, 247, 247);
+    border-spacing: 0;
+    table-layout: fixed;
+    word-wrap: break-word;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    vertical-align: middle;
+    padding: 0;
+    margin: 0;
+    text-color: black;
+}

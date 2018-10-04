@@ -15,7 +15,7 @@ package org.eclipse.sw360.rest.resourceserver.attachment;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -25,14 +25,14 @@ import org.eclipse.sw360.commonIO.AttachmentFrontendUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
-import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
+import org.springframework.hateoas.Resource;
+import org.springframework.hateoas.Resources;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
@@ -42,13 +42,13 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @Service
-@Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360AttachmentService {
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
@@ -60,45 +60,38 @@ public class Sw360AttachmentService {
     @NonNull
     private final RestControllerHelper restControllerHelper;
 
+    private static final Logger log = Logger.getLogger(Sw360AttachmentService.class);
     private final Duration downloadTimeout = Duration.durationOf(30, TimeUnit.SECONDS);
-
     private AttachmentConnector attachmentConnector;
 
-    public AttachmentInfo getAttachmentBySha1ForUser(String sha1, User sw360User) throws TException {
-        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        List<Release> releases = sw360ComponentClient.getReleaseSummary(sw360User);
-        for (Release release : releases) {
-            final Set<Attachment> attachments = release.getAttachments();
-            if (attachments != null && attachments.size() > 0) {
-                for (Attachment attachment : attachments) {
-                    if (sha1.equals(attachment.getSha1())) {
-                        return new AttachmentInfo(attachment, release);
-                    }
-                }
-            }
-        }
-        return null;
+    public AttachmentInfo getAttachmentById(String id) throws TException {
+        AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
+        List<Attachment> attachments = attachmentClient.getAttachmentsByIds(Collections.singleton(id));
+        return createAttachmentInfo(attachmentClient, attachments);
     }
 
-    public AttachmentInfo getAttachmentByIdForUser(String id, User sw360User) throws TException {
-        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        List<Release> releases = sw360ComponentClient.getReleaseSummary(sw360User);
-        for (Release release : releases) {
-            final Set<Attachment> attachments = release.getAttachments();
-            if (attachments != null && attachments.size() > 0) {
-                for (Attachment attachment : attachments) {
-                    if (id.equals(attachment.getAttachmentContentId())) {
-                        return new AttachmentInfo(attachment, release);
-                    }
-                }
-            }
+    public AttachmentInfo getAttachmentBySha1(String sha1) throws TException {
+        AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
+        List<Attachment> attachments = attachmentClient.getAttachmentsBySha1s(Collections.singleton(sha1));
+        return createAttachmentInfo(attachmentClient, attachments);
+    }
+
+    private AttachmentInfo createAttachmentInfo(AttachmentService.Iface attachmentClient, List<Attachment> attachments) throws TException {
+        AttachmentInfo attachmentInfo = new AttachmentInfo(getValidAttachment(attachments));
+        String attachmentId = attachmentInfo.getAttachment().getAttachmentContentId();
+        attachmentInfo.setOwner(attachmentClient.getAttachmentOwnersByIds(Collections.singleton(attachmentId)).get(0));
+        return attachmentInfo;
+    }
+
+    private Attachment getValidAttachment(List<Attachment> attachments) {
+        if (attachments.isEmpty()) {
+            throw new ResourceNotFoundException();
         }
-        return null;
+        return attachments.get(0);
     }
 
     public void downloadAttachmentWithContext(Object context, String attachmentId, HttpServletResponse response, OAuth2Authentication oAuth2Authentication) {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
-
         AttachmentContent attachmentContent = getAttachmentContent(attachmentId);
 
         String filename = attachmentContent.getFilename();
@@ -163,12 +156,6 @@ public class Sw360AttachmentService {
         }
     }
 
-    private ComponentService.Iface getThriftComponentClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/components/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new ComponentService.Client(protocol);
-    }
-
     private AttachmentConnector getConnector() throws TException {
         if (attachmentConnector == null) makeConnector();
         return attachmentConnector;
@@ -183,5 +170,21 @@ public class Sw360AttachmentService {
                 throw new TException(e);
             }
         }
+    }
+
+    private AttachmentService.Iface getThriftAttachmentClient() throws TTransportException {
+        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/attachments/thrift");
+        TProtocol protocol = new TCompactProtocol(thriftClient);
+        return new AttachmentService.Client(protocol);
+    }
+
+    public Resources<Resource<Attachment>> getResourcesFromList(Set<Attachment> attachmentList) {
+        final List<Resource<Attachment>> attachmentResources = new ArrayList<>();
+        for (final Attachment attachment : attachmentList) {
+            final Attachment embeddedAttachment = restControllerHelper.convertToEmbeddedAttachment(attachment);
+            final Resource<Attachment> attachmentResource = new Resource<>(embeddedAttachment);
+            attachmentResources.add(attachmentResource);
+        }
+        return new Resources<>(attachmentResources);
     }
 }

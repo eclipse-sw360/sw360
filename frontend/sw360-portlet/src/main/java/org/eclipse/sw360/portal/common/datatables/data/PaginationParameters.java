@@ -10,6 +10,8 @@
  */
 package org.eclipse.sw360.portal.common.datatables.data;
 
+import java.util.Optional;
+
 /**
  * @author thomas.maier@evosoft.com
  */
@@ -43,18 +45,18 @@ public class PaginationParameters {
     /**
      * Column index being sorted on
      */
-    private int sortingColumn;
+    private Optional<Integer> sortingColumn;
 
     /**
      * Direction to be sorted - ascending or descending order
      */
-    private boolean ascending;
+    private Optional<Boolean> ascending;
 
 
     public PaginationParameters() {
     }
 
-    public PaginationParameters(String echo, String columnNames, int displayLength, int displayStart, int columnCount, int sortingColumn, boolean ascending) {
+    public PaginationParameters(String echo, String columnNames, int displayLength, int displayStart, int columnCount, Optional<Integer> sortingColumn, Optional<Boolean> ascending) {
         this.echo = echo;
         this.columnNames = columnNames;
         this.displayLength = displayLength;
@@ -104,19 +106,19 @@ public class PaginationParameters {
         this.columnCount = columnCount;
     }
 
-    public int getSortingColumn() {
+    public Optional<Integer> getSortingColumn() {
         return sortingColumn;
     }
 
-    public void setSortingColumn(int sortingColumn) {
+    public void setSortingColumn(Optional<Integer> sortingColumn) {
         this.sortingColumn = sortingColumn;
     }
 
-    public boolean isAscending() {
+    public Optional<Boolean> isAscending() {
         return ascending;
     }
 
-    public void setAscending(boolean ascending) {
+    public void setAscending(Optional<Boolean> ascending) {
         this.ascending = ascending;
     }
 }

@@ -1,54 +1,44 @@
 /*
  * Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+ * Copyright Bosch Software Innovations GmbH, 2018.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-
-/*
- * Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- */
-
-/*
- * Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- */
-
 package org.eclipse.sw360.rest.resourceserver;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.runner.RunWith;
+import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.util.Base64Utils;
 
+import java.util.Collections;
+import java.util.List;
 import java.io.IOException;
 
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 public class TestHelper {
 
     static public void checkResponse(String responseBody, String linkRelation, int embeddedArraySize) throws IOException {
+        TestHelper.checkResponse(responseBody, linkRelation, embeddedArraySize, null);
+    }
+
+    static public void checkResponse(String responseBody, String linkRelation, int embeddedArraySize, List<String> fields) throws IOException {
         JsonNode responseBodyJsonNode = new ObjectMapper().readTree(responseBody);
 
         assertThat(responseBodyJsonNode.has("_embedded"), is(true));
@@ -59,6 +49,12 @@ public class TestHelper {
         JsonNode sw360UsersNode = embeddedNode.get("sw360:" + linkRelation);
         assertThat(sw360UsersNode.isArray(),is(true));
         assertThat(sw360UsersNode.size(),is(embeddedArraySize));
+        if(fields != null && embeddedArraySize > 0) {
+            JsonNode itemNode = sw360UsersNode.get(0);
+            for(String field:fields) {
+                assertTrue(itemNode.has(field));
+            }
+        }
 
         assertThat(responseBodyJsonNode.has("_links"), is(true));
 
@@ -66,7 +62,7 @@ public class TestHelper {
         assertThat(linksNode.has("curies"), is(true));
 
         JsonNode curiesNode = linksNode.get("curies").get(0);
-        assertThat(curiesNode.get("href").asText(), endsWith("docs/html5/{rel}.html"));
+        assertThat(curiesNode.get("href").asText(), endsWith("docs/{rel}.html"));
         assertThat(curiesNode.get("name").asText(), is("sw360"));
         assertThat(curiesNode.get("templated").asBoolean(), is(true));
     }
@@ -90,6 +86,25 @@ public class TestHelper {
         return new ObjectMapper()
                 .readValue(response.getContentAsByteArray(), OAuthToken.class)
                 .accessToken;
+    }
+
+    public static void handleBatchDeleteResourcesResponse(ResponseEntity<String> response, String resourceId, int statusCode) throws IOException {
+        handleBatchDeleteResourcesResponse(response, Collections.singletonList(new MultiStatus(resourceId, HttpStatus.valueOf(statusCode))));
+    }
+
+    public static void handleBatchDeleteResourcesResponse(ResponseEntity<String> response, List<MultiStatus> responseStatusList) throws IOException {
+        assertEquals(HttpStatus.MULTI_STATUS, response.getStatusCode());
+
+        JsonNode responseNode = new ObjectMapper().readTree(response.getBody());
+        assertThat(responseNode.isArray(), is(true));
+        assertThat(responseNode.size(), is(responseStatusList.size()));
+
+        for (int i = 0; i < responseStatusList.size(); i++) {
+            MultiStatus multiStatus = responseStatusList.get(i);
+            JsonNode jsonResult = responseNode.get(i);
+            assertThat(jsonResult.get("status").asInt(), is(multiStatus.getStatusCode()));
+            assertThat(jsonResult.get("resourceId").asText(), is(multiStatus.getResourceId()));
+        }
     }
 
 

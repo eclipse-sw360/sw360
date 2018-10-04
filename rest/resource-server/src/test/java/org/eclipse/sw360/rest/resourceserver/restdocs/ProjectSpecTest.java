@@ -10,6 +10,8 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
 import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
@@ -19,6 +21,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
+import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
@@ -28,6 +31,8 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
+import org.springframework.hateoas.Resource;
+import org.springframework.hateoas.Resources;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.*;
@@ -62,14 +67,32 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     @MockBean
     private Sw360ReleaseService releaseServiceMock;
 
+    @MockBean
+    private Sw360AttachmentService attachmentServiceMock;
+
     private Project project;
+    private Attachment attachment;
+    private Map<String, Set<String>> externalIds;
 
     @Before
     public void before() throws TException {
+        Set<Attachment> attachmentList = new HashSet<>();
+        List<Resource<Attachment>> attachmentResources = new ArrayList<>();
+        attachment = new Attachment("1231231254", "spring-core-4.3.4.RELEASE.jar");
+        attachment.setSha1("da373e491d3863477568896089ee9457bc316783");
+        attachmentList.add(attachment);
+        attachmentResources.add(new Resource<>(attachment));
+
+        given(this.attachmentServiceMock.getAttachmentContent(anyObject())).willReturn(new AttachmentContent().setId("1231231254").setFilename("spring-core-4.3.4.RELEASE.jar").setContentType("binary"));
+        given(this.attachmentServiceMock.getResourcesFromList(anyObject())).willReturn(new Resources<>(attachmentResources));
 
         Map<String, ProjectReleaseRelationship> linkedReleases = new HashMap<>();
         Map<String, ProjectRelationship> linkedProjects = new HashMap<>();
         ProjectReleaseRelationship projectReleaseRelationship = new ProjectReleaseRelationship(CONTAINED, MAINLINE);
+
+        externalIds = new HashMap<>();
+        externalIds.put("portal-id", new HashSet<>(Arrays.asList("13319-XX3")));
+        externalIds.put("project-ext", new HashSet<>(Arrays.asList("515432", "7657")));
 
         List<Project> projectList = new ArrayList<>();
         List<Project> projectListByName = new ArrayList<>();
@@ -98,6 +121,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project.setLinkedProjects(linkedProjects);
         projectList.add(project);
         projectListByName.add(project);
+        project.setAttachments(attachmentList);
 
         Project project2 = new Project();
         project2.setId("376570");
@@ -116,7 +140,10 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project2.setPreevaluationDeadline("2018-07-17");
         project2.setSystemTestStart("2017-01-01");
         project2.setSystemTestEnd("2018-03-01");
-        project2.setExternalIds(Collections.singletonMap("mainline-id-project", "7657"));
+        Map<String, String> projExtKeys = new HashMap();
+        projExtKeys.put("mainline-id-project", "7657");
+        projExtKeys.put("portal-id", "13319-XX3");
+        project2.setExternalIds(projExtKeys);
         linkedReleases = new HashMap<>();
         linkedReleases.put("5578999", projectReleaseRelationship);
         project2.setReleaseIdToUsage(linkedReleases);
@@ -126,6 +153,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         Set<String> releaseIdsTransitive = new HashSet<>(Arrays.asList("3765276512", "5578999"));
 
         given(this.projectServiceMock.getProjectsForUser(anyObject())).willReturn(projectList);
+        given(this.projectServiceMock.searchByExternalIds(eq(externalIds), anyObject())).willReturn((new HashSet<>(projectList)));
         given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), anyObject())).willReturn(project);
         given(this.projectServiceMock.searchProjectByName(eq(project.getName()), anyObject())).willReturn(projectListByName);
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), anyObject(), eq("false"))).willReturn(releaseIds);
@@ -165,13 +193,10 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.releaseServiceMock.getReleaseForUserById(eq(release.getId()), anyObject())).willReturn(release);
         given(this.releaseServiceMock.getReleaseForUserById(eq(release2.getId()), anyObject())).willReturn(release2);
 
-        User user = new User();
-        user.setId("123456789");
-        user.setEmail("admin@sw360.org");
-        user.setFullname("John Doe");
-        user.setDepartment("sw360");
-
-        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(user);
+        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(
+                new User("admin@sw360.org", "sw360").setId("123456789"));
+        given(this.userServiceMock.getUserByEmail("jane@sw360.org")).willReturn(
+                new User("jane@sw360.org", "sw360").setId("209582812"));
     }
 
     @Test
@@ -227,7 +252,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("_embedded.createdBy").description("The user who created this project"),
                                 fieldWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
                                 fieldWithPath("_embedded.sw360:releases").description("An array of <<resources-releases, Releases resources>>"),
-                                fieldWithPath("_embedded.sw360:moderators").description("An array of all project moderators with email and link to their <<resources-user-get,User resource>>")
+                                fieldWithPath("_embedded.sw360:moderators").description("An array of all project moderators with email and link to their <<resources-user-get,User resource>>"),
+                                fieldWithPath("_embedded.sw360:attachments").description("An array of all project attachments and link to their <<resources-attachment-get,Attachment resource>>")
                         )));
     }
 
@@ -265,6 +291,24 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         responseFields(
                                 fieldWithPath("_embedded.sw360:projects[]name").description("The name of the project"),
                                 fieldWithPath("_embedded.sw360:projects[]version").description("The project version"),
+                                fieldWithPath("_embedded.sw360:projects[]projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
+                                fieldWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_projects_by_externalIds() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/projects/searchByExternalIds?project-ext=515432&project-ext=7657&portal-id=13319-XX3")
+                .contentType(MediaTypes.HAL_JSON)
+                .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        responseFields(
+                                fieldWithPath("_embedded.sw360:projects[]name").description("The name of the project"),
+                                fieldWithPath("_embedded.sw360:projects[]version").description("The project version"),
+                                fieldWithPath("_embedded.sw360:projects[]externalIds").description("External Ids of the project"),
                                 fieldWithPath("_embedded.sw360:projects[]projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
                                 fieldWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
@@ -321,5 +365,31 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("_embedded.sw360:releases[].eccInformation.eccStatus").description("The ECC information status value"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
+    }
+
+    @Test
+    public void should_document_get_project_attachment_info() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/projects/" + project.getId() + "/attachments")
+                .header("Authorization", "Bearer " + accessToken)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        responseFields(
+                                fieldWithPath("_embedded.sw360:attachments").description("An array of <<resources-attachment, Attachments resources>>"),
+                                fieldWithPath("_embedded.sw360:attachments[]filename").description("The attachment filename"),
+                                fieldWithPath("_embedded.sw360:attachments[]sha1").description("The attachment sha1 value"),
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_project_attachment() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/projects/" + project.getId() + "/attachments/" + attachment.getAttachmentContentId())
+                .header("Authorization", "Bearer " + accessToken)
+                .accept("application/*"))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document());
     }
 }

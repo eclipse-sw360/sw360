@@ -59,6 +59,7 @@ public class ProjectDatabaseHandlerTest {
     ProjectModerator moderator = Mockito.mock(ProjectModerator.class);
     ProjectDatabaseHandler handler;
     ComponentDatabaseHandler componentHandler;
+    AttachmentDatabaseHandler attachmentDatabaseHandler;
     @Before
     public void setUp() throws Exception {
         assertTestString(dbName);
@@ -120,7 +121,8 @@ public class ProjectDatabaseHandlerTest {
         databaseConnector.add(new Component("comp1").setId("c1"));
 
         componentHandler = new ComponentDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), dbName, attachmentsDbName);
-        handler = new ProjectDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), dbName, attachmentDbName, moderator, componentHandler);
+        attachmentDatabaseHandler = new AttachmentDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), dbName, attachmentsDbName);
+        handler = new ProjectDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), dbName, attachmentDbName, moderator, componentHandler, attachmentDatabaseHandler);
     }
 
     @After

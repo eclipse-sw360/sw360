@@ -54,9 +54,14 @@
 </portlet:actionURL>
 <core_rt:if test="${empty attributeNotFoundException}">
     <div id="header"></div>
-    <p class="pageHeader"><span
-            class="pageHeaderBigSpan">License: <sw360:out value="${licenseDetail.fullname}"/> (<sw360:out value="${licenseDetail.shortname}"/>)</span>
-        <core_rt:if test="${isUserAtLeastClearingAdmin == 'Yes'}">
+    <p class="pageHeader">
+        <span class="pageHeaderBigSpan">
+            <core_rt:if test="${licenseDetail.checked == false}">
+                <alert>UNCHECKED</alert>
+            </core_rt:if>
+            License: <sw360:out value="${licenseDetail.fullname}"/> (<sw360:out value="${licenseDetail.shortname}"/>)
+        </span>
+        <core_rt:if test="${isUserAtLeastClearingAdmin == 'Yes' || licenseDetail.checked == false}">
          <span class="pull-right">
              <input type="button" onclick="editLicense()" id="edit" value="Edit License Details and Text"
                     class="addButton">

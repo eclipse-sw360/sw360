@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2014-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2014-2018. Part of the SW360 Portal Project.
  * With contributions by Bosch Software Innovations GmbH, 2016.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -103,9 +103,12 @@ struct AttachmentUsage {
  * If a new type of usage data is defined (like LicenseInfoUsage), the type must be registered in
  *    org.eclipse.sw360.datahandler.couchdb.deserializer.UsageDataDeserializer
  * in order to be properly deserialized when loading from CouchDB
+ * The type also must be registered in ThriftUtils.THRIFT_NESTED_CLASSES in order to be able to be serialized.
  */
 union UsageData {
     1: LicenseInfoUsage licenseInfo;
+    2: SourcePackageUsage sourcePackage;
+    3: ManuallySetUsage manuallySet;
 }
 
 /**
@@ -114,6 +117,20 @@ union UsageData {
  */
 struct LicenseInfoUsage {
     1: required set<string> excludedLicenseIds;
+}
+
+/**
+ * Flags an attachment when it is used for source code bundle generation.
+ */
+struct SourcePackageUsage {
+    1: optional string dummy; // when there are no fields, jackson fails to serialize the object
+}
+
+/**
+ * Flags an attachment when it has been manually designated as used in some way to prevent deletetion.
+ */
+struct ManuallySetUsage {
+    1: optional string dummy; // when there are no fields, jackson fails to serialize the object
 }
 
 struct FilledAttachment {
@@ -234,6 +251,13 @@ service AttachmentService {
     list<AttachmentUsage> getAttachmentUsages(1: Source owner, 2: string attachmentContentId, 3: UsageData filter);
 
     /**
+     * Returns the list of usage objects describing the usage of the attachment that can be identified
+     * by the given owner and attachmentContentIds. Optionally filtered  by usage type.
+     * If a usage data object is given with a value, the type of the value is used for the filter.
+     */
+    list<AttachmentUsage> getAttachmentsUsages(1: Source owner, 2: set<string> attachmentContentIds, 3: UsageData filter);
+
+    /**
      * Returns the number of usages for set of attachments, optionally filtered by usage type.
      * If a usage data object is given with a value, the type of the value is used for the filter.
      */
@@ -245,4 +269,19 @@ service AttachmentService {
      * is used for the filter.
      */
     list<AttachmentUsage> getUsedAttachments(1: Source usedBy, 2: UsageData filter);
+
+    /**
+     * Returns attachments based on its attachmentContentId value
+     */
+    list<Attachment> getAttachmentsByIds(1: set<string> ids);
+
+    /**
+     * Returns attachments based on its sha1 value
+     */
+    list<Attachment> getAttachmentsBySha1s(1: set<string> sha1s);
+
+    /**
+     * Returns the sources/owners (project, component, release) of the attachment by attachmentContentId
+     */
+    list<Source> getAttachmentOwnersByIds(1: set<string> ids)
 }

@@ -97,6 +97,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     private static final TSerializer JSON_THRIFT_SERIALIZER = new TSerializer(new TSimpleJSONProtocol.Factory());
 
     // Component view datatables, index of columns
+    private static final int COMPONENT_NO_SORT = -1;
     private static final int COMPONENT_DT_ROW_VENDOR = 0;
     private static final int COMPONENT_DT_ROW_NAME = 1;
     private static final int COMPONENT_DT_ROW_MAIN_LICENSES = 2;
@@ -461,7 +462,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 request.setAttribute(COMPONENT, component);
                 request.setAttribute(DOCUMENT_ID, id);
 
-                setAttachmentsInRequest(request, component.getAttachments());
+                setAttachmentsInRequest(request, component);
                 Map<RequestedAction, Boolean> permissions = component.getPermissions();
                 DocumentState documentState = component.getDocumentState();
 
@@ -477,7 +478,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 Component component = new Component();
                 request.setAttribute(COMPONENT, component);
                 setUsingDocs(request, user, null, component.getReleaseIds());
-                setAttachmentsInRequest(request, component.getAttachments());
+                setAttachmentsInRequest(request, component);
                 SessionMessages.add(request, "request_processed", "New Component");
             }
         }
@@ -502,7 +503,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 release = client.getReleaseByIdForEdit(releaseId, user);
                 request.setAttribute(RELEASE, release);
                 request.setAttribute(DOCUMENT_ID, releaseId);
-                setAttachmentsInRequest(request, release.getAttachments());
+                setAttachmentsInRequest(request, release);
 
                 putDirectlyLinkedReleaseRelationsInRequest(request, release);
                 Map<RequestedAction, Boolean> permissions = release.getPermissions();
@@ -522,7 +523,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                     release.setClearingState(ClearingState.NEW_CLEARING);
                     request.setAttribute(RELEASE, release);
                     putDirectlyLinkedReleaseRelationsInRequest(request, release);
-                    setAttachmentsInRequest(request, release.getAttachments());
+                    setAttachmentsInRequest(request, release);
                     setUsingDocs(request, null, user, client);
                     SessionMessages.add(request, "request_processed", "New Release");
                 }
@@ -730,7 +731,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 request.setAttribute(COMPONENT, component);
                 request.setAttribute(DOCUMENT_ID, id);
                 request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_COMPONENT);
-                setAttachmentsInRequest(request, component.getAttachments());
+                setAttachmentsInRequest(request, component);
                 Set<String> releaseIds = SW360Utils.getReleaseIds(component.getReleases());
 
                 setUsingDocs(request, user, client, releaseIds);
@@ -791,7 +792,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 request.setAttribute(RELEASE, release);
                 request.setAttribute(DOCUMENT_ID, releaseId);
                 request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_RELEASE);
-                setAttachmentsInRequest(request, release.getAttachments());
+                setAttachmentsInRequest(request, release);
 
                 setUsingDocs(request, releaseId, user, client);
                 putDirectlyLinkedReleaseRelationsInRequest(request, release);
@@ -1057,7 +1058,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
     private void prepareRequestForEditAfterDuplicateError(ActionRequest request, Component component) throws TException {
         request.setAttribute(COMPONENT, component);
-        setAttachmentsInRequest(request, component.getAttachments());
+        setAttachmentsInRequest(request, component);
         request.setAttribute(USING_PROJECTS, Collections.emptySet());
         request.setAttribute(USING_COMPONENTS, Collections.emptySet());
         request.setAttribute(ALL_USING_PROJECTS_COUNT, 0);
@@ -1124,7 +1125,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     private void prepareRequestForReleaseEditAfterDuplicateError(ActionRequest request, Release release) throws TException {
         fillVendor(release);
         request.setAttribute(RELEASE, release);
-        setAttachmentsInRequest(request, release.getAttachments());
+        setAttachmentsInRequest(request, release);
         putDirectlyLinkedReleaseRelationsInRequest(request, release);
         request.setAttribute(USING_PROJECTS, Collections.emptySet());
         request.setAttribute(USING_COMPONENTS, Collections.emptySet());
@@ -1247,9 +1248,10 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     private void serveComponentList(ResourceRequest request, ResourceResponse response) throws PortletException {
         HttpServletRequest originalServletRequest = PortalUtil.getOriginalServletRequest(PortalUtil.getHttpServletRequest(request));
         PaginationParameters paginationParameters = PaginationParser.parametersFrom(originalServletRequest);
+        handlePaginationSortOrder(request, paginationParameters);
         List<Component> componentList = getFilteredComponentList(request);
-        JSONArray jsonComponents = getComponentData(componentList, paginationParameters);
 
+        JSONArray jsonComponents = getComponentData(componentList, paginationParameters);
         JSONObject jsonResult = createJSONObject();
         jsonResult.put(DATATABLE_RECORDS_TOTAL, componentList.size());
         jsonResult.put(DATATABLE_RECORDS_FILTERED, componentList.size());
@@ -1260,6 +1262,17 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         } catch (IOException e) {
             log.error("Problem rendering RequestStatus", e);
             response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "500");
+        }
+    }
+
+    private void handlePaginationSortOrder(ResourceRequest request, PaginationParameters paginationParameters) {
+        if (!paginationParameters.getSortingColumn().isPresent()) {
+            for (Component._Fields filteredField : componentFilteredFields) {
+                if (!isNullOrEmpty(request.getParameter(filteredField.toString()))) {
+                    paginationParameters.setSortingColumn(Optional.of(COMPONENT_NO_SORT));
+                    break;
+                }
+            }
         }
     }
 
@@ -1305,22 +1318,23 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     }
 
     private List<Component> sortComponentList(List<Component> componentList, PaginationParameters componentParameters) {
+        boolean isAsc = componentParameters.isAscending().orElse(true);
 
-        switch (componentParameters.getSortingColumn()) {
+        switch (componentParameters.getSortingColumn().orElse(COMPONENT_DT_ROW_NAME)) {
             case COMPONENT_DT_ROW_VENDOR:
-                Collections.sort(componentList, compareByVendor(componentParameters.isAscending()));
+                Collections.sort(componentList, compareByVendor(isAsc));
                 break;
             case COMPONENT_DT_ROW_NAME:
-                Collections.sort(componentList, compareByName(componentParameters.isAscending()));
+                Collections.sort(componentList, compareByName(isAsc));
                 break;
             case COMPONENT_DT_ROW_MAIN_LICENSES:
-                Collections.sort(componentList, compareByMainLicenses(componentParameters.isAscending()));
+                Collections.sort(componentList, compareByMainLicenses(isAsc));
                 break;
             case COMPONENT_DT_ROW_TYPE:
-                Collections.sort(componentList, compareByComponentType(componentParameters.isAscending()));
+                Collections.sort(componentList, compareByComponentType(isAsc));
                 break;
             case COMPONENT_DT_ROW_ACTION:
-                Collections.sort(componentList, compareById(componentParameters.isAscending()));
+                Collections.sort(componentList, compareById(isAsc));
                 break;
             default:
                 break;

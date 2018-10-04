@@ -22,10 +22,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Source;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
-import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
-import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
+import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.hamcrest.Matchers;
@@ -200,6 +197,34 @@ public class AttachmentHandlerTest {
 
         Assert.assertThat(handler.getAttachmentUsages(Source.releaseId("r1"), "a11", UsageData.licenseInfo(new LicenseInfoUsage())),
                 Matchers.containsInAnyOrder(usage1, usage5));
+    }
+
+    @Test
+    public void testGetAttachmentsUsages() throws Exception {
+        AttachmentUsage usage1 = createUsage("p1", "r1", "a11");
+        AttachmentUsage usage2 = createUsage("p1", "r1", "a12");
+        AttachmentUsage usage3 = createUsage("p2", "r2", "a21");
+        AttachmentUsage usage4 = createUsage("p3", "r1", "a11");
+        AttachmentUsage usage5 = createUsage("p4", "r1", "a11");
+        handler.makeAttachmentUsages(Lists.newArrayList(usage1, usage2, usage3, usage4, usage5));
+
+        Assert.assertThat(handler.getAttachmentsUsages(Source.releaseId("r1"), ImmutableSet.of("a11", "a12"), null),
+                Matchers.containsInAnyOrder(usage1, usage2, usage4, usage5));
+        Assert.assertThat(handler.getAttachmentsUsages(Source.releaseId("r1"), Collections.emptySet(), null),
+                Matchers.empty());
+    }
+
+    @Test
+    public void testGetAttachmentsUsagesWithFilter() throws Exception {
+        AttachmentUsage usage1 = createUsage("p1", "r1", "a11", UsageData.licenseInfo(new LicenseInfoUsage()));
+        AttachmentUsage usage2 = createUsage("p1", "r1", "a12", UsageData.licenseInfo(new LicenseInfoUsage()));
+        AttachmentUsage usage3 = createUsage("p2", "r2", "a21");
+        AttachmentUsage usage4 = createUsage("p3", "r1", "a13", UsageData.manuallySet(new ManuallySetUsage()));
+        AttachmentUsage usage5 = createUsage("p4", "r1", "a11", UsageData.licenseInfo(new LicenseInfoUsage()));
+        handler.makeAttachmentUsages(Lists.newArrayList(usage1, usage2, usage3, usage4, usage5));
+
+        Assert.assertThat(handler.getAttachmentsUsages(Source.releaseId("r1"), ImmutableSet.of("a11", "a12", "a13"), UsageData.licenseInfo(new LicenseInfoUsage())),
+                Matchers.containsInAnyOrder(usage1, usage2, usage5));
     }
 
     @Test

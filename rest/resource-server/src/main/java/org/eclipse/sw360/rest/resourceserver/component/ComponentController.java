@@ -1,6 +1,6 @@
 /*
  * Copyright Siemens AG, 2017-2018.
- * Copyright Bosch Software Innovations GmbH, 2017.
+ * Copyright Bosch Software Innovations GmbH, 2017-2018.
  * Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -10,18 +10,24 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
+
 package org.eclipse.sw360.rest.resourceserver.component;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.resourcelists.*;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
+import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
@@ -29,6 +35,8 @@ import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
+import org.springframework.data.domain.Pageable;
+import org.springframework.hateoas.PagedResources;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.ResourceProcessor;
 import org.springframework.hateoas.Resources;
@@ -54,6 +62,7 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ComponentController implements ResourceProcessor<RepositoryLinksResource> {
     public static final String COMPONENTS_URL = "/components";
+    private static final Logger log = Logger.getLogger(ComponentController.class);
 
     @NonNull
     private final Sw360ComponentService componentService;
@@ -70,28 +79,38 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
     @NonNull
     private final RestControllerHelper restControllerHelper;
 
+    @NonNull
+    private final ResourceListController resourceListController = new ResourceListController();
+
     @RequestMapping(value = COMPONENTS_URL, method = RequestMethod.GET)
-    public ResponseEntity<Resources<Resource<Component>>> getComponents(@RequestParam(value = "name", required = false) String name,
+    public ResponseEntity<Resources<Resource<Component>>> getComponents(Pageable pageable,
+                                                                        @RequestParam(value = "name", required = false) String name,
                                                                         @RequestParam(value = "type", required = false) String componentType,
-                                                                        OAuth2Authentication oAuth2Authentication) throws TException {
+                                                                        @RequestParam(value = "fields", required = false) List<String> fields,
+                                                                        OAuth2Authentication oAuth2Authentication) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
-        List<Component> sw360Components = new ArrayList<>();
+
+        List<Component> allComponents = new ArrayList<>();
         if (name != null && !name.isEmpty()) {
-            sw360Components.addAll(componentService.searchComponentByName(name));
+            allComponents.addAll(componentService.searchComponentByName(name));
         } else {
-            sw360Components.addAll(componentService.getComponentsForUser(sw360User));
+            allComponents.addAll(componentService.getComponentsForUser(sw360User));
         }
 
+        PaginationOptions paginationOptions = restControllerHelper.paginationOptionsFromPageable(pageable, SW360Constants.TYPE_COMPONENT);
+        PaginationResult paginationResult = resourceListController.applyPagingToList(allComponents, paginationOptions);
+        allComponents = paginationResult.getResources();
+
         List<Resource<Component>> componentResources = new ArrayList<>();
-        sw360Components.stream()
+        allComponents.stream()
                 .filter(component -> componentType == null || componentType.equals(component.componentType.name()))
                 .forEach(c -> {
-                    Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c);
+                    Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c, fields);
                     componentResources.add(new Resource<>(embeddedComponent));
                 });
 
-        Resources<Resource<Component>> resources = new Resources<>(componentResources);
+        PagedResources<Resource<Component>> resources = restControllerHelper.generatePagesResource(paginationResult, componentResources);
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
@@ -102,6 +121,39 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
         Component sw360Component = componentService.getComponentForUserById(id, user);
         HalResource<Component> userHalResource = createHalComponent(sw360Component, user);
         return new ResponseEntity<>(userHalResource, HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = COMPONENTS_URL + "/{id}", method = RequestMethod.PATCH)
+    public ResponseEntity<Resource<Component>> patchComponent(
+            @PathVariable("id") String id,
+            @RequestBody Component updateComponent,
+            OAuth2Authentication oAuth2Authentication) throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
+        Component sw360Component = componentService.getComponentForUserById(id, user);
+        sw360Component = this.restControllerHelper.updateComponent(sw360Component, updateComponent);
+        componentService.updateComponent(sw360Component, user);
+        HalResource<Component> userHalResource = createHalComponent(sw360Component, user);
+        return new ResponseEntity<>(userHalResource, HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = COMPONENTS_URL + "/{ids}", method = RequestMethod.DELETE)
+    public ResponseEntity<List<MultiStatus>> deleteComponents(
+            @PathVariable("ids") List<String> idsToDelete, OAuth2Authentication oAuth2Authentication) throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
+        List<MultiStatus> results = new ArrayList<>();
+        for(String id:idsToDelete) {
+            RequestStatus requestStatus = componentService.deleteComponent(id, user);
+            if(requestStatus == RequestStatus.SUCCESS) {
+                results.add(new MultiStatus(id, HttpStatus.OK));
+            } else if(requestStatus == RequestStatus.IN_USE) {
+                results.add(new MultiStatus(id, HttpStatus.CONFLICT));
+            } else {
+                results.add(new MultiStatus(id, HttpStatus.INTERNAL_SERVER_ERROR));
+            }
+        }
+        return new ResponseEntity<>(results, HttpStatus.MULTI_STATUS);
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
@@ -133,6 +185,16 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
                 .buildAndExpand(sw360Component.getId()).toUri();
 
         return ResponseEntity.created(location).body(halResource);
+    }
+
+    @RequestMapping(value = COMPONENTS_URL + "/{id}/attachments", method = RequestMethod.GET)
+    public ResponseEntity<Resources<Resource<Attachment>>> getComponentAttachments(
+            @PathVariable("id") String id,
+            OAuth2Authentication oAuth2Authentication) throws TException {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
+        final Component sw360Component = componentService.getComponentForUserById(id, sw360User);
+        final Resources<Resource<Attachment>> resources = attachmentService.getResourcesFromList(sw360Component.getAttachments());
+        return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
     @RequestMapping(value = COMPONENTS_URL + "/{componentId}/attachments", method = RequestMethod.POST, consumes = {"multipart/mixed", "multipart/form-data"})
@@ -197,6 +259,10 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
             Set<String> vendors = sw360Component.getVendorNames();
             restControllerHelper.addEmbeddedVendors(halComponent, vendors);
             sw360Component.setVendorNames(null);
+        }
+
+        if (sw360Component.getAttachments() != null) {
+            restControllerHelper.addEmbeddedAttachments(halComponent, sw360Component.getAttachments());
         }
 
         restControllerHelper.addEmbeddedUser(halComponent, user, "createdBy");

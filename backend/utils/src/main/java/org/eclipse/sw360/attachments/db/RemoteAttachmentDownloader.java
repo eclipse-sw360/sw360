@@ -15,6 +15,7 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
+import org.eclipse.sw360.datahandler.db.AttachmentContentRepository;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.apache.log4j.Logger;
@@ -47,9 +48,9 @@ public class RemoteAttachmentDownloader {
 
     public static int retrieveRemoteAttachments(Supplier<HttpClient> httpClient, String dbAttachments, Duration downloadTimeout) throws MalformedURLException {
         AttachmentConnector attachmentConnector = new AttachmentConnector(httpClient, dbAttachments, downloadTimeout);
-        AttachmentRepository attachmentRepository = new AttachmentRepository(new DatabaseConnector(httpClient, dbAttachments));
+        AttachmentContentRepository attachmentContentRepository = new AttachmentContentRepository(new DatabaseConnector(httpClient, dbAttachments));
 
-        List<AttachmentContent> remoteAttachments = attachmentRepository.getOnlyRemoteAttachments();
+        List<AttachmentContent> remoteAttachments = attachmentContentRepository.getOnlyRemoteAttachments();
         log.info(format("we have %d remote attachments to retrieve", remoteAttachments.size()));
 
         int count = 0;

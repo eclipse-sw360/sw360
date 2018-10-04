@@ -125,6 +125,8 @@
 <core_rt:set var="customMap" value="${component.roles}"/>
 <%@include file="/html/utils/includes/mapEdit.jspf" %>
 
+<core_rt:set var="CODESCOOP_URL" value="<%=PortalConstants.CODESCOOP_URL%>"/>
+<core_rt:set var="CODESCOOP_TOKEN" value="<%=PortalConstants.CODESCOOP_TOKEN%>"/>
 <!-- Adding similar component popup for new component case -->
 <script>
     require([ 'modules/linkListDialog' ], function(linkListDialog) {
@@ -136,6 +138,8 @@
             checkComponentNameParamKey = '<portlet:namespace/><%=PortalConstants.COMPONENT_NAME%>',
             openOnBlurOfElementId = '#comp_name';
 
+        <core_rt:if test="${empty CODESCOOP_URL || empty CODESCOOP_TOKEN}">
         linkListDialog.registerLinkListDialog(openOnBlurOfElementId, checkComponentNameUrl, checkComponentNameParamKey);
+        </core_rt:if>
     });
 </script>

@@ -9,7 +9,7 @@
  * http://www.eclipse.org/legal/epl-v10.html
  */
 
-package org.eclipse.sw360.attachments.db;
+package org.eclipse.sw360.datahandler.db;
 
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
@@ -38,9 +38,9 @@ import java.util.stream.Collectors;
         @View(name = "all", map = "function(doc) { if (doc.type == 'attachment') emit(null, doc._id) }"),
         @View(name = "onlyRemotes", map = "function(doc) { if(doc.type == 'attachment' && doc.onlyRemote) { emit(null, doc) } }")
 })
-public class AttachmentRepository extends DatabaseRepository<AttachmentContent> {
+public class AttachmentContentRepository extends DatabaseRepository<AttachmentContent> {
 
-    public AttachmentRepository(DatabaseConnector db) {
+    public AttachmentContentRepository(DatabaseConnector db) {
         super(AttachmentContent.class, db);
 
         initStandardDesignDocument();

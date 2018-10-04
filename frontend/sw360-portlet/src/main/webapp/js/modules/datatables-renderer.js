@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017.
+ * Copyright Siemens AG, 2017-2018.
  * Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -242,16 +242,17 @@ define('modules/datatables-renderer', ['jquery', /* jquery-plugins */ 'datatable
      *   <li>icon:        name of the icon to be shown, e.g. "Trash"
      *   <li>title:       Title to be shown on mouse over or if the icon could not be found</li>
      *   <li>approvalKey: Will be set as "data-approval-state" attribute. This allows to decide whether an attachment is deletable.</li>
+     *   <li>usageCountsKey: Will be set as "data-usages-count" attribute. This allows to decide whether an attachment is deletable.</li>
      * </ol>
      *
      * @param {Array} actions the actions as defined before
      *
      * @return {Function} render function for DataTable
      *
-     * Example usage in column definition: <code>..., renderer: $.fn.dataTable.render.actions( [{ key: 'attachmentContentId', 'class': 'delete-attachment', icon: 'Trash', title: 'Delete Attachment', approvalKey: 'checkStatus' }] ), ...</code>
+     * Example usage in column definition: <code>..., renderer: $.fn.dataTable.render.actions( [{ key: 'attachmentContentId', 'class': 'delete-attachment', icon: 'Trash', title: 'Delete Attachment', approvalKey: 'checkStatus', usageCountsKey: 'usageCounts' }] ), ...</code>
      */
     $.fn.dataTable.render.actions = function(actions) {
-        return function(data, type, row) {
+        return function(data, type, row, meta) {
             var actionsHtml = '';
             if(type === 'display') {
                 actions.forEach(function(action) {
@@ -261,7 +262,8 @@ define('modules/datatables-renderer', ['jquery', /* jquery-plugins */ 'datatable
                         alt: action.title,
                         title: action.title,
                         'data-key': row[action.key],
-                        'data-approvalstate': row[action.approvalKey]
+                        'data-approvalstate': row[action.approvalKey],
+                        'data-usages-count': meta.settings.json[action.usageCountsKey][row.attachmentContentId]
                     })[0].outerHTML;
                 });
                 return actionsHtml;

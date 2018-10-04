@@ -15,6 +15,7 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
+import org.eclipse.sw360.datahandler.db.AttachmentContentRepository;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -57,7 +58,7 @@ public class RemoteAttachmentDownloaderTest {
     private static final String dbName = DatabaseSettings.COUCH_DB_ATTACHMENTS;
 
     private AttachmentConnector attachmentConnector;
-    private AttachmentRepository repository;
+    private AttachmentContentRepository repository;
 
     private List<String> garbage;
     private Duration downloadTimeout = Duration.durationOf(5, TimeUnit.SECONDS);
@@ -74,7 +75,7 @@ public class RemoteAttachmentDownloaderTest {
     public void setUp() throws Exception {
         DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), dbName);
         attachmentConnector = new AttachmentConnector(DatabaseSettings.getConfiguredHttpClient(), dbName, downloadTimeout);
-        repository = new AttachmentRepository(databaseConnector);
+        repository = new AttachmentContentRepository(databaseConnector);
 
         garbage = new ArrayList<>();
     }

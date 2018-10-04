@@ -76,7 +76,21 @@
       </label>
     </td>
 
-    <td width="33%"></td>
+    <td width="33%">
+      <label class="checkboxlabel" for="isChecked">
+        <input type="checkbox"
+               name="<portlet:namespace/><%=License._Fields.CHECKED%>"
+               value="true"
+               id="isChecked"
+               <core_rt:if test="${isUserAtLeastClearingAdmin == 'Yes' && licenseDetail.checked == true}">
+                 checked="checked"
+               </core_rt:if>
+               <core_rt:if test="${isUserAtLeastClearingAdmin != 'Yes' || (licenseDetail.id != null && licenseDetail.checked == true)}">
+                 disabled="disabled"
+               </core_rt:if> />
+        is checked
+      </label>
+    </td>
   </tr>
 
 </table>

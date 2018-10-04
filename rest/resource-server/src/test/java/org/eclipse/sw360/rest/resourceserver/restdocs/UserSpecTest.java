@@ -21,10 +21,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.List;
 
 import static org.mockito.BDDMockito.given;
@@ -112,7 +110,6 @@ public class UserSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("self").description("The <<resources-users,User resource>>")
                         ),
                         responseFields(
-                                fieldWithPath("id").description("The user's id"),
                                 fieldWithPath("email").description("The user's email"),
                                 fieldWithPath("userGroup").description("The user group, possible values are: " + Arrays.asList(UserGroup.values())),
                                 fieldWithPath("fullName").description("The users's full name"),
@@ -136,7 +133,6 @@ public class UserSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("self").description("The <<resources-users,User resource>>")
                         ),
                         responseFields(
-                                fieldWithPath("id").description("The user's id"),
                                 fieldWithPath("email").description("The user's email"),
                                 fieldWithPath("userGroup").description("The user group, possible values are: " + Arrays.asList(UserGroup.values())),
                                 fieldWithPath("fullName").description("The users's full name"),

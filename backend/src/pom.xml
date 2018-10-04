@@ -2,6 +2,7 @@
 <!--
   ~ Copyright Siemens AG, 2013-2016. Part of the SW360 Portal Project.
   ~ With modifications by Bosch Software Innovations GmbH, 2016.
+  ~ With modifacations by Verifa Oy, 2018.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -38,6 +39,7 @@
         <module>src-licenseinfo</module>
         <module>src-cvesearch</module>
         <module>src-schedule</module>
+        <module>src-wsimport</module>
     </modules>
 
 

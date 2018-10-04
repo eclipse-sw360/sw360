@@ -15,19 +15,20 @@ package org.eclipse.sw360.rest.resourceserver.project;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
+import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -51,6 +52,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.util.FileCopyUtils;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -61,7 +63,6 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
@@ -70,6 +71,7 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ProjectController implements ResourceProcessor<RepositoryLinksResource> {
     public static final String PROJECTS_URL = "/projects";
+    private static final Logger log = Logger.getLogger(ProjectController.class);
 
     @NonNull
     private final Sw360ProjectService projectService;
@@ -298,6 +300,16 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         FileCopyUtils.copy(byteContent, response.getOutputStream());
     }
 
+    @RequestMapping(value = PROJECTS_URL + "/{id}/attachments", method = RequestMethod.GET)
+    public ResponseEntity<Resources<Resource<Attachment>>> getProjectAttachments(
+            @PathVariable("id") String id,
+            OAuth2Authentication oAuth2Authentication) throws TException {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
+        final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+        final Resources<Resource<Attachment>> resources = attachmentService.getResourcesFromList(sw360Project.getAttachments());
+        return new ResponseEntity<>(resources, HttpStatus.OK);
+    }
+
     @RequestMapping(value = PROJECTS_URL + "/{projectId}/attachments/{attachmentId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public void downloadAttachmentFromProject(
             @PathVariable("projectId") String projectId,
@@ -358,6 +370,29 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         return new ResponseEntity<>(halResource, HttpStatus.OK);
     }
 
+    @RequestMapping(value = PROJECTS_URL + "/searchByExternalIds", method = RequestMethod.GET)
+    public ResponseEntity searchByExternalIds(OAuth2Authentication oAuth2Authentication,
+                                              @RequestParam MultiValueMap<String, String> externalIdsMultiMap) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
+        List<Resource<Project>> projectResources = new ArrayList<>();
+        Map<String, Set<String>> externalIds = new HashMap<>();
+
+        for (String externalIdKey : externalIdsMultiMap.keySet()) {
+            externalIds.put(externalIdKey, new HashSet<>(externalIdsMultiMap.get(externalIdKey)));
+        }
+
+        Set<Project> sw360Projects = projectService.searchByExternalIds(externalIds, sw360User);
+        sw360Projects.stream().forEach(p -> {
+            Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
+            embeddedProject.setExternalIds(p.getExternalIds());
+            projectResources.add(new Resource<>(embeddedProject));
+        });
+
+        Resources<Resource<Project>> resources = new Resources<>(projectResources);
+        return new ResponseEntity<>(resources, HttpStatus.OK);
+    }
+
+
     @Override
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
         resource.add(linkTo(ProjectController.class).slash("api" + PROJECTS_URL).withRel("projects"));
@@ -381,6 +416,10 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         if (sw360Project.getModerators() != null) {
             Set<String> moderators = sw360Project.getModerators();
             restControllerHelper.addEmbeddedModerators(halProject, moderators);
+        }
+
+        if (sw360Project.getAttachments() != null) {
+            restControllerHelper.addEmbeddedAttachments(halProject, sw360Project.getAttachments());
         }
 
         return halProject;

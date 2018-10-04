@@ -19,20 +19,63 @@ The Releases resource is used to create and list releases.
 A `GET` request will list all of the service's releases.
 
 ===== Response structure
-
 include::{snippets}/should_document_get_releases/response-fields.adoc[]
 
 ===== Example request
-
 include::{snippets}/should_document_get_releases/curl-request.adoc[]
 
 ===== Example response
-
 include::{snippets}/should_document_get_releases/http-response.adoc[]
 
 ===== Links
-
 include::{snippets}/should_document_get_releases/links.adoc[]
+
+
+[[resources-releases-list-with-fields]]
+==== Listing releases with fields
+
+A `GET` request will list all of the service's releases. The `fields` parameter defines which component object properties should be contained in the response.
+
+===== Response structure
+include::{snippets}/should_document_get_releases_with_fields/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_releases_with_fields/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_releases_with_fields/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_releases_with_fields/links.adoc[]
+
+
+[[resources-release-attachment-info-get]]
+==== Listing attachment info
+
+A `GET` request will get all attachment information of a release.
+
+===== Response structure
+include::{snippets}/should_document_get_release_attachment_info/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_release_attachment_info/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_release_attachment_info/http-response.adoc[]
+
+
+[[resources-release-attachment-get]]
+==== Download attachment
+
+A `GET` request will allow you to download an attachment of a release. +
+Please set the Accept-Header `application/*`. Only this Accept-Header is supported.
+
+===== Example request
+include::{snippets}/should_document_get_release_attachment/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_release_attachment/http-response.adoc[]
+
 
 [[resources-release-get]]
 ==== Get a single release
@@ -40,38 +83,46 @@ include::{snippets}/should_document_get_releases/links.adoc[]
 A `GET` request will get a single release.
 
 ===== Response structure
-
 include::{snippets}/should_document_get_release/response-fields.adoc[]
 
 ===== Example request
-
 include::{snippets}/should_document_get_release/curl-request.adoc[]
 
 ===== Example response
-
 include::{snippets}/should_document_get_release/http-response.adoc[]
 
 ===== Links
-
 include::{snippets}/should_document_get_release/links.adoc[]
 
 
-////
-[[resources-releases-create]]
-==== Creating a release
+[[resources-release-update]]
+==== Update a release
 
-A `POST` request is used to create a release
+A `PATCH` request is used to update an existing release
 
-===== Request structure
-
-include::{snippets}/should_document_create_release/request-fields.adoc[]
+===== Response structure
+include::{snippets}/should_document_update_release/response-fields.adoc[]
 
 ===== Example request
-
-include::{snippets}/should_document_create_release/curl-request.adoc[]
+include::{snippets}/should_document_update_release/curl-request.adoc[]
 
 ===== Example response
+include::{snippets}/should_document_update_release/http-response.adoc[]
 
-include::{snippets}/should_document_create_release/http-response.adoc[]
-////
+===== Links
+include::{snippets}/should_document_update_release/links.adoc[]
 
+
+[[resources-release-delete]]
+==== Delete a release
+
+A `DELETE` request is used to delete an existing release
+
+===== Response structure
+include::{snippets}/should_document_delete_releases/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_delete_releases/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_delete_releases/http-response.adoc[]

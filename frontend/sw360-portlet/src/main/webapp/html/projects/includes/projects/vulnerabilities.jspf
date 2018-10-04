@@ -33,11 +33,19 @@
 <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/datatables.net-buttons-dt/1.1.2/css/buttons.dataTables.min.css"/>
 <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/datatables.net-select-bs/1.2.2/css/select.bootstrap.min.css"/>
 
-<p>Security Vulnerability Monitoring:
+<p>
+    <span>Security Vulnerability Monitoring:
         <span
             <core_rt:if test="${project.enableSvm}">class="notificationBulletInline backgroundOK">enabled</core_rt:if>
             <core_rt:if test="${not project.enableSvm}">class="notificationBulletInline backgroundGrey">disabled</core_rt:if>
         </span>
+    </span>
+    <span>Security Vulnerabilities Display:
+        <span
+            <core_rt:if test="${project.enableVulnerabilitiesDisplay}">class="notificationBulletInline backgroundOK">enabled</core_rt:if>
+            <core_rt:if test="${not project.enableVulnerabilitiesDisplay}">class="notificationBulletInline backgroundGrey">disabled</core_rt:if>
+        </span>
+    </span>
 </p>
 <p>
     Showing
@@ -47,7 +55,8 @@
         <option value="1000" <core_rt:if test="${viewSize == 1000}">selected</core_rt:if>>1000 latest</option>
         <option value="-1" <core_rt:if test="${viewSize == -1}">selected</core_rt:if>>All</option>
     </select>
-    vulnerabilities out of ${numberOfVulnerabilities} in total.
+    vulnerabilities out of <core_rt:if test="${project.enableVulnerabilitiesDisplay}">${numberOfVulnerabilities}</core_rt:if>
+    <core_rt:if test="${not project.enableVulnerabilitiesDisplay}">?</core_rt:if> in total.
 </p>
 <div id="vulnerabilityTableDiv">
     <form>
@@ -114,6 +123,7 @@
         function createVulnerabilityTable() {
             var result = [];
 
+            <core_rt:if test="${project.enableVulnerabilitiesDisplay}">
             <core_rt:forEach items="${vulnerabilityList}" var="vulnerability">
             result.push({
                 "DT_RowId": "${vulnerability.id}",
@@ -130,6 +140,7 @@
                 "intReleaseId": "<sw360:out value="${vulnerability.intReleaseId}"/>"
             });
             </core_rt:forEach>
+            </core_rt:if>
 
             vulnerabilityTable = $('#vulnerabilityTable').DataTable({
                 <core_rt:if test="${vulnerabilityRatingsEditable}">
@@ -159,6 +170,11 @@
                     select: {
                         style: 'multi+shift'
                     },
+                </core_rt:if>
+                <core_rt:if test="${not project.enableVulnerabilitiesDisplay}">
+                "language": {
+                    "emptyTable": "Vulnerabilities display is disabled in this project"
+                },
                 </core_rt:if>
                 pagingType: "simple_numbers",
                 "data": result,

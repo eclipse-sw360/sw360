@@ -129,6 +129,19 @@
 
     <jsp:include page="/html/utils/includes/searchAndSelectUsers.jsp" />
     <jsp:include page="/html/utils/includes/searchUsers.jsp" />
+
+    <c:set var="CODESCOOP_URL" value="<%=PortalConstants.CODESCOOP_URL%>"/>
+    <c:set var="CODESCOOP_TOKEN" value="<%=PortalConstants.CODESCOOP_TOKEN%>"/>
+    <c:if test="${not empty CODESCOOP_URL && not empty CODESCOOP_TOKEN}">
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                require(['modules/codeScoop' ], function(codeScoop) {
+                    var api = new codeScoop('<%=PortalConstants.CODESCOOP_URL%>', '<%=PortalConstants.CODESCOOP_TOKEN%>');
+                    api.activateAutoFill();
+                });
+            });
+        </script>
+    </c:if>
 </core_rt:if>
 
 <script>

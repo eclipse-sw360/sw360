@@ -1,6 +1,6 @@
 /*
  * Copyright Siemens AG, 2017-2018.
- * Copyright Bosch Software Innovations GmbH, 2017.
+ * Copyright Bosch Software Innovations GmbH, 2017-2018.
  * Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -67,6 +67,11 @@ public class Sw360ComponentService {
             throw new RuntimeException("sw360 component with name '" + component.getName() + " cannot be updated.");
         }
         return requestStatus;
+    }
+
+    public RequestStatus deleteComponent(String componentId, User sw360User) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        return sw360ComponentClient.deleteComponent(componentId, sw360User);
     }
 
     public List<Component> searchComponentByName(String name) throws TException {

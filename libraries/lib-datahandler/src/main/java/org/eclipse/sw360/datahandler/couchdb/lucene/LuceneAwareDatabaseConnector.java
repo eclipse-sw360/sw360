@@ -53,6 +53,8 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
 
     private final DatabaseConnector connector;
 
+    private static final List<String> LUCENE_SPECIAL_CHARACTERS = Arrays.asList("[\\\\\\+\\-\\!\\~\\*\\?\\^\\:\\(\\)\\{\\}\\[\\]]", "\\&\\&", "\\|\\|");
+
     /**
      * Maximum number of results to return
      */
@@ -91,7 +93,7 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
     /**
      * Search with lucene using the previously declared search function only for ids
      */
-    public <T> Set<String> searchIds(Class<T> type, LuceneSearchView function, String queryString) {
+    public <T> List<String> searchIds(Class<T> type, LuceneSearchView function, String queryString) {
         LuceneResult queryLuceneResult = searchView(function, queryString, false);
         return getIdsFromResult(queryLuceneResult);
     }
@@ -144,8 +146,8 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
     // HELPER METHODS //
     ////////////////////
 
-    private static Set<String> getIdsFromResult(LuceneResult result) {
-        Set<String> ids = new HashSet<>();
+    private static List<String> getIdsFromResult(LuceneResult result) {
+        List<String> ids = new ArrayList<>();
         if (result != null) {
             for (LuceneResult.Row row : result.getRows()) {
                 ids.add(row.getId());
@@ -162,7 +164,7 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
         List <String> subQueries = new ArrayList<>();
         for (Map.Entry<String, Set<String>> restriction : subQueryRestrictions.entrySet()) {
 
-            final Set<String> filterSet =restriction.getValue();
+            final Set<String> filterSet = restriction.getValue();
 
             if (!filterSet.isEmpty()) {
                 final String fieldName = restriction.getKey();
@@ -192,7 +194,7 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
                 return fieldName + ":\"" + (enumByString(input, ProjectState.class).toString()) + "\"";
             } else if (fieldName.equals("projectType")) {
                 return fieldName + ":\"" + (enumByString(input, ProjectType.class).toString()) + "\"";
-            } else if (input.contains(" ")){
+            } else if (fieldName.equals("businessUnit") || fieldName.equals("tag")) {
                 return fieldName + ":\"" + input + "\"";
             } else {
                 return fieldName + ":" + input;
@@ -204,7 +206,11 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
     }
 
     public static String prepareWildcardQuery(String query) {
-        return sanitizeQueryInput(query) + "*";
+        if (DatabaseSettings.LUCENE_LEADING_WILDCARD) {
+            return "*" + sanitizeQueryInput(query) + "*";
+        } else {
+            return sanitizeQueryInput(query) + "*";
+        }
     }
 
     public static String prepareFuzzyQuery(String query) {
@@ -212,8 +218,13 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
     }
 
     private static String sanitizeQueryInput(String input) {
-        // p{L}:  matches any kind of letter from any language, such as accented character (é ä î...)
-        // p{nD}: matches a digit zero through nine in any script except ideographic scripts.
-        return nullToEmpty(input).replaceAll("[^\\p{L}\\p{Nd}]+", " ").trim();
+        if (isNullOrEmpty(input)) {
+            return nullToEmpty(input);
+        } else {
+            for (String removeStr : LUCENE_SPECIAL_CHARACTERS) {
+                input = input.replaceAll(removeStr, " ");
+            }
+            return input.trim();
+        }
     }
 }

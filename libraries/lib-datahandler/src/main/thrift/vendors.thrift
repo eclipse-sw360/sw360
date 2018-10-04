@@ -55,7 +55,7 @@ service VendorService {
     /**
      * get set of vendorIds whose fullname or shortname starts with searchText
      **/
-    set<string> searchVendorIds(1: string searchText);
+    list<string> searchVendorIds(1: string searchText);
 
     /**
      * write vendor to database and return id

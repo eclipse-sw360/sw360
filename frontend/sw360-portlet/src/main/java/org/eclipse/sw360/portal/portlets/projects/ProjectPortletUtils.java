@@ -16,12 +16,9 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
-import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.*;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
-import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
-import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
+import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -35,13 +32,18 @@ import org.eclipse.sw360.portal.common.CustomFieldHelper;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.common.PortletUtils;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
+import org.jetbrains.annotations.NotNull;
 
 import javax.portlet.PortletRequest;
 import javax.portlet.ResourceRequest;
 import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static org.eclipse.sw360.portal.common.PortalConstants.CUSTOM_FIELD_PROJECT_GROUP_FILTER;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.arrayToList;
+import static org.eclipse.sw360.portal.common.PortalConstants.*;
 
 /**
  * Component portlet implementation
@@ -91,8 +93,10 @@ public class ProjectPortletUtils {
 
                 case ROLES:
                     project.setRoles(PortletUtils.getCustomMapFromRequest(request));
+                    break;
                 case EXTERNAL_IDS:
                     project.setExternalIds(PortletUtils.getExternalIdMapFromRequest(request));
+                    break;
                 default:
                     setFieldValue(request, project, field);
             }
@@ -260,7 +264,7 @@ public class ProjectPortletUtils {
     }
 
     public static List<AttachmentUsage> makeAttachmentUsages(Project project, Map<String, Set<String>> selectedReleaseAndAttachmentIds,
-            Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachmentId) {
+                                                             Function<String, UsageData> usageDataGenerator) {
         List<AttachmentUsage> attachmentUsages = Lists.newArrayList();
 
         for(String releaseId : selectedReleaseAndAttachmentIds.keySet()) {
@@ -270,11 +274,8 @@ public class ProjectPortletUtils {
                 usage.setOwner(Source.releaseId(releaseId));
                 usage.setAttachmentContentId(attachmentContentId);
 
-                Set<String> licenseIds = CommonUtils.nullToEmptySet(excludedLicensesPerAttachmentId.get(attachmentContentId)).stream()
-                        .filter(LicenseNameWithText::isSetLicenseName)
-                        .map(LicenseNameWithText::getLicenseName)
-                        .collect(Collectors.toSet());
-                usage.setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(licenseIds)));
+                UsageData usageData = usageDataGenerator.apply(attachmentContentId);
+                usage.setUsageData(usageData);
 
                 attachmentUsages.add(usage);
             }
@@ -306,5 +307,105 @@ public class ProjectPortletUtils {
         }
 
         return attachments;
+    }
+
+    public static List<AttachmentUsage> deselectedAttachmentUsagesFromRequest(ResourceRequest request) {
+        return makeAttachmentUsagesFromRequestParameters(request, Sets::difference);
+    }
+
+    public static List<AttachmentUsage> selectedAttachmentUsagesFromRequest(ResourceRequest request) {
+        return makeAttachmentUsagesFromRequestParameters(request, Sets::intersection);
+    }
+
+    private static List<AttachmentUsage> makeAttachmentUsagesFromRequestParameters(ResourceRequest request, BiFunction<Set<String>, Set<String>, Set<String>> computeUsagesFromCheckboxes) {
+        final String projectId = request.getParameter(PROJECT_ID);
+        Set<String> selectedUsages = new HashSet<>(arrayToList(request.getParameterValues(PROJECT_SELECTED_ATTACHMENT_USAGES)));
+        Set<String> changedUsages = new HashSet<>(arrayToList(request.getParameterValues(PROJECT_SELECTED_ATTACHMENT_USAGES_SHADOWS)));
+        Set<String> usagesSubset = computeUsagesFromCheckboxes.apply(changedUsages, selectedUsages);
+        return usagesSubset.stream()
+                .map(s -> parseAttachmentUsageFromString(projectId, s))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    private static AttachmentUsage parseAttachmentUsageFromString(String projectId, String s) {
+        String[] split = s.split("_");
+        if (split.length != 3) {
+            log.warn(String.format("cannot parse attachment usage from %s for project id %s", s, projectId));
+            return null;
+        }
+
+        String releaseId = split[0];
+        String type = split[1];
+        String attachmentContentId = split[2];
+
+        AttachmentUsage usage = new AttachmentUsage(Source.releaseId(releaseId), attachmentContentId, Source.projectId(projectId));
+        final UsageData usageData;
+        switch (UsageData._Fields.findByName(type)) {
+            case LICENSE_INFO:
+                usageData = UsageData.licenseInfo(new LicenseInfoUsage(Collections.emptySet()));
+                break;
+            case SOURCE_PACKAGE:
+                usageData = UsageData.sourcePackage(new SourcePackageUsage());
+                break;
+            case MANUALLY_SET:
+                usageData = UsageData.manuallySet(new ManuallySetUsage());
+                break;
+            default:
+                throw new IllegalArgumentException("Unexpected UsageData type: " + type);
+        }
+        usage.setUsageData(usageData);
+        return usage;
+    }
+
+    /**
+     * Here, "equivalent" means an AttachmentUsage should replace another one in the DB, not that they are equal.
+     * I.e, they have the same attachmentContentId, owner, usedBy, and same UsageData type.
+     */
+    @NotNull
+    static Predicate<AttachmentUsage> isUsageEquivalent(AttachmentUsage usage) {
+        return equivalentUsage -> usage.getAttachmentContentId().equals(equivalentUsage.getAttachmentContentId()) &&
+                usage.getOwner().equals(equivalentUsage.getOwner()) &&
+                usage.getUsedBy().equals(equivalentUsage.getUsedBy()) &&
+                usage.getUsageData().getSetField().equals(equivalentUsage.getUsageData().getSetField());
+    }
+
+    static AttachmentUsage mergeAttachmentUsages(AttachmentUsage u1, AttachmentUsage u2) {
+        if (u1.getUsageData() == null) {
+            if (u2.getUsageData() == null) {
+                return u1;
+            } else {
+                throw new IllegalArgumentException("Cannot merge attachment usages of different usage types");
+            }
+        } else {
+            if (!u1.getUsageData().getSetField().equals(u2.getUsageData().getSetField())) {
+                throw new IllegalArgumentException("Cannot merge attachment usages of different usage types");
+            }
+        }
+        AttachmentUsage mergedUsage = u1.deepCopy();
+        switch (u1.getUsageData().getSetField()) {
+            case LICENSE_INFO:
+                mergedUsage.getUsageData().getLicenseInfo().setExcludedLicenseIds(
+                        Sets.union(Optional.of(u1)
+                                        .map(AttachmentUsage::getUsageData)
+                                        .map(UsageData::getLicenseInfo)
+                                        .map(LicenseInfoUsage::getExcludedLicenseIds)
+                                        .orElse(Collections.emptySet()),
+                                Optional.of(u2)
+                                        .map(AttachmentUsage::getUsageData)
+                                        .map(UsageData::getLicenseInfo)
+                                        .map(LicenseInfoUsage::getExcludedLicenseIds)
+                                        .orElse(Collections.emptySet())));
+                break;
+            case SOURCE_PACKAGE:
+            case MANUALLY_SET:
+                // do nothing
+                // source package and manual usages do not have any information to be merged
+                break;
+            default:
+                throw new IllegalArgumentException("Unexpected UsageData type: " + u1.getUsageData().getSetField());
+        }
+
+        return mergedUsage;
     }
 }

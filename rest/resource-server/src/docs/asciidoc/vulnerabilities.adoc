@@ -19,20 +19,17 @@ The Vulnerabilities resource is used to create and list vulnerabilities.
 A `GET` request will list all of the service's vulnerabilities.
 
 ===== Response structure
-
 include::{snippets}/should_document_get_vulnerabilities/response-fields.adoc[]
 
 ===== Example request
-
 include::{snippets}/should_document_get_vulnerabilities/curl-request.adoc[]
 
 ===== Example response
-
 include::{snippets}/should_document_get_vulnerabilities/http-response.adoc[]
 
 ===== Links
-
 include::{snippets}/should_document_get_vulnerabilities/links.adoc[]
+
 
 [[resources-vulnerabilitie-get]]
 ==== Get a single vulnerability
@@ -40,17 +37,13 @@ include::{snippets}/should_document_get_vulnerabilities/links.adoc[]
 A `GET` request will get a single vulnerability.
 
 ===== Response structure
-
 include::{snippets}/should_document_get_vulnerability/response-fields.adoc[]
 
 ===== Example request
-
 include::{snippets}/should_document_get_vulnerability/curl-request.adoc[]
 
 ===== Example response
-
 include::{snippets}/should_document_get_vulnerability/http-response.adoc[]
 
 ===== Links
-
 include::{snippets}/should_document_get_vulnerability/links.adoc[]

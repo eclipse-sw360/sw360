@@ -131,6 +131,8 @@ public class PortalConstants {
     public static final String CONTEXT_TYPE = "context_type";
     public static final String CONTEXT_ID = "context_id";
     public static final String ATTACHMENT_USAGE_COUNT_MAP = "attachmenUsageCountMap";
+    public static final String ATTACHMENT_USAGES = "attachmentUsages";
+    public static final String ATTACHMENT_USAGES_RESTRICTED_COUNTS = "attachmentUsagesRestrictedCounts";
 
     //! Specialized keys for projects
     public static final String PROJECT_ID = "projectid";
@@ -157,6 +159,12 @@ public class PortalConstants {
     public static final String DEFAULT_LICENSE_INFO_HEADER_TEXT = "defaultLicenseInfoHeaderText";
     public static final String DEFAULT_LICENSE_INFO_HEADER_TEXT_FOR_DISPALY = "--default text--";
     public static final Set<String> PROJECT_EXTERNAL_ID_KEYS;
+    public static final String PROJECT_SELECTED_ATTACHMENT_USAGES = "selectedAttachmentUsages";
+    public static final String PROJECT_SELECTED_ATTACHMENT_USAGES_SHADOWS = "selectedAttachmentUsagesShadows";
+    public static final String LICENSE_INFO_ATTACHMENT_USAGES = "licInfoAttUsages";
+    public static final String SOURCE_CODE_ATTACHMENT_USAGES = "sourceAttUsages";
+    public static final String MANUAL_ATTACHMENT_USAGES = "manualAttUsages";
+
 
     public static final String FOSSOLOGY_FINGER_PRINTS = "fingerPrints";
     public static final String USER_LIST = "userList";
@@ -276,6 +284,8 @@ public class PortalConstants {
     public static final String LINKED_OBJECTS_PREFIX = "load_linked_";
     public static final String LOAD_LINKED_PROJECTS_ROWS = LINKED_OBJECTS_PREFIX + "projects_rows";
     public static final String LOAD_LINKED_RELEASES_ROWS = LINKED_OBJECTS_PREFIX + "releases_rows";
+    public static final String LOAD_ATTACHMENT_USAGES_ROWS = "load_attachment_usages_rows";
+    public static final String SAVE_ATTACHMENT_USAGES = "save_attachment_usages";
     public static final String PARENT_BRANCH_ID = "parent_branch_id";
     public static final String PARENT_SCOPE_GROUP_ID = "parentScopeGroupId";
 
@@ -289,6 +299,7 @@ public class PortalConstants {
     public static final String DOWNLOAD_SOURCE_CODE_BUNDLE = "DownloadSourceCodeBundle";
     public static final String GET_LICENCES_FROM_ATTACHMENT = "GetLicensesFromAttachment";
     public static final String LOAD_LICENSE_INFO_ATTACHMENT_USAGE = "LoadLicenseInfoAttachmentUsage";
+    public static final String LOAD_SOURCE_PACKAGE_ATTACHMENT_USAGE = "LoadSourcePackageAttachmentUsage";
     public static final String LOAD_PROJECT_LIST = "load_project_list";
 
     //component actions
@@ -370,6 +381,10 @@ public class PortalConstants {
     //
     public static String PROJECTIMPORT_HOSTS;
 
+    // CodeScoop integration
+    public static final String CODESCOOP_URL;
+    public static final String CODESCOOP_TOKEN;
+
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);
 
@@ -390,6 +405,9 @@ public class PortalConstants {
         RELEASE_EXTERNAL_ID_KEYS = CommonUtils.splitToSet(props.getProperty("release.externalkeys", "org.maven.id,com.github.id,com.gitlab.id,purl.id"));
         PROJECTIMPORT_HOSTS = props.getProperty("projectimport.hosts", "");
         PREFERRED_COUNTRY_CODES = props.getProperty("preferred.country.codes", "DE,AT,CH,US");
+
+        CODESCOOP_URL = props.getProperty("codescoop.url", "");
+        CODESCOOP_TOKEN = props.getProperty("codescoop.token", "");
     }
 
     private PortalConstants() {

@@ -14,7 +14,7 @@ package org.eclipse.sw360.licenseinfo;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.attachments.db.AttachmentDatabaseHandler;
+import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;

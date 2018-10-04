@@ -10,9 +10,17 @@
   ~ http://www.eclipse.org/legal/epl-v10.html
 --%>
 <table class="table info_table" id="licenseDetailOverview">
-  <thead><tr><th colspan="2">License Details: <sw360:out value="${licenseDetail.fullname}"/> (<sw360:out value="${licenseDetail.shortname}"/>)</th></tr></thead>
+  <thead><tr><th colspan="2">
+    License Details: <sw360:out value="${licenseDetail.fullname}"/> (<sw360:out value="${licenseDetail.shortname}"/>)
+    <core_rt:if test="${licenseDetail.checked != true}">
+      <alert>UNCHECKED</alert>
+    </core_rt:if>
+  </th></tr></thead>
   <tr><td>Fullname:</td><td><sw360:out value="${licenseDetail.fullname}"/></td></tr>
   <tr><td>Shortname:</td><td><sw360:out value="${licenseDetail.shortname}"/></td></tr>
+  <core_rt:if test="${licenseDetail.checked != true}">
+    <tr><td>Is checked:</td><td><b>false</b></td></tr>
+  </core_rt:if>
   <tr><td>Type:</td><td><sw360:out value="${licenseDetail.licenseType.licenseType}"/></td></tr>
   <%--need nested ifs for the yes no because the values can be undefined--%>
   <tr><td>GPL-2.0 compatibility:</td><td><sw360:DisplayEnum value="${licenseDetail.GPLv2Compat}"/></td></tr>
