@@ -31,7 +31,7 @@ class UserResourceProcessor implements ResourceProcessor<Resource<User>> {
     public Resource<User> process(Resource<User> resource) {
         try {
             User user = resource.getContent();
-            Link selfLink = linkTo(UserController.class).slash("api/users/" + URLEncoder.encode(user.getId(), "UTF-8")).withSelfRel();
+            Link selfLink = linkTo(UserController.class).slash("api/users/byid/" + URLEncoder.encode(user.getId(), "UTF-8")).withSelfRel();
             resource.add(selfLink);
             return resource;
         } catch (Exception e) {
