@@ -40,6 +40,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
     private static final String TODO_DEFAULT_TEXT = "todo not determined so far.";
 
     private static final String DOCX_TEMPLATE_FILE = "/templateFrontpageContent.docx";
+    private static final String DOCX_TEMPLATE_REPORT_FILE = "/templateReport.docx";
     private static final String DOCX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     private static final String DOCX_OUTPUT_TYPE = "docx";
 
@@ -50,33 +51,41 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
     @Override
     public byte[] generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, String projectName, String projectVersion, String licenseInfoHeaderText) throws SW360Exception {
         ByteArrayOutputStream docxOutputStream = new ByteArrayOutputStream();
-        Optional<byte[]> docxTemplateFile = CommonUtils.loadResource(DocxGenerator.class, DOCX_TEMPLATE_FILE);
-        if (docxTemplateFile.isPresent()) {
-            try {
-                XWPFDocument xwpfDocument = new XWPFDocument(new ByteArrayInputStream(docxTemplateFile.get()));
-                switch (getOutputVariant()) {
-                    case DISCLOSURE:
+        Optional<byte[]> docxTemplateFile;
+        XWPFDocument xwpfDocument;
+        try {
+            switch (getOutputVariant()) {
+                case DISCLOSURE:
+                    docxTemplateFile = CommonUtils.loadResource(DocxGenerator.class, DOCX_TEMPLATE_FILE);
+                    xwpfDocument = new XWPFDocument(new ByteArrayInputStream(docxTemplateFile.get()));
+                    if (docxTemplateFile.isPresent()) {
                         fillDocument(xwpfDocument, projectLicenseInfoResults, projectName, projectVersion, licenseInfoHeaderText, false);
-                        break;
-                    case REPORT:
+                    } else {
+                        throw new SW360Exception("Could not load the template for xwpf document: " + DOCX_TEMPLATE_FILE);
+                    }
+                    break;
+                case REPORT:
+                    docxTemplateFile = CommonUtils.loadResource(DocxGenerator.class, DOCX_TEMPLATE_REPORT_FILE);
+                    xwpfDocument = new XWPFDocument(new ByteArrayInputStream(docxTemplateFile.get()));
+                    if (docxTemplateFile.isPresent()) {
                         fillDocument(xwpfDocument, projectLicenseInfoResults, projectName, projectVersion, licenseInfoHeaderText, true);
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Unknown generator variant type: " + getOutputVariant());
-                }
-                xwpfDocument.write(docxOutputStream);
-                docxOutputStream.close();
-            } catch (XmlException e) {
-                throw new SW360Exception("Got XmlException while generating docx document: " + e.getMessage());
-            } catch (IOException e) {
-                throw new SW360Exception("Got IOException when generating docx document: " + e.getMessage());
-            } catch (TException e) {
-                throw new SW360Exception("Error reading sw360 licenses: " + e.getMessage());
+                    } else {
+                        throw new SW360Exception("Could not load the template for xwpf document: " + DOCX_TEMPLATE_REPORT_FILE);
+                    }
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown generator variant type: " + getOutputVariant());
             }
-            return docxOutputStream.toByteArray();
-        } else {
-            throw new SW360Exception("Could not load the template for xwpf document: " + DOCX_TEMPLATE_FILE);
+            xwpfDocument.write(docxOutputStream);
+            docxOutputStream.close();
+        } catch (XmlException e) {
+            throw new SW360Exception("Got XmlException while generating docx document: " + e.getMessage());
+        } catch (IOException e) {
+            throw new SW360Exception("Got IOException when generating docx document: " + e.getMessage());
+        } catch (TException e) {
+            throw new SW360Exception("Error reading sw360 licenses: " + e.getMessage());
         }
+        return docxOutputStream.toByteArray();
     }
 
     private void fillDocument(XWPFDocument document, Collection<LicenseInfoParsingResult> projectLicenseInfoResults,
