@@ -21,10 +21,7 @@ import org.ektorp.ViewQuery;
 import org.ektorp.support.View;
 import org.ektorp.support.Views;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * CRUD access for the Component class
@@ -86,7 +83,15 @@ import java.util.Set;
                     "         emit(doc.fossologyId, doc.componentId);  " +
                     "     } " +
                     "  } " +
-                    "}")
+                    "}"),
+        @View(name = "byExternalIds",
+                map = "function(doc) {" +
+                        "  if (doc.type == 'release') {" +
+                        "    for (var externalId in doc.externalIds) {" +
+                        "       emit( [externalId, doc.externalIds[externalId]] , doc._id);" +
+                        "    }" +
+                        "  }" +
+                        "}")
 })
 public class ComponentRepository extends SummaryAwareRepository<Component> {
 
@@ -158,5 +163,10 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
     public Set<Component> getUsingComponents(Set<String> releaseIds) {
         final Set<String> componentIdsByLinkingRelease = queryForIdsAsValue("byLinkingRelease", releaseIds);
         return new HashSet<>(get(componentIdsByLinkingRelease));
+    }
+
+    public Set<Component> searchByExternalIds(Map<String, Set<String>> externalIds) {
+        Set<String> ids = queryForIdsAsComplexValues("byExternalIds", externalIds);
+        return new HashSet<>(get(ids));
     }
 }

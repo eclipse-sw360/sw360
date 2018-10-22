@@ -440,4 +440,15 @@ public class ComponentHandler implements ComponentService.Iface {
         return handler.getDuplicateReleaseSources();
     }
 
+    @Override
+    public Set<Component> searchComponentsByExternalIds(Map<String, Set<String>> externalIds) throws TException {
+        assertNotNull(externalIds);
+        return handler.searchComponentsByExternalIds(externalIds);
+    }
+
+    @Override
+    public Set<Release> searchReleasesByExternalIds(Map<String, Set<String>> externalIds) throws TException {
+        assertNotNull(externalIds);
+        return handler.searchReleasesByExternalIds(externalIds);
+    }
 }

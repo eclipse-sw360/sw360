@@ -1,5 +1,5 @@
 //
-// Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+// Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
 //
 // All rights reserved. This configuration file is provided to you under the
 // terms and conditions of the Eclipse Distribution License v1.0 which
@@ -47,6 +47,22 @@ include::{snippets}/should_document_get_releases_with_fields/http-response.adoc[
 
 ===== Links
 include::{snippets}/should_document_get_releases_with_fields/links.adoc[]
+
+
+[[resources-releases-get-by-externalids]]
+==== Listing by external ids
+
+A `GET` request will get all releases corresponding to external ids +
+The request parameter supports MultiValueMap (allows to add duplicate keys with different values)
+
+===== Response structure
+include::{snippets}/should_document_get_releases_by_external-ids/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_releases_by_external-ids/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_releases_by_external-ids/http-response.adoc[]
 
 
 [[resources-release-attachment-info-get]]

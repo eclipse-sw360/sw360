@@ -72,7 +72,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
     private Project project;
     private Attachment attachment;
-    private Map<String, Set<String>> externalIds;
+
 
     @Before
     public void before() throws TException {
@@ -90,7 +90,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         Map<String, ProjectRelationship> linkedProjects = new HashMap<>();
         ProjectReleaseRelationship projectReleaseRelationship = new ProjectReleaseRelationship(CONTAINED, MAINLINE);
 
-        externalIds = new HashMap<>();
+        Map<String, Set<String>> externalIds = new HashMap<>();
         externalIds.put("portal-id", new HashSet<>(Arrays.asList("13319-XX3")));
         externalIds.put("project-ext", new HashSet<>(Arrays.asList("515432", "7657")));
 
@@ -158,6 +158,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.searchProjectByName(eq(project.getName()), anyObject())).willReturn(projectListByName);
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), anyObject(), eq("false"))).willReturn(releaseIds);
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), anyObject(), eq("true"))).willReturn(releaseIdsTransitive);
+        given(this.projectServiceMock.convertToEmbeddedWithExternalIds(eq(project))).willReturn(project);
+        given(this.projectServiceMock.convertToEmbeddedWithExternalIds(eq(project2))).willReturn(project2);
 
         Release release = new Release();
         release.setId("3765276512");

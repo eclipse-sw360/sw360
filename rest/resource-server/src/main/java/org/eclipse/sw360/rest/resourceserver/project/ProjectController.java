@@ -360,25 +360,9 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
 
     @RequestMapping(value = PROJECTS_URL + "/searchByExternalIds", method = RequestMethod.GET)
     public ResponseEntity searchByExternalIds(@RequestParam MultiValueMap<String, String> externalIdsMultiMap) throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        List<Resource<Project>> projectResources = new ArrayList<>();
-        Map<String, Set<String>> externalIds = new HashMap<>();
-
-        for (String externalIdKey : externalIdsMultiMap.keySet()) {
-            externalIds.put(externalIdKey, new HashSet<>(externalIdsMultiMap.get(externalIdKey)));
-        }
-
-        Set<Project> sw360Projects = projectService.searchByExternalIds(externalIds, sw360User);
-        sw360Projects.stream().forEach(p -> {
-            Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
-            embeddedProject.setExternalIds(p.getExternalIds());
-            projectResources.add(new Resource<>(embeddedProject));
-        });
-
-        Resources<Resource<Project>> resources = new Resources<>(projectResources);
-        return new ResponseEntity<>(resources, HttpStatus.OK);
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        return restControllerHelper.searchByExternalIds(externalIdsMultiMap, projectService, sw360User);
     }
-
 
     @Override
     public RepositoryLinksResource process(RepositoryLinksResource resource) {

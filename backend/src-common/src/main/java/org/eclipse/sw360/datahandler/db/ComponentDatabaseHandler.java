@@ -988,6 +988,14 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return releaseRepository.makeSummary(SummaryType.SHORT, ids);
     }
 
+    public Set<Component> searchComponentsByExternalIds(Map<String, Set<String>> externalIds) {
+        return componentRepository.searchByExternalIds(externalIds);
+    }
+
+    public Set<Release> searchReleasesByExternalIds(Map<String, Set<String>> externalIds) {
+        return releaseRepository.searchByExternalIds(externalIds);
+    }
+
     /**
      * Returns full documents straight from repository. Don't want this to get abused, that's why it's package-private.
      * Used for bulk-computing ReleaseClearingStateSummaries by ProjectDatabaseHandler.

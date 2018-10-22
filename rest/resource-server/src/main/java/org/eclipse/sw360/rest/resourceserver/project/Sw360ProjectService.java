@@ -13,6 +13,7 @@
 
 package org.eclipse.sw360.rest.resourceserver.project;
 
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
@@ -27,6 +28,8 @@ import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
+import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -40,9 +43,12 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class Sw360ProjectService {
+public class Sw360ProjectService implements AwareOfRestServices<Project> {
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;
+
+    @NonNull
+    private RestControllerHelper rch;
 
     public List<Project> getProjectsForUser(User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
@@ -108,9 +114,15 @@ public class Sw360ProjectService {
         }
     }
 
-    public Set<Project> searchByExternalIds(Map<String, Set<String>> externalIds, User sw360User) throws TException {
+    @Override
+    public Set<Project> searchByExternalIds(Map<String, Set<String>> externalIds, User user) throws TException {
         final ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        return sw360ProjectClient.searchByExternalIds(externalIds, sw360User);
+        return sw360ProjectClient.searchByExternalIds(externalIds, user);
+    }
+
+    @Override
+    public Project convertToEmbeddedWithExternalIds(Project sw360Object) {
+        return rch.convertToEmbeddedProject(sw360Object).setExternalIds(sw360Object.getExternalIds());
     }
 
     private ProjectService.Iface getThriftProjectClient() throws TTransportException {

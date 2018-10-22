@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2014-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2014-2018. Part of the SW360 Portal Project.
  * With contributions by Bosch Software Innovations GmbH, 2016.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -616,4 +616,14 @@ service ComponentService {
      * return map of name to ids
      **/
     map <string, list<string>> getDuplicateReleaseSources();
+
+   /**
+     * get a set of components based on the external id external ids can have multiple values to one key
+     */
+    set<Component> searchComponentsByExternalIds(1: map<string, set<string>> externalIds);
+
+   /**
+     * get a set of releases based on the external id external ids can have multiple values to one key
+     */
+    set<Release> searchReleasesByExternalIds(1: map<string, set<string>> externalIds);
 }
