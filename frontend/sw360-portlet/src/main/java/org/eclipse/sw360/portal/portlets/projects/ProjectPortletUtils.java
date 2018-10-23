@@ -91,6 +91,16 @@ public class ProjectPortletUtils {
                     }
                     break;
 
+                case OBLIGATIONS_TEXT:
+                    // if `OBLIGATIONS_TEXT` is not in the request then we want this to be unset in the `project`
+                    String obligationsText = request.getParameter(field.toString());
+                    if(obligationsText == null) {
+                        project.unsetObligationsText();
+                    } else {
+                        project.setObligationsText(StringEscapeUtils.unescapeHtml(obligationsText));
+                    }
+                    break;
+
                 case ROLES:
                     project.setRoles(PortletUtils.getCustomMapFromRequest(request));
                     break;

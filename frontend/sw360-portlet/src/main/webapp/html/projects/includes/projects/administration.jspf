@@ -52,6 +52,48 @@
         <td>Deadline for pre-evaluation:</td>
         <td><sw360:out value="${project.preevaluationDeadline}"/></td>
     </tr>
+    <tr>
+        <td>Obligations:</td>
+        <td>
+            <textarea class="projectObligationsText" id="obligationsText" readonly><sw360:DisplayObligations project="${project}" defaultText="${defaultObligationsText}"/></textarea>
+        </td>
+    </tr>
+     <tr>
+        <td>Clearing summary:</td>
+        <td>
+            <textarea class="projectClearingSummaryText" id="clearingSummaryText" name="<portlet:namespace/><%=Project._Fields.CLEARING_SUMMARY%>" type="text" readonly><sw360:out value="${project.clearingSummary}" /></textarea>
+        </td>
+    </tr>
+    <tr>
+        <td>Special risk Open Source Software:</td>
+        <td>
+            <textarea class="projectSpecialRisksOSSText" id="specialRisksOSSText" name="<portlet:namespace/><%=Project._Fields.SPECIAL_RISKS_OSS%>" type="text" readonly><sw360:out value="${project.specialRisksOSS}" /></textarea>
+        </td>
+    </tr>
+    <tr>
+        <td>General risks 3rd party software:</td>
+        <td>
+            <textarea class="projectGeneralRisks3rdPartyText" id="generalRisks3rdPartyText" name="<portlet:namespace/><%=Project._Fields.GENERAL_RISKS3RD_PARTY%>" type="text" readonly><sw360:out value="${project.generalRisks3rdParty}" /></textarea>
+        </td>
+    </tr>
+    <tr>
+        <td>Special risks 3rd party software:</td>
+        <td>
+            <textarea class="projectSpecialRisks3rdPartyText" id="specialRisks3rdPartyText" name="<portlet:namespace/><%=Project._Fields.SPECIAL_RISKS3RD_PARTY%>" type="text" readonly><sw360:out value="${project.specialRisks3rdParty}" /></textarea>
+        </td>
+    </tr>
+    <tr>
+        <td>Sales and delivery channels:</td>
+        <td>
+            <textarea class="projectDeliveryChannelsText" id="deliveryChannelsText" name="<portlet:namespace/><%=Project._Fields.DELIVERY_CHANNELS%>"  type="text" readonly><sw360:out value="${project.deliveryChannels}" /></textarea>
+        </td>
+    </tr>
+        <tr>
+        <td>Remarks additional requirements:</td>
+        <td>
+            <textarea class="projectRemarksAdditionalRequirementsText" id="remarksAdditionalRequirementsText" name="<portlet:namespace/><%=Project._Fields.REMARKS_ADDITIONAL_REQUIREMENTS%>" readonly><sw360:out value="${project.remarksAdditionalRequirements}" /></textarea>
+        </td>
+    </tr>
 </table>
 
 <table class="table info_table" id="lifecycle">
@@ -100,6 +142,7 @@
 
         Liferay.on('allPortletsReady', function() {
             $('#licenseInfoHeaderText').height($('#licenseInfoHeaderText').prop('scrollHeight'));
+            $('#obligationsText').height($('#obligationsText').prop('scrollHeight'));
         });
 
     });

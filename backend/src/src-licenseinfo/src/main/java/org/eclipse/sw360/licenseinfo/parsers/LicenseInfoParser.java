@@ -10,9 +10,12 @@
  */
 package org.eclipse.sw360.licenseinfo.parsers;
 
+import java.util.ArrayList;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationParsingResult;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationInfoRequestStatus;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
@@ -43,4 +46,8 @@ public abstract class LicenseInfoParser {
     }
 
     public abstract <T> List<LicenseInfoParsingResult> getLicenseInfos(Attachment attachment, User user, T context) throws TException;
+
+    public <T> ObligationParsingResult getObligations(Attachment attachment, User user, T context) throws TException {
+        return new ObligationParsingResult().setStatus(ObligationInfoRequestStatus.NO_APPLICABLE_SOURCE);
+    }
 }
