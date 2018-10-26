@@ -86,7 +86,7 @@
                  checked="checked"
                </core_rt:if>
                <core_rt:if test="${isUserAtLeastClearingAdmin != 'Yes' || (licenseDetail.id != null && licenseDetail.checked == true)}">
-                 disabled="disabled"
+                 readonly="readonly"
                </core_rt:if> />
         is checked
       </label>

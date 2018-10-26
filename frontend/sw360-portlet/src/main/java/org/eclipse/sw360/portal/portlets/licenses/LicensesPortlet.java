@@ -264,8 +264,7 @@ public class LicensesPortlet extends Sw360Portlet {
             }
         }
 
-        license = updateLicenseFromRequest(license, request);
-        return license;
+        return updateLicenseFromRequest(license, request);
     }
 
     private boolean checkLicenseExists(License license, User user, LicenseService.Iface client) {
