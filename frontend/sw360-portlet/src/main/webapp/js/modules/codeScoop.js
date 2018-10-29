@@ -211,7 +211,7 @@ define("modules/codeScoop", [], function () {
         };
 
         this._fetch_repo = function (owner, name, callback) {
-            _this._api("GET", "repository/" + owner + "/" + name + "/", null, callback);
+            _this._api("GET", "/integration/siemens/repository/" + owner + "/" + name + "/", null, callback);
         };
 
         this._fetch_composite = function (requestData, callback) {
