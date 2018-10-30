@@ -14,13 +14,13 @@ package org.eclipse.sw360.datahandler.resourcelists;
 
 import java.util.Comparator;
 
-public class PaginationOptions {
+public class PaginationOptions<T> {
 
     private final int pageNumber;
     private final int pageSize;
-    private final Comparator sortComparator;
+    private final Comparator<T> sortComparator;
 
-    public PaginationOptions(int pageNumber, int pageSize, Comparator sortComparator) {
+    public PaginationOptions(int pageNumber, int pageSize, Comparator<T> sortComparator) {
         if(pageSize <= 0) {
             pageSize = 10;
         }
@@ -37,7 +37,7 @@ public class PaginationOptions {
         return pageSize;
     }
 
-    Comparator getSortComparator() {
+    Comparator<T> getSortComparator() {
         return sortComparator;
     }
 
@@ -48,7 +48,7 @@ public class PaginationOptions {
         return pageNumber * pageSize;
     }
 
-    public int getPageEndIndex() {
+    int getPageEndIndex() {
         return getOffset() + getPageSize();
     }
 

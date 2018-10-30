@@ -36,7 +36,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.data.domain.Pageable;
-import org.springframework.hateoas.PagedResources;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.ResourceProcessor;
 import org.springframework.hateoas.Resources;
@@ -49,6 +48,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URI;
@@ -77,16 +77,14 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
     private final Sw360AttachmentService attachmentService;
 
     @NonNull
-    private final RestControllerHelper restControllerHelper;
-
-    @NonNull
-    private final ResourceListController resourceListController = new ResourceListController();
+    private final RestControllerHelper<Component> restControllerHelper;
 
     @RequestMapping(value = COMPONENTS_URL, method = RequestMethod.GET)
     public ResponseEntity<Resources<Resource<Component>>> getComponents(Pageable pageable,
                                                                         @RequestParam(value = "name", required = false) String name,
                                                                         @RequestParam(value = "type", required = false) String componentType,
                                                                         @RequestParam(value = "fields", required = false) List<String> fields,
+                                                                        HttpServletRequest request,
                                                                         OAuth2Authentication oAuth2Authentication) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
@@ -98,19 +96,17 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
             allComponents.addAll(componentService.getComponentsForUser(sw360User));
         }
 
-        PaginationOptions paginationOptions = restControllerHelper.paginationOptionsFromPageable(pageable, SW360Constants.TYPE_COMPONENT);
-        PaginationResult paginationResult = resourceListController.applyPagingToList(allComponents, paginationOptions);
-        allComponents = paginationResult.getResources();
+        PaginationResult<Component> paginationResult = restControllerHelper.createPaginationResult(request, pageable, allComponents, SW360Constants.TYPE_COMPONENT);
 
         List<Resource<Component>> componentResources = new ArrayList<>();
-        allComponents.stream()
+        paginationResult.getResources().stream()
                 .filter(component -> componentType == null || componentType.equals(component.componentType.name()))
                 .forEach(c -> {
                     Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c, fields);
                     componentResources.add(new Resource<>(embeddedComponent));
                 });
 
-        PagedResources<Resource<Component>> resources = restControllerHelper.generatePagesResource(paginationResult, componentResources);
+        Resources<Resource<Component>> resources = restControllerHelper.generateResources(paginationResult, componentResources);
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 

@@ -19,7 +19,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Component;
 
 import java.util.*;
 
-public class ResourceComparatorGenerator {
+public class ResourceComparatorGenerator<T> {
 
     private static final Map<Component._Fields, Comparator<Component>> componentMap = generateComponentMap();
 
@@ -32,7 +32,7 @@ public class ResourceComparatorGenerator {
         return Collections.unmodifiableMap(componentMap);
     }
 
-    public <T extends TBase<?, ? extends TFieldIdEnum>> Comparator<T> generateComparator(String type) throws ResourceClassNotFoundException {
+    public Comparator<T> generateComparator(String type) throws ResourceClassNotFoundException {
         switch (type) {
             case SW360Constants.TYPE_COMPONENT:
                 return (Comparator<T>)defaultComponentComparator();
@@ -41,11 +41,11 @@ public class ResourceComparatorGenerator {
         }
     }
 
-    public <T extends TBase<?, ? extends TFieldIdEnum>> Comparator<T> generateComparator(String type, String property) throws ResourceClassNotFoundException {
+    public Comparator<T> generateComparator(String type, String property) throws ResourceClassNotFoundException {
         return generateComparator(type, Collections.singletonList(property));
     }
 
-    public <T extends TBase<?, ? extends TFieldIdEnum>> Comparator<T> generateComparator(String type, List<String> properties) throws ResourceClassNotFoundException {
+    public Comparator<T> generateComparator(String type, List<String> properties) throws ResourceClassNotFoundException {
         switch (type) {
             case SW360Constants.TYPE_COMPONENT:
                 List<Component._Fields> fields = new ArrayList<>();
@@ -61,7 +61,7 @@ public class ResourceComparatorGenerator {
         }
     }
 
-    public <T extends TBase<?, ? extends TFieldIdEnum>> Comparator<T> generateComparatorWithFields(String type, List<Component._Fields> fields) throws ResourceClassNotFoundException {
+    public Comparator<T> generateComparatorWithFields(String type, List<Component._Fields> fields) throws ResourceClassNotFoundException {
         switch (type) {
             case SW360Constants.TYPE_COMPONENT:
                 return (Comparator<T>)componentComparator(fields);

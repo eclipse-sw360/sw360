@@ -16,10 +16,10 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-public class ResourceListController {
+public class ResourceListController<T> {
 
-    public PaginationResult applyPagingToList(List resources, PaginationOptions paginationOptions) throws PaginationParameterException {
-        List sortedResources = this.sortList(resources, paginationOptions.getSortComparator());
+    public PaginationResult<T> applyPagingToList(List<T> resources, PaginationOptions<T> paginationOptions) throws PaginationParameterException {
+        List<T> sortedResources = this.sortList(resources, paginationOptions.getSortComparator());
 
         int fromIndex = paginationOptions.getOffset();
         int toIndex = paginationOptions.getPageEndIndex();
@@ -28,10 +28,10 @@ public class ResourceListController {
         } else if (toIndex > sortedResources.size()) {
             toIndex = sortedResources.size();
         }
-        return new PaginationResult(sortedResources.subList(fromIndex, toIndex), sortedResources.size(), paginationOptions);
+        return new PaginationResult<>(sortedResources.subList(fromIndex, toIndex), sortedResources.size(), paginationOptions);
     }
 
-    private List sortList(List resources, Comparator comparator) {
+    private List<T> sortList(List<T> resources, Comparator<T> comparator) {
         if(comparator == null) {
             return resources;
         }
