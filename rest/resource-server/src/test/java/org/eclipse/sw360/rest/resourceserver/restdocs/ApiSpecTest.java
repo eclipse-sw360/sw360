@@ -13,6 +13,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,7 +21,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
 import org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.mockito.BDDMockito.given;
@@ -82,6 +82,11 @@ public class ApiSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
+    @Ignore
+    // SecurityContextHolder.getContext in test filter chain supports no mocking.
+    // The authentication object is always null in the test class.
+    // As result the test filter automatically authenticates the request
+    // thus the unauthorized case is not testable
     public void should_document_error_unauthorized() throws Exception {
         this.mockMvc.perform(RestDocumentationRequestBuilders.get("/api")
                 .header("Authorization", "Bearer " + "123456789"))

@@ -94,4 +94,8 @@ public class UserDatabaseHandler {
     public User getByExternalId(String externalId) {
         return repository.getByExternalId(externalId);
     }
+
+    public User getByApiToken(String token) {
+        return repository.getByApiToken(token);
+    }
 }

@@ -55,6 +55,15 @@ public class Sw360UserService {
         }
     }
 
+    public User getUserByApiToken(String token) {
+        try {
+            UserService.Iface sw360UserClient = getThriftUserClient();
+            return sw360UserClient.getByApiToken(token);
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private UserService.Iface getThriftUserClient() throws TTransportException {
         THttpClient thriftClient = new THttpClient(thriftServerUrl + "/users/thrift");
         TProtocol protocol = new TCompactProtocol(thriftClient);

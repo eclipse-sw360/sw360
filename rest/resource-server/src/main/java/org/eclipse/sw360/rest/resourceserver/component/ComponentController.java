@@ -19,7 +19,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
-import org.eclipse.sw360.datahandler.resourcelists.*;
+import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
+import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
+import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
@@ -27,15 +29,15 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
-import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
+import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
-import org.springframework.data.domain.Pageable;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.ResourceProcessor;
 import org.springframework.hateoas.Resources;
@@ -43,7 +45,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -53,14 +54,17 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
 @BasePathAwareController
-@Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ComponentController implements ResourceProcessor<RepositoryLinksResource> {
+
     public static final String COMPONENTS_URL = "/components";
     private static final Logger log = Logger.getLogger(ComponentController.class);
 
@@ -84,10 +88,9 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
                                                                         @RequestParam(value = "name", required = false) String name,
                                                                         @RequestParam(value = "type", required = false) String componentType,
                                                                         @RequestParam(value = "fields", required = false) List<String> fields,
-                                                                        HttpServletRequest request,
-                                                                        OAuth2Authentication oAuth2Authentication) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+                                                                        HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
 
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
         List<Component> allComponents = new ArrayList<>();
         if (name != null && !name.isEmpty()) {
@@ -112,8 +115,8 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
 
     @RequestMapping(value = COMPONENTS_URL + "/{id}", method = RequestMethod.GET)
     public ResponseEntity<Resource<Component>> getComponent(
-            @PathVariable("id") String id, OAuth2Authentication oAuth2Authentication) throws TException {
-        User user = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
+            @PathVariable("id") String id) throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
         Component sw360Component = componentService.getComponentForUserById(id, user);
         HalResource<Component> userHalResource = createHalComponent(sw360Component, user);
         return new ResponseEntity<>(userHalResource, HttpStatus.OK);
@@ -123,9 +126,8 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
     @RequestMapping(value = COMPONENTS_URL + "/{id}", method = RequestMethod.PATCH)
     public ResponseEntity<Resource<Component>> patchComponent(
             @PathVariable("id") String id,
-            @RequestBody Component updateComponent,
-            OAuth2Authentication oAuth2Authentication) throws TException {
-        User user = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
+            @RequestBody Component updateComponent) throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
         Component sw360Component = componentService.getComponentForUserById(id, user);
         sw360Component = this.restControllerHelper.updateComponent(sw360Component, updateComponent);
         componentService.updateComponent(sw360Component, user);
@@ -136,8 +138,8 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = COMPONENTS_URL + "/{ids}", method = RequestMethod.DELETE)
     public ResponseEntity<List<MultiStatus>> deleteComponents(
-            @PathVariable("ids") List<String> idsToDelete, OAuth2Authentication oAuth2Authentication) throws TException {
-        User user = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
+            @PathVariable("ids") List<String> idsToDelete) throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
         List<MultiStatus> results = new ArrayList<>();
         for(String id:idsToDelete) {
             RequestStatus requestStatus = componentService.deleteComponent(id, user);
@@ -154,11 +156,9 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
 
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = COMPONENTS_URL, method = RequestMethod.POST)
-    public ResponseEntity<Resource<Component>> createComponent(
-            OAuth2Authentication oAuth2Authentication,
-            @RequestBody Component component) throws URISyntaxException, TException {
+    public ResponseEntity<Resource<Component>> createComponent(@RequestBody Component component) throws URISyntaxException, TException {
 
-        User user = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
+        User user = restControllerHelper.getSw360UserFromAuthentication();
 
         if (component.getVendorNames() != null) {
             Set<String> vendors = new HashSet<>();
@@ -185,19 +185,18 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
 
     @RequestMapping(value = COMPONENTS_URL + "/{id}/attachments", method = RequestMethod.GET)
     public ResponseEntity<Resources<Resource<Attachment>>> getComponentAttachments(
-            @PathVariable("id") String id,
-            OAuth2Authentication oAuth2Authentication) throws TException {
-        final User sw360User = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
+            @PathVariable("id") String id) throws TException {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Component sw360Component = componentService.getComponentForUserById(id, sw360User);
         final Resources<Resource<Attachment>> resources = attachmentService.getResourcesFromList(sw360Component.getAttachments());
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
     @RequestMapping(value = COMPONENTS_URL + "/{componentId}/attachments", method = RequestMethod.POST, consumes = {"multipart/mixed", "multipart/form-data"})
-    public ResponseEntity<HalResource> addAttachmentToComponent(@PathVariable("componentId") String componentId, OAuth2Authentication oAuth2Authentication,
+    public ResponseEntity<HalResource> addAttachmentToComponent(@PathVariable("componentId") String componentId,
                                                                 @RequestPart("file") MultipartFile file,
                                                                 @RequestPart("attachment") Attachment newAttachment) throws TException {
-        final User sw360User = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
         Attachment attachment;
         try {
@@ -220,11 +219,10 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
     public void downloadAttachmentFromComponent(
             @PathVariable("componentId") String componentId,
             @PathVariable("attachmentId") String attachmentId,
-            HttpServletResponse response,
-            OAuth2Authentication oAuth2Authentication) throws TException {
-        final User sw360User = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
+            HttpServletResponse response) throws TException {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Component component = componentService.getComponentForUserById(componentId, sw360User);
-        attachmentService.downloadAttachmentWithContext(component, attachmentId, response, oAuth2Authentication);
+        attachmentService.downloadAttachmentWithContext(component, attachmentId, response, sw360User);
     }
 
     @Override

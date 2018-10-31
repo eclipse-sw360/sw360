@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -27,6 +27,7 @@ import java.util.Set;
  *
  * @author cedric.bodet@tngtech.com
  * @author Johannes.Najjar@tngtech.com
+ * @author thomas.maier@evosoft.com
  */
 
 @Views({
@@ -34,6 +35,12 @@ import java.util.Set;
                 map = "function(doc) { if (doc.type == 'user') emit(null, doc._id) }"),
         @View(name = "byExternalId",
                 map = "function(doc) { if (doc.type == 'user') emit(doc.externalid, doc._id) }"),
+        @View(name = "byApiToken",
+                map = "function(doc) { if (doc.type == 'user') " +
+                        "  for (var i in doc.restApiTokens) {" +
+                        "    emit(doc.restApiTokens[i].token, doc._id)" +
+                        "  }" +
+                        "}"),
         @View(name = "byEmail",
                 map = "function(doc) { " +
                         "  if (doc.type == 'user') {" +
@@ -60,15 +67,24 @@ public class UserRepository extends SummaryAwareRepository<User> {
 
     public User getByExternalId(String externalId) {
         final Set<String> userIds = queryForIdsAsValue("byExternalId", externalId);
-        if (userIds != null && !userIds.isEmpty())
-            return get(CommonUtils.getFirst(userIds));
-        return null;
+        return getUserFromIds(userIds);
     }
 
     public User getByEmail(String email) {
         final Set<String> userIds = queryForIdsAsValue("byEmail", email);
-        if (userIds != null && !userIds.isEmpty())
+        return getUserFromIds(userIds);
+    }
+
+    public User getByApiToken(String token) {
+        final Set<String> userIds = queryForIdsAsValue("byApiToken", token);
+        return getUserFromIds(userIds);
+    }
+
+    private User getUserFromIds(Set<String> userIds) {
+        if (userIds != null && !userIds.isEmpty()) {
             return get(CommonUtils.getFirst(userIds));
-        return null;
+        } else {
+            return null;
+        }
     }
 }

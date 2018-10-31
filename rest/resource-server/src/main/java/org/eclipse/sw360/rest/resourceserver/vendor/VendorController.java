@@ -23,7 +23,6 @@ import org.springframework.hateoas.Resources;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,7 +30,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,7 +48,7 @@ public class VendorController implements ResourceProcessor<RepositoryLinksResour
     private final RestControllerHelper restControllerHelper;
 
     @RequestMapping(value = VENDORS_URL, method = RequestMethod.GET)
-    public ResponseEntity<Resources<Resource<Vendor>>> getVendors(OAuth2Authentication oAuth2Authentication) {
+    public ResponseEntity<Resources<Resource<Vendor>>> getVendors() {
         List<Vendor> vendors = vendorService.getVendors();
 
         List<Resource<Vendor>> vendorResources = new ArrayList<>();
@@ -66,7 +64,7 @@ public class VendorController implements ResourceProcessor<RepositoryLinksResour
 
     @RequestMapping(value = VENDORS_URL + "/{id}", method = RequestMethod.GET)
     public ResponseEntity<Resource<Vendor>> getVendor(
-            @PathVariable("id") String id, OAuth2Authentication oAuth2Authentication) {
+            @PathVariable("id") String id) {
         Vendor sw360Vendor = vendorService.getVendorById(id);
         HalResource<Vendor> halResource = createHalVendor(sw360Vendor);
         return new ResponseEntity<>(halResource, HttpStatus.OK);
@@ -75,8 +73,7 @@ public class VendorController implements ResourceProcessor<RepositoryLinksResour
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = VENDORS_URL, method = RequestMethod.POST)
     public ResponseEntity createVendor(
-            OAuth2Authentication oAuth2Authentication,
-            @RequestBody Vendor vendor) throws URISyntaxException {
+            @RequestBody Vendor vendor) {
         vendor = vendorService.createVendor(vendor);
         HalResource<Vendor> halResource = createHalVendor(vendor);
 

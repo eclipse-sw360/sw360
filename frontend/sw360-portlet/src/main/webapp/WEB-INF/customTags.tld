@@ -988,6 +988,18 @@
     </tag>
 
     <tag>
+        <name>DisplayApiTokenExpireDate</name>
+        <tag-class>org.eclipse.sw360.portal.tags.DisplayApiTokenExpireDate</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <name>token</name>
+            <required>true</required>
+            <type>org.eclipse.sw360.datahandler.thrift.users.RestApiToken</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
+
+    <tag>
         <name>DisplayDownloadAttachmentBundle</name>
         <tag-class>org.eclipse.sw360.portal.tags.links.DisplayDownloadAttachmentBundle</tag-class>
         <body-content>empty</body-content>

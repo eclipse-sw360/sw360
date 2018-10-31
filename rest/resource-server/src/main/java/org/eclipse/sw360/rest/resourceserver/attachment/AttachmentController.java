@@ -69,10 +69,9 @@ public class AttachmentController implements ResourceProcessor<RepositoryLinksRe
 
     @RequestMapping(value = ATTACHMENTS_URL + "/{id}", method = RequestMethod.GET)
     public ResponseEntity<Resource<Attachment>> getAttachmentForId(
-            @PathVariable("id") String id,
-            OAuth2Authentication oAuth2Authentication) throws TException {
+            @PathVariable("id") String id) throws TException {
 
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         AttachmentInfo attachmentInfo = attachmentService.getAttachmentById(id);
         HalResource<Attachment> attachmentResource = createHalAttachment(attachmentInfo, sw360User);
         return new ResponseEntity<>(attachmentResource, HttpStatus.OK);
@@ -80,10 +79,9 @@ public class AttachmentController implements ResourceProcessor<RepositoryLinksRe
 
     @RequestMapping(value = ATTACHMENTS_URL, params = "sha1", method = RequestMethod.GET)
     public ResponseEntity<Resource<Attachment>> getAttachmentForSha1(
-            OAuth2Authentication oAuth2Authentication,
             @RequestParam String sha1) throws TException {
 
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         AttachmentInfo attachmentInfo = attachmentService.getAttachmentBySha1(sha1);
         HalResource<Attachment> attachmentResource = createHalAttachment(attachmentInfo, sw360User);
         return new ResponseEntity<>(attachmentResource, HttpStatus.OK);

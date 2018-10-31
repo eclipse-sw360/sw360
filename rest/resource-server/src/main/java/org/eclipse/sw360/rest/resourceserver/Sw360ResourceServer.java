@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -11,7 +11,10 @@
 
 package org.eclipse.sw360.rest.resourceserver;
 
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.security.ApiTokenAuthenticationFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -24,22 +27,36 @@ import org.springframework.hateoas.UriTemplate;
 import org.springframework.hateoas.hal.CurieProvider;
 import org.springframework.hateoas.hal.DefaultCurieProvider;
 
+import java.util.Properties;
+
 @SpringBootApplication
 public class Sw360ResourceServer extends SpringBootServletInitializer {
-    public static String CURIE_NAMESPACE = "sw360";
 
-    public @Bean
-    CurieProvider curieProvider() {
+    @Value("${spring.data.rest.default-page-size:10}")
+    private int defaultPageSize;
+
+    private static final String PROPERTIES_FILE_PATH = "/sw360.properties";
+    private static final String CURIE_NAMESPACE = "sw360";
+
+    public static final String API_TOKEN_HASH_SALT;
+    public static final String API_TOKEN_MAX_VALIDITY_READ_IN_DAYS;
+    public static final String API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS;
+
+    static {
+        Properties props = CommonUtils.loadProperties(Sw360ResourceServer.class, PROPERTIES_FILE_PATH);
+        API_TOKEN_MAX_VALIDITY_READ_IN_DAYS = props.getProperty("rest.apitoken.read.validity.days", "90");
+        API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS = props.getProperty("rest.apitoken.write.validity.days", "30");
+        API_TOKEN_HASH_SALT = props.getProperty("rest.apitoken.hash.salt", "$2a$04$Software360RestApiSalt");
+    }
+
+    @Bean
+    public CurieProvider curieProvider() {
         return new DefaultCurieProvider(CURIE_NAMESPACE, new UriTemplate("/docs/{rel}.html"));
     }
 
-    @Override
-    protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
-        return builder.sources(Sw360ResourceServer.class);
-    }
-
-    public static void main(String[] args) {
-        SpringApplication.run(Sw360ResourceServer.class, args);
+    @Bean
+    public ApiTokenAuthenticationFilter authFilterBean() {
+        return new ApiTokenAuthenticationFilter();
     }
 
     @Bean
@@ -50,5 +67,14 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
                 config.setLimitParamName(RestControllerHelper.PAGINATION_PARAM_PAGE_ENTRIES);
             }
         };
+    }
+
+    @Override
+    protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
+        return builder.sources(Sw360ResourceServer.class);
+    }
+
+    public static void main(String[] args) {
+        SpringApplication.run(Sw360ResourceServer.class, args);
     }
 }
