@@ -147,7 +147,11 @@ public class VulnerabilitiesPortlet extends Sw360Portlet {
     }
 
     private boolean isFormattedTimeStamp(String potentialTimestamp) {
-        return potentialTimestamp.matches(YEAR_MONTH_DAY_REGEX);
+        if (isNullOrEmpty(potentialTimestamp)) {
+            return false;
+        } else {
+            return potentialTimestamp.matches(YEAR_MONTH_DAY_REGEX);
+        }
     }
 
     private void prepareDetailView(RenderRequest request, RenderResponse response) throws IOException, PortletException {

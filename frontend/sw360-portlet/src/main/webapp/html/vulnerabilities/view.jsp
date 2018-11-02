@@ -1,6 +1,6 @@
 <%--
   ~ Copyright (c) Bosch Software Innovations GmbH 2016.
-  ~ Copyright (c) Siemens AG 2016-2017. Part of the SW360 Portal Project.
+  ~ Copyright (c) Siemens AG 2016-2018. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -167,7 +167,7 @@
                          </core_rt:if>
                             "",
                     "3": "<sw360:out value='${vulnerability.publishDate}'/>",
-                    "4": "<sw360:out value='${vulnerability.lastExternalUpdate}'/>"
+                    "4": "<sw360:out value='${vulnerability.lastExternalUpdate}' default='not set'/>"
                 });
                 </core_rt:forEach>
 
@@ -190,7 +190,7 @@
                         {"title": "Publish date"},
                         {"title": "Last update"}
                     ],
-                    "order": [[4, 'desc'],[2, 'asc']],
+                    "order": [[4, 'desc'],[3, 'desc']],
                     "autoWidth": false
                 });
                 vulnerabilityTable.$('td').tooltip({"delay": 0, "track": true, "fade": 250});
