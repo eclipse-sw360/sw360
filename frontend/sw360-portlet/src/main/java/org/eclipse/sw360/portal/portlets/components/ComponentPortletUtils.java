@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -230,9 +230,16 @@ public abstract class ComponentPortletUtils {
                 }
 
                 for (Release release : releases) {
-                    release.unsetVendorId();
+                    if (release.isSetVendorId()) {
+                        release.unsetVendorId();
+                    }
+                    if (release.isSetVendor()) {
+                        release.unsetVendor();
+                    }
                     RequestStatus local_status = componentClient.updateRelease(release, user);
-                    if (local_status != RequestStatus.SUCCESS) global_status = local_status;
+                    if (local_status != RequestStatus.SUCCESS) {
+                        global_status = local_status;
+                    }
                 }
 
                 if (global_status == RequestStatus.SUCCESS) {
@@ -242,7 +249,7 @@ public abstract class ComponentPortletUtils {
                 }
 
             } catch (TException e) {
-                log.error("Could not delete release from DB", e);
+                log.error("Could not delete vendor from DB", e);
             }
         }
         return RequestStatus.FAILURE;

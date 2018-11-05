@@ -30,6 +30,7 @@ To migrate it is recommended to do this in the following order:
 
 ## Optional usage
 - `009_overwrite_release_name_with_component_name.py`
+- `010_repair_missing_vendorId_links_in_releases.py`
 
 ## Run the scripts for a database not running on localhost
 tbd.
