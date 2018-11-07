@@ -1,5 +1,5 @@
 <!--
- Modifications applied by Siemens AG 2014.
+ Modifications applied by Siemens AG 2014-2018.
  Modifications for supporting own infrastructure.
 
  Original file from: Liferay Inc.
@@ -31,6 +31,14 @@ $theme.include($body_top_include)
 #dockbar()
 
 <div class="container-fluid" id="wrapper">
+
+    <div id="unsupported-browser">
+        <div id="unsupported-browser-content">
+            Your current browser (Internet Explorer / Edge) is not supported!
+            <a href="#" onclick="document.getElementById('unsupported-browser').style.display='none';return false;">X</a>
+        </div>
+    </div>
+
 	<header id="banner" role="banner">
 		<div id="heading">
 			<h1 class="site-title">
@@ -75,6 +83,8 @@ $theme.include($body_top_include)
 $theme.include($body_bottom_include)
 
 $theme.include($bottom_include)
+
+<script src="$themeDisplay.getTheme().getContextPath()/js/supportedBrowser.js"></script>
 
 </body>
 
