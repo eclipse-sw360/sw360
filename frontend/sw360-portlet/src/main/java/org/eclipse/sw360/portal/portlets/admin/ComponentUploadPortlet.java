@@ -13,49 +13,36 @@ package org.eclipse.sw360.portal.portlets.admin;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.FluentIterable;
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.SetMultimap;
 import com.liferay.portal.kernel.portlet.PortletResponseUtil;
 import com.liferay.portal.kernel.upload.UploadPortletRequest;
 import com.liferay.portal.util.PortalUtil;
-import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.commonIO.ConvertRecord;
-import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.licenses.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.eclipse.sw360.exporter.CSVExport;
-import org.eclipse.sw360.exporter.ZipTools;
 import org.eclipse.sw360.importer.*;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
-import org.jetbrains.annotations.NotNull;
 
 import javax.portlet.*;
 import java.io.*;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.zip.ZipOutputStream;
 
-import static org.eclipse.sw360.commonIO.ConvertRecord.*;
-import static org.eclipse.sw360.commonIO.TypeMappings.*;
 import static org.eclipse.sw360.datahandler.common.ImportCSV.readAsCSVRecords;
-import static org.eclipse.sw360.exporter.ZipTools.*;
 import static org.eclipse.sw360.importer.ComponentImportUtils.*;
 
 /**
@@ -115,13 +102,6 @@ public class ComponentUploadPortlet extends Sw360Portlet {
                     generateSampleReleaseLinksFile(request, response);
                 } catch (IOException e) {
                     log.error("Something went wrong with the CSV creation", e);
-                }
-                break;
-            case PortalConstants.DOWNLOAD_LICENSE_BACKUP:
-                try {
-                    backUpLicenses(request, response);
-                } catch (IOException | TException e) {
-                    log.error("Something went wrong with the license zip creation", e);
                 }
                 break;
         }
@@ -276,67 +256,6 @@ public class ComponentUploadPortlet extends Sw360Portlet {
         PortletResponseUtil.sendFile(request, response, "ComponentsReleasesVendors.csv", byteArrayInputStream, "text/csv");
     }
 
-    public void backUpLicenses(ResourceRequest request, ResourceResponse response) throws IOException, TException {
-        Map<String, InputStream> fileNameToStreams = getFilenameToCSVStreams();
-
-        final ByteArrayOutputStream outB = new ByteArrayOutputStream();
-        final ZipOutputStream zipOutputStream = new ZipOutputStream(outB);
-
-        for (Map.Entry<String, InputStream> entry : fileNameToStreams.entrySet()) {
-            ZipTools.addToZip(zipOutputStream, entry.getKey(), entry.getValue());
-        }
-
-        zipOutputStream.flush();
-        zipOutputStream.close(); // this closes outB
-
-        final ByteArrayInputStream zipFile = new ByteArrayInputStream(outB.toByteArray());
-        PortletResponseUtil.sendFile(request, response, "LicensesBackup.lics", zipFile, "application/zip");
-    }
-
-    @NotNull
-    private Map<String, InputStream> getFilenameToCSVStreams() throws TException, IOException {
-        Map<String, InputStream> fileNameToStreams = new HashMap<>();
-
-        final LicenseService.Iface client = thriftClients.makeLicenseClient();
-
-        fileNameToStreams.put(RISK_CATEGORY_FILE, getCsvStream(serialize(client.getRiskCategories(), riskCategorySerializer())));
-
-        fileNameToStreams.put(ZipTools.RISK_FILE, getCsvStream(serialize(client.getRisks(), riskSerializer())));
-        fileNameToStreams.put(ZipTools.OBLIGATION_FILE, getCsvStream(serialize(client.getObligations(), obligationSerializer())));
-
-        final List<Todo> todos = client.getTodos();
-        List<PropertyWithValueAndId> customProperties = new ArrayList<>();
-        SetMultimap<Integer, Integer> todoCustomPropertyMap = HashMultimap.create();
-        ConvertRecord.fillTodoCustomPropertyInfo(todos, customProperties, todoCustomPropertyMap);
-        fileNameToStreams.put(ZipTools.TODO_CUSTOM_PROPERTIES_FILE, getCsvStream(serialize(todoCustomPropertyMap, ImmutableList.of("T_ID", "P_ID"))));
-        fileNameToStreams.put(ZipTools.CUSTOM_PROPERTIES_FILE, getCsvStream(serialize(customProperties, customPropertiesSerializer())));
-        fileNameToStreams.put(ZipTools.OBLIGATION_TODO_FILE, getCsvStream(serialize(getTodoToObligationMap(todos), ImmutableList.of("O_ID", "T_ID"))));
-        fileNameToStreams.put(ZipTools.TODO_FILE, getCsvStream(serialize(todos, todoSerializer())));
-
-        fileNameToStreams.put(ZipTools.LICENSETYPE_FILE, getCsvStream(serialize(client.getLicenseTypes(), licenseTypeSerializer())));
-
-        final List<License> licenses = client.getLicenses();
-        fileNameToStreams.put(ZipTools.LICENSE_TODO_FILE, getCsvStream(serialize(getLicenseToTodoMap(licenses), ImmutableList.of("Identifier", "ID"))));
-        fileNameToStreams.put(ZipTools.LICENSE_RISK_FILE, getCsvStream(serialize(getLicenseToRiskMap(licenses), ImmutableList.of("Identifier", "ID"))));
-        fileNameToStreams.put(ZipTools.LICENSE_FILE, getCsvStream(serialize(licenses, licenseSerializer())));
-        return fileNameToStreams;
-    }
-
-    @NotNull
-    private ByteArrayOutputStream writeCsvStream(List<List<String>> listList) throws TException, IOException {
-        final ByteArrayOutputStream riskCategoryCsvStream = new ByteArrayOutputStream();
-        Writer out = new BufferedWriter(new OutputStreamWriter(riskCategoryCsvStream));
-        CSVPrinter csvPrinter = new CSVPrinter(out, CommonUtils.sw360CsvFormat);
-        csvPrinter.printRecords(listList);
-        csvPrinter.flush();
-        csvPrinter.close();
-        return riskCategoryCsvStream;
-    }
-
-    private ByteArrayInputStream getCsvStream(List<List<String>> listList) throws TException, IOException {
-        return new ByteArrayInputStream(writeCsvStream(listList).toByteArray());
-    }
-
     @UsedAsLiferayAction
     public void updateComponents(ActionRequest request, ActionResponse response) throws PortletException, IOException, TException {
         List<CSVRecord> releaseRecords = getCSVFromRequest(request, "file");
@@ -387,84 +306,5 @@ public class ComponentUploadPortlet extends Sw360Portlet {
         final RequestSummary requestSummary = writeReleaseLinksToDatabase(csvRecords, componentClient, user);
 
         renderRequestSummary(request, response, requestSummary);
-    }
-
-    @UsedAsLiferayAction
-    public void updateLicenses(ActionRequest request, ActionResponse response) throws PortletException, IOException, TException {
-        final HashMap<String, InputStream> inputMap = new HashMap<>();
-        User user = UserCacheHolder.getUserFromRequest(request);
-        try {
-            fillFilenameInputStreamMap(request, inputMap);
-            if (ZipTools.isValidLicenseArchive(inputMap)) {
-
-                final LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
-
-                log.debug("Parsing risk categories ...");
-                Map<Integer, RiskCategory> riskCategoryMap = getIdentifierToTypeMapAndWriteMissingToDatabase(licenseClient,
-                        inputMap.get(RISK_CATEGORY_FILE), RiskCategory.class, Integer.class, user);
-
-                log.debug("Parsing risks ...");
-                Map<Integer, Risk> riskMap = getIntegerRiskMap(licenseClient, riskCategoryMap, inputMap.get(RISK_FILE), user);
-
-                log.debug("Parsing obligations ...");
-                Map<Integer, Obligation> obligationMap = getIdentifierToTypeMapAndWriteMissingToDatabase(licenseClient,
-                        inputMap.get(OBLIGATION_FILE), Obligation.class, Integer.class, user);
-
-                log.debug("Parsing obligation todos ...");
-                List<CSVRecord> obligationTodoRecords = readAsCSVRecords(inputMap.get(OBLIGATION_TODO_FILE));
-                Map<Integer, Set<Integer>> obligationTodoMapping = convertRelationalTableWithIntegerKeys(obligationTodoRecords);
-
-                log.debug("Parsing license types ...");
-                Map<Integer, LicenseType> licenseTypeMap = getIdentifierToTypeMapAndWriteMissingToDatabase(licenseClient,
-                        inputMap.get(LICENSETYPE_FILE), LicenseType.class, Integer.class, user);
-
-                log.debug("Parsing todos ...");
-                Map<Integer, Todo> todoMap = getTodoMapAndWriteMissingToDatabase(licenseClient, obligationMap, obligationTodoMapping, inputMap.get(TODO_FILE), user);
-
-                if(inputMap.containsKey(CUSTOM_PROPERTIES_FILE)) {
-                    log.debug("Parsing custom properties ...");
-                    Map<Integer, PropertyWithValue> customPropertiesMap =
-                            getCustomPropertiesWithValuesByIdAndWriteMissingToDatabase(licenseClient, inputMap.get(CUSTOM_PROPERTIES_FILE), user);
-
-                    log.debug("Parsing todo custom properties relation ...");
-                    List<CSVRecord> todoPropertiesRecord = readAsCSVRecords(inputMap.get(TODO_CUSTOM_PROPERTIES_FILE));
-                    Map<Integer, Set<Integer>> todoPropertiesMap = convertRelationalTableWithIntegerKeys(todoPropertiesRecord);
-
-                    todoMap = updateTodoMapWithCustomPropertiesAndWriteToDatabase(licenseClient, todoMap, customPropertiesMap, todoPropertiesMap, user);
-                }
-
-                log.debug("Parsing license todos ...");
-                List<CSVRecord> licenseTodoRecord = readAsCSVRecords(inputMap.get(LICENSE_TODO_FILE));
-                Map<String, Set<Integer>> licenseTodoMap = convertRelationalTable(licenseTodoRecord);
-
-
-                log.debug("Parsing license risks ...");
-                List<CSVRecord> licenseRiskRecord = readAsCSVRecords(inputMap.get(LICENSE_RISK_FILE));
-                Map<String, Set<Integer>> licenseRiskMap = convertRelationalTable(licenseRiskRecord);
-
-                log.debug("Parsing licenses ...");
-                List<CSVRecord> licenseRecord = readAsCSVRecords(inputMap.get(LICENSE_FILE));
-
-                final List<License> licensesToAdd = ConvertRecord.fillLicenses(licenseRecord, licenseTypeMap, todoMap, riskMap, licenseTodoMap, licenseRiskMap);
-                addLicenses(licenseClient, licensesToAdd, log, user);
-
-            } else {
-                throw new SW360Exception("Invalid file format");
-            }
-        } finally {
-            for (InputStream inputStream : inputMap.values()) {
-                inputStream.close();
-            }
-        }
-    }
-
-    private void fillFilenameInputStreamMap(ActionRequest request, HashMap<String, InputStream> fileNameToStream) throws IOException {
-        InputStream in = null;
-        try {
-            in = getInputStreamFromRequest(request, "file");
-            ZipTools.extractZipToInputStreamMap(in, fileNameToStream);
-        } finally {
-            if (in != null) in.close();
-        }
     }
 }

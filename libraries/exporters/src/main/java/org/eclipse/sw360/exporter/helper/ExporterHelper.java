@@ -9,10 +9,11 @@
  * http://www.eclipse.org/legal/epl-v10.html
  */
 
-package org.eclipse.sw360.exporter;
+package org.eclipse.sw360.exporter.helper;
 
 import com.google.common.collect.Lists;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.exporter.utils.SubTable;
 
 import java.util.List;
 import java.util.stream.Collectors;

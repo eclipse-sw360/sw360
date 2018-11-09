@@ -103,7 +103,12 @@ public class LicenseHandler implements LicenseService.Iface {
 
     @Override
     public List<License> addLicenses(List<License> licenses, User user) throws TException {
-        return handler.addLicenses(licenses, user);
+        return handler.addOrOverwriteLicenses(licenses, user, false);
+    }
+
+    @Override
+    public List<License> addOrOverwriteLicenses(List<License> licenses, User user) throws TException {
+        return handler.addOrOverwriteLicenses(licenses, user, true);
     }
 
     @Override

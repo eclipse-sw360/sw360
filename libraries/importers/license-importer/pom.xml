@@ -27,6 +27,11 @@
             <artifactId>commonIO</artifactId>
             <version>${project.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.eclipse.sw360</groupId>
+            <artifactId>exporters</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 </project>

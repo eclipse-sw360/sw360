@@ -14,6 +14,8 @@ import com.google.common.collect.ImmutableList;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.apache.thrift.TEnum;
+import org.eclipse.sw360.exporter.helper.ExporterHelper;
+import org.eclipse.sw360.exporter.utils.SubTable;
 
 import java.util.ArrayList;
 import java.util.List;

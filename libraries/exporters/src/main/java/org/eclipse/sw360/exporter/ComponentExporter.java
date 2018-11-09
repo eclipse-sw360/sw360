@@ -18,6 +18,9 @@ import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.exporter.helper.ComponentHelper;
+import org.eclipse.sw360.exporter.helper.ExporterHelper;
+import org.eclipse.sw360.exporter.helper.ReleaseHelper;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -53,18 +56,18 @@ public class ComponentExporter extends ExcelExporter<Component, ComponentHelper>
             .add(RELEASES)
             .build();
 
-    static final List<Component._Fields> COMPONENT_RENDERED_FIELDS = Component.metaDataMap.keySet()
+    public static final List<Component._Fields> COMPONENT_RENDERED_FIELDS = Component.metaDataMap.keySet()
             .stream()
             .filter(k -> ! COMPONENT_IGNORED_FIELDS.contains(k))
             .collect(Collectors.toList());
 
-    static List<String> HEADERS = COMPONENT_RENDERED_FIELDS
+    public static List<String> HEADERS = COMPONENT_RENDERED_FIELDS
             .stream()
             .map(Component._Fields::getFieldName)
             .map(n -> SW360Utils.displayNameFor(n, nameToDisplayName))
             .collect(Collectors.toList());
 
-    static List<String> HEADERS_EXTENDED_BY_RELEASES = ExporterHelper.addSubheadersWithPrefixesAsNeeded(HEADERS, ReleaseExporter.HEADERS, "release: ");
+    public static List<String> HEADERS_EXTENDED_BY_RELEASES = ExporterHelper.addSubheadersWithPrefixesAsNeeded(HEADERS, ReleaseExporter.HEADERS, "release: ");
 
     public ComponentExporter(ComponentService.Iface componentClient, List<Component> components, User user,
             boolean extendedByReleases) throws SW360Exception {

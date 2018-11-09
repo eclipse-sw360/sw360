@@ -16,6 +16,7 @@ import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.exporter.helper.ReleaseHelper;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -51,14 +52,14 @@ public class ReleaseExporter extends ExcelExporter<Release, ReleaseHelper> {
         nameToDisplayName.put(Release._Fields.OPERATING_SYSTEMS.getFieldName(), "operating systems");
     }
 
-    static final List<Release._Fields> RELEASE_IGNORED_FIELDS = ImmutableList.<Release._Fields>builder()
+    public static final List<Release._Fields> RELEASE_IGNORED_FIELDS = ImmutableList.<Release._Fields>builder()
             .add(REVISION)
             .add(DOCUMENT_STATE)
             .add(PERMISSIONS)
             .add(VENDOR_ID)
             .build();
 
-    static final List<Vendor._Fields> VENDOR_IGNORED_FIELDS = ImmutableList.<Vendor._Fields>builder()
+    public static final List<Vendor._Fields> VENDOR_IGNORED_FIELDS = ImmutableList.<Vendor._Fields>builder()
             .add(Vendor._Fields.PERMISSIONS)
             .add(Vendor._Fields.REVISION)
             .add(Vendor._Fields.ID)
@@ -70,9 +71,9 @@ public class ReleaseExporter extends ExcelExporter<Release, ReleaseHelper> {
             .filter(k -> !RELEASE_IGNORED_FIELDS.contains(k))
             .collect(Collectors.toList());
 
-    static final List<String> HEADERS = makeHeaders();
+    public static final List<String> HEADERS = makeHeaders();
 
-    static final List<String> HEADERS_EXTENDED_BY_ADDITIONAL_DATA = makeHeadersForExtendedExport();
+    public static final List<String> HEADERS_EXTENDED_BY_ADDITIONAL_DATA = makeHeadersForExtendedExport();
 
     public ReleaseExporter(ComponentService.Iface cClient, List<Release> releases, User user,
             List<ReleaseClearingStatusData> releaseClearingStatuses) throws SW360Exception {

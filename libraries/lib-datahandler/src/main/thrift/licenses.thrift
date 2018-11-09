@@ -214,6 +214,11 @@ service LicenseService {
     list<License> addLicenses(1: list <License> licenses, 2: User user);
 
     /**
+     * bulk add for import of license archive, returns input licenses if successful, null otherwise
+     **/
+    list<License> addOrOverwriteLicenses(1: list <License> licenses, 2: User user);
+
+    /**
      * bulk add for import of license archive, returns input todos if successful, null otherwise
      **/
     list<Todo> addTodos(1: list <Todo> todos, 2: User user);

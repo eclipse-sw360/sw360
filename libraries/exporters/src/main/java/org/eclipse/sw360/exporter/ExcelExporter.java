@@ -17,6 +17,8 @@ import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.exporter.helper.ExporterHelper;
+import org.eclipse.sw360.exporter.utils.SubTable;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
