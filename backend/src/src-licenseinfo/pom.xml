@@ -27,7 +27,7 @@
         <dependency>
             <groupId>org.eclipse.sw360</groupId>
             <artifactId>src-attachments</artifactId>
-            <version>3.3.0-SNAPSHOT</version>
+            <version>3.3.0-M1</version>
         </dependency>
         <dependency>
             <groupId>org.spdx</groupId>
@@ -63,7 +63,7 @@
     <parent>
         <groupId>org.eclipse.sw360</groupId>
         <artifactId>backend-src</artifactId>
-        <version>3.3.0-SNAPSHOT</version>
+        <version>3.3.0-M1</version>
     </parent>
 
     <artifactId>src-licenseinfo</artifactId>
