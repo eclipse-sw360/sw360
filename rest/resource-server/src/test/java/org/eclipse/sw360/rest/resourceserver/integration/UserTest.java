@@ -71,7 +71,7 @@ public class UserTest extends TestIntegrationBase {
     }
 
     @Test
-    public void should_get_single_user_with_correct_self_link() throws IOException {
+    public void should_get_single_user_containing_the_correct_self_link() throws IOException {
         String userLink = "http://localhost:" + port + "/api/users/byid/987654321";
 
         ResponseEntity<String> response = sendRequest(userLink);
