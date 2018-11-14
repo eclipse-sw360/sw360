@@ -9,6 +9,8 @@
 
 package org.eclipse.sw360.rest.resourceserver.integration;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
@@ -26,21 +28,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.mockito.BDDMockito.given;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class UserTest extends TestIntegrationBase {
 
-	@Value("${local.server.port}")
-	private int port;
+    @Value("${local.server.port}")
+    private int port;
 
-	@MockBean
-	private Sw360UserService userServiceMock;
+    @MockBean
+    private Sw360UserService userServiceMock;
 
-	@Before
-	public void before() {
-		List<User> userList = new ArrayList<>();
+    @Before
+    public void before() {
+        List<User> userList = new ArrayList<>();
 
         User user = new User();
         user.setId("123456789");
@@ -54,20 +57,35 @@ public class UserTest extends TestIntegrationBase {
         user.setFullname("Jane Doe");
         userList.add(user);
 
-		given(this.userServiceMock.getAllUsers()
-		).willReturn(userList);
-	}
+        given(this.userServiceMock.getAllUsers()).willReturn(userList);
 
-	@Test
-	public void should_get_all_users() throws IOException {
-		HttpHeaders headers = getHeaders(port);
-		ResponseEntity<String> response =
-				new TestRestTemplate().exchange("http://localhost:" + port + "/api/users",
-						HttpMethod.GET,
-						new HttpEntity<>(null, headers),
-						String.class);
+        given(this.userServiceMock.getUser(user.getId())).willReturn(user);
+    }
+
+    @Test
+    public void should_get_all_users() throws IOException {
+        ResponseEntity<String> response = sendRequest("http://localhost:" + port + "/api/users");
         assertThat(HttpStatus.OK, is(response.getStatusCode()));
 
-		TestHelper.checkResponse(response.getBody(), "users", 2);
-	}
+        TestHelper.checkResponse(response.getBody(), "users", 2);
+    }
+
+    @Test
+    public void should_get_single_user_containing_the_correct_self_link() throws IOException {
+        String userLink = "http://localhost:" + port + "/api/users/byid/987654321";
+
+        ResponseEntity<String> response = sendRequest(userLink);
+        assertThat(HttpStatus.OK, is(response.getStatusCode()));
+
+        JsonNode responseBody = new ObjectMapper().readTree(response.getBody());
+        assertEquals(responseBody.get("_links").get("self").get("href").textValue(), userLink);
+    }
+
+    private ResponseEntity<String> sendRequest(String url) throws IOException {
+        HttpHeaders headers = getHeaders(port);
+        return new TestRestTemplate().exchange(url,
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                String.class);
+    }
 }
