@@ -1,5 +1,6 @@
 /*
  * Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
+ * With contributions by Siemens Healthcare Diagnostics Inc, 2018.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -54,6 +55,7 @@ import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePerm
  * @author daniele.fognini@tngtech.com
  * @author alex.borodin@evosoft.com
  * @author thomas.maier@evosoft.com
+ * @author ksoranko@verifa.io
  */
 public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
@@ -149,6 +151,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     ////////////////////////////
     // ADD INDIVIDUAL OBJECTS //
     ////////////////////////////
+
+    public List<Project> getMyProjectsFull(String user) {
+        return repository.getMyProjectsFull(user);
+    }
 
     public AddDocumentRequestSummary addProject(Project project, User user) throws SW360Exception {
         // Prepare project for database

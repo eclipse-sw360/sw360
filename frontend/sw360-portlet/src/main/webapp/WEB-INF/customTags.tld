@@ -1,6 +1,7 @@
 <!--
   ~ Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
   ~ With contributions by Bosch Software Innovations GmbH, 2016.
+  ~ With contributions by Siemens Healthcare Diagnostics Inc, 2018.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -1073,12 +1074,9 @@
     </tag>
 
     <tag>
-        <name>DisplayReleaseClearingStateSummary</name>
-        <tag-class>org.eclipse.sw360.portal.tags.DisplayReleaseClearingStateSummary</tag-class>
+        <name>DisplayAcceptedReleases</name>
+        <tag-class>org.eclipse.sw360.portal.tags.DisplayAcceptedReleases</tag-class>
         <body-content>empty</body-content>
-        <description>
-            wraps ReleaseClearingStateSummary
-        </description>
         <attribute>
             <name>releaseClearingStateSummary</name>
             <required>true</required>

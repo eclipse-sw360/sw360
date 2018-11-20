@@ -1,6 +1,7 @@
 
 /*
  * Copyright Siemens AG, 2013-2016. Part of the SW360 Portal Project.
+ * With modifications by Siemens Healthcare Diagnostics Inc, 2018.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -22,9 +23,10 @@ import java.io.IOException;
  *
  * @author birgit.heydenreich@tngtech.com
  * @author alex.borodin@evosoft.com
+ * @author ksoranko@verifa.io
  */
 
-public class DisplayReleaseClearingStateSummary extends SimpleTagSupport {
+public class DisplayAcceptedReleases extends SimpleTagSupport {
 
     private ReleaseClearingStateSummary releaseClearingStateSummary;
 
@@ -37,10 +39,11 @@ public class DisplayReleaseClearingStateSummary extends SimpleTagSupport {
         if (releaseClearingStateSummary == null) {
             releaseCounts = "not available";
         } else {
-            releaseCounts = releaseClearingStateSummary.newRelease + " " + releaseClearingStateSummary.underClearing + " " + releaseClearingStateSummary.underClearingByProjectTeam + " " + releaseClearingStateSummary.reportAvailable + " " + releaseClearingStateSummary.approved;
+            int total = releaseClearingStateSummary.newRelease + releaseClearingStateSummary.underClearing + releaseClearingStateSummary.underClearingByProjectTeam + releaseClearingStateSummary.reportAvailable + releaseClearingStateSummary.approved;
+            releaseCounts = releaseClearingStateSummary.approved + " / " + Integer.toString(total);
         }
 
-        String s = "<span title=\"new release, under clearing, under clearing by the project clearing team, report available, approved\">" + releaseCounts + "</span>";
+        String s = "<span title=\"approved releases / total number of releases\">" + releaseCounts + "</span>";
         getJspContext().getOut().print(s);
 
     }

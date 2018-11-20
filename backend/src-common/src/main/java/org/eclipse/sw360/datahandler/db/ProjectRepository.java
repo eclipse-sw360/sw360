@@ -1,5 +1,6 @@
 /*
  * Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
+ * With contributions by Siemens Healthcare Diagnostics Inc, 2018.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -32,6 +33,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Utils.getBUFromOrganisat
  * @author cedric.bodet@tngtech.com
  * @author Johannes.Najjar@tngtech.com
  * @author thomas.maier@evosoft.com
+ * @author ksoranko@verifa.io
  */
 @View(name = "all", map = "function(doc) { if (doc.type == 'project') emit(null, doc._id) }")
 public class ProjectRepository extends SummaryAwareRepository<Project> {
@@ -213,6 +215,10 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
 
     public List<Project> getMyProjectsSummary(String user) {
         return makeSummaryFromFullDocs(SummaryType.SHORT, getMyProjects(user));
+    }
+
+    public List<Project> getMyProjectsFull(String user) {
+        return new ArrayList<>(getMyProjects(user));
     }
 
     @View(name = "buprojects", map = BU_PROJECTS_VIEW)
