@@ -38,7 +38,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -106,6 +106,11 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
         Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
         HalResource halRelease = createHalReleaseResource(sw360Release, true);
         return new ResponseEntity<>(halRelease, HttpStatus.OK);
+    }
+
+    @RequestMapping(value = RELEASES_URL + "/searchByExternalIds", method = RequestMethod.GET)
+    public ResponseEntity searchByExternalIds(@RequestParam MultiValueMap<String, String> externalIdsMultiMap) throws TException {
+        return restControllerHelper.searchByExternalIds(externalIdsMultiMap, releaseService, null);
     }
 
     @PreAuthorize("hasAuthority('WRITE')")

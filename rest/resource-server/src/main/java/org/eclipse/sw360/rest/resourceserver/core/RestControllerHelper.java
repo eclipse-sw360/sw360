@@ -41,9 +41,12 @@ import org.springframework.hateoas.Link;
 import org.springframework.hateoas.PagedResources;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.Resources;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
@@ -435,5 +438,35 @@ public class RestControllerHelper<T> {
         attachment.setCheckedComment(null);
         attachment.setCheckStatus(null);
         return attachment;
+    }
+
+    /**
+     * Generic Entity response method to get externalIds (projects, components, releases)
+     */
+    public <T> ResponseEntity searchByExternalIds(MultiValueMap<String, String> externalIdsMultiMap,
+                                                  AwareOfRestServices<T> service,
+                                                  User user) throws TException {
+
+        Map<String, Set<String>> externalIds = getExternalIdsFromMultiMap(externalIdsMultiMap);
+        Set<T> sw360Objects = service.searchByExternalIds(externalIds, user);
+        List<Resource> resourceList = new ArrayList<>();
+
+        sw360Objects.forEach(sw360Object -> {
+            T embeddedResource = service.convertToEmbeddedWithExternalIds(sw360Object);
+            Resource<T> releaseResource = new Resource<>(embeddedResource);
+            resourceList.add(releaseResource);
+        });
+
+        Resources<Resource> resources = new Resources<>(resourceList);
+        return new ResponseEntity<>(resources, HttpStatus.OK);
+    }
+
+    private Map<String, Set<String>> getExternalIdsFromMultiMap(MultiValueMap<String, String> externalIdsMultiMap) {
+        Map<String, Set<String>> externalIds = new HashMap<>();
+        for (String externalIdKey : externalIdsMultiMap.keySet()) {
+            externalIds.put(externalIdKey, new HashSet<>(externalIdsMultiMap.get(externalIdKey)));
+        }
+
+        return externalIds;
     }
 }
