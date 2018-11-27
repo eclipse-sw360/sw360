@@ -1,6 +1,6 @@
 /**
 *
-* Modifications applied by Siemens AG 2014-2017.
+* Modifications applied by Siemens AG 2014-2018.
 * Modifications for supporting own infrastructure.
 *
 * Original file from: Liferay Inc.
@@ -573,4 +573,20 @@ div.content2 {
 .infopic {
 	padding: 0px 10px 0px 0px;
 	cursor:pointer;
+}
+
+div#unsupported-browser {
+	display: none;
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+}
+
+div#unsupported-browser-content {
+	width: 100%;
+	text-align: center;
+	padding: 6px 0px;
+	border: 2px solid #000;
+	background-color: #FFA500;
 }
