@@ -12,14 +12,18 @@
 
 package org.eclipse.sw360.datahandler.resourcelists;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import org.apache.thrift.TBase;
+import org.apache.thrift.TFieldIdEnum;
+
+import java.util.*;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class ResourceListController<T> {
 
     private static final String PAGINATION_PARAMETER_EXCEPTION_MESSAGE = "The given page index is bigger than the actual number of pages";
+
+    private final ResourcePredicateGenerator resourcePredicateGenerator = new ResourcePredicateGenerator();
 
     public PaginationResult<T> applyPagingToList(List<T> resources, PaginationOptions<T> paginationOptions) throws PaginationParameterException {
         if(resources.size() == 0) {
@@ -47,5 +51,10 @@ public class ResourceListController<T> {
         }
         Collections.sort(resources, comparator);
         return resources;
+    }
+
+    public <T extends TBase<?, ? extends TFieldIdEnum>> List<T> applyFilter(String resourceClassName, List resources, Map<String,String> filter) {
+        Predicate predicate = resourcePredicateGenerator.predicateFromFilterMap(resourceClassName, filter);
+        return (List<T>)resources.stream().filter(predicate).collect(Collectors.toList());
     }
 }

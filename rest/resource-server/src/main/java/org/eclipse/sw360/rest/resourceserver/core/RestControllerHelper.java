@@ -67,6 +67,10 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class RestControllerHelper<T> {
 
+    public static final String REQUEST_PARAM_KEY_PAGE = "page";
+    public static final String REQUEST_PARAM_KEY_PAGE_ENTRIES = "page_entries";
+    public static final String REQUEST_PARAM_KEY_SORT = "sort";
+
     @NonNull
     private final Sw360UserService userService;
 
@@ -199,6 +203,13 @@ public class RestControllerHelper<T> {
         } else {
             return null;
         }
+    }
+
+    public Map<String, String> removePageableParamatersFromRequestParams(Map<String, String> requestParams) {
+        requestParams.remove(REQUEST_PARAM_KEY_PAGE);
+        requestParams.remove(REQUEST_PARAM_KEY_PAGE_ENTRIES);
+        requestParams.remove(REQUEST_PARAM_KEY_SORT);
+        return requestParams;
     }
 
     public void addEmbeddedModerators(HalResource halResource, Set<String> moderators) {

@@ -18,9 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
-import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
-import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
-import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
+import org.eclipse.sw360.datahandler.resourcelists.*;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
@@ -56,10 +54,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
@@ -85,27 +80,25 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
     @NonNull
     private final RestControllerHelper<Component> restControllerHelper;
 
+    @NonNull
+    private final ResourceListController<Component> resourceListController = new ResourceListController<>();
+
     @RequestMapping(value = COMPONENTS_URL, method = RequestMethod.GET)
     public ResponseEntity<Resources> getComponents(Pageable pageable,
-                                                                        @RequestParam(value = "name", required = false) String name,
-                                                                        @RequestParam(value = "type", required = false) String componentType,
                                                                         @RequestParam(value = "fields", required = false) List<String> fields,
+                                                                        @RequestParam Map<String,String> requestParams,
                                                                         HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        List<Component> allComponents = componentService.getComponentsForUser(sw360User);
 
-        List<Component> allComponents = new ArrayList<>();
-        if (name != null && !name.isEmpty()) {
-            allComponents.addAll(componentService.searchComponentByName(name));
-        } else {
-            allComponents.addAll(componentService.getComponentsForUser(sw360User));
-        }
+        requestParams = restControllerHelper.removePageableParamatersFromRequestParams(requestParams);
+        List<Component> filteredComponents = resourceListController.applyFilter(SW360Constants.TYPE_COMPONENT, allComponents, requestParams);
 
-        PaginationResult<Component> paginationResult = restControllerHelper.createPaginationResult(request, pageable, allComponents, SW360Constants.TYPE_COMPONENT);
+        PaginationResult<Component> paginationResult = restControllerHelper.createPaginationResult(request, pageable, filteredComponents, SW360Constants.TYPE_COMPONENT);
 
-        List<Resource<Component>> componentResources = new ArrayList<>();
+                List<Resource<Component>> componentResources = new ArrayList<>();
         paginationResult.getResources().stream()
-                .filter(component -> componentType == null || componentType.equals(component.componentType.name()))
                 .forEach(c -> {
                     Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c, fields);
                     componentResources.add(new Resource<>(embeddedComponent));
