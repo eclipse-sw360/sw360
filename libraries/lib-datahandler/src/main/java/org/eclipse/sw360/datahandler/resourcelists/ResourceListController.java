@@ -12,6 +12,7 @@
 
 package org.eclipse.sw360.datahandler.resourcelists;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -23,8 +24,10 @@ public class ResourceListController<T> {
 
         int fromIndex = paginationOptions.getOffset();
         int toIndex = paginationOptions.getPageEndIndex();
-        if(fromIndex >= sortedResources.size()) {
-            throw new PaginationParameterException("The page size of " + fromIndex + " exceeds the list size of 'sortedResources.size()'");
+        if(fromIndex == 0 && sortedResources.size() == 0) {
+            return new PaginationResult<>(new ArrayList<>(), 0, paginationOptions);
+        } else if(fromIndex >= sortedResources.size()) {
+             throw new PaginationParameterException("The page size of " + fromIndex + " exceeds the list size of " + sortedResources.size() + ".");
         } else if (toIndex > sortedResources.size()) {
             toIndex = sortedResources.size();
         }
