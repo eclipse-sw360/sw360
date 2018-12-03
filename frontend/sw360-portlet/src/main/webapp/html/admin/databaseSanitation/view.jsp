@@ -94,4 +94,4 @@
 </script>
 
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/dataTable_Siemens.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/search.css">
+<link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">

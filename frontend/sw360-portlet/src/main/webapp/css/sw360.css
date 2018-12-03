@@ -199,9 +199,12 @@ label.inlinelabel {
 #searchInput .searchbar {
     display: inline-block;
     color: rgb(85, 85, 85);
-    width: 90%;
+    width: 100%;
     padding: 5px;
-    height: 20px;
+    height: 28px;
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
 }
 
 #searchInput select.searchbar {
@@ -276,7 +279,7 @@ input[readonly].clickable {
 
 .release-list-entry-element input {
     width: 95%;
-    padding: 2%
+    padding: 2%;
 }
 
 #bdp-import-status-popup {
@@ -610,7 +613,7 @@ input[readonly].clickable {
     display: block;
 }
 
-.dropdown a:hover {background-color: #ddd}
+.dropdown a:hover {background-color: #ddd;}
 
 .show {display:block;}
 
@@ -672,4 +675,9 @@ input[readonly].clickable {
     padding: 0;
     margin: 0;
     text-color: black;
+}
+
+.typePic {
+    vertical-align: middle;
+    line-height: 50px;
 }

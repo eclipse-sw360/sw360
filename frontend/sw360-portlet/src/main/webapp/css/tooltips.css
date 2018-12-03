@@ -361,7 +361,7 @@
 
 .sw360-tt-ReleaseRelationship-SIDE_BY_SIDE:hover:after {
     content: "";
-    dipslay: none;
+    display: none;
 }
 
 .sw360-tt-ReleaseRelationship-STANDALONE:hover:after {

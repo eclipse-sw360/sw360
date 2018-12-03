@@ -168,5 +168,5 @@
     }
 </script>
 
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/search.css">
+<link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
 <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/github-com-craftpip-jquery-confirm/3.0.1/jquery-confirm.min.css">

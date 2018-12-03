@@ -14,28 +14,25 @@ import com.github.ldriscoll.ektorplucene.LuceneAwareCouchDbConnector;
 import com.github.ldriscoll.ektorplucene.LuceneQuery;
 import com.github.ldriscoll.ektorplucene.LuceneResult;
 import com.github.ldriscoll.ektorplucene.util.IndexUploader;
-import com.google.common.base.Function;
 import com.google.common.base.Joiner;
-import com.google.common.collect.FluentIterable;
 import org.apache.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.ektorp.DbAccessException;
 import org.ektorp.http.HttpClient;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Strings.nullToEmpty;
-import static org.eclipse.sw360.datahandler.common.ThriftEnumUtils.enumByString;
 
 
 /**
@@ -53,7 +50,7 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
 
     private final DatabaseConnector connector;
 
-    private static final List<String> LUCENE_SPECIAL_CHARACTERS = Arrays.asList("[\\\\\\+\\-\\!\\~\\*\\?\\^\\:\\(\\)\\{\\}\\[\\]]", "\\&\\&", "\\|\\|");
+    private static final List<String> LUCENE_SPECIAL_CHARACTERS = Arrays.asList("[\\\\\\+\\-\\!\\~\\*\\?\\\"\\^\\:\\(\\)\\{\\}\\[\\]]", "\\&\\&", "\\|\\|");
 
     /**
      * Maximum number of results to return
@@ -178,7 +175,7 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
         }
 
         String query  = AND.join(subQueries);
-        return searchView(type, luceneSearchView, query);
+            return searchView(type, luceneSearchView, query);
     }
 
     public List<Project> searchProjectViewWithRestrictionsAndFilter(LuceneSearchView luceneSearchView, String text,
@@ -190,26 +187,26 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
 
     private static String formatSubquery(Set<String> filterSet, final String fieldName) {
         final Function<String, String> addType = input -> {
-            if (fieldName.equals("state")) {
-                return fieldName + ":\"" + (enumByString(input, ProjectState.class).toString()) + "\"";
-            } else if (fieldName.equals("projectType")) {
-                return fieldName + ":\"" + (enumByString(input, ProjectType.class).toString()) + "\"";
-            } else if (fieldName.equals("businessUnit") || fieldName.equals("tag")) {
+            if (fieldName.equals("businessUnit") || fieldName.equals("tag") || fieldName.equals("projectResponsible")) {
                 return fieldName + ":\"" + input + "\"";
             } else {
                 return fieldName + ":" + input;
             }
         };
 
-        FluentIterable<String> searchFilters = FluentIterable.from(filterSet).transform(addType);
-        return "( " + OR.join(searchFilters) + " ) ";
+        Stream<String> searchFilters = filterSet.stream().map(addType);
+        return "( " + OR.join(searchFilters.collect(Collectors.toList())) + " ) ";
     }
 
     public static String prepareWildcardQuery(String query) {
-        if (DatabaseSettings.LUCENE_LEADING_WILDCARD) {
-            return "*" + sanitizeQueryInput(query) + "*";
+        String leadingWildcardChar = DatabaseSettings.LUCENE_LEADING_WILDCARD ? "*" : "";
+        if (query.startsWith("\"") && query.endsWith("\"")) {
+            return "(\"" + sanitizeQueryInput(query) + "\")";
         } else {
-            return sanitizeQueryInput(query) + "*";
+            String wildCardQuery = Arrays.stream(sanitizeQueryInput(query)
+                    .split(" ")).map(q -> leadingWildcardChar + q + "*")
+                    .collect(Collectors.joining(" "));
+            return "(\"" + wildCardQuery + "\" " + wildCardQuery + ")";
         }
     }
 
@@ -224,7 +221,7 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
             for (String removeStr : LUCENE_SPECIAL_CHARACTERS) {
                 input = input.replaceAll(removeStr, " ");
             }
-            return input.trim();
+            return input.replaceAll("\\s+", " ").trim();
         }
     }
 }

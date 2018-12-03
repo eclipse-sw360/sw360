@@ -104,6 +104,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     private static final int COMPONENT_DT_ROW_TYPE = 3;
     private static final int COMPONENT_DT_ROW_ACTION = 4;
 
+    private static final int MAX_RESULT_LIMIT_CHECK_COMPONENT_NAME = 15;
+
     private boolean typeIsComponent(String documentType) {
         return SW360Constants.TYPE_COMPONENT.equals(documentType);
     }
@@ -256,16 +258,19 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
                 // first search for names
                 filterMap.put(Component._Fields.NAME.getFieldName(), splitExtendedCName);
-                similarComponents.addAll(cClient.refineSearch(null, filterMap));
+                similarComponents.addAll(cClient.refineSearch(null, filterMap)
+                        .stream().limit(MAX_RESULT_LIMIT_CHECK_COMPONENT_NAME)
+                        .collect(Collectors.toList()));
 
                 // second search for vendors
                 filterMap.remove(Component._Fields.NAME.getFieldName());
                 filterMap.put(Component._Fields.VENDOR_NAMES.getFieldName(), splitExtendedCName);
-                similarComponents.addAll(cClient.refineSearch(null, filterMap));
+                similarComponents.addAll(cClient.refineSearch(null, filterMap)
+                        .stream().limit(MAX_RESULT_LIMIT_CHECK_COMPONENT_NAME)
+                        .collect(Collectors.toList()));
 
                 // remove duplicates and sort alphabetically
-                resultComponents = similarComponents.stream().distinct().sorted(Comparator.comparing(c -> c.getName()))
-                        .collect(Collectors.toList());
+                resultComponents = similarComponents.stream().distinct().sorted(Comparator.comparing(Component::getName)).collect(Collectors.toList());
             } catch (TException e) {
                 log.error("Error getting similar components from backend", e);
                 errors.add(e.getMessage());
