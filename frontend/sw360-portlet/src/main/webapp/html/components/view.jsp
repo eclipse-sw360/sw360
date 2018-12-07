@@ -109,10 +109,9 @@
                 <td>
                     <label for="component_type">Component Type</label>
                     <select class="searchbar toplabelledInput filterInput" id="component_type" name="<portlet:namespace/><%=Component._Fields.COMPONENT_TYPE%>">
-                        <option value="<%=PortalConstants.NO_FILTER%>" class="textlabel stackedLabel">Any</option>
+                        <option value="<%=PortalConstants.NO_FILTER%>" class="textlabel stackedLabel"></option>
                         <sw360:DisplayEnumOptions type="<%=ComponentType.class%>" selectedName="${componentType}" useStringValues="true"/>
                     </select>
-                    <sw360:DisplayEnumInfo type="<%=ComponentType.class%>"/>
                 </td>
             </tr>
             <tr>
@@ -265,6 +264,7 @@
             }
 
             function createComponentsTable() {
+                var columnDefs =  [];
                 var columns = [
                     {"title": "Vendor", data: "vndrs"},
                     {"title": "Component Name", data: "name", render: {display: renderComponentNameLink}},
@@ -272,8 +272,6 @@
                     {"title": "Component Type", data: "cType"},
                     {"title": "Actions", data: "id", render: {display: renderComponentActions}}
                 ];
-                var order = [[1, 'asc']];
-                var columnDefs =  [];
 
                 if (window.codescoopEnabled) {
                     columns = [
@@ -298,7 +296,6 @@
                         {"title": "Component Type", data: "cType"},
                         {"title": "Actions", data: "id", render: {display: renderComponentActions}}
                     ];
-                    order = [[2, 'asc']];
                     columnDefs = [{ "orderable": false, "targets": [0, 4, 5, 6 ,7] }];
                 }
 
@@ -328,7 +325,6 @@
                     "pageLength": 25,
                     "searching": false,
                     "columns": columns,
-                    "order": order,
                     "aaSorting": [],
                     "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
                     "autoWidth": false,

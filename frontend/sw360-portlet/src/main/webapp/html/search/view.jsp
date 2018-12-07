@@ -25,9 +25,9 @@
 
 
 <%@ taglib prefix="sw360" uri="/WEB-INF/customTags.tld" %>
-<jsp:useBean id="searchtext" type="java.lang.String"  scope="request"/>
-<jsp:useBean id="documents" type="java.util.List<org.eclipse.sw360.datahandler.thrift.search.SearchResult>"  scope="request"/>
-<jsp:useBean id="typeMask" type="java.util.List<java.lang.String>"  scope="request"/>
+<jsp:useBean id="searchtext" type="java.lang.String" scope="request"/>
+<jsp:useBean id="documents" type="java.util.List<org.eclipse.sw360.datahandler.thrift.search.SearchResult>" scope="request"/>
+<jsp:useBean id="typeMask" type="java.util.List<java.lang.String>" scope="request"/>
 
 <div id="header"></div>
 <p class="pageHeader"><span class="pageHeaderBigSpan">Search results</span> <span
@@ -38,57 +38,56 @@
         <table>
             <thead>
             <tr>
-                <th style="background-color: #b2e0e0; padding: 10px; dir: left; valign: middle; align: left; font-size: 14px; font-family: Arial;">
-                    Keyword Search
-                </th>
+                <th class="infoheading"> Keyword Search</th>
             </tr>
             </thead>
             <tbody style="background-color: #f8f7f7; border: none;">
             <tr>
                 <td>
-                    <input type="text"  maxlength="100" class="searchbar"
+                    <input type="text" maxlength="100" class="searchbar"
                            id="keywordsearchinput" name="<portlet:namespace/><%=KEY_SEARCH_TEXT%>"
                            value="${searchtext}">
-                    <br/>
-                    <input style="padding: 5px 20px 5px 20px; border: none; font-weight:bold; align:center"
-                           type="submit" name="searchBtn" value="Search">
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <ul style="list-style-type: none;">
+                        <li style="height: 35px;margin-left: 3%;">
+                            <label> <input type="checkbox" class="typeFilter" value="<%=SW360Constants.TYPE_PROJECT%>" name="<portlet:namespace/><%=PortalConstants.TYPE_MASK%>"   <core_rt:if test="<%=typeMask.contains(SW360Constants.TYPE_PROJECT)%>">   checked="" </core_rt:if> > <img src="<%=request.getContextPath()%>/images/legends_P.png" class="typePic" title="Project"/>&ensp;Projects </label>
+                        </li>
+                        <li style="height: 35px;margin-left: 3%;">
+                            <label> <input type="checkbox" class="typeFilter" value="<%=SW360Constants.TYPE_COMPONENT%>" name="<portlet:namespace/><%=PortalConstants.TYPE_MASK%>" <core_rt:if test="<%=typeMask.contains(SW360Constants.TYPE_COMPONENT)%>"> checked="" </core_rt:if> > <img src="<%=request.getContextPath()%>/images/legend_C.png" class="typePic" title="Component"/>&ensp;Components</label>
+                        </li>
+                        <li style="height: 35px;margin-left: 3%;">
+                            <label> <input type="checkbox" class="typeFilter" value="<%=SW360Constants.TYPE_LICENSE%>" name="<portlet:namespace/><%=PortalConstants.TYPE_MASK%>"   <core_rt:if test="<%=typeMask.contains(SW360Constants.TYPE_LICENSE)%>">   checked="" </core_rt:if> > <img src="<%=request.getContextPath()%>/images/legend_L.png" class="typePic" title="License"/>&ensp;Licenses</label>
+                        </li>
+                        <li style="height: 35px;margin-left: 3%;">
+                            <label> <input type="checkbox" class="typeFilter" value="<%=SW360Constants.TYPE_RELEASE%>" name="<portlet:namespace/><%=PortalConstants.TYPE_MASK%>"   <core_rt:if test="<%=typeMask.contains(SW360Constants.TYPE_RELEASE)%>">   checked="" </core_rt:if> > <img src="<%=request.getContextPath()%>/images/legends_R.png" class="typePic" title="Release"/>&ensp;Releases</label>
+                        </li>
+                        <li style="height: 35px;margin-left: 3%;">
+                            <label> <input type="checkbox" class="typeFilter" value="<%=SW360Constants.TYPE_USER%>" name="<portlet:namespace/><%=PortalConstants.TYPE_MASK%>"      <core_rt:if test="<%=typeMask.contains(SW360Constants.TYPE_USER)%>">      checked="" </core_rt:if> > <img src="<%=request.getContextPath()%>/images/legend_U.png" class="typePic" title="User"/>&ensp;Users</label>
+                        </li>
+                        <li style="height: 35px;margin-left: 3%;">
+                            <label> <input type="checkbox" class="typeFilter" value="<%=SW360Constants.TYPE_VENDOR%>" name="<portlet:namespace/><%=PortalConstants.TYPE_MASK%>"   <core_rt:if test="<%=typeMask.contains(SW360Constants.TYPE_VENDOR)%>"> checked="" </core_rt:if> > <img src="<%=request.getContextPath()%>/images/legend_V.png" class="typePic" title="Vendor"/>&ensp;Vendors</label>
+                        </li>
+                    </ul>
+                    <button class="addButton" type="button" onclick="toggleSelection()">Toggle selection</button>
+                    <button class="addButton" type="button" onclick="deselectAllTypes()">Deselect all</button>
+                    <img class="infopic" src="<%=request.getContextPath()%>/images/ic_info.png"
+                         title="No type restriction is the same as looking for all types, also types that are not in the list"/>
                 </td>
             </tr>
             </tbody>
         </table>
         <br>
-        <ul style="list-style-type: none;">
-            <li style="height: 35px;margin-left: 3%;">
-                <label> <input type="checkbox" class="typeFilter" value="<%=SW360Constants.TYPE_PROJECT%>" name="<portlet:namespace/><%=PortalConstants.TYPE_MASK%>"   <core_rt:if test="<%=typeMask.contains(SW360Constants.TYPE_PROJECT)%>">   checked="" </core_rt:if> > <img src="<%=request.getContextPath()%>/images/legends_P.png" class="typePic" title="Project"/>&ensp;Projects </label>
-            </li>
-            <li style="height: 35px;margin-left: 3%;">
-                <label> <input type="checkbox" class="typeFilter" value="<%=SW360Constants.TYPE_COMPONENT%>" name="<portlet:namespace/><%=PortalConstants.TYPE_MASK%>" <core_rt:if test="<%=typeMask.contains(SW360Constants.TYPE_COMPONENT)%>"> checked="" </core_rt:if> > <img src="<%=request.getContextPath()%>/images/legend_C.png" class="typePic" title="Component"/>&ensp;Components</label>
-            </li>
-            <li style="height: 35px;margin-left: 3%;">
-                <label> <input type="checkbox" class="typeFilter" value="<%=SW360Constants.TYPE_LICENSE%>" name="<portlet:namespace/><%=PortalConstants.TYPE_MASK%>"   <core_rt:if test="<%=typeMask.contains(SW360Constants.TYPE_LICENSE)%>">   checked="" </core_rt:if> > <img src="<%=request.getContextPath()%>/images/legend_L.png" class="typePic" title="License"/>&ensp;Licenses</label>
-            </li>
-            <li style="height: 35px;margin-left: 3%;">
-                <label> <input type="checkbox" class="typeFilter" value="<%=SW360Constants.TYPE_RELEASE%>" name="<portlet:namespace/><%=PortalConstants.TYPE_MASK%>"   <core_rt:if test="<%=typeMask.contains(SW360Constants.TYPE_RELEASE)%>">   checked="" </core_rt:if> > <img src="<%=request.getContextPath()%>/images/legends_R.png" class="typePic" title="Release"/>&ensp;Releases</label>
-            </li>
-            <li style="height: 35px;margin-left: 3%;">
-                <label> <input type="checkbox" class="typeFilter" value="<%=SW360Constants.TYPE_USER%>" name="<portlet:namespace/><%=PortalConstants.TYPE_MASK%>"      <core_rt:if test="<%=typeMask.contains(SW360Constants.TYPE_USER)%>">      checked="" </core_rt:if> > <img src="<%=request.getContextPath()%>/images/legend_U.png" class="typePic" title="User"/>&ensp;Users</label>
-            </li>
-            <li style="height: 35px;margin-left: 3%;">
-                <label> <input type="checkbox" class="typeFilter"  value="<%=SW360Constants.TYPE_VENDOR%>" name="<portlet:namespace/><%=PortalConstants.TYPE_MASK%>"   <core_rt:if test="<%=typeMask.contains(SW360Constants.TYPE_VENDOR)%>">    checked="" </core_rt:if> > <img src="<%=request.getContextPath()%>/images/legend_V.png" class="typePic" title="Vendor"/>&ensp;Vendors</label>
-            </li>
-        </ul>
-
-        <button type="button" onclick="deselectAllTypes()">Deselect all</button> <button type="button" onclick="toggleSelection()">Toggle selection</button>
-        <br/>
-        <b>Note: No type restriction is the same as looking for all types, also types that are not in the list</b>
+        <input class="addButton" type="submit" name="searchBtn" value="Search">
     </form>
 </div>
-<div id="searchTableDiv" class="SW360content2">
+<div id="searchTableDiv" class="content2">
     <table id="searchTable" cellpadding="0" cellspacing="0" border="0" class="display">
         <tfoot>
         <tr>
-            <th style="width:50%;"></th>
-            <th style="width:50%;"></th>
+            <th colspan="2"></th>
         </tr>
         </tfoot>
     </table>
@@ -98,7 +97,7 @@
 <script type="text/javascript" src="<%=request.getContextPath()%>/webjars/datatables/1.10.15/js/jquery.dataTables.min.js"></script>
 
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/dataTable_Siemens.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/search.css">
+<link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
 
 <script>
 
@@ -174,8 +173,10 @@
                 },
                 { "title": "Text" }
             ],
-            autoWidth: false
+            autoWidth: false,
+            columnDefs: [{
+                "width": "90px", "targets": [0]
+            }]
         });
     }
 </script>
-
