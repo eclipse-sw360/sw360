@@ -104,6 +104,22 @@ public class DatabaseRepository<T> extends CouchDbRepositorySupport<T> {
         return queryForIds(query);
     }
 
+    public Set<String> queryForIdsOnlyComplexKey(String queryName, String key) {
+        return queryForIdsOnlyComplexKeys(queryName, Collections.singleton(key));
+    }
+
+    public Set<String> queryForIdsOnlyComplexKeys(String queryName, Set<String> keys) {
+        Set<String> queryResult = new HashSet<>();
+        for (String key : keys) {
+            // If there is no value for the key just search for the key occurrence
+            // \ufff0 is used to ignore all other complex keys
+            ComplexKey startKeys = ComplexKey.of(key);
+            ComplexKey endKeys = ComplexKey.of(key, "\ufff0");
+            queryResult.addAll(queryForIds(queryName, startKeys, endKeys));
+        }
+        return queryResult;
+    }
+
     private static Set<ComplexKey> createComplexKeys(Map.Entry<String, Set<String>> key) {
         return key.getValue().stream().map(v -> ComplexKey.of(key.getKey(), v)).collect(Collectors.toSet());
     }
@@ -114,6 +130,11 @@ public class DatabaseRepository<T> extends CouchDbRepositorySupport<T> {
     }
 
     public Set<String> queryForIds(String queryName, String startKey, String endKey) {
+        ViewQuery query = createQuery(queryName).startKey(startKey).endKey(endKey);
+        return queryForIds(query);
+    }
+
+    public Set<String> queryForIds(String queryName, ComplexKey startKey, ComplexKey endKey) {
         ViewQuery query = createQuery(queryName).startKey(startKey).endKey(endKey);
         return queryForIds(query);
     }

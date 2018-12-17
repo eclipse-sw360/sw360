@@ -166,7 +166,8 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
     }
 
     public Set<Component> searchByExternalIds(Map<String, Set<String>> externalIds) {
-        Set<String> ids = queryForIdsAsComplexValues("byExternalIds", externalIds);
-        return new HashSet<>(get(ids));
+        RepositoryUtils repositoryUtils = new RepositoryUtils();
+        Set<String> searchIds = repositoryUtils.searchByExternalIds(this, "byExternalIds", externalIds);
+        return new HashSet<>(get(searchIds));
     }
 }

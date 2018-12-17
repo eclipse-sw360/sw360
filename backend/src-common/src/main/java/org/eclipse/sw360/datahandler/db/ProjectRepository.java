@@ -237,7 +237,8 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
 
     @View(name = "byexternalids", map = BY_EXTERNAL_IDS)
     public Set<Project> searchByExternalIds(Map<String, Set<String>> externalIds, User user) {
-        Set<String> searchIds = queryForIdsAsComplexValues("byexternalids", externalIds);
+        RepositoryUtils repositoryUtils = new RepositoryUtils();
+        Set<String> searchIds = repositoryUtils.searchByExternalIds(this, "byexternalids", externalIds);
         return filterAccessibleProjectsByIds(user, searchIds);
     }
 

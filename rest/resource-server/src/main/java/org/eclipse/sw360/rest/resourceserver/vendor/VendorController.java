@@ -52,13 +52,12 @@ public class VendorController implements ResourceProcessor<RepositoryLinksResour
         List<Vendor> vendors = vendorService.getVendors();
 
         List<Resource<Vendor>> vendorResources = new ArrayList<>();
-        for (Vendor vendor : vendors) {
-            Vendor embeddedVendor = restControllerHelper.convertToEmbeddedVendor(vendor.getFullname());
-            Resource<Vendor> vendorResource = new Resource<>(embeddedVendor);
-            vendorResources.add(vendorResource);
-        }
-        Resources<Resource<Vendor>> resources = new Resources<>(vendorResources);
+        vendors.forEach(v -> {
+            Vendor embeddedVendor = restControllerHelper.convertToEmbeddedVendor(v);
+            vendorResources.add(new Resource<>(embeddedVendor));
+        });
 
+        Resources<Resource<Vendor>> resources = new Resources<>(vendorResources);
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
