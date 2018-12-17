@@ -92,9 +92,19 @@ public class DocxUtils {
     }
 
     public static void replaceText(XWPFDocument document, String placeHolder, String replaceText) {
-        for (XWPFHeader header : document.getHeaderList())
+        for (XWPFHeader header : document.getHeaderList()) {
             replaceAllBodyElements(header.getBodyElements(), placeHolder, replaceText);
+        }
+
         replaceAllBodyElements(document.getBodyElements(), placeHolder, replaceText);
+
+        for (XWPFTable table : document.getTables()) {
+            for(XWPFTableRow row : table.getRows()) {
+                for(XWPFTableCell cell : row.getTableCells()) {
+                    replaceAllBodyElements(cell.getBodyElements(), placeHolder, replaceText);
+                }
+            }
+        }
     }
 
     private static void replaceAllBodyElements(List<IBodyElement> bodyElements, String placeHolder, String replaceText) {

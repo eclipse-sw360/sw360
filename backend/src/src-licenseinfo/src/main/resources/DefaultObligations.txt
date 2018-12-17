@@ -1,0 +1,8 @@
+## All rights reserved. This configuration file is provided to you under the
+## terms and conditions of the Eclipse Distribution License v1.0 which
+## accompanies this distribution, and is available at
+## http://www.eclipse.org/org/documents/edl-v10.php
+##
+All superordinated products have to:
+    - Include the contents of the Readme_OSS / commercial 3rd party software with all required license texts and copyright notices and acknowledgments in the delivery of the product. The ReadMe_OSS has to be delivered in a way that a user can easily find it.
+    - Need to be able to ship the source code of all components licensed under a license which requires this. The build files have to be delivered too.

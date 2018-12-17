@@ -1136,6 +1136,23 @@
             <rtexprvalue>true</rtexprvalue>
         </attribute>
     </tag>
+        <tag>
+        <name>DisplayObligations</name>
+        <tag-class>org.eclipse.sw360.portal.tags.DisplayObligations</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <name>project</name>
+            <required>true</required>
+            <type>org.eclipse.sw360.datahandler.thrift.projects.Project</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>defaultText</name>
+            <required>true</required>
+            <type>java.lang.String</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
     <tag>
         <name>DisplayCountryCodeSelection</name>
         <tag-class>org.eclipse.sw360.portal.tags.DisplayCountryCodeSelection</tag-class>

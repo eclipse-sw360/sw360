@@ -570,11 +570,12 @@ input[readonly].clickable {
     100% { transform: rotate(360deg); }
 }
 
-.projectLicenseInfoHeaderText {
+.projectLicenseInfoHeaderText, .projectObligationsText, .projectSpecialRisksOSSText, .projectGeneralRisks3rdPartyText, .projectSpecialRisks3rdPartyText, .projectDeliveryChannelsText, .projectRemarksAdditionalRequirementsText, .projectClearingSummaryText {
     width: 95% !important;
     resize: vertical;
     background-color: white !important;
 }
+
 .dropbtn {
       background-color: #f1f1f1;
         color: black;

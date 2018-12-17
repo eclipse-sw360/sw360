@@ -24,6 +24,7 @@ import org.apache.velocity.runtime.resource.loader.FileResourceLoader;
 import org.apache.velocity.tools.ToolManager;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
 import org.eclipse.sw360.licenseinfo.util.LicenseNameWithTextUtils;
@@ -44,6 +45,7 @@ public abstract class OutputGenerator<T> {
     protected static final String LICENSE_INFO_RESULTS_CONTEXT_PROPERTY = "licenseInfoResults";
     protected static final String LICENSE_INFO_ERROR_RESULTS_CONTEXT_PROPERTY = "licenseInfoErrorResults";
     protected static final String LICENSE_INFO_HEADER_TEXT = "licenseInfoHeader";
+    protected static final String OBLIGATIONS_TEXT = "obligations";
     protected static final String LICENSE_INFO_PROJECT_TITLE = "projectTitle";
 
     private final String outputType;
@@ -60,7 +62,7 @@ public abstract class OutputGenerator<T> {
         this.outputVariant = variant;
     }
 
-    public abstract T generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, String projectName, String projectVersion, String licenseInfoHeaderText) throws SW360Exception;
+    public abstract T generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project, Collection<ObligationParsingResult> obligationResults) throws SW360Exception;
 
     public String getOutputType() {
         return outputType;
@@ -222,11 +224,12 @@ public abstract class OutputGenerator<T> {
      * @return rendered template
      */
     protected String renderTemplateWithDefaultValues(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, String file,
-                                                     String projectTitle, String licenseInfoHeaderText) {
+                                                     String projectTitle, String licenseInfoHeaderText, String obligationsText) {
         VelocityContext vc = getConfiguredVelocityContext();
         // set header
         vc.put(LICENSE_INFO_PROJECT_TITLE, projectTitle);
         vc.put(LICENSE_INFO_HEADER_TEXT, licenseInfoHeaderText);
+        vc.put(OBLIGATIONS_TEXT, obligationsText);
 
         // sorted lists of all license to be displayed at the end of the file at once
         List<LicenseNameWithText> licenseNamesWithTexts = getSortedLicenseNameWithTexts(projectLicenseInfoResults);

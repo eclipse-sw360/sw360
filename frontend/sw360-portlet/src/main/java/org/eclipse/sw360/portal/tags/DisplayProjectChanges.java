@@ -47,6 +47,7 @@ public class DisplayProjectChanges extends UserAwareTag {
     private String tableClasses = "";
     private String idPrefix = "";
     private String defaultLicenseInfoHeaderText = PortalConstants.DEFAULT_LICENSE_INFO_HEADER_TEXT_FOR_DISPALY;
+    private String defaultObligationsText = PortalConstants.DEFAULT_OBLIGATIONS_TEXT_FOR_DISPALY;
 
     public void setActual(Project actual) {
         this.actual = prepareLicenseInfoHeaderTextInProject(actual);
@@ -72,6 +73,9 @@ public class DisplayProjectChanges extends UserAwareTag {
         this.defaultLicenseInfoHeaderText = defaultLicenseInfoHeaderText;
     }
 
+    public void setDefaultObligationsText(String defaultObligationsText) {
+        this.defaultObligationsText = defaultObligationsText;
+    }
 
     public int doStartTag() throws JspException {
 
@@ -311,6 +315,23 @@ public class DisplayProjectChanges extends UserAwareTag {
         } else {
             // for a custom text escape html properly
             modifiedProject.setLicenseInfoHeaderText(StringEscapeUtils.escapeHtml(modifiedProject.getLicenseInfoHeaderText()).replace("\n", "<br>") );
+        }
+
+        return modifiedProject;
+    }
+
+    private Project prepareObligationsTextInProject(Project project) {
+        Project modifiedProject = project.deepCopy();
+
+        String defaultTextAsHtmlForDisplay = "<span title=\"" + defaultObligationsText + "\">" + PortalConstants.DEFAULT_OBLIGATIONS_TEXT_FOR_DISPALY + "</span>";
+
+        if(!modifiedProject.isSetObligationsText()) {
+            // if the project contains the default clearing summary text, we wrap it into an html span-element such that the default text is given as a hover text.
+            // this is only done for displaying it in a three-way merge in a moderation request.
+            modifiedProject.setObligationsText(defaultTextAsHtmlForDisplay);
+        } else {
+            // for a custom text escape html properly
+            modifiedProject.setObligationsText(StringEscapeUtils.escapeHtml(modifiedProject.getObligationsText()).replace("\n", "<br>") );
         }
 
         return modifiedProject;

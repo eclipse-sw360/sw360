@@ -15,6 +15,9 @@ package org.eclipse.sw360.licenseinfo.outputGenerators;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
+import org.apache.poi.xwpf.usermodel.XWPFTable;
+import org.apache.poi.xwpf.usermodel.XWPFTableRow;
+import org.apache.poi.xwpf.usermodel.XWPFTableCell;
 import org.apache.thrift.TException;
 import org.apache.xmlbeans.XmlException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
@@ -24,6 +27,9 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.Todo;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.users.UserService;
+import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -49,7 +55,9 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
     }
 
     @Override
-    public byte[] generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, String projectName, String projectVersion, String licenseInfoHeaderText) throws SW360Exception {
+    public byte[] generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project, Collection<ObligationParsingResult> obligationResults) throws SW360Exception {
+        String licenseInfoHeaderText = project.getLicenseInfoHeaderText();
+
         ByteArrayOutputStream docxOutputStream = new ByteArrayOutputStream();
         Optional<byte[]> docxTemplateFile;
         XWPFDocument xwpfDocument;
@@ -59,7 +67,13 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                     docxTemplateFile = CommonUtils.loadResource(DocxGenerator.class, DOCX_TEMPLATE_FILE);
                     xwpfDocument = new XWPFDocument(new ByteArrayInputStream(docxTemplateFile.get()));
                     if (docxTemplateFile.isPresent()) {
-                        fillDocument(xwpfDocument, projectLicenseInfoResults, projectName, projectVersion, licenseInfoHeaderText, false);
+                        fillDisclosureDocument(
+                            xwpfDocument,
+                            projectLicenseInfoResults,
+                            project,
+                            licenseInfoHeaderText,
+                            false
+                            );
                     } else {
                         throw new SW360Exception("Could not load the template for xwpf document: " + DOCX_TEMPLATE_FILE);
                     }
@@ -68,7 +82,14 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                     docxTemplateFile = CommonUtils.loadResource(DocxGenerator.class, DOCX_TEMPLATE_REPORT_FILE);
                     xwpfDocument = new XWPFDocument(new ByteArrayInputStream(docxTemplateFile.get()));
                     if (docxTemplateFile.isPresent()) {
-                        fillDocument(xwpfDocument, projectLicenseInfoResults, projectName, projectVersion, licenseInfoHeaderText, true);
+                        fillReportDocument(
+                            xwpfDocument,
+                            projectLicenseInfoResults,
+                            project,
+                            licenseInfoHeaderText,
+                            true,
+                            obligationResults
+                        );
                     } else {
                         throw new SW360Exception("Could not load the template for xwpf document: " + DOCX_TEMPLATE_REPORT_FILE);
                     }
@@ -88,14 +109,201 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         return docxOutputStream.toByteArray();
     }
 
-    private void fillDocument(XWPFDocument document, Collection<LicenseInfoParsingResult> projectLicenseInfoResults,
-                              String projectName, String projectVersion, String licenseInfoHeaderText, boolean includeObligations) throws XmlException, TException {
-        replaceText(document, "$license-info-header", licenseInfoHeaderText);
-        replaceText(document, "$project-name", projectName);
-        replaceText(document, "$project-version", projectVersion);
-        fillReleaseBulletList(document, projectLicenseInfoResults);
-        fillReleaseDetailList(document, projectLicenseInfoResults, includeObligations);
-        fillLicenseList(document, projectLicenseInfoResults);
+    private void fillDisclosureDocument(
+        XWPFDocument document,
+        Collection<LicenseInfoParsingResult> projectLicenseInfoResults,
+        Project project,
+        String licenseInfoHeaderText,
+        boolean includeObligations) throws XmlException, TException {
+
+            String projectName = project.getName();
+            String projectVersion = project.getVersion();
+
+            replaceText(document, "$license-info-header", licenseInfoHeaderText);
+            replaceText(document, "$project-name", projectName);
+            replaceText(document, "$project-version", projectVersion);
+
+            fillReleaseBulletList(document, projectLicenseInfoResults);
+            fillReleaseDetailList(document, projectLicenseInfoResults, includeObligations);
+            fillLicenseList(document, projectLicenseInfoResults);
+        }
+
+    private void fillReportDocument(
+        XWPFDocument document,
+        Collection<LicenseInfoParsingResult> projectLicenseInfoResults,
+        Project project,
+        String licenseInfoHeaderText,
+        boolean includeObligations,
+        Collection<ObligationParsingResult> obligationResults) throws XmlException, TException {
+
+            String projectName = project.getName();
+            String projectVersion = project.getVersion();
+            String obligationsText = project.getObligationsText();
+            String clearingSummaryText = project.getClearingSummary();
+            String specialRisksOSSText = project.getSpecialRisksOSS();
+            String generalRisks3rdPartyText = project.getGeneralRisks3rdParty();
+            String specialRisks3rdPartyText = project.getSpecialRisks3rdParty();
+            String deliveryChannelsText = project.getDeliveryChannels();
+            String remarksAdditionalRequirementsText = project.getRemarksAdditionalRequirements();
+            String projectDescription = project.getDescription();
+
+            fillOverview3rdPartyComponentTable(document, projectLicenseInfoResults);
+            fillOwnerGroup(document, project);
+            fillAttendeesTable(document, project);
+
+            replaceText(document, "$license-info-header", licenseInfoHeaderText);
+            replaceText(document, "$project-name", projectName);
+            replaceText(document, "$project-version", projectVersion);
+            replaceText(document, "$obligations-text", obligationsText);
+            replaceText(document, "$clearing-summary-text", clearingSummaryText);
+            replaceText(document, "$special-risks-oss-addition-text", specialRisksOSSText);
+            replaceText(document, "$general-risks-3rd-party-text", generalRisks3rdPartyText);
+            replaceText(document, "$special-risks-3rd-party-text", specialRisks3rdPartyText);
+            replaceText(document, "$delivery-channels-text", deliveryChannelsText);
+            replaceText(document, "$remarks-additional-requirements-text", remarksAdditionalRequirementsText);
+            replaceText(document, "$product-description", projectDescription);
+
+
+            fillSpecialOSSRisksTable(document, project, obligationResults);
+            fillReleaseBulletList(document, projectLicenseInfoResults);
+            fillReleaseDetailList(document, projectLicenseInfoResults, includeObligations);
+            fillLicenseList(document, projectLicenseInfoResults);
+    }
+
+    private void fillOwnerGroup(XWPFDocument document, Project project) throws XmlException, TException {
+        String businessUnit = "";
+        if(project.isSetBusinessUnit()) {
+            businessUnit = project.getBusinessUnit();
+        }
+        replaceText(document, "$owner-group", businessUnit);
+    }
+
+    private void fillAttendeesTable(XWPFDocument document, Project project) throws XmlException, TException {
+        XWPFTable table = document.getTables().get(0);
+
+        int currentRow = 6;
+
+        UserService.Iface userClient = new ThriftClients().makeUserClient();
+
+        if(project.isSetProjectOwner() && !project.getProjectOwner().isEmpty()) {
+            User owner = userClient.getByEmail(project.getProjectOwner());
+            if(owner != null) {
+                XWPFTableRow row = table.insertNewTableRow(currentRow++);
+                row.addNewTableCell().setText(owner.getEmail());
+                row.addNewTableCell().setText(owner.getDepartment());
+                row.addNewTableCell().setText("Owner");
+            }
+        }
+
+        if(project.isSetRoles()) {
+            for(Map.Entry<String,Set<String> > rolRelationship : project.getRoles().entrySet()) {
+
+                String rol = rolRelationship.getKey();
+                Set<String> emails = rolRelationship.getValue();
+                for(String email : emails) {
+                    if(email.isEmpty()) {
+                        continue;
+                    }
+
+                    User user = userClient.getByEmail(email);
+
+                    XWPFTableRow row = table.insertNewTableRow(currentRow++);
+                    String name = email;
+                    if(user != null && user.isSetFullname()) {
+                        name = user.getFullname();
+                    }
+                    String department = "N.A.";
+                    if(user != null) {
+                        name = user.getDepartment();
+                    }
+
+                    row.addNewTableCell().setText(name);
+                    row.addNewTableCell().setText(department);
+                    row.addNewTableCell().setText(rol);
+                }
+            }
+        }
+    }
+
+    private class ObligationKey {
+        public final String topic;
+        public final String text;
+        public ObligationKey(String topic, String text) {
+            this.topic = topic;
+            this.text = text;
+        }
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof ObligationKey)) return false;
+            ObligationKey key = (ObligationKey) o;
+            return topic == key.topic && text == key.text;
+        }
+        @Override
+        public int hashCode() {
+            return (topic == null ? 0 : topic.hashCode()) ^ (text == null ? 0 : text.hashCode());
+        }
+    }
+
+    private void fillSpecialOSSRisksTable(XWPFDocument document, Project project, Collection<ObligationParsingResult> obligationResults) throws XmlException, TException {
+        XWPFTable table = document.getTables().get(1);
+
+        Map<ObligationKey,ArrayList<String>> collatedObligations = new HashMap<ObligationKey,ArrayList<String>>();
+        for(ObligationParsingResult result : obligationResults) {
+            if(result.getStatus() != ObligationInfoRequestStatus.SUCCESS) {
+                continue;
+            }
+            for(Obligation obligation : result.getObligations()) {
+                ObligationKey key = new ObligationKey(obligation.getTopic(), obligation.getText());
+                if(!collatedObligations.containsKey(key)) {
+                    collatedObligations.put(key, new ArrayList<String>());
+                }
+                ArrayList<String> licenses = collatedObligations.get(key);
+                for(String license : obligation.getLicenseIDs()) {
+                    if(!licenses.contains(license)) {
+                        licenses.add(license);
+                    }
+                }
+            }
+        }
+        int currentRow = 1;
+        for( ObligationKey key :  collatedObligations.keySet()) {
+            ArrayList<String> licenses = collatedObligations.get(key);
+            XWPFTableRow row = table.insertNewTableRow(currentRow++);
+            String licensesString = String.join(" ", licenses);
+            row.addNewTableCell().setText(key.topic);
+            row.addNewTableCell().setText(licensesString);
+            row.addNewTableCell().setText(key.text);
+        }
+    }
+
+    private void fillOverview3rdPartyComponentTable(XWPFDocument document, Collection<LicenseInfoParsingResult> projectLicenseInfoResults) throws XmlException {
+        XWPFTable table = document.getTables().get(2);
+
+        int currentRow = 1;
+        for(LicenseInfoParsingResult result : projectLicenseInfoResults) {
+            if(result.getStatus() != LicenseInfoRequestStatus.SUCCESS) {
+                continue;
+            }
+
+            XWPFTableRow row = table.insertNewTableRow(currentRow++);
+            LicenseInfo licenseInfo = result.getLicenseInfo();
+            row.addNewTableCell().setText(result.getName());
+            row.addNewTableCell().setText(result.getVersion());
+            row.addNewTableCell().setText(licenseInfo.getSha1Hash());
+            row.addNewTableCell().setText(licenseInfo.getComponentName());
+
+            String globalLicense = "";
+            for(LicenseNameWithText l : licenseInfo.getLicenseNamesWithTexts()) {
+                if(l != null && l.getType().equals("global")) {
+                    globalLicense = l.getLicenseName();
+                    break;
+                }
+            }
+
+            row.addNewTableCell().setText(result.getComponentType());
+            row.addNewTableCell().setText(globalLicense);
+        }
     }
 
     private void fillReleaseBulletList(XWPFDocument document, Collection<LicenseInfoParsingResult> projectLicenseInfoResults) throws XmlException {

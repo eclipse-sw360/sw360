@@ -11,7 +11,7 @@
  * http://www.eclipse.org/legal/epl-v10.html
  */
 package org.eclipse.sw360.licenseinfo.outputGenerators;
-
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
 import org.dom4j.Document;
 import org.dom4j.Element;
@@ -121,13 +121,20 @@ public class XhtmlGeneratorTest {
 
         LicenseInfoParsingResult lipresultEmpty = generateLIPResult(liEmpty, releaseName, version1, vendorName);
         lipresultsEmpty = Collections.singletonList(lipresultEmpty);
+        Collection<ObligationParsingResult> obligationResults = new HashSet();
 
         xhtmlGenerator = new XhtmlGenerator(OutputFormatVariant.DISCLOSURE, "License Disclosure as XHTML");
 
-        xmlString = xhtmlGenerator.generateOutputFile(lipresults, "myproject", "1.0", "Lorem Ipsum");
-        xmlString2 = xhtmlGenerator.generateOutputFile(lipresults2, "myproject", "1.0", "Lorem Ipsum");
-        xmlString3 = xhtmlGenerator.generateOutputFile(lipresults3, "myproject", "1.0", "Lorem Ipsum");
-        xmlStringEmpty = xhtmlGenerator.generateOutputFile(lipresultsEmpty, "myproject", "1.0", "Lorem Ipsum");
+        Project p = new Project();
+        p.setName("myproject");
+        p.setVersion("1.0");
+        p.setLicenseInfoHeaderText("Lorem");
+        p.setObligationsText("Ipsum");
+
+        xmlString = xhtmlGenerator.generateOutputFile(lipresults, p, obligationResults);
+        xmlString2 = xhtmlGenerator.generateOutputFile(lipresults2, p, obligationResults);
+        xmlString3 = xhtmlGenerator.generateOutputFile(lipresults3, p, obligationResults);
+        xmlStringEmpty = xhtmlGenerator.generateOutputFile(lipresultsEmpty, p, obligationResults);
 
         generateDocumentsFromXml();
     }
