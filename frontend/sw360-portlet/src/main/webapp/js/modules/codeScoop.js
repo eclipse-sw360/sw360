@@ -211,7 +211,7 @@ define("modules/codeScoop", [], function () {
         };
 
         this._fetch_repo = function (owner, name, callback) {
-            _this._api("GET", "repository/" + owner + "/" + name + "/", null, callback);
+            _this._api("GET", "/integration/siemens/repository/" + owner + "/" + name + "/", null, callback);
         };
 
         this._fetch_composite = function (requestData, callback) {
@@ -307,6 +307,8 @@ define("modules/codeScoop", [], function () {
                     } else {
                         _this.formElements.homepage.value = repo.url;
                     }
+
+                    repo.categories = _this._fetch_categories(repo["hierarchicalCategories"]);
                     _this.formElements.categories.value = repo.categories.join(",");
                 })
             };
@@ -439,6 +441,14 @@ define("modules/codeScoop", [], function () {
             return true;
         };
 
+        this._fetch_categories = function (hierarchicalCategories) {
+            var categories = [];
+            for (var i = 0; i < hierarchicalCategories.length; i++) {
+                categories.push(hierarchicalCategories[i]["name"])
+            }
+            return categories;
+        };
+
         this._check_component_diff = function (sw360Component, externalComponent) {
             var result = {};
 
@@ -453,6 +463,8 @@ define("modules/codeScoop", [], function () {
             if (sw360Component.homepage !== externalComponent.homepageUrl) {
                 result["homepage"] = externalComponent.homepageUrl;
             }
+
+            externalComponent.categories = _this._fetch_categories(externalComponent["hierarchicalCategories"]);
 
             if (!_this._match_string_array(sw360Component.categories, externalComponent.categories)) {
                 result["categories"] = externalComponent.categories;
