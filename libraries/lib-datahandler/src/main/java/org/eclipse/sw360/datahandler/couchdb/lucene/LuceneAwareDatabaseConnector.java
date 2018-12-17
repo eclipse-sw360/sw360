@@ -175,7 +175,7 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
         }
 
         String query  = AND.join(subQueries);
-            return searchView(type, luceneSearchView, query);
+        return searchView(type, luceneSearchView, query);
     }
 
     public List<Project> searchProjectViewWithRestrictionsAndFilter(LuceneSearchView luceneSearchView, String text,
