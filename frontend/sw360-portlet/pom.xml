@@ -148,6 +148,11 @@
             <version>${jquery.datatables.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>datatables-plugins</artifactId>
+            <version>${jquery.datatables.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.webjars.bower</groupId>
             <artifactId>datatables.net-buttons</artifactId>
             <version>${jquery.datatables.buttons.version}</version>
