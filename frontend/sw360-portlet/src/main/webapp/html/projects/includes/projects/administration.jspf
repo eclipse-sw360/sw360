@@ -55,43 +55,43 @@
     <tr>
         <td>Obligations:</td>
         <td>
-            <textarea class="projectObligationsText" id="obligationsText" readonly><sw360:DisplayObligations project="${project}" defaultText="${defaultObligationsText}"/></textarea>
+            <textarea class="projectObligationsText broader" rows="5" id="obligationsText" readonly><sw360:DisplayObligations project="${project}" defaultText="${defaultObligationsText}"/></textarea>
         </td>
     </tr>
      <tr>
         <td>Clearing summary:</td>
         <td>
-            <textarea class="projectClearingSummaryText" id="clearingSummaryText" name="<portlet:namespace/><%=Project._Fields.CLEARING_SUMMARY%>" type="text" readonly><sw360:out value="${project.clearingSummary}" /></textarea>
+            <textarea class="projectClearingSummaryText broader" rows="5" id="clearingSummaryText" name="<portlet:namespace/><%=Project._Fields.CLEARING_SUMMARY%>" type="text" readonly><sw360:out value="${project.clearingSummary}" /></textarea>
         </td>
     </tr>
     <tr>
         <td>Special risk Open Source Software:</td>
         <td>
-            <textarea class="projectSpecialRisksOSSText" id="specialRisksOSSText" name="<portlet:namespace/><%=Project._Fields.SPECIAL_RISKS_OSS%>" type="text" readonly><sw360:out value="${project.specialRisksOSS}" /></textarea>
+            <textarea class="projectSpecialRisksOSSText broader" rows="5" id="specialRisksOSSText" name="<portlet:namespace/><%=Project._Fields.SPECIAL_RISKS_OSS%>" type="text" readonly><sw360:out value="${project.specialRisksOSS}" /></textarea>
         </td>
     </tr>
     <tr>
         <td>General risks 3rd party software:</td>
         <td>
-            <textarea class="projectGeneralRisks3rdPartyText" id="generalRisks3rdPartyText" name="<portlet:namespace/><%=Project._Fields.GENERAL_RISKS3RD_PARTY%>" type="text" readonly><sw360:out value="${project.generalRisks3rdParty}" /></textarea>
+            <textarea class="projectGeneralRisks3rdPartyText broader" rows="5" id="generalRisks3rdPartyText" name="<portlet:namespace/><%=Project._Fields.GENERAL_RISKS3RD_PARTY%>" type="text" readonly><sw360:out value="${project.generalRisks3rdParty}" /></textarea>
         </td>
     </tr>
     <tr>
         <td>Special risks 3rd party software:</td>
         <td>
-            <textarea class="projectSpecialRisks3rdPartyText" id="specialRisks3rdPartyText" name="<portlet:namespace/><%=Project._Fields.SPECIAL_RISKS3RD_PARTY%>" type="text" readonly><sw360:out value="${project.specialRisks3rdParty}" /></textarea>
+            <textarea class="projectSpecialRisks3rdPartyText broader" rows="5" id="specialRisks3rdPartyText" name="<portlet:namespace/><%=Project._Fields.SPECIAL_RISKS3RD_PARTY%>" type="text" readonly><sw360:out value="${project.specialRisks3rdParty}" /></textarea>
         </td>
     </tr>
     <tr>
         <td>Sales and delivery channels:</td>
         <td>
-            <textarea class="projectDeliveryChannelsText" id="deliveryChannelsText" name="<portlet:namespace/><%=Project._Fields.DELIVERY_CHANNELS%>"  type="text" readonly><sw360:out value="${project.deliveryChannels}" /></textarea>
+            <textarea class="projectDeliveryChannelsText broader" rows="5" id="deliveryChannelsText" name="<portlet:namespace/><%=Project._Fields.DELIVERY_CHANNELS%>"  type="text" readonly><sw360:out value="${project.deliveryChannels}" /></textarea>
         </td>
     </tr>
         <tr>
         <td>Remarks additional requirements:</td>
         <td>
-            <textarea class="projectRemarksAdditionalRequirementsText" id="remarksAdditionalRequirementsText" name="<portlet:namespace/><%=Project._Fields.REMARKS_ADDITIONAL_REQUIREMENTS%>" readonly><sw360:out value="${project.remarksAdditionalRequirements}" /></textarea>
+            <textarea class="projectRemarksAdditionalRequirementsText broader" rows="5" id="remarksAdditionalRequirementsText" name="<portlet:namespace/><%=Project._Fields.REMARKS_ADDITIONAL_REQUIREMENTS%>" readonly><sw360:out value="${project.remarksAdditionalRequirements}" /></textarea>
         </td>
     </tr>
 </table>
@@ -132,7 +132,7 @@
     </thead>
     <tr>
         <td>
-            <textarea class="projectLicenseInfoHeaderText" id="licenseInfoHeaderText" readonly><sw360:DisplayLicenseInfoHeader project="${project}" defaultText="${defaultLicenseInfoHeaderText}"/></textarea>
+            <textarea class="projectLicenseInfoHeaderText broader" rows="5" id="licenseInfoHeaderText" readonly><sw360:DisplayLicenseInfoHeader project="${project}" defaultText="${defaultLicenseInfoHeaderText}"/></textarea>
         </td>
     </tr>
 </table>
