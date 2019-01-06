@@ -57,44 +57,56 @@
     <tr>
         <td colspan="3">
             <label class="textlabel stackedLabel" for="obligations">Obligations</label>
-            <textarea name="<portlet:namespace/><%=Project._Fields.OBLIGATIONS_TEXT%>" class="projectObligationsText" id="obligationsText" data-defaulttext="${defaultObligationsText}"><sw360:DisplayObligations project="${project}" defaultText="${defaultObligationsText}"/></textarea>
+            <textarea name="<portlet:namespace/><%=Project._Fields.OBLIGATIONS_TEXT%>"
+                      class="projectObligationsText broader" rows="5" id="obligationsText"
+                      data-defaulttext="${defaultObligationsText}"><sw360:DisplayObligations project="${project}"
+                                                                                             defaultText="${defaultObligationsText}"/></textarea>
             <input id="setToDefaultObligationsTextButton" type="button" class="addButton pull-right" value="Set To Default Text">
         </td>
     </tr>
      <tr>
         <td colspan="3" width="100%">
             <label class="textlabel stackedLabel" for="clearingSummary">Clearing summary</label>
-            <textarea id="clearingSummaryText" name="<portlet:namespace/><%=Project._Fields.CLEARING_SUMMARY%>" type="text"><sw360:out value="${project.clearingSummary}" /></textarea>
+            <textarea id="clearingSummaryText" name="<portlet:namespace/><%=Project._Fields.CLEARING_SUMMARY%>"
+                      class="broader" rows="5" type="text"><sw360:out value="${project.clearingSummary}"/></textarea>
         </td>
     </tr>
     <tr>
         <td colspan="3" width="100%">
             <label class="textlabel stackedLabel" for="specialRisksOSSText">Special risk Open Source Software</label>
-            <textarea id="specialRisksOSSText" name="<portlet:namespace/><%=Project._Fields.SPECIAL_RISKS_OSS%>" type="text"><sw360:out value="${project.specialRisksOSS}" /></textarea>
+            <textarea id="specialRisksOSSText" name="<portlet:namespace/><%=Project._Fields.SPECIAL_RISKS_OSS%>"
+                      class="broader" rows="5" type="text"><sw360:out value="${project.specialRisksOSS}"/></textarea>
         </td>
     </tr>
     <tr>
         <td colspan="3" width="100%">
             <label class="textlabel stackedLabel" for="generalRisks3rdParty">General risk 3rd party software</label>
-            <textarea id="generalRisks3rdPartyText" name="<portlet:namespace/><%=Project._Fields.GENERAL_RISKS3RD_PARTY%>" type="text"><sw360:out value="${project.generalRisks3rdParty}" /></textarea>
+            <textarea id="generalRisks3rdPartyText"
+                      name="<portlet:namespace/><%=Project._Fields.GENERAL_RISKS3RD_PARTY%>" class="broader" rows="5"
+                      type="text"><sw360:out value="${project.generalRisks3rdParty}"/></textarea>
         </td>
     </tr>
     <tr>
         <td colspan="3" width="100%">
             <label class="textlabel stackedLabel" for="specialRisks3rdParty">Special risks 3rd party software</label>
-            <textarea id="specialRisks3rdPartyText" name="<portlet:namespace/><%=Project._Fields.SPECIAL_RISKS3RD_PARTY%>" type="text" ><sw360:out value="${project.specialRisks3rdParty}" /></textarea>
+            <textarea id="specialRisks3rdPartyText"
+                      name="<portlet:namespace/><%=Project._Fields.SPECIAL_RISKS3RD_PARTY%>" class="broader" rows="5"
+                      type="text"><sw360:out value="${project.specialRisks3rdParty}"/></textarea>
         </td>
     </tr>
     <tr>
         <td colspan="3" width="100%">
             <label class="textlabel stackedLabel" for="deliveryChannels">Sales and delivery channels</label>
-            <textarea id="deliveryChannelsText" name="<portlet:namespace/><%=Project._Fields.DELIVERY_CHANNELS%>" type="text"><sw360:out value="${project.deliveryChannels}" /></textarea>
+            <textarea id="deliveryChannelsText" name="<portlet:namespace/><%=Project._Fields.DELIVERY_CHANNELS%>"
+                      class="broader" rows="5" type="text"><sw360:out value="${project.deliveryChannels}"/></textarea>
         </td>
     </tr>
     <tr>
         <td colspan="3" width="100%">
             <label class="textlabel stackedLabel" for="remarksAdditionalRequirements">Remarks additional requirements</label>
-            <textarea id="remarksAdditionalRequirementsText" name="<portlet:namespace/><%=Project._Fields.REMARKS_ADDITIONAL_REQUIREMENTS%>"" type="text"><sw360:out value="${project.remarksAdditionalRequirements}" /></textarea>
+            <textarea id="remarksAdditionalRequirementsText"
+                      name="<portlet:namespace/><%=Project._Fields.REMARKS_ADDITIONAL_REQUIREMENTS%>" class="broader"
+                      rows="5" type="text"><sw360:out value="${project.remarksAdditionalRequirements}"/></textarea>
         </td>
     </tr>
 </table>
@@ -153,43 +165,43 @@
     </thead>
     <tr>
         <td>
-            <textarea name="<portlet:namespace/><%=Project._Fields.LICENSE_INFO_HEADER_TEXT%>" class="projectLicenseInfoHeaderText" id="licenseInfoHeaderText" data-defaulttext="${defaultLicenseInfoHeaderText}"><sw360:DisplayLicenseInfoHeader project="${project}" defaultText="${defaultLicenseInfoHeaderText}"/></textarea>
+            <textarea name="<portlet:namespace/><%=Project._Fields.LICENSE_INFO_HEADER_TEXT%>" rows="5"
+                      class="projectLicenseInfoHeaderText broader" id="licenseInfoHeaderText"
+                      data-defaulttext="${defaultLicenseInfoHeaderText}"><sw360:DisplayLicenseInfoHeader
+                    project="${project}" defaultText="${defaultLicenseInfoHeaderText}"/></textarea>
+            <input id="setToDefaultLicenseInfoHeaderTextButton" type="button" class="addButton pull-right"
+                   value="Set To Default Text">
         </td>
     </tr>
 </table>
-<input id="setToDefaultLicenseInfoHeaderTextButton" type="button" class="addButton pull-right" value="Set To Default Text">
 
 <script>
-    require(['jquery', /* jquery-plugins */ 'jquery-ui'], function($) {
+    require(['jquery'], function ($) {
 
         Liferay.on('allPortletsReady', function() {
             <core_rt:if test="${addMode}" >
-            setDefaultLicenseInfoHeaderText();
-            setDefaultObligationsText();
+                setDefaultTextAndResize($('#obligationsText'));
+                setDefaultTextAndResize($('#licenseInfoHeaderText'))
             </core_rt:if>
 
-            $('.projectLicenseInfoHeaderText').each(function() {
-                $(this).height($(this).prop('scrollHeight'));
+            $('#setToDefaultObligationsTextButton').click(function () {
+                setDefaultTextAndResize($('#obligationsText'));
             });
 
-            $('.projectObligationsText').each(function() {
-                $(this).height($(this).prop('scrollHeight'));
+            $('#setToDefaultLicenseInfoHeaderTextButton').click(function () {
+                setDefaultTextAndResize($('#licenseInfoHeaderText'));
             });
-
-            $('#setToDefaultLicenseInfoHeaderTextButton').on('click', setDefaultLicenseInfoHeaderText);
-
-            $('#setToDefaultObligationsTextButton').on('click', setDefaultObligationsText);
 
             $('.datepicker').datepicker({dateFormat: "yy-mm-dd"});
         });
 
-       function setDefaultLicenseInfoHeaderText() {
-           $('#licenseInfoHeaderText').val($('#licenseInfoHeaderText').data("defaulttext"));
-       }
+        function setDefaultTextAndResize(textarea) {
+            $(textarea).val($(textarea).data("defaulttext"));
+            $(textarea).height($(textarea)[0].scrollHeight);
+        }
 
-        function setDefaultObligationsText() {
-           $('#obligationsText').val($('#obligationsText').data("defaulttext"));
-       }
+        $('#licenseInfoHeaderText').height($('#licenseInfoHeaderText').prop('scrollHeight'));
+        $('#obligationsText').height($('#obligationsText').prop('scrollHeight'));
 
     });
 </script>
