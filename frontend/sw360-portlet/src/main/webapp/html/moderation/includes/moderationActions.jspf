@@ -9,8 +9,8 @@
   ~ which accompanies this distribution, and is available at
   ~ http://www.eclipse.org/legal/epl-v10.html
   --%>
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/github-com-craftpip-jquery-confirm/3.0.1/jquery-confirm.min.css">
-<script src="<%=request.getContextPath()%>/webjars/github-com-craftpip-jquery-confirm/3.0.1/jquery-confirm.min.js" type="text/javascript"></script>
+<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.css">
+<script src="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.js" type="text/javascript"></script>
 <script>
     function sendModerationDecision(actionControlString) {
         var commentText = btoa($("#moderationDecisionCommentField").val());

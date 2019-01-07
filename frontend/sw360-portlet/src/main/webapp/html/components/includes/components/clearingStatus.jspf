@@ -34,9 +34,9 @@
 
 <%@include file="/html/utils/includes/fossologyClearing.jspf"%>
 
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/datatables.net-buttons-dt/1.1.2/css/buttons.dataTables.min.css"/>
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/1.12.1/jquery-ui.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/github-com-craftpip-jquery-confirm/3.0.1/jquery-confirm.min.css">
+<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/datatables.net-buttons-bs/css/buttons.bootstrap.min.css"/>
+<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/themes/base/jquery-ui.min.css">
+<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.css">
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/dataTable_Siemens.css">
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
 
@@ -89,10 +89,10 @@
         'jquery',
         'utils/includes/fossologyClearing',
         'modules/confirm',
-        'datatables',
-        'datatables_buttons',
-        'buttons.print',
-        'datatables_sorting'], function ($, fossology, confirm) {
+        'datatables.net',
+        'datatables.net-buttons',
+        'datatables.net-buttons.print',
+        'datatables-plugins-sorting.natural'], function ($, fossology, confirm) {
 
         var releaseTable;
 

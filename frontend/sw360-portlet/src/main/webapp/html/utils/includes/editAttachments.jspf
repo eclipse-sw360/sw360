@@ -90,7 +90,7 @@
 <%@include file="/html/utils/includes/attachmentsUpload.jspf" %>
 
 <script>
-    require(['jquery', 'utils/includes/attachmentsUpload', 'modules/confirm', /* jquery-plugins */ 'datatables', 'modules/datatables-renderer'], function($, attachmentUploader, confirm) {
+    require(['jquery', 'utils/includes/attachmentsUpload', 'modules/confirm', /* jquery-plugins */ 'datatables.net', 'modules/datatables-renderer'], function($, attachmentUploader, confirm) {
         var attachmentTable,
             config = $('#attachmentInfo').data();
 

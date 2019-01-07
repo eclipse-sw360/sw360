@@ -14,7 +14,7 @@ var codeScoopCss = {
     positionTransform: "translateX(-50%) translateY(-50%)",
     border: "1px solid ",
     modalBackground: {
-        image: "url('/sw360-portlet/webjars/jquery-ui/1.12.1/images/ui-icons_777777_256x240.png')",
+        image: "url('/sw360-portlet/webjars/jquery-ui/themes/base/images/ui-icons_777777_256x240.png')",
         position: "-95px -128px"
     },
     colorWhite: "#ffffff",

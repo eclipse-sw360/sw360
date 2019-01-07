@@ -34,7 +34,7 @@
 
 <jsp:useBean id="vendorList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor>"  scope="request"/>
 
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/datatables.net-buttons-dt/1.1.2/css/buttons.dataTables.min.css"/>
+<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/datatables.net-buttons-bs/css/buttons.bootstrap.min.css"/>
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/dataTable_Siemens.css">
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
 
@@ -60,7 +60,7 @@
     </table>
 </div>
 
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/github-com-craftpip-jquery-confirm/3.0.1/jquery-confirm.min.css">
+<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.css">
 
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
@@ -68,7 +68,7 @@
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;
 
-        require(['jquery', 'utils/includes/quickfilter', 'modules/confirm', /* jquery-plugins: */ 'datatables', 'datatables_buttons', 'buttons.print', 'jquery-confirm'], function($, quickfilter, confirm) {
+        require(['jquery', 'utils/includes/quickfilter', 'modules/confirm', /* jquery-plugins: */ 'datatables.net', 'datatables.net-buttons', 'datatables.net-buttons.print', 'jquery-confirm'], function($, quickfilter, confirm) {
             var vendorsTable,
                 vendorIdInURL = '<%=PortalConstants.VENDOR_ID%>',
                 pageName = '<%=PortalConstants.PAGENAME%>';

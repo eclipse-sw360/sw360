@@ -56,7 +56,7 @@
 <%@include file="/html/utils/includes/logError.jspf" %>
 <core_rt:if test="${empty attributeNotFoundException}">
 
-    <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/1.12.1/jquery-ui.css">
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/themes/base/jquery-ui.min.css">
     <link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
     <script type="text/javascript" src="<%=request.getContextPath()%>/js/releaseTools.js"></script>
 

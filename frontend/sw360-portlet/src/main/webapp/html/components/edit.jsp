@@ -66,18 +66,18 @@
     <core_rt:set var="componentCategoriesAutocomplete" value='<%=PortalConstants.COMPONENT_CATEGORIES%>'/>
 
     <core_rt:set var="componentDivAddMode" value="${empty component.id}"/>
-    <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/1.12.1/jquery-ui.css">
-    <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/github-com-craftpip-jquery-confirm/3.0.1/jquery-confirm.min.css">
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/themes/base/jquery-ui.min.css">
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.css">
     <link rel="stylesheet" href="<%=request.getContextPath()%>/css/dataTable_Siemens.css">
     <link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
 
     <script src="<%=request.getContextPath()%>/js/releaseTools.js"></script>
     <!--include jQuery -->
-    <script src="<%=request.getContextPath()%>/webjars/jquery/1.12.4/jquery.min.js" type="text/javascript"></script>
+    <script src="<%=request.getContextPath()%>/webjars/jquery/dist/jquery.min.js" type="text/javascript"></script>
     <!--  needed for some dialogs mostly regarding attachments -->
-    <script src="<%=request.getContextPath()%>/webjars/jquery-ui/1.12.1/jquery-ui.min.js"></script>
+    <script src="<%=request.getContextPath()%>/webjars/jquery-ui/jquery-ui.min.js"></script>
     <!-- needed in mapEdit.jspf -->
-    <script src="<%=request.getContextPath()%>/webjars/github-com-craftpip-jquery-confirm/3.0.1/jquery-confirm.min.js" type="text/javascript"></script>
+    <script src="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.js" type="text/javascript"></script>
     <div id="where" class="content1">
         <p class="pageHeader"><span class="pageHeaderBigSpan"><sw360:out value="${component.name}"/></span>
             <core_rt:if test="${not componentDivAddMode}">

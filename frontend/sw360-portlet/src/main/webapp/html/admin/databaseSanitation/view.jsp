@@ -21,9 +21,9 @@
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.DUPLICATES%>'/>
 </portlet:resourceURL>
 
-<script src="<%=request.getContextPath()%>/webjars/jquery/1.12.4/jquery.min.js"></script>
-<script src="<%=request.getContextPath()%>/webjars/jquery-ui/1.12.1/jquery-ui.min.js"></script>
-<script src="<%=request.getContextPath()%>/webjars/datatables/1.10.15/js/jquery.dataTables.min.js"></script>
+<script src="<%=request.getContextPath()%>/webjars/jquery/dist/jquery.min.js"></script>
+<script src="<%=request.getContextPath()%>/webjars/jquery-ui/jquery-ui.min.js"></script>
+<script src="<%=request.getContextPath()%>/webjars/datatables.net/js/jquery.dataTables.min.js"></script>
 
 <div id="header"></div>
 <p class="pageHeader"><span class="pageHeaderBigSpan">DB Administration</span></p>
@@ -49,8 +49,8 @@
 </div>
 
 <br/>
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/github-com-craftpip-jquery-confirm/3.0.1/jquery-confirm.min.css">
-<script src="<%=request.getContextPath()%>/webjars/github-com-craftpip-jquery-confirm/3.0.1/jquery-confirm.min.js" type="text/javascript"></script>
+<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.css">
+<script src="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.js" type="text/javascript"></script>
 <script>
     function findDuplicates() {
 

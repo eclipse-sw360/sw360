@@ -31,9 +31,9 @@
                    value='<%=PortalConstants.ACTION_IMPORT_SPDX_LICENSE_INFORMATION%>'/>
 </portlet:resourceURL>
 
-<script src="<%=request.getContextPath()%>/webjars/jquery/1.12.4/jquery.min.js"></script>
-<script src="<%=request.getContextPath()%>/webjars/jquery-ui/1.12.1/jquery-ui.min.js"></script>
-<script src="<%=request.getContextPath()%>/webjars/github-com-craftpip-jquery-confirm/3.0.1/jquery-confirm.min.js" type="text/javascript"></script>
+<script src="<%=request.getContextPath()%>/webjars/jquery/dist/jquery.min.js"></script>
+<script src="<%=request.getContextPath()%>/webjars/jquery-ui/jquery-ui.min.js"></script>
+<script src="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.js" type="text/javascript"></script>
 
 <div id="header"></div>
 <p class="pageHeader"><span class="pageHeaderBigSpan">License Administration</span></p>
@@ -169,4 +169,4 @@
 </script>
 
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/github-com-craftpip-jquery-confirm/3.0.1/jquery-confirm.min.css">
+<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.css">

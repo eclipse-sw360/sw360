@@ -9,7 +9,7 @@
  * http://www.eclipse.org/legal/epl-v10.html
  */
 
-define('utils/includes/searchAndSelectIds', ['jquery', /* jquery-plugins: */ 'datatables'], function($) {
+define('utils/includes/searchAndSelectIds', ['jquery', /* jquery-plugins: */ 'datatables.net'], function($) {
 
     var selectedIds = [];
 

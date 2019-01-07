@@ -65,7 +65,7 @@
 
 <script>
 
-    require(['jquery', /* jquery-plugins */ 'datatables', 'jquery-ui', 'jquery-confirm'], function($) {
+    require(['jquery', /* jquery-plugins */ 'datatables.net', 'jquery-ui', 'jquery-confirm'], function($) {
 
         $("#addLinkedReleasesToReleaseButton").on('click', showReleaseDialog);
         $('#releaseSearchButton').on('click', function() { ReleaseContentFromAjax('releaseSearchResultsTable', '<%=PortalConstants.RELEASE_SEARCH%>', $('#searchrelease').val(), true); });

@@ -14,7 +14,7 @@
  * This module provides some useful renderers for jquery DataTable. Please the jsdoc on the
  * rendering functions for more information.
  */
-define('modules/datatables-renderer', ['jquery', /* jquery-plugins */ 'datatables', 'jquery-confirm'], function($) {
+define('modules/datatables-renderer', ['jquery', /* jquery-plugins */ 'datatables.net', 'jquery-confirm'], function($) {
 
     // helper functions
     function createEllipsisSpan(text) {

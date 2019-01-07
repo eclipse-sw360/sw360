@@ -135,7 +135,7 @@
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;
 
-        require(['jquery', 'utils/includes/quickfilter', /* jquery-plugins: */ 'datatables'], function($, quickfilter) {
+        require(['jquery', 'utils/includes/quickfilter', /* jquery-plugins: */ 'datatables.net'], function($, quickfilter) {
             var usersTable,
                 usersMissingTable;
 

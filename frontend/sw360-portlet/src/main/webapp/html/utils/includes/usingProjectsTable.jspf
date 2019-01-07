@@ -26,7 +26,7 @@
     </div>
 
     <script>
-        require(['jquery', /* jquery-plugins */ 'datatables'], function ($) {
+        require(['jquery', /* jquery-plugins */ 'datatables.net'], function ($) {
             var usingProjectsTable;
 
             Liferay.on('allPortletsReady', function() {

@@ -93,8 +93,8 @@
     </table>
 </div>
 
-<script type="text/javascript" src="<%=request.getContextPath()%>/webjars/jquery/1.12.4/jquery.min.js"></script>
-<script type="text/javascript" src="<%=request.getContextPath()%>/webjars/datatables/1.10.15/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="<%=request.getContextPath()%>/webjars/jquery/dist/jquery.min.js"></script>
+<script type="text/javascript" src="<%=request.getContextPath()%>/webjars/datatables.net/js/jquery.dataTables.min.js"></script>
 
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/dataTable_Siemens.css">
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">

@@ -35,7 +35,7 @@
     <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_EDIT%>"/>
 </portlet:renderURL>
 
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/datatables.net-buttons-dt/1.1.2/css/buttons.dataTables.min.css"/>
+<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/datatables.net-buttons-bs/css/buttons.bootstrap.min.css"/>
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/dataTable_Siemens.css">
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
 
@@ -69,7 +69,7 @@
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-    require(['jquery', 'utils/includes/quickfilter', /* jquery-plugins */ 'datatables', 'datatables_buttons', 'buttons.print'], function($, quickfilter) {
+    require(['jquery', 'utils/includes/quickfilter', /* jquery-plugins */ 'datatables.net', 'datatables.net-buttons', 'datatables.net-buttons.print'], function($, quickfilter) {
         var licenseTable;
 
         Liferay.on('allPortletsReady', function() {

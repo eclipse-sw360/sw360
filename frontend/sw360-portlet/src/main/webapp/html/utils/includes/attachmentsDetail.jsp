@@ -25,7 +25,7 @@
     <jsp:useBean id="documentType" type="java.lang.String" scope="request" />
     <jsp:useBean id="documentID" class="java.lang.String" scope="request" />
 </c:catch>
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/github-com-craftpip-jquery-confirm/3.0.1/jquery-confirm.min.css">
+<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.css">
 
 <core_rt:if test="${empty attributeNotFoundException}">
 
@@ -70,7 +70,7 @@
         </table>
 
         <script>
-            require(['jquery', /* jquery-plugins */ 'datatables', 'jquery-confirm' ], function($) {
+            require(['jquery', /* jquery-plugins */ 'datatables.net', 'jquery-confirm' ], function($) {
                 var attachmentJSON = [];
                 var usageLinks;
 

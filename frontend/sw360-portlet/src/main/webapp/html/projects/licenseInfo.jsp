@@ -38,8 +38,8 @@
                  scope="request"/>
 </c:catch>
 <core_rt:if test="${empty attributeNotFoundException}">
-    <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/1.12.1/jquery-ui.css">
-    <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-treetable/3.2.0/css/jquery.treetable.css"/>
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/themes/base/jquery-ui.min.css">
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-treetable/css/jquery.treetable.css"/>
     <link rel="stylesheet" href="<%=request.getContextPath()%>/css/jquery.treetable.theme.sw360.css"/>
     <link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
 
