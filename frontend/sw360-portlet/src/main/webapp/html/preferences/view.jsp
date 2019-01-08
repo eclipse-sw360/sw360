@@ -208,7 +208,7 @@
                 })
             }
 
-            $('.datepicker').datepicker({dateFormat: "yy-mm-dd"});
+            $('.datepicker').datepicker({changeMonth:true,changeYear:true,dateFormat: "yy-mm-dd"});
             $('.datepicker').datepicker('option', 'minDate', new Date());
 
             $('#authorities_read').change(function () {
