@@ -94,6 +94,20 @@ public class ComponentTest extends TestIntegrationBase {
     }
 
     @Test
+    public void should_get_all_components_empty_list() throws IOException, TException {
+        given(this.componentServiceMock.getComponentsForUser(anyObject())).willReturn(new ArrayList<>());
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/components",
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, headers),
+                        String.class);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        TestHelper.checkResponse(response.getBody(), "components", 0);
+    }
+
+    @Test
     public void should_get_all_components_wrong_page() throws IOException, TException {
         when(this.componentServiceMock.getComponentsForUser(anyObject())).thenThrow(ResourceNotFoundException.class);
         HttpHeaders headers = getHeaders(port);
