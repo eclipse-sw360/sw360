@@ -15,6 +15,12 @@ sudo: required
 dist: trusty
 language: java
 jdk: openjdk8
+addons:
+  apt:
+    packages:
+      - docker-ce
+services:
+  - docker
 
 cache:
   apt: true
@@ -34,14 +40,23 @@ script: mvn --fail-at-end $MVN_ARGS
 
 matrix:
   include:
-    - env: MVN_ARGS="package"
-    - env: MVN_ARGS="validate"
+    - name: mvn package
+      env: MVN_ARGS="package"
+    - name: mvn validate
+      env: MVN_ARGS="validate"
       before_install:
-    - env: MVN_ARGS="dependency:analyze -DfailOnWarning"
+    - name: mvn dependency:analyze
+      env: MVN_ARGS="dependency:analyze -DfailOnWarning"
       install: mvn package -DskipTests
-    - before_install: true
+    - name: check for license headers
+      before_install: true
       install: true
       script: .travis/testForLicenseHeaders.sh
-      env: DESC="test for license headers"
+    # the following job sadly runs into timeout
+    # - name: test docker install file
+    #   before_install: true
+    #   install: true
+    #   script: scripts/compileWithDocker.sh
   allow_failures:
-    - env: MVN_ARGS="dependency:analyze -DfailOnWarning"
+    - name: mvn dependency:analyze
+
