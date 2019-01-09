@@ -13,7 +13,8 @@ server:
 sw360:
   sw360-portal-server-url: ${SW360_PORTAL_SERVER_URL:http://127.0.0.1:8080}
   sw360-liferay-company-id: ${SW360_LIFERAY_COMPANY_ID:20155}
-  cors-allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:#{null}}
+  cors:
+    allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:#{null}}
 
 security:
   oauth2:

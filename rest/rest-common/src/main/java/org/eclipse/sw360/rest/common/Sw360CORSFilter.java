@@ -24,14 +24,17 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.StringJoiner;
 
 @Configuration
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public abstract class Sw360CORSFilter implements Filter {
 
-    @Value("${sw360.cors-allowed-origin}")
+    @Value("${sw360.cors.allowed-origin}")
     private String allowedOrigin;
+    @Value("${sw360.cors.max-age:3600}")
+    private String accessControlMaxAge;
+    @Value("${sw360.cors.allow-credentials:true}")
+    private String accessControlAllowCredentials;
 
     private static final String ALLOWED_HTTP_METHODS = allowedHttpMethods();
     private static final String ALLOWED_HTTP_HEADERS = allowedHttpHeaders();
@@ -61,9 +64,9 @@ public abstract class Sw360CORSFilter implements Filter {
     private void setCORSHeader(HttpServletResponse httpServletResponse) {
         httpServletResponse.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, allowedOrigin);
         httpServletResponse.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, ALLOWED_HTTP_METHODS);
-        httpServletResponse.setHeader(HttpHeaders.ACCESS_CONTROL_MAX_AGE, "3600");
+        httpServletResponse.setHeader(HttpHeaders.ACCESS_CONTROL_MAX_AGE, accessControlMaxAge);
         httpServletResponse.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, ALLOWED_HTTP_HEADERS);
-        httpServletResponse.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+        httpServletResponse.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, accessControlAllowCredentials);
     }
 
     private static String allowedHttpMethods() {
@@ -72,22 +75,13 @@ public abstract class Sw360CORSFilter implements Filter {
         httpMethods.add(HttpMethod.POST.name());
         httpMethods.add(HttpMethod.DELETE.name());
         httpMethods.add(HttpMethod.PATCH.name());
-        return valueListStringBuilder(httpMethods);
+        return String.join(",", httpMethods);
     }
 
     private static String allowedHttpHeaders() {
         List<String> httpHeaders = new ArrayList<>();
         httpHeaders.add(HttpHeaders.CONTENT_TYPE);
         httpHeaders.add(HttpHeaders.AUTHORIZATION);
-        return valueListStringBuilder(httpHeaders);
+        return String.join(",", httpHeaders);
     }
-
-    private static String valueListStringBuilder(List<String> valueList ) {
-        StringJoiner stringJoiner = new StringJoiner(", ");
-        for(String value: valueList) {
-            stringJoiner.add(value);
-        }
-        return stringJoiner.toString();
-    }
-
 }
