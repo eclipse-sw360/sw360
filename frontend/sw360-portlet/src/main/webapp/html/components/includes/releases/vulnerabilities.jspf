@@ -32,8 +32,8 @@
 <jsp:useBean id="numberOfVulnerabilities" type="java.lang.Integer" scope="request"/>
 <jsp:useBean id="viewSize" type="java.lang.Integer" scope="request"/>
 
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/datatables.net-buttons-dt/1.1.2/css/buttons.dataTables.min.css"/>
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/datatables.net-select-bs/1.2.2/css/select.bootstrap.min.css"/>
+<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/datatables.net-buttons-bs/css/buttons.bootstrap.min.css"/>
+<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/datatables.net-select-bs/css/select.bootstrap.min.css"/>
 
 <p>
     Showing
@@ -94,7 +94,7 @@
         window.location.href=portletURL.toString();
     }
 
-    require(['jquery', 'utils/includes/vulnerabilityModal', /* jquery-plugins */ 'jquery-ui', 'datatables', 'modules/datatables-utils', 'datatables_select', 'datatables_buttons'], function ($, vulnerarbilityModal) {
+    require(['jquery', 'utils/includes/vulnerabilityModal', /* jquery-plugins */ 'jquery-ui', 'datatables.net', 'modules/datatables-utils', 'datatables.net-select', 'datatables.net-buttons'], function ($, vulnerarbilityModal) {
         var vulnerabilityTable;
         var modal;
 

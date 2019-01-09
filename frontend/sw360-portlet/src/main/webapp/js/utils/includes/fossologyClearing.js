@@ -9,7 +9,7 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-define('utils/includes/fossologyClearing', ['jquery', /* jquery-plugins */ 'jquery-ui', 'datatables'], function($) {
+define('utils/includes/fossologyClearing', ['jquery', /* jquery-plugins */ 'jquery-ui', 'datatables.net'], function($) {
     var fosstable,
         config = $('#fossologyClearing').data(),
         objectNamespacer = objectNamespacerOf(config.portletNamespace),

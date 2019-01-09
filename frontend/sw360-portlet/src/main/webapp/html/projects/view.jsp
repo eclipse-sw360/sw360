@@ -196,9 +196,9 @@
     </form>
 </div>
 
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/1.12.1/jquery-ui.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/github-com-craftpip-jquery-confirm/3.0.1/jquery-confirm.min.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/datatables.net-buttons-dt/1.1.2/css/buttons.dataTables.min.css"/>
+<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/themes/base/jquery-ui.min.css">
+<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.css">
+<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/datatables.net-buttons-bs/css/buttons.bootstrap.min.css"/>
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/dataTable_Siemens.css">
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
 
@@ -214,7 +214,7 @@
         var PortletURL = Liferay.PortletURL;
         const clearingSummaryColumnIndex = 4;
 
-        require(['jquery', 'modules/autocomplete', 'modules/confirm', /* jquery-plugins */ 'datatables', 'datatables_buttons', 'buttons.print'], function($, autocomplete, confirm) {
+        require(['jquery', 'modules/autocomplete', 'modules/confirm', /* jquery-plugins */ 'datatables.net', 'datatables.net-buttons', 'datatables.net-buttons.print'], function($, autocomplete, confirm) {
             var projectsTable;
 
              // initializing

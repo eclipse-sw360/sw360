@@ -32,7 +32,7 @@
 
 <core_rt:set var="enableTokenGenerator" value='<%=PortalConstants.API_TOKEN_ENABLE_GENERATOR%>'/>
 
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/1.12.1/jquery-ui.css">
+<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/themes/base/jquery-ui.min.css">
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
 
 <div id="header"></div>

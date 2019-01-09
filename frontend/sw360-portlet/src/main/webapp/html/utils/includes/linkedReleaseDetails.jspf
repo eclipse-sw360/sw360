@@ -23,7 +23,7 @@
 
 <jsp:useBean id="releaseList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.components.ReleaseLink>"
              scope="request"/>
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-treetable/3.2.0/css/jquery.treetable.css"/>
+<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-treetable/css/jquery.treetable.css"/>
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/jquery.treetable.theme.sw360.css"/>
 
 <table class="table info_table" id="LinkedReleasesInfo""

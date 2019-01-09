@@ -38,7 +38,7 @@
 
 <core_rt:if test="${empty attributeNotFoundException}">
 
-    <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/1.12.1/jquery-ui.css">
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/themes/base/jquery-ui.min.css">
     <link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
 
     <core_rt:set var="dontDisplayDeleteButton" value="true" scope="request"/>

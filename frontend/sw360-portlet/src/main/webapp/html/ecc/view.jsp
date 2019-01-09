@@ -30,7 +30,7 @@
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.RELEASE%>"/>
 </portlet:resourceURL>
 
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/datatables.net-buttons-dt/1.1.2/css/buttons.dataTables.min.css"/>
+<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/datatables.net-buttons-bs/css/buttons.bootstrap.min.css"/>
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/dataTable_Siemens.css">
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
 
@@ -82,7 +82,7 @@
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;
 
-        require(['jquery', 'utils/includes/quickfilter', /* jquery-plugins: */ 'datatables', 'datatables_buttons', 'buttons.print'], function($, quickfilter) {
+        require(['jquery', 'utils/includes/quickfilter', /* jquery-plugins: */ 'datatables.net', 'datatables.net-buttons', 'datatables.net-buttons.print'], function($, quickfilter) {
             var eccInfoTable;
 
             // initializing

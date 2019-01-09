@@ -61,7 +61,7 @@
 
 
 <script>
-    require(['jquery', /* jquery-plugins */ 'datatables', 'jquery-ui', 'jquery-confirm'], function($) {
+    require(['jquery', /* jquery-plugins */ 'datatables.net', 'jquery-ui', 'jquery-confirm'], function($) {
 
         Liferay.on('allPortletsReady', function() {
             bindkeyPressToClick('searchproject', 'searchbuttonproject');

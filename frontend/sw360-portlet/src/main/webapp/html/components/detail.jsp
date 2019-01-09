@@ -57,7 +57,7 @@
 <core_rt:if test="${empty attributeNotFoundException}">
 
     <link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
-    <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/1.12.1/jquery-ui.css">
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/themes/base/jquery-ui.min.css">
 
     <div id="header"></div>
     <p class="pageHeader"><span class="pageHeaderBigSpan">Component: <sw360:out value="${component.name}"/></span>

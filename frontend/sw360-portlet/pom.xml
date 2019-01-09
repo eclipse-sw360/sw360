@@ -22,16 +22,16 @@
     </parent>
 
     <properties>
-        <jquery.version>1.12.4</jquery.version>
+        <require.js.version>2.3.6</require.js.version>
+        <jquery.version>3.3.1</jquery.version>
         <jquery.ui.version>1.12.1</jquery.ui.version>
-        <jquery.datatables.version>1.10.15</jquery.datatables.version>
-        <jquery.datatables.buttons.version>1.1.2</jquery.datatables.buttons.version>
-        <jquery.datatables.select.version>1.2.2</jquery.datatables.select.version>
-        <jquery.confirm.version>3.0.1</jquery.confirm.version>
+        <jquery.datatables.version>1.10.19</jquery.datatables.version>
+        <jquery.datatables.buttons.version>1.5.3</jquery.datatables.buttons.version>
+        <jquery.datatables.select.version>1.2.7</jquery.datatables.select.version>
+        <jquery.confirm.version>3.3.2</jquery.confirm.version>
         <jquery.treetable.version>3.2.0</jquery.treetable.version>
-        <jquery.validation.version>1.15.1</jquery.validation.version>
-        <resumable.js.version>1.0.3</resumable.js.version>
-        <require.js.version>2.3.3</require.js.version>
+        <jquery.validation.version>1.19.0</jquery.validation.version>
+        <resumable.js.version>1.1.0</resumable.js.version>
     </properties>
 
     <artifactId>sw360-portlet</artifactId>
@@ -121,91 +121,6 @@
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
-
-        <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>requirejs</artifactId>
-            <version>${require.js.version}</version>
-        </dependency>
-        <dependency> <!-- to support Servlet2 containers -->
-            <groupId>org.webjars</groupId>
-            <artifactId>webjars-servlet-2.x</artifactId>
-            <version>1.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>jquery</artifactId>
-            <version>${jquery.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>jquery-ui</artifactId>
-            <version>${jquery.ui.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>datatables</artifactId>
-            <version>${jquery.datatables.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>datatables-plugins</artifactId>
-            <version>${jquery.datatables.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars.bower</groupId>
-            <artifactId>datatables.net-buttons</artifactId>
-            <version>${jquery.datatables.buttons.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars.bower</groupId>
-            <artifactId>datatables.net-buttons-dt</artifactId>
-            <version>${jquery.datatables.buttons.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars.bower</groupId>
-            <artifactId>datatables.net-select</artifactId>
-            <version>${jquery.datatables.select.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars.bower</groupId>
-            <artifactId>datatables.net-select-bs</artifactId>
-            <version>${jquery.datatables.select.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars.npm</groupId>
-            <artifactId>github-com-craftpip-jquery-confirm</artifactId>
-            <version>${jquery.confirm.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars.bower</groupId>
-            <artifactId>jquery-treetable</artifactId>
-            <version>${jquery.treetable.version}</version>
-            <exclusions>
-              <!--
-                Treetable comes with a dependency to jquery-3.2.1 but with groupIs org.webjars.bower instead of org.webjars.
-                This way the jquery webjar does not conflict with the included jquery webjar above and will be included as well.
-                Since the webjars-locator searches the whole classpath, it will included jquery-3.2.1 instead of the defined jquery
-                version in this pom. We exclude the jquery-dependency here to avoid this behaviour.
-              -->
-            <exclusion>
-              <groupId>org.webjars.bower</groupId>
-              <artifactId>jquery</artifactId>
-            </exclusion>
-          </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>jquery-validation</artifactId>
-            <version>${jquery.validation.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>resumable.js</artifactId>
-            <version>${resumable.js.version}</version>
-        </dependency>
-
-
         <dependency>
             <groupId>com.liferay.portal</groupId>
             <artifactId>portal-service</artifactId>
@@ -260,9 +175,88 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-csv</artifactId>
-            <version>1.4</version>
         </dependency>
 
+        <!--
+          -
+          - WEB JAR DEPENDENCIES
+          -
+        -->
+
+        <!-- Bower GitHub WebJars -->
+        <dependency>
+            <groupId>org.webjars.bowergithub.requirejs</groupId>
+            <artifactId>requirejs-bower</artifactId>
+            <version>${require.js.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.bowergithub.jquery</groupId>
+            <artifactId>jquery-dist</artifactId>
+            <version>${jquery.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.bowergithub.components</groupId>
+            <artifactId>jqueryui</artifactId>
+            <version>${jquery.ui.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.bowergithub.datatables</groupId>
+            <artifactId>dist-datatables</artifactId>
+            <version>${jquery.datatables.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.bowergithub.datatables</groupId>
+            <artifactId>dist-datatables-buttons</artifactId>
+            <version>${jquery.datatables.buttons.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.bowergithub.datatables</groupId>
+            <artifactId>dist-datatables-buttons-bootstrap</artifactId>
+            <version>${jquery.datatables.buttons.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.bowergithub.datatables</groupId>
+            <artifactId>dist-datatables-select</artifactId>
+            <version>${jquery.datatables.select.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.bowergithub.datatables</groupId>
+            <artifactId>dist-datatables-select-bootstrap</artifactId>
+            <version>${jquery.datatables.select.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.bowergithub.craftpip</groupId>
+            <artifactId>jquery-confirm</artifactId>
+            <version>${jquery.confirm.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.bowergithub.ludo</groupId>
+            <artifactId>jquery-treetable</artifactId>
+            <version>${jquery.treetable.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.bowergithub.jquery-validation</groupId>
+            <artifactId>jquery-validation</artifactId>
+            <version>${jquery.validation.version}</version>
+        </dependency>
+        <!-- Classic WebJars -->
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>datatables-plugins</artifactId>
+            <version>${jquery.datatables.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>resumable.js</artifactId>
+            <version>${resumable.js.version}</version>
+        </dependency>
+
+
+        <!--
+          -
+          - TEST DEPENDENCIES
+          -
+         -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>

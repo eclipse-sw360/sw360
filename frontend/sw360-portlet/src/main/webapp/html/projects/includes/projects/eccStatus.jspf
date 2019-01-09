@@ -37,13 +37,13 @@
     </div>
 </core_rt:if>
 
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/datatables.net-buttons-dt/1.1.2/css/buttons.dataTables.min.css"/>
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/1.12.1/jquery-ui.css">
+<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/datatables.net-buttons-bs/css/buttons.bootstrap.min.css"/>
+<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/themes/base/jquery-ui.min.css">
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/dataTable_Siemens.css">
 
 <script type="text/javascript">
-    require(['jquery', /* jquery-plugins */ 'datatables', 'datatables_buttons', 'buttons.print'], function ($) {
+    require(['jquery', /* jquery-plugins */ 'datatables.net', 'datatables.net-buttons', 'datatables.net-buttons.print'], function ($) {
         var releaseECCTable;
 
         Liferay.on('allPortletsReady', function() {

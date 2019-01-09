@@ -53,7 +53,7 @@
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-    require([ 'modules/mergeWizard', 'jquery', /* jquery-plugins */ 'datatables' ], function(wizard, $) {
+    require([ 'modules/mergeWizard', 'jquery', /* jquery-plugins */ 'datatables.net' ], function(wizard, $) {
         var mergeWizardStepUrl = '<%=componentMergeWizardStepUrl%>',
             postParamsPrefix = '<portlet:namespace/>',
             $wizardRoot = $('#componentMergeWizard');
@@ -131,7 +131,7 @@
 
         function submitChosenComponent($stepElement) {
             var checkedList = $stepElement.find('input:checked');
-            if (checkedList.size() !== 1 || $(checkedList.get(0)).val() ===  $wizardRoot.data('componentTargetId')) {
+            if (checkedList.length !== 1 || $(checkedList.get(0)).val() ===  $wizardRoot.data('componentTargetId')) {
                 $stepElement.find('.stepFeedback').html('<div class="alert">Please choose exactly one component, which is not the component itself!</div>');
                 $('html, body').stop().animate({ scrollTop: 0 }, 300, 'swing');
                 setTimeout(function() {

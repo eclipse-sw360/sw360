@@ -9,7 +9,7 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-define('modules/datatables-utils', ['jquery', /* jquery-plugins */ 'datatables'], function($) {
+define('modules/datatables-utils', ['jquery', /* jquery-plugins */ 'datatables.net'], function($) {
     $.fn.dataTable.ext.order['sort-select'] = function(settings, col) {
         return this.api().column(col, {order:'index'}).nodes().map(function(td) {
             return $('select', td).val();
