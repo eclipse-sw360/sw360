@@ -19,6 +19,7 @@ import org.apache.poi.xwpf.usermodel.XWPFTable;
 import org.apache.poi.xwpf.usermodel.XWPFTableRow;
 import org.apache.poi.xwpf.usermodel.XWPFTableCell;
 import org.apache.thrift.TException;
+import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -40,7 +41,6 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyString
 import static org.eclipse.sw360.licenseinfo.outputGenerators.DocxUtils.*;
 
 public class DocxGenerator extends OutputGenerator<byte[]> {
-
     private static final String UNKNOWN_LICENSE_NAME = "Unknown license name";
     private static final String UNKNOWN_FILE_NAME = "Unknown file name";
     private static final String TODO_DEFAULT_TEXT = "todo not determined so far.";
@@ -295,7 +295,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
             String globalLicense = "";
             for(LicenseNameWithText l : licenseInfo.getLicenseNamesWithTexts()) {
-                if(l != null && l.getType().equals("global")) {
+                if(l != null && "global".equals(l.getType())) {
                     globalLicense = l.getLicenseName();
                     break;
                 }
