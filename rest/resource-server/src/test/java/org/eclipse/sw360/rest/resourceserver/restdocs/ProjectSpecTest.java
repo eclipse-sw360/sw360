@@ -10,6 +10,7 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
@@ -274,6 +275,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("createdOn").description("The date the project was created"),
                                 fieldWithPath("description").description("The project description"),
                                 fieldWithPath("projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
+                                fieldWithPath("visibility").description("The project visibility, possible values are: " + Arrays.asList(Visibility.values())),
                                 fieldWithPath("businessUnit").description("The business unit this project belongs to"),
                                 fieldWithPath("externalIds").description("When projects are imported from other tools, the external ids can be stored here"),
                                 fieldWithPath("ownerAccountingUnit").description("The owner accounting unit of the project"),
@@ -443,6 +445,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         Map<String, String> project = new HashMap<>();
         project.put("name", "Test Project");
         project.put("version", "1.0");
+        project.put("visibility", "PRIVATE");
         project.put("description", "This is the description of my Test Project");
         project.put("projectType", ProjectType.PRODUCT.toString());
 
@@ -457,11 +460,13 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("name").description("The name of the project"),
                                 fieldWithPath("description").description("The project description"),
                                 fieldWithPath("version").description("The version of the new project"),
+                                fieldWithPath("visibility").description("The project visibility, possible values are: " + Arrays.asList(Visibility.values())),
                                 fieldWithPath("projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values()))
                         ),
                         responseFields(
                                 fieldWithPath("name").description("The name of the project"),
                                 fieldWithPath("version").description("The project version"),
+                                fieldWithPath("visibility").description("The project visibility, possible values are: " + Arrays.asList(Visibility.values())),
                                 fieldWithPath("createdOn").description("The date the project was created"),
                                 fieldWithPath("description").description("The project description"),
                                 fieldWithPath("projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
