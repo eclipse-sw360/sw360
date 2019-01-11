@@ -24,6 +24,7 @@ import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentController;
 import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
 import org.eclipse.sw360.rest.resourceserver.license.LicenseController;
@@ -436,6 +437,12 @@ public class RestControllerHelper<T> {
         return embeddedUser;
     }
 
+    public Vendor convertToEmbeddedVendor(Vendor vendor) {
+        Vendor embeddedVendor = convertToEmbeddedVendor(vendor.getFullname());
+        embeddedVendor.setId(vendor.getId());
+        return embeddedVendor;
+    }
+
     public Vendor convertToEmbeddedVendor(String fullName) {
         Vendor embeddedVendor = new Vendor();
         embeddedVendor.setFullname(fullName);
@@ -454,6 +461,13 @@ public class RestControllerHelper<T> {
         attachment.setCheckedComment(null);
         attachment.setCheckStatus(null);
         return attachment;
+    }
+
+    public Vulnerability convertToEmbeddedVulnerability(Vulnerability vulnerability) {
+        Vulnerability embeddedVulnerability = new Vulnerability(vulnerability.getExternalId());
+        embeddedVulnerability.setId(vulnerability.getId());
+        embeddedVulnerability.setTitle(vulnerability.getTitle());
+        return embeddedVulnerability;
     }
 
     /**

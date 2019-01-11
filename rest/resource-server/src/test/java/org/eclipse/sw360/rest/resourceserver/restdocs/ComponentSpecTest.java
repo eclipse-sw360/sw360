@@ -33,6 +33,7 @@ import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.Resources;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static org.mockito.BDDMockito.given;
@@ -82,6 +83,9 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         given(this.attachmentServiceMock.getAttachmentContent(anyObject())).willReturn(new AttachmentContent().setId("1231231254").setFilename("spring-core-4.3.4.RELEASE.jar").setContentType("binary"));
         given(this.attachmentServiceMock.getResourcesFromList(anyObject())).willReturn(new Resources<>(attachmentResources));
 
+        Map<String, Set<String>> externalIds = new HashMap<>();
+        externalIds.put("component-id-key", Collections.singleton(""));
+
         List<Component> componentList = new ArrayList<>();
         List<Component> componentListByName = new ArrayList<>();
         angularComponent = new Component();
@@ -101,6 +105,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         angularComponent.setLanguages(ImmutableSet.of("EN", "DE"));
         angularComponent.setOperatingSystems(ImmutableSet.of("Windows", "Linux"));
         angularComponent.setAttachments(attachmentList);
+        angularComponent.setExternalIds(Collections.singletonMap("component-id-key", "1831A3"));
         componentList.add(angularComponent);
         componentListByName.add(angularComponent);
 
@@ -120,20 +125,33 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         springComponent.setCategories(ImmutableSet.of("jdbc", "java"));
         springComponent.setLanguages(ImmutableSet.of("EN", "DE"));
         springComponent.setOperatingSystems(ImmutableSet.of("Windows", "Linux"));
+        springComponent.setExternalIds(Collections.singletonMap("component-id-key", "c77321"));
         componentList.add(springComponent);
 
-        when(this.componentServiceMock.createComponent(anyObject(), anyObject())).then(invocation -> {
-            springComponent.setType("component");
-            springComponent.setCreatedOn("2016-12-20");
-            springComponent.setModerators(null);
-            springComponent.setVendorNames(null);
-            return springComponent;
-        });
+        when(this.componentServiceMock.createComponent(anyObject(), anyObject())).then(invocation ->
+                new Component("Spring Framework")
+                        .setDescription("The Spring Framework provides a comprehensive programming and configuration model for modern Java-based enterprise applications.")
+                        .setComponentType(ComponentType.OSS)
+                        .setId("1234567890")
+                        .setCreatedOn(new SimpleDateFormat("yyyy-MM-dd").format(new Date())));
 
         given(this.componentServiceMock.getComponentsForUser(anyObject())).willReturn(componentList);
         given(this.componentServiceMock.getComponentForUserById(eq("17653524"), anyObject())).willReturn(angularComponent);
         given(this.componentServiceMock.searchComponentByName(eq(angularComponent.getName()))).willReturn(componentListByName);
         given(this.componentServiceMock.deleteComponent(eq(angularComponent.getId()), anyObject())).willReturn(RequestStatus.SUCCESS);
+        given(this.componentServiceMock.searchByExternalIds(eq(externalIds), anyObject())).willReturn((new HashSet<>(componentList)));
+        given(this.componentServiceMock.convertToEmbeddedWithExternalIds(eq(angularComponent))).willReturn(
+                new Component("Angular")
+                        .setId("17653524")
+                        .setComponentType(ComponentType.OSS)
+                        .setExternalIds(Collections.singletonMap("component-id-key", "1831A3"))
+        );
+        given(this.componentServiceMock.convertToEmbeddedWithExternalIds(eq(springComponent))).willReturn(
+                new Component("Spring Framework")
+                        .setId("678dstzd8")
+                        .setComponentType(ComponentType.OSS)
+                        .setExternalIds(Collections.singletonMap("component-id-key", "c77321"))
+        );
 
         given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(
                 new User("admin@sw360.org", "sw360").setId("123456789"));
@@ -283,6 +301,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("ownerCountry").description("The owner country of the component"),
                                 fieldWithPath("categories").description("The component categories"),
                                 fieldWithPath("languages").description("The language of the component"),
+                                fieldWithPath("externalIds").description("When projects are imported from other tools, the external ids can be stored here"),
                                 fieldWithPath("operatingSystems").description("The OS on which the component operates"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 fieldWithPath("_embedded.createdBy").description("The user who created this component"),
@@ -296,10 +315,8 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_create_component() throws Exception {
         Map<String, String> component = new HashMap<>();
-
         component.put("name", "Spring Framework");
         component.put("description", "The Spring Framework provides a comprehensive programming and configuration model for modern Java-based enterprise applications.");
-        component.put("createdBy", "jane@sw360.org");
         component.put("componentType", ComponentType.OSS.toString());
 
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
@@ -313,21 +330,13 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                         requestFields(
                                 fieldWithPath("name").description("The name of the component"),
                                 fieldWithPath("description").description("The component description"),
-                                fieldWithPath("createdBy").description("The user who created this component"),
                                 fieldWithPath("componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values()))
                         ),
                         responseFields(
                                 fieldWithPath("name").description("The name of the component"),
                                 fieldWithPath("componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
-                                fieldWithPath("componentOwner").description("The owner name of the component"),
                                 fieldWithPath("description").description("The component description"),
                                 fieldWithPath("createdOn").description("The date the component was created"),
-                                fieldWithPath("ownerAccountingUnit").description("The owner accounting unit of the component"),
-                                fieldWithPath("ownerGroup").description("The owner group of the component"),
-                                fieldWithPath("ownerCountry").description("The owner country of the component"),
-                                fieldWithPath("categories").description("The component categories"),
-                                fieldWithPath("languages").description("The language of the component"),
-                                fieldWithPath("operatingSystems").description("The OS on which the component operates"),
                                 fieldWithPath("_embedded.createdBy").description("The user who created this component"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
@@ -428,6 +437,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("ownerAccountingUnit").description("The owner accounting unit of the component"),
                                 fieldWithPath("ownerGroup").description("The owner group of the component"),
                                 fieldWithPath("ownerCountry").description("The owner country of the component"),
+                                fieldWithPath("externalIds").description("When projects are imported from other tools, the external ids can be stored here"),
                                 fieldWithPath("categories").description("The component categories"),
                                 fieldWithPath("languages").description("The language of the component"),
                                 fieldWithPath("operatingSystems").description("The OS on which the component operates"),
@@ -478,5 +488,22 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                 .accept("application/*"))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document());
+    }
+
+    @Test
+    public void should_document_get_components_by_externalIds() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/components/searchByExternalIds?component-id-key=")
+                .contentType(MediaTypes.HAL_JSON)
+                .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        responseFields(
+                                fieldWithPath("_embedded.sw360:components").description("An array of <<resources-components, Components resources>>"),
+                                fieldWithPath("_embedded.sw360:components[]componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
+                                fieldWithPath("_embedded.sw360:components[]name").description("The name of the component, optional"),
+                                fieldWithPath("_embedded.sw360:components[]externalIds").description("External Ids of the component"),
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
     }
 }

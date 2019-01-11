@@ -14,7 +14,6 @@ import org.eclipse.sw360.components.summary.ReleaseSummary;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.ektorp.ViewQuery;
@@ -139,7 +138,8 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
     }
 
     public Set<Release> searchByExternalIds(Map<String, Set<String>> externalIds) {
-        Set<String> ids = queryForIdsAsComplexValues("byExternalIds", externalIds);
-        return new HashSet<>(get(ids));
+        RepositoryUtils repositoryUtils = new RepositoryUtils();
+        Set<String> searchIds = repositoryUtils.searchByExternalIds(this, "byExternalIds", externalIds);
+        return new HashSet<>(get(searchIds));
     }
 }

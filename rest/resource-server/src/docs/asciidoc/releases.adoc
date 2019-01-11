@@ -53,7 +53,8 @@ include::{snippets}/should_document_get_releases_with_fields/links.adoc[]
 ==== Listing by external ids
 
 A `GET` request will get all releases corresponding to external ids +
-The request parameter supports MultiValueMap (allows to add duplicate keys with different values)
+The request parameter supports MultiValueMap (allows to add duplicate keys with different values) +
+It's possible to search for releases only by the external id key by leaving the value.
 
 ===== Response structure
 include::{snippets}/should_document_get_releases_by_external-ids/response-fields.adoc[]
@@ -109,6 +110,21 @@ include::{snippets}/should_document_get_release/http-response.adoc[]
 
 ===== Links
 include::{snippets}/should_document_get_release/links.adoc[]
+
+
+[[resources-releases-create]]
+==== Creating a release
+
+A `POST` request is used to create a release
+
+===== Request structure
+include::{snippets}/should_document_create_release/request-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_create_release/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_create_release/http-response.adoc[]
 
 
 [[resources-release-update]]

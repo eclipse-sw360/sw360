@@ -35,6 +35,7 @@ import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.Resources;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static org.eclipse.sw360.datahandler.thrift.MainlineState.MAINLINE;
@@ -42,10 +43,11 @@ import static org.eclipse.sw360.datahandler.thrift.ReleaseRelationship.CONTAINED
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
-import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
-import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
+import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -173,8 +175,27 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.searchProjectByName(eq(project.getName()), anyObject())).willReturn(projectListByName);
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), anyObject(), eq("false"))).willReturn(releaseIds);
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), anyObject(), eq("true"))).willReturn(releaseIdsTransitive);
-        given(this.projectServiceMock.convertToEmbeddedWithExternalIds(eq(project))).willReturn(project);
-        given(this.projectServiceMock.convertToEmbeddedWithExternalIds(eq(project2))).willReturn(project2);
+        given(this.projectServiceMock.convertToEmbeddedWithExternalIds(eq(project))).willReturn(
+                new Project("Emerald Web")
+                        .setVersion("1.0.2")
+                        .setId("376576")
+                        .setDescription("Emerald Web provides a suite of components for Critical Infrastructures.")
+                        .setExternalIds(Collections.singletonMap("mainline-id-project", "515432"))
+                        .setProjectType(ProjectType.PRODUCT));
+        given(this.projectServiceMock.convertToEmbeddedWithExternalIds(eq(project2))).willReturn(
+                new Project("Orange Web")
+                        .setVersion("2.0.1")
+                        .setId("376570")
+                        .setDescription("Orange Web provides a suite of components for documentation.")
+                        .setExternalIds(projExtKeys)
+                        .setProjectType(ProjectType.PRODUCT));
+        when(this.projectServiceMock.createProject(anyObject(), anyObject())).then(invocation ->
+                new Project("Test Project")
+                        .setId("1234567890")
+                        .setDescription("This is the description of my Test Project")
+                        .setProjectType(ProjectType.PRODUCT)
+                        .setVersion("1.0")
+                        .setCreatedOn(new SimpleDateFormat("yyyy-MM-dd").format(new Date())));
 
         Release release = new Release();
         release.setId("3765276512");
@@ -415,5 +436,37 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 .accept("application/*"))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document());
+    }
+
+    @Test
+    public void should_document_create_project() throws Exception {
+        Map<String, String> project = new HashMap<>();
+        project.put("name", "Test Project");
+        project.put("version", "1.0");
+        project.put("description", "This is the description of my Test Project");
+        project.put("projectType", ProjectType.PRODUCT.toString());
+
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        this.mockMvc.perform(post("/api/projects")
+                .contentType(MediaTypes.HAL_JSON)
+                .content(this.objectMapper.writeValueAsString(project))
+                .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isCreated())
+                .andDo(this.documentationHandler.document(
+                        requestFields(
+                                fieldWithPath("name").description("The name of the project"),
+                                fieldWithPath("description").description("The project description"),
+                                fieldWithPath("version").description("The version of the new project"),
+                                fieldWithPath("projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values()))
+                        ),
+                        responseFields(
+                                fieldWithPath("name").description("The name of the project"),
+                                fieldWithPath("version").description("The project version"),
+                                fieldWithPath("createdOn").description("The date the project was created"),
+                                fieldWithPath("description").description("The project description"),
+                                fieldWithPath("projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("_embedded.createdBy").description("The user who created this project")
+                        )));
     }
 }

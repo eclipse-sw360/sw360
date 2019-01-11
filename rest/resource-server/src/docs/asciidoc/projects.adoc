@@ -73,7 +73,8 @@ include::{snippets}/should_document_get_projects_by_type/links.adoc[]
 ==== Listing by external ids
 
 A `GET` request will get all projects corresponding to external ids +
-The request parameter supports MultiValueMap (allows to add duplicate keys with different values)
+The request parameter supports MultiValueMap (allows to add duplicate keys with different values) +
+It's possible to search for projects only by the external id key by leaving the value.
 
 ===== Response structure
 include::{snippets}/should_document_get_projects_by_external-ids/response-fields.adoc[]
@@ -186,3 +187,18 @@ include::{snippets}/should_document_get_project_releases_ecc_information/http-re
 
 ===== Links
 include::{snippets}/should_document_get_project_releases_ecc_information/links.adoc[]
+
+
+[[resources-projects-create]]
+==== Creating a project
+
+A `POST` request is used to create a project
+
+===== Request structure
+include::{snippets}/should_document_create_project/request-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_create_project/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_create_project/http-response.adoc[]

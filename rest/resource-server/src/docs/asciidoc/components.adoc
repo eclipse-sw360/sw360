@@ -104,6 +104,23 @@ include::{snippets}/should_document_get_component/http-response.adoc[]
 include::{snippets}/should_document_get_component/links.adoc[]
 
 
+[[resources-components-get-by-externalids]]
+==== Listing by external ids
+
+A `GET` request will get all components corresponding to external ids +
+The request parameter supports MultiValueMap (allows to add duplicate keys with different values) +
+It's possible to search for components only by the external id key by leaving the value.
+
+===== Response structure
+include::{snippets}/should_document_get_components_by_external-ids/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_components_by_external-ids/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_components_by_external-ids/http-response.adoc[]
+
+
 [[resources-component-attachment-info-get]]
 ==== Listing attachment info
 

@@ -22,11 +22,9 @@ import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
-import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
@@ -34,14 +32,17 @@ import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.Resources;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.*;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
-import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
-import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
+import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -65,6 +66,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     private Release release;
     private Attachment attachment;
+    Component component;
 
     private String releaseId = "3765276512";
 
@@ -83,7 +85,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         Map<String, Set<String>> externalIds = new HashMap<>();
         externalIds.put("mainline-id-component", new HashSet<>(Arrays.asList("1432", "4876")));
 
-        Component component = new Component();
+        component = new Component();
         component.setId("17653524");
         component.setName("Angular");
         component.setDescription("Angular is a development platform for building mobile and desktop web applications.");
@@ -131,8 +133,18 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         given(this.releaseServiceMock.getReleaseForUserById(eq(release.getId()), anyObject())).willReturn(release);
         given(this.releaseServiceMock.deleteRelease(eq(release.getId()), anyObject())).willReturn(RequestStatus.SUCCESS);
         given(this.releaseServiceMock.searchByExternalIds(eq(externalIds), anyObject())).willReturn((new HashSet<>(releaseList)));
-        given(this.releaseServiceMock.convertToEmbeddedWithExternalIds(eq(release))).willReturn(release);
-        given(this.releaseServiceMock.convertToEmbeddedWithExternalIds(eq(release2))).willReturn(release2);
+        given(this.releaseServiceMock.convertToEmbeddedWithExternalIds(eq(release))).willReturn(
+                new Release("Angular", "2.3.0", component.getId())
+                        .setId(releaseId)
+                        .setExternalIds(Collections.singletonMap("mainline-id-component", "1432")));
+        given(this.releaseServiceMock.convertToEmbeddedWithExternalIds(eq(release2))).willReturn(
+                new Release("Angular", "2.3.1", component.getId())
+                        .setId("3765276512")
+                        .setExternalIds(Collections.singletonMap("mainline-id-component", "4876")));
+        when(this.releaseServiceMock.createRelease(anyObject(), anyObject())).then(invocation ->
+                new Release("Test Release", "1.0", component.getId())
+                        .setId("1234567890")
+                        .setCreatedOn(new SimpleDateFormat("yyyy-MM-dd").format(new Date())));
 
         given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(
                 new User("admin@sw360.org", "sw360").setId("123456789"));
@@ -300,7 +312,34 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("_embedded.sw360:releases").description("An array of <<resources-releases, Releases resources>>"),
                                 fieldWithPath("_embedded.sw360:releases[]name").description("The name of the release, optional"),
                                 fieldWithPath("_embedded.sw360:releases[]version").description("The version of the release"),
-                                fieldWithPath("_embedded.sw360:releases[]externalIds").description("External Ids of the project"),
+                                fieldWithPath("_embedded.sw360:releases[]externalIds").description("External Ids of the release"),
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
+
+    @Test
+    public void should_document_create_release() throws Exception {
+        Map<String, String> release = new HashMap<>();
+        release.put("name", "Test Release");
+        release.put("version", "1.0");
+        release.put("componentId", component.getId());
+
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        this.mockMvc.perform(post("/api/releases")
+                .contentType(MediaTypes.HAL_JSON)
+                .content(this.objectMapper.writeValueAsString(release))
+                .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isCreated())
+                .andDo(this.documentationHandler.document(
+                        requestFields(
+                                fieldWithPath("name").description("The name of the new release"),
+                                fieldWithPath("version").description("The version of the new release"),
+                                fieldWithPath("componentId").description("The componentId of the origin component")
+                        ),
+                        responseFields(
+                                fieldWithPath("name").description("The name of the release, optional"),
+                                fieldWithPath("version").description("The version of the release"),
+                                fieldWithPath("createdOn").description("The creation date of the internal sw360 release"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }

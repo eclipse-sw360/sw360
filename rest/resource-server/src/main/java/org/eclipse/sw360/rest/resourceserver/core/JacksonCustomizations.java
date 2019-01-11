@@ -492,6 +492,7 @@ class JacksonCustomizations {
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonIgnoreProperties({
+                "id",
                 "revision",
                 "type",
                 "externalId",
@@ -521,6 +522,8 @@ class JacksonCustomizations {
                 "referencesSize",
                 "setPriorityToolTip",
                 "setCveReferences",
+                "assignedExtComponentIdsIterator",
+                "vendorAdvisoriesIterator",
                 "setIntReleaseId",
                 "cveReferencesSize",
                 "setDescription",
@@ -555,6 +558,7 @@ class JacksonCustomizations {
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonIgnoreProperties({
+                "id",
                 "revision",
                 "type",
                 "publishDate",
@@ -612,6 +616,8 @@ class JacksonCustomizations {
                 "setExtendedDescription",
                 "vulnerableConfigurationSize",
                 "assignedExtComponentIdsSize",
+                "assignedExtComponentIdsIterator",
+                "vendorAdvisoriesIterator",
                 "vendorAdvisoriesSize",
                 "setVendorAdvisories",
                 "cveFurtherMetaDataPerSourceSize",
