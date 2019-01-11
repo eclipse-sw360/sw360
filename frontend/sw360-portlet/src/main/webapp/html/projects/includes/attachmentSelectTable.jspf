@@ -306,7 +306,7 @@
                         });
 
                         loadedCallback();
-                    }).error(function(xhr, type, error) {
+                    }).fail(function(xhr, type, error) {
                         data.loaded = false;
                         renderErrorMessage($linkedProjectsInfoTable, node, data.ttId, error);
                         loadedCallback(error);
@@ -422,7 +422,7 @@
                                 }
                             });
                         }
-                    }).error(function(error) {
+                    }).fail(function(error) {
                         $('#infobar').removeClass('backgroundWarning').addClass('backgroundAlert').html($('<span>', {
                             text: "Cannot load previous selection: " + error.statusText + ' (' + error.status + ')'
                         }));

@@ -17,25 +17,24 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
+
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
+import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
+import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.licenseinfo.outputGenerators.*;
 import org.eclipse.sw360.licenseinfo.parsers.*;
 import org.eclipse.sw360.licenseinfo.util.LicenseNameWithTextUtils;
+
+import org.apache.log4j.Logger;
+import org.apache.thrift.TException;
 
 import java.net.MalformedURLException;
 import java.util.*;
@@ -46,8 +45,8 @@ import java.util.stream.Collectors;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
-import static org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant.REPORT;
 import static org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant.DISCLOSURE;
+import static org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant.REPORT;
 
 /**
  * Implementation of the Thrift service
@@ -380,7 +379,12 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
 
         parsingResults.forEach(result -> {
             if( component != null) {
-                result.setComponentType(toString(component.getComponentType()));
+                if (component.getComponentType() != null) {
+                    result.setComponentType(toString(component.getComponentType()));
+                } else {
+                    LOGGER.warn("Component with [" + component.getId() + ": " + component.getName() + "] has no type!");
+                    result.setComponentType("");
+                }
             } else {
                 // just being extra defensive
                 result.setComponentType("Unknown component.");
