@@ -18,6 +18,7 @@ import java.util.Set;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
@@ -174,6 +175,10 @@ class JacksonCustomizations {
             @JsonSerialize(using = JsonReleaseRelationSerializer.class)
             @JsonProperty("linkedReleases")
             abstract public Map<String, ProjectReleaseRelationship> getReleaseIdToUsage();
+
+            @Override
+            @JsonProperty("visibility")
+            abstract public Visibility getVisbility();
 
             @Override
             @JsonProperty("id")
