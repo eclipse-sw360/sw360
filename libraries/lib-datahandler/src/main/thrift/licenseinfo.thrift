@@ -70,6 +70,7 @@ struct LicenseInfoParsingResult {
     31: optional string name,
     32: optional string version,
     33: optional string componentType,
+    34: optional Release release,
 }
 
 enum ObligationInfoRequestStatus {
@@ -82,6 +83,7 @@ struct ObligationParsingResult {
     1: required ObligationInfoRequestStatus status,
     2: optional string message,
     3: optional list<Obligation> obligations,
+    4: optional Release release,
 }
 
 struct Obligation {

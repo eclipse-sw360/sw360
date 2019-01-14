@@ -22,6 +22,7 @@ import org.apache.thrift.TException;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
@@ -32,6 +33,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
+import java.math.BigInteger;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -49,6 +51,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
     private static final String DOCX_TEMPLATE_REPORT_FILE = "/templateReport.docx";
     private static final String DOCX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     private static final String DOCX_OUTPUT_TYPE = "docx";
+    public static final String UNKNOWN_LICENSE = "Unknown";
 
     public DocxGenerator(OutputFormatVariant outputFormatVariant, String description) {
         super(DOCX_OUTPUT_TYPE, description, true, DOCX_MIME_TYPE, outputFormatVariant);
@@ -165,9 +168,11 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
 
             fillSpecialOSSRisksTable(document, project, obligationResults);
-            fillReleaseBulletList(document, projectLicenseInfoResults);
-            fillReleaseDetailList(document, projectLicenseInfoResults, includeObligations);
-            fillLicenseList(document, projectLicenseInfoResults);
+
+            // because of the impossible API component subsections must be the last thing in the docx file
+            // the rest of the sections must be generated after this
+            writeComponentSubsections(document, projectLicenseInfoResults, obligationResults);
+
     }
 
     private void fillOwnerGroup(XWPFDocument document, Project project) throws XmlException, TException {
@@ -303,6 +308,61 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
             row.addNewTableCell().setText(result.getComponentType());
             row.addNewTableCell().setText(globalLicense);
+        }
+    }
+
+    private static Optional<ObligationParsingResult> obligationsForRelease(Release release, Collection<ObligationParsingResult> obligationResults) {
+        return obligationResults.stream().filter(opr -> opr.getRelease() == release).findFirst();
+    }
+
+    private void writeComponentSubsections(XWPFDocument document, Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Collection<ObligationParsingResult> obligationResults) throws XmlException {
+
+        for(LicenseInfoParsingResult result : projectLicenseInfoResults) {
+
+            XWPFParagraph title = document.createParagraph();
+            title.setStyle(STYLE_HEADING_3);
+            title.setNumID(new BigInteger("2"));
+            XWPFRun titleRun = title.createRun();
+            titleRun.setText(result.getVendor() + " " + result.getName());
+
+            XWPFParagraph description = document.createParagraph();
+            XWPFRun descriptionRun = description.createRun();
+
+            LicenseInfo licenseInfo = result.getLicenseInfo();
+            String globalLicense = UNKNOWN_LICENSE;
+            for(LicenseNameWithText l : licenseInfo.getLicenseNamesWithTexts()) {
+                if("global".equals(l.getType())) {
+                    globalLicense = l.getLicenseName();
+                    break;
+                }
+            }
+
+            descriptionRun.setText("The component is licensed under " + globalLicense + ".");
+
+            if(result.isSetRelease()) {
+                Optional<ObligationParsingResult> obligationsResultOp = obligationsForRelease(result.getRelease(), obligationResults);
+
+                if(!obligationsResultOp.isPresent()) {
+                    continue;
+                }
+
+                ObligationParsingResult obligationsResult = obligationsResultOp.get();
+
+                if(!obligationsResult.isSetObligations()) {
+                    continue;
+                }
+
+                int currentRow = 0;
+                Collection<Obligation> obligations = obligationsResult.getObligations();
+                XWPFTable table = document.createTable();
+                for(Obligation o :  obligations) {
+                    XWPFTableRow row = table.insertNewTableRow(currentRow++);
+                    String licensesString = String.join(" ", o.getLicenseIDs());
+                    row.addNewTableCell().setText(o.getTopic());
+                    row.addNewTableCell().setText(licensesString);
+                    row.addNewTableCell().setText(o.getText());
+                }
+            }
         }
     }
 

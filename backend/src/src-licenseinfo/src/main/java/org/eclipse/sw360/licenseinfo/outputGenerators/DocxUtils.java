@@ -28,6 +28,7 @@ public class DocxUtils {
     public static final String ALERT_COLOR = "e95850";
     public static final String FONT_FAMILY = "Calibri";
     public static final String STYLE_HEADING = "Heading2";
+    public static final String STYLE_HEADING_3 = "Heading 3";
     private static final int BUFFER_SIZE = 16;
     private static final int ANCHOR_MAX_SIZE = 40;
     private static final String BOOKMARK_PREFIX = "bookmark_";
