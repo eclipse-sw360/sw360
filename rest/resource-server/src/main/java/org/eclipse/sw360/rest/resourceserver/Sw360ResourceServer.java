@@ -11,6 +11,7 @@
 
 package org.eclipse.sw360.rest.resourceserver;
 
+import org.eclipse.sw360.rest.common.Sw360CORSFilter;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.security.ApiTokenAuthenticationFilter;
@@ -23,6 +24,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.data.rest.core.config.RepositoryRestConfiguration;
 import org.springframework.data.rest.webmvc.config.RepositoryRestConfigurer;
 import org.springframework.data.rest.webmvc.config.RepositoryRestConfigurerAdapter;
+import org.springframework.context.annotation.Import;
 import org.springframework.hateoas.UriTemplate;
 import org.springframework.hateoas.hal.CurieProvider;
 import org.springframework.hateoas.hal.DefaultCurieProvider;
@@ -30,6 +32,7 @@ import org.springframework.hateoas.hal.DefaultCurieProvider;
 import java.util.Properties;
 
 @SpringBootApplication
+@Import(Sw360CORSFilter.class)
 public class Sw360ResourceServer extends SpringBootServletInitializer {
 
     @Value("${spring.data.rest.default-page-size:10}")

@@ -24,6 +24,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>rest-common</module>
         <module>authorization-server</module>
         <module>resource-server</module>
     </modules>

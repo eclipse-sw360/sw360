@@ -14,10 +14,12 @@ package org.eclipse.sw360.rest.authserver;
 import org.apache.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.rest.common.Sw360CORSFilter;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.support.SpringBootServletInitializer;
+import org.springframework.context.annotation.Import;
 
 import javax.crypto.SealedObject;
 import java.io.IOException;
@@ -26,6 +28,7 @@ import java.util.Properties;
 import static org.eclipse.sw360.rest.authserver.security.Sw360SecurityEncryptor.encrypt;
 
 @SpringBootApplication
+@Import(Sw360CORSFilter.class)
 public class Sw360AuthorizationServer extends SpringBootServletInitializer {
 
     private static final Logger log = Logger.getLogger(Sw360AuthorizationServer.class);

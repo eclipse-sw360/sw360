@@ -46,3 +46,5 @@ sw360:
   test-user-id: admin@sw360.org
   test-user-password: sw360-password
   couchdb-url: ${SW360_COUCHDB_URL:http://localhost:5984}
+  cors:
+    allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:#{null}}
