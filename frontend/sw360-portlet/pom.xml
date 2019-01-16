@@ -32,6 +32,8 @@
         <jquery.treetable.version>3.2.0</jquery.treetable.version>
         <jquery.validation.version>1.19.0</jquery.validation.version>
         <resumable.js.version>1.1.0</resumable.js.version>
+        <context.antiJARLocking>true</context.antiJARLocking>
+        <context.antiResourceLocking>true</context.antiResourceLocking>
     </properties>
 
     <artifactId>sw360-portlet</artifactId>
@@ -94,6 +96,20 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>2.2</version>
+                <configuration>
+                    <webResources>
+                        <resource>
+                            <directory>src/main/webapp/META-INF</directory>
+                            <filtering>true</filtering>
+                            <targetPath>META-INF</targetPath>
+                        </resource>
+                    </webResources>
+                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -307,6 +323,13 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+        <profile>
+            <id>develop</id>
+            <properties>
+                <context.antiJARLocking>false</context.antiJARLocking>
+                <context.antiResourceLocking>false</context.antiResourceLocking>
+            </properties>
         </profile>
     </profiles>
 </project>
