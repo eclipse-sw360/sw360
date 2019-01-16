@@ -153,10 +153,10 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                         .setExternalIds(Collections.singletonMap("component-id-key", "c77321"))
         );
 
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
+                new User("admin@sw360.org", "sw360").setId("123456789"));
         given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(
                 new User("admin@sw360.org", "sw360").setId("123456789"));
-        given(this.userServiceMock.getUserByEmail("jane@sw360.org")).willReturn(
-                new User("jane@sw360.org", "sw360").setId("209582812"));
         given(this.userServiceMock.getUserByEmail("john@sw360.org")).willReturn(
                 new User("john@sw360.org", "sw360").setId("74427996"));
 

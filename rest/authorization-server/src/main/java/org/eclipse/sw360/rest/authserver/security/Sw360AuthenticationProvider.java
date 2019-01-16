@@ -63,20 +63,20 @@ public class Sw360AuthenticationProvider implements AuthenticationProvider {
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        String email = authentication.getName();
-        String password = (String) authentication.getCredentials();
+        String userIdentifier = authentication.getName();
+        String password = authentication.getCredentials().toString();
 
         if (isDevEnvironment() && testUserId != null && testUserPassword != null) {
             // For easy testing without having a Liferay portal running, we mock an existing sw360 user
-            if (email.equals(testUserId) && password.equals(testUserPassword)) {
-                return createAuthenticationToken(email, password, null);
+            if (userIdentifier.equals(testUserId) && password.equals(testUserPassword)) {
+                return createAuthenticationToken(userIdentifier, password, null);
             }
         } else if (isValidString(sw360PortalServerURL) && isValidString(sw360LiferayCompanyId)) {
             // Verify if the user exists in sw360 and set the corresponding authority (read, write)
-            if (isAuthorized(email, password)) {
-                User user = getUserByEmail(email);
+            if (isAuthorized(userIdentifier, password)) {
+                User user = getUserByEmailOrExternalId(userIdentifier, userIdentifier);
                 if (!Objects.isNull(user)) {
-                    return createAuthenticationToken(email, password, user);
+                    return createAuthenticationToken(userIdentifier, password, user);
                 }
             }
         }
@@ -88,16 +88,14 @@ public class Sw360AuthenticationProvider implements AuthenticationProvider {
         return authentication.equals(UsernamePasswordAuthenticationToken.class);
     }
 
-    private boolean isAuthorized(String email, String password) {
-        // Solution 1:
-        // UserLocalServiceUtil.authenticateForBasic
-        // userId = UserLocalServiceUtil.authenticateForBasic(companyId, authType, login, current);
-        // this need a dependency to liferay
+    private boolean isAuthorized(String user, String password) {
+        return liferayAuthCheckRequest("get-user-id-by-email-address", "emailAddress", user, password) ||
+                liferayAuthCheckRequest("get-user-id-by-screen-name", "screenName", user, password);
+    }
 
-        // Solution 2:
-        // Liferay json webservice call to verify username and password
-        String liferayParameterURL = "/api/jsonws/user/get-user-id-by-email-address?companyId=%s&emailAddress=%s";
-        String url = sw360PortalServerURL + String.format(liferayParameterURL, sw360LiferayCompanyId, email);
+    private boolean liferayAuthCheckRequest(String route, String userParam, String user, String password) {
+        String liferayParameterURL = "/api/jsonws/user/%s?companyId=%s&%s=%s";
+        String url = sw360PortalServerURL + String.format(liferayParameterURL, route, sw360LiferayCompanyId, userParam, user);
         RestTemplateBuilder restTemplateBuilder = new RestTemplateBuilder();
         String encodedPassword;
 
@@ -107,11 +105,10 @@ public class Sw360AuthenticationProvider implements AuthenticationProvider {
             return false;
         }
 
-        RestTemplate restTemplate = restTemplateBuilder.basicAuthorization(email, encodedPassword).build();
+        RestTemplate restTemplate = restTemplateBuilder.basicAuthorization(user, encodedPassword).build();
         ResponseEntity<String> response = restTemplate.postForEntity(url, null, String.class);
 
         try {
-            // The user exits in liferay if the body contains a number
             Integer.parseInt(response.getBody());
         } catch (NumberFormatException e) {
             return false;
@@ -119,11 +116,11 @@ public class Sw360AuthenticationProvider implements AuthenticationProvider {
         return true;
     }
 
-    private User getUserByEmail(String email) {
+    private User getUserByEmailOrExternalId(String email, String externalId) {
         UserService.Iface client = new ThriftClients().makeUserClient();
         try {
             if (!Strings.isNullOrEmpty(email) && client != null) {
-                return client.getByEmail(email);
+                return client.getByEmailOrExternalId(email, externalId);
             }
         } catch (TException e) {
             return null;
