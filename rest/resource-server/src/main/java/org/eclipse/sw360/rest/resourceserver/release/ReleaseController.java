@@ -65,7 +65,6 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ReleaseController implements ResourceProcessor<RepositoryLinksResource> {
     public static final String RELEASES_URL = "/releases";
-    private static final Logger log = Logger.getLogger(ReleaseController.class);
 
     @NonNull
     private Sw360ReleaseService releaseService;
@@ -103,7 +102,13 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
             Resource<Release> releaseResource = new Resource<>(embeddedRelease);
             releaseResources.add(releaseResource);
         }
-        Resources<Resource<Release>> resources = restControllerHelper.generateResources(paginationResult, releaseResources);
+        Resources resources;
+        if (releaseResources.size() == 0) {
+            resources = restControllerHelper.emptyPageResource(Release.class, paginationResult);
+        } else {
+            resources = restControllerHelper.generatePagesResource(paginationResult, releaseResources);
+        }
+
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 

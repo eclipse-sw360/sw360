@@ -19,73 +19,66 @@ import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
-public class ResourceComparatorGenerator<T> {
+public class ResourceComparatorGenerator {
 
-    private static final Map<Component._Fields, Comparator<Component>> componentMap = generateComponentMap();
-    private static final Map<Release._Fields, Comparator<Release>> releaseMap = generateReleaseMap();
+    private static final Map<Component._Fields, Comparator<Component>> componentMap;
+    private static final Map<Release._Fields, Comparator<Release>> releaseMap;
+    private static final Comparator<Component> defaultComponentComparator;
+    private static final Comparator<Release> defaultReleaseComparator;
 
-    private static Map<Component._Fields, Comparator<Component>> generateComponentMap() {
-        Map<Component._Fields, Comparator<Component>> componentMap = new HashMap<>();
-        componentMap.put(Component._Fields.NAME, Comparator.comparing(Component::getName, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
-        componentMap.put(Component._Fields.CREATED_ON, Comparator.comparing(Component::getCreatedOn, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
-        componentMap.put(Component._Fields.CREATED_BY, Comparator.comparing(Component::getCreatedBy, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
-        componentMap.put(Component._Fields.COMPONENT_TYPE, Comparator.comparing(c -> Optional.ofNullable(c.getComponentType()).map(Object::toString).orElse(null), Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
-        return Collections.unmodifiableMap(componentMap);
+
+    static {
+        Map<Component._Fields, Comparator<Component>> mutableComponentMap = new HashMap<>();
+        mutableComponentMap.put(Component._Fields.NAME, Comparator.comparing(Component::getName, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        mutableComponentMap.put(Component._Fields.CREATED_ON, Comparator.comparing(Component::getCreatedOn, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        mutableComponentMap.put(Component._Fields.CREATED_BY, Comparator.comparing(Component::getCreatedBy, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        mutableComponentMap.put(Component._Fields.COMPONENT_TYPE, Comparator.comparing(c -> Optional.ofNullable(c.getComponentType()).map(Object::toString).orElse(null), Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        componentMap = Collections.unmodifiableMap(mutableComponentMap);
+        defaultComponentComparator = componentMap.get(Component._Fields.NAME);
+
+        Map<Release._Fields, Comparator<Release>> mutableReleaseMap = new HashMap<>();
+        mutableReleaseMap.put(Release._Fields.NAME, Comparator.comparing(Release::getName, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        mutableReleaseMap.put(Release._Fields.VERSION, Comparator.comparing(Release::getVersion, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        mutableReleaseMap.put(Release._Fields.COMPONENT_ID, Comparator.comparing(Release::getComponentId, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        mutableReleaseMap.put(Release._Fields.RELEASE_DATE, Comparator.comparing(Release::getReleaseDate, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        mutableReleaseMap.put(Release._Fields.CREATED_ON, Comparator.comparing(Release::getCreatedOn, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        mutableReleaseMap.put(Release._Fields.CREATED_BY, Comparator.comparing(Release::getCreatedBy, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        releaseMap = Collections.unmodifiableMap(mutableReleaseMap);
+        defaultReleaseComparator = releaseMap.get(Release._Fields.NAME);
     }
 
-    private static Map<Release._Fields, Comparator<Release>> generateReleaseMap() {
-        Map<Release._Fields, Comparator<Release>> releaseMap = new HashMap<>();
-        releaseMap.put(Release._Fields.NAME, Comparator.comparing(Release::getName, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
-        releaseMap.put(Release._Fields.VERSION, Comparator.comparing(Release::getVersion, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
-        releaseMap.put(Release._Fields.COMPONENT_ID, Comparator.comparing(Release::getComponentId, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
-        releaseMap.put(Release._Fields.RELEASE_DATE, Comparator.comparing(Release::getReleaseDate, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
-        releaseMap.put(Release._Fields.CREATED_ON, Comparator.comparing(Release::getCreatedOn, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
-        releaseMap.put(Release._Fields.CREATED_BY, Comparator.comparing(Release::getCreatedBy, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
-        return Collections.unmodifiableMap(releaseMap);
+    @SuppressWarnings("unchecked")
+    public <T> Comparator<T> generateComparator(String type) throws ResourceClassNotFoundException {
+        return generateComparator(type, Collections.EMPTY_LIST);
     }
 
-    public Comparator<T> generateComparator(String type) throws ResourceClassNotFoundException {
-        switch (type) {
-            case SW360Constants.TYPE_COMPONENT:
-                return (Comparator<T>)defaultComponentComparator();
-            case SW360Constants.TYPE_RELEASE:
-                return (Comparator<T>)defaultReleaseComparator();
-            default:
-                throw new ResourceClassNotFoundException("No default comparator for resource class with name " + type);
-        }
-    }
-
-    public Comparator<T> generateComparator(String type, String property) throws ResourceClassNotFoundException {
+    public <T> Comparator<T> generateComparator(String type, String property) throws ResourceClassNotFoundException {
         return generateComparator(type, Collections.singletonList(property));
     }
 
-    public Comparator<T> generateComparator(String type, List<String> properties) throws ResourceClassNotFoundException {
+    private <T> Comparator<T> generateComparator(String type,  List<String> properties) throws ResourceClassNotFoundException {
         switch (type) {
             case SW360Constants.TYPE_COMPONENT:
-                List<Component._Fields> componentFields = new ArrayList<>();
-                for(String property:properties) {
-                    Component._Fields field = Component._Fields.findByName(property);
-                    if (field != null) {
-                        componentFields.add(field);
-                    }
-                }
+                List<Component._Fields> componentFields = properties.stream()
+                        .map(Component._Fields::findByName)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList());
                 return generateComparatorWithFields(type, componentFields);
             case SW360Constants.TYPE_RELEASE:
-                List<Release._Fields> releaseFields = new ArrayList<>();
-                for(String property:properties) {
-                    Release._Fields field = Release._Fields.findByName(property);
-                    if (field != null) {
-                        releaseFields.add(field);
-                    }
-                }
+                List<Release._Fields> releaseFields = properties.stream()
+                        .map(Release._Fields::findByName)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList());
                 return generateComparatorWithFields(type, releaseFields);
             default:
                 throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
         }
     }
 
-    public Comparator<T> generateComparatorWithFields(String type, List fields) throws ResourceClassNotFoundException {
+    @SuppressWarnings("unchecked")
+    private <T> Comparator<T> generateComparatorWithFields(String type, List fields) throws ResourceClassNotFoundException {
         switch (type) {
             case SW360Constants.TYPE_COMPONENT:
                 return (Comparator<T>)componentComparator(fields);
@@ -97,33 +90,23 @@ public class ResourceComparatorGenerator<T> {
     }
 
     private Comparator<Component> componentComparator(List<Component._Fields> fields) {
-        Comparator<Component> comparator = Comparator.comparing(x -> true);
-        for (Component._Fields field:fields) {
-            Comparator<Component> fieldComparator = componentMap.get(field);
-            if(fieldComparator != null) {
-                comparator = comparator.thenComparing(fieldComparator);
-            }
-        }
-        comparator = comparator.thenComparing(defaultComponentComparator());
-        return comparator;
+        return comparator(fields, componentMap, defaultComponentComparator);
     }
 
     private Comparator<Release> releaseComparator(List<Release._Fields> fields) {
-        Comparator<Release> comparator = Comparator.comparing(x -> true);
-        for (Release._Fields field:fields) {
-            Comparator<Release> fieldComparator = releaseMap.get(field);
+        return comparator(fields, releaseMap, defaultReleaseComparator);
+    }
+
+    private <T extends TBase<T,F>, F extends TFieldIdEnum> Comparator<T> comparator(List<F> fields,
+                                                                                    Map<F, Comparator<T>> map,
+                                                                                    Comparator<T> defaultComparator) {
+        Comparator<T> comparator = Comparator.comparing(x -> true);
+        for (F field:fields) {
+            Comparator<T> fieldComparator = map.get(field);
             if(fieldComparator != null) {
                 comparator = comparator.thenComparing(fieldComparator);
             }
         }
-        comparator = comparator.thenComparing(defaultReleaseComparator());
-        return comparator;
+        return comparator.thenComparing(defaultComparator);
     }
-
-    private Comparator<Component> defaultComponentComparator() {
-        return componentMap.get(Component._Fields.NAME);
-    }
-
-    private Comparator<Release> defaultReleaseComparator() { return releaseMap.get(Release._Fields.NAME); }
-
 }

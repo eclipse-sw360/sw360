@@ -77,7 +77,7 @@ public class RestControllerHelper<T> {
     private final Sw360LicenseService licenseService;
 
     @NonNull
-    private final ResourceComparatorGenerator<T> resourceComparatorGenerator = new ResourceComparatorGenerator<>();
+    private final ResourceComparatorGenerator resourceComparatorGenerator = new ResourceComparatorGenerator();
 
     @NonNull
     private final ResourceListController<T> resourceListController = new ResourceListController<>();
@@ -176,7 +176,7 @@ public class RestControllerHelper<T> {
         return new PaginationOptions<T>(pageable.getPageNumber(), pageable.getPageSize(), comparator);
     }
 
-    private Comparator<T> comparatorFromPageable(Pageable pageable,  String resourceClassName) throws ResourceClassNotFoundException {
+    private Comparator<T> comparatorFromPageable(Pageable pageable, String resourceClassName) throws ResourceClassNotFoundException {
         Sort.Order order = firstOrderFromPageable(pageable);
         if(order == null) {
             return resourceComparatorGenerator.generateComparator(resourceClassName);
