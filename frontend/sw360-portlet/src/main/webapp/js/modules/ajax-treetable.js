@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017.
+ * Copyright Siemens AG, 2017-2019.
  * Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -19,13 +19,14 @@ define('modules/ajax-treetable', [ 'jquery', /* jquery-plugins: */ 'jquery-treet
                     var node = this,
                         data = dataCallback(table, node);
 
-                    if (node.children.length === 0) {
+                    if (node.children.length === 0 && node.row.data("children-loaded") !== true) {
                         jQuery.ajax({
                             type: 'POST',
                             url: ajaxUrl,
                             cache: false,
                             data: data
                         }).done(function (result) {
+                            node.row.data("children-loaded", true);
                             renderCallback(table, node, result);
                         });
                     }
