@@ -91,6 +91,9 @@ function bindkeyPressToClick(keyed, clicked) {
 }
 
 function choosePane($pane) {
+    // some hack for not having to put the tabView in the global namespace. currently all tabviews have the same id which
+    // is why this hack works.
+    var tabView = $('#myTab');
     if (typeof tabView != "undefined" && typeof tabView.getTabs == "function") {
         var indexOfErrorPane = $pane.parent().children().index($pane[0]);
         try {

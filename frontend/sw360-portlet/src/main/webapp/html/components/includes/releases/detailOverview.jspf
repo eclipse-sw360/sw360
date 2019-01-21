@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -11,12 +11,12 @@
 
 <div id="content">
     <div class="container-fluid">
-        <div id="myTab" class="row-fluid">
+        <div id="myTab" class="row-fluid" <core_rt:if test="${not empty selectedTab}"> data-initial-tab="${selectedTab}" </core_rt:if>>
             <ul class="nav nav-tabs span2">
-                <li <core_rt:if test="${selectedTab == 'Summary' || empty selectedTab}"> class="active" </core_rt:if> id="Summary" >    <a href="#tab-Summary">Summary</a></li>
-                <li <core_rt:if test="${selectedTab == 'Linked Releases'}">              class="active" </core_rt:if>  >                <a href="#tab-linkedReleases">Linked Releases</a></li>
-                <li <core_rt:if test="${selectedTab == 'Clearing'}">                     class="active" </core_rt:if> id="Clearing" >   <a href="#tab-ClearingDetails">Clearing Details</a></li>
-                <li <core_rt:if test="${selectedTab == 'ECC Details'}">                  class="active" </core_rt:if> id="ECC-Details"> <a href="#tab-ECCDetails">ECC Details
+                <li id="Summary"><a href="#tab-Summary">Summary</a></li>
+                <li><a href="#tab-linkedReleases">Linked Releases</a></li>
+                <li id="Clearing"><a href="#tab-ClearingDetails">Clearing Details</a></li>
+                <li id="ECC-Details"><a href="#tab-ECCDetails">ECC Details
                     <div id="eccStatusDiv"
                         <core_rt:if test="${release.eccInformation.eccStatus.value == 0 || release.eccInformation.eccStatus.value == 3}"> class="notificationBulletSpan backgroundAlert" </core_rt:if> <%--ECCStatus.OPEN || ECCStatus.REJECTED--%>
                         <core_rt:if test="${release.eccInformation.eccStatus.value == 1}"> class="notificationBulletSpan backgroundWarning" </core_rt:if> <%--ECCStatus.IN_PROGRESS--%>
@@ -24,9 +24,9 @@
                         <core_rt:if test="${release.eccInformation.eccStatus.value == 3}">!</core_rt:if> <%--ECCStatus.REJECTED--%>
                         <core_rt:if test="${release.eccInformation.eccStatus.value != 3}">&nbsp;</core_rt:if> <%--ECCStatus.REJECTED--%>
                     </div></a></li>
-                <li <core_rt:if test="${selectedTab == 'Attachments'}">                  class="active" </core_rt:if>  >                <a href="#tab-Attachments">Attachments</a></li>
+                <li><a href="#tab-Attachments">Attachments</a></li>
                 <core_rt:if test="${cotsMode}">
-                    <li <core_rt:if test="${selectedTab == 'COTSDetails'}"> class="active" </core_rt:if>  ><a href="#tab-CommercialDetails">Commercial Details</a></li>
+                    <li><a href="#tab-CommercialDetails">Commercial Details</a></li>
                 </core_rt:if>
                 <core_rt:if test="${inReleaseDetailsContext}">
                     <%@include file="/html/utils/includes/vulnerabilityTab.jspf" %>

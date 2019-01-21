@@ -1,6 +1,6 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%--
-  ~ Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
   ~ With modifications by Bosch Software Innovations GmbH, 2016.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
@@ -18,7 +18,6 @@
 <portlet:defineObjects/>
 <liferay-theme:defineObjects/>
 <c:catch var="attributeNotFoundException">
-    <jsp:useBean id="selectedTab" class="java.lang.String" scope="request"/>
     <jsp:useBean id="licenseDetail" class="org.eclipse.sw360.datahandler.thrift.licenses.License" scope="request"/>
     <jsp:useBean id="moderationLicenseDetail" class="org.eclipse.sw360.datahandler.thrift.licenses.License"
                  scope="request"/>
@@ -63,45 +62,37 @@
         </span>
         <core_rt:if test="${isUserAtLeastClearingAdmin == 'Yes' || licenseDetail.checked == false}">
          <span class="pull-right">
-             <input type="button" onclick="editLicense()" id="edit" value="Edit License Details and Text"
-                    class="addButton">
+             <input type="button" id="edit" value="Edit License Details and Text" class="addButton">
          </span>
         </core_rt:if>
     </p>
     <core_rt:set var="editMode" value="true" scope="request"/>
     <%@include file="includes/detailOverview.jspf" %>
 </core_rt:if>
+
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-    var Y = YUI().use(
-            'aui-tabview',
-            function (Y) {
-                new Y.TabView(
-                        {
-                            srcNode: '#myTab',
-                            stacked: true,
-                            type: 'tab'
-                        }
-                ).render();
-            }
-    );
+	require(['jquery', 'modules/tabview'], function($, tabview) {
+	    tabview.create('myTab');
 
-    function cancelEditWhitelist() {
-        $(':checkbox').prop('checked', true);
-        Y.all('table.todosFromModerationRequest').hide();
-        Y.all('table.db_table').show();
-    }
+        $('#cancelEditWhitelistButton').on('click', function(event) {
+            $(':checkbox').prop('checked', true);
+            $('table.todosFromModerationRequest').hide();
+            $('table.db_table').show();
+        });
 
-    function showWhiteListOptions() {
-        Y.all('table.todosFromModerationRequest').show();
-        Y.all('table.db_table').hide();
-    }
+        $('#EditWhitelist').on('click', function(event) {
+            $('table.todosFromModerationRequest').show();
+            $('table.db_table').hide();
+        });
 
-    function editLicense() {
-        window.location = '<portlet:renderURL >'
-                             +'<portlet:param name="<%=PortalConstants.LICENSE_ID%>" value="${licenseDetail.id}"/>'
-                             +'<portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_EDIT%>"/>'
-                         +'</portlet:renderURL>'
-    }
+	    $('#edit').on('click', function(event) {
+            window.location = '<portlet:renderURL>'
+                                + '<portlet:param name="<%=PortalConstants.LICENSE_ID%>" value="${licenseDetail.id}"/>'
+                                + '<portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_EDIT%>"/>'
+                            + '</portlet:renderURL>'
+        });
+	});
 </script>
 
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">

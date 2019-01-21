@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2016. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2016, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -24,7 +24,6 @@
 
 <jsp:useBean id="moderationRequest" class="org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest" scope="request"/>
 <jsp:useBean id="actual_component" class="org.eclipse.sw360.datahandler.thrift.components.Component" scope="request"/>
-<jsp:useBean id="selectedTab" class="java.lang.String" scope="request"/>
 <jsp:useBean id="usingProjects" type="java.util.Set<org.eclipse.sw360.datahandler.thrift.projects.Project>" scope="request"/>
 
 <core_rt:set var="component" value="${actual_component}" scope="request"/>
@@ -50,19 +49,9 @@
 <%@include file="/html/components/includes/components/detailOverview.jspf"%>
 
 <script>
-    var tabView;
-    var Y = YUI().use(
-            'aui-tabview',
-            function (Y) {
-                tabView = new Y.TabView(
-                        {
-                            srcNode: '#myTab',
-                            stacked: true,
-                            type: 'tab'
-                        }
-                ).render();
-            }
-    );
+    require(['jquery', 'modules/tabview'], function($, tabview) {
+        tabview.create('myTab');
+    });
 
     function getBaseURL(){
         var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';

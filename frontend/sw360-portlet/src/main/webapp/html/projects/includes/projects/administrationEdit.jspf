@@ -176,7 +176,7 @@
 </table>
 
 <script>
-    require(['jquery'], function ($) {
+    require(['jquery', /* jquery-plugins */ 'jquery-ui'], function ($) {
 
         Liferay.on('allPortletsReady', function() {
             <core_rt:if test="${addMode}" >

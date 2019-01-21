@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
  * With contributions by Bosch Software Innovations GmbH, 2016.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -15,9 +15,8 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.kernel.portlet.PortletResponseUtil;
 import com.liferay.portal.kernel.servlet.SessionMessages;
-import org.apache.commons.lang.enums.EnumUtils;
+
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -31,11 +30,13 @@ import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
+
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 
 import javax.portlet.*;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Function;
@@ -234,7 +235,7 @@ public class LicensesPortlet extends Sw360Portlet {
         } else {
             response.setRenderParameter(LICENSE_ID, licenseId);
             response.setRenderParameter(PAGENAME, PAGENAME_DETAIL);
-            response.setRenderParameter(SELECTED_TAB, "Details");
+            request.setAttribute(SELECTED_TAB, "tab-Details");
             setSessionMessage(request, requestStatus, "License", "update");
         }
     }
@@ -354,7 +355,7 @@ public class LicensesPortlet extends Sw360Portlet {
 
         response.setRenderParameter(LICENSE_ID, licenseId);
         response.setRenderParameter(PAGENAME, PAGENAME_DETAIL);
-        response.setRenderParameter(SELECTED_TAB, "Todos");
+        request.setAttribute(SELECTED_TAB, "tab-TodosAndObligations");
     }
 
     @UsedAsLiferayAction
@@ -378,7 +379,7 @@ public class LicensesPortlet extends Sw360Portlet {
         }
         response.setRenderParameter(LICENSE_ID, licenseId);
         response.setRenderParameter(PAGENAME, PAGENAME_DETAIL);
-        response.setRenderParameter(SELECTED_TAB, "LicenseText");
+        request.setAttribute(SELECTED_TAB, "tab-LicenseText");
     }
 
     @UsedAsLiferayAction
@@ -430,7 +431,7 @@ public class LicensesPortlet extends Sw360Portlet {
         }
         response.setRenderParameter(LICENSE_ID, licenseID);
         response.setRenderParameter(PAGENAME, PAGENAME_DETAIL);
-        response.setRenderParameter(SELECTED_TAB, "Todos");
+        request.setAttribute(SELECTED_TAB, "tab-TodosAndObligations");
     }
 
     @UsedAsLiferayAction
@@ -474,6 +475,6 @@ public class LicensesPortlet extends Sw360Portlet {
         }
         response.setRenderParameter(LICENSE_ID, licenseId);
         response.setRenderParameter(PAGENAME, PAGENAME_DETAIL);
-        response.setRenderParameter(SELECTED_TAB, "Details");
+        request.setAttribute(SELECTED_TAB, "tab-Details");
     }
 }

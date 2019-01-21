@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -82,7 +82,7 @@
 <div id="content" >
     <div class="container-fluid">
         <form  id="projectEditForm" name="projectEditForm" action="<%=updateURL%>" method="post" >
-            <div id="myTab" class="row-fluid">
+            <div id="myTab" class="row-fluid" <core_rt:if test="${not empty selectedTab}"> data-initial-tab="${selectedTab}" </core_rt:if>>
                 <ul class="nav nav-tabs span2">
                     <li class="active"><a href="#tab-Summary">Summary</a></li>
                     <li><a href="#tab-Administration">Administration</a></li>
@@ -144,22 +144,9 @@
 </core_rt:if>
 
 <script>
-var tabView;
-var Y = YUI().use(
-    'aui-tabview',
-    function(Y) {
-        tabView = new Y.TabView(
-            {
-                srcNode: '#myTab',
-                stacked: true,
-                type: 'tab'
-            }
-        ).render();
-    }
-);
+require(['jquery', 'modules/sw360Validate', 'modules/confirm', 'modules/tabview' ], function($, sw360Validate, confirm, tabview) {
 
-
-require(['jquery', 'modules/sw360Validate', 'modules/confirm' ], function($, sw360Validate, confirm) {
+    tabview.create('myTab');
 
     Liferay.on('allPortletsReady', function() {
         var contextpath = '<%=request.getContextPath()%>',

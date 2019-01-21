@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -83,19 +83,10 @@
 <%@include file="/html/components/includes/releases/detailOverview.jspf"%>
 
 <script>
-    var tabView;
-    var Y = YUI().use(
-            'aui-tabview',
-            function (Y) {
-                tabView = new Y.TabView(
-                        {
-                            srcNode: '#myTab',
-                            stacked: true,
-                            type: 'tab'
-                        }
-                ).render();
-            }
-    );
+    require(['jquery', 'modules/tabview'], function($, tabview) {
+        tabview.create('myTab');
+    });
+
     function getBaseURL(){
         var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
         var portletURL = Liferay.PortletURL.createURL(baseUrl)

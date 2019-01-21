@@ -41,7 +41,6 @@
 </portlet:actionURL>
 <c:catch var="attributeNotFoundException">
     <jsp:useBean id="component" class="org.eclipse.sw360.datahandler.thrift.components.Component" scope="request"/>
-    <jsp:useBean id="selectedTab" class="java.lang.String" scope="request"/>
     <jsp:useBean id="usingProjects" type="java.util.Set<org.eclipse.sw360.datahandler.thrift.projects.Project>" scope="request"/>
     <jsp:useBean id="usingComponents" type="java.util.Set<org.eclipse.sw360.datahandler.thrift.components.Component>" scope="request"/>
     <jsp:useBean id="allUsingProjectsCount" type="java.lang.Integer" scope="request"/>
