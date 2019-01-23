@@ -62,7 +62,7 @@ The software is tested with
 
 ### PROBLEMS
 
-Running with the tested software shows no problems if you encounter some please report them at https://github.com/siemens/sw360portal/issues.
+Running with the tested software shows no problems if you encounter some please report them at https://github.com/eclipse/sw360/issues.
 
 
 ### Deployment
