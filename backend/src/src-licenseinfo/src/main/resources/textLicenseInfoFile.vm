@@ -14,6 +14,8 @@ Open Source Software Contained in this Product/Device:
 #foreach($releaseName in $licenseInfoResults.keySet()) #set($errorResults=[])
 * $releaseName #foreach($errorResult in $licenseInfoErrorResults.get($releaseName))
 (ERROR when reading license information from file $errorResult.licenseInfo.filenames[0]: $errorResult.message) #end
+## The following empty line is needed to ensure that every release gets a new line
+
 #end
 
 
