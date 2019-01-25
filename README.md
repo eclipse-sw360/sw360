@@ -44,7 +44,7 @@ In order to build you will need:
 
 * A git client
 * Apache Maven 3.0.X
-* Apache Thrift 0.9.3
+* Apache Thrift 0.11.0
 
 http://maven.apache.org/download.html#Installation
 
