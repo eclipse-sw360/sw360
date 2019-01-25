@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2016-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2016-2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -8,21 +8,25 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
- package org.eclipse.sw360.mail;
+package org.eclipse.sw360.mail;
 
 import com.google.common.collect.Sets;
+import org.apache.log4j.Logger;
+import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
 
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.IllegalFormatException;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.*;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
@@ -36,6 +40,11 @@ public class MailUtil {
 
     private static final Logger log = Logger.getLogger(MailUtil.class);
 
+    // Asynchronous mail service executor options
+    private static final int MAIL_ASYNC_SEND_THREAD_LIMIT = 1;
+    private static final int MAIL_ASYNC_SEND_QUEUE_LIMIT = 1000;
+
+    private static ExecutorService mailExecutor;
     private Properties loadedProperties;
     private Session session;
 
@@ -52,8 +61,15 @@ public class MailUtil {
 
     public MailUtil() {
         loadedProperties = CommonUtils.loadProperties(MailUtil.class, MailConstants.MAIL_PROPERTIES_FILE_PATH);
+        mailExecutor = fixedThreadPoolWithQueueSize(MAIL_ASYNC_SEND_THREAD_LIMIT, MAIL_ASYNC_SEND_QUEUE_LIMIT);
         setBasicProperties();
         setSession();
+    }
+
+    private static ExecutorService fixedThreadPoolWithQueueSize(int nThreads, int queueSize) {
+        // ThreadPoolExecutor.AbortPolicy is used as default which throws RejectedExecutionException
+        return new ThreadPoolExecutor(nThreads, nThreads, 60L, TimeUnit.SECONDS,
+                new ArrayBlockingQueue<>(queueSize, true));
     }
 
     private void setBasicProperties() {
@@ -98,6 +114,10 @@ public class MailUtil {
         sendMail(Sets.newHashSet(recipient), null, subjectNameInPropertiesFile, textNameInPropertiesFile, notificationClass, roleName, checkWantsNotifications, textParameters);
     }
 
+    public void sendMail(Set<String> recipients, String excludedRecipient, String subjectNameInPropertiesFile, String textNameInPropertiesFile, String notificationClass, String roleName, String... textParameters) {
+        sendMail(recipients, excludedRecipient, subjectNameInPropertiesFile, textNameInPropertiesFile, notificationClass, roleName, true, textParameters);
+    }
+
     private void sendMail(Set<String> recipients, String excludedRecipient, String subjectNameInPropertiesFile, String textNameInPropertiesFile, String notificationClass, String roleName, boolean checkWantsNotifications, String... textParameters) {
         MimeMessage messageWithSubjectAndText = makeMessageWithSubjectAndText(subjectNameInPropertiesFile, textNameInPropertiesFile, textParameters);
         for (String recipient : nullToEmptySet(recipients)) {
@@ -107,10 +127,6 @@ public class MailUtil {
                 sendMailWithSubjectAndText(recipient, messageWithSubjectAndText);
             }
         }
-    }
-
-    public void sendMail(Set<String> recipients, String excludedRecipient, String subjectNameInPropertiesFile, String textNameInPropertiesFile, String notificationClass, String roleName, String ... textParameters) {
-        sendMail(recipients, excludedRecipient, subjectNameInPropertiesFile, textNameInPropertiesFile, notificationClass, roleName, true, textParameters);
     }
 
     private boolean isMailWantedBy(String userEmail, String notificationPreferenceKey){
@@ -137,7 +153,6 @@ public class MailUtil {
             return false;
         }
         return true;
-
     }
 
     private MimeMessage makeMessageWithSubjectAndText(String subjectKeyInPropertiesFile, String textKeyInPropertiesFile, String ... textParameters) {
@@ -177,12 +192,10 @@ public class MailUtil {
             message.setFrom(new InternetAddress(from));
             message.addRecipient(Message.RecipientType.TO, new InternetAddress(recipient));
             if (isMailingEnabledAndValid()) {
-                Transport.send(message);
+                sendMailAsync(message);
             } else {
                 writeMessageToLog(message);
             }
-            log.info("Sent message successfully to user "+recipient+".");
-
         } catch (MessagingException mex) {
             log.error(mex.getMessage(), mex);
         }
@@ -191,10 +204,10 @@ public class MailUtil {
     private void writeMessageToLog(MimeMessage message) {
         try {
             log.info(String.format("E-Mail message dumped to log, because mailing is not configured [correctly]:\n"+
-            "From: %s\n"+
-            "To: %s\n"+
-            "Subject: %s\n"+
-            "Text: %s\n",
+                            "From: %s\n"+
+                            "To: %s\n"+
+                            "Subject: %s\n"+
+                            "Text: %s\n",
                     Arrays.toString(message.getFrom()),
                     Arrays.toString(message.getRecipients(Message.RecipientType.TO)),
                     message.getSubject(),
@@ -203,6 +216,28 @@ public class MailUtil {
         } catch (MessagingException | IOException e) {
             log.error("Cannot dump E-mail message to log", e);
         }
+    }
+
+    private void sendMailAsync(MimeMessage message) {
+        try {
+            mailExecutor.submit(createMailTask(message));
+        } catch (RejectedExecutionException e) {
+            log.error("Max queue size of asynchronous mail service executor reached", e);
+        }
+    }
+
+    private Runnable createMailTask(MimeMessage message) {
+        Runnable mailTask = () -> {
+            try {
+                String recipient = Arrays.toString(message.getRecipients(Message.RecipientType.TO));
+                log.info("Send asynchronous E-Mail to recipient " + recipient);
+                Transport.send(message);
+                log.info("Sent asynchronous message to " + recipient + " successfully");
+            } catch (MessagingException e) {
+                log.error("Could not sent E-Mail notification via SMTP " + host, e);
+            }
+        };
+        return mailTask;
     }
 
     private class SMTPAuthenticator extends Authenticator {

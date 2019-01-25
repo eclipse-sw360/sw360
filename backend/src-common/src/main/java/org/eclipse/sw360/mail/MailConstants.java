@@ -10,10 +10,6 @@
  */
 package org.eclipse.sw360.mail;
 
-import org.eclipse.sw360.datahandler.common.CommonUtils;
-
-import java.util.Properties;
-
 /**
  * Constants for the MailUtil class.
  *
