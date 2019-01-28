@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -13,6 +13,7 @@ package org.eclipse.sw360.datahandler.db;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.SetMultimap;
+
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
@@ -20,15 +21,10 @@ import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectWithReleaseRelationTuple;
+import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -39,7 +35,10 @@ import static org.eclipse.sw360.datahandler.TestUtils.assertTestString;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
@@ -263,10 +262,8 @@ public class ProjectDatabaseHandlerTest {
         assertEquals(false, deleted);
     }
 
-
-    @Ignore("One is no longer able to create duplicate projects in the db")
-    public void testDuplicateProjectIsFound() throws Exception {
-
+    @Ignore("One is no longer able to create duplicate projects via the service, so if you want enable the test, you cannot create the duplicate project via addProject()")
+    public void testGetDuplicateProjects() throws Exception {
         String originalProjectId = "P1";
         final Project tmp = handler.getProjectById(originalProjectId, user1);
         tmp.unsetId();
@@ -277,6 +274,37 @@ public class ProjectDatabaseHandlerTest {
 
         assertThat(duplicateProjects.size(), is(1));
         assertThat(duplicateProjects.get(printName(tmp)), containsInAnyOrder(newProjectId,originalProjectId));
+    }
+
+    public void testAddProjectWithDuplicateFails() throws Exception {
+        // given:
+        String originalProjectId = "P1";
+        final Project tmp = handler.getProjectById(originalProjectId, user1);
+        tmp.unsetId();
+        tmp.unsetRevision();
+
+        // when:
+        AddDocumentRequestSummary addProjectResult = handler.addProject(tmp, user1);
+
+        // then:
+        assertThat(addProjectResult.getRequestStatus(), is(RequestStatus.DUPLICATE));
+        assertThat(addProjectResult.getId(), is(nullValue()));
+    }
+
+    public void testUpdateProjectWithDuplicateFails() throws Exception {
+        // given:
+        String originalProjectId = "P1";
+        String duplicateProjectId = "P2";
+        final Project tmp = handler.getProjectById(originalProjectId, user1);
+        tmp.unsetId();
+        tmp.unsetRevision();
+        tmp.setId(duplicateProjectId);
+
+        // when:
+        RequestStatus updateProjectResult = handler.updateProject(tmp, user1);
+
+        // then:
+        assertThat(updateProjectResult, is(RequestStatus.DUPLICATE));
     }
 
     @Test

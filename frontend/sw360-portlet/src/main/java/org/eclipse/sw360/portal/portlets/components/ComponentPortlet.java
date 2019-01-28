@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
  * With contributions by Bosch Software Innovations GmbH, 2016.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -27,14 +27,8 @@ import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.theme.ThemeDisplay;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portlet.PortletURLFactoryUtil;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
-import org.apache.thrift.TSerializer;
-import org.apache.thrift.protocol.TSimpleJSONProtocol;
-import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.common.SW360Constants;
-import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
+
+import org.eclipse.sw360.datahandler.common.*;
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.*;
@@ -49,10 +43,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.exporter.ComponentExporter;
 import org.eclipse.sw360.portal.common.*;
 import org.eclipse.sw360.portal.common.datatables.PaginationParser;
@@ -61,9 +52,15 @@ import org.eclipse.sw360.portal.portlets.FossologyAwarePortlet;
 import org.eclipse.sw360.portal.users.LifeRayUserSession;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 
+import org.apache.log4j.Logger;
+import org.apache.thrift.TException;
+import org.apache.thrift.TSerializer;
+import org.apache.thrift.protocol.TSimpleJSONProtocol;
+
 import javax.portlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
@@ -1029,9 +1026,17 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 user.setCommentMadeDuringModerationRequest(ModerationRequestCommentMsg);
                 RequestStatus requestStatus = client.updateComponent(component, user);
                 setSessionMessage(request, requestStatus, "Component", "update", component.getName());
-                cleanUploadHistory(user.getEmail(),id);
-                response.setRenderParameter(PAGENAME, PAGENAME_DETAIL);
-                response.setRenderParameter(COMPONENT_ID, request.getParameter(COMPONENT_ID));
+                if (RequestStatus.DUPLICATE.equals(requestStatus)) {
+                    setSW360SessionError(request, ErrorMessages.COMPONENT_DUPLICATE);
+                    response.setRenderParameter(PAGENAME, PAGENAME_EDIT);
+                    request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_COMPONENT);
+                    request.setAttribute(DOCUMENT_ID, id);
+                    prepareRequestForEditAfterDuplicateError(request, component);
+                } else {
+                    cleanUploadHistory(user.getEmail(), id);
+                    response.setRenderParameter(PAGENAME, PAGENAME_DETAIL);
+                    response.setRenderParameter(COMPONENT_ID, request.getParameter(COMPONENT_ID));
+                }
             } else {
                 Component component = new Component();
                 ComponentPortletUtils.updateComponentFromRequest(request, component);
@@ -1089,11 +1094,19 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
                     RequestStatus requestStatus = client.updateRelease(release, user);
                     setSessionMessage(request, requestStatus, "Release", "update", printName(release));
-                    cleanUploadHistory(user.getEmail(),releaseId);
-
-                    response.setRenderParameter(PAGENAME, PAGENAME_RELEASE_DETAIL);
-                    response.setRenderParameter(COMPONENT_ID, request.getParameter(COMPONENT_ID));
-                    response.setRenderParameter(RELEASE_ID, request.getParameter(RELEASE_ID));
+                    if (RequestStatus.DUPLICATE.equals(requestStatus)) {
+                        setSW360SessionError(request, ErrorMessages.RELEASE_DUPLICATE);
+                        response.setRenderParameter(PAGENAME, PAGENAME_EDIT_RELEASE);
+                        request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_RELEASE);
+                        response.setRenderParameter(COMPONENT_ID, id);
+                        response.setRenderParameter(RELEASE_ID, releaseId);
+                        prepareRequestForReleaseEditAfterDuplicateError(request, release);
+                    } else {
+                        cleanUploadHistory(user.getEmail(), releaseId);
+                        response.setRenderParameter(PAGENAME, PAGENAME_RELEASE_DETAIL);
+                        response.setRenderParameter(COMPONENT_ID, id);
+                        response.setRenderParameter(RELEASE_ID, releaseId);
+                    }
                 } else {
                     release = new Release();
                     release.setComponentId(component.getId());

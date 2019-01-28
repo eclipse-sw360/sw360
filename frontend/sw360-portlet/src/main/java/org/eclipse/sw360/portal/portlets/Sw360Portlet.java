@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
  * With contributions by Bosch Software Innovations GmbH, 2016.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -22,9 +22,7 @@ import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.bridges.mvc.MVCPortlet;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
+
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -38,12 +36,14 @@ import org.eclipse.sw360.portal.common.ErrorMessages;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.apache.thrift.TException;
+
 import javax.portlet.*;
+
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 
@@ -253,29 +253,33 @@ abstract public class Sw360Portlet extends MVCPortlet {
             name = " " + name;
         }
         switch (requestStatus) {
-            case SUCCESS:
-                statusMessage = type + name + " " + verb + "d successfully!";
-                SessionMessages.add(request, "request_processed", statusMessage);
-                break;
-            case SENT_TO_MODERATOR:
-                statusMessage = "Moderation request was sent to " + verb + " the " + type + name + "!";
-                SessionMessages.add(request, "request_processed", statusMessage);
-                break;
-            case FAILURE:
-                setSW360SessionError(request, ErrorMessages.DOCUMENT_NOT_PROCESSED_SUCCESSFULLY);
-                break;
-            case IN_USE:
-                if(type.equals("License")) {
-                    setSW360SessionError(request, ErrorMessages.LICENSE_USED_BY_RELEASE);
-                } else {
-                    setSW360SessionError(request, ErrorMessages.DOCUMENT_USED_BY_PROJECT_OR_RELEASE);
-                }
-                break;
-            case FAILED_SANITY_CHECK:
-                setSW360SessionError(request, ErrorMessages.UPDATE_FAILED_SANITY_CHECK);
-                break;
-            default:
-                throw new PortletException("Unknown request status");
+        case SUCCESS:
+            statusMessage = type + name + " " + verb + "d successfully!";
+            SessionMessages.add(request, "request_processed", statusMessage);
+            break;
+        case SENT_TO_MODERATOR:
+            statusMessage = "Moderation request was sent to " + verb + " the " + type + name + "!";
+            SessionMessages.add(request, "request_processed", statusMessage);
+            break;
+        case FAILURE:
+            setSW360SessionError(request, ErrorMessages.DOCUMENT_NOT_PROCESSED_SUCCESSFULLY);
+            break;
+        case IN_USE:
+            if (type.equals("License")) {
+                setSW360SessionError(request, ErrorMessages.LICENSE_USED_BY_RELEASE);
+            } else {
+                setSW360SessionError(request, ErrorMessages.DOCUMENT_USED_BY_PROJECT_OR_RELEASE);
+            }
+            break;
+        case FAILED_SANITY_CHECK:
+            setSW360SessionError(request, ErrorMessages.UPDATE_FAILED_SANITY_CHECK);
+            break;
+        case DUPLICATE:
+            // just break to not throw an exception, error message has to be set by caller
+            // because of type specific error messages
+            break;
+        default:
+            throw new PortletException("Unknown request status");
         }
     }
 

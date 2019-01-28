@@ -18,11 +18,11 @@ import com.google.common.collect.ImmutableList;
 public class ErrorMessages {
 
     public static final String PROJECT_NOT_ADDED = "Project could not be added.";
-    public static final String PROJECT_DUPLICATE ="Project could not be added, since a project with the same name and version already exists.";
+    public static final String PROJECT_DUPLICATE = "A project with the same name and version already exists.";
     public static final String COMPONENT_NOT_ADDED = "Component could not be added.";
-    public static final String COMPONENT_DUPLICATE ="Component could not be added, since a component with the same name already exists.";
+    public static final String COMPONENT_DUPLICATE = "A component with the same name already exists.";
     public static final String RELEASE_NOT_ADDED = "Release could not be added.";
-    public static final String RELEASE_DUPLICATE ="Release could not be added, since a release with the same name and version already exists.";
+    public static final String RELEASE_DUPLICATE = "A release with the same name and version already exists.";
     public static final String ERROR_GETTING_PROJECT = "Error fetching project from backend.";
     public static final String ERROR_GETTING_COMPONENT = "Error fetching component from backend.";
     public static final String ERROR_GETTING_LICENSE = "Error fetching license from backend.";
