@@ -1050,8 +1050,11 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 user.setCommentMadeDuringModerationRequest(ModerationRequestCommentMsg);
                 RequestStatus requestStatus = client.updateComponent(component, user);
                 setSessionMessage(request, requestStatus, "Component", "update", component.getName());
-                if (RequestStatus.DUPLICATE.equals(requestStatus)) {
-                    setSW360SessionError(request, ErrorMessages.COMPONENT_DUPLICATE);
+                if (RequestStatus.DUPLICATE.equals(requestStatus) || RequestStatus.DUPLICATE_ATTACHMENT.equals(requestStatus)) {
+                    if(RequestStatus.DUPLICATE.equals(requestStatus))
+                        setSW360SessionError(request, ErrorMessages.COMPONENT_DUPLICATE);
+                    else
+                        setSW360SessionError(request, ErrorMessages.DUPLICATE_ATTACHMENT);
                     response.setRenderParameter(PAGENAME, PAGENAME_EDIT);
                     request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_COMPONENT);
                     request.setAttribute(DOCUMENT_ID, id);
@@ -1118,8 +1121,11 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
                     RequestStatus requestStatus = client.updateRelease(release, user);
                     setSessionMessage(request, requestStatus, "Release", "update", printName(release));
-                    if (RequestStatus.DUPLICATE.equals(requestStatus)) {
-                        setSW360SessionError(request, ErrorMessages.RELEASE_DUPLICATE);
+                    if (RequestStatus.DUPLICATE.equals(requestStatus) || RequestStatus.DUPLICATE_ATTACHMENT.equals(requestStatus)) {
+                        if(RequestStatus.DUPLICATE.equals(requestStatus))
+                            setSW360SessionError(request, ErrorMessages.RELEASE_DUPLICATE);
+                        else
+                            setSW360SessionError(request, ErrorMessages.DUPLICATE_ATTACHMENT);
                         response.setRenderParameter(PAGENAME, PAGENAME_EDIT_RELEASE);
                         request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_RELEASE);
                         response.setRenderParameter(COMPONENT_ID, id);

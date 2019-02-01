@@ -126,4 +126,10 @@ public class AttachmentConnector extends AttachmentStreamConnector {
             }
         }
     }
+
+    public static boolean isDuplicateAttachment(Set<Attachment> attachments) {
+        boolean duplicateSha1 = attachments.parallelStream().collect(Collectors.groupingBy(Attachment::getSha1)).size() < attachments.size();
+        boolean duplicateFileName = attachments.parallelStream().collect(Collectors.groupingBy(Attachment::getFilename)).size() < attachments.size();
+        return (duplicateSha1 || duplicateFileName);
+    }
 }

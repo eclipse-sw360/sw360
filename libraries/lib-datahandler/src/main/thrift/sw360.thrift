@@ -26,6 +26,7 @@ enum RequestStatus {
     IN_USE=3,
     FAILED_SANITY_CHECK = 4,
     DUPLICATE = 5,
+    DUPLICATE_ATTACHMENT = 6,
 }
 
 enum RemoveModeratorRequestStatus {
