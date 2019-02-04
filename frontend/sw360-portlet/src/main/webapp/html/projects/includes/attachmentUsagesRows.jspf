@@ -86,7 +86,7 @@
                            name="<portlet:namespace/><%=PortalConstants.PROJECT_SELECTED_ATTACHMENT_USAGES%>"
                            value="${releaseLink.id}_<%=UsageData._Fields.LICENSE_INFO.getFieldName()%>_${attachment.attachmentContentId}"
                            id="${releaseLink.id}_<%=UsageData._Fields.LICENSE_INFO.getFieldName()%>_${attachment.attachmentContentId}"
-                           <core_rt:if test="${!licenseInfoAttachmentTypes.contains(attachment.attachmentType)}">disabled</core_rt:if>
+                           <core_rt:if test="${!licenseInfoAttachmentTypes.contains(attachment.attachmentType) or !writeAccessUser}">disabled</core_rt:if>
                            <core_rt:if test="${licInfoAttUsages.containsKey(attachment.attachmentContentId)}">checked="checked"</core_rt:if>
                            class="trackChange<core_rt:if test="${licInfoAttUsages.containsKey(attachment.attachmentContentId)}"> defaultChecked</core_rt:if>"
                     />
@@ -102,7 +102,7 @@
                            name="<portlet:namespace/><%=PortalConstants.PROJECT_SELECTED_ATTACHMENT_USAGES%>"
                            value="${releaseLink.id}_<%=UsageData._Fields.SOURCE_PACKAGE.getFieldName()%>_${attachment.attachmentContentId}"
                            id="${releaseLink.id}_<%=UsageData._Fields.SOURCE_PACKAGE.getFieldName()%>_${attachment.attachmentContentId}"
-                           <core_rt:if test="${!sourceCodeAttachmentTypes.contains(attachment.attachmentType)}">disabled</core_rt:if>
+                           <core_rt:if test="${!sourceCodeAttachmentTypes.contains(attachment.attachmentType) or !writeAccessUser}">disabled</core_rt:if>
                            <core_rt:if test="${sourceAttUsages.containsKey(attachment.attachmentContentId)}">checked="checked"</core_rt:if>
                            class="trackChange<core_rt:if test="${sourceAttUsages.containsKey(attachment.attachmentContentId)}"> defaultChecked</core_rt:if>"
                     />
@@ -120,6 +120,7 @@
                            id="${releaseLink.id}_<%=UsageData._Fields.MANUALLY_SET.getFieldName()%>_${attachment.attachmentContentId}"
                            <core_rt:if test="${manualAttUsages.containsKey(attachment.attachmentContentId)}">checked="checked"</core_rt:if>
                            class="trackChange<core_rt:if test="${manualAttUsages.containsKey(attachment.attachmentContentId)}"> defaultChecked</core_rt:if>" <core_rt:if test="${manualAttUsages.containsKey(attachment.attachmentContentId)}">checked="checked" class="defaultChecked"</core_rt:if>
+                           <core_rt:if test="${!writeAccessUser}">disabled</core_rt:if>
                     />
                     <input type="checkbox"
                            name="<portlet:namespace/><%=PortalConstants.PROJECT_SELECTED_ATTACHMENT_USAGES_SHADOWS%>"

@@ -25,9 +25,10 @@
 </portlet:resourceURL>
 <jsp:useBean id="vulnerabilityList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO>" scope="request"/>
 <jsp:useBean id="vulnerabilityRatings" type="java.util.Map<java.lang.String, org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityRatingForProject>" scope="request"/>
-<jsp:useBean id="vulnerabilityRatingsEditable" type="java.lang.Boolean" scope="request"/>
+<jsp:useBean id="writeAccessUser" type="java.lang.Boolean" scope="request"/>
 <jsp:useBean id="vulnerabilityCheckstatusTooltips" type="java.util.Map<java.lang.String, java.lang.String>" scope="request"/>
 <jsp:useBean id="vulnerabilityMatchedByHistogram" type="java.util.Map<java.lang.String, java.lang.Long>" scope="request"/>
+
 <jsp:useBean id="viewSize" type="java.lang.Integer" scope="request"/>
 
 <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/datatables.net-buttons-bs/css/buttons.bootstrap.min.css"/>
@@ -71,7 +72,7 @@
         <%@include file="/html/utils/includes/vulnerabilityModal.jspf" %>
     </form>
 </div>
-<core_rt:if test="${vulnerabilityRatingsEditable}">
+<core_rt:if test="${writeAccessUser}">
     <div>
         Change rating of selected vulnerabilities to
         <select class="toplabelledInput action change-vulnerability"
@@ -113,7 +114,7 @@
         Liferay.on('allPortletsReady', function() {
             createVulnerabilityTable();
 
-            <core_rt:if test="${vulnerabilityRatingsEditable}">
+            <core_rt:if test="${writeAccessUser}">
                 $('#apply-to-selected').on('click', function () {
                     batchChangeRating();
                 });
@@ -143,7 +144,7 @@
             </core_rt:if>
 
             vulnerabilityTable = $('#vulnerabilityTable').DataTable({
-                <core_rt:if test="${vulnerabilityRatingsEditable}">
+                <core_rt:if test="${writeAccessUser}">
                     dom: 'lfrtBip',
                     buttons: [
                         {
@@ -201,7 +202,7 @@
             });
         }
 
-        <core_rt:if test="${vulnerabilityRatingsEditable}">
+        <core_rt:if test="${writeAccessUser}">
             function batchChangeRating() {
                 var selectedRows = vulnerabilityTable.rows('.selected');
                 var selectedValue = $("#rating-change-for-selected").children("option:selected");

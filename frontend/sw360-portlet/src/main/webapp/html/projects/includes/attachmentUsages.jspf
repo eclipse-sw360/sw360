@@ -63,7 +63,7 @@
     </core_rt:if>
     </tbody>
 </table>
-<core_rt:if test="${inProjectDetailsContext}">
+<core_rt:if test="${inProjectDetailsContext and writeAccessUser}">
 <span class="pull-right">
     <input type="button" class="addButton" id="saveAttachmentUsagesButton" value="Save Usages" class="addButton"/>
 </span>
