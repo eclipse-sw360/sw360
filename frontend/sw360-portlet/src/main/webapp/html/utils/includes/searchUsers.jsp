@@ -65,7 +65,12 @@
         }
 
         function renderUserInputToFullData(entry) {
-            return " , ," + entry + ", ," + entry;
+            var newentry = entry.split(":");
+            if(newentry.length>0){
+                return newentry[0]+ ","+newentry[1]+ ","+newentry[2]+ ","+newentry[3]+ ","+newentry[4];
+            } else {
+                return " , ," + entry + ", ," + entry;
+            }
         }
 
         const indexMail = 2;

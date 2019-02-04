@@ -34,7 +34,8 @@ define('utils/includes/searchAndSelectIds', ['jquery', /* jquery-plugins: */ 'da
             multi: false,
             $resultInput: false,
             resultFullData: [],
-            $resultInputDisplay: false
+            $resultInputDisplay: false,
+            $resultInputDetail: false
         };
 
         var pr = {
@@ -145,12 +146,13 @@ define('utils/includes/searchAndSelectIds', ['jquery', /* jquery-plugins: */ 'da
 
                 currentState.$resultInput = $('#' + resultInputId);
                 currentState.$resultInputDisplay = $('#' + resultInputId + 'Display');
+                currentState.$resultInputDetail = $('#' + resultInputId + 'Detail');
                 currentState.multi = multi;
 
                 if(!selectedIds.hasOwnProperty(resultInputId)) {
                     selectedIds[resultInputId] = [];
-                    if (currentState.$resultInput.val().length > 0) {
-                        var alreadyPresentIds = currentState.$resultInput.val().split(",");
+                    if (currentState.$resultInputDetail.val().length > 0) {
+                        var alreadyPresentIds = currentState.$resultInputDetail.val().split(",");
                         for(var i=0; i<alreadyPresentIds.length; i++) {
                             selectedIds[resultInputId].push(opts.renderInput(alreadyPresentIds[i]));
                         }

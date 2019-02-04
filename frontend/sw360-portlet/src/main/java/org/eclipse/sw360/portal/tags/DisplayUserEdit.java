@@ -78,6 +78,7 @@ public class DisplayUserEdit extends NameSpaceAwareTag {
 
         List<String> userList = new ArrayList<>();
         List<String> emailList = new ArrayList<>();
+        List<String> userDetailsList = new ArrayList<>();
 
         List<String> emailInput;
 
@@ -104,17 +105,23 @@ public class DisplayUserEdit extends NameSpaceAwareTag {
                 emailList.add(email);
                 if (user != null) {
                     userList.add(user.getFullname());
+                    String userDetails = user.getGivenname()+":"+user.getLastname()+":"+email+":"+user.getDepartment()+":"+user.getFullname();
+                    userDetailsList.add(userDetails);
                 } else {
                     userList.add(email);
+                    userDetailsList.add(email);
                 }
             }
 
             Joiner commaJoiner = Joiner.on(", ");
+            Joiner commaJoinerNoSpace = Joiner.on(",");
             String mails = getString(commaJoiner.join(emailList));
+            String userDetailsForRender = getString(commaJoinerNoSpace.join(userDetailsList));
             String userNames = getString(commaJoiner.join(userList));
 
             display.append(String.format("<label class=\"textlabel stackedLabel\" for=\"%sDisplay\">%s</label>", id, description))
                     .append(String.format("<input type=\"hidden\" readonly=\"\" value=\"%s\"  id=\"%s\" name=\"%s%s\"/>", mails, id, namespace, id))
+                    .append(String.format("<input type=\"hidden\" readonly=\"\" value=\"%s\"  id=\"%sDetail\" name=\"%s%sDetail\"/>", userDetailsForRender, id, namespace, id))
                     .append(String.format("<input type=\"text\" readonly=\"\" value=\"%s\" id=\"%sDisplay\" ", userNames, id));
 
             if (!readonly) {
