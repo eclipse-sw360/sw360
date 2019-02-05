@@ -24,6 +24,7 @@ import org.springframework.util.Base64Utils;
 import java.util.Collections;
 import java.util.List;
 import java.io.IOException;
+import java.util.stream.Stream;
 
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.is;
@@ -41,30 +42,47 @@ public class TestHelper {
     static public void checkResponse(String responseBody, String linkRelation, int embeddedArraySize, List<String> fields) throws IOException {
         JsonNode responseBodyJsonNode = new ObjectMapper().readTree(responseBody);
 
-        assertThat(responseBodyJsonNode.has("_embedded"), is(true));
+        assertThat("_embedded should exist", responseBodyJsonNode.has("_embedded"), is(true));
 
-        JsonNode embeddedNode = responseBodyJsonNode.get("_embedded");
-        assertThat(embeddedNode.has("sw360:" + linkRelation), is(true));
+        if(embeddedArraySize > 0) {
+            JsonNode embeddedNode = responseBodyJsonNode.get("_embedded");
+            assertThat("_embedded should contain sw360:" + linkRelation, embeddedNode.has("sw360:" + linkRelation), is(true));
 
-        JsonNode sw360UsersNode = embeddedNode.get("sw360:" + linkRelation);
-        assertThat(sw360UsersNode.isArray(),is(true));
-        assertThat(sw360UsersNode.size(),is(embeddedArraySize));
-        if(fields != null && embeddedArraySize > 0) {
-            JsonNode itemNode = sw360UsersNode.get(0);
-            for(String field:fields) {
-                assertTrue(itemNode.has(field));
+            JsonNode embeddedRelationInNode = embeddedNode.get("sw360:" + linkRelation);
+            assertThat("conten of sw360:" + linkRelation + " should be a array", embeddedRelationInNode.isArray(), is(true));
+            assertThat(embeddedRelationInNode.size(), is(embeddedArraySize));
+            if (fields != null) {
+                JsonNode itemNode = embeddedRelationInNode.get(0);
+                for (String field : fields) {
+                    assertTrue(itemNode.has(field));
+                }
             }
         }
 
-        assertThat(responseBodyJsonNode.has("_links"), is(true));
+        assertThat("_links should exists", responseBodyJsonNode.has("_links"), is(true));
 
         JsonNode linksNode = responseBodyJsonNode.get("_links");
-        assertThat(linksNode.has("curies"), is(true));
+        assertThat("first curries exists in _links", linksNode.has("curies"), is(true));
 
         JsonNode curiesNode = linksNode.get("curies").get(0);
-        assertThat(curiesNode.get("href").asText(), endsWith("docs/{rel}.html"));
-        assertThat(curiesNode.get("name").asText(), is("sw360"));
-        assertThat(curiesNode.get("templated").asBoolean(), is(true));
+        assertThat("first curies node should have href", curiesNode.get("href").asText(), endsWith("docs/{rel}.html"));
+        assertThat("first curies node should have name", curiesNode.get("name").asText(), is("sw360"));
+        assertThat("first curies node should have template", curiesNode.get("templated").asBoolean(), is(true));
+    }
+
+    public static void checkNotPagedResponse(String responseBody) throws IOException {
+        JsonNode responseBodyJsonNode = new ObjectMapper().readTree(responseBody);
+        assertThat("page should not exists", responseBodyJsonNode.has("page"), is(false));
+    }
+
+    public static void checkPagedResponse(String responseBody) throws IOException {
+        JsonNode responseBodyJsonNode = new ObjectMapper().readTree(responseBody);
+
+        assertThat("page should exists", responseBodyJsonNode.has("page"), is(true));
+
+        final JsonNode pageNode = responseBodyJsonNode.get("page");
+        Stream.of("size", "totalElements", "totalPages", "number")
+                .forEach(s -> assertThat("page should contain "+ s, pageNode.has(s), is(true)));
     }
 
     public static String getAccessToken(MockMvc mockMvc, String username, String password) throws Exception {

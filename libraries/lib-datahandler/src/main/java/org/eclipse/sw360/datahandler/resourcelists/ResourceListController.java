@@ -17,11 +17,11 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-public class ResourceListController<T> {
+public class ResourceListController {
 
     private static final String PAGINATION_PARAMETER_EXCEPTION_MESSAGE = "The given page index is bigger than the actual number of pages";
 
-    public PaginationResult<T> applyPagingToList(List<T> resources, PaginationOptions<T> paginationOptions) throws PaginationParameterException {
+    public static <T> PaginationResult<T> applyPagingToList(List<T> resources, PaginationOptions<T> paginationOptions) throws PaginationParameterException {
         if(resources.size() == 0) {
             if(paginationOptions.getPageNumber() == 0) {
                 return new PaginationResult<>(resources, 0, paginationOptions);
@@ -29,7 +29,7 @@ public class ResourceListController<T> {
                 throw new PaginationParameterException(PAGINATION_PARAMETER_EXCEPTION_MESSAGE);
             }
         }
-        List<T> sortedResources = this.sortList(resources, paginationOptions.getSortComparator());
+        List<T> sortedResources = ResourceListController.sortList(resources, paginationOptions.getSortComparator());
 
         int fromIndex = paginationOptions.getOffset();
         int toIndex = paginationOptions.getPageEndIndex();
@@ -41,11 +41,11 @@ public class ResourceListController<T> {
         return new PaginationResult<>(sortedResources.subList(fromIndex, toIndex), sortedResources.size(), paginationOptions);
     }
 
-    private List<T> sortList(List<T> resources, Comparator<T> comparator) {
+    private static <T> List<T> sortList(List<T> resources, Comparator<T> comparator) {
         if(comparator == null) {
             return resources;
         }
-        Collections.sort(resources, comparator);
+        resources.sort(comparator);
         return resources;
     }
 }

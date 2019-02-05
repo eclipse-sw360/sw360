@@ -44,7 +44,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
     private String thriftServerUrl;
 
     @NonNull
-    private final RestControllerHelper<Component> rch;
+    private final RestControllerHelper rch;
 
     public List<Component> getComponentsForUser(User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();

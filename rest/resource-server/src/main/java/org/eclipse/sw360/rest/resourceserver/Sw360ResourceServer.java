@@ -13,7 +13,7 @@ package org.eclipse.sw360.rest.resourceserver;
 
 import org.eclipse.sw360.rest.common.Sw360CORSFilter;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.core.RestPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.security.ApiTokenAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
@@ -67,7 +67,7 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
         return new RepositoryRestConfigurerAdapter() {
             @Override
             public void configureRepositoryRestConfiguration(RepositoryRestConfiguration config) {
-                config.setLimitParamName(RestControllerHelper.PAGINATION_PARAM_PAGE_ENTRIES);
+                config.setLimitParamName(RestPaginationHelper.PAGINATION_PARAM_PAGE_ENTRIES);
             }
         };
     }

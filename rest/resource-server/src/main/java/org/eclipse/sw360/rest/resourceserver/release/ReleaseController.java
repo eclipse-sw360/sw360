@@ -15,7 +15,7 @@ package org.eclipse.sw360.rest.resourceserver.release;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.log4j.Logger;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.resourcelists.*;
@@ -30,11 +30,11 @@ import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.core.RestPaginationHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
-import org.springframework.hateoas.PagedResources;
 import org.springframework.hateoas.Link;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.ResourceProcessor;
@@ -47,16 +47,15 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
@@ -75,9 +74,6 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
     @NonNull
     private final RestControllerHelper restControllerHelper;
 
-    @NonNull
-    private final ResourceListController resourceListController = new ResourceListController();
-
     @RequestMapping(value = RELEASES_URL, method = RequestMethod.GET)
     public ResponseEntity<Resources<Resource<Release>>> getReleasesForUser(
             Pageable pageable,
@@ -94,19 +90,19 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
             sw360Releases.addAll(releaseService.getReleasesForUser(sw360User));
         }
 
-        PaginationResult<Release> paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Releases, SW360Constants.TYPE_RELEASE);
+        PaginationResult<Release> paginationResult = RestPaginationHelper.createPaginationResult(request, pageable, sw360Releases, SW360Constants.TYPE_RELEASE);
 
-        List<Resource> releaseResources = new ArrayList<>();
+        List<Resource<Release>> releaseResources = new ArrayList<>();
         for (Release sw360Release : sw360Releases) {
             Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(sw360Release, fields);
             Resource<Release> releaseResource = new Resource<>(embeddedRelease);
             releaseResources.add(releaseResource);
         }
-        Resources resources;
+        Resources<Resource<Release>> resources;
         if (releaseResources.size() == 0) {
-            resources = restControllerHelper.emptyPageResource(Release.class, paginationResult);
+            resources = RestPaginationHelper.emptyPageResource(Release.class, paginationResult);
         } else {
-            resources = restControllerHelper.generatePagesResource(paginationResult, releaseResources);
+            resources = RestPaginationHelper.generatePagesResource(paginationResult, releaseResources);
         }
 
         return new ResponseEntity<>(resources, HttpStatus.OK);
@@ -165,32 +161,23 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
 
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = RELEASES_URL, method = RequestMethod.POST)
-    public ResponseEntity<Resource<Release>> createRelease(
-            @RequestBody Release release) throws URISyntaxException, TException {
+    public ResponseEntity<Resource<Release>> createRelease(@RequestBody Release release)
+            throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
         if (release.isSetComponentId()) {
-            URI componentURI = new URI(release.getComponentId());
-            String path = componentURI.getPath();
-            String componentId = path.substring(path.lastIndexOf('/') + 1);
+            String componentId = FilenameUtils.getBaseName(release.getComponentId());
             release.setComponentId(componentId);
         }
         if (release.isSetVendorId()) {
-            URI vendorURI = new URI(release.getVendorId());
-            String path = vendorURI.getPath();
-            String vendorId = path.substring(path.lastIndexOf('/') + 1);
+            String vendorId = FilenameUtils.getBaseName(release.getVendorId());
             release.setVendorId(vendorId);
         }
 
         if (release.getMainLicenseIds() != null) {
-            Set<String> mainLicenseIds = new HashSet<>();
-            Set<String> mainLicenseUris = release.getMainLicenseIds();
-            for (String licenseURIString : mainLicenseUris.toArray(new String[mainLicenseUris.size()])) {
-                URI licenseURI = new URI(licenseURIString);
-                String path = licenseURI.getPath();
-                String licenseId = path.substring(path.lastIndexOf('/') + 1);
-                mainLicenseIds.add(licenseId);
-            }
+            Set<String> mainLicenseIds = release.getMainLicenseIds().stream()
+                    .map(FilenameUtils::getBaseName)
+                    .collect(Collectors.toSet());
             release.setMainLicenseIds(mainLicenseIds);
         }
 

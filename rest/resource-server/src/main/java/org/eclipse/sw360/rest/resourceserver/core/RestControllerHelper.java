@@ -16,7 +16,6 @@ import org.apache.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
 import org.apache.thrift.TFieldIdEnum;
-import org.eclipse.sw360.datahandler.resourcelists.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -38,26 +37,17 @@ import org.eclipse.sw360.rest.resourceserver.user.UserController;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.vendor.VendorController;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.hateoas.Link;
-import org.springframework.hateoas.PagedResources;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.Resources;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.hateoas.core.EmbeddedWrapper;
-import org.springframework.hateoas.core.EmbeddedWrappers;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.util.*;
 
@@ -65,7 +55,7 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class RestControllerHelper<T> {
+public class RestControllerHelper {
 
     @NonNull
     private final Sw360UserService userService;
@@ -76,20 +66,7 @@ public class RestControllerHelper<T> {
     @NonNull
     private final Sw360LicenseService licenseService;
 
-    @NonNull
-    private final ResourceComparatorGenerator resourceComparatorGenerator = new ResourceComparatorGenerator();
-
-    @NonNull
-    private final ResourceListController<T> resourceListController = new ResourceListController<>();
-
     private static final Logger LOGGER = Logger.getLogger(RestControllerHelper.class);
-
-    private static final String PAGINATION_KEY_FIRST = "first";
-    private static final String PAGINATION_KEY_PREVIOUS = "previous";
-    private static final String PAGINATION_KEY_NEXT = "next";
-    private static final String PAGINATION_KEY_LAST = "last";
-    private static final String PAGINATION_PARAM_PAGE = "page";
-    public static final String PAGINATION_PARAM_PAGE_ENTRIES = "page_entries";
 
     public User getSw360UserFromAuthentication() {
         try {
@@ -97,107 +74,6 @@ public class RestControllerHelper<T> {
             return userService.getUserByEmail(userId);
         } catch (RuntimeException e) {
             throw new AuthenticationServiceException("Could not load user from authentication.");
-        }
-    }
-
-    public PaginationResult<T> createPaginationResult(HttpServletRequest request, Pageable pageable, List<T> resources, String resourceType) throws ResourceClassNotFoundException, PaginationParameterException {
-        PaginationResult<T> paginationResult;
-        if (requestContainsPaging(request)) {
-            PaginationOptions<T> paginationOptions = paginationOptionsFromPageable(pageable, resourceType);
-            paginationResult = resourceListController.applyPagingToList(resources, paginationOptions);
-        } else {
-            paginationResult = new PaginationResult<>(resources);
-        }
-        return paginationResult;
-    }
-
-    private boolean requestContainsPaging(HttpServletRequest request) {
-        return request.getParameterMap().containsKey(PAGINATION_PARAM_PAGE) || request.getParameterMap().containsKey(PAGINATION_PARAM_PAGE_ENTRIES);
-    }
-
-    public <T extends TBase<?, ? extends TFieldIdEnum>> Resources<Resource<T>> generatePagesResource(PaginationResult paginationResult, List<Resource<T>> resources) throws URISyntaxException {
-        if (paginationResult.isPagingActive()) {
-            PagedResources.PageMetadata pageMetadata = createPageMetadata(paginationResult);
-            List<Link> pagingLinks = this.getPaginationLinks(paginationResult, this.getAPIBaseUrl());
-            return new PagedResources<>(resources, pageMetadata, pagingLinks);
-        } else {
-            return new Resources<>(resources);
-        }
-    }
-
-    public PagedResources emptyPageResource(Class resourceClass, PaginationResult paginationResult) {
-        EmbeddedWrappers embeddedWrappers = new EmbeddedWrappers(true);
-        EmbeddedWrapper embeddedWrapper = embeddedWrappers.emptyCollectionOf(resourceClass);
-        List<EmbeddedWrapper> list = Collections.singletonList(embeddedWrapper);
-        PagedResources.PageMetadata pageMetadata = createPageMetadata(paginationResult);
-        return new PagedResources<>(list, pageMetadata, new ArrayList<>());
-    }
-
-    private PagedResources.PageMetadata createPageMetadata(PaginationResult paginationResult) {
-        PaginationOptions paginationOptions = paginationResult.getPaginationOptions();
-        return new PagedResources.PageMetadata(
-                paginationOptions.getPageSize(),
-                paginationOptions.getPageNumber(),
-                paginationResult.getTotalCount(),
-                paginationResult.getTotalPageCount());
-    }
-
-    private List<Link> getPaginationLinks(PaginationResult paginationResult, String baseUrl) {
-        PaginationOptions paginationOptions = paginationResult.getPaginationOptions();
-        List<Link> paginationLinks = new ArrayList<>();
-
-        paginationLinks.add(new Link(createPaginationLink(baseUrl, 0, paginationOptions.getPageSize()),PAGINATION_KEY_FIRST));
-        if(paginationOptions.getPageNumber() > 0) {
-            paginationLinks.add(new Link(createPaginationLink(baseUrl, paginationOptions.getPageNumber() - 1, paginationOptions.getPageSize()),PAGINATION_KEY_PREVIOUS));
-        }
-        if(paginationOptions.getOffset() + paginationOptions.getPageSize() < paginationResult.getTotalCount()) {
-            paginationLinks.add(new Link(createPaginationLink(baseUrl, paginationOptions.getPageNumber() + 1, paginationOptions.getPageSize()),PAGINATION_KEY_NEXT));
-        }
-        paginationLinks.add(new Link(createPaginationLink(baseUrl, paginationResult.getTotalPageCount() - 1, paginationOptions.getPageSize()),PAGINATION_KEY_LAST));
-
-        return paginationLinks;
-    }
-
-    private String createPaginationLink(String baseUrl, int page, int pageSize) {
-        return baseUrl + "?" + PAGINATION_PARAM_PAGE + "=" + page + "&" + PAGINATION_PARAM_PAGE_ENTRIES + "=" + pageSize;
-    }
-
-    private String getAPIBaseUrl() throws URISyntaxException {
-        URI uri = ServletUriComponentsBuilder.fromCurrentRequest().build().toUri();
-        return new URI(uri.getScheme(),
-                uri.getAuthority(),
-                uri.getPath(),
-                null,
-                uri.getFragment()).toString();
-    }
-
-    private PaginationOptions<T> paginationOptionsFromPageable(Pageable pageable, String resourceClassName) throws ResourceClassNotFoundException {
-        Comparator<T> comparator = this.comparatorFromPageable(pageable, resourceClassName);
-        return new PaginationOptions<T>(pageable.getPageNumber(), pageable.getPageSize(), comparator);
-    }
-
-    private Comparator<T> comparatorFromPageable(Pageable pageable, String resourceClassName) throws ResourceClassNotFoundException {
-        Sort.Order order = firstOrderFromPageable(pageable);
-        if(order == null) {
-            return resourceComparatorGenerator.generateComparator(resourceClassName);
-        }
-        Comparator<T> comparator = resourceComparatorGenerator.generateComparator(resourceClassName, order.getProperty());
-        if(order.isDescending()) {
-            comparator = comparator.reversed();
-        }
-        return comparator;
-    }
-
-    private Sort.Order firstOrderFromPageable(Pageable pageable) {
-        Sort sort = pageable.getSort();
-        if(sort == null) {
-            return null;
-        }
-        Iterator<Sort.Order> orderIterator = sort.iterator();
-        if(orderIterator.hasNext()) {
-            return orderIterator.next();
-        } else {
-            return null;
         }
     }
 

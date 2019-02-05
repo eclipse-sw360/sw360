@@ -20,6 +20,7 @@ import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
@@ -91,6 +92,21 @@ public class ComponentTest extends TestIntegrationBase {
         assertEquals(HttpStatus.OK, response.getStatusCode());
 
         TestHelper.checkResponse(response.getBody(), "components", 1);
+        TestHelper.checkNotPagedResponse(response.getBody());
+    }
+
+    @Test
+    public void should_get_all_components_with_paging() throws IOException {
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/components?page=0&page_entries=10",
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, headers),
+                        String.class);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        TestHelper.checkResponse(response.getBody(), "components", 1);
+        TestHelper.checkPagedResponse(response.getBody());
     }
 
     @Test
@@ -105,6 +121,22 @@ public class ComponentTest extends TestIntegrationBase {
         assertEquals(HttpStatus.OK, response.getStatusCode());
 
         TestHelper.checkResponse(response.getBody(), "components", 0);
+        TestHelper.checkNotPagedResponse(response.getBody());
+    }
+
+    @Test
+    public void should_get_all_components_empty_list_with_paging() throws IOException, TException {
+        given(this.componentServiceMock.getComponentsForUser(anyObject())).willReturn(new ArrayList<>());
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/components?page=0&page_entries=10",
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, headers),
+                        String.class);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        TestHelper.checkResponse(response.getBody(), "components", 0);
+        TestHelper.checkPagedResponse(response.getBody());
     }
 
     @Test

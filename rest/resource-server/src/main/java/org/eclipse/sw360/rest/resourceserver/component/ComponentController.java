@@ -31,6 +31,7 @@ import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.core.RestPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -83,7 +84,7 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
     private final Sw360AttachmentService attachmentService;
 
     @NonNull
-    private final RestControllerHelper<Component> restControllerHelper;
+    private final RestControllerHelper restControllerHelper;
 
     @RequestMapping(value = COMPONENTS_URL, method = RequestMethod.GET)
     public ResponseEntity<Resources> getComponents(Pageable pageable,
@@ -101,7 +102,7 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
             allComponents.addAll(componentService.getComponentsForUser(sw360User));
         }
 
-        PaginationResult<Component> paginationResult = restControllerHelper.createPaginationResult(request, pageable, allComponents, SW360Constants.TYPE_COMPONENT);
+        PaginationResult<Component> paginationResult = RestPaginationHelper.createPaginationResult(request, pageable, allComponents, SW360Constants.TYPE_COMPONENT);
 
         List<Resource<Component>> componentResources = new ArrayList<>();
         paginationResult.getResources().stream()
@@ -113,9 +114,9 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
 
         Resources resources;
         if (componentResources.size() == 0) {
-            resources = restControllerHelper.emptyPageResource(Component.class, paginationResult);
+            resources = RestPaginationHelper.emptyPageResource(Component.class, paginationResult);
         } else {
-            resources = restControllerHelper.generatePagesResource(paginationResult, componentResources);
+            resources = RestPaginationHelper.generatePagesResource(paginationResult, componentResources);
         }
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }

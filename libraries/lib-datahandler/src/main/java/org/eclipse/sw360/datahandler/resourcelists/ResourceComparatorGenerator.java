@@ -50,15 +50,15 @@ public class ResourceComparatorGenerator {
     }
 
     @SuppressWarnings("unchecked")
-    public <T> Comparator<T> generateComparator(String type) throws ResourceClassNotFoundException {
+    public static <T> Comparator<T> generateComparator(String type) throws ResourceClassNotFoundException {
         return generateComparator(type, Collections.EMPTY_LIST);
     }
 
-    public <T> Comparator<T> generateComparator(String type, String property) throws ResourceClassNotFoundException {
+    public static <T> Comparator<T> generateComparator(String type, String property) throws ResourceClassNotFoundException {
         return generateComparator(type, Collections.singletonList(property));
     }
 
-    private <T> Comparator<T> generateComparator(String type,  List<String> properties) throws ResourceClassNotFoundException {
+    private static <T> Comparator<T> generateComparator(String type,  List<String> properties) throws ResourceClassNotFoundException {
         switch (type) {
             case SW360Constants.TYPE_COMPONENT:
                 List<Component._Fields> componentFields = properties.stream()
@@ -78,7 +78,7 @@ public class ResourceComparatorGenerator {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> Comparator<T> generateComparatorWithFields(String type, List fields) throws ResourceClassNotFoundException {
+    private static <T> Comparator<T> generateComparatorWithFields(String type, List fields) throws ResourceClassNotFoundException {
         switch (type) {
             case SW360Constants.TYPE_COMPONENT:
                 return (Comparator<T>)componentComparator(fields);
@@ -89,15 +89,15 @@ public class ResourceComparatorGenerator {
         }
     }
 
-    private Comparator<Component> componentComparator(List<Component._Fields> fields) {
+    private static Comparator<Component> componentComparator(List<Component._Fields> fields) {
         return comparator(fields, componentMap, defaultComponentComparator);
     }
 
-    private Comparator<Release> releaseComparator(List<Release._Fields> fields) {
+    private static Comparator<Release> releaseComparator(List<Release._Fields> fields) {
         return comparator(fields, releaseMap, defaultReleaseComparator);
     }
 
-    private <T extends TBase<T,F>, F extends TFieldIdEnum> Comparator<T> comparator(List<F> fields,
+    private static <T extends TBase<T,F>, F extends TFieldIdEnum> Comparator<T> comparator(List<F> fields,
                                                                                     Map<F, Comparator<T>> map,
                                                                                     Comparator<T> defaultComparator) {
         Comparator<T> comparator = Comparator.comparing(x -> true);
