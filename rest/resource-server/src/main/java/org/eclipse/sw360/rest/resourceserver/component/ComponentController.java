@@ -89,10 +89,11 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
 
     @RequestMapping(value = COMPONENTS_URL, method = RequestMethod.GET)
     public ResponseEntity<Resources> getComponents(Pageable pageable,
-                                                                        @RequestParam(value = "name", required = false) String name,
-                                                                        @RequestParam(value = "type", required = false) String componentType,
-                                                                        @RequestParam(value = "fields", required = false) List<String> fields,
-                                                                        HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+                                                   @RequestParam(value = "name", required = false) String name,
+                                                   @RequestParam(value = "type", required = false) String componentType,
+                                                   @RequestParam(value = "fields", required = false) List<String> fields,
+                                                   HttpServletRequest request)
+            throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
