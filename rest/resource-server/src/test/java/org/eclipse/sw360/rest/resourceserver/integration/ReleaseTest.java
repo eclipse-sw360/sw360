@@ -94,6 +94,50 @@ public class ReleaseTest extends TestIntegrationBase {
     }
 
     @Test
+    public void should_get_all_releases_with_paging() throws IOException {
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/releases?page=0&page_entries=10",
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, headers),
+                        String.class);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        TestHelper.checkResponse(response.getBody(), "releases", 1);
+        TestHelper.checkPagedResponse(response.getBody());
+    }
+
+    @Test
+    public void should_get_all_releases_empty_list() throws IOException, TException {
+        given(this.releaseServiceMock.getReleasesForUser(anyObject())).willReturn(new ArrayList<>());
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/releases",
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, headers),
+                        String.class);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        TestHelper.checkResponse(response.getBody(), "releases", 0);
+        TestHelper.checkNotPagedResponse(response.getBody());
+    }
+
+    @Test
+    public void should_get_all_releases_empty_list_with_paging() throws IOException, TException {
+        given(this.releaseServiceMock.getReleasesForUser(anyObject())).willReturn(new ArrayList<>());
+        HttpHeaders headers = getHeaders(port);
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/releases?page=0&page_entries=10",
+                        HttpMethod.GET,
+                        new HttpEntity<>(null, headers),
+                        String.class);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        TestHelper.checkResponse(response.getBody(), "releases", 0);
+        TestHelper.checkPagedResponse(response.getBody());
+    }
+
+    @Test
     public void should_get_all_releases_wrong_page() throws IOException {
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =

@@ -60,7 +60,11 @@ public class RestPaginationHelper {
         return request.getParameterMap().containsKey(PAGINATION_PARAM_PAGE) || request.getParameterMap().containsKey(PAGINATION_PARAM_PAGE_ENTRIES);
     }
 
-    public static <T extends TBase<?, ? extends TFieldIdEnum>> Resources<Resource<T>> generatePagesResource(PaginationResult paginationResult, List<Resource<T>> resources) throws URISyntaxException {
+    public static <T extends TBase<?, ? extends TFieldIdEnum>> Resources<Resource<T>> generatePagesResource(Class<T> tClass, PaginationResult<T> paginationResult, List<Resource<T>> resources) throws URISyntaxException {
+        if(resources.size() == 0) {
+            return emptyPageResource(tClass, paginationResult);
+        }
+
         if (paginationResult.isPagingActive()) {
             PagedResources.PageMetadata pageMetadata = createPageMetadata(paginationResult);
             List<Link> pagingLinks = RestPaginationHelper.getPaginationLinks(paginationResult, RestPaginationHelper.getAPIBaseUrl());
@@ -70,7 +74,7 @@ public class RestPaginationHelper {
         }
     }
 
-    public static <T extends TBase<?, ? extends TFieldIdEnum>> Resources<Resource<T>> emptyPageResource(Class<T> tClass, PaginationResult<T> paginationResult) {
+    private static <T extends TBase<?, ? extends TFieldIdEnum>> Resources<Resource<T>> emptyPageResource(Class<T> tClass, PaginationResult<T> paginationResult) {
         if (paginationResult.isPagingActive()) {
             PagedResources.PageMetadata pageMetadata = createPageMetadata(paginationResult);
             // TODO: does this break empty responses again

@@ -42,9 +42,9 @@ public class TestHelper {
     static public void checkResponse(String responseBody, String linkRelation, int embeddedArraySize, List<String> fields) throws IOException {
         JsonNode responseBodyJsonNode = new ObjectMapper().readTree(responseBody);
 
-        assertThat("_embedded should exist", responseBodyJsonNode.has("_embedded"), is(true));
-
         if(embeddedArraySize > 0) {
+            assertThat("_embedded should exist in: " + responseBody, responseBodyJsonNode.has("_embedded"), is(true));
+
             JsonNode embeddedNode = responseBodyJsonNode.get("_embedded");
             assertThat("_embedded should contain sw360:" + linkRelation, embeddedNode.has("sw360:" + linkRelation), is(true));
 
@@ -67,18 +67,18 @@ public class TestHelper {
         JsonNode curiesNode = linksNode.get("curies").get(0);
         assertThat("first curies node should have href", curiesNode.get("href").asText(), endsWith("docs/{rel}.html"));
         assertThat("first curies node should have name", curiesNode.get("name").asText(), is("sw360"));
-        assertThat("first curies node should have template", curiesNode.get("templated").asBoolean(), is(true));
+        assertThat("first curies node should have templated", curiesNode.get("templated").asBoolean(), is(true));
     }
 
     public static void checkNotPagedResponse(String responseBody) throws IOException {
         JsonNode responseBodyJsonNode = new ObjectMapper().readTree(responseBody);
-        assertThat("page should not exists", responseBodyJsonNode.has("page"), is(false));
+        assertThat("page should not exists in: " + responseBody, responseBodyJsonNode.has("page"), is(false));
     }
 
     public static void checkPagedResponse(String responseBody) throws IOException {
         JsonNode responseBodyJsonNode = new ObjectMapper().readTree(responseBody);
 
-        assertThat("page should exists", responseBodyJsonNode.has("page"), is(true));
+        assertThat("page should exists: " + responseBody, responseBodyJsonNode.has("page"), is(true));
 
         final JsonNode pageNode = responseBodyJsonNode.get("page");
         Stream.of("size", "totalElements", "totalPages", "number")

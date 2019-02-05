@@ -98,13 +98,7 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
             Resource<Release> releaseResource = new Resource<>(embeddedRelease);
             releaseResources.add(releaseResource);
         }
-        Resources<Resource<Release>> resources;
-        if (releaseResources.size() == 0) {
-            resources = RestPaginationHelper.emptyPageResource(Release.class, paginationResult);
-        } else {
-            resources = RestPaginationHelper.generatePagesResource(paginationResult, releaseResources);
-        }
-
+        Resources<Resource<Release>> resources = RestPaginationHelper.generatePagesResource(Release.class, paginationResult, releaseResources);
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 

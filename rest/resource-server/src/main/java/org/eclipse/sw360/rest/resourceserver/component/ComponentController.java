@@ -61,6 +61,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
@@ -104,20 +105,13 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
 
         PaginationResult<Component> paginationResult = RestPaginationHelper.createPaginationResult(request, pageable, allComponents, SW360Constants.TYPE_COMPONENT);
 
-        List<Resource<Component>> componentResources = new ArrayList<>();
-        paginationResult.getResources().stream()
+        List<Resource<Component>> componentResources = paginationResult.getResources().stream()
                 .filter(component -> componentType == null || componentType.equals(component.componentType.name()))
-                .forEach(c -> {
-                    Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c, fields);
-                    componentResources.add(new Resource<>(embeddedComponent));
-                });
+                .map(c -> restControllerHelper.convertToEmbeddedComponent(c, fields))
+                .map(embeddedComponent -> new Resource<>(embeddedComponent))
+                .collect(Collectors.toList());
 
-        Resources resources;
-        if (componentResources.size() == 0) {
-            resources = RestPaginationHelper.emptyPageResource(Component.class, paginationResult);
-        } else {
-            resources = RestPaginationHelper.generatePagesResource(paginationResult, componentResources);
-        }
+        Resources resources = RestPaginationHelper.generatePagesResource(Component.class, paginationResult, componentResources);
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
