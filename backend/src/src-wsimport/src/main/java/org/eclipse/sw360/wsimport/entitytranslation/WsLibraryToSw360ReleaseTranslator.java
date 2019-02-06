@@ -35,6 +35,7 @@ public class WsLibraryToSw360ReleaseTranslator implements EntityTranslator<WsLib
         sw360Release.setName(wsLibrary.getName());
         sw360Release.getExternalIds().put(TranslationConstants.WS_ID, Integer.toString(wsLibrary.getKeyId()));
         sw360Release.getExternalIds().put(FILENAME, wsLibrary.getFilename());
+        sw360Release.getExternalIds().put(SHA1, wsLibrary.getSha1());
 
         if (wsLibrary.getReferences() != null) {
                 sw360Release.setDownloadurl(wsLibrary.getReferences().getScmUrl());
@@ -49,7 +50,7 @@ public class WsLibraryToSw360ReleaseTranslator implements EntityTranslator<WsLib
         } else {
             sw360Release.setVersion(UNKNOWN);
         }
-
+        
         sw360Release.setClearingState(ClearingState.NEW_CLEARING);
 
         return sw360Release;

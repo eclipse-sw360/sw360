@@ -22,6 +22,7 @@ public class WsLibrary {
     private String type;
     private WsReference references;
     private WsLicense[] licenses;
+    private String sha1;
 
     public int getKeyId() {
         return keyId;
@@ -79,5 +80,12 @@ public class WsLibrary {
         this.licenses = licenses;
     }
 
+    public String getSha1() {
+        return sha1;
+    }
+
+    public void setSha1(String sha1) {
+        this.sha1 = sha1;
+    }
 }
 

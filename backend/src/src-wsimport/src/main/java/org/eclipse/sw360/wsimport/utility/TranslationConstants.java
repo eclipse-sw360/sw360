@@ -25,6 +25,7 @@ public class TranslationConstants {
     public static final String IMPORTED_FROM_WHITESOURCE = "Imported from Whitesource";
     public static final String APPLICATION_JSON = "application/json";
     public static final String VERSION_SUFFIX_REGEX = "$*?-SNAPSHOT|$*?.RELEASE|$*?-RELEASE|$*?RELEASE|$*?.Final";
+    public static final String SHA1 = "sha1";
 
     public static final String REQUEST__GET_PROJECT_VITALS = "getProjectVitals";
     public static final String REQUEST__GET_PROJECT_LICENSES = "getProjectLicenses";
