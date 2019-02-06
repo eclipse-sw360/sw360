@@ -35,7 +35,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
-import org.springframework.hateoas.PagedResources;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.ResourceProcessor;
 import org.springframework.hateoas.Resources;
@@ -43,7 +42,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -81,7 +79,7 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
     private final RestControllerHelper<Component> restControllerHelper;
 
     @NonNull
-    private final ResourceListController<Component> resourceListController = new ResourceListController<>();
+    private final ResourceListController resourceListController = new ResourceListController();
 
     @RequestMapping(value = COMPONENTS_URL, method = RequestMethod.GET)
     public ResponseEntity<Resources> getComponents(Pageable pageable,
@@ -93,7 +91,7 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
         List<Component> allComponents = componentService.getComponentsForUser(sw360User);
 
         requestParams = restControllerHelper.removePageableParamatersFromRequestParams(requestParams);
-        List<Component> filteredComponents = resourceListController.applyFilter(SW360Constants.TYPE_COMPONENT, allComponents, requestParams);
+        List<Component> filteredComponents = resourceListController.applyFilter(Component.class, allComponents, requestParams);
 
         PaginationResult<Component> paginationResult = restControllerHelper.createPaginationResult(request, pageable, filteredComponents, SW360Constants.TYPE_COMPONENT);
 

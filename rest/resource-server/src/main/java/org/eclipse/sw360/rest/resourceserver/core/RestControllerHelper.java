@@ -65,7 +65,7 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class RestControllerHelper<T> {
+public class RestControllerHelper<T extends TBase<?, ? extends TFieldIdEnum>> {
 
     public static final String REQUEST_PARAM_KEY_PAGE = "page";
     public static final String REQUEST_PARAM_KEY_PAGE_ENTRIES = "page_entries";
@@ -84,7 +84,7 @@ public class RestControllerHelper<T> {
     private final ResourceComparatorGenerator<T> resourceComparatorGenerator = new ResourceComparatorGenerator<>();
 
     @NonNull
-    private final ResourceListController<T> resourceListController = new ResourceListController<>();
+    private final ResourceListController resourceListController = new ResourceListController();
 
     private static final Logger LOGGER = Logger.getLogger(RestControllerHelper.class);
 

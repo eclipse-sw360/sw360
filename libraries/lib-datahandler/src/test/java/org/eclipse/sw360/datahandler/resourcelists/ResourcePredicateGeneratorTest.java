@@ -49,7 +49,7 @@ public class ResourcePredicateGeneratorTest {
 
         Map<String, String> filterParams = new HashMap<>();
         filterParams.put("name",filterString);
-        Predicate<Component> namePredicate = resourcePredicateGenerator.predicateFromFilterMap("component", filterParams);
+        Predicate<Component> namePredicate = resourcePredicateGenerator.predicateFromFilterMap(Component.class, filterParams);
         assertNotNull(namePredicate);
 
         List<Component> result = componentList.stream().filter(namePredicate).collect(Collectors.toList());
@@ -64,7 +64,7 @@ public class ResourcePredicateGeneratorTest {
 
         Map<String, String> filterParams = new HashMap<>();
         filterParams.put("name",filterString);
-        Predicate<Component> namePredicate = resourcePredicateGenerator.predicateFromFilterMap("component", filterParams);
+        Predicate<Component> namePredicate = resourcePredicateGenerator.predicateFromFilterMap(Component.class, filterParams);
         assertNotNull(namePredicate);
 
         List<Component> result = componentList.stream().filter(namePredicate).collect(Collectors.toList());

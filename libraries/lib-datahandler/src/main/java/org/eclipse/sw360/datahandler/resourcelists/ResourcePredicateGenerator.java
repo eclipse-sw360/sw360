@@ -19,7 +19,6 @@ import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -43,28 +42,26 @@ class ResourcePredicateGenerator {
         componentMap.put(Component._Fields.OWNER_COUNTRY, Component::getOwnerCountry);
     }
 
-    <T extends TBase<?, ? extends TFieldIdEnum>> Predicate<T> predicateFromFilterMap(String resourceClass, Map<String, String> filter) {
-        Predicate<T> finalPredicate = alwaysTruePredicate();
-        for (Map.Entry<String, String> entry : filter.entrySet()) {
-            String key = entry.getKey();
-            String value = entry.getValue();
-            Predicate<T> keyValuePredicate = predicateForKey(resourceClass, key, value);
-            finalPredicate = finalPredicate.and(keyValuePredicate);
-        }
-        return finalPredicate;
+    <T extends TBase<?, ? extends TFieldIdEnum>> Predicate<T> predicateFromFilterMap(Class<T> resourceClass, Map<String, String> filter) {
+        return filter.entrySet().stream()
+                .map(entry -> {
+                    String key = entry.getKey();
+                    String value = entry.getValue();
+                    return predicateForKey(resourceClass, key, value);
+                })
+                .reduce(alwaysTruePredicate(), Predicate::and);
     }
 
-    private <T extends TBase<?, ? extends TFieldIdEnum>> Predicate<T> predicateForKey(String resourceClass, String key, String value) {
-        switch (resourceClass) {
-            case SW360Constants.TYPE_COMPONENT:
-                return (Predicate<T>) componentPredicateForKey(key, value);
-            default:
-                log.debug("Filters for " + resourceClass + " are not yet supported");
-                return alwaysTruePredicate();
+    private <T extends TBase<?, ? extends TFieldIdEnum>> Predicate<T> predicateForKey(Class<T> resourceClass, String key, String value) {
+        if(resourceClass.equals(Component.class)) {
+            return (Predicate<T>) componentPredicateForKey(key, value);
+        } else {
+            log.debug("Filters for " + resourceClass + " are not yet supported");
+            return alwaysTruePredicate();
         }
     }
 
-    private <Resource, R> Predicate<Resource> predicateFunctionForValue(Function<? super Resource, String> f, String value) {
+    private <Resource> Predicate<Resource> predicateFunctionForValue(Function<? super Resource, String> f, String value) {
         if (value == null) {
             return resource -> f.apply(resource) == null;
         }
