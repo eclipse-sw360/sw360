@@ -104,7 +104,7 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
             allComponents.addAll(componentService.getComponentsForUser(sw360User));
         }
 
-        PaginationResult<Component> paginationResult = RestPaginationHelper.createPaginationResult(request, pageable, allComponents, SW360Constants.TYPE_COMPONENT);
+        PaginationResult<Component> paginationResult = RestPaginationHelper.createPaginationResult(request, pageable, allComponents, Component.class);
 
         List<Resource<Component>> componentResources = paginationResult.getResources().stream()
                 .filter(component -> componentType == null || componentType.equals(component.componentType.name()))

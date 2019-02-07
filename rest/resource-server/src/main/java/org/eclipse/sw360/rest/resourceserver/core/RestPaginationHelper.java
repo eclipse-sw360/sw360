@@ -44,7 +44,7 @@ public class RestPaginationHelper {
     public static <T extends TBase<?, ? extends TFieldIdEnum>> PaginationResult<T> createPaginationResult(HttpServletRequest request,
                                                                                                           Pageable pageable,
                                                                                                           List<T> resources,
-                                                                                                          String resourceType)
+                                                                                                          Class<T> resourceType)
             throws ResourceClassNotFoundException, PaginationParameterException {
         PaginationResult<T> paginationResult;
         if (requestContainsPaging(request)) {
@@ -61,30 +61,12 @@ public class RestPaginationHelper {
     }
 
     public static <T extends TBase<?, ? extends TFieldIdEnum>> Resources<Resource<T>> generatePagesResource(Class<T> tClass, PaginationResult<T> paginationResult, List<Resource<T>> resources) throws URISyntaxException {
-        if(resources.size() == 0) {
-            return emptyPageResource(tClass, paginationResult);
-        }
-
         if (paginationResult.isPagingActive()) {
             PagedResources.PageMetadata pageMetadata = createPageMetadata(paginationResult);
-            List<Link> pagingLinks = RestPaginationHelper.getPaginationLinks(paginationResult, RestPaginationHelper.getAPIBaseUrl());
+            List<Link> pagingLinks = getPaginationLinks(paginationResult, getAPIBaseUrl());
             return new PagedResources<>(resources, pageMetadata, pagingLinks);
         } else {
             return new Resources<>(resources);
-        }
-    }
-
-    private static <T extends TBase<?, ? extends TFieldIdEnum>> Resources<Resource<T>> emptyPageResource(Class<T> tClass, PaginationResult<T> paginationResult) {
-        if (paginationResult.isPagingActive()) {
-            PagedResources.PageMetadata pageMetadata = createPageMetadata(paginationResult);
-            // TODO: does this break empty responses again
-            // EmbeddedWrappers embeddedWrappers = new EmbeddedWrappers(true);
-            // EmbeddedWrapper embeddedWrapper = embeddedWrappers.emptyCollectionOf(tClass);
-            // List<EmbeddedWrapper> list = Collections.singletonList(embeddedWrapper);
-            // return new PagedResources<Resource<T>>(list, pageMetadata, new ArrayList<>());
-            return new PagedResources<>(new ArrayList<>(), pageMetadata, new ArrayList<>());
-        } else {
-            return new Resources<>(new ArrayList<>());
         }
     }
 
@@ -126,33 +108,27 @@ public class RestPaginationHelper {
                 uri.getFragment()).toString();
     }
 
-    private static <T extends TBase<?, ? extends TFieldIdEnum>> PaginationOptions<T> paginationOptionsFromPageable(Pageable pageable, String resourceClassName) throws ResourceClassNotFoundException {
-        Comparator<T> comparator = RestPaginationHelper.comparatorFromPageable(pageable, resourceClassName);
+    private static <T extends TBase<?, ? extends TFieldIdEnum>> PaginationOptions<T> paginationOptionsFromPageable(Pageable pageable, Class<T> resourceClass) throws ResourceClassNotFoundException {
+        Comparator<T> comparator = RestPaginationHelper.comparatorFromPageable(pageable, resourceClass);
         return new PaginationOptions<T>(pageable.getPageNumber(), pageable.getPageSize(), comparator);
     }
 
-    private static <T extends TBase<?, ? extends TFieldIdEnum>> Comparator<T> comparatorFromPageable(Pageable pageable, String resourceClassName) throws ResourceClassNotFoundException {
-        Sort.Order order = firstOrderFromPageable(pageable);
-        if(order == null) {
-            return ResourceComparatorGenerator.generateComparator(resourceClassName);
+    private static <T extends TBase<?, ? extends TFieldIdEnum>> Comparator<T> comparatorFromPageable(Pageable pageable, Class<T> resourceClass) throws ResourceClassNotFoundException {
+        final Optional<Sort.Order> order = firstOrderFromPageable(pageable);
+        if(! order.isPresent()) {
+            return ResourceComparatorGenerator.generateComparator(resourceClass);
         }
-        Comparator<T> comparator = ResourceComparatorGenerator.generateComparator(resourceClassName, order.getProperty());
-        if(order.isDescending()) {
+        Comparator<T> comparator = ResourceComparatorGenerator.generateComparator(resourceClass, order.get().getProperty());
+        if(order.get().isDescending()) {
             comparator = comparator.reversed();
         }
         return comparator;
     }
 
-    private static Sort.Order firstOrderFromPageable(Pageable pageable) {
-        Sort sort = pageable.getSort();
-        if(sort == null) {
-            return null;
-        }
-        Iterator<Sort.Order> orderIterator = sort.iterator();
-        if(orderIterator.hasNext()) {
-            return orderIterator.next();
-        } else {
-            return null;
-        }
+    private static Optional<Sort.Order> firstOrderFromPageable(Pageable pageable) {
+        return Optional.ofNullable(pageable.getSort())
+                .map(Sort::iterator)
+                .filter(Iterator::hasNext)
+                .map(Iterator::next);
     }
 }

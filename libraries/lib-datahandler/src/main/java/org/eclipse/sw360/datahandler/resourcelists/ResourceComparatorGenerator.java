@@ -49,44 +49,41 @@ public class ResourceComparatorGenerator {
         defaultReleaseComparator = releaseMap.get(Release._Fields.NAME);
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T> Comparator<T> generateComparator(String type) throws ResourceClassNotFoundException {
-        return generateComparator(type, Collections.EMPTY_LIST);
+    public static <T> Comparator<T> generateComparator(Class<T> type) throws ResourceClassNotFoundException {
+        return generateComparator(type, Collections.emptyList());
     }
 
-    public static <T> Comparator<T> generateComparator(String type, String property) throws ResourceClassNotFoundException {
+    public static <T> Comparator<T> generateComparator(Class<T> type, String property) throws ResourceClassNotFoundException {
         return generateComparator(type, Collections.singletonList(property));
     }
 
-    private static <T> Comparator<T> generateComparator(String type,  List<String> properties) throws ResourceClassNotFoundException {
-        switch (type) {
-            case SW360Constants.TYPE_COMPONENT:
-                List<Component._Fields> componentFields = properties.stream()
-                        .map(Component._Fields::findByName)
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList());
-                return generateComparatorWithFields(type, componentFields);
-            case SW360Constants.TYPE_RELEASE:
-                List<Release._Fields> releaseFields = properties.stream()
-                        .map(Release._Fields::findByName)
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList());
-                return generateComparatorWithFields(type, releaseFields);
-            default:
-                throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
+    private static <T> Comparator<T> generateComparator(Class<T> type,  List<String> properties) throws ResourceClassNotFoundException {
+        if (type.equals(Component.class)){
+            List<Component._Fields> componentFields = properties.stream()
+                    .map(Component._Fields::findByName)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            return generateComparatorWithFields(type, componentFields);
         }
+        if (type.equals(Release.class)) {
+            List<Release._Fields> releaseFields = properties.stream()
+                    .map(Release._Fields::findByName)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            return generateComparatorWithFields(type, releaseFields);
+        }
+        throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> Comparator<T> generateComparatorWithFields(String type, List fields) throws ResourceClassNotFoundException {
-        switch (type) {
-            case SW360Constants.TYPE_COMPONENT:
-                return (Comparator<T>)componentComparator(fields);
-            case SW360Constants.TYPE_RELEASE:
-                return (Comparator<T>)releaseComparator(fields);
-            default:
-                throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
+    private static <T> Comparator<T> generateComparatorWithFields(Class<T> type, List fields) throws ResourceClassNotFoundException {
+        if (type.equals(Component.class)) {
+            return componentComparator(fields);
         }
+        if (type.equals(Release.class)) {
+            return releaseComparator(fields);
+        }
+        throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
     }
 
     private static Comparator<Component> componentComparator(List<Component._Fields> fields) {

@@ -90,7 +90,7 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
             sw360Releases.addAll(releaseService.getReleasesForUser(sw360User));
         }
 
-        PaginationResult<Release> paginationResult = RestPaginationHelper.createPaginationResult(request, pageable, sw360Releases, SW360Constants.TYPE_RELEASE);
+        PaginationResult<Release> paginationResult = RestPaginationHelper.createPaginationResult(request, pageable, sw360Releases, Release.class);
 
         List<Resource<Release>> releaseResources = new ArrayList<>();
         for (Release sw360Release : sw360Releases) {

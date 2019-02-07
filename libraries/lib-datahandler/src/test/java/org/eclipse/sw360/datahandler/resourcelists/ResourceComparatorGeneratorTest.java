@@ -27,17 +27,9 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ResourceComparatorGeneratorTest {
-
-    private ResourceComparatorGenerator resourceComparatorGenerator;
-
-    @Before
-    public void setUp() throws Exception {
-        resourceComparatorGenerator = new ResourceComparatorGenerator();
-    }
-
     @Test
     public void checkComponentComparatorName() throws ResourceClassNotFoundException {
-        Comparator<Component> nameComparator = resourceComparatorGenerator.generateComparator(SW360Constants.TYPE_COMPONENT, "name");
+        Comparator<Component> nameComparator = ResourceComparatorGenerator.generateComparator(Component.class, "name");
         assertNotNull(nameComparator);
         assertTrue(nameComparator.compare(new Component().setName("alpha"), new Component().setName("beta")) < 0);
         assertTrue(nameComparator.compare(new Component().setName("beta"), new Component().setName("alpha")) > 0);
@@ -46,7 +38,7 @@ public class ResourceComparatorGeneratorTest {
 
     @Test
     public void checkComponentComparatorCreatedOn() throws ResourceClassNotFoundException {
-        Comparator<Component> createdOnComparator = resourceComparatorGenerator.generateComparator(SW360Constants.TYPE_COMPONENT, "createdOn");
+        Comparator<Component> createdOnComparator = ResourceComparatorGenerator.generateComparator(Component.class, "createdOn");
         assertNotNull(createdOnComparator);
         assertTrue(createdOnComparator.compare(new Component().setCreatedOn("06-08-2018"), new Component().setCreatedOn("07-08-2018")) < 0);
         assertTrue(createdOnComparator.compare(new Component().setCreatedOn("07-08-2018"), new Component().setCreatedOn("06-08-2018")) > 0);
@@ -55,7 +47,7 @@ public class ResourceComparatorGeneratorTest {
 
     @Test
     public void checkComponentComparatorCreatedBy() throws ResourceClassNotFoundException {
-        Comparator<Component> createdByComparator = resourceComparatorGenerator.generateComparator(SW360Constants.TYPE_COMPONENT, "createdBy");
+        Comparator<Component> createdByComparator = ResourceComparatorGenerator.generateComparator(Component.class, "createdBy");
         assertNotNull(createdByComparator);
         assertTrue(createdByComparator.compare(new Component().setCreatedBy("John Doe"), new Component().setCreatedBy("Max Mustermann")) < -0);
         assertTrue(createdByComparator.compare(new Component().setCreatedBy("Max Mustermann"), new Component().setCreatedBy("John Doe")) > 0);

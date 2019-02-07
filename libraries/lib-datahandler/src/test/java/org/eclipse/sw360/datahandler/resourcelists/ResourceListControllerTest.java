@@ -31,8 +31,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(MockitoJUnitRunner.class)
 public class ResourceListControllerTest {
 
-    private ResourceListController resourceListController;
-    private ResourceComparatorGenerator resourceComparatorGenerator;
     private List<Component> unsortedComponents;
 
     @Rule
@@ -40,8 +38,6 @@ public class ResourceListControllerTest {
 
     @Before
     public void setUp() throws Exception {
-        resourceListController = new ResourceListController();
-        resourceComparatorGenerator = new ResourceComparatorGenerator();
         unsortedComponents = new ArrayList<>();
 
         Component componentC = new Component();
@@ -77,10 +73,10 @@ public class ResourceListControllerTest {
 
     @Test
     public void testPagingAndSortingByName() throws PaginationParameterException, ResourceClassNotFoundException {
-        Comparator comparator = resourceComparatorGenerator.generateComparator(SW360Constants.TYPE_COMPONENT, "name");
-        PaginationOptions paginationOptions = new PaginationOptions(0, 2, comparator);
+        Comparator<Component> comparator = ResourceComparatorGenerator.generateComparator(Component.class, "name");
+        PaginationOptions<Component> paginationOptions = new PaginationOptions<>(0, 2, comparator);
         List<Component> tmpList = new ArrayList<>(unsortedComponents);
-        PaginationResult paginationResult = resourceListController.applyPagingToList(tmpList, paginationOptions);
+        PaginationResult<Component> paginationResult = ResourceListController.applyPagingToList(tmpList, paginationOptions);
         assertEquals(paginationResult.getResources().size(), 2);
         assertEquals(unsortedComponents.get(2), paginationResult.getResources().get(0));
         assertEquals(unsortedComponents.get(1), paginationResult.getResources().get(1));
@@ -88,22 +84,22 @@ public class ResourceListControllerTest {
 
     @Test
     public void testPagingAndSortingByCreatedOn() throws PaginationParameterException, ResourceClassNotFoundException {
-        Comparator comparator = resourceComparatorGenerator.generateComparator(SW360Constants.TYPE_COMPONENT, "createdOn").reversed();
-        PaginationOptions paginationOptions = new PaginationOptions(1, 3, comparator);
+        Comparator<Component> comparator = ResourceComparatorGenerator.generateComparator(Component.class, "createdOn").reversed();
+        PaginationOptions<Component> paginationOptions = new PaginationOptions<>(1, 3, comparator);
         List<Component> tmpList = new ArrayList<>(unsortedComponents);
-        PaginationResult paginationResult = resourceListController.applyPagingToList(tmpList, paginationOptions);
-        assertTrue(paginationResult.getResources().size() == 2);
+        PaginationResult paginationResult = ResourceListController.applyPagingToList(tmpList, paginationOptions);
+        assertEquals(2, paginationResult.getResources().size());
         assertEquals(unsortedComponents.get(3), paginationResult.getResources().get(0));
         assertEquals(unsortedComponents.get(0), paginationResult.getResources().get(1));
     }
 
     @Test
     public void testPagingAndSortingByCreatedBy() throws PaginationParameterException, ResourceClassNotFoundException {
-        Comparator comparator = resourceComparatorGenerator.generateComparator(SW360Constants.TYPE_COMPONENT, "createdBy");
-        PaginationOptions paginationOptions = new PaginationOptions(0, 4, comparator);
+        Comparator<Component> comparator = ResourceComparatorGenerator.generateComparator(Component.class, "createdBy");
+        PaginationOptions<Component> paginationOptions = new PaginationOptions<>(0, 4, comparator);
         List<Component> tmpList = new ArrayList<>(unsortedComponents);
-        PaginationResult paginationResult = resourceListController.applyPagingToList(tmpList, paginationOptions);
-        assertTrue(paginationResult.getResources().size() == 4);
+        PaginationResult paginationResult = ResourceListController.applyPagingToList(tmpList, paginationOptions);
+        assertEquals(4, paginationResult.getResources().size());
         assertEquals(unsortedComponents.get(1), paginationResult.getResources().get(0));
         assertEquals(unsortedComponents.get(0), paginationResult.getResources().get(1));
         assertEquals(unsortedComponents.get(4), paginationResult.getResources().get(2));
@@ -112,11 +108,11 @@ public class ResourceListControllerTest {
 
     @Test
     public void testPagingAndSortingInvalidPage() throws PaginationParameterException, ResourceClassNotFoundException {
-        Comparator comparator = resourceComparatorGenerator.generateComparator(SW360Constants.TYPE_COMPONENT, "name");
-        PaginationOptions paginationOptions = new PaginationOptions(3, 4, comparator);
+        Comparator<Component> comparator = ResourceComparatorGenerator.generateComparator(Component.class, "name");
+        PaginationOptions<Component> paginationOptions = new PaginationOptions<>(3, 4, comparator);
         List<Component> tmpList = new ArrayList<>(unsortedComponents);
         thrown.expect(PaginationParameterException.class);
-        resourceListController.applyPagingToList(tmpList, paginationOptions);
+        ResourceListController.applyPagingToList(tmpList, paginationOptions);
     }
 
 }
