@@ -91,20 +91,24 @@ public class ReleaseTest extends TestIntegrationBase {
                         String.class);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         TestHelper.checkResponse(response.getBody(), "releases", 1);
+        TestHelper.checkResponseCuries(response.getBody());
     }
 
     @Test
     public void should_get_all_releases_with_paging() throws IOException {
+        int page = 0;
+        int page_entries = 7;
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
-                new TestRestTemplate().exchange("http://localhost:" + port + "/api/releases?page=0&page_entries=10",
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/releases?page=" + page + "&page_entries=" + page_entries,
                         HttpMethod.GET,
                         new HttpEntity<>(null, headers),
                         String.class);
         assertEquals(HttpStatus.OK, response.getStatusCode());
 
         TestHelper.checkResponse(response.getBody(), "releases", 1);
-        TestHelper.checkPagedResponse(response.getBody());
+        TestHelper.checkResponseCuries(response.getBody());
+        TestHelper.checkPagedResponse(response.getBody(), page_entries, page, 1);
     }
 
     @Test
@@ -119,22 +123,26 @@ public class ReleaseTest extends TestIntegrationBase {
         assertEquals(HttpStatus.OK, response.getStatusCode());
 
         TestHelper.checkResponse(response.getBody(), "releases", 0);
+        TestHelper.checkResponseCuries(response.getBody());
         TestHelper.checkNotPagedResponse(response.getBody());
     }
 
     @Test
     public void should_get_all_releases_empty_list_with_paging() throws IOException, TException {
+        int page = 0;
+        int page_entries = 7;
         given(this.releaseServiceMock.getReleasesForUser(anyObject())).willReturn(new ArrayList<>());
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
-                new TestRestTemplate().exchange("http://localhost:" + port + "/api/releases?page=0&page_entries=10",
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/releases?page=" + page + "&page_entries=" + page_entries,
                         HttpMethod.GET,
                         new HttpEntity<>(null, headers),
                         String.class);
         assertEquals(HttpStatus.OK, response.getStatusCode());
 
         TestHelper.checkResponse(response.getBody(), "releases", 0);
-        TestHelper.checkPagedResponse(response.getBody());
+        TestHelper.checkResponseCuries(response.getBody());
+        TestHelper.checkPagedResponse(response.getBody(), page_entries, page, 1);
     }
 
     @Test
@@ -196,6 +204,7 @@ public class ReleaseTest extends TestIntegrationBase {
                         String.class);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         TestHelper.checkResponse(response.getBody(), "releases", 1, Collections.singletonList(extraField));
+        TestHelper.checkResponseCuries(response.getBody());
     }
 
     @Test

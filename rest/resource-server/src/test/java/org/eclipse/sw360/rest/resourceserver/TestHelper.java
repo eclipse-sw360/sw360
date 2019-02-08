@@ -60,6 +60,10 @@ public class TestHelper {
         }
 
         assertThat("_links should exists", responseBodyJsonNode.has("_links"), is(true));
+    }
+
+    static public void checkResponseCuries(String responseBody) throws IOException {
+        JsonNode responseBodyJsonNode = new ObjectMapper().readTree(responseBody);
 
         JsonNode linksNode = responseBodyJsonNode.get("_links");
         assertThat("first curries exists in _links", linksNode.has("curies"), is(true));
@@ -75,7 +79,7 @@ public class TestHelper {
         assertThat("page should not exists in: " + responseBody, responseBodyJsonNode.has("page"), is(false));
     }
 
-    public static void checkPagedResponse(String responseBody) throws IOException {
+    public static void checkPagedResponse(String responseBody, int size, int number, int totalPages) throws IOException {
         JsonNode responseBodyJsonNode = new ObjectMapper().readTree(responseBody);
 
         assertThat("page should exists: " + responseBody, responseBodyJsonNode.has("page"), is(true));
@@ -83,6 +87,9 @@ public class TestHelper {
         final JsonNode pageNode = responseBodyJsonNode.get("page");
         Stream.of("size", "totalElements", "totalPages", "number")
                 .forEach(s -> assertThat("page should contain "+ s, pageNode.has(s), is(true)));
+        assertEquals(pageNode.get("size").asInt(), size);
+        assertEquals(pageNode.get("number").asInt(), number);
+        assertEquals(pageNode.get("totalPages").asInt(), totalPages);
     }
 
     public static String getAccessToken(MockMvc mockMvc, String username, String password) throws Exception {
