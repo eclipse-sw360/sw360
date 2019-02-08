@@ -77,3 +77,6 @@
         </div>
     </div>
 </div>
+<script>
+    document.title = "${project.name} - " + document.title;
+</script>
