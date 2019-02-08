@@ -16,7 +16,7 @@
 # initial author: birgit.heydenreich@tngtech.com
 # -----------------------------------------------------------------------------
 
-set -ex
+set -e
 
 VERSION=0.11.0
 
@@ -25,12 +25,24 @@ BUILDDIR="${BASEDIR}/thrift-$VERSION"
 
 has() { type "$1" &> /dev/null; }
 
+if has "thrift"; then
+    if thrift --version | grep -q "$VERSION"; then
+        echo "thrift is already installed at $(which thrift)"
+        exit 0
+    else
+        echo "thrift is already installed but does not have the correct version: $VERSION"
+        exit 1
+    fi
+fi
+
 SUDO_CMD=""
 if [ "$EUID" -ne 0 ]; then
    if has "sudo" ; then
        SUDO_CMD="sudo "
    fi
 fi
+
+set -x
 
 if [[ ! -d "$BUILDDIR" ]]; then
     echo "-[shell provisioning] Extracting thrift"
@@ -72,11 +84,11 @@ if [[ ! -f "./compiler/cpp/thrift" ]]; then
 
     echo "-[shell provisioning] Building thrift"
     if [[ ! -f "./Makefile" ]]; then
-        ./configure --with-java  \
-                    --without-cpp --without-qt4 --without-c_glib --without-csharp --without-erlang --without-perl --without-php \
-                    --without-php_extension --without-python --without-ruby --without-haskell --without-go --without-d \
-                    --without-haskell --without-php --without-ruby --without-python --without-erlang --without-perl \
-                    --without-c_sharp --without-d --without-php --without-go --without-lua --without-nodejs --without-cl
+        ./configure --without-java --without-cpp --without-qt4 --without-c_glib --without-csharp --without-erlang \
+                    --without-perl --without-php --without-php_extension --without-python --without-ruby \
+                    --without-haskell --without-go --without-d --without-haskell --without-php --without-ruby \
+                    --without-python --without-erlang --without-perl --without-c_sharp --without-d --without-php \
+                    --without-go --without-lua --without-nodejs --without-cl
     fi
     make
 fi
