@@ -46,6 +46,15 @@ public class Sw360UserService {
         }
     }
 
+    public User getUserByEmailOrExternalId(String userIdentifier) {
+        try {
+            UserService.Iface sw360UserClient = getThriftUserClient();
+            return sw360UserClient.getByEmailOrExternalId(userIdentifier, userIdentifier);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public User getUser(String id) {
         try {
             UserService.Iface sw360UserClient = getThriftUserClient();
