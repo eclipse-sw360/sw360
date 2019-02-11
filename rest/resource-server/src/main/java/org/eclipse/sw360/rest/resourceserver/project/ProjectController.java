@@ -14,6 +14,7 @@ package org.eclipse.sw360.rest.resourceserver.project;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -280,9 +281,12 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         final Map<String, Set<LicenseNameWithText>> excludedLicenses = new HashMap<>(); // TODO: implement method to determine excluded licenses
 
         final String projectName = sw360Project.getName();
-        final String timestamp = SW360Utils.getCreatedOn();
-        final OutputFormatInfo outputFormatInfo = licenseInfoService.getOutputFormatInfoForGeneratorClass(generatorClassName);
-        final String filename = String.format("LicenseInfo-%s-%s.%s", projectName, timestamp, outputFormatInfo.getFileExtension());
+        final String projectVersion = sw360Project.getVersion();
+	final String timestamp = SW360Utils.getCreatedOnTime().replaceAll("\\s", "_").replace(":", "_");
+	final OutputFormatInfo outputFormatInfo = licenseInfoService.getOutputFormatInfoForGeneratorClass(generatorClassName);
+	final String filename = String.format("LicenseInfo-%s%s-%s.%s", projectName,
+			StringUtils.isBlank(projectVersion) ? "" : "-" + projectVersion, timestamp,
+			outputFormatInfo.getFileExtension());
 
         final LicenseInfoFile licenseInfoFile = licenseInfoService.getLicenseInfoFile(sw360Project, sw360User, generatorClassName, selectedReleaseAndAttachmentIds, excludedLicenses);
         byte[] byteContent = licenseInfoFile.bufferForGeneratedOutput().array();

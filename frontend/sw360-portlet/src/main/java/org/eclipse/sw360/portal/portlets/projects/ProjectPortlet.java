@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.portlet.PortletResponseUtil;
 import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.model.Organization;
 import com.liferay.portal.util.PortalUtil;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
@@ -292,13 +293,15 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     }
 
     private void sendLicenseInfoResponse(ResourceRequest request, ResourceResponse response, Project project, LicenseInfoFile licenseInfoFile) throws IOException {
-        OutputFormatInfo outputFormatInfo = licenseInfoFile.getOutputFormatInfo();
-        String filename = String.format("LicenseInfo-%s-%s.%s", project.getName(), SW360Utils.getCreatedOn(),
-                outputFormatInfo.getFileExtension());
-        String mimetype = outputFormatInfo.getMimeType();
-        if (isNullOrEmpty(mimetype)) {
-            mimetype = URLConnection.guessContentTypeFromName(filename);
-        }
+    	OutputFormatInfo outputFormatInfo = licenseInfoFile.getOutputFormatInfo();
+	String filename = String.format("LicenseInfo-%s%s-%s.%s", project.getName(),
+			StringUtils.isBlank(project.getVersion()) ? "" : "-" + project.getVersion(),
+			SW360Utils.getCreatedOnTime().replaceAll("\\s", "_").replace(":", "_"),
+			outputFormatInfo.getFileExtension());
+    	String mimetype = outputFormatInfo.getMimeType();
+    	if (isNullOrEmpty(mimetype)) {
+    		mimetype = URLConnection.guessContentTypeFromName(filename);
+    	}
 
         PortletResponseUtil.sendFile(request, response, filename, licenseInfoFile.getGeneratedOutput(), mimetype);
     }
