@@ -62,7 +62,6 @@ public class AttachmentPortletUtils extends AttachmentFrontendUtils {
     }
 
     public AttachmentPortletUtils(ThriftClients thriftClients) {
-        super(thriftClients);
         projectClient = thriftClients.makeProjectClient();
         componentClient = thriftClients.makeComponentClient();
     }
@@ -109,7 +108,7 @@ public class AttachmentPortletUtils extends AttachmentFrontendUtils {
         List<AttachmentContent> attachments = new ArrayList<>();
         try {
             for(String id : ids){
-                attachments.add(client.getAttachmentContent(id));
+                attachments.add(attchmntClient.get().getAttachmentContent(id));
             }
 
             serveAttachmentBundle(attachments, request, response, downloadFileName);
@@ -233,7 +232,7 @@ public class AttachmentPortletUtils extends AttachmentFrontendUtils {
         AttachmentContent attachment = null;
         if (resumableUpload.hasAttachmentId()) {
             try {
-                attachment = client.getAttachmentContent(resumableUpload.getAttachmentId());
+                attachment = attchmntClient.get().getAttachmentContent(resumableUpload.getAttachmentId());
             } catch (TException e) {
                 log.error("Error retrieving attachment", e);
             }
@@ -248,7 +247,7 @@ public class AttachmentPortletUtils extends AttachmentFrontendUtils {
                 .setFilename(filename);
 
         try {
-            attachmentContent = client.makeAttachmentContent(attachmentContent);
+            attachmentContent = attchmntClient.get().makeAttachmentContent(attachmentContent);
         } catch (TException e) {
             log.error("Error creating attachment", e);
             attachmentContent = null;
@@ -269,7 +268,7 @@ public class AttachmentPortletUtils extends AttachmentFrontendUtils {
     public RequestStatus cancelUpload(ResourceRequest request) {
         String attachmentId = request.getParameter(PortalConstants.ATTACHMENT_ID);
         try {
-            return client.deleteAttachmentContent(attachmentId);
+            return attchmntClient.get().deleteAttachmentContent(attachmentId);
         } catch (TException e) {
             log.error("Error deleting attachment from backend", e);
             return RequestStatus.FAILURE;
