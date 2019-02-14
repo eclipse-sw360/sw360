@@ -74,7 +74,7 @@ if [[ ! -f "./compiler/cpp/thrift" ]]; then
 
     if has "apt-get" ; then
         $SUDO_CMD apt-get update
-        $SUDO_CMD apt-get install -y libboost-dev libboost-test-dev libboost-program-options-dev libevent-dev automake libtool flex bison pkg-config g++ libssl-dev
+        $SUDO_CMD apt-get install -y build-essential libboost-dev libboost-test-dev libboost-program-options-dev libevent-dev automake libtool flex bison pkg-config g++ libssl-dev
     elif has "apk" ; then
         $SUDO_CMD apk --update add g++ make apache-ant libtool automake autoconf bison flex
     else
@@ -85,7 +85,7 @@ if [[ ! -f "./compiler/cpp/thrift" ]]; then
     echo "-[shell provisioning] Building thrift"
     if [[ ! -f "./Makefile" ]]; then
         ./configure --without-java --without-cpp --without-qt4 --without-c_glib --without-csharp --without-erlang \
-                    --without-perl --without-php --without-php_extension --without-python --without-ruby \
+                    --without-perl --without-php --without-php_extension --without-python --without-py3 --without-ruby \
                     --without-haskell --without-go --without-d --without-haskell --without-php --without-ruby \
                     --without-python --without-erlang --without-perl --without-c_sharp --without-d --without-php \
                     --without-go --without-lua --without-nodejs --without-cl
