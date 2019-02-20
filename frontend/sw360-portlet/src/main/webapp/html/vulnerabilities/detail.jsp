@@ -14,7 +14,6 @@
 <liferay-theme:defineObjects />
 
 <jsp:useBean id="vulnerability" class="org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability" scope="request" />
-<jsp:useBean id="selectedTab" class="java.lang.String" scope="request" />
 
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
 <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/themes/base/jquery-ui.min.css">
@@ -26,11 +25,11 @@
 
 <div id="content" >
     <div class="container-fluid">
-        <div id="myTab" class="row-fluid">
+        <div id="myTab" class="row-fluid" <core_rt:if test="${not empty selectedTab}"> data-initial-tab="${selectedTab}" </core_rt:if>>
             <ul class="nav nav-tabs span2">
-                <li <core_rt:if test="${selectedTab == 'Summary' || empty selectedTab}"> class="active" </core_rt:if> ><a href="#tab-Summary">Summary</a></li>
-                <li <core_rt:if test="${selectedTab == 'Meta data'}"> class="active" </core_rt:if>><a href="#tab-metaData">Meta data</a></li>
-                <li <core_rt:if test="${selectedTab == 'References'}"> class="active" </core_rt:if>><a href="#tab-references">References</a></li>
+                <li><a href="#tab-Summary">Summary</a></li>
+                <li><a href="#tab-metaData">Meta data</a></li>
+                <li><a href="#tab-references">References</a></li>
             </ul>
             <div class="tab-content span10">
                 <div id="tab-Summary" class="tab-pane" >
@@ -47,18 +46,9 @@
     </div>
 </div>
 
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-    var tabView;
-    var Y = YUI().use(
-            'aui-tabview',
-            function(Y) {
-                tabView = new Y.TabView(
-                        {
-                            srcNode: '#myTab',
-                            stacked: true,
-                            type: 'tab'
-                        }
-                ).render();
-            }
-    );
+    require(['jquery', 'modules/tabview'], function($, tabview) {
+        tabview.create('myTab');
+    });
 </script>

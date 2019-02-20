@@ -146,30 +146,30 @@
         function deleteRelease(id, name, linkedReleasesSize, attachmentsSize) {
 
             function deleteReleaseInternal() {
-                jQuery.ajax({
+                $.ajax({
                     type: 'POST',
                     url: '<%=deleteReleaseAjaxURL%>',
                     cache: false,
                     data: {
                         <portlet:namespace/>releaseId: id,
-                <portlet:namespace/><%=PortalConstants.MODERATION_REQUEST_COMMENT%>:btoa($("#moderationDeleteCommentField").val())
-            },
-                success: function(data) {
-                    if (data.result == 'SUCCESS') {
-                        releaseTable.row('#' + id).remove().draw(false);
-                    }
-                    else if (data.result == 'SENT_TO_MODERATOR') {
-                        $.alert("You may not delete the release, but a request was sent to a moderator!");
-                    } else if (data.result == 'IN_USE') {
-                        $.alert("I could not delete the release, since it is used by another component (release) or project");
-                    } else {
+                        <portlet:namespace/><%=PortalConstants.MODERATION_REQUEST_COMMENT%>:btoa($("#moderationDeleteCommentField").val())
+                    },
+                    success: function(data) {
+                        if (data.result == 'SUCCESS') {
+                            releaseTable.row('#' + id).remove().draw(false);
+                        }
+                        else if (data.result == 'SENT_TO_MODERATOR') {
+                            $.alert("You may not delete the release, but a request was sent to a moderator!");
+                        } else if (data.result == 'IN_USE') {
+                            $.alert("I could not delete the release, since it is used by another component (release) or project");
+                        } else {
+                            $.alert("I could not delete the release!");
+                        }
+                    },
+                    error: function() {
                         $.alert("I could not delete the release!");
                     }
-                },
-                error: function() {
-                    $.alert("I could not delete the release!");
-                }
-            });
+                });
             }
 
             var confirmMessage = "Do you really want to delete the release <b>" + name + "</b> ?";

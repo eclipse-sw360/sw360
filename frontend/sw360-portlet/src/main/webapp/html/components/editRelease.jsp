@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -90,7 +90,7 @@
     <div id="content">
         <div class="container-fluid">
             <form id="releaseEditForm" name="releaseEditForm" action="<%=updateReleaseURL%>" method="post">
-                <div id="myTab" class="row-fluid">
+                <div id="myTab" class="row-fluid" <core_rt:if test="${not empty selectedTab}"> data-initial-tab="${selectedTab}" </core_rt:if>>
                     <ul class="nav nav-tabs span2">
                         <li><a href="#tab-ReleaseInformation">Summary</a></li>
                         <li><a href="#tab-ReleaseLinks">Linked Releases</a></li>
@@ -168,22 +168,9 @@
 <%@include file="/html/components/includes/vendors/searchVendor.jspf" %>
 
 <script>
-    var tabView; // we still need this global variable, until invalidHandlerShowErrorTab is modularized
+    require(['jquery', 'modules/sw360Validate', 'components/includes/vendors/searchVendor', 'modules/confirm', 'modules/autocomplete', 'modules/tabview', /* jquery-plugins */ 'jquery-ui' ], function($, sw360Validate, vendorsearch, confirm, autocomplete, tabview) {
 
-    YUI().use(
-            'aui-tabview',
-            function (Y) {
-                tabView = new Y.TabView(
-                        {
-                            srcNode: '#myTab',
-                            stacked: true,
-                            type: 'tab'
-                        }
-                ).render();
-            }
-    );
-
-    require(['jquery', 'modules/sw360Validate', 'components/includes/vendors/searchVendor', 'modules/confirm', 'modules/autocomplete', /* jquery-plugins */ 'jquery-ui' ], function($, sw360Validate, vendorsearch, confirm, autocomplete) {
+        tabview.create('myTab');
 
         Liferay.on('allPortletsReady', function() {
             autocomplete.prepareForMultipleHits('programminglanguages', ${programmingLanguages});

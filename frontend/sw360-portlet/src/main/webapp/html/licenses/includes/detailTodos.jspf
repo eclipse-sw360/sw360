@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
   ~ With modifications by Bosch Software Innovations GmbH, 2016.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
@@ -22,13 +22,12 @@
     <tr>
         <th colspan="8">Todos and Obligations Details:
             <core_rt:if test="${editMode}">
-                                    <span class="pull-right">
-                                        <core_rt:if
-                                                test="${not empty licenseDetail.todos || not empty added_todos_from_moderation_request}">
-                                            <input id="EditWhitelist" class="addButton" type="button"
-                                                   onclick="showWhiteListOptions()" value="Edit WhiteList">
-                                        </core_rt:if>
-                                    </span>
+                <span class="pull-right">
+                    <core_rt:if
+                            test="${not empty licenseDetail.todos || not empty added_todos_from_moderation_request}">
+                        <input id="EditWhitelist" class="addButton" type="button" value="Edit WhiteList">
+                    </core_rt:if>
+                </span>
             </core_rt:if>
         </th>
     </tr>
@@ -81,7 +80,7 @@
                 <span class="pull-right">
                     <core_rt:if test="${not empty moderationLicenseDetail.todos || not empty added_todos_from_moderation_request}">
                         <input type="button" class="addButton" id="SubmitWhitelist" value="Submit" onclick="submitFormWhiteList()">
-                        <input type="button" class="addButton" id="cancelEditWhitelistButton" value="Cancel" onclick="cancelEditWhitelist()">
+                        <input type="button" class="addButton" id="cancelEditWhitelistButton" value="Cancel">
                     </core_rt:if>
                 </span>
             </core_rt:if>

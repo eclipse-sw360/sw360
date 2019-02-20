@@ -30,6 +30,7 @@
         },
         shim: {
             // only for libraries that do not support RequireJS out of the box
+            "jquery-confirm":                       [ "jquery" ],
             "jquery-treetable": 					[ "jquery" ],
             "datatables-plugins-sorting.natural": 	[ "jquery" ]
         }

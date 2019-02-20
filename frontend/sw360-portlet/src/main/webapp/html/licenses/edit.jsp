@@ -73,20 +73,6 @@
     </div>
 
     <script>
-        var Y = YUI().use(
-                'aui-tabview',
-                function(Y) {
-                    new Y.TabView(
-                            {
-                                srcNode: '#myTab',
-                                stacked: true,
-                                type: 'tab'
-                            }
-                    ).render();
-                }
-
-        );
-
         var contextpath;
 
         Liferay.on('allPortletsReady', function() {
@@ -107,10 +93,6 @@
             });
         });
 
-        function editLicense() {
-            window.location ='<portlet:renderURL ><portlet:param name="<%=PortalConstants.LICENSE_ID%>" value="${licenseDetail.id}"/><portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_EDIT%>"/></portlet:renderURL>'
-        }
-
         function deleteLicense() {
             window.location.href = '<%=deleteURL%>';
         }
@@ -128,7 +110,6 @@
                     .setParameter('<%=PortalConstants.LICENSE_ID%>','${licenseDetail.id}');
             window.location = portletURL.toString();
         }
-
     </script>
 </core_rt:if>
 

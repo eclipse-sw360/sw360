@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -22,7 +22,6 @@
 <jsp:useBean id="usingProjects" type="java.util.Set<org.eclipse.sw360.datahandler.thrift.projects.Project>" scope="request"/>
 <jsp:useBean id="allUsingProjectsCount" type="java.lang.Integer" scope="request"/>
 <jsp:useBean id="moderationRequest" class="org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest" scope="request"/>
-<jsp:useBean id="selectedTab" class="java.lang.String" scope="request" />
 <jsp:useBean id="actual_project" class="org.eclipse.sw360.datahandler.thrift.projects.Project" scope="request" />
 <jsp:useBean id="defaultLicenseInfoHeaderText" class="java.lang.String" scope="request" />
 <core_rt:set var="project" value="${actual_project}" scope="request"/>
@@ -61,19 +60,9 @@
 <%@include file="/html/projects/includes/detailOverview.jspf"%>
 
 <script>
-    var tabView;
-    var Y = YUI().use(
-            'aui-tabview',
-            function(Y) {
-                tabView = new Y.TabView(
-                        {
-                            srcNode: '#myTab',
-                            stacked: true,
-                            type: 'tab'
-                        }
-                ).render();
-            }
-    );
+    require(['jquery', 'modules/tabview'], function($, tabview) {
+        tabview.create('myTab');
+    });
 
     function getBaseURL(){
         var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
