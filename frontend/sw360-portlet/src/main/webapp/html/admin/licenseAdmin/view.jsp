@@ -78,7 +78,7 @@
     </tr>
     <tr>
         <td>Import all SPDX license information</td>
-        <td><a id="importSPDXLink" href="#">Import</a>
+        <td><a href="#" onclick="importSpdxLicenseInformation(); return false;">Import</a>
         </td>
     </tr>
     <tr>
@@ -160,11 +160,6 @@
 
         var confirmMessage = "Do you really want to import all SPDX licenses";
         deleteConfirmed(confirmMessage, importSpdxLicenseInformationInternal);
-    }
-
-    window.onload = function() {
-        var a = document.getElementById("importSPDXLink");
-        a.onclick = importSpdxLicenseInformation;
     }
 </script>
 
