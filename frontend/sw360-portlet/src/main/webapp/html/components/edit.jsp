@@ -145,6 +145,7 @@
 </core_rt:if>
 
 <script>
+    document.title = "${component.name} - " + document.title;
     /* variables used in releaseTools.js ... */
     var releaseIdInURL = '<%=PortalConstants.RELEASE_ID%>',
         compIdInURL = '<%=PortalConstants.COMPONENT_ID%>',

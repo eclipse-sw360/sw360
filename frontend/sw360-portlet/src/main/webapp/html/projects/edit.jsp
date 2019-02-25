@@ -145,6 +145,7 @@
 
 <script>
 require(['jquery', 'modules/sw360Validate', 'modules/confirm', 'modules/tabview' ], function($, sw360Validate, confirm, tabview) {
+    document.title = "${project.name} - " + document.title;
 
     tabview.create('myTab');
 

@@ -41,3 +41,6 @@
         </div>
     </div>
 </div>
+<script>
+    document.title = "${component.name} - " + document.title;
+</script>
