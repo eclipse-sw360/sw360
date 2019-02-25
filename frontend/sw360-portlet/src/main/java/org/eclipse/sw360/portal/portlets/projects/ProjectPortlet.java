@@ -856,7 +856,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 putVulnerabilitiesInRequest(request, id, user);
                 putAttachmentUsagesInRequest(request, id);
                 request.setAttribute(
-                        VULNERABILITY_RATINGS_EDITABLE,
+                        WRITE_ACCESS_USER,
                         PermissionUtils.makePermission(project, user).isActionAllowed(RequestedAction.WRITE));
 
                 addProjectBreadcrumb(request, response, project);

@@ -190,7 +190,6 @@ public class PortalConstants {
     public static final String VULNERABILITY = "vulnerability";
     public static final String VULNERABILITY_LIST = "vulnerabilityList";
     public static final String VULNERABILITY_RATINGS = "vulnerabilityRatings";
-    public static final String VULNERABILITY_RATINGS_EDITABLE = "vulnerabilityRatingsEditable";
     public static final String VULNERABILITY_ID = "vulnerabilityId";
     public static final String VULNERABILITY_IDS = "vulnerabilityIds";
     public static final String VULNERABILITY_RATING_VALUE = "vulnerabilityRatingValue";
@@ -395,6 +394,8 @@ public class PortalConstants {
     // CodeScoop integration
     public static final String CODESCOOP_URL;
     public static final String CODESCOOP_TOKEN;
+
+    public static final String WRITE_ACCESS_USER = "writeAccessUser";
 
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);
