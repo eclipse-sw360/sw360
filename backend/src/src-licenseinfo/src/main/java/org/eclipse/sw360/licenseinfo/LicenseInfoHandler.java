@@ -249,6 +249,8 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
                     .map(parser -> wrapTException(() -> parser.getObligations(attachment, user, release)))
                     .collect(Collectors.toList());
 
+            results = assignReleaseToObligationParsingResults(results, release);
+
             obligationCache.put(attachmentContentId, results);
             return results;
         } catch (WrappedTException exception) {
@@ -368,8 +370,17 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
                 r.setVendor(release.isSetVendor() ? release.getVendor().getShortname() : "");
                 r.setName(release.getName());
                 r.setVersion(release.getVersion());
+                r.setRelease(release);
             }
         });
+        return parsingResults;
+    }
+
+    protected List<ObligationParsingResult> assignReleaseToObligationParsingResults(List<ObligationParsingResult> parsingResults,
+    Release release) {
+        parsingResults.stream()
+            .filter(r -> ! r.isSetRelease())
+            .forEach(r -> r.setRelease(release));
         return parsingResults;
     }
 
