@@ -24,6 +24,7 @@ import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
+import org.eclipse.sw360.rest.resourceserver.core.BasicController;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -57,7 +58,7 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class ReleaseController implements ResourceProcessor<RepositoryLinksResource> {
+public class ReleaseController extends BasicController<Release,RepositoryLinksResource> {
     public static final String RELEASES_URL = "/releases";
     private static final Logger log = Logger.getLogger(ReleaseController.class);
 
@@ -84,11 +85,9 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
             sw360Releases.addAll(releaseService.getReleasesForUser(sw360User));
         }
 
-        Resources<Resource<Release>> resources = new Resources<>(sw360Releases.stream()
+        return mkResponse(sw360Releases.stream()
                 .map(r -> restControllerHelper.convertToEmbeddedRelease(r, fields))
-                .map(r -> new Resource<>(r))
                 .collect(Collectors.toList()));
-        return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
     private Release searchReleaseBySha1(String sha1, User sw360User) throws TException {
