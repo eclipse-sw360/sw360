@@ -51,6 +51,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
@@ -70,7 +71,7 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
     private RestControllerHelper restControllerHelper;
 
     @RequestMapping(value = RELEASES_URL, method = RequestMethod.GET)
-    public ResponseEntity<Resources<Resource>> getReleasesForUser(
+    public ResponseEntity<Resources<Resource<Release>>> getReleasesForUser(
             @RequestParam(value = "sha1", required = false) String sha1,
             @RequestParam(value = "fields", required = false) List<String> fields) throws TException {
 
@@ -83,14 +84,10 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
             sw360Releases.addAll(releaseService.getReleasesForUser(sw360User));
         }
 
-        List<Resource> releaseResources = new ArrayList<>();
-        for (Release sw360Release : sw360Releases) {
-            Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(sw360Release, fields);
-            Resource<Release> releaseResource = new Resource<>(embeddedRelease);
-            releaseResources.add(releaseResource);
-        }
-        Resources<Resource> resources = new Resources<>(releaseResources);
-
+        Resources<Resource<Release>> resources = new Resources<>(sw360Releases.stream()
+                .map(r -> restControllerHelper.convertToEmbeddedRelease(r, fields))
+                .map(r -> new Resource<>(r))
+                .collect(Collectors.toList()));
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
