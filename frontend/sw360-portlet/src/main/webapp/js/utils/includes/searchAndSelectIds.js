@@ -39,6 +39,10 @@ define('utils/includes/searchAndSelectIds', ['jquery', /* jquery-plugins: */ 'da
 
         var pr = {
             resetSearchTable: function (data) {
+                /* first update selection */
+                pr.updateSelection();
+
+                /* then generate html from updated selection and search result */
                 var tableData = opts.prepareData(data, currentState);
                 pr.setDataToIdSearchTableAndRefresh(tableData);
             },
@@ -58,7 +62,6 @@ define('utils/includes/searchAndSelectIds', ['jquery', /* jquery-plugins: */ 'da
 
             destroyIdSearchDataTable: function() {
                 opts.$table.DataTable().destroy();
-
             },
 
             makeIdSearchDataTable: function() {
@@ -87,13 +90,7 @@ define('utils/includes/searchAndSelectIds', ['jquery', /* jquery-plugins: */ 'da
             },
 
             setOutput: function () {
-                var selected = opts.$tableBody.find(':checked').map(
-                    function (index, obj) {
-                        return obj.value;
-                    }
-                );
-
-                pr.addUniquely(selected);
+                pr.updateSelection();
 
                 var allIds = opts.extractIds(currentState);
                 var ids        = allIds['ids'];
@@ -103,6 +100,15 @@ define('utils/includes/searchAndSelectIds', ['jquery', /* jquery-plugins: */ 'da
 
                 currentState.$resultInputDisplay.val(displayIds.join(", "));
                 currentState.$resultInputDisplay.trigger('change');
+            },
+
+            updateSelection: function() {
+                var selected = opts.$tableBody.find(':checked').map(
+                        function (index, obj) {
+                            return obj.value;
+                        }
+                );
+                pr.addUniquely(selected);
             },
 
             addUniquely: function(input) {
