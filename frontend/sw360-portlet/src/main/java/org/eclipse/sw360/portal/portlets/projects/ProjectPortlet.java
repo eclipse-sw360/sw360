@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
  * With contributions by Bosch Software Innovations GmbH, 2016.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -1170,9 +1170,17 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 user.setCommentMadeDuringModerationRequest(ModerationRequestCommentMsg);
                 requestStatus = client.updateProject(project, user);
                 setSessionMessage(request, requestStatus, "Project", "update", printName(project));
-                cleanUploadHistory(user.getEmail(), id);
-                response.setRenderParameter(PAGENAME, PAGENAME_DETAIL);
-                response.setRenderParameter(PROJECT_ID, request.getParameter(PROJECT_ID));
+                if (RequestStatus.DUPLICATE.equals(requestStatus)) {
+                    setSW360SessionError(request, ErrorMessages.PROJECT_DUPLICATE);
+                    response.setRenderParameter(PAGENAME, PAGENAME_EDIT);
+                    request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_PROJECT);
+                    request.setAttribute(DOCUMENT_ID, id);
+                    prepareRequestForEditAfterDuplicateError(request, project, user);
+                } else {
+                    cleanUploadHistory(user.getEmail(), id);
+                    response.setRenderParameter(PAGENAME, PAGENAME_DETAIL);
+                    response.setRenderParameter(PROJECT_ID, request.getParameter(PROJECT_ID));
+                }
             } else {
                 // Add project
                 Project project = new Project();

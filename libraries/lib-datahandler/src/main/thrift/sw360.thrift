@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2014-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2014-2017, 2019. Part of the SW360 Portal Project.
  * With contributions by Bosch Software Innovations GmbH, 2016.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -25,6 +25,7 @@ enum RequestStatus {
     FAILURE = 2,
     IN_USE=3,
     FAILED_SANITY_CHECK = 4,
+    DUPLICATE = 5,
 }
 
 enum RemoveModeratorRequestStatus {

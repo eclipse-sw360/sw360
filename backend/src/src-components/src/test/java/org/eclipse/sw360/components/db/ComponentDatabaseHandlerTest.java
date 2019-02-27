@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -13,20 +13,19 @@ package org.eclipse.sw360.components.db;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.entitlement.ComponentModerator;
 import org.eclipse.sw360.datahandler.entitlement.ReleaseModerator;
-import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
+import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+
 import org.jetbrains.annotations.NotNull;
 import org.junit.*;
 import org.junit.rules.ExpectedException;
@@ -39,7 +38,9 @@ import java.util.concurrent.*;
 
 import static org.eclipse.sw360.datahandler.TestUtils.assertTestString;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyMap;
-import static org.eclipse.sw360.datahandler.common.SW360Utils.*;
+import static org.eclipse.sw360.datahandler.common.SW360Utils.getComponentIds;
+import static org.eclipse.sw360.datahandler.common.SW360Utils.getReleaseIds;
+import static org.eclipse.sw360.datahandler.common.SW360Utils.printFullname;
 import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.ensureEccInformationIsSet;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
@@ -67,7 +68,6 @@ public class ComponentDatabaseHandlerTest {
     private List<Component> components;
     private Map<String, Component>  componentMap;
     private List<Release> releases;
-    private Map<String, Release> releaseMap;
     private Map<String, Vendor> vendors;
     private ComponentDatabaseHandler handler;
 
@@ -138,7 +138,6 @@ public class ComponentDatabaseHandlerTest {
         }
 
         componentMap= ThriftUtils.getIdMap(components);
-        releaseMap= ThriftUtils.getIdMap(releases);
 
         // Prepare the handler
         handler = new ComponentDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), dbName, attachmentsDbName, moderator, releaseModerator);
@@ -758,6 +757,18 @@ public class ComponentDatabaseHandlerTest {
         assertFalse(releasesContain(actual.getReleases(), "R2C"));
     }
 
+    @Test
+    public void testUpdateComponentDuplicate() throws Exception {
+        // given:
+        Component component = components.get(0);
+        component.setName("component2");
+
+        // when:
+        RequestStatus status = handler.updateComponent(component, user1);
+
+        // then:
+        assertThat(status, is(RequestStatus.DUPLICATE));
+    }
 
     @Test
     public void testUpdateInconsistentComponent() throws Exception {
@@ -779,7 +790,7 @@ public class ComponentDatabaseHandlerTest {
         expected.setReleases(tmpReleases);
 
         RequestStatus status = handler.updateComponent(expected, user1);
-        assertThat(RequestStatus.SUCCESS, is(status));
+        assertThat(status, is(RequestStatus.SUCCESS));
         Component actual = handler.getComponent("C1", user1);
 
         //Other asserts have been dealt with in testUpdateComponent
@@ -827,6 +838,19 @@ public class ComponentDatabaseHandlerTest {
         // Check releases
         assertEquals(1, actual.getSubscribersSize());
         assertTrue(actual.getSubscribers().contains(email1));
+    }
+
+    @Test
+    public void testUpdateReleaseDuplicate() throws Exception {
+        // given:
+        Release release = releases.get(0);
+        release.setVersion("releaseB");
+
+        // when:
+        RequestStatus status = handler.updateRelease(release, user2, ThriftUtils.IMMUTABLE_OF_RELEASE);
+
+        // then:
+        assertThat(status, is(RequestStatus.DUPLICATE));
     }
 
     @Test
@@ -963,7 +987,7 @@ public class ComponentDatabaseHandlerTest {
         final Component tmp = handler.getComponent(originalComponentId, user1);
         tmp.unsetId();
         tmp.unsetRevision();
-        String newComponentId = handler.addComponent(tmp, email1).getId();
+        handler.addComponent(tmp, email1).getId();
 
         final Map<String, List<String>> duplicateComponents = handler.getDuplicateComponents();
 
