@@ -174,15 +174,15 @@ public class UserUtils {
         String userEmailAddress = user.getEmailAddress();
         org.eclipse.sw360.datahandler.thrift.users.User refreshed = UserCacheHolder.getRefreshedUserFromEmail(userEmailAddress);
         if (!equivalent(refreshed, user)) {
-            synchronizeUserWithDatabase(user, thriftClients, user::getEmailAddress, user::getOpenId, UserUtils::fillThriftUserFromLiferayUser);
+            synchronizeUserWithDatabase(user, thriftClients, user::getEmailAddress, user::getScreenName, UserUtils::fillThriftUserFromLiferayUser);
             UserCacheHolder.getRefreshedUserFromEmail(userEmailAddress);
         }
     }
 
-    private boolean equivalent(org.eclipse.sw360.datahandler.thrift.users.User refreshed, User user) {
-        final org.eclipse.sw360.datahandler.thrift.users.User thriftUser = new org.eclipse.sw360.datahandler.thrift.users.User();
-        fillThriftUserFromLiferayUser(thriftUser, user);
-        return thriftUser.equals(refreshed);
+    private boolean equivalent(org.eclipse.sw360.datahandler.thrift.users.User userInSW360, User user) {
+        final org.eclipse.sw360.datahandler.thrift.users.User userFromLiferay = new org.eclipse.sw360.datahandler.thrift.users.User();
+        fillThriftUserFromLiferayUser(userFromLiferay, user);
+        return userFromLiferay.equals(userInSW360);
     }
 
     public static void fillThriftUserFromUserCSV(final org.eclipse.sw360.datahandler.thrift.users.User thriftUser, final UserCSV userCsv) {
@@ -201,7 +201,7 @@ public class UserUtils {
         thriftUser.setEmail(user.getEmailAddress());
         thriftUser.setType(TYPE_USER);
         thriftUser.setUserGroup(getUserGroupFromLiferayUser(user));
-        thriftUser.setExternalid(user.getOpenId());
+        thriftUser.setExternalid(user.getScreenName());
         thriftUser.setFullname(user.getFullName());
         thriftUser.setGivenname(user.getFirstName());
         thriftUser.setLastname(user.getLastName());

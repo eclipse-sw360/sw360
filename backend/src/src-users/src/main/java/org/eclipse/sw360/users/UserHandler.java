@@ -33,14 +33,14 @@ public class UserHandler implements UserService.Iface {
 
     private static final Logger log = Logger.getLogger(UserHandler.class);
 
-    UserDatabaseHandler db;
+    private UserDatabaseHandler db;
 
     public UserHandler() throws IOException {
         db = new UserDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_USERS);
     }
 
     @Override
-    public User getUser(String id) throws TException {
+    public User getUser(String id) {
         return db.getUser(id);
     }
 
@@ -70,12 +70,12 @@ public class UserHandler implements UserService.Iface {
     }
 
     @Override
-    public List<User> searchUsers(String searchText) throws TException {
+    public List<User> searchUsers(String searchText) {
         return db.searchUsers(searchText);
     }
 
     @Override
-    public List<User> getAllUsers() throws TException {
+    public List<User> getAllUsers() {
         return db.getAll();
     }
 
