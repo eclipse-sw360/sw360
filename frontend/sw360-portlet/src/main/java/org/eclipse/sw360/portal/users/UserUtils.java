@@ -156,7 +156,7 @@ public class UserUtils {
         } catch (NoSuchUserException e) {
             log.info("Could not find user with email: '" + email + "'. Will try searching by external id.");
             try {
-                return UserLocalServiceUtil.getUserByOpenId(companyId, externalId);
+                return UserLocalServiceUtil.getUserByScreenName(companyId, externalId);
             } catch (NoSuchUserException nsue) {
                 log.info("Could not find user with externalId: '" + externalId);
                 throw new NoSuchUserException("Couldn't find user either with email or external id", nsue);
