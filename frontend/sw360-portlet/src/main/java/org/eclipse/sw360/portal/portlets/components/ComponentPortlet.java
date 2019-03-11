@@ -1151,8 +1151,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     }
 
     private void fillVendor(Release release) throws TException {
-        VendorService.Iface client = thriftClients.makeVendorClient();
-        if(release.isSetVendorId()) {
+        if(!isNullOrEmpty(release.getVendorId()) && release.isSetVendorId()) {
+            VendorService.Iface client = thriftClients.makeVendorClient();
             Vendor vendor = client.getByID(release.getVendorId());
             release.setVendor(vendor);
         }
