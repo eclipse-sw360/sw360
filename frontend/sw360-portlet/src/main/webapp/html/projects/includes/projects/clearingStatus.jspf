@@ -9,6 +9,7 @@
   ~ http://www.eclipse.org/legal/epl-v10.html
 --%>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
+<%@ page import="org.eclipse.sw360.portal.common.page.PortletReleasePage" %>
 <portlet:resourceURL var="deleteReleaseAjaxURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.DELETE_RELEASE%>'/>
 </portlet:resourceURL>
@@ -66,16 +67,17 @@
             });
         });
 
-        function renderActions(releaseId) {
-            return "<img src='<%=request.getContextPath()%>/images/fossology-logo-24.gif' " +
-                " class='action send-to-fossology' data-release-id='" + releaseId + "'" +
-                "  alt='SelectClearing' title='send to Fossology'>";
-        }
-
         function createClearingTable() {
             var result = [];
-
+            var sendToFossology,editRelease;
             <core_rt:forEach items="${releasesAndProjects}" var="releasesClearingStatusData">
+            sendToFossology = "<img src='<%=request.getContextPath()%>/images/fossology-logo-24.gif' " +
+                                       " class='action send-to-fossology' data-release-id='" + releaseId + "'" +
+                                       "  alt='SelectClearing' title='send to Fossology'>";
+            editRelease = "<sw360:DisplayReleaseLink releaseId='${releasesClearingStatusData.release.id}' showName='false' page='<%=PortletReleasePage.EDIT%>'>"+
+                                   "<img src='<%=request.getContextPath()%>/images/edit.png' alt='Edit' title='Edit'>"+
+                              "</sw360:DisplayReleaseLink>";
+
             result.push({
                 "DT_RowId": "${releasesClearingStatusData.release.id}",
                 "0": "<sw360:DisplayReleaseLink release="${releasesClearingStatusData.release}" showFullname="true"/>",
@@ -83,7 +85,8 @@
                 "2": "<span id='releaseClearingState${releasesClearingStatusData.release.id}'><sw360:DisplayEnum value="${releasesClearingStatusData.release.clearingState}"/></span>",
                 "3": "<sw360:DisplayEnum value="${releasesClearingStatusData.release.mainlineState}"/>",
                 "4": "<sw360:out value="${releasesClearingStatusData.mainlineStates}"/>",
-                "5": "<sw360:DisplayEnum value="${releasesClearingStatusData.componentType}"/>"
+                "5": "<sw360:DisplayEnum value="${releasesClearingStatusData.componentType}"/>",
+                "6": sendToFossology + editRelease
             });
             </core_rt:forEach>
 
@@ -109,7 +112,7 @@
                     {title: "Release Mainline State"},
                     {title: "Project Mainline State"},
                     {title: "Type"},
-                    {title: "Action", data: "DT_RowId", render: renderActions}
+                    {title: "Action"}
                 ],
                 pagingType: "simple_numbers",
                 autoWidth: false
