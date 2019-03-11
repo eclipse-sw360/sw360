@@ -29,6 +29,7 @@ import com.liferay.portal.util.PortalUtil;
 import com.liferay.portlet.PortletURLFactoryUtil;
 
 import org.eclipse.sw360.datahandler.common.*;
+import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.*;
@@ -57,14 +58,14 @@ import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
 import org.apache.thrift.protocol.TSimpleJSONProtocol;
 
-import javax.portlet.*;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import javax.portlet.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Strings.nullToEmpty;
@@ -74,6 +75,7 @@ import static java.lang.Math.min;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.CONTENT_TYPE_OPENXML_SPREADSHEET;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
+import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
 import static org.eclipse.sw360.portal.common.PortletUtils.getVerificationState;
 
@@ -162,6 +164,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             serveUnsubscribeRelease(request, response);
         } else if (PortalConstants.VIEW_LINKED_RELEASES.equals(action)) {
             serveLinkedReleases(request, response);
+        } else if (PortalConstants.PROJECT_SEARCH.equals(action)) {
+            serveProjectSearch(request, response);
         } else if (PortalConstants.UPDATE_VULNERABILITIES_RELEASE.equals(action)){
             updateVulnerabilitiesRelease(request,response);
         } else if (PortalConstants.UPDATE_VULNERABILITIES_COMPONENT.equals(action)){
@@ -172,6 +176,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 updateVulnerabilityVerification(request,response);
         } else if (PortalConstants.EXPORT_TO_EXCEL.equals(action)) {
             exportExcel(request, response);
+        } else if (PortalConstants.RELEASE_LINK_TO_PROJECT.equals(action)) {
+            linkReleaseToProject(request, response);
         } else if (isGenericAction(action)) {
             dealWithGenericAction(request, response, action);
         }
@@ -393,6 +399,24 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         } else if (PortalConstants.RELEASE_SEARCH.equals(what)) {
             String where = request.getParameter(PortalConstants.WHERE);
             serveReleaseSearchResults(request, response, where);
+        }
+    }
+
+    private void serveProjectSearch(ResourceRequest request, ResourceResponse response) throws PortletException {
+        ProjectSearchUtils utils = new ProjectSearchUtils(thriftClients);
+        User user = UserCacheHolder.getUserFromRequest(request);
+        String searchTerm = request.getParameter(PortalConstants.WHERE);
+
+        List<Project> projects = utils.searchProjects(user, searchTerm);
+        try {
+            String serializedProjects = projects.stream()
+                    .map(project -> wrapTException(() -> JSON_THRIFT_SERIALIZER.toString(project)))
+                    .collect(Collectors.joining(",", "[", "]"));
+
+            writeJSON(request, response, serializedProjects);
+        } catch (IOException | WrappedTException exception) {
+            log.error("cannot retrieve information about projects.", exception.getCause());
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "500");
         }
     }
 
@@ -1279,6 +1303,33 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             writeJSON(request, response, jsonResult);
         } catch (IOException e) {
             log.error("Problem rendering RequestStatus", e);
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "500");
+        }
+    }
+
+    private void linkReleaseToProject(ResourceRequest request, ResourceResponse response) throws IOException {
+        User user = UserCacheHolder.getUserFromRequest(request);
+        String projectId = request.getParameter(PortalConstants.PROJECT_ID);
+        String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
+
+
+        try {
+            log.debug("Link release [" + releaseId + "] to project [" + projectId + "]");
+
+            ProjectService.Iface client = thriftClients.makeProjectClient();
+            Project project = client.getProjectByIdForEdit(projectId, user);
+
+            project.putToReleaseIdToUsage(releaseId,
+                    new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.OPEN));
+            client.updateProject(project, user);
+
+            JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+            jsonObject.put("success", true);
+            jsonObject.put("releaseId", releaseId);
+            jsonObject.put("projectId", projectId);
+            writeJSON(request, response, jsonObject);
+        } catch (TException exception) {
+            log.error("Cannot link release [" + releaseId + "] to project [" + projectId + "].");
             response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "500");
         }
     }

@@ -53,7 +53,10 @@
     </core_rt:if>
     <jsp:useBean id="numberOfCheckedOrUncheckedVulnerabilities" type="java.lang.Long" scope="request"/>
 </c:catch>
+
 <%@include file="/html/utils/includes/logError.jspf" %>
+<%@include file="/html/components/includes/releases/linkProject.jspf" %>
+
 <core_rt:if test="${empty attributeNotFoundException}">
 
     <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/themes/base/jquery-ui.min.css">
@@ -81,6 +84,7 @@
             </span>
             <span class="pull-right">
                 <input type="button" id="edit" data-release-id="${releaseId}" value="Edit" class="addButton">
+                <input type="button" id="linkToProject" data-release-id="${releaseId}" data-release-name="<sw360:ReleaseName release="${release}"/>" value="Link to project" class="addButton">
                 <sw360:DisplaySubscribeButton email="<%=themeDisplay.getUser().getEmailAddress()%>" object="${release}" id="SubscribeButton" />
             </span>
         </p>
@@ -101,7 +105,7 @@
 
 
 
-    require(['jquery', 'modules/tabview'], function($, tabview) {
+    require(['jquery', 'modules/tabview', 'components/includes/releases/linkProject'], function($, tabview, linkProject) {
 
         tabview.create('myTab');
 
@@ -117,6 +121,10 @@
 
         $('#edit').on('click', function(event) {
             editRelease($(event.currentTarget).data().releaseId);
+        });
+
+        $('#linkToProject').on('click', function() {
+            linkProject.openLinkDialog($(event.currentTarget).data().releaseId, $(event.currentTarget).data().releaseName);
         });
 
         $('#SubscribeButton').on('click', function(event) {

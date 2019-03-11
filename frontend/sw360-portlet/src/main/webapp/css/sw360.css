@@ -311,9 +311,9 @@ input[readonly].clickable {
 }
 
 #projectsTable span.clearingstate {
-	display: inline-block;
-	width: 100%;
-	text-align: center;
+    display: inline-block;
+    width: 100%;
+    text-align: center;
 }
 
 #attachmentsDetail span.dataTableChildRowCell {
@@ -530,6 +530,17 @@ input[readonly].clickable {
     max-width: 100%;
 }
 
+.dataTable tr td.actions {
+    white-space: nowrap;
+}
+
+.dataTable tr td.actions img {
+    width: 16px;
+    height: 16px;
+    margin-left: 8px;
+    cursor: pointer;
+}
+
 .aui .tab-content {
     overflow: hidden;
 }
@@ -563,6 +574,21 @@ input[readonly].clickable {
     width: 18px;
     height: 18px;
     animation: spin 2s linear infinite;
+}
+
+button.spinner:before {
+    margin-top: 0;
+    width: 12px;
+    height: 12px;
+    float: right;
+    margin-right: 0;
+    margin-left: 0.75em;
+    border: 3px solid white;
+    border-top: 3px solid rgb(178, 224, 224);
+}
+
+button.addButton.spinner:before {
+    border-top: 3px solid #e95850;
 }
 
 @keyframes spin {
@@ -642,7 +668,7 @@ textarea.broader {
    }
 
  .releasePageHeader {
- 	border-bottom: 1px solid #cccccc;
+     border-bottom: 1px solid #cccccc;
  }
  .arrow-down {
    width: 0;

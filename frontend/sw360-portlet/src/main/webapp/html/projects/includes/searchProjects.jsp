@@ -29,14 +29,14 @@
         <div id="Projectsearchresults">
             <table width="100%" id="projectSearchResultstable">
                 <thead style="border-bottom: 2px solid #66c1c2;" >
-                <tr class="trheader" style="height: 30px;">
-                    <th width="4%">&nbsp;</th>
-                    <th class="textlabel" align="left">Project name</th>
-                    <th class="textlabel" align="left">Version</th>
-                    <th class="textlabel" align="left">State</th>
-                    <th class="textlabel" align="left">Responsible</th>
-                    <th class="textlabel" align="left">Description</th>
-                </tr>
+	                <tr class="trheader" style="height: 30px;">
+	                    <th width="4%">&nbsp;</th>
+	                    <th class="textlabel" align="left">Project name</th>
+	                    <th class="textlabel" align="left">Version</th>
+	                    <th class="textlabel" align="left">State</th>
+	                    <th class="textlabel" align="left">Responsible</th>
+	                    <th class="textlabel" align="left">Description</th>
+	                </tr>
                 </thead>
                 <tbody>
                     <tr class="trbodyClass">

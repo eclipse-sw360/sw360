@@ -145,6 +145,10 @@
     line-height: 20px;
 }
 
+button.addButton {
+	padding: 0px 5px;
+}
+
 .addButton {
 	background-color: #e95850;
 }
