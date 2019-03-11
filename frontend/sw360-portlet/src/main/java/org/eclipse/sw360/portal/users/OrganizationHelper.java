@@ -12,17 +12,19 @@
  */
 package org.eclipse.sw360.portal.users;
 
-import com.liferay.portal.NoSuchOrganizationException;
 import com.liferay.portal.kernel.bean.PortalBeanLocatorUtil;
+import com.liferay.portal.kernel.exception.NoSuchOrganizationException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
-import com.liferay.portal.model.*;
-import com.liferay.portal.security.membershippolicy.OrganizationMembershipPolicyUtil;
-import com.liferay.portal.service.OrganizationLocalService;
-import com.liferay.portal.service.OrganizationLocalServiceUtil;
-import com.liferay.portal.service.UserLocalServiceUtil;
-import org.apache.log4j.Logger;
+import com.liferay.portal.kernel.model.*;
+import com.liferay.portal.kernel.security.membershippolicy.OrganizationMembershipPolicyUtil;
+import com.liferay.portal.kernel.service.OrganizationLocalService;
+import com.liferay.portal.kernel.service.OrganizationLocalServiceUtil;
+import com.liferay.portal.kernel.service.UserLocalServiceUtil;
+
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+
+import org.apache.log4j.Logger;
 
 import java.util.*;
 import java.util.function.Predicate;

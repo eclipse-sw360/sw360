@@ -21,6 +21,10 @@
 			<name>view-template</name>
 			<value>/html/licenses/view.jsp</value>
 		</init-param>
+		<init-param>
+            <name>javax.portlet.init-param.copy-request-parameters</name>
+            <value>false</value>
+        </init-param>
 		<expiration-cache>0</expiration-cache>
 		<supports>
 			<mime-type>text/html</mime-type>
@@ -55,6 +59,10 @@
 			<name>view-template</name>
 			<value>/html/components/view.jsp</value>
 		</init-param>
+		<init-param>
+            <name>javax.portlet.init-param.copy-request-parameters</name>
+            <value>false</value>
+        </init-param>
 		<expiration-cache>0</expiration-cache>
 		<supports>
 			<mime-type>text/html</mime-type>
@@ -88,6 +96,10 @@
         <init-param>
             <name>view-template</name>
             <value>/html/moderation/view.jsp</value>
+        </init-param>
+        <init-param>
+            <name>javax.portlet.init-param.copy-request-parameters</name>
+            <value>false</value>
         </init-param>
         <expiration-cache>0</expiration-cache>
         <supports>
@@ -125,6 +137,10 @@
             <name>view-template</name>
             <value>/html/projects/view.jsp</value>
         </init-param>
+        <init-param>
+            <name>javax.portlet.init-param.copy-request-parameters</name>
+            <value>false</value>
+        </init-param>
         <expiration-cache>0</expiration-cache>
         <supports>
             <mime-type>text/html</mime-type>
@@ -159,6 +175,10 @@
 			<name>view-template</name>
 			<value>/html/search/view.jsp</value>
 		</init-param>
+		<init-param>
+            <name>javax.portlet.init-param.copy-request-parameters</name>
+            <value>false</value>
+        </init-param>
 		<expiration-cache>0</expiration-cache>
 		<supports>
 			<mime-type>text/html</mime-type>
@@ -186,12 +206,14 @@
     <portlet>
         <portlet-name>welcome</portlet-name>
         <display-name>Welcome</display-name>
-        <portlet-class>
-            com.liferay.util.bridges.mvc.MVCPortlet
-        </portlet-class>
+        <portlet-class>com.liferay.portal.kernel.portlet.bridges.mvc.MVCPortlet</portlet-class>
         <init-param>
             <name>view-template</name>
             <value>/html/homepage/welcome/view.jsp</value>
+        </init-param>
+        <init-param>
+            <name>javax.portlet.init-param.copy-request-parameters</name>
+            <value>false</value>
         </init-param>
         <expiration-cache>0</expiration-cache>
         <supports>
@@ -227,6 +249,10 @@
 			<name>view-template</name>
 			<value>/html/homepage/recentcomponents/view.jsp</value>
 		</init-param>
+		<init-param>
+            <name>javax.portlet.init-param.copy-request-parameters</name>
+            <value>false</value>
+        </init-param>
 		<expiration-cache>0</expiration-cache>
 		<supports>
 			<mime-type>text/html</mime-type>
@@ -260,6 +286,10 @@
         <init-param>
             <name>view-template</name>
             <value>/html/homepage/recentreleases/view.jsp</value>
+        </init-param>
+        <init-param>
+            <name>javax.portlet.init-param.copy-request-parameters</name>
+            <value>false</value>
         </init-param>
         <expiration-cache>0</expiration-cache>
         <supports>
@@ -295,6 +325,10 @@
 			<name>view-template</name>
 			<value>/html/homepage/mysubscriptions/view.jsp</value>
 		</init-param>
+		<init-param>
+            <name>javax.portlet.init-param.copy-request-parameters</name>
+            <value>false</value>
+        </init-param>
 		<expiration-cache>0</expiration-cache>
 		<supports>
 			<mime-type>text/html</mime-type>
@@ -328,6 +362,10 @@
         <init-param>
             <name>view-template</name>
             <value>/html/homepage/mycomponents/view.jsp</value>
+        </init-param>
+        <init-param>
+            <name>javax.portlet.init-param.copy-request-parameters</name>
+            <value>false</value>
         </init-param>
         <expiration-cache>0</expiration-cache>
         <supports>
@@ -363,6 +401,10 @@
             <name>view-template</name>
             <value>/html/homepage/myprojects/view.jsp</value>
         </init-param>
+        <init-param>
+            <name>javax.portlet.init-param.copy-request-parameters</name>
+            <value>false</value>
+        </init-param>
         <expiration-cache>0</expiration-cache>
         <supports>
             <mime-type>text/html</mime-type>
@@ -397,6 +439,10 @@
 			<name>view-template</name>
 			<value>/html/homepage/mytaskassignments/view.jsp</value>
 		</init-param>
+		<init-param>
+            <name>javax.portlet.init-param.copy-request-parameters</name>
+            <value>false</value>
+        </init-param>
 		<expiration-cache>0</expiration-cache>
 		<supports>
 			<mime-type>text/html</mime-type>
@@ -431,6 +477,10 @@
 			<name>view-template</name>
 			<value>/html/homepage/mytasksubmissions/view.jsp</value>
 		</init-param>
+		<init-param>
+            <name>javax.portlet.init-param.copy-request-parameters</name>
+            <value>false</value>
+        </init-param>
 		<expiration-cache>0</expiration-cache>
 		<supports>
 			<mime-type>text/html</mime-type>
@@ -466,6 +516,10 @@
             <name>view-template</name>
             <value>/html/admin/attachmentVacuum/view.jsp</value>
         </init-param>
+        <init-param>
+            <name>javax.portlet.init-param.copy-request-parameters</name>
+            <value>false</value>
+        </init-param>
         <expiration-cache>0</expiration-cache>
         <supports>
             <mime-type>text/html</mime-type>
@@ -490,6 +544,10 @@
         <init-param>
             <name>view-template</name>
             <value>/html/admin/databaseSanitation/view.jsp</value>
+        </init-param>
+        <init-param>
+            <name>javax.portlet.init-param.copy-request-parameters</name>
+            <value>false</value>
         </init-param>
         <expiration-cache>0</expiration-cache>
         <supports>
@@ -516,6 +574,10 @@
             <name>view-template</name>
             <value>/html/admin/bulkReleaseEdit/view.jsp</value>
         </init-param>
+        <init-param>
+            <name>javax.portlet.init-param.copy-request-parameters</name>
+            <value>false</value>
+        </init-param>
         <expiration-cache>0</expiration-cache>
         <supports>
             <mime-type>text/html</mime-type>
@@ -540,6 +602,10 @@
         <init-param>
             <name>view-template</name>
             <value>/html/admin/componentImport/view.jsp</value>
+        </init-param>
+        <init-param>
+            <name>javax.portlet.init-param.copy-request-parameters</name>
+            <value>false</value>
         </init-param>
         <expiration-cache>0</expiration-cache>
         <supports>
@@ -566,6 +632,10 @@
             <name>view-template</name>
             <value>/html/admin/licenseAdmin/view.jsp</value>
         </init-param>
+        <init-param>
+            <name>javax.portlet.init-param.copy-request-parameters</name>
+            <value>false</value>
+        </init-param>
         <expiration-cache>0</expiration-cache>
         <supports>
             <mime-type>text/html</mime-type>
@@ -590,6 +660,10 @@
         <init-param>
             <name>view-template</name>
             <value>/html/admin/fossyAdmin/view.jsp</value>
+        </init-param>
+        <init-param>
+            <name>javax.portlet.init-param.copy-request-parameters</name>
+            <value>false</value>
         </init-param>
         <expiration-cache>0</expiration-cache>
         <supports>
@@ -616,6 +690,10 @@
             <name>view-template</name>
             <value>/html/admin/user/view.jsp</value>
         </init-param>
+        <init-param>
+            <name>javax.portlet.init-param.copy-request-parameters</name>
+            <value>false</value>
+        </init-param>
         <expiration-cache>0</expiration-cache>
         <supports>
             <mime-type>text/html</mime-type>
@@ -640,6 +718,10 @@
         <init-param>
             <name>view-template</name>
             <value>/html/admin/vendors/view.jsp</value>
+        </init-param>
+        <init-param>
+            <name>javax.portlet.init-param.copy-request-parameters</name>
+            <value>false</value>
         </init-param>
         <expiration-cache>0</expiration-cache>
         <supports>
@@ -691,6 +773,10 @@
             <name>view-template</name>
             <value>/html/homepage/signup/view.jsp</value>
         </init-param>
+        <init-param>
+            <name>javax.portlet.init-param.copy-request-parameters</name>
+            <value>false</value>
+        </init-param>
         <expiration-cache>0</expiration-cache>
         <supports>
             <mime-type>text/html</mime-type>
@@ -715,6 +801,10 @@
         <init-param>
             <name>view-template</name>
             <value>/html/projects/import.jsp</value>
+        </init-param>
+        <init-param>
+            <name>javax.portlet.init-param.copy-request-parameters</name>
+            <value>false</value>
         </init-param>
         <expiration-cache>0</expiration-cache>
         <supports>
@@ -750,6 +840,10 @@
             <name>view-template</name>
             <value>/html/admin/scheduleAdmin/view.jsp</value>
         </init-param>
+        <init-param>
+            <name>javax.portlet.init-param.copy-request-parameters</name>
+            <value>false</value>
+        </init-param>
         <expiration-cache>0</expiration-cache>
         <supports>
             <mime-type>text/html</mime-type>
@@ -774,6 +868,10 @@
         <init-param>
             <name>view-template</name>
             <value>/html/vulnerabilities/view.jsp</value>
+        </init-param>
+        <init-param>
+            <name>javax.portlet.init-param.copy-request-parameters</name>
+            <value>false</value>
         </init-param>
         <expiration-cache>0</expiration-cache>
         <supports>
@@ -809,6 +907,10 @@
             <name>view-template</name>
             <value>/html/ecc/view.jsp</value>
         </init-param>
+        <init-param>
+            <name>javax.portlet.init-param.copy-request-parameters</name>
+            <value>false</value>
+        </init-param>
         <expiration-cache>0</expiration-cache>
         <supports>
             <mime-type>text/html</mime-type>
@@ -840,6 +942,10 @@
             <name>view-template</name>
             <value>/html/preferences/view.jsp</value>
         </init-param>
+        <init-param>
+            <name>javax.portlet.init-param.copy-request-parameters</name>
+            <value>false</value>
+        </init-param>
         <expiration-cache>0</expiration-cache>
         <supports>
             <mime-type>text/html</mime-type>
@@ -870,6 +976,10 @@
         <init-param>
             <name>view-template</name>
             <value>/html/projects/wsimport.jsp</value>
+        </init-param>
+        <init-param>
+            <name>javax.portlet.init-param.copy-request-parameters</name>
+            <value>false</value>
         </init-param>
         <expiration-cache>0</expiration-cache>
         <supports>

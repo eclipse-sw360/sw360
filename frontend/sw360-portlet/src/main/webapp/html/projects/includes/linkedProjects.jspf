@@ -1,4 +1,4 @@
-<%@ page import="com.liferay.portlet.PortletURLFactoryUtil" %>
+<%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.projects.Project" %>
 <%@ page import="javax.portlet.PortletRequest" %><%--
   ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
@@ -30,7 +30,7 @@
   data-load-node-url="<%=loadLinkedProjectsRowsURL%>"
   data-portlet-namespace="<portlet:namespace/>"
   data-parent-branch-key="<%=PortalConstants.PARENT_BRANCH_ID%>"
-  data-scope-group-id="${pageContext.getAttribute('scopeGroupId')}"
+  data-scope-group-id="${httpServletRequest.getAttribute('scopeGroupId')}"
     >
     <thead>
     <tr>

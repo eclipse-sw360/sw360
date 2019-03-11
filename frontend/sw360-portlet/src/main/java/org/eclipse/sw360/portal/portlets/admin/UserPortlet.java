@@ -17,17 +17,12 @@ import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.model.*;
 import com.liferay.portal.kernel.portlet.PortletResponseUtil;
+import com.liferay.portal.kernel.service.*;
 import com.liferay.portal.kernel.upload.UploadPortletRequest;
-import com.liferay.portal.model.*;
-import com.liferay.portal.service.*;
-import com.liferay.portal.util.PortalUtil;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVPrinter;
-import org.apache.commons.csv.CSVRecord;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
+import com.liferay.portal.kernel.util.PortalUtil;
+
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
@@ -38,7 +33,12 @@ import org.eclipse.sw360.portal.users.UserCSV;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 import org.eclipse.sw360.portal.users.UserUtils;
 
+import org.apache.commons.csv.*;
+import org.apache.log4j.Logger;
+import org.apache.thrift.TException;
+
 import javax.portlet.*;
+
 import java.io.*;
 import java.util.*;
 

@@ -11,12 +11,12 @@
 package org.eclipse.sw360.portal.users;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.ServiceContextFactory;
 import com.liferay.portal.kernel.servlet.SessionMessages;
-import com.liferay.portal.service.ServiceContext;
-import com.liferay.portal.service.ServiceContextFactory;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -44,7 +44,7 @@ class HttpServletRequestAdapter implements RequestAdapter {
     public Optional<ServiceContext> getServiceContext() {
         try {
             return Optional.of(ServiceContextFactory.getInstance(request));
-        } catch (PortalException | SystemException e ) {
+        } catch (PortalException e ) {
             return Optional.empty();
         }
     }

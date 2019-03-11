@@ -16,8 +16,8 @@
 <liferay-theme:defineObjects />
 
 <%@ page import="javax.portlet.PortletRequest" %>
-<%@ page import="com.liferay.portlet.PortletURLFactoryUtil" %>
-<%@ page import="com.liferay.portal.util.PortalUtil" %>
+<%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
+<%@ page import="com.liferay.portal.kernel.util.PortalUtil" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.vendors.Vendor" %>
 
 

@@ -10,25 +10,26 @@
  */
 package org.eclipse.sw360.portal.users;
 
-import com.liferay.portal.NoSuchUserException;
+import com.liferay.portal.kernel.exception.NoSuchUserException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.model.Role;
+import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.search.Indexer;
 import com.liferay.portal.kernel.search.IndexerRegistryUtil;
+import com.liferay.portal.kernel.service.*;
+import com.liferay.portal.kernel.service.persistence.RoleUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
-import com.liferay.portal.model.Role;
-import com.liferay.portal.model.User;
-import com.liferay.portal.service.*;
-import com.liferay.portal.service.persistence.RoleUtil;
+
 import org.eclipse.sw360.portal.common.ErrorMessages;
+
 import org.apache.log4j.Logger;
 
 import javax.portlet.PortletRequest;
 import javax.servlet.http.HttpServletRequest;
+
 import java.util.Optional;
 import java.util.function.Consumer;
-
-import static com.google.common.base.Strings.isNullOrEmpty;
 
 /**
  * @author alex.borodin@evosoft.com

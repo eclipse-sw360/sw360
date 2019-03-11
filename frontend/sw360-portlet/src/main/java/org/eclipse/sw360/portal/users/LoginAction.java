@@ -11,10 +11,12 @@
 package org.eclipse.sw360.portal.users;
 
 import com.liferay.portal.kernel.events.Action;
+import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.portal.service.UserLocalServiceUtil;
+
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.common.SW360Utils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +34,7 @@ public class LoginAction extends Action {
     public void run(HttpServletRequest request, HttpServletResponse response) {
         try {
             long userId = getLiferayUserId(request);
-            com.liferay.portal.model.User user = UserLocalServiceUtil.getUserById(userId);
+            User user = UserLocalServiceUtil.getUserById(userId);
             UserUtils userUtils = new UserUtils();
             userUtils.synchronizeUserWithDatabase(user);
         } catch (Exception  e) {

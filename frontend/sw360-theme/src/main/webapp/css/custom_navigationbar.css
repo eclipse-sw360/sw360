@@ -11,7 +11,7 @@
 */
 @import "compass";
 
-@import url(custom_common.css);
+@import url(custom_breadcrumbs.css);
 
 @import url(color_schemes/green.css);
 
@@ -171,17 +171,17 @@ hr, .separator {
 		margin-left:10px;
 		margin-top:1px;
 		height:23px;
-		border:1px solid #ffffff; 
-		    
+		border:1px solid #ffffff;
+
 }
 #navigation .contactsBttn{
-		padding:3px;		
+		padding:3px;
 		font-size:14px;
 		font-family:arial;
 		background-color:#999999;
-		color:white;		
+		color:white;
 		margin-top:1px;
-		height:23px;		
+		height:23px;
 }
 
 .ie7 #navigation ul {
@@ -205,7 +205,7 @@ hr, .separator {
 }
 #navigation a {
 	font-family:Arial;
-    color:#444444; 
+    color:#444444;
     text-align:center;
 	font-size: 14px;
 	font-family:Arial;
@@ -368,7 +368,7 @@ hr, .separator {
 	border-top:1px solid #cccccc;
 	background-color:#f8f7f7;
 	height:30px;*/
-	
+
 	background-color:#f8f7f7;
 	border-top:1px solid #cccccc;
     position:fixed;

@@ -11,18 +11,19 @@
 package org.eclipse.sw360.portal.users;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
-import com.liferay.portal.model.User;
-import com.liferay.portal.security.auth.AutoLogin;
-import com.liferay.portal.security.auth.AutoLoginException;
-import com.liferay.portal.service.UserLocalServiceUtil;
-import com.liferay.portal.util.PortalUtil;
-import java.util.Enumeration;
+import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.security.auto.login.AutoLogin;
+import com.liferay.portal.kernel.security.auto.login.AutoLoginException;
+import com.liferay.portal.kernel.service.UserLocalServiceUtil;
+import com.liferay.portal.kernel.util.PortalUtil;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import java.util.Enumeration;
 
 /**
  * Stub for testing single sign on / auto login with prefixed user: 
@@ -59,8 +60,6 @@ public class TestAutoLogin implements AutoLogin {
         User user = null;
         try {
             user = UserLocalServiceUtil.getUserByEmailAddress(companyId, emailId);
-        } catch (SystemException e) {
-            log.error("System exception at getUserByEmailAddress(): " + e.getMessage(), e);
         } catch (PortalException e) {
             log.error("Portal exception at getUserByEmailAddress(): " + e.getMessage(), e);
         }

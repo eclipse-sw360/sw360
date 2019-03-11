@@ -10,10 +10,9 @@
  */
 package org.eclipse.sw360.portal.portlets.moderation;
 
+import com.liferay.portal.kernel.model.Organization;
 import com.liferay.portal.kernel.servlet.SessionMessages;
-import com.liferay.portal.model.Organization;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
+
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -42,6 +41,9 @@ import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.portlets.FossologyAwarePortlet;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 import org.eclipse.sw360.portal.users.UserUtils;
+
+import org.apache.log4j.Logger;
+import org.apache.thrift.TException;
 import org.jetbrains.annotations.NotNull;
 
 import javax.portlet.*;

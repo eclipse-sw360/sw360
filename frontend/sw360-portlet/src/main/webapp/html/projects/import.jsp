@@ -9,13 +9,13 @@
   ~ http://www.eclipse.org/legal/epl-v10.html
   --%>
 
-<%@ taglib prefix="min-width" uri="http://alloy.liferay.com/tld/aui" %>
-<%@ taglib prefix="min-height" uri="http://alloy.liferay.com/tld/aui" %>
+<%@ taglib prefix="min-width" uri="http://liferay.com/tld/aui" %>
+<%@ taglib prefix="min-height" uri="http://liferay.com/tld/aui" %>
 
 <%@include file="/html/init.jsp" %>
 <%-- the following is needed by liferay to display error messages--%>
 <%@include file="/html/utils/includes/errorKeyToMessage.jspf"%>
-<%@ page import="com.liferay.portlet.PortletURLFactoryUtil" %>
+<%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 <%@ page import="javax.portlet.PortletRequest" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.projectimport.RemoteCredentials" %>

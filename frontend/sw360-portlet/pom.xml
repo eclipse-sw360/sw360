@@ -42,11 +42,12 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>com.liferay.maven.plugins</groupId>
-                <artifactId>liferay-maven-plugin</artifactId>
-                <version>${liferay.maven.plugin.version}</version>
+                <groupId>com.liferay</groupId>
+                <artifactId>com.liferay.css.builder</artifactId>
+                <version>1.0.21</version>
                 <executions>
                     <execution>
+                        <id>default-build-css</id>
                         <phase>generate-sources</phase>
                         <goals>
                             <goal>build-css</goal>
@@ -54,12 +55,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <autoDeployDir>${deploy.dir}</autoDeployDir>
-                    <appServerDeployDir>${liferay.app.server.deploy.dir}</appServerDeployDir>
-                    <appServerLibGlobalDir>${liferay.app.server.lib.global.dir}</appServerLibGlobalDir>
-                    <appServerPortalDir>${liferay.app.server.portal.dir}</appServerPortalDir>
-                    <liferayVersion>${liferay.version}</liferayVersion>
-                    <pluginType>portlet</pluginType>
+                    <docrootDirName>src/main/webapp</docrootDirName>
                 </configuration>
             </plugin>
             <plugin>
@@ -139,26 +135,26 @@
         </dependency>
         <dependency>
             <groupId>com.liferay.portal</groupId>
-            <artifactId>portal-service</artifactId>
-            <version>${liferay.version}</version>
+            <artifactId>com.liferay.portal.kernel</artifactId>
+            <version>2.6.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.liferay.portal</groupId>
-            <artifactId>util-bridges</artifactId>
-            <version>${liferay.version}</version>
+            <artifactId>com.liferay.util.bridges</artifactId>
+            <version>2.0.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.liferay.portal</groupId>
-            <artifactId>util-taglib</artifactId>
-            <version>${liferay.version}</version>
+            <artifactId>com.liferay.util.taglib</artifactId>
+            <version>2.0.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.liferay.portal</groupId>
-            <artifactId>util-java</artifactId>
-            <version>${liferay.version}</version>
+            <artifactId>com.liferay.util.java</artifactId>
+            <version>2.0.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -299,28 +295,7 @@
             <id>deploy</id>
             <build>
                 <plugins>
-                    <plugin>
-                        <groupId>com.liferay.maven.plugins</groupId>
-                        <artifactId>liferay-maven-plugin</artifactId>
-                        <version>${liferay.version}</version>
-                        <executions>
-                            <execution>
-                                <id>deploy-war</id>
-                                <phase>install</phase>
-                                <goals>
-                                    <goal>deploy</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <autoDeployDir>${deploy.dir}</autoDeployDir>
-                            <appServerDeployDir>${liferay.app.server.deploy.dir}</appServerDeployDir>
-                            <appServerLibGlobalDir>${liferay.app.server.lib.global.dir}</appServerLibGlobalDir>
-                            <appServerPortalDir>${liferay.app.server.portal.dir}</appServerPortalDir>
-                            <liferayVersion>${liferay.version}</liferayVersion>
-                            <pluginType>portlet</pluginType>
-                        </configuration>
-                    </plugin>
+                    <!--  FIXME: deploy profile has lost plugin since liferay-maven-plugin no longer available since liferay 7.0 CE -->
                 </plugins>
             </build>
         </profile>

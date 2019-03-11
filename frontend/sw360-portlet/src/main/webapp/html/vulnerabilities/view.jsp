@@ -9,7 +9,7 @@
   ~ which accompanies this distribution, and is available at
   ~ http://www.eclipse.org/legal/epl-v10.html
   --%>
-<%@ page import="com.liferay.portlet.PortletURLFactoryUtil" %>
+<%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 <%@ page import="javax.portlet.PortletRequest" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability" %>
@@ -26,9 +26,6 @@
 
 <jsp:useBean id="externalId" class="java.lang.String" scope="request"/>
 <jsp:useBean id="vulnerableConfiguration" class="java.lang.String" scope="request"/>
-
-<portlet:actionURL var="applyFiltersURL" name="applyFilters">
-</portlet:actionURL>
 
 <portlet:actionURL var="applyFiltersURL" name="applyFilters">
 </portlet:actionURL>

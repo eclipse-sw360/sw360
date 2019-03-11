@@ -9,7 +9,7 @@
   ~ http://www.eclipse.org/legal/epl-v10.html
   --%>
 
-<%@ page import="com.liferay.portlet.PortletURLFactoryUtil" %>
+<%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
 <%@include file="/html/init.jsp" %>
 
 

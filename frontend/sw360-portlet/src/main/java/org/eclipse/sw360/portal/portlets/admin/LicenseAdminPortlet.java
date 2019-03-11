@@ -14,25 +14,25 @@ package org.eclipse.sw360.portal.portlets.admin;
 
 import com.liferay.portal.kernel.portlet.PortletResponseUtil;
 import com.liferay.portal.kernel.upload.UploadPortletRequest;
-import com.liferay.portal.util.PortalUtil;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
+import com.liferay.portal.kernel.util.PortalUtil;
+
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.exporter.LicsExporter;
-import org.eclipse.sw360.importer.LicsImporter;
 import org.eclipse.sw360.exporter.utils.ZipTools;
+import org.eclipse.sw360.importer.LicsImporter;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 
+import org.apache.log4j.Logger;
+import org.apache.thrift.TException;
+
 import javax.portlet.*;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.ZipOutputStream;

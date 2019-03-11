@@ -54,28 +54,6 @@
   			<id>deploy</id>
   			<build>
   				<plugins>
-					<plugin>
-						<groupId>com.liferay.maven.plugins</groupId>
-						<artifactId>liferay-maven-plugin</artifactId>
-						<version>${liferay.version}</version>
-						<executions>
-							<execution>
-            					<id>deploy-war</id>
-            					<phase>install</phase>
-            					<goals>
-              						<goal>deploy</goal>
-            					</goals>
-          					</execution>
-						</executions> 
-						<configuration>
-							<autoDeployDir>${deploy.dir}</autoDeployDir>
-							<appServerDeployDir>${liferay.app.server.deploy.dir}</appServerDeployDir>
-							<appServerLibGlobalDir>${liferay.app.server.lib.global.dir}</appServerLibGlobalDir>
-							<appServerPortalDir>${liferay.app.server.portal.dir}</appServerPortalDir>
-							<liferayVersion>${liferay.version}</liferayVersion>
-							<pluginType>layouttpl</pluginType>
-						</configuration>
-					</plugin>
     			</plugins>
   			</build>
 		</profile>

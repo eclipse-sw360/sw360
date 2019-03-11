@@ -16,7 +16,7 @@
 <portlet:defineObjects />
 <liferay-theme:defineObjects />
 
-<%@ page import="com.liferay.portlet.PortletURLFactoryUtil" %>
+<%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.moderation.DocumentType" %>
 <%@ page import="javax.portlet.PortletRequest" %>
 

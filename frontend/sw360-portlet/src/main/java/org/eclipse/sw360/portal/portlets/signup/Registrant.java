@@ -14,6 +14,7 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.util.Validator;
+
 import org.eclipse.sw360.datahandler.common.SW360Assert;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -46,7 +47,7 @@ class Registrant extends User {
         setWantsMailNotification(true);
     }
 
-    public com.liferay.portal.model.User addLifeRayUser(PortletRequest request) throws PortalException, SystemException {
+    public com.liferay.portal.kernel.model.User addLifeRayUser(PortletRequest request) throws PortalException, SystemException {
         return UserPortletUtils.addLiferayUser(request, getGivenname(), getLastname(), getEmail(),
                 getDepartment(), UserUtils.getRoleConstantFromUserGroup(getUserGroup()), isMale, getExternalid(), password, false, false);
 

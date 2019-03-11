@@ -18,7 +18,7 @@
 <portlet:defineObjects/>
 <liferay-theme:defineObjects/>
 
-<jsp:useBean id="userList" type="java.util.List<com.liferay.portal.model.User>" scope="request"/>
+<jsp:useBean id="userList" type="java.util.List<com.liferay.portal.kernel.model.User>" scope="request"/>
 <jsp:useBean id="missingUserList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.users.User>"
              scope="request"/>
 <portlet:actionURL var="updateLifeRayUsers" name="updateUsers">

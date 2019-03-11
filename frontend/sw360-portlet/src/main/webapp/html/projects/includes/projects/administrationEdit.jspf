@@ -9,7 +9,9 @@
   ~ http://www.eclipse.org/legal/epl-v10.html
   --%>
 
-<%@ page import="org.eclipse.sw360.datahandler.thrift.projects.Project" %>
+<%@page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState"%>
+<%@page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectState"%>
+<%@page import="org.eclipse.sw360.datahandler.thrift.projects.Project" %>
 
 <%@ taglib prefix="core_rt" uri="http://java.sun.com/jstl/core_rt" %>
 

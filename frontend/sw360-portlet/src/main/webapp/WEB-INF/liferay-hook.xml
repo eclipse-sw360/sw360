@@ -4,7 +4,7 @@
  ~ Modifications for supporting own infrastructure.
  ~ Original file from: Liferay Inc.
  -->
-<!DOCTYPE hook PUBLIC "-//Liferay//DTD Hook 6.2.0//EN" "http://www.liferay.com/dtd/liferay-hook_6_2_0.dtd">
+<!DOCTYPE hook PUBLIC "-//Liferay//DTD Hook 7.1.0//EN" "http://www.liferay.com/dtd/liferay-hook_7_1_0.dtd">
 
 <hook>
     <portal-properties>portal.properties</portal-properties>
