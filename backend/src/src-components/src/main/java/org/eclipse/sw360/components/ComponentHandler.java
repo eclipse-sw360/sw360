@@ -273,8 +273,14 @@ public class ComponentHandler implements ComponentService.Iface {
         assertNotNull(release);
         assertId(release.getId());
         assertUser(user);
-
+        removeSelfLink(release);
         return handler.updateRelease(release, user, ThriftUtils.IMMUTABLE_OF_RELEASE);
+    }
+
+    private void removeSelfLink(Release release) {
+        if(release.releaseIdToRelationship != null && !release.releaseIdToRelationship.isEmpty()) {
+            release.releaseIdToRelationship.remove(release.id);
+        }
     }
 
     @Override
