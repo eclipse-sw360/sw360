@@ -27,6 +27,7 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
+import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.licenseinfo.util.LicenseNameWithTextUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -62,7 +63,7 @@ public abstract class OutputGenerator<T> {
         this.outputVariant = variant;
     }
 
-    public abstract T generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project, Collection<ObligationParsingResult> obligationResults) throws SW360Exception;
+    public abstract T generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project, Collection<ObligationParsingResult> obligationResults, User user) throws SW360Exception;
 
     public String getOutputType() {
         return outputType;

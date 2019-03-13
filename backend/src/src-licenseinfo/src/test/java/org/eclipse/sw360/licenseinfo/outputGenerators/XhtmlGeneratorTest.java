@@ -134,10 +134,10 @@ public class XhtmlGeneratorTest {
         p.setLicenseInfoHeaderText("Lorem");
         p.setObligationsText("Ipsum");
 
-        xmlString = xhtmlGenerator.generateOutputFile(lipresults, p, obligationResults);
-        xmlString2 = xhtmlGenerator.generateOutputFile(lipresults2, p, obligationResults);
-        xmlString3 = xhtmlGenerator.generateOutputFile(lipresults3, p, obligationResults);
-        xmlStringEmpty = xhtmlGenerator.generateOutputFile(lipresultsEmpty, p, obligationResults);
+        xmlString = xhtmlGenerator.generateOutputFile(lipresults, p, obligationResults, null);
+        xmlString2 = xhtmlGenerator.generateOutputFile(lipresults2, p, obligationResults, null);
+        xmlString3 = xhtmlGenerator.generateOutputFile(lipresults3, p, obligationResults, null);
+        xmlStringEmpty = xhtmlGenerator.generateOutputFile(lipresultsEmpty, p, obligationResults, null);
 
         generateDocumentsFromXml();
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2016-2018. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2016-2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -59,7 +59,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
     private static final String DEFAULT_LICENSE_INFO_TEXT = dropCommentedLine(DEFAULT_LICENSE_INFO_HEADER_FILE);
     private static final String DEFAULT_OBLIGATIONS_FILE = "/DefaultObligations.txt";
     private static final String DEFAULT_OBLIGATIONS_TEXT = dropCommentedLine(DEFAULT_OBLIGATIONS_FILE);
-    public static final String MSG_NO_RELEASE_GIVEN = "No release given";
+    private static final String MSG_NO_RELEASE_GIVEN = "No release given";
 
     protected List<LicenseInfoParser> parsers;
     protected List<OutputGenerator<?>> outputGenerators;
@@ -128,7 +128,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
 
         fillDefaults(project);
 
-        Object output = generator.generateOutputFile(projectLicenseInfoResults, project, obligationsResults);
+        Object output = generator.generateOutputFile(projectLicenseInfoResults, project, obligationsResults, user);
         if (output instanceof byte[]) {
             licenseInfoFile.setGeneratedOutput((byte[]) output);
         } else if (output instanceof String) {
@@ -384,12 +384,12 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         return parsingResults;
     }
 
-    protected List<LicenseInfoParsingResult> assignComponentToLicenseInfoParsingResults(List<LicenseInfoParsingResult> parsingResults, Release release, User user) throws TException {
+    private List<LicenseInfoParsingResult> assignComponentToLicenseInfoParsingResults(List<LicenseInfoParsingResult> parsingResults, Release release, User user) throws TException {
         final ComponentService.Iface componentClient = new ThriftClients().makeComponentClient();
         final Component component = componentClient.getComponentById(release.getComponentId(), user);
 
         parsingResults.forEach(result -> {
-            if( component != null) {
+            if(component != null) {
                 if (component.getComponentType() != null) {
                     result.setComponentType(toString(component.getComponentType()));
                 } else {
