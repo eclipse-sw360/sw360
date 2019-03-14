@@ -41,7 +41,9 @@
 
 <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.css">
 <script src="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.js" type="text/javascript"></script>
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
+require(['jquery', 'modules/confirm', 'datatables.net', 'jquery-confirm'], function($, confirm) {
     var moderationRequestsTable;
 
     Liferay.on('allPortletsReady', function() {
@@ -52,7 +54,7 @@
             "DT_RowId": "${moderation.id}",
             "0": "<sw360:DisplayModerationRequestLink moderationRequest="${moderation}"/>",
             "1": "<sw360:DisplayEnum value="${moderation.moderationState}"/>",
-            "2": "<img src='<%=request.getContextPath()%>/images/Trash.png' onclick=\"deleteModerationRequest('${moderation.id}','<b><sw360:out value="${moderation.documentName}"/></b>')\"  alt='Delete' title='Delete'>"
+            "2": "<img class='delete' src='<%=request.getContextPath()%>/images/Trash.png' data-moderation-id='${moderation.id}' data-document-name='<b><sw360:out value="${moderation.documentName}"/></b>' alt='Delete' title='Delete'>"
         });
         </core_rt:forEach>
 
@@ -68,6 +70,11 @@
             ],
             autoWidth: false
         });
+    });
+
+    $('#tasksubmissionTable').on('click', 'img.delete', function(event) {
+        var data = $(event.currentTarget).data();
+        deleteModerationRequest(data.moderationId, data.documentName);
     });
 
     function deleteModerationRequest(id, docName) {
@@ -93,9 +100,9 @@
                 }
             });
         }
-
-        deleteConfirmed("Do you really want to delete the moderation request for " + docName + " ?", deleteModerationRequestInternal);
+        confirm.confirmDeletion("Do you really want to delete the moderation request for " + docName + " ?", deleteModerationRequestInternal);
     }
+});
 
 </script>
 
