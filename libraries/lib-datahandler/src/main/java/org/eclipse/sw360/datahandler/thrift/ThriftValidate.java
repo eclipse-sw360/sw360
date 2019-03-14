@@ -12,11 +12,9 @@ package org.eclipse.sw360.datahandler.thrift;
 
 import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
+
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
-import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.*;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -170,6 +168,12 @@ public class ThriftValidate {
 
         // Unset fields that do not make sense
         component.unsetReleases();
+        component.unsetDefaultVendor();
+        // we might want to have a logic someday that the defaultVendorId will be set
+        // from defaultVendor if the latter one is set and the former one not - but
+        // until now the thought is that clients need to make sure that the
+        // defaultVendorId is set and that the component contains the vendor itself is
+        // just convenience
     }
 
     public static List<Component> prepareComponents(Collection<Component> components) throws SW360Exception {

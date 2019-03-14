@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017-2018.
+ * Copyright Siemens AG, 2017-2019.
  * Copyright Bosch Software Innovations GmbH, 2017-2018.
  * Part of the SW360 Portal Project.
  *
@@ -13,10 +13,6 @@
 
 package org.eclipse.sw360.rest.resourceserver.component;
 
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
@@ -28,38 +24,40 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
-import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
+import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
+import org.eclipse.sw360.rest.resourceserver.user.UserController;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
+import org.eclipse.sw360.rest.resourceserver.vendor.VendorController;
+
+import org.apache.log4j.Logger;
+import org.apache.thrift.TException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
-import org.springframework.hateoas.PagedResources;
-import org.springframework.hateoas.Resource;
-import org.springframework.hateoas.ResourceProcessor;
-import org.springframework.hateoas.Resources;
+import org.springframework.hateoas.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
@@ -261,6 +259,21 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
             restControllerHelper.addEmbeddedModerators(halComponent, moderators);
         }
 
+        if (sw360Component.getDefaultVendorId() != null) {
+            Vendor defaultVendor;
+            if (sw360Component.getDefaultVendor() == null
+                    || sw360Component.getDefaultVendor().getId() != sw360Component.getDefaultVendorId()) {
+                defaultVendor = vendorService.getVendorById(sw360Component.getDefaultVendorId());
+            } else {
+                defaultVendor = sw360Component.getDefaultVendor();
+            }
+            addEmbeddedDefaultVendor(halComponent, defaultVendor);
+            // delete default vendor so that this object is not put directly in the
+            // component object (it is available in the embedded resources path though)
+            // but keep id so that this field is put directly into the component json
+            sw360Component.setDefaultVendor(null);
+        }
+
         if (sw360Component.getVendorNames() != null) {
             Set<String> vendors = sw360Component.getVendorNames();
             restControllerHelper.addEmbeddedVendors(halComponent, vendors);
@@ -274,5 +287,13 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
         restControllerHelper.addEmbeddedUser(halComponent, user, "createdBy");
 
         return halComponent;
+    }
+
+    private void addEmbeddedDefaultVendor(HalResource<Component> halComponent, Vendor defaultVendor) {
+        HalResource<Vendor> halDefaultVendor = new HalResource<>(defaultVendor);
+        Link vendorSelfLink = linkTo(UserController.class)
+                .slash("api" + VendorController.VENDORS_URL + "/" + defaultVendor.getId()).withSelfRel();
+        halDefaultVendor.add(vendorSelfLink);
+        halComponent.addEmbeddedResource("defaultVendor", halDefaultVendor);
     }
 }

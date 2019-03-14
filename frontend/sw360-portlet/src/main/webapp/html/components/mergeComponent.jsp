@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2017, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -154,13 +154,13 @@
             $stepElement.append(wizard.createSingleMergeLine('Created by', data.componentTarget.createdBy, data.componentSource.createdBy));
             $stepElement.append(wizard.createMultiMergeLine('Categories', data.componentTarget.categories, data.componentSource.categories));
             $stepElement.append(wizard.createSingleMergeLine('Component Type', data.componentTarget.componentType, data.componentSource.componentType, getComponentTypeDisplayString));
+            $stepElement.append(wizard.createSingleMergeLine('Default Vendor', data.componentTarget.defaultVendor, data.componentSource.defaultVendor, getDefaultVendorDisplayString));
             $stepElement.append(wizard.createSingleMergeLine('Homepage', data.componentTarget.homepage, data.componentSource.homepage));
             $stepElement.append(wizard.createSingleMergeLine('Blog', data.componentTarget.blog, data.componentSource.blog));
             $stepElement.append(wizard.createSingleMergeLine('Wiki', data.componentTarget.wiki, data.componentSource.wiki));
             $stepElement.append(wizard.createSingleMergeLine('Mailing list', data.componentTarget.mailinglist, data.componentSource.mailinglist));
             $stepElement.append(wizard.createSingleMergeLine('Description', data.componentTarget.description, data.componentSource.description));
             $stepElement.append(wizard.createSingleMergeLine('External ids', data.componentTarget.externalids, data.componentSource.externalids));
-
 
             $stepElement.append(wizard.createCategoryLine('Roles'));
             $stepElement.append(wizard.createSingleMergeLine('Component owner', data.componentTarget.componentOwner, data.componentSource.componentOwner));
@@ -202,6 +202,8 @@
             componentSelection.createdBy = wizard.getFinalSingleValue('Created by');
             componentSelection.categories = wizard.getFinalMultiValue('Categories');
             componentSelection.componentType = wizard.getFinalSingleValue('Component Type');
+            componentSelection.defaultVendor = wizard.getFinalSingleValue('Default Vendor');
+            componentSelection.defaultVendorId = componentSelection.defaultVendor ? componentSelection.defaultVendor.id : undefined;
             componentSelection.homepage = wizard.getFinalSingleValue('Homepage');
             componentSelection.blog = wizard.getFinalSingleValue('Blog');
             componentSelection.wiki = wizard.getFinalSingleValue('Wiki');
@@ -256,6 +258,7 @@
             $stepElement.append(wizard.createSingleDisplayLine('Created by', data.componentSelection.createdBy));
             $stepElement.append(wizard.createMultiDisplayLine('Categories', data.componentSelection.categories));
             $stepElement.append(wizard.createSingleDisplayLine('Component Type', data.componentSelection.componentType, getComponentTypeDisplayString));
+            $stepElement.append(wizard.createSingleDisplayLine('Default Vendor', data.componentSelection.defaultVendor, getDefaultVendorDisplayString));
             $stepElement.append(wizard.createSingleDisplayLine('Homepage', data.componentSelection.homepage));
             $stepElement.append(wizard.createSingleDisplayLine('Blog', data.componentSelection.blog));
             $stepElement.append(wizard.createSingleDisplayLine('Wiki', data.componentSelection.wiki));
@@ -305,8 +308,12 @@
         componentTypeDisplayStrings[${ct.value}] = '${ThriftEnumUtils.enumToString(ct)}';
         </core_rt:forEach>
 
-        function getComponentTypeDisplayString(componentType){
-          return componentTypeDisplayStrings[componentType];
+        function getComponentTypeDisplayString(componentType) {
+            return componentTypeDisplayStrings[componentType];
+        }
+
+        function getDefaultVendorDisplayString(defaultVendor) {
+            return defaultVendor ? defaultVendor.fullname : '';
         }
     });
 </script>
