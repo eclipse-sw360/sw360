@@ -51,7 +51,7 @@
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.DELETE_COMPONENT%>'/>
 </portlet:resourceURL>
 
-<portlet:resourceURL var="loadComponentsURL">
+<portlet:resourceURL var="sw360ComponentsURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.LOAD_COMPONENT_LIST%>'/>
 </portlet:resourceURL>
 
@@ -62,6 +62,10 @@
     <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>"/>
     <portlet:param name="<%=PortalConstants.LICENSE_ID%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>"/>
 </liferay-portlet:renderURL>
+
+<portlet:resourceURL var="sw360CompositeUrl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CODESCOOP_ACTION_COMPOSITE%>'/>
+</portlet:resourceURL>
 
 <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/themes/base/jquery-ui.min.css">
 <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.css">
@@ -74,6 +78,7 @@
     <span class="pageHeaderBigSpan">Components</span>
     <span class="pageHeaderMediumSpan">
         <span id="componentCounter">(${totalRows})</span>
+    </span>
     <span class="pull-right">
           <input type="button" class="addButton" onclick="window.location.href='<%=addComponentURL%>'"
                  value="Add Component">
@@ -187,17 +192,15 @@
     };
 </script>
 
-<core_rt:set var="CODESCOOP_URL" value="<%=PortalConstants.CODESCOOP_URL%>"/>
-<core_rt:set var="CODESCOOP_TOKEN" value="<%=PortalConstants.CODESCOOP_TOKEN%>"/>
-<core_rt:if test="${not empty CODESCOOP_URL && not empty CODESCOOP_TOKEN}">
+<core_rt:if test="${codescoopActive}">
     <script>
         window.codescoopEnabled = true;
         document.addEventListener("DOMContentLoaded", function() {
             require(['modules/codeScoop' ], function(codeScoop) {
-                var api = new codeScoop('<%=PortalConstants.CODESCOOP_URL%>', '<%=PortalConstants.CODESCOOP_TOKEN%>');
-                api.activateIndexes("componentsTable", "<%=loadComponentsURL%>");
-                renderCallback = api.updateIndexes;
-                dataGetter = api.getData;
+                var api = new codeScoop();
+                api.activateIndexes("componentsTable", "<%=sw360ComponentsURL%>", "<%=sw360CompositeUrl%>");
+                renderCallback = api._update_indexes;
+                dataGetter = api._get_composite_data_item;
             });
             document
                 .getElementById("componentsTable")
@@ -285,13 +288,13 @@
                                 return dataGetter(row.DT_RowId, 'rate');
                             }},
                         {"title": "Interest", data: function(row, type, val, meta){
-                                return dataGetter(row.DT_RowId, 'compositeIndex', 'interestPercent');
+                                return dataGetter(row.DT_RowId, 'index', 'interest');
                             }},
                         {"title": "Activity", data: function(row, type, val, meta){
-                                return dataGetter(row.DT_RowId, 'compositeIndex', 'activityPercent');
+                                return dataGetter(row.DT_RowId, 'index', 'activity');
                             }},
                         {"title": "Health", data: function(row, type, val, meta){
-                                return dataGetter(row.DT_RowId, 'compositeIndex', 'healthPercent');
+                                return dataGetter(row.DT_RowId, 'index', 'health');
                             }},
                         {"title": "Component Type", data: "cType"},
                         {"title": "Actions", data: "id", render: {display: renderComponentActions}}
@@ -309,7 +312,7 @@
                     "iDisplayStart": 0,
                     "bProcessing": true,
                     "bServerSide": true,
-                    "sAjaxSource": '<%=loadComponentsURL%>',
+                    "sAjaxSource": '<%=sw360ComponentsURL%>',
                     "dom": 'lBrtip',
                     "buttons": [
                         {

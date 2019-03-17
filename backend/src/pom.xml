@@ -42,6 +42,20 @@
         <module>src-wsimport</module>
     </modules>
 
+    <profiles>
+        <profile>
+            <id>codescoop</id>
+            <modules>
+                <module>src-codescoop</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>default</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+        </profile>
+    </profiles>
 
     <dependencies>
         <dependency>

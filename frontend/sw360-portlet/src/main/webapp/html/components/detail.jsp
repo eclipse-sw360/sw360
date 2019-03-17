@@ -39,6 +39,11 @@
 <portlet:actionURL var="updateComponentURL" name="updateComponent">
     <portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="${component.id}"/>
 </portlet:actionURL>
+
+<portlet:resourceURL var="sw360ComponentUrl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CODESCOOP_ACTION_COMPONENT%>'/>
+</portlet:resourceURL>
+
 <c:catch var="attributeNotFoundException">
     <jsp:useBean id="component" class="org.eclipse.sw360.datahandler.thrift.components.Component" scope="request"/>
     <jsp:useBean id="usingProjects" type="java.util.Set<org.eclipse.sw360.datahandler.thrift.projects.Project>" scope="request"/>
@@ -126,9 +131,7 @@
         }
     });
 </script>
-<c:set var="CODESCOOP_URL" value="<%=PortalConstants.CODESCOOP_URL%>"/>
-<c:set var="CODESCOOP_TOKEN" value="<%=PortalConstants.CODESCOOP_TOKEN%>"/>
-<c:if test="${not empty CODESCOOP_URL && not empty CODESCOOP_TOKEN}">
+<c:if test="${codescoopActive}">
     <form id="component_edit_form" name="componentEditForm" action="<%=updateComponentURL%>&updateOnlyRequested" method="post" style="display: none;">
     </form>
     <script>
@@ -137,12 +140,14 @@
             homepage: '<portlet:namespace/><%=Component._Fields.HOMEPAGE%>',
             categories: '<portlet:namespace/><%=Component._Fields.CATEGORIES%>',
             languages: '<portlet:namespace/><%=Component._Fields.LANGUAGES%>',
-            licenses: '<portlet:namespace/><%=Component._Fields.MAIN_LICENSE_IDS%>'
+            licenses: '<portlet:namespace/><%=Component._Fields.MAIN_LICENSE_IDS%>',
+            externalIdKey: '<portlet:namespace/><%=PortalConstants.EXTERNAL_ID_KEY%>externalIdsTableRow',
+            externalIdValue: '<portlet:namespace/><%=PortalConstants.EXTERNAL_ID_VALUE%>externalIdsTableRow'
         };
         document.addEventListener("DOMContentLoaded", function() {
             require(['modules/codeScoop' ], function(codeScoop) {
-                var api = new codeScoop('<%=PortalConstants.CODESCOOP_URL%>', '<%=PortalConstants.CODESCOOP_TOKEN%>');
-                api.activateMerge();
+                var api = new codeScoop();
+                api.activateMerge("<%=sw360ComponentUrl%>");
             });
         });
     </script>

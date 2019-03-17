@@ -38,6 +38,12 @@ var codeScoopCss = {
     dynamicSizeFull: "100%"
 };
 
+var AutocompleteBy = {
+    byName: "name",
+    byOwner: "owner",
+    byUrl: "url"
+};
+
 function Modal() {
 
     var _this = this;
@@ -166,20 +172,9 @@ function Modal() {
 }
 
 define("modules/codeScoop", [], function () {
-    function codeScoop(apiUrl, apiToken) {
-        if (!apiUrl) {
-            console.error("Codescoop plugin error: invalid codescoop.url property");
-            return null;
-        }
-        if (!apiToken) {
-            console.error("Codescoop plugin error: invalid codescoop.token property");
-            return null;
-        }
-
+    function codeScoop() {
         var _this = this;
 
-        this.apiUrl = apiUrl;
-        this.apiToken = apiToken;
         this.formElements = {
             form: undefined,
             name: undefined,
@@ -195,12 +190,19 @@ define("modules/codeScoop", [], function () {
         this.interval = 500;
         this.modal = new Modal();
 
-        this._api = function (method, path, request, callback) {
+        this.api = {
+            componentUrl: "",
+            autocompleteUrl: "",
+            compositeUrl: "",
+            releaseUrl: "",
+            purlUrl: ""
+        };
+
+        this._proxy_api = function (method, url, request, callback) {
             var xhr = new XMLHttpRequest();
-            xhr.open(method, _this.apiUrl + path, true);
-            xhr.setRequestHeader("X-Api-Key", _this.apiToken);
-            xhr.setRequestHeader("X-User-Login", "sw360");
+            xhr.open(method, url, true);
             xhr.setRequestHeader("Content-type", "application/json");
+            xhr.setRequestHeader("Accept", "application/json");
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === 4 && xhr.status === 200) {
                     var dto = JSON.parse(this.responseText);
@@ -210,20 +212,16 @@ define("modules/codeScoop", [], function () {
             xhr.send(request);
         };
 
-        this._fetch_repo = function (owner, name, callback) {
-            _this._api("GET", "/integration/siemens/repository/" + owner + "/" + name + "/", null, callback);
+        this._match_component = function (url, componentSearch, callback) {
+            _this._proxy_api("POST", url, JSON.stringify(componentSearch), callback);
         };
 
-        this._fetch_composite = function (requestData, callback) {
-            _this._api("POST", "integration/siemens/composite", JSON.stringify(requestData), callback);
+        this._fetch_composite = function (compositeUrl, requestData, callback) {
+            _this._proxy_api("POST", compositeUrl, JSON.stringify(requestData), callback);
         };
 
-        this._fetch_releases_by_repo_id = function (id, callback) {
-            _this._api("GET", "integration/siemens/releases?gitHubRepoId=" + id, null, callback);
-        };
-
-        this._fetch_releases_by_repo_owner_name = function (requestData, callback) {
-            _this._api("POST", "integration/siemens/releases", JSON.stringify(requestData), callback);
+        this._fetch_releases_by_component_id = function (url, requestData, callback) {
+            _this._proxy_api("POST", url, JSON.stringify(requestData), callback);
         };
 
         this._install_form_element = function () {
@@ -281,36 +279,43 @@ define("modules/codeScoop", [], function () {
             document.body.appendChild(_this.formElements.componentListUrl);
         };
 
-        this._autocomplete_repo = function (searchType, searchValue, limit, callback) {
-            var xhr = new XMLHttpRequest();
-            xhr.open("GET", _this.apiUrl + "autocomplete?data=" + searchType + "&limit=" + limit + "&search=" + searchValue, true);
-            xhr.setRequestHeader("X-Api-Key", _this.apiToken);
-            xhr.setRequestHeader("X-User-Login", "test");
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    var repoDtoList = JSON.parse(this.responseText);
-                    callback(repoDtoList);
-                }
+        this._autocomplete_repo = function (autocompleteBy, searchValue, limit, callback) {
+            var autocompleteRequest = {
+                search: searchValue.trim(),
+                by: autocompleteBy,
+                limit: limit
             };
-            xhr.send(null);
+            _this._proxy_api("POST", _this.api.autocompleteUrl, JSON.stringify(autocompleteRequest), function (data) {
+                callback(data.repositories);
+            });
         };
 
         this._listen_autocomplete = function () {
 
-            var autoFillForm = function (id) {
-                var ownerName = id.split("/");
-                _this._fetch_repo(ownerName[0], ownerName[1], function (repo) {
-                    _this.formElements.name.value = id;
-                    _this.formElements.description.innerHTML = repo.title;
-                    if (repo.homepageUrl) {
-                        _this.formElements.homepage.value = repo.homepageUrl;
-                    } else {
-                        _this.formElements.homepage.value = repo.url;
-                    }
+            var autoFillForm = function (data) {
+                _this.formElements.name.value = data.name;
+                _this.formElements.description.innerHTML = data.origin.title;
+                if (data.origin.homepageUrl) {
+                    _this.formElements.homepage.value = data.origin.homepageUrl;
+                } else {
+                    _this.formElements.homepage.value = data.origin.url;
+                }
 
-                    repo.categories = _this._fetch_categories(repo["hierarchicalCategories"]);
-                    _this.formElements.categories.value = repo.categories.join(",");
-                })
+                var categories = _this._fetch_categories(data.origin.categories);
+                _this.formElements.categories.value = categories.join(",");
+
+                document.getElementById("add-external-id").click();
+                var inputs = document.getElementsByTagName("input");
+                inputs = Array.from(inputs);
+                var filtered = inputs.filter(function(inp) {
+                    return inp.name.startsWith("_components_WAR_sw360portlet_externalIdKeyexternalIdsTableRow") && inp.value === ''
+                })[0];
+                filtered.value = "purl.id";
+
+                filtered = inputs.filter(function(inp) {
+                    return inp.name.startsWith("_components_WAR_sw360portlet_externalIdValueexternalIdsTableRow") && inp.value === ''
+                })[0];
+                filtered.value = data.purl;
             };
 
             var clean = function () {
@@ -325,16 +330,16 @@ define("modules/codeScoop", [], function () {
 
             var select = function (e) {
                 if (e.target.nodeName === "P") {
-                    var data = e.target.getAttribute("data").split(":");
+                    var data = JSON.parse(e.target.getAttribute("data"));
 
-                    if (data[0] === "name") {
-                        _this.formElements.name.value = data[1];
-                    } else if (data[0] === "url") {
+                    if (data.by === AutocompleteBy.byName) {
+                        _this.formElements.name.value = data.name;
+                    } else if (data.by === AutocompleteBy.byUrl) {
                         _this.formElements.homepage.value = e.target.innerHTML;
                     }
 
                     clean();
-                    autoFillForm(data[1]);
+                    autoFillForm(data);
                 }
             };
 
@@ -343,19 +348,18 @@ define("modules/codeScoop", [], function () {
                     return;
                 }
 
-                _this._autocomplete_repo("name", _this.formElements.name.value, 5, function (repoList) {
+                _this._autocomplete_repo(AutocompleteBy.byName, _this.formElements.name.value, 5, function (repoList) {
                     clean();
                     if (repoList.length > 0) {
                         for (var i = 0; i < repoList.length; i++) {
-                            var repoID = repoList[i]["owner"] + "/" + repoList[i]["name"];
+                            var repo = repoList[i];
                             var div = document.createElement("div");
                             var p = document.createElement("p");
-                            p.innerHTML = repoID;
-                            p.setAttribute("data", "name:" + repoID);
-
+                            p.innerHTML = repo.owner + "/" + repo.name;
+                            repo.by = AutocompleteBy.byName;
+                            p.setAttribute("data", JSON.stringify(repo));
                             div.style.cursor = "pointer";
                             div.style.marginTop = codeScoopCss.sizeXXS;
-
                             div.appendChild(p);
                             _this.formElements.componentList.appendChild(div);
                         }
@@ -373,15 +377,16 @@ define("modules/codeScoop", [], function () {
                     return;
                 }
 
-                _this._autocomplete_repo("url", _this.formElements.homepage.value, 5, function (repoList) {
+                _this._autocomplete_repo(AutocompleteBy.byUrl, _this.formElements.homepage.value, 5, function (repoList) {
                     clean();
                     if (repoList.length > 0) {
                         for (var i = 0; i < repoList.length; i++) {
-                            var repoID = repoList[i]["owner"] + "/" + repoList[i]["name"];
+                            var repo = repoList[i];
                             var div = document.createElement("div");
                             var p = document.createElement("p");
-                            p.innerHTML = repoList[i].url;
-                            p.setAttribute("data", "url:" + repoID);
+                            p.innerHTML = repo.origin.url;
+                            repo.by = AutocompleteBy.byUrl;
+                            p.setAttribute("data", JSON.stringify(repo));
 
                             div.style.cursor = "pointer";
                             div.style.marginTop = codeScoopCss.sizeXXS;
@@ -452,70 +457,78 @@ define("modules/codeScoop", [], function () {
         this._check_component_diff = function (sw360Component, externalComponent) {
             var result = {};
 
-            if (sw360Component.description !== externalComponent.title.replace(/</g,"&lt;").replace(/>/g,"&gt;")) {
-                result["description"] = externalComponent.title;
+            var origin = externalComponent.origin;
+            if (!origin) {
+                return result;
             }
 
-            if (externalComponent.homepageUrl === "") {
-                externalComponent.homepageUrl = externalComponent.url;
+            if (sw360Component.description !== origin.title.replace(/</g, "&lt;").replace(/>/g, "&gt;")) {
+                result["description"] = origin.title;
             }
 
-            if (sw360Component.homepage !== externalComponent.homepageUrl) {
-                result["homepage"] = externalComponent.homepageUrl;
+
+            if (origin["homepageUrl"] && (sw360Component.homepage !== origin["homepageUrl"])) {
+                result["homepage"] = origin["homepageUrl"];
+            } else if (!origin["homepageUrl"] && origin.url && (sw360Component.homepage !== origin.url)) {
+                result["homepage"] = origin.url;
             }
 
-            externalComponent.categories = _this._fetch_categories(externalComponent["hierarchicalCategories"]);
+            var categories = _this._fetch_categories(origin["categories"]);
 
-            if (!_this._match_string_array(sw360Component.categories, externalComponent.categories)) {
-                result["categories"] = externalComponent.categories;
+            if (!_this._match_string_array(sw360Component.categories, categories)) {
+                result["categories"] = categories;
             }
 
-            if (!_this._match_string_array(sw360Component.languages, externalComponent["langs"])) {
-                result["languages"] = externalComponent["langs"];
+            if (!_this._match_string_array(sw360Component.languages, origin["languages"])) {
+                result["languages"] = origin["languages"];
             }
 
-            if (sw360Component.licenses.indexOf(externalComponent["license"]) < 0) {
-                sw360Component.licenses.push(externalComponent["license"]);
+            if (sw360Component.licenses.indexOf(origin["license"]) < 0) {
+                sw360Component.licenses.push(origin["license"]);
                 result["licenses"] = sw360Component.licenses;
+            }
+
+            var purlPresent = false;
+            sw360Component.externalIds.forEach(function (id) {
+                if (id.value === externalComponent.purl) {
+                    purlPresent = true;
+                }
+            });
+            if (!purlPresent) {
+                result["purl"] = externalComponent.purl;
             }
             return result;
         };
 
-        this.activateAutoFill = function () {
+        this.activateAutoFill = function (componentUrl, autocompleteUrl) {
+            _this.api.componentUrl = componentUrl;
+            _this.api.autocompleteUrl = autocompleteUrl;
             _this._install_form_element();
             _this._install_autocomplete_box();
             _this._listen_autocomplete();
         };
 
-        this.activateIndexes = function (tableID, dataUrl) {
-            dataUrl = dataUrl + "&sEcho=1&iColumns=5&sColumns=%2C%2C%2C%2C&iDisplayStart=0" +
-                "&iDisplayLength=25&mDataProp_0=vndrs&bSortable_0=true&mDataProp_1=name" +
-                "&bSortable_1=true&mDataProp_2=lics&bSortable_2=true&mDataProp_3=cType" +
-                "&bSortable_3=true&mDataProp_4=id&bSortable_4=true&iSortCol_0=1" +
-                "&sSortDir_0=asc&iSortingCols=1&_=" + new Date().getTime();
+        var urlParams = "&sEcho=1&iColumns=5&sColumns=%2C%2C%2C%2C&iDisplayStart=0" +
+            "&iDisplayLength=25&mDataProp_0=vndrs&bSortable_0=true&mDataProp_1=name" +
+            "&bSortable_1=true&mDataProp_2=lics&bSortable_2=true&mDataProp_3=cType" +
+            "&bSortable_3=true&mDataProp_4=id&bSortable_4=true&iSortCol_0=1" +
+            "&sSortDir_0=asc&iSortingCols=1&_=";
+
+        this.activateIndexes = function (tableID, dataUrl, compositeUrl) {
+            _this.api.compositeUrl = compositeUrl + urlParams + new Date().getTime();
+            dataUrl = dataUrl + urlParams + new Date().getTime();
+
             var xhr = new XMLHttpRequest();
             xhr.open("GET", dataUrl, true);
-            xhr.setRequestHeader("Accept", "application/json, text/javascript, */*; q=0.01");
+            xhr.setRequestHeader("Accept", "application/json");
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === 4 && xhr.status === 200) {
-                    var response = JSON.parse(this.responseText);
-
-                    var requestData = [];
-
-                    for (var i = 0; i < response.aaData.length; i++) {
-                        var swComponent = response.aaData[i];
-                        var vendor = swComponent["vndrs"].length === 0 ? null : swComponent["vndrs"][0];
-                        requestData.push({
-                            id: swComponent.DT_RowId,
-                            vendor: vendor,
-                            name: swComponent.name
-                        });
-                    }
-
-                    _this._fetch_composite(requestData, function (responseData) {
+                    var sw360ComponentsResponse = JSON.parse(this.responseText);
+                    var componentSearchData = _this._composite_data_from_sw360_components(sw360ComponentsResponse.aaData);
+                    _this._fetch_composite(_this.api.compositeUrl, componentSearchData, function (responseData) {
                         for (var i = 0; i < responseData.length; i++) {
                             var data = responseData[i];
-                            _this.indexData[data.id] = data;
+                            _this.indexData[data.uuid] = data;
                         }
                     });
                 }
@@ -523,23 +536,56 @@ define("modules/codeScoop", [], function () {
             xhr.send(null);
         };
 
-        this.getData = function (id, field, secondField) {
-            var elementData = _this.indexData[id];
-            if (elementData && field === "logo") {
-                return '<img src="' + elementData["logo"] + '" style="display:block;width:30px;height:30px;border-radius:3px"/>';
+        this._composite_data_from_sw360_components = function (sw360Components) {
+            var componentSearchData = [];
+            for (var i = 0; i < sw360Components.length; i++) {
+                var swComponent = sw360Components[i];
+                var ownerQuery = swComponent["vndrs"].length === 0 ? "" : swComponent["vndrs"][0];
+                var searchQuery = swComponent.name;
+                if (searchQuery.indexOf("/") > 0) {
+                    var searchQueryData = searchQuery.split("/");
+                    searchQuery = searchQueryData[1];
+                    if (!ownerQuery) {
+                        ownerQuery = searchQueryData[0];
+                    }
+                }
+                componentSearchData.push({
+                    uuid: swComponent.DT_RowId,
+                    ownerQuery: ownerQuery,
+                    searchQuery: searchQuery
+                });
             }
-            if (elementData && field === "compositeIndex") {
-                elementData = elementData[field];
+            return componentSearchData;
+        };
+
+        this._get_composite_data_item = function (id, field, secondField) {
+            var elementData = _this.indexData[id];
+
+            if (!elementData) {
+                return "";
+            }
+
+            var origin = elementData["origin"];
+
+            if (origin && field === "rate") {
+                elementData = origin[field];
+                return elementData ? elementData : "";
+            }
+            if (origin && field === "logo") {
+                return '<img src="' + origin["logo"] + '" style="display:block;width:30px;height:30px;border-radius:3px"/>';
+            }
+            if (origin && field === "index") {
+                elementData = origin["index"];
                 if (elementData) {
                     elementData = elementData[secondField];
                     return elementData ? elementData : "";
                 }
-                return "";
             }
-            return elementData ? elementData[field] : "";
+
+            return "";
         };
 
-        this.updateIndexes = function () {
+        this._update_indexes = function () {
             if (_this.indexDone) {
                 return;
             }
@@ -564,7 +610,48 @@ define("modules/codeScoop", [], function () {
             _this.timeout = setTimeout(updateAction, _this.interval);
         };
 
-        this.activateReleaseAutocomplete = function () {
+        _this.create_table = function () {
+            var table = document.createElement("div");
+            table.style.display = "flex";
+            table.style.flexDirection = "column";
+            table.style.width = "90%";
+            table.style.paddingRight = "5%";
+            table.style.height = codeScoopCss.dynamicSizeXS;
+            table.style.overflowY = "scroll";
+
+            return table;
+        };
+
+        this.activateReleaseAutocomplete = function (componentUrl,
+                                                     releaseUrl,
+                                                     purlUrl) {
+            _this.api.componentUrl = componentUrl;
+            _this.api.releaseUrl = releaseUrl;
+            _this.api.purlUrl = purlUrl;
+
+            var callTo = _this.api.releaseUrl;
+
+            var vendor = document.getElementById("VENDOR_IDDisplay").value;
+            var name = document.querySelectorAll("[name='_components_WAR_sw360portlet_NAME']")[0].value;
+
+            var query = {
+                uuid: "",
+                searchQuery: name,
+                ownerQuery: vendor,
+                limit: 5,
+                filter: {
+                    minScore: 100
+                }
+            };
+
+            if (sw360Purl && sw360Purl !== "") {
+                callTo = _this.api.purlUrl;
+                query = [sw360Purl];
+            } else {
+                console.log("kick off matching releases without purl");
+                return;
+            }
+
             var releaseButton = document.createElement("button");
             releaseButton.innerHTML = "Populate release";
             releaseButton.setAttribute("class", "addButton");
@@ -578,10 +665,11 @@ define("modules/codeScoop", [], function () {
             var selectRepoFromList = function (e) {
                 if (e.target.nodeName === "BUTTON") {
                     _this.modal.setLoader();
-                    var id = e.target.getAttribute("data");
-                    _this._fetch_releases_by_repo_id(id, function (dto) {
+                    var component = JSON.parse(e.target.getAttribute("data"));
+
+                    _this._fetch_releases_by_component_id(_this.api.releaseUrl, {searchQuery: component.id}, function (releasesList) {
                         var languageInput = document.getElementById("programminglanguages");
-                        var languages = dto["repo"]["langs"];
+                        var languages = component.origin.languages;
                         for (var k = 0; k < languages.length; k++) {
                             if (k !== 0) {
                                 languageInput.value = languageInput.value + ", ";
@@ -589,79 +677,59 @@ define("modules/codeScoop", [], function () {
                             languageInput.value = languageInput.value + languages[k];
                         }
 
-                        var table = document.createElement("div");
-                        table.style.width = "80%";
-                        table.style.height = codeScoopCss.dynamicSizeXS;
-                        table.style.overflowY = "scroll";
+                        var table = _this.create_table();
 
-                        var componentReleasesKey = Object.keys(dto.releases);
+                        for (var i = 0; i < releasesList.length; i++) {
+                            var release = releasesList[i];
 
-                        for (var iKey = 0; iKey < componentReleasesKey.length; iKey++) {
-                            var name = componentReleasesKey[iKey];
-                            if (dto.releases[name][0]["releaseSource"] === "RELEASE_GITHUB") {
-                                var ownerName = name.split("/");
-                                if (componentReleasesKey.indexOf(ownerName[1]) > -1) {
-                                    componentReleasesKey.splice(iKey, 1);
-                                    componentReleasesKey.splice(componentReleasesKey.indexOf(ownerName[1]));
-                                    componentReleasesKey.unshift(ownerName[1]);
-                                } else {
-                                    componentReleasesKey.splice(iKey, 1);
-                                    componentReleasesKey.unshift(name);
-                                }
-                                break;
-                            }
-                        }
-
-                        for (var i = 0; i < componentReleasesKey.length; i++) {
                             var row = document.createElement("div");
                             row.style.margin = codeScoopCss.sizeXS + " 0";
                             row.style.borderBottom = codeScoopCss.border + codeScoopCss.colorGray;
-                            row.innerHTML = "<strong>" + componentReleasesKey[i] + "</strong>";
+                            row.innerHTML = "<strong>" + release.version + "</strong>";
                             table.appendChild(row);
 
-                            var releases = dto.releases[componentReleasesKey[i]];
+                            var arrow = document.createElement("div");
+                            arrow.style.display = "flex";
+                            arrow.style.flexDirection = "row";
+                            arrow.style.justifyContent = "space-between";
+                            arrow.style.margin = codeScoopCss.sizeXS + " 0";
+                            arrow.style.minHeight = codeScoopCss.sizeL;
 
-                            for (var j = 0; j < releases.length; j++) {
-                                var rel = releases[j];
+                            var date = release.dateUTC;
+                            var dateArray = date.split("/");
+                            date = dateArray[2] + "-" + dateArray[1] + "-" + dateArray[0];
+                            var div = document.createElement("div");
+                            div.innerHTML = "Version: " + release.version + ", Date: " + date;
+                            arrow.appendChild(div);
 
-                                var arrow = document.createElement("div");
-                                arrow.style.display = "flex";
-                                arrow.style.flexDirection = "row";
-                                arrow.style.justifyContent = "space-between";
-                                arrow.style.margin = codeScoopCss.sizeXS + " 0";
-                                arrow.style.minHeight = codeScoopCss.sizeL;
-
-                                var date = rel["dateUTC"];
-                                var dateArray = date.split("/");
-                                date = dateArray[2] + "-" + dateArray[1] + "-" + dateArray[0];
-                                var div = document.createElement("div");
-                                div.innerHTML = "Version: " + rel.version + ", Date: " + date;
-                                arrow.appendChild(div);
-
-                                var selectButton = document.createElement("button");
-                                selectButton.innerHTML = "select";
-                                selectButton.style.cursor = "pointer";
-                                selectButton.setAttribute("class", "addButton");
-                                var license = rel["license"];
-                                if (!license) {
-                                    license = "MIT"
-                                }
-                                selectButton.setAttribute("data", rel.version + "*" + date + "*" + rel["downloadUrl"] + "*" + license);
-                                arrow.appendChild(selectButton);
-
-                                table.appendChild(arrow);
+                            var selectButton = document.createElement("button");
+                            selectButton.innerHTML = "select";
+                            selectButton.style.cursor = "pointer";
+                            selectButton.setAttribute("class", "addButton");
+                            var license = release.license;
+                            if (!license) {
+                                license = component.origin.license;
                             }
+                            selectButton.setAttribute("data", JSON.stringify({
+                                version: release.version,
+                                date: date,
+                                downloadUrl: release.downloadUrl,
+                                license: license
+                            }));
+                            arrow.appendChild(selectButton);
+
+                            table.appendChild(arrow);
                         }
                         _this.modal.refresh(table, "Please select release");
                         table.addEventListener("click", function (e) {
                             if (e.target["nodeName"] === "BUTTON") {
                                 _this.modal.close();
-                                var data = e.target.getAttribute("data").split("*");
-                                document.getElementById("comp_version").value = data[0];
-                                document.getElementById("releaseDate").value = data[1];
-                                document.getElementById("downloadUrl").value = data[2];
-                                document.getElementById("MAIN_LICENSE_IDSDisplay").value = data[3];
-                                document.getElementById("MAIN_LICENSE_IDS").value = data[3];
+                                var data = JSON.parse(e.target.getAttribute("data"));
+                                document.getElementById("comp_version").value = data.version;
+                                document.getElementById("releaseDate").value = data.date;
+                                document.getElementById("downloadUrl").value = data.downloadUrl;
+                                document.getElementById("MAIN_LICENSE_IDSDisplay").value = data.license;
+                                document.getElementById("MAIN_LICENSE_IDS").value = data.license;
                             }
                         });
                     });
@@ -671,37 +739,12 @@ define("modules/codeScoop", [], function () {
             releaseButton.onclick = function () {
                 if (!_this.modal.isOpened()) {
                     _this.modal.open();
-                    var vendor = document.getElementById("VENDOR_IDDisplay").value;
-                    var name = document.querySelectorAll("[name='_components_WAR_sw360portlet_NAME']")[0].value;
-                    if (name.indexOf("/") > 0) {
-                        var vendorName = name.split("/");
-                        vendor = vendorName[0];
-                        name = vendorName[1];
-                    }
+                    _this._match_component(callTo, query, function (componentList) {
+                        if (componentList.length > 0) {
+                            var table = _this.create_table();
 
-                    _this._autocomplete_repo("name", name, 100, function (repoList) {
-                        var filteredRepoList = [];
-                        if (vendor && vendor.length > 0) {
-                            vendor = vendor.toLowerCase();
-                            for (var iRepo = 0; iRepo < repoList.length; iRepo++) {
-                                if (repoList[iRepo]["owner"].toLowerCase().indexOf(vendor) === 0) {
-                                    filteredRepoList.push(repoList[iRepo]);
-                                }
-                            }
-                        } else {
-                            filteredRepoList = repoList;
-                        }
-
-                        if (filteredRepoList.length > 0) {
-                            var table = document.createElement("div");
-                            table.style.display = "flex";
-                            table.style.flexDirection = "column";
-                            table.style.width = "80%";
-                            table.style.height = codeScoopCss.dynamicSizeXS;
-                            table.style.overflowY = "scroll";
-
-                            for (var i = 0; i < filteredRepoList.length; i++) {
-                                var repo = filteredRepoList[i];
+                            for (var i = 0; i < componentList.length; i++) {
+                                var component = componentList[i];
 
                                 var row = document.createElement("div");
                                 row.style.display = "flex";
@@ -713,7 +756,7 @@ define("modules/codeScoop", [], function () {
 
                                 var div = document.createElement("div");
                                 var p = document.createElement("p");
-                                p.innerHTML = "Vendor: " + repo["owner"] + ", Name: " + repo["name"];
+                                p.innerHTML = (component.origin ? component.origin.owner : "? ") + "/" + component.name + " " + component.purl;
                                 div.appendChild(p);
                                 row.appendChild(div);
 
@@ -721,7 +764,7 @@ define("modules/codeScoop", [], function () {
                                 selectButton.innerHTML = "select";
                                 selectButton.style.cursor = "pointer";
                                 selectButton.setAttribute("class", "addButton");
-                                selectButton.setAttribute("data", repo.id);
+                                selectButton.setAttribute("data", JSON.stringify(component));
                                 row.appendChild(selectButton);
 
                                 table.appendChild(row);
@@ -742,7 +785,14 @@ define("modules/codeScoop", [], function () {
         this.activateMissedReleases = function (releaseData,
                                                 componentInfoTableId,
                                                 releaseAggregateTableId,
-                                                addReleaseUrl) {
+                                                addReleaseUrl,
+                                                componentUrl,
+                                                releasesUrl,
+                                                purlUrl) {
+            _this.api.componentUrl = componentUrl;
+            _this.api.releasesUrl = releasesUrl;
+            _this.api.purlUrl = purlUrl;
+
             var existReleases = {};
             if (releaseData.length > 0) {
                 for (var i = 0; i < releaseData.length; i++) {
@@ -755,95 +805,179 @@ define("modules/codeScoop", [], function () {
                 }
             }
 
-            var componentName = document
-                .getElementById(componentInfoTableId)
-                .getElementsByTagName("tbody")[0]
-                .getElementsByTagName("tr")[0]
-                .getElementsByTagName("td")[1]
-                .innerHTML;
-            var componentVendor = document
-                .getElementById(releaseAggregateTableId)
-                .getElementsByTagName("tbody")[0]
-                .getElementsByTagName("tr")[0]
-                .getElementsByTagName("td")[1]
-                .innerHTML.split(",")[0];
+            var sw360Component = _this._read_sw360_component_from_page();
 
-            var request = {
-                "vardor": componentVendor,
-                "name": componentName
+            var callTo = _this.api.componentUrl;
+            var query = {
+                uuid: "",
+                searchQuery: sw360Component.name,
+                ownerQuery: sw360Component.vendor,
+                limit: 1,
+                filter: {
+                    languages: sw360Component.languages,
+                    licenses: sw360Component.licenses
+                }
             };
 
-            _this._fetch_releases_by_repo_owner_name(request, function (dto) {
-                var absentReleases = [];
-                var componentReleasesKey = Object.keys(dto["releases"]);
-
-                for (var i = 0; i < componentReleasesKey.length; i++) {
-                    var name = componentReleasesKey[i];
-                    var releasesByType = dto["releases"][name];
-                    for (var j = 0; j < releasesByType.length; j++) {
-                        var release = releasesByType[j];
-                        if (existReleases[release.version] === undefined) {
-                            absentReleases.push(release);
-                        }
-                    }
+            var purlPresent = "";
+            sw360Component.externalIds.forEach(function (id) {
+                if (id.value.startsWith("pkg://")) {
+                    purlPresent = id.value;
                 }
+            });
+            if (purlPresent !== "") {
+                callTo = _this.api.purlUrl;
+                query = [purlPresent];
+            } else {
+                console.log("kick off matching releases without purl");
+                return;
+            }
 
-                if (absentReleases.length > 0) {
-                    _this._init_missed_release_button(absentReleases.length, addReleaseUrl);
+            _this._match_component(callTo, query, function (componentList) {
+                if (componentList.length > 0) {
+                    _this._fetch_releases_by_component_id(_this.api.releasesUrl, {searchQuery: componentList[0].id}, function (externalReleases) {
+                        var absentReleases = [];
+
+                        for (var i = 0; i < externalReleases.length; i++) {
+                            var version = externalReleases[i].version;
+                            if (existReleases[version] === undefined) {
+                                absentReleases.push(version);
+                            }
+                        }
+
+                        if (absentReleases.length > 0) {
+                            _this._init_missed_release_button(absentReleases.length, addReleaseUrl);
+                        }
+                    })
                 }
             });
         };
 
-        this.activateMerge = function () {
-            var readComponent = function () {
-                var sw360Component = {
-                    description: "",
-                    homepage: "",
-                    categories: [],
-                    languages: [],
-                    licenses: []
-                };
+        this._read_sw360_component_from_page = function () {
+            var sw360Component = {
+                description: "",
+                homepage: "",
+                categories: [],
+                languages: [],
+                licenses: [],
+                vendor: "",
+                name: "",
+                externalIds: []
+            };
 
+            try {
+                var vendor = document
+                    .getElementById("releaseAggregateTable")
+                    .getElementsByTagName("tbody")[0]
+                    .getElementsByTagName("tr")[0]
+                    .getElementsByTagName("td")[1].innerHTML;
+                if (vendor.indexOf(",") > 0) {
+                    vendor = vendor.split(",")[0];
+                }
+
+                var name = document
+                    .getElementById("componentOverview")
+                    .getElementsByTagName("tbody")[0]
+                    .getElementsByTagName("tr")[0]
+                    .getElementsByTagName("td")[1].innerHTML;
+                if (name.indexOf("/") > 0) {
+                    var data = name.split("/");
+                    name = data[1];
+                    if (!vendor) {
+                        vendor = data[0];
+                    }
+                }
+                sw360Component.name = name ? name : "";
+                sw360Component.vendor = vendor ? vendor : "";
+            } catch (e) {
+                console.debug("name/vendor not readable");
+            }
+
+            try {
                 sw360Component.description = document
                     .getElementById("up_Summary")
                     .getElementsByTagName("p")[0]
                     .innerHTML;
+            } catch (e) {
+                console.debug("description not readable");
+            }
 
-                var tableData = document
-                    .getElementById("componentOverview")
-                    .getElementsByTagName("tbody")[0]
-                    .getElementsByTagName("tr");
+            var tableData = document
+                .getElementById("componentOverview")
+                .getElementsByTagName("tbody")[0]
+                .getElementsByTagName("tr");
 
+            try {
                 sw360Component.homepage = tableData[5]
                     .getElementsByTagName("td")[1]
                     .getElementsByTagName("a")[0]
                     .innerHTML;
+            } catch (e) {
+                console.debug("homepage not readable");
+            }
+
+            try {
                 sw360Component.categories = _this._clean_string_array(
                     tableData[3]
                         .getElementsByTagName("td")[1]
                         .innerHTML
                         .split(","));
+            } catch (e) {
+                console.debug("categories not readable");
+            }
 
-                tableData = document
-                    .getElementById("releaseAggregateTable")
-                    .getElementsByTagName("tbody")[0]
-                    .getElementsByTagName("tr");
+            tableData = document
+                .getElementById("releaseAggregateTable")
+                .getElementsByTagName("tbody")[0]
+                .getElementsByTagName("tr");
 
+            try {
                 sw360Component.languages = _this._clean_string_array(
                     tableData[1]
                         .getElementsByTagName("td")[1]
                         .innerHTML
                         .split(","));
+            } catch (e) {
+                console.debug("languages not readable");
+            }
 
+            try {
                 var licenses = tableData[4]
                     .getElementsByTagName("td")[1]
                     .getElementsByTagName("a");
                 for (var i = 0; i < licenses.length; i++) {
                     sw360Component.licenses.push(licenses[i].innerHTML);
                 }
+            } catch (e) {
+                console.debug("licenses not readable");
+            }
 
-                return sw360Component;
-            };
+            try {
+                var spans = document.querySelectorAll('.mapDisplayRootItem span');
+                spans = Array.from(spans);
+                var p = 0;
+                do {
+                    var spanName = spans[p];
+                    var spanValue = spans[p + 1];
+                    var external = {
+                        name: spanName.innerHTML.trim(),
+                        value: spanValue.innerHTML.trim()
+                    };
+                    sw360Component.externalIds.push(external);
+                    p = p + 2;
+                } while (p < spans.length);
+            } catch (e) {
+                console.debug("purl not available");
+            }
+
+            return sw360Component;
+        };
+
+        this.activateMerge = function (componentUrl) {
+            _this.api.componentUrl = componentUrl + urlParams + new Date().getTime();
+
+            var sw360ComponentFromPage = _this._read_sw360_component_from_page();
+            var externalIds = sw360ComponentFromPage.externalIds;
 
             var updateComponentDiff = function (e) {
                 var diff = JSON.parse(e.target.getAttribute("data"));
@@ -851,26 +985,43 @@ define("modules/codeScoop", [], function () {
                 _this.modal.setLoader();
                 var keys = Object.keys(diff);
                 for (var i = 0; i < keys.length; i++) {
-                    var input = document.createElement("input");
-                    input.name = edit_form_fields[keys[i]];
-                    input.value = diff[keys[i]];
-                    form.appendChild(input);
+                    if (keys[i] === "purl") {
+                        externalIds.push({
+                            name:"purl.id",
+                            value: diff["purl"]
+                        });
+                    } else {
+                        var input = document.createElement("input");
+                        input.name = edit_form_fields[keys[i]];
+                        input.value = diff[keys[i]];
+                        form.appendChild(input);
+                    }
                 }
+
+                if (externalIds.length > 0) {
+                    externalIds.forEach(function (id) {
+                        var timestamp =  Date.now() + (Math.floor(Math.random() * Math.floor(1000)));
+
+                        var input = document.createElement("input");
+                        input.name = edit_form_fields.externalIdKey + timestamp;
+                        input.value = id.name;
+                        form.appendChild(input);
+
+                        var input2 = document.createElement("input");
+                        input2.name = edit_form_fields.externalIdValue + timestamp;
+                        input2.value = id.value;
+                        form.appendChild(input2);
+                    });
+                }
+
                 form.submit();
             };
 
-            var showDiffForMerge = function (externalRepo) {
-                var sw360Component = readComponent();
-
-                var diff = _this._check_component_diff(sw360Component, externalRepo);
+            var showDiffForMerge = function (externalComponent) {
+                var diff = _this._check_component_diff(sw360ComponentFromPage, externalComponent);
                 var keys = Object.keys(diff);
                 if (keys.length > 0) {
-                    var table = document.createElement("div");
-                    table.style.display = "flex";
-                    table.style.flexDirection = "column";
-                    table.style.width = "80%";
-                    table.style.height = codeScoopCss.dynamicSizeXS;
-                    table.style.overflowY = "scroll";
+                    var table = _this.create_table();
 
                     for (var i = 0; i < keys.length; i++) {
                         var row = document.createElement("div");
@@ -917,10 +1068,8 @@ define("modules/codeScoop", [], function () {
             var selectRepoFromList = function (e) {
                 if (e.target.nodeName === "BUTTON") {
                     _this.modal.setLoader();
-                    var id = e.target.getAttribute("data");
-                    _this._fetch_releases_by_repo_id(id, function (dto) {
-                        showDiffForMerge(dto["repo"]);
-                    });
+                    var data = e.target.getAttribute("data");
+                    showDiffForMerge(JSON.parse(data));
                 }
             };
 
@@ -939,49 +1088,37 @@ define("modules/codeScoop", [], function () {
                 if (!_this.modal.isOpened()) {
                     _this.modal.open();
 
-                    var name = document
-                        .getElementById("componentOverview")
-                        .getElementsByTagName("tbody")[0]
-                        .getElementsByTagName("tr")[0]
-                        .getElementsByTagName("td")[1].innerHTML;
-
-                    var vendor = document
-                        .getElementById("releaseAggregateTable")
-                        .getElementsByTagName("tbody")[0]
-                        .getElementsByTagName("tr")[0]
-                        .getElementsByTagName("td")[1].innerHTML;
-
-                    if (name.indexOf("/") > 0) {
-                        var vendorName = name.split("/");
-                        vendor = vendorName[0];
-                        name = vendorName[1];
-                    } else if (vendor.indexOf(",") > 0) {
-                        vendor = vendor.split(",")[0];
+                    var limit = 3;
+                    if (!sw360ComponentFromPage.vendor) {
+                        limit += 2;
+                    }
+                    if (!sw360ComponentFromPage.name) {
+                        limit += 2;
+                    }
+                    if (!sw360ComponentFromPage.languages || sw360ComponentFromPage.languages.length === 0) {
+                        limit += 2;
+                    }
+                    if (!sw360ComponentFromPage.licenses || sw360ComponentFromPage.licenses.length === 0) {
+                        limit += 2;
                     }
 
-                    _this._autocomplete_repo("name", name, 100, function (repoList) {
-                        var filteredRepoList = [];
-                        if (vendor && vendor.length > 0) {
-                            vendor = vendor.toLowerCase();
-                            for (var iRepo = 0; iRepo < repoList.length; iRepo++) {
-                                if (repoList[iRepo]["owner"].toLowerCase().indexOf(vendor) === 0) {
-                                    filteredRepoList.push(repoList[iRepo]);
-                                }
-                            }
-                        } else {
-                            filteredRepoList = repoList;
+                    var query = {
+                        uuid: "",
+                        searchQuery: sw360ComponentFromPage.name,
+                        ownerQuery: sw360ComponentFromPage.vendor,
+                        limit: limit,
+                        filter: {
+                            languages: sw360ComponentFromPage.languages,
+                            licenses: sw360ComponentFromPage.licenses
                         }
+                    };
 
-                        if (filteredRepoList.length > 0) {
-                            var table = document.createElement("div");
-                            table.style.display = "flex";
-                            table.style.flexDirection = "column";
-                            table.style.width = "80%";
-                            table.style.height = codeScoopCss.dynamicSizeXS;
-                            table.style.overflowY = "scroll";
+                    _this._match_component(_this.api.componentUrl, query, function (componentList) {
+                        if (componentList.length > 0) {
+                            var table = _this.create_table();
 
-                            for (var i = 0; i < filteredRepoList.length; i++) {
-                                var repo = filteredRepoList[i];
+                            for (var i = 0; i < componentList.length; i++) {
+                                var component = componentList[i];
 
                                 var row = document.createElement("div");
                                 row.style.display = "flex";
@@ -993,7 +1130,7 @@ define("modules/codeScoop", [], function () {
 
                                 var div = document.createElement("div");
                                 var p = document.createElement("p");
-                                p.innerHTML = "Vendor: " + repo["owner"] + ", Name: " + repo["name"];
+                                p.innerHTML = component["owner"] + "/" + component["name"] + " " + component["purl"];
                                 div.appendChild(p);
                                 row.appendChild(div);
 
@@ -1001,7 +1138,7 @@ define("modules/codeScoop", [], function () {
                                 selectButton.innerHTML = "select";
                                 selectButton.style.cursor = "pointer";
                                 selectButton.setAttribute("class", "addButton");
-                                selectButton.setAttribute("data", repo.id);
+                                selectButton.setAttribute("data", JSON.stringify(component));
                                 row.appendChild(selectButton);
 
                                 table.appendChild(row);

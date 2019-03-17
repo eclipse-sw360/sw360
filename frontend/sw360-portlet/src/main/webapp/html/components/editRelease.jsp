@@ -168,6 +168,9 @@
 <%@include file="/html/components/includes/vendors/searchVendor.jspf" %>
 
 <script>
+    var sw360Purl = "${componentpurl}";
+</script>
+<script>
     require(['jquery', 'modules/sw360Validate', 'components/includes/vendors/searchVendor', 'modules/confirm', 'modules/autocomplete', 'modules/tabview', /* jquery-plugins */ 'jquery-ui' ], function($, sw360Validate, vendorsearch, confirm, autocomplete, tabview) {
         document.title = "${component.name} - " + document.title;
 
