@@ -65,6 +65,17 @@ div.dt-buttons {
 	text-align: right;
 	
 }
+
+.dataTable input[type="radio"] {
+    margin-top: -2px;
+}
+
+.dataTable tr.selected td,
+.dataTable tr.selected td.sorting_1 {
+    background-color: rgb(178, 224, 224);
+    color: black;
+}
+
 #example_paginate{
 	display:inline;
 }

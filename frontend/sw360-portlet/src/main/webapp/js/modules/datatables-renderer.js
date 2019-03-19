@@ -24,6 +24,47 @@ define('modules/datatables-renderer', ['jquery', /* jquery-plugins */ 'datatable
         }).text(text);
     }
 
+    function createStateBoxes(projectState, clearingState) {
+        var projectStateMap = {
+            '': "",
+             0: "Active",
+             1: "Phase Out",
+             2: "Unknown"
+        };
+        var projectStateCssMap = {
+            '': "projectStateInactive",
+             0: "projectStateActive",
+             1: "projectStateInactive",
+             2: "projectStateInactive"
+        };
+        var clearingStateMap = {
+            '': "",
+             0: "Open",
+             1: "In Progress",
+             2: "Closed"
+        };
+        var clearingStateCssMap = {
+            '': "clearingStateUnknown",
+             0: "clearingStateOpen",
+             1: "clearingStateInProgress",
+             2: "clearingStateClosed"
+        };
+
+        projectState = typeof projectState != 'undefined' ? projectState : '';
+        var $projectStateBox = $('<div>', {
+            title: projectStateMap[projectState] || '',
+            "class": "stateBox capsuleLeft " + projectStateCssMap[projectState]
+        }).text(" PS ");
+
+        clearingState = typeof clearingState != 'undefined' ? clearingState : '';
+        var $clearingStateBox = $('<div>', {
+            title: clearingStateMap[clearingState] || '',
+            "class": "stateBox capsuleRight " + clearingStateCssMap[clearingState]
+        }).text(" CS ");
+
+        return $projectStateBox[0].outerHTML +  $clearingStateBox[0].outerHTML;
+    }
+
     function createSelectInput(selectDataKey, selectData, name, clazz, optionClazz, currentKey) {
         var $select = $('<select>', { name: name, "class": clazz, title: selectData[currentKey] });
 
@@ -42,7 +83,40 @@ define('modules/datatables-renderer', ['jquery', /* jquery-plugins */ 'datatable
         return $text;
     }
 
+    function createRadioInput(name, clazz, value, selected) {
+        var $radio = $('<input>', { type: 'radio', name: name, "class": clazz, title: value, value: value });
+
+        if(selected) {
+            $radio.attr('checked', 'checked');
+        }
+
+        return $radio;
+    }
+
     // renderer definitions
+
+    /**
+     * Renders the data in span and additionally adds a class and a data attribute with the given name. This way
+     * the data becomes available via attribute as well.
+     *
+     * Example usage in column definition: <code>..., renderer: $.fn.dataTable.render.data('name', 'name-column'), ...</code>
+     *
+     * @param name name for the data attribute
+     * @param clazz additional class to add
+     */
+    $.fn.dataTable.render.data = function(name, clazz) {
+        return function(data, type, row, meta) {
+            if(type === 'display') {
+                return $('<span>', {
+                    "class": clazz
+                }).attr('data-' + name, data).text(data)[0].outerHTML;
+            } else if(type === 'type') {
+                return 'string';
+            } else {
+                return data;
+            }
+        };
+    };
 
     /**
      * Renders the text with an ellipsis if space is unsufficient. The whole value will always be in the title.
@@ -136,6 +210,35 @@ define('modules/datatables-renderer', ['jquery', /* jquery-plugins */ 'datatable
 
             if(type === 'display') {
                 input = createTextInput(name, clazz, placeholder, value);
+                if(typeof hook === 'function') {
+                    hook.call(input, value, type, row, meta);
+                }
+                return input[0].outerHTML;
+            } else if(type === 'type') {
+                return 'string';
+            } else {
+                return value;
+            }
+        }
+    };
+
+    /**
+     * Renders an input radio field with the given parameters. This function returns the appropriate render function on call.
+     *
+     * @param {String} name name for the input field
+     * @param {String} clazz class or classes to be added to the select fields. Multiple classes must be space separated
+     * @param {Function} hook the hook is called on creation with this set to the input field and the default render parameters of datatables (value, type, row, meta)
+     *
+     * @return {Function} render function for DataTable
+     *
+     * Example usage in column definition: <code>..., renderer: $.fn.dataTable.render.inputRadio("gender", "", "female", true), ...</code>
+     */
+    $.fn.dataTable.render.inputRadio = function(name, clazz, selected, hook) {
+        return function(value, type, row, meta) {
+            var input;
+
+            if(type === 'display') {
+                input = createRadioInput(name, clazz, value, selected);
                 if(typeof hook === 'function') {
                     hook.call(input, value, type, row, meta);
                 }
@@ -272,6 +375,21 @@ define('modules/datatables-renderer', ['jquery', /* jquery-plugins */ 'datatable
             }
         };
     };
+
+    /**
+     * Renders the clearing state boxes. It expects the data to be a two-dimensional array with the clearing state.
+     *
+     * Example usage in column definition: <code>..., renderer: $.fn.dataTable.render.stateBoxes, data: function(row) { return [ row.state, row.clearingState]; }, ...</code>
+     */
+    $.fn.dataTable.render.stateBoxes = function(data, type, row, meta) {
+        if(type === 'display') {
+            return createStateBoxes(data[0], data[1]);
+        } else if(type == 'type') {
+            return 'num';
+        } else {
+            return data[0];
+        }
+    }
 
     // return empty object since all renderers are put into $.fn.dataTable.render.ellipsis which is a convenient location for such renderer
     return {};

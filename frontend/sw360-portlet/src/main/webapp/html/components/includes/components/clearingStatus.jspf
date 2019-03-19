@@ -33,6 +33,7 @@
 </core_rt:if>
 
 <%@include file="/html/utils/includes/fossologyClearing.jspf"%>
+<%@include file="/html/components/includes/releases/linkProject.jspf"%>
 
 <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/datatables.net-buttons-bs/css/buttons.bootstrap.min.css"/>
 <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/themes/base/jquery-ui.min.css">
@@ -54,8 +55,9 @@
         "5": "<span id='fossologySending${release.id}'></span>"
         + "<span id='releaseAction${release.id}'>"
         + "<img class='action send-to-fossology' src='<%=request.getContextPath()%>/images/fossology-logo-24.gif' data-release-id='${release.id}' alt='SelectClearing' title='send to Fossology'>"
-        + "<sw360:DisplayReleaseLink release="${release}" showName="false" page="<%=PortletReleasePage.EDIT%>"><img src='<%=request.getContextPath()%>/images/edit.png' alt='Edit' title='Edit'></sw360:DisplayReleaseLink>"
-        + "<sw360:DisplayReleaseLink release="${release}" showName="false" page="<%=PortletReleasePage.DUPLICATE%>"><img src='<%=request.getContextPath()%>/images/ic_clone.png' alt='Duplicate' title='Duplicate'></sw360:DisplayReleaseLink>"
+        + "<sw360:DisplayReleaseLink release="${release}" showName="false" page="<%=PortletReleasePage.EDIT%>"><img src='<%=request.getContextPath()%>/images/edit.png' class='action' alt='Edit' title='Edit'></sw360:DisplayReleaseLink>"
+        + "<sw360:DisplayReleaseLink release="${release}" showName="false" page="<%=PortletReleasePage.DUPLICATE%>"><img src='<%=request.getContextPath()%>/images/ic_clone.png' class='action' alt='Duplicate' title='Duplicate'></sw360:DisplayReleaseLink>"
+        + "<img class='action link-release' src='<%=request.getContextPath()%>/images/link.png' data-release-id='${release.id}' data-release-name='<sw360:ReleaseName release="${release}" />' alt='Link to Project' title='Link to Project'>"
         + "<img class='action delete-release' src='<%=request.getContextPath()%>/images/Trash.png' data-release-id='${release.id}' data-release-name='<sw360:ReleaseName release="${release}" />' data-linked-releases='${release.releaseIdToRelationshipSize}' data-attachments='${release.attachmentsSize}' alt='Delete' title='Delete'>"
         + "</span>"
         </core_rt:if>
@@ -89,10 +91,11 @@
         'jquery',
         'utils/includes/fossologyClearing',
         'modules/confirm',
+        'components/includes/releases/linkProject',
         'datatables.net',
         'datatables.net-buttons',
         'datatables.net-buttons.print',
-        'datatables-plugins-sorting.natural'], function ($, fossology, confirm) {
+        'datatables-plugins-sorting.natural'], function ($, fossology, confirm, linkProject) {
 
         var releaseTable;
 
@@ -100,13 +103,17 @@
             createClearingTable();
             fossology.initialize();
 
-            $('#releasesTable').on('click', '.action.send-to-fossology', function(event) {
+            $('#releasesTable').delegate('.action.send-to-fossology', 'click', function(event) {
                 var data = $(event.currentTarget).data();
                 fossology.openSelectClearingDialog('clearingState', data.releaseId);
             });
-            $('#releasesTable').on('click', '.action.delete-release', function(event) {
+            $('#releasesTable').delegate('.action.delete-release', 'click', function(event) {
                 var data = $(event.currentTarget).data();
                 deleteRelease(data.releaseId, data.releaseName, data.linkedReleases, data.attachments);
+            });
+            $('#releasesTable').delegate('.action.link-release', 'click', function(event) {
+                var data = $(event.currentTarget).data();
+                linkProject.openLinkDialog(data.releaseId, data.releaseName);
             });
         });
 
@@ -132,7 +139,7 @@
                     {"sTitle": "Clearing state"},
                     {"sTitle": "Clearing report"},
                     {"sTitle": "Release Mainline state"},
-                    {"sTitle": "Actions"}
+                    {"sTitle": "Actions", "className": "actions"}
                 ],
                 "autoWidth": false,
                 "drawCallback": renderCallback,
