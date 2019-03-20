@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2014-2018. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2014-2019. Part of the SW360 Portal Project.
  * With contributions by Bosch Software Innovations GmbH, 2016.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -113,10 +113,16 @@ union UsageData {
 
 /**
  * Stores specific information if an attachment is used for license info generation. Holds the license ids
- * that were excluded from generation.
+ * that were excluded from generation. In addition it holds the path of project ids as one string separated
+ * with ":", where the project id from the root project in "usedBy" is always included, so this string is never
+ * empty. This means that each usage becomes really unique by the complete path
+ *     projectPath:owner(=releaseId):attachmentContentId
+ * Since the projectPath was added over time, it is not required yet and the code has to deal with the case that
+ * it is empty. This might change in the future.
  */
 struct LicenseInfoUsage {
     1: required set<string> excludedLicenseIds;
+    2: optional string projectPath;
 }
 
 /**

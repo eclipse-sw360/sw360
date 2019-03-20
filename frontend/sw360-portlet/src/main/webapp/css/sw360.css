@@ -349,6 +349,16 @@ input[readonly].clickable {
     padding-right: 0px;
 }
 
+#LinkedProjectsInfo input.use-subproject-selection {
+    margin-top: -2px;
+    margin-right: 5px;
+}
+
+#LinkedProjectsInfo .use-subproject-selection-label {
+    margin-top: 5px;
+    font-size: 12px;
+}
+
 .sw360modal button:last-of-type {
     float: right;
 }

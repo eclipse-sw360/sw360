@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2016. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2016, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -10,21 +10,18 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.Source;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
-import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
+import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.ektorp.BulkDeleteDocument;
@@ -156,13 +153,18 @@ public class AttachmentDatabaseHandler {
         }
     }
 
-    private List<AttachmentUsage> distinctAttachmentUsages(List<AttachmentUsage> attachmentUsages) {
+    @VisibleForTesting
+    protected List<AttachmentUsage> distinctAttachmentUsages(List<AttachmentUsage> attachmentUsages) {
         return attachmentUsages.stream()
                 .filter(CommonUtils.distinctByKey(au -> ImmutableList.of(
                         au.getOwner(),
                         au.getUsedBy(),
                         au.getAttachmentContentId(),
-                        au.isSetUsageData() ? au.getUsageData().getSetField() : "")))
+                        au.isSetUsageData() ? au.getUsageData().getSetField() : "",
+                        au.isSetUsageData() && au.getUsageData().getSetField().equals(UsageData._Fields.LICENSE_INFO)
+                                && au.getUsageData().getLicenseInfo().isSetProjectPath()
+                                        ? au.getUsageData().getLicenseInfo().getProjectPath()
+                                        : "")))
                 .collect(Collectors.toList());
     }
 

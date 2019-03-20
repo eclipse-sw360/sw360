@@ -270,21 +270,48 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     private void downloadLicenseInfo(ResourceRequest request, ResourceResponse response) throws IOException {
         final String projectId = request.getParameter(PROJECT_ID);
         final String outputGenerator = request.getParameter(PortalConstants.LICENSE_INFO_SELECTED_OUTPUT_FORMAT);
-        final Map<String, Set<String>> selectedReleaseAndAttachmentIds = ProjectPortletUtils
-                .getSelectedReleaseAndAttachmentIdsFromRequest(request);
-        final Set<String> attachmentIds = selectedReleaseAndAttachmentIds.values().stream().flatMap(Collection::stream)
-                .collect(Collectors.toSet());
-        final Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachmentId = ProjectPortletUtils
-                .getExcludedLicensesPerAttachmentIdFromRequest(attachmentIds, request);
+
+        Set<String> selectedAttachmentIdsWithPath = Sets
+                .newHashSet(request.getParameterValues(PortalConstants.LICENSE_INFO_RELEASE_TO_ATTACHMENT));
+        final Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachmentIdWithPath = ProjectPortletUtils
+                .getExcludedLicensesPerAttachmentIdFromRequest(selectedAttachmentIdsWithPath, request);
+
+        final Map<String, Set<String>> releaseIdsToSelectedAttachmentIds = new HashMap<>();
+        selectedAttachmentIdsWithPath.stream().forEach(selectedAttachmentIdWithPath -> {
+            String[] pathParts = selectedAttachmentIdWithPath.split(":");
+            String releaseId = pathParts[pathParts.length - 2];
+            String attachmentId = pathParts[pathParts.length - 1];
+            if (releaseIdsToSelectedAttachmentIds.containsKey(releaseId)) {
+                // since we have a set as value, we can just add without getting duplicates
+                releaseIdsToSelectedAttachmentIds.get(releaseId).add(attachmentId);
+            } else {
+                Set<String> attachmentIds = new HashSet<>();
+                attachmentIds.add(attachmentId);
+                releaseIdsToSelectedAttachmentIds.put(releaseId, attachmentIds);
+            }
+        });
+        final Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachmentId = new HashMap<>();
+        excludedLicensesPerAttachmentIdWithPath.entrySet().stream().forEach(entry -> {
+            String attachmentId = entry.getKey().substring(entry.getKey().lastIndexOf(":") + 1);
+            Set<LicenseNameWithText> excludedLicenses = entry.getValue();
+            if (excludedLicensesPerAttachmentId.containsKey(attachmentId)) {
+                // this is the important part: if a license is not excluded (read "included") in
+                // one attachment occurence, then include (read "not exclude") it in the final
+                // result
+                excludedLicenses = Sets.intersection(excludedLicensesPerAttachmentId.get(attachmentId),
+                        entry.getValue());
+            }
+            excludedLicensesPerAttachmentId.put(attachmentId, excludedLicenses);
+        });
 
         try {
             final LicenseInfoService.Iface licenseInfoClient = thriftClients.makeLicenseInfoClient();
-
             final User user = UserCacheHolder.getUserFromRequest(request);
             Project project = thriftClients.makeProjectClient().getProjectById(projectId, user);
             LicenseInfoFile licenseInfoFile = licenseInfoClient.getLicenseInfoFile(project, user, outputGenerator,
-                    selectedReleaseAndAttachmentIds, excludedLicensesPerAttachmentId);
-            saveLicenseInfoAttachmentUsages(project, user, selectedReleaseAndAttachmentIds, excludedLicensesPerAttachmentId);
+                    releaseIdsToSelectedAttachmentIds, excludedLicensesPerAttachmentId);
+            saveLicenseInfoAttachmentUsages(project, user, selectedAttachmentIdsWithPath,
+                    excludedLicensesPerAttachmentIdWithPath);
             sendLicenseInfoResponse(request, response, project, licenseInfoFile);
         } catch (TException e) {
             log.error("Error getting LicenseInfo file for project with id " + projectId + " and generator " + outputGenerator, e);
@@ -306,18 +333,25 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         PortletResponseUtil.sendFile(request, response, filename, licenseInfoFile.getGeneratedOutput(), mimetype);
     }
 
-    private void saveLicenseInfoAttachmentUsages(Project project, User user, Map<String, Set<String>> selectedReleaseAndAttachmentIds, Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachmentId) {
-        try {
+    private void saveLicenseInfoAttachmentUsages(Project project, User user, Set<String> selectedAttachmentIdsWithPath,
+            Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachmentIdWithPath) {
 
+        try {
             Function<String, UsageData> usageDataGenerator = attachmentContentId -> {
-                Set<String> licenseIds = CommonUtils.nullToEmptySet(excludedLicensesPerAttachmentId.get(attachmentContentId)).stream()
+                Set<String> licenseIds = CommonUtils
+                        .nullToEmptySet(excludedLicensesPerAttachmentIdWithPath.get(attachmentContentId)).stream()
                         .filter(LicenseNameWithText::isSetLicenseName)
                         .map(LicenseNameWithText::getLicenseName)
                         .collect(Collectors.toSet());
-                return UsageData.licenseInfo(new LicenseInfoUsage(licenseIds));
+                LicenseInfoUsage licenseInfoUsage = new LicenseInfoUsage(licenseIds);
+                // until second last occurence of ":" (strip releaseId and attachmentId)
+                String projectPath = attachmentContentId.substring(0,
+                        attachmentContentId.lastIndexOf(":", attachmentContentId.lastIndexOf(":") - 1));
+                licenseInfoUsage.setProjectPath(projectPath);
+                return UsageData.licenseInfo(licenseInfoUsage);
             };
-            List<AttachmentUsage> attachmentUsages = ProjectPortletUtils.makeAttachmentUsages(project, selectedReleaseAndAttachmentIds,
-                    usageDataGenerator);
+            List<AttachmentUsage> attachmentUsages = ProjectPortletUtils.makeLicenseInfoAttachmentUsages(project,
+                    selectedAttachmentIdsWithPath, usageDataGenerator);
             replaceAttachmentUsages(project, user, attachmentUsages, UsageData.licenseInfo(new LicenseInfoUsage(Collections.emptySet())));
         } catch (TException e) {
             // there's no need to abort the user's desired action just because the ancillary action of storing selection failed
@@ -358,7 +392,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
     private void downloadSourceCodeBundle(ResourceRequest request, ResourceResponse response) {
 
-        Map<String, Set<String>> selectedReleaseAndAttachmentIds = ProjectPortletUtils.getSelectedReleaseAndAttachmentIdsFromRequest(request);
+        Map<String, Set<String>> selectedReleaseAndAttachmentIds = ProjectPortletUtils
+                .getSelectedReleaseAndAttachmentIdsFromRequest(request, false);
         Set<String> selectedAttachmentIds = new HashSet<>();
         selectedReleaseAndAttachmentIds.forEach((key, value) -> selectedAttachmentIds.addAll(value));
 
@@ -668,7 +703,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                     Strings.nullToEmpty(l1.get(LICENSE_NAME_WITH_TEXT_NAME))
                             .compareTo(l2.get(LICENSE_NAME_WITH_TEXT_NAME)));
 
-            request.getPortletSession().setAttribute(LICENSE_STORE_KEY_PREFIX + attachmentContentId, licenseStore);
+            request.getPortletSession()
+                    .setAttribute(LICENSE_STORE_KEY_PREFIX + request.getParameter(PortalConstants.PROJECT_PATH) + ":"
+                            + release.getId() + ":" + attachmentContentId, licenseStore);
             writeJSON(request, response, OBJECT_MAPPER.writeValueAsString(licenses));
         } catch (TException exception) {
             log.error("Cannot retrieve license information for attachment id " + attachmentContentId + ".", exception);
@@ -904,12 +941,53 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 request.setAttribute(PROJECT_LIST, mappedProjectLinks);
                 addProjectBreadcrumb(request, response, project);
 
+                storePathsMapInRequest(request, mappedProjectLinks);
                 storeAttachmentUsageCountInRequest(request, mappedProjectLinks, UsageData.licenseInfo(new LicenseInfoUsage(Sets.newHashSet())));
             } catch (TException e) {
                 log.error("Error fetching project from backend!", e);
                 setSW360SessionError(request, ErrorMessages.ERROR_GETTING_PROJECT);
             }
         }
+    }
+
+    /**
+     * Method generates a map with nodeIds of given {@link ProjectLink}s as keys.
+     * The value is the corresponding project path as a {@link String}. A project
+     * path denotes the concatenations of projectids from the root project of the
+     * given link list to the current project, separated with ":". This map will be
+     * put in the given {@link RenderRequest} as attribute value of
+     *
+     * @param request            the request to store the paths map into
+     * @param mappedProjectLinks the list of projectlinks which describe the project
+     *                           tree whose paths map should be generated
+     */
+    private void storePathsMapInRequest(RenderRequest request, List<ProjectLink> mappedProjectLinks) {
+        Map<String, String> paths = new HashMap<>();
+
+        for (ProjectLink link : mappedProjectLinks) {
+            if (link.getTreeLevel() == 0) {
+                paths.put(link.getId(), "");
+                continue;
+            }
+
+            String path = "";
+            ProjectLink current = link;
+            while (current.getParentNodeId() != null) {
+                final String parentNodeId = current.getParentNodeId();
+                path = current.getId() + (path.length() > 0 ? ":" + path : "");
+                Optional<ProjectLink> parent = mappedProjectLinks.stream()
+                        .filter(l -> l.getNodeId().equals(parentNodeId)).findFirst();
+                if (parent.isPresent()) {
+                    current = parent.get();
+                } else {
+                    break;
+                }
+            }
+            path = current.getId() + (path.length() > 0 ? ":" + path : "");
+            paths.put(link.getNodeId(), path);
+        }
+
+        request.setAttribute(PortalConstants.PROJECT_PATHS, paths);
     }
 
     private void storeAttachmentUsageCountInRequest(RenderRequest request, List<ProjectLink> mappedProjectLinks, UsageData filter) throws TException {
