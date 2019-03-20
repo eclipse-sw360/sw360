@@ -590,3 +590,9 @@ div#unsupported-browser-content {
 	border: 2px solid #000;
 	background-color: #FFA500;
 }
+.headerMarginTop {
+	margin-top: 1.5em !important;
+}
+.headerMarginButtom{
+	margin-bottom: 1em !important;
+}

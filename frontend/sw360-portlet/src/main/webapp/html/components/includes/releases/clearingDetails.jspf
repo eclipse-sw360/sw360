@@ -46,6 +46,11 @@
     </tbody>
 </table>
 
+<%@ page import="org.eclipse.sw360.portal.common.FossologyConnectionHelper" %>
+<%@include file="/html/utils/includes/fossologyClearing.jspf"%>
+
+<core_rt:set var="clearingInfo" value="${release.clearingInformation}"/>
+<core_rt:set var="FOSSOLOGY_CONNECTION_ENABLED" value="<%=FossologyConnectionHelper.getInstance().isFossologyConnectionEnabled()%>"/>
 <table class="table info_table" id="ReleaseClearingOverview">
     <thead>
     <tr>
@@ -57,13 +62,20 @@
         <td>
             <sw360:DisplayEnum value="${release.clearingState}"/>
             &nbsp;
-            <span id='releaseAction${release.id}'>
-                <img class="action send-to-fossology" src='<%=request.getContextPath()%>/images/fossology-logo-24.gif'
-                     data-release-id="${release.id}"
-                     alt='Send to FOSSology'
-                     title='Send to FOSSology'>
-                <span id='fossologySending${release.id}'></span>
-            </span>
+            <core_rt:choose>
+                <core_rt:when test="${not empty FOSSOLOGY_CONNECTION_ENABLED and not FOSSOLOGY_CONNECTION_ENABLED}">
+                    <img src='<%=request.getContextPath()%>/images/fossology-logo-grey.gif' title='Fossology is not configured'/>
+                </core_rt:when>
+                <core_rt:otherwise>
+                    <span id='releaseAction${release.id}'>
+                        <img class="action send-to-fossology" src='<%=request.getContextPath()%>/images/fossology-logo-24.gif'
+                             data-release-id="${release.id}"
+                             alt='Send to FOSSology'
+                             title='Send to FOSSology'>
+                        <span id='fossologySending${release.id}'></span>
+                   </span>
+                </core_rt:otherwise>
+            </core_rt:choose>
         </td>
     </tr>
     <tr>

@@ -15,6 +15,7 @@
 <%@ page import="javax.portlet.PortletRequest" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectType" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectState" %>
+<%@ page import="org.eclipse.sw360.portal.common.FossologyConnectionHelper" %>
 
 <%@ include file="/html/init.jsp" %>
 <%-- the following is needed by liferay to display error messages--%>
@@ -35,6 +36,7 @@
 
 <core_rt:set var="stateAutoC" value='<%=PortalConstants.STATE%>'/>
 <core_rt:set var="projectTypeAutoC" value='<%=PortalConstants.PROJECT_TYPE%>'/>
+<core_rt:set var="FOSSOLOGY_CONNECTION_ENABLED" value="<%=FossologyConnectionHelper.getInstance().isFossologyConnectionEnabled()%>"/>
 
 <portlet:resourceURL var="exportProjectsURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.EXPORT_TO_EXCEL%>"/>
@@ -266,8 +268,18 @@
 
             function renderProjectActions(id, type, row) {
                 <%--TODO most of this can be simplified to CSS properties --%>
-                return "<img class='clearing' src='<%=request.getContextPath()%>/images/fossology-logo-24.gif'" +
-                     " data-project-id='" + id + "' data-project-action='projectAction" + id + "' alt='SelectClearing' title='send to Fossology'>" +
+                var sendingToFossology;
+                <core_rt:choose>
+                    <core_rt:when test="${not empty FOSSOLOGY_CONNECTION_ENABLED and not FOSSOLOGY_CONNECTION_ENABLED}">
+                        sendingToFossology = "<img src='<%=request.getContextPath()%>/images/fossology-logo-grey.gif' title='Fossology is not configured'/>";
+                    </core_rt:when>
+                    <core_rt:otherwise>
+                        sendingToFossology = "<img class='clearing' src='<%=request.getContextPath()%>/images/fossology-logo-24.gif'"
+                                           +" data-project-id='" + id + "' data-project-action='projectAction" + id + "'"
+                                           +" alt='SelectClearing' title='send to Fossology'>";
+                    </core_rt:otherwise>
+                </core_rt:choose>
+                return sendingToFossology +
                         "<span id='projectAction" + id + "'></span>"
                     + renderLinkTo(
                         makeProjectUrl(id, '<%=PortalConstants.PAGENAME_EDIT%>'),

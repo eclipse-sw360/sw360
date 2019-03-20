@@ -9,6 +9,7 @@
   ~ http://www.eclipse.org/legal/epl-v10.html
   --%>
 <%@ page import="org.eclipse.sw360.portal.common.page.PortletReleasePage,org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType" %>
+<%@ page import="org.eclipse.sw360.portal.common.FossologyConnectionHelper" %>
 <portlet:resourceURL var="deleteReleaseAjaxURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.DELETE_RELEASE%>'/>
 </portlet:resourceURL>
@@ -26,6 +27,7 @@
     <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_EDIT_RELEASE%>"/>
 </portlet:renderURL>
 
+<core_rt:set var="FOSSOLOGY_CONNECTION_ENABLED" value="<%=FossologyConnectionHelper.getInstance().isFossologyConnectionEnabled()%>"/>
 <core_rt:if test="${component.releasesSize == 0 }">
     <h1>Please add release to view their clearing status here.</h1>
 </core_rt:if>
@@ -51,6 +53,17 @@
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
 
 <script>
+    var sendingToFossology;
+    <core_rt:choose>
+        <core_rt:when test="${not empty FOSSOLOGY_CONNECTION_ENABLED and not FOSSOLOGY_CONNECTION_ENABLED}">
+            sendingToFossology = "<img src='<%=request.getContextPath()%>/images/fossology-logo-grey.gif' title='Fossology is not configured'/>";
+        </core_rt:when>
+        <core_rt:otherwise>
+            sendingToFossology = "<img class='action send-to-fossology' src='<%=request.getContextPath()%>/images/fossology-logo-24.gif' " +
+                               " data-release-id='${release.id}' alt='SelectClearing' " +
+                               " title='send to Fossology'>";
+        </core_rt:otherwise>
+    </core_rt:choose>
     var releaseData =
     [<core_rt:forEach items="${component.releases}" var="release">
         {
@@ -63,7 +76,7 @@
         <core_rt:if test="${inComponentDetailsContext}">
         "5": "<span id='fossologySending${release.id}'></span>"
         + "<span id='releaseAction${release.id}'>"
-        + "<img class='action send-to-fossology' src='<%=request.getContextPath()%>/images/fossology-logo-24.gif' data-release-id='${release.id}' alt='SelectClearing' title='send to Fossology'>"
+        + sendingToFossology
         + "<sw360:DisplayReleaseLink release="${release}" showName="false" page="<%=PortletReleasePage.EDIT%>"><img src='<%=request.getContextPath()%>/images/edit.png' class='action' alt='Edit' title='Edit'></sw360:DisplayReleaseLink>"
         + "<sw360:DisplayReleaseLink release="${release}" showName="false" page="<%=PortletReleasePage.DUPLICATE%>"><img src='<%=request.getContextPath()%>/images/ic_clone.png' class='action' alt='Duplicate' title='Duplicate'></sw360:DisplayReleaseLink>"
         + "<img class='action link-release' src='<%=request.getContextPath()%>/images/link.png' data-release-id='${release.id}' data-release-name='<sw360:ReleaseName release="${release}" />' alt='Link to Project' title='Link to Project'>"
