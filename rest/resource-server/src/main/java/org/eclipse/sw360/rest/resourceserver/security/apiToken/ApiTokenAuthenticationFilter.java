@@ -9,7 +9,7 @@
  * http://www.eclipse.org/legal/epl-v10.html
  */
 
-package org.eclipse.sw360.rest.resourceserver.security;
+package org.eclipse.sw360.rest.resourceserver.security.apiToken;
 
 import org.apache.log4j.Logger;
 import org.springframework.context.annotation.Profile;
