@@ -24,6 +24,10 @@ import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
@@ -179,6 +183,8 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
             fillOverview3rdPartyComponentTable(document, projectLicenseInfoResults);
             fillCommonRulesTable(document, project);
             fillAdditionalRequirementsTable(document, obligationResults);
+
+            fillCommonRulesTable(document, project);
 
             // because of the impossible API component subsections must be the last thing in the docx file
             // the rest of the sections must be generated after this
