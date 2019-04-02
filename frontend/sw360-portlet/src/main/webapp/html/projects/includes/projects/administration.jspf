@@ -9,6 +9,8 @@
   ~ http://www.eclipse.org/legal/epl-v10.html
 --%>
 
+<%@ taglib prefix="core_rt" uri="http://java.sun.com/jstl/core_rt" %>
+
 <table class="table info_table" id="clearing">
     <thead>
     <tr>
@@ -94,6 +96,24 @@
             <textarea class="projectRemarksAdditionalRequirementsText broader" rows="5" id="remarksAdditionalRequirementsText" name="<portlet:namespace/><%=Project._Fields.REMARKS_ADDITIONAL_REQUIREMENTS%>" readonly><sw360:out value="${project.remarksAdditionalRequirements}" /></textarea>
         </td>
     </tr>
+</table>
+
+<table class="table info_table" id="obligations">
+    <thead>
+        <tr><th>Obligation</th><th>Fulfilled</th><th>Modified</th></tr>
+    </thead>
+    <tbody>
+        <core_rt:forEach items="${projectObligations}" var="entry">
+            <tr>
+                <td>${entry.getKey().getText()}</td>
+                <td><input type="checkbox" value="${entry.getKey().getId()}"
+                    disabled="disabled"
+                    <core_rt:if test="${entry.getValue().isFulfilled()}">checked="checked"</core_rt:if>
+                /></td>
+                <td>${entry.getValue().getModificationHint()}</td>
+            </tr>
+        </core_rt:forEach>
+    </tbody>
 </table>
 
 <table class="table info_table" id="lifecycle">

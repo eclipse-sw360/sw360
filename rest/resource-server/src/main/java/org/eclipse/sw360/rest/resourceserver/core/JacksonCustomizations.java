@@ -144,6 +144,8 @@ class JacksonCustomizations {
                 "setReleaseIds",
                 "setPermissions",
                 "setClearingState",
+                "setTodos",
+                "todosSize",
                 "securityResponsibles",
                 "securityResponsiblesSize",
                 "securityResponsiblesIterator",

@@ -50,6 +50,9 @@ struct Todo {
 
     // information from external data sources
     19: optional map<string, string> externalIds,
+
+    // is valid for Projects
+    20: optional bool validForProject,
 }
 
 struct RiskCategory {

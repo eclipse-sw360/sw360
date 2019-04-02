@@ -14,19 +14,32 @@ package org.eclipse.sw360.portal.portlets.projects;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.*;
-import com.liferay.portal.kernel.json.*;
+import com.liferay.portal.kernel.json.JSONArray;
+import com.liferay.portal.kernel.json.JSONException;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.portlet.PortletResponseUtil;
 import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.model.Organization;
 import com.liferay.portal.util.PortalUtil;
-
-import org.eclipse.sw360.datahandler.common.*;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.apache.thrift.TException;
+import org.apache.thrift.TSerializer;
+import org.apache.thrift.protocol.TSimpleJSONProtocol;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
-import org.eclipse.sw360.datahandler.thrift.components.*;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.cvesearch.CveSearchService;
 import org.eclipse.sw360.datahandler.thrift.cvesearch.VulnerabilityUpdateStatus;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
@@ -44,24 +57,20 @@ import org.eclipse.sw360.portal.portlets.FossologyAwarePortlet;
 import org.eclipse.sw360.portal.users.LifeRayUserSession;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 import org.eclipse.sw360.portal.users.UserUtils;
-
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
-import org.apache.thrift.TSerializer;
-import org.apache.thrift.protocol.TSimpleJSONProtocol;
 import org.jetbrains.annotations.NotNull;
 
 import javax.portlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URLConnection;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.function.*;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -837,6 +846,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_PROJECT);
         request.setAttribute(DOCUMENT_ID, id);
         request.setAttribute(DEFAULT_LICENSE_INFO_HEADER_TEXT, getProjectDefaultLicenseInfoHeaderText());
+
         request.setAttribute(DEFAULT_OBLIGATIONS_TEXT, getProjectDefaultObligationsText());
         if (id != null) {
             try {
@@ -860,6 +870,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                         PermissionUtils.makePermission(project, user).isActionAllowed(RequestedAction.WRITE));
 
                 addProjectBreadcrumb(request, response, project);
+                request.setAttribute(PROJECT_OBLIGATIONS, SW360Utils.getProjectObligations(project));
 
             } catch (TException e) {
                 log.error("Error fetching project from backend!", e);
@@ -1076,6 +1087,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
             request.setAttribute(PROJECT, project);
             request.setAttribute(DOCUMENT_ID, id);
+            request.setAttribute(PROJECT_OBLIGATIONS, SW360Utils.getProjectObligations(project));
 
             setAttachmentsInRequest(request, project);
             try {
@@ -1106,6 +1118,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 }
                 request.setAttribute(USING_PROJECTS, Collections.emptySet());
                 request.setAttribute(ALL_USING_PROJECTS_COUNT, 0);
+                request.setAttribute(PROJECT_OBLIGATIONS, SW360Utils.getProjectObligations(project));
 
                 SessionMessages.add(request, "request_processed", "New Project");
             }
@@ -1283,6 +1296,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             return "";
         }
     }
+
+
 
     private void serveProjectList(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
         HttpServletRequest originalServletRequest = PortalUtil.getOriginalServletRequest(PortalUtil.getHttpServletRequest(request));
