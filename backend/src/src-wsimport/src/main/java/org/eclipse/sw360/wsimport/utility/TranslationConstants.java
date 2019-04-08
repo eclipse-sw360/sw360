@@ -1,6 +1,6 @@
 /*
  * Copyright (c) Bosch Software Innovations GmbH 2017.
- * With modifications by Verifa Oy, 2018.
+ * With modifications by Verifa Oy, 2018-2019.
  * Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -26,9 +26,9 @@ public class TranslationConstants {
     public static final String APPLICATION_JSON = "application/json";
     public static final String VERSION_SUFFIX_REGEX = "$*?-SNAPSHOT|$*?.RELEASE|$*?-RELEASE|$*?RELEASE|$*?.Final";
 
-    public static final String REQUEST__GET_PROJECT_VITALS = "getProjectVitals";
-    public static final String REQUEST__GET_PROJECT_LICENSES = "getProjectLicenses";
-    public static final String REQUEST__GET_ORGANIZATION_PROJECT_VITALS = "getOrganizationProjectVitals";
+    public static final String GET_PROJECT_VITALS = "getProjectVitals";
+    public static final String GET_PROJECT_LICENSES = "getProjectLicenses";
+    public static final String GET_ORGANIZATION_PROJECT_VITALS = "getOrganizationProjectVitals";
 
     private TranslationConstants(){
         //Utility class with only static members
