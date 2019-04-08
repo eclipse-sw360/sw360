@@ -48,6 +48,7 @@ public class DisplayDownloadAttachmentBundle extends DisplayDownloadAbstract {
         for (Attachment attachment : attachments) {
             urlWriter.withParam(PortalConstants.ATTACHMENT_ID, attachment.attachmentContentId);
         }
+        urlWriter.withParam(PortalConstants.ALL_ATTACHMENTS, "true");
     }
 
     @Override

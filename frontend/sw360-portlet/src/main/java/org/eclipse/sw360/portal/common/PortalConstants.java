@@ -131,6 +131,7 @@ public class PortalConstants {
     public static final String ADDED_ATTACHMENTS = "added_attachments";
     public static final String REMOVED_ATTACHMENTS = "removed_attachments";
     public static final String ATTACHMENT_ID = "attachmentId";
+    public static final String ALL_ATTACHMENTS = "all_attachments";
     public static final String CONTEXT_TYPE = "context_type";
     public static final String CONTEXT_ID = "context_id";
     public static final String ATTACHMENT_USAGE_COUNT_MAP = "attachmenUsageCountMap";

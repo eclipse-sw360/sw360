@@ -15,6 +15,7 @@ import com.liferay.portal.kernel.portlet.PortletResponseUtil;
 import com.liferay.portal.kernel.servlet.HttpHeaders;
 import com.liferay.portal.kernel.upload.UploadPortletRequest;
 import com.liferay.portal.util.PortalUtil;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.commonIO.AttachmentFrontendUtils;
@@ -125,7 +126,10 @@ public class AttachmentPortletUtils extends AttachmentFrontendUtils {
     private void serveAttachmentBundle(List<AttachmentContent> attachments, ResourceRequest request, ResourceResponse response, Optional<String> downloadFileName){
         String filename;
         String contentType;
-        if(attachments.size() == 1){
+        String isAllAttachment = request.getParameter(PortalConstants.ALL_ATTACHMENTS);
+        boolean downloadAllAttachmentSelected = StringUtils.isNotEmpty(isAllAttachment)
+                && isAllAttachment.equalsIgnoreCase("true");
+        if (attachments.size() == 1 && !downloadAllAttachmentSelected) {
             filename = attachments.get(0).getFilename();
             contentType = attachments.get(0).getContentType();
             if (contentType.equalsIgnoreCase("application/gzip")) {
@@ -136,8 +140,7 @@ public class AttachmentPortletUtils extends AttachmentFrontendUtils {
                 response.setProperty(HttpHeaders.CONTENT_ENCODING, "identity");
             }
         } else {
-            filename = downloadFileName
-                    .orElse(DEFAULT_ATTACHMENT_BUNDLE_NAME);
+            filename = downloadFileName.orElse(DEFAULT_ATTACHMENT_BUNDLE_NAME);
             contentType = "application/zip";
         }
 
@@ -146,7 +149,9 @@ public class AttachmentPortletUtils extends AttachmentFrontendUtils {
             Optional<Object> context = getContextFromRequest(request, user);
 
             if(context.isPresent()){
-                try (InputStream attachmentStream = getStreamToServeAFile(attachments, user, context.get())) {
+                try (InputStream attachmentStream = (downloadAllAttachmentSelected
+                        ? getStreamToServeBundle(attachments, user, context.get())
+                        : getStreamToServeAFile(attachments, user, context.get()))) {
                     PortletResponseUtil.sendFile(request, response, filename, attachmentStream, contentType);
                 } catch (IOException e) {
                     log.error("cannot finish writing response", e);
