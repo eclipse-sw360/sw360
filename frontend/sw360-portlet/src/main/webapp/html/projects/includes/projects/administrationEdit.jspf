@@ -11,6 +11,8 @@
 
 <%@ page import="org.eclipse.sw360.datahandler.thrift.projects.Project" %>
 
+<%@ taglib prefix="core_rt" uri="http://java.sun.com/jstl/core_rt" %>
+
 <table class="table info_table" id="ProjectClearingInfo" title="Clearing">
     <thead>
     <tr>
@@ -109,6 +111,24 @@
                       rows="5" type="text"><sw360:out value="${project.remarksAdditionalRequirements}"/></textarea>
         </td>
     </tr>
+</table>
+
+<table class="table info_table" id="obligations">
+    <thead>
+        <tr><th>Obligation</th><th>Fulfilled</th></tr>
+    </thead>
+    <tbody>
+        <core_rt:forEach items="${projectObligations}" var="entry">
+            <tr>
+                <td>${entry.getKey().getText()}</td>
+                <td><input type="checkbox"
+                    name="<portlet:namespace/><%=Project._Fields.TODOS%>"
+                    value="${entry.getKey().getId()}"
+                    <core_rt:if test="${entry.getValue().fulfilled}">checked="checked"</core_rt:if>
+                /></td>
+            </tr>
+        </core_rt:forEach>
+    </tbody>
 </table>
 
 <table class="table info_table" id="ProjectLifecycleInfo" title="Lifecycle">

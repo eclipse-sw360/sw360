@@ -24,6 +24,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectTodo;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityCheckStatus;
@@ -107,10 +108,51 @@ public class ProjectPortletUtils {
                 case EXTERNAL_IDS:
                     project.setExternalIds(PortletUtils.getExternalIdMapFromRequest(request));
                     break;
+                case TODOS:
+                    String userId = UserCacheHolder.getUserFromRequest(request).getId();
+                    updateProjectTodosFromRequest(request.getParameterValues(field.toString()), userId, project);
+                    break;
                 default:
                     setFieldValue(request, project, field);
             }
         }
+    }
+
+    private static void updateProjectTodosFromRequest(String[] ids, String userId, Project project) {
+        Set<String> idSet = ids != null ? Arrays.stream(ids).collect(Collectors.toSet()) : Collections.emptySet();
+        Set<ProjectTodo> currentTodos = project.getTodosSize() > 0 ? project.getTodos() : Collections.emptySet();
+        String updated = SW360Utils.getCreatedOnTime();
+
+        // assemble set of project todos
+        Set<ProjectTodo> projectTodos = idSet.stream()
+                .map(id -> currentTodos.stream()
+                        .filter(pt -> pt.getTodoId().equals(id))
+                        .findAny()
+                        .orElseGet(() -> new ProjectTodo(id, userId, updated, true)))
+                .collect(Collectors.toSet());
+
+        // update changed to fulfilled
+        projectTodos.stream()
+                .filter(projectTodo -> !projectTodo.fulfilled)
+                .forEach(projectTodo -> {
+                            projectTodo.fulfilled = true;
+                            projectTodo.setUserId(userId);
+                            projectTodo.setUpdated(updated);
+                        });
+
+        // update changed to not fulfilled
+        Set<ProjectTodo> changedToNotFulfilled = currentTodos.stream()
+                .filter(projectTodo -> idSet.stream().noneMatch(id -> id.equals(projectTodo.todoId)))
+                .map(projectTodo -> {
+                    projectTodo.fulfilled = false;
+                    projectTodo.setUserId(userId);
+                    projectTodo.setUpdated(updated);
+                    return projectTodo;
+                })
+                .collect(Collectors.toSet());
+
+        projectTodos.addAll(changedToNotFulfilled);
+        project.setTodos(projectTodos);
     }
 
     private static void updateLinkedReleasesFromRequest(PortletRequest request, Map<String, ProjectReleaseRelationship> releaseUsage) {

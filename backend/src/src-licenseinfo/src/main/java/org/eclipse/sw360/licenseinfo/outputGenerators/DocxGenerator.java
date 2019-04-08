@@ -17,6 +17,7 @@ import org.apache.poi.xwpf.usermodel.*;
 import org.apache.thrift.TException;
 import org.apache.xmlbeans.XmlException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
@@ -54,8 +55,9 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
     private static final String DOCX_OUTPUT_TYPE = "docx";
     public static final String UNKNOWN_LICENSE = "Unknown";
     private static final long ADDITIONAL_REQ_THRESHOLD = 3;
-    public static final int ADDITIONAL_REQ_TABLE_INDEX = 4;
+    public static final int ADDITIONAL_REQ_TABLE_INDEX = 5;
     public static final int DEV_DETAIL_TABLE_INDEX = 2;
+    private static final int COMMON_RULES_TABLE_INDEX = 4;
 
     public DocxGenerator(OutputFormatVariant outputFormatVariant, String description) {
         super(DOCX_OUTPUT_TYPE, description, true, DOCX_MIME_TYPE, outputFormatVariant);
@@ -175,6 +177,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
             fillSpecialOSSRisksTable(document, project, obligationResults);
             fillDevelopmentDetailsTable(document, project, user);
             fillOverview3rdPartyComponentTable(document, projectLicenseInfoResults);
+            fillCommonRulesTable(document, project);
             fillAdditionalRequirementsTable(document, obligationResults);
 
             // because of the impossible API component subsections must be the last thing in the docx file
@@ -550,5 +553,18 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
             setText(document.createParagraph().createRun(), nullToEmptyString(licenseNameWithText.getLicenseText()));
             addNewLines(document, 1);
         }
+    }
+
+    private void fillCommonRulesTable(XWPFDocument document, Project project) throws TException {
+        XWPFTable table = document.getTables().get(COMMON_RULES_TABLE_INDEX);
+        final int[] currentRow = new int[]{0};
+
+        SW360Utils.getProjectObligations(project).entrySet().stream()
+                .forEachOrdered(todo -> {
+                    currentRow[0] = currentRow[0] + 1;
+                    XWPFTableRow row = table.insertNewTableRow(currentRow[0]);
+                    row.addNewTableCell().setText(todo.getKey().getText());
+                    row.addNewTableCell().setText(todo.getValue().fulfilled ? "yes" : "no");
+                });
     }
 }

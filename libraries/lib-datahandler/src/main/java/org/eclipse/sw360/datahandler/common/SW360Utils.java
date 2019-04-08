@@ -24,14 +24,20 @@ import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TEnum;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
+import org.eclipse.sw360.datahandler.thrift.licenses.Todo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectTodo;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
 import org.jetbrains.annotations.NotNull;
@@ -67,6 +73,42 @@ public class SW360Utils {
 
     private SW360Utils() {
         // Utility class with only static functions
+    }
+
+    public static class TodoInfo {
+        public final boolean fulfilled;
+        public final String timestamp;
+        public final String user;
+
+        public TodoInfo(ProjectTodo projectTodo) {
+            final UserService.Iface userClient = new ThriftClients().makeUserClient();
+
+            String userString = "";
+
+            User user;
+            try {
+                if (projectTodo.userId != null) {
+                    user = userClient.getUser(projectTodo.userId);
+                    if (user != null) {
+                        userString = String.format("%s <%s>", user.getFullname(), user.getEmail());
+                    }
+                }
+            } catch (TException te) {
+                log.error("Could not load user from backend.", te);
+            }
+
+            this.user = userString;
+            this.fulfilled = projectTodo.fulfilled;
+            this.timestamp = Strings.nullToEmpty(projectTodo.updated);
+        }
+
+        public String getModificationHint() {
+            return String.format("%s %s",this.user, this.timestamp);
+        }
+
+        public boolean isFulfilled() {
+            return fulfilled;
+        }
     }
 
     static{
@@ -195,6 +237,26 @@ public class SW360Utils {
         }
         String vendorName = Optional.ofNullable(release.getVendor()).map(Vendor::getShortname).orElse(null);
         return getReleaseFullname(vendorName, release.getName(), release.getVersion());
+    }
+
+    public static Map<Todo, TodoInfo> getProjectObligations(Project project) {
+        final LicenseService.Iface licenseClient = new ThriftClients().makeLicenseClient();
+
+        Set<ProjectTodo> projectTodos = project.getTodosSize() > 0 ? project.getTodos() : Collections.emptySet();
+        try {
+            return licenseClient.getTodos().stream()
+                    .filter(o -> o.isValidForProject())
+                    .collect(Collectors.toMap(
+                            todo -> todo,
+                            todo -> new TodoInfo(projectTodos.stream()
+                                        .filter(projectTodo -> projectTodo.getTodoId().equals(todo.getId()))
+                                        .findFirst()
+                                        .orElseGet(ProjectTodo::new))
+                            )
+                    );
+        } catch (TException te) {
+            return Collections.emptyMap();
+        }
     }
 
     @NotNull

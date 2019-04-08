@@ -162,6 +162,7 @@ public class PortalConstants {
     public static final String DEFAULT_OBLIGATIONS_TEXT = "defaultObligationsText";
     public static final String DEFAULT_LICENSE_INFO_HEADER_TEXT_FOR_DISPALY = "--default text--";
     public static final String DEFAULT_OBLIGATIONS_TEXT_FOR_DISPALY = "--default text--";
+    public static final String PROJECT_OBLIGATIONS = "projectObligations";
     public static final Set<String> PROJECT_EXTERNAL_ID_KEYS;
     public static final String PROJECT_SELECTED_ATTACHMENT_USAGES = "selectedAttachmentUsages";
     public static final String PROJECT_SELECTED_ATTACHMENT_USAGES_SHADOWS = "selectedAttachmentUsagesShadows";

@@ -14,6 +14,7 @@ include "attachments.thrift"
 include "vendors.thrift"
 include "components.thrift"
 include "sw360.thrift"
+include "licenses.thrift"
 
 namespace java org.eclipse.sw360.datahandler.thrift.projects
 namespace php sw360.thrift.projects
@@ -32,6 +33,7 @@ typedef attachments.Attachment Attachment
 typedef components.ReleaseLink ReleaseLink
 typedef components.ReleaseClearingStatusData ReleaseClearingStatusData
 typedef sw360.AddDocumentRequestSummary AddDocumentRequestSummary
+typedef licenses.Todo Todo
 
 const string CLEARING_TEAM_UNKNOWN = "Unknown"
 
@@ -120,6 +122,7 @@ struct Project {
     138: optional string specialRisks3rdParty,
     139: optional string deliveryChannels,
     140: optional string remarksAdditionalRequirements,
+    141: optional set<ProjectTodo> todos,
 
     // Urls for the project
     50: optional string homepage,
@@ -154,6 +157,13 @@ struct ProjectLink {
 struct ProjectWithReleaseRelationTuple {
     1: required Project project,
     2: required ProjectReleaseRelationship relation,
+}
+
+struct ProjectTodo {
+    1: required string todoId;
+    2: required string userId;
+    3: required string updated;
+    4: required bool fulfilled;
 }
 
 service ProjectService {
@@ -323,5 +333,4 @@ service ProjectService {
      * external ids can have multiple values to one key
      */
     set<Project> searchByExternalIds(1: map<string, set<string>> externalIds, 2: User user);
-
 }
