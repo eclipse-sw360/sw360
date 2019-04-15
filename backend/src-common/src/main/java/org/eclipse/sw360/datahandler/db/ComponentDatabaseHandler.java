@@ -224,6 +224,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         setMainLicenses(component);
 
+        vendorRepository.fillVendor(component);
+
         // Set permissions
         makePermission(component, user).fillPermissions();
 
@@ -513,6 +515,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 .add(Component._Fields.CREATED_BY)
                 .add(Component._Fields.CATEGORIES)
                 .add(Component._Fields.COMPONENT_TYPE)
+                .add(Component._Fields.DEFAULT_VENDOR_ID)
                 .add(Component._Fields.HOMEPAGE)
                 .add(Component._Fields.BLOG)
                 .add(Component._Fields.WIKI)

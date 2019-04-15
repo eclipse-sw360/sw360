@@ -61,7 +61,7 @@
                     <span style="display:none" id='plaincpeid${release.id}'>${release.cpeid}</span>
                 </td>
                 <td width="20%">
-                    <sw360:DisplayVendorEdit id='vendorId${release.id}' displayLabel="false"
+                    <sw360:DisplayVendorEdit id='vendorId${release.id}' label=""
                                              vendor="${release.vendor}" releaseId="${release.id}"/>
                     <span style="display:none" id='plainvendor${release.id}'>${release.vendor.fullname}</span>
                 </td>

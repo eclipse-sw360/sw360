@@ -173,7 +173,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         } else if (PortalConstants.UPDATE_ALL_VULNERABILITIES.equals(action)) {
             updateAllVulnerabilities(request, response);
         } else if (PortalConstants.UPDATE_VULNERABILITY_VERIFICATION.equals(action)){
-                updateVulnerabilityVerification(request,response);
+            updateVulnerabilityVerification(request, response);
         } else if (PortalConstants.EXPORT_TO_EXCEL.equals(action)) {
             exportExcel(request, response);
         } else if (PortalConstants.RELEASE_LINK_TO_PROJECT.equals(action)) {
@@ -522,7 +522,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
         try {
             ComponentService.Iface client = thriftClients.makeComponentClient();
-
+            Component component;
             Release release;
 
             if (!isNullOrEmpty(releaseId)) {
@@ -540,13 +540,17 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 if (isNullOrEmpty(id)) {
                     id = release.getComponentId();
                 }
+                component = client.getComponentById(id, user);
 
             } else {
+                component = client.getComponentById(id, user);
                 release = (Release) request.getAttribute(RELEASE);
                 if(release == null) {
                     release = new Release();
                     release.setComponentId(id);
                     release.setClearingState(ClearingState.NEW_CLEARING);
+                    release.setVendorId(component.getDefaultVendorId());
+                    release.setVendor(component.getDefaultVendor());
                     request.setAttribute(RELEASE, release);
                     putDirectlyLinkedReleaseRelationsInRequest(request, release);
                     setAttachmentsInRequest(request, release);
@@ -555,7 +559,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 }
             }
 
-            Component component = client.getComponentById(id, user);
+
             addComponentBreadcrumb(request, response, component);
             if (!isNullOrEmpty(release.getId())) { //Otherwise the link is meaningless
                 addReleaseBreadcrumb(request, response, release);
@@ -1348,6 +1352,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     public JSONArray getComponentData(List<Component> componentList, PaginationParameters componentParameters) {
         List<Component> sortedComponents = sortComponentList(componentList, componentParameters);
         int count = getComponentDataCount(componentParameters, componentList.size());
+        VendorService.Iface vendorClient = thriftClients.makeVendorClient();
 
         JSONArray componentData = createJSONArray();
         for (int i = componentParameters.getDisplayStart(); i < count; i++) {
@@ -1361,17 +1366,31 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             jsonObject.put("attsSize", String.valueOf(comp.getAttachmentsSize()));
 
             JSONArray vendorArray = createJSONArray();
-            if (comp.isSetVendorNames()) {
-                comp.getVendorNames().stream().sorted().forEach(vendorArray::put);
+            Set<String> vendorNames = new HashSet<>();
+            if (comp.isSetDefaultVendorId()) {
+                Vendor defaultVendor = null;
+                try {
+                    defaultVendor = vendorClient.getByID(comp.getDefaultVendorId());
+                } catch (TException e) {
+                    log.error("Could not get vendor for id [" + comp.getDefaultVendorId() + "] in component with id ["
+                            + comp.getId() + "] because of: ", e);
+                }
+                if (defaultVendor != null) {
+                    vendorNames.add(defaultVendor.getShortname());
+                }
             }
+            if (comp.isSetVendorNames()) {
+                vendorNames.addAll(comp.getVendorNames());
+            }
+            vendorNames.stream().sorted().forEach(vendorArray::put);
+            jsonObject.put("vndrs", vendorArray);
 
             JSONArray licenseArray = createJSONArray();
             if (comp.isSetMainLicenseIds()) {
                 comp.getMainLicenseIds().stream().sorted().forEach(licenseArray::put);
             }
-
-            jsonObject.put("vndrs", vendorArray);
             jsonObject.put("lics", licenseArray);
+
             componentData.put(jsonObject);
         }
 

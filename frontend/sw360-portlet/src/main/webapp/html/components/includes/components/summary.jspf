@@ -38,6 +38,10 @@
         <td><sw360:DisplayEnum value="${component.componentType}"/></td>
     </tr>
     <tr>
+        <td>Default vendor:</td>
+        <td><sw360:out value="${component.defaultVendor.fullname}"/></td>
+    </tr>
+    <tr>
         <td>Homepage:</td>
         <td><sw360:DisplayLink target="${component.homepage}"/></td>
     </tr>

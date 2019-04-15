@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -10,20 +10,15 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
-import com.google.common.base.Strings;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+
 import org.ektorp.support.View;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
-import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 
 /**
  * CRUD access for the Vendor class
@@ -38,6 +33,17 @@ public class VendorRepository extends DatabaseRepository<Vendor> {
         super(Vendor.class, db);
 
         initStandardDesignDocument();
+    }
+
+    public void fillVendor(Component component) {
+        if (component.isSetDefaultVendorId()) {
+            final String vendorId = component.getDefaultVendorId();
+            if (!isNullOrEmpty(vendorId)) {
+                final Vendor vendor = get(vendorId);
+                if (vendor != null)
+                    component.setDefaultVendor(vendor);
+            }
+        }
     }
 
     public void fillVendor(Release release) {

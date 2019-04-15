@@ -10,12 +10,6 @@
  */
 package org.eclipse.sw360.rest.resourceserver.core;
 
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TBase;
-import org.apache.thrift.TException;
-import org.apache.thrift.TFieldIdEnum;
 import org.eclipse.sw360.datahandler.resourcelists.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
@@ -37,24 +31,30 @@ import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.eclipse.sw360.rest.resourceserver.user.UserController;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.vendor.VendorController;
+
+import org.apache.log4j.Logger;
+import org.apache.thrift.TBase;
+import org.apache.thrift.TException;
+import org.apache.thrift.TFieldIdEnum;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.hateoas.Link;
-import org.springframework.hateoas.PagedResources;
-import org.springframework.hateoas.Resource;
-import org.springframework.hateoas.Resources;
+import org.springframework.hateoas.*;
+import org.springframework.hateoas.core.EmbeddedWrapper;
+import org.springframework.hateoas.core.EmbeddedWrappers;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.hateoas.core.EmbeddedWrapper;
-import org.springframework.hateoas.core.EmbeddedWrappers;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+
 import javax.servlet.http.HttpServletRequest;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -246,8 +246,8 @@ public class RestControllerHelper<T> {
         }
     }
 
-    public void addEmbeddedVendors(HalResource<Component> halComponent, Set<String> vendors) {
-        for (String vendorFullName : vendors) {
+    public void addEmbeddedVendors(HalResource<Component> halComponent, Set<String> vendorFullnames) {
+        for (String vendorFullName : vendorFullnames) {
             HalResource<Vendor> vendorHalResource = addEmbeddedVendor(vendorFullName);
             halComponent.addEmbeddedResource("sw360:vendors", vendorHalResource);
         }

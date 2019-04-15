@@ -10,6 +10,7 @@
 --%>
 <%@ page import="org.eclipse.sw360.datahandler.common.SW360Utils" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.components.Component" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.components.Release"%>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.MainlineState" %>
 
 <table class="table info_table" id="ComponentBasicInfo">
@@ -20,7 +21,7 @@
     </thead>
     <tr>
         <td width="33%">
-            <sw360:DisplayVendorEdit id="<%=Release._Fields.VENDOR_ID.toString()%>" vendor="${release.vendor}" />
+            <sw360:DisplayVendorEdit id="<%=Release._Fields.VENDOR_ID.toString()%>" vendor="${release.vendor}" label="Vendor"/>
         </td>
         <td width="33%">
             <label class="textlabel stackedLabel mandatory" for="comp_name">Name</label>

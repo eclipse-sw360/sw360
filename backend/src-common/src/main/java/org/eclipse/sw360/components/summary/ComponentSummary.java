@@ -10,8 +10,6 @@
  */
 package org.eclipse.sw360.components.summary;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableListMultimap;
 import org.eclipse.sw360.datahandler.db.ReleaseRepository;
 import org.eclipse.sw360.datahandler.db.VendorRepository;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
@@ -19,7 +17,8 @@ import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 import static org.eclipse.sw360.datahandler.thrift.ThriftUtils.copyField;
 

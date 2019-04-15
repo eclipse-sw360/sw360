@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -49,17 +49,20 @@
             <sw360:DisplayEnumInfo type="<%=ComponentType.class%>"/>
         </td>
         <td width="33%">
+            <sw360:DisplayVendorEdit id="<%=Component._Fields.DEFAULT_VENDOR_ID.toString()%>" vendorId="${component.defaultVendorId}" vendor="${component.defaultVendor}" label="Default vendor"/>
+        </td>
+        <td width="33%">
             <label class="textlabel stackedLabel" for="comp_homeurl">Homepage URL</label>
             <input class="toplabelledInput" id="comp_homeurl" name="<portlet:namespace/><%=Component._Fields.HOMEPAGE%>" type="URL" align="middle"
                    value="<sw360:out value="${component.homepage}"/>" placeholder="Enter Home Url"/>
         </td>
+    </tr>
+    <tr>
         <td width="33%">
             <label class="textlabel stackedLabel" for="comp_blogurl">Blog URL</label>
             <input class="toplabelledInput" id="comp_blogurl" name="<portlet:namespace/><%=Component._Fields.BLOG%>" type="URL" align="middle"
                    placeholder="Enter Blog Url" value="<sw360:out value="${component.blog}"/>"/>
         </td>
-    </tr>
-    <tr>
         <td width="33%">
             <label class="textlabel stackedLabel" for="comp_wikiurl">Wiki URL</label>
             <input class="toplabelledInput" id="comp_wikiurl" name="<portlet:namespace/><%=Component._Fields.WIKI%>" type="URL" align="middle"
@@ -70,10 +73,12 @@
             <input class="toplabelledInput" id="mailinglist" name="<portlet:namespace/><%=Component._Fields.MAILINGLIST%>" type="text"
                    placeholder="Enter Mailing List Url" value="<sw360:out value="${component.mailinglist}"/>"/>
         </td>
-        <td width="33%">
+    </tr>
+    <tr>
+        <td colspan="3">
             <label class="textlabel stackedLabel" for="comp_desc">Short Description</label>
             <textarea class="toplabelledInput" id="comp_desc" name="<portlet:namespace/><%=Component._Fields.DESCRIPTION%>" rows="4" cols="30"
-                      style="width:200px; height: 25px; resize:both;"
+                      style="width: 97%; height: 25px; resize:both;"
                       placeholder="Enter Description"><sw360:out value="${component.description}"/></textarea>
         </td>
     </tr>
@@ -125,11 +130,13 @@
 <core_rt:set var="customMap" value="${component.roles}"/>
 <%@include file="/html/utils/includes/mapEdit.jspf" %>
 
+<%@include file="/html/components/includes/vendors/searchVendor.jspf" %>
+
 <core_rt:set var="CODESCOOP_URL" value="<%=PortalConstants.CODESCOOP_URL%>"/>
 <core_rt:set var="CODESCOOP_TOKEN" value="<%=PortalConstants.CODESCOOP_TOKEN%>"/>
 <!-- Adding similar component popup for new component case -->
 <script>
-    require([ 'modules/linkListDialog' ], function(linkListDialog) {
+    require([ 'modules/linkListDialog', 'components/includes/vendors/searchVendor' ], function(linkListDialog, vendorsearch) {
         <portlet:resourceURL var="checkComponentNameUrl">
             <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.CHECK_COMPONENT_NAME%>"/>
         </portlet:resourceURL>
@@ -141,5 +148,21 @@
         <core_rt:if test="${empty CODESCOOP_URL || empty CODESCOOP_TOKEN}">
         linkListDialog.registerLinkListDialog(openOnBlurOfElementId, checkComponentNameUrl, checkComponentNameParamKey);
         </core_rt:if>
+
+
+        // vendor handling
+
+        $('#ComponentGeneralInfo input.edit-vendor').on('click', function() {
+            vendorsearch.openSearchDialog('<portlet:namespace/>what', '<portlet:namespace/>where',
+                      '<portlet:namespace/>FULLNAME', '<portlet:namespace/>SHORTNAME', '<portlet:namespace/>URL', fillVendorInfo);
+        });
+
+        function fillVendorInfo(vendorInfo) {
+            var beforeComma = vendorInfo.substr(0, vendorInfo.indexOf(","));
+            var afterComma = vendorInfo.substr(vendorInfo.indexOf(",") + 1);
+
+            $('#<%=Component._Fields.DEFAULT_VENDOR_ID.toString()%>').val(beforeComma.trim());
+            $('#<%=Component._Fields.DEFAULT_VENDOR_ID.toString()%>Display').val(afterComma.trim());
+        }
     });
 </script>

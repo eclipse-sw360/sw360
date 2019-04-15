@@ -263,6 +263,9 @@ struct Component {
 
     35: optional set<string> mainLicenseIds,        //Aggregate of release main licenses
 
+    36: optional Vendor defaultVendor,
+    37: optional string defaultVendorId,
+
     // List of keywords
     40: optional set<string> categories,
     41: optional set<string> languages,             //Aggregate of release languages
