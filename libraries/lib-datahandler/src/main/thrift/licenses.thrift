@@ -41,7 +41,7 @@ struct Todo {
     7: optional bool distribution,
     8: optional list<Obligation> obligations,
     9: optional set<string> obligationDatabaseIds,
-    10: required i32 todoId,
+    10: optional string title,
     11: optional map<string, string> customPropertyToValue,
 
     // These two are a quick fix to receiving booleans in PHP not working at the moment
@@ -305,4 +305,8 @@ service LicenseService {
     RequestSummary deleteAllLicenseInformation(1: User user);
 
     RequestSummary importAllSpdxLicenses(1: User user);
+    /**
+     * delete todo from database if user has permissions
+     **/
+    RequestStatus deleteTodo(1: string id, 2: User user);
 }

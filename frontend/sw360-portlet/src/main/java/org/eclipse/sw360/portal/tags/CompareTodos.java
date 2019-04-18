@@ -188,7 +188,7 @@ public class CompareTodos extends NameSpaceAwareTag {
             case REVISION:
             case TYPE:
             case OBLIGATION_DATABASE_IDS:
-            case TODO_ID:
+            case TITLE:
             case DEVELOPMENT_STRING:
             case DISTRIBUTION_STRING:
             case WHITELIST:

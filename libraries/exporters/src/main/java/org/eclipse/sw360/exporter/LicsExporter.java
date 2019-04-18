@@ -64,7 +64,7 @@ public class LicsExporter {
 
         final List<Todo> todos = licenseClient.getTodos();
         List<ConvertRecord.PropertyWithValueAndId> customProperties = new ArrayList<>();
-        SetMultimap<Integer, Integer> todoCustomPropertyMap = HashMultimap.create();
+        SetMultimap<String, Integer> todoCustomPropertyMap = HashMultimap.create();
         ConvertRecord.fillTodoCustomPropertyInfo(todos, customProperties, todoCustomPropertyMap);
         fileNameToStreams.put(LicsArchive.TODO_CUSTOM_PROPERTIES_FILE, getCsvStream(serialize(todoCustomPropertyMap, ImmutableList.of("T_ID", "P_ID"))));
         fileNameToStreams.put(LicsArchive.CUSTOM_PROPERTIES_FILE, getCsvStream(serialize(customProperties, customPropertiesSerializer())));

@@ -58,6 +58,7 @@ public class PortalConstants {
     public static final String PAGENAME_DETAIL = "detail";
     public static final String PAGENAME_VIEW = "view";
     public static final String PAGENAME_IMPORT = "import";
+    public static final String PAGENAME_ADD = "add";
     public static final String PAGENAME_EDIT = "edit";
     public static final String PAGENAME_ACTION = "action";
     public static final String PAGENAME_DUPLICATE = "duplicate";
@@ -125,6 +126,10 @@ public class PortalConstants {
     public static final String VENDOR = "vendor";
     public static final String VENDOR_ID = "vendorId";
     public static final String VENDOR_LIST = "vendorList";
+
+    //! Specialized keys for todos
+    public static final String TODO_LIST = "todoList";
+    public static final String TODO_ID = "todoId";
 
     //! Specialized keys for attachments
     public static final String ATTACHMENTS = "attachments";
@@ -340,6 +345,9 @@ public class PortalConstants {
 
     // vendor actions
     public static final String REMOVE_VENDOR = "remove_vendor";
+
+    // todo actions
+    public static final String REMOVE_TODO = "removeTodo";
 
     // user actions
     public static final String USER_PREFIX = "user";

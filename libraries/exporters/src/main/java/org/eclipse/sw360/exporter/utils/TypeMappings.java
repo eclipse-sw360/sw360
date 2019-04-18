@@ -72,7 +72,7 @@ public class TypeMappings {
         return new Function<Todo, Integer>() {
             @Override
             public Integer apply(Todo input) {
-                return input.getTodoId();
+                return -1;
             }
         };
     }

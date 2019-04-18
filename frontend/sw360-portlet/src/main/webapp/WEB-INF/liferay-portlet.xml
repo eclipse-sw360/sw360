@@ -113,6 +113,17 @@
     </portlet>
 
     <portlet>
+        <portlet-name>todos</portlet-name>
+        <icon>/icon.png</icon>
+        <instanceable>false</instanceable>
+        <private-request-attributes>false</private-request-attributes>
+        <header-portlet-css>/css/main.css</header-portlet-css>
+        <header-portlet-css>/css/print.css</header-portlet-css>
+        <header-portlet-css>/css/tooltips.css</header-portlet-css>
+        <header-portlet-javascript>/js/main.js</header-portlet-javascript>
+    </portlet>
+
+    <portlet>
         <portlet-name>projects</portlet-name>
         <icon>/icon.png</icon>
         <friendly-url-mapper-class>com.liferay.portal.kernel.portlet.DefaultFriendlyURLMapper</friendly-url-mapper-class>

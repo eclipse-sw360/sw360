@@ -70,16 +70,16 @@ public class ConvertRecordTest {
         String full = "headers\n 1,A,A1 \n 2,A,A2 \n 3,A,A3 \n 4,B,B1 \n 5,B,B2";
         fullRecord = readToRecord(full);
 
-        String fullTodo = "header \n '1','text1','true','true' \n '2','text2','false','false', '{\"key\": \"value\"}'";
+        String fullTodo = "header \n 'title1','text1','true','true' \n 'title2','text2','false','false', '{\"key\": \"value\"}'";
         fullTodoRecord = readToRecord(fullTodo);
 
         Map<String, String> todoCustomProperties1 = new HashMap<>();
         todoCustomProperties1.put("A", "A1");
-        Todo todo1 = new Todo().setTodoId(1).setCustomPropertyToValue(todoCustomProperties1);
+        Todo todo1 = new Todo().setId("1").setCustomPropertyToValue(todoCustomProperties1);
         Map<String, String> todoCustomProperties2 = new HashMap<>();
         todoCustomProperties2.put("A", "A2");
         todoCustomProperties2.put("C", "C2");
-        Todo todo2 = new Todo().setTodoId(2).setCustomPropertyToValue(todoCustomProperties2);
+        Todo todo2 = new Todo().setId("2").setCustomPropertyToValue(todoCustomProperties2);
         todos = Arrays.asList(todo1, todo2);
     }
 
@@ -179,7 +179,7 @@ public class ConvertRecordTest {
     @Test
     public void testFillTodoCustomPropertyInfoEmpty() throws Exception {
         List<ConvertRecord.PropertyWithValueAndId> customProperties = new ArrayList<>();
-        SetMultimap<Integer, Integer> todoCustomPropertyMap = HashMultimap.create();
+        SetMultimap<String, Integer> todoCustomPropertyMap = HashMultimap.create();
         fillTodoCustomPropertyInfo(Collections.EMPTY_LIST, customProperties, todoCustomPropertyMap);
         assertThat(customProperties.size(), is(0));
         assertThat(todoCustomPropertyMap.size(), is(0));
@@ -188,11 +188,11 @@ public class ConvertRecordTest {
     @Test
     public void testFillTodoCustomPropertyInfoFull() throws Exception {
         List<ConvertRecord.PropertyWithValueAndId> customProperties = new ArrayList<>();
-        SetMultimap<Integer, Integer> todoCustomPropertyMap = HashMultimap.create();
+        SetMultimap<String, Integer> todoCustomPropertyMap = HashMultimap.create();
         fillTodoCustomPropertyInfo(todos, customProperties, todoCustomPropertyMap);
         assertThat(customProperties.size(), is(3));
         assertThat(todoCustomPropertyMap.size(), is(3));
-        int id = todoCustomPropertyMap.get(1).stream().findFirst().get();
+        int id = todoCustomPropertyMap.get("1").stream().findFirst().get();
         assertThat(customProperties.get(id).getProperty(), is("A"));
         assertThat(customProperties.get(id).getValue(), is("A1"));
     }
@@ -208,11 +208,9 @@ public class ConvertRecordTest {
         List<Todo> todos = convertTodos(fullTodoRecord);
         assertThat(todos.size(), is(2));
         assertThat(todos.get(0).getText(), is("text1"));
-        assertThat(todos.get(0).getTodoId(), is(1));
         assertThat(todos.get(0).isDevelopment(), is(true));
         assertThat(todos.get(0).isDistribution(), is(true));
         assertThat(todos.get(1).getText(), is("text2"));
-        assertThat(todos.get(1).getTodoId(), is(2));
         assertThat(todos.get(1).isDevelopment(), is(false));
         assertThat(todos.get(1).isDistribution(), is(false));
         assertThat(todos.get(1).getExternalIds().size(), is(1));
