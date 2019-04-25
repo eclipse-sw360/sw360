@@ -101,6 +101,39 @@ include::{snippets}/should_document_get_project_attachment_info/curl-request.ado
 include::{snippets}/should_document_get_project_attachment_info/http-response.adoc[]
 
 
+[[resources-project-attachment-upload]]
+==== Upload attachment to project
+
+A `POST` request is used to upload attachment to project
+
+[red]#Request structure#
+|===
+|Path |Type |Description
+
+|file
+|file
+|File path of the attachment
+
+|attachment.filename
+|String
+|Name of the file
+
+|attachment.attachmentContentId
+|String
+|Attachment content id
+|===
+
+[red]#Response structure#
+|===
+|Complete Project will be returned
+|===
+
+===== Example request
+include::{snippets}/should_document_upload_attachment_to_project/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_upload_attachment_to_project/http-response.adoc[]
+
 [[resources-project-attachment-get]]
 ==== Download attachment
 
@@ -202,3 +235,4 @@ include::{snippets}/should_document_create_project/curl-request.adoc[]
 
 ===== Example response
 include::{snippets}/should_document_create_project/http-response.adoc[]
+

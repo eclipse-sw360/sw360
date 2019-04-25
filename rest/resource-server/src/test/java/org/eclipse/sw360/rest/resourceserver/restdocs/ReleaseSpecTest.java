@@ -32,6 +32,7 @@ import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.Resources;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -71,7 +72,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
     private String releaseId = "3765276512";
 
     @Before
-    public void before() throws TException {
+    public void before() throws TException, IOException {
         Set<Attachment> attachmentList = new HashSet<>();
         List<Resource<Attachment>> attachmentResources = new ArrayList<>();
         attachment = new Attachment("1231231254", "spring-core-4.3.4.RELEASE.jar");
@@ -81,6 +82,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
         given(this.attachmentServiceMock.getAttachmentContent(anyObject())).willReturn(new AttachmentContent().setId("1231231254").setFilename("spring-core-4.3.4.RELEASE.jar").setContentType("binary"));
         given(this.attachmentServiceMock.getResourcesFromList(anyObject())).willReturn(new Resources<>(attachmentResources));
+        given(this.attachmentServiceMock.uploadAttachment(anyObject(), anyObject(), anyObject())).willReturn(attachment);
 
         Map<String, Set<String>> externalIds = new HashMap<>();
         externalIds.put("mainline-id-component", new HashSet<>(Arrays.asList("1432", "4876")));
@@ -346,5 +348,10 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("createdOn").description("The creation date of the internal sw360 release"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
+    }
+
+    @Test
+    public void should_document_upload_attachment_to_release() throws Exception {
+        testAttachmentUpload("/api/releases/", releaseId);
     }
 }
