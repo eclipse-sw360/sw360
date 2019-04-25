@@ -58,7 +58,7 @@ public class UserPortletUtils {
         long roleId = role.getRoleId();
 
         try {
-            if (userAlreadyExists(requestAdapter.getErrorMessagesConsumer(), emailAddress, externalId, externalId, companyId)){
+            if (userAlreadyExists(requestAdapter.getErrorMessagesConsumer(), emailAddress, externalId, companyId)){
                 return null;
             }
         } catch (PortalException | SystemException e) {
@@ -128,17 +128,14 @@ public class UserPortletUtils {
         }
     }
 
-    private static boolean userAlreadyExists(Consumer<String> errorMessageConsumer, String emailAddress, String externalId, String screenName, long companyId) throws PortalException, SystemException {
+    private static boolean userAlreadyExists(Consumer<String> errorMessageConsumer, String emailAddress, String externalId, long companyId) throws PortalException, SystemException {
         boolean sameEmailExists = userByFieldExists(emailAddress, UserLocalServiceUtil::getUserByEmailAddress, companyId);
-        boolean sameScreenNameExists = userByFieldExists(screenName, UserLocalServiceUtil::getUserByScreenName, companyId);
-        boolean sameExternalIdExists = userByFieldExists(externalId, UserLocalServiceUtil::getUserByOpenId, companyId);
-        boolean alreadyExists = sameScreenNameExists || sameEmailExists || sameExternalIdExists;
+        boolean sameExternalIdExists = userByFieldExists(externalId, UserLocalServiceUtil::getUserByScreenName, companyId);
+        boolean alreadyExists = sameEmailExists || sameExternalIdExists;
 
         if(alreadyExists) {
             String errorMessage;
-            if(sameScreenNameExists) {
-                errorMessage = ErrorMessages.FULL_NAME_ALREADY_EXISTS;
-            } else if(sameEmailExists) {
+            if(sameEmailExists) {
                 errorMessage = ErrorMessages.EMAIL_ALREADY_EXISTS;
             } else {
                 errorMessage = ErrorMessages.EXTERNAL_ID_ALREADY_EXISTS;

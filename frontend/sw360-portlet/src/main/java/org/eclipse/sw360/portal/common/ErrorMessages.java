@@ -39,7 +39,6 @@ public class ErrorMessages {
     public static final String PASSWORDS_DONT_MATCH = "Password do not match.";
     public static final String COULD_NOT_CREATE_USER_MODERATION_REQUEST = "Could not create user moderation request.";
     public static final String EMAIL_ALREADY_EXISTS = "Email already exists.";
-    public static final String FULL_NAME_ALREADY_EXISTS = "Full name already exists.";
     public static final String EXTERNAL_ID_ALREADY_EXISTS = "External id already exists.";
     public static final String DEFAULT_ERROR_MESSAGE = "Request could not be processed.";
     public static final String DOCUMENT_NOT_AVAILABLE = "The requested document is not available.";
@@ -70,7 +69,6 @@ public class ErrorMessages {
             .add(PASSWORDS_DONT_MATCH)
             .add(COULD_NOT_CREATE_USER_MODERATION_REQUEST)
             .add(EMAIL_ALREADY_EXISTS)
-            .add(FULL_NAME_ALREADY_EXISTS)
             .add(EXTERNAL_ID_ALREADY_EXISTS)
             .add(DOCUMENT_NOT_AVAILABLE)
             .add(ERROR_GETTING_PROJECT)

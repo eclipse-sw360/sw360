@@ -109,7 +109,7 @@ public class UserPortlet extends Sw360Portlet {
                     }
                 }
 
-                String gid = liferayUser.getOpenId();
+                String gid = liferayUser.getScreenName();
                 String passwordHash = liferayUser.getPassword();
 
                 return !(isNullOrEmpty(firstName) || isNullOrEmpty(lastName) || isNullOrEmpty(emailAddress) || isNullOrEmpty(department) || isNullOrEmpty(userGroup) || isNullOrEmpty(gid) || isNullOrEmpty(passwordHash));
@@ -167,7 +167,7 @@ public class UserPortlet extends Sw360Portlet {
     }
 
 
-    public void backUpUsers(ResourceRequest request, ResourceResponse response) throws PortletException, IOException, SystemException, PortalException {
+    public void backUpUsers(ResourceRequest request, ResourceResponse response) throws IOException, SystemException, PortalException {
         List<User> liferayUsers;
         try {
             liferayUsers = UserLocalServiceUtil.getUsers(QueryUtil.ALL_POS, QueryUtil.ALL_POS);
@@ -196,7 +196,7 @@ public class UserPortlet extends Sw360Portlet {
                 department = organizations.get(0).getName();
             }
 
-            String gid = liferayUser.getOpenId();
+            String gid = liferayUser.getScreenName();
             boolean isMale = liferayUser.isMale();
             String passwordHash = liferayUser.getPassword();
             if (isNullOrEmpty(emailAddress) || isNullOrEmpty(department)) {

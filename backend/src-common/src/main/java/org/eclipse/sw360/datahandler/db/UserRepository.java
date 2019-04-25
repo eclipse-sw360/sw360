@@ -34,7 +34,7 @@ import java.util.Set;
         @View(name = "all",
                 map = "function(doc) { if (doc.type == 'user') emit(null, doc._id) }"),
         @View(name = "byExternalId",
-                map = "function(doc) { if (doc.type == 'user') emit(doc.externalid.toLowerCase(), doc._id) }"),
+                map = "function(doc) { if (doc.type == 'user' && doc.externalid) emit(doc.externalid.toLowerCase(), doc._id) }"),
         @View(name = "byApiToken",
                 map = "function(doc) { if (doc.type == 'user') " +
                         "  for (var i in doc.restApiTokens) {" +
@@ -66,6 +66,10 @@ public class UserRepository extends SummaryAwareRepository<User> {
     }
 
     public User getByExternalId(String externalId) {
+        if(externalId == null || "".equals(externalId)) {
+            // liferay contains the setup user with externalId=="" and we do not want to match him or any other one with empty externalID
+            return null;
+        }
         final Set<String> userIds = queryForIdsAsValue("byExternalId", externalId.toLowerCase());
         return getUserFromIds(userIds);
     }
