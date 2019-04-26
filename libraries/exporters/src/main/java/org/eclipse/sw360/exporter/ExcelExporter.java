@@ -11,6 +11,7 @@
 package org.eclipse.sw360.exporter;
 
 
+import org.apache.poi.ss.SpreadsheetVersion;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
@@ -96,7 +97,11 @@ public class ExcelExporter<T, U extends ExporterHelper<T>> {
         }
         for (int column = 0; column < helper.getColumns(); column++) {
             Cell cell = row.createCell(column);
-            cell.setCellValue(values.get(column));
+            if(values.get(column).length() >= SpreadsheetVersion.EXCEL2007.getMaxTextLength()) {
+                cell.setCellValue("cell has exceeded max number of characters");
+            }else {
+                cell.setCellValue(values.get(column));
+            }
             cell.setCellStyle(style);
         }
     }
