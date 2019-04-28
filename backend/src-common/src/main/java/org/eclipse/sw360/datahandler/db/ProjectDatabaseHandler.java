@@ -194,7 +194,9 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         if (changeWouldResultInDuplicate(actual, project)) {
             return RequestStatus.DUPLICATE;
-        } else if (!changePassesSanityCheck(project, actual)) {
+        } else if (duplicateAttachmentExist(project)) {
+            return RequestStatus.DUPLICATE_ATTACHMENT;
+        } else if (!changePassesSanityCheck(project, actual)){
             return RequestStatus.FAILED_SANITY_CHECK;
         } else if (makePermission(actual, user).isActionAllowed(RequestedAction.WRITE)) {
             copyImmutableFields(project,actual);
@@ -219,6 +221,13 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
 
         return isDuplicate(after);
+    }
+
+    private boolean duplicateAttachmentExist(Project project) {
+        if(project.attachments != null && !project.attachments.isEmpty()) {
+            return AttachmentConnector.isDuplicateAttachment(project.attachments);
+        }
+        return false;
     }
 
     private void deleteAttachmentUsagesOfUnlinkedReleases(Project updated, Project actual) throws SW360Exception {

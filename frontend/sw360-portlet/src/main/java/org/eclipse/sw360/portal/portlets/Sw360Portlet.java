@@ -275,6 +275,7 @@ abstract public class Sw360Portlet extends MVCPortlet {
             setSW360SessionError(request, ErrorMessages.UPDATE_FAILED_SANITY_CHECK);
             break;
         case DUPLICATE:
+        case DUPLICATE_ATTACHMENT:
             // just break to not throw an exception, error message has to be set by caller
             // because of type specific error messages
             break;
