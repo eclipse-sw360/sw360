@@ -93,6 +93,7 @@ public class PortalConstants {
     //! Specialized keys for components
     public static final String COMPONENT_ID = "componentid";
     public static final String COMPONENT = "component";
+    public static final String COMPONENT_PURL = "componentpurl";
     public static final String COMPONENT_NAME = "componentname";
     public static final String ACTUAL_COMPONENT = "actual_component";
     public static final String COMPONENT_LIST = "componentList";
@@ -394,8 +395,13 @@ public class PortalConstants {
     public static final String API_TOKEN_ID = "tokenId";
 
     // CodeScoop integration
-    public static final String CODESCOOP_URL;
-    public static final String CODESCOOP_TOKEN;
+    public static final String CODESCOOP_ACTIVE = "codescoopActive";
+    public static final String CODESCOOP_ACTION = "codescoop_action_";
+    public static final String CODESCOOP_ACTION_COMPOSITE = CODESCOOP_ACTION + "composite";
+    public static final String CODESCOOP_ACTION_COMPONENT = CODESCOOP_ACTION + "component";
+    public static final String CODESCOOP_ACTION_RELEASES = CODESCOOP_ACTION + "releases";
+    public static final String CODESCOOP_ACTION_AUTOCOMPLETE = CODESCOOP_ACTION + "autocomplete";
+    public static final String CODESCOOP_ACTION_PURL = CODESCOOP_ACTION + "purl";
 
     public static final String WRITE_ACCESS_USER = "writeAccessUser";
 
@@ -426,10 +432,6 @@ public class PortalConstants {
         API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS = props.getProperty("rest.apitoken.write.validity.days", "30");
         API_TOKEN_HASH_SALT = props.getProperty("rest.apitoken.hash.salt", "$2a$04$Software360RestApiSalt");
         API_WRITE_ACCESS_USERGROUP = UserGroup.valueOf(props.getProperty("rest.write.access.usergroup", UserGroup.ADMIN.name()));
-
-        // CodesScoop Constants
-        CODESCOOP_URL = props.getProperty("codescoop.url", "");
-        CODESCOOP_TOKEN = props.getProperty("codescoop.token", "");
     }
 
     private PortalConstants() {

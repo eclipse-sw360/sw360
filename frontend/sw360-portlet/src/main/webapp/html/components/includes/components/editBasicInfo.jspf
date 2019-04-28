@@ -132,8 +132,6 @@
 
 <%@include file="/html/components/includes/vendors/searchVendor.jspf" %>
 
-<core_rt:set var="CODESCOOP_URL" value="<%=PortalConstants.CODESCOOP_URL%>"/>
-<core_rt:set var="CODESCOOP_TOKEN" value="<%=PortalConstants.CODESCOOP_TOKEN%>"/>
 <!-- Adding similar component popup for new component case -->
 <script>
     require([ 'modules/linkListDialog', 'components/includes/vendors/searchVendor' ], function(linkListDialog, vendorsearch) {
@@ -145,7 +143,7 @@
             checkComponentNameParamKey = '<portlet:namespace/><%=PortalConstants.COMPONENT_NAME%>',
             openOnBlurOfElementId = '#comp_name';
 
-        <core_rt:if test="${empty CODESCOOP_URL || empty CODESCOOP_TOKEN}">
+        <core_rt:if test="${not codescoopActive}">
         linkListDialog.registerLinkListDialog(openOnBlurOfElementId, checkComponentNameUrl, checkComponentNameParamKey);
         </core_rt:if>
 

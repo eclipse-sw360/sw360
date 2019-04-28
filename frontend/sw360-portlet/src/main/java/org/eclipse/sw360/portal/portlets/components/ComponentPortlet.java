@@ -34,6 +34,7 @@ import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.codescoop.CodescoopService;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.cvesearch.CveSearchService;
 import org.eclipse.sw360.datahandler.thrift.cvesearch.VulnerabilityUpdateStatus;
@@ -58,8 +59,15 @@ import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
 import org.apache.thrift.protocol.TSimpleJSONProtocol;
 
+import javax.portlet.*;
+import javax.portlet.filter.ResourceRequestWrapper;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.nio.charset.Charset;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -174,12 +182,15 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             updateAllVulnerabilities(request, response);
         } else if (PortalConstants.UPDATE_VULNERABILITY_VERIFICATION.equals(action)){
             updateVulnerabilityVerification(request, response);
+            updateVulnerabilityVerification(request,response);
         } else if (PortalConstants.EXPORT_TO_EXCEL.equals(action)) {
             exportExcel(request, response);
         } else if (PortalConstants.RELEASE_LINK_TO_PROJECT.equals(action)) {
             linkReleaseToProject(request, response);
         } else if (isGenericAction(action)) {
             dealWithGenericAction(request, response, action);
+        } else if (action.contains(PortalConstants.CODESCOOP_ACTION)) {
+            serveCodescoop(action, request, response);
         }
     }
 
@@ -389,7 +400,6 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         serveRequestStatus(request, response, requestStatus, "Problem unsubscribing release", log);
     }
 
-
     private void serveLinkedReleases(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
         String what = request.getParameter(PortalConstants.WHAT);
 
@@ -448,10 +458,60 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         serveReleaseSearch(request, response, searchText);
     }
 
+    private void serveCodescoop(String action, ResourceRequest request, ResourceResponse response) throws PortletException {
+        try {
+            ResourceRequestWrapper wrapper = new ResourceRequestWrapper(request);
+            BufferedReader streamReader = wrapper.getReader();
+            StringBuilder responseStrBuilder = new StringBuilder();
+            String inputStr;
+            while ((inputStr = streamReader.readLine()) != null) {
+                responseStrBuilder.append(inputStr);
+            }
+            log.info("requested data : " + responseStrBuilder.toString());
+            CodescoopService.Iface codescoopClient = thriftClients.makeCodescoopClient();
+
+            String responseJson = null;
+            if (CODESCOOP_ACTION_COMPOSITE.equals(action)) {
+                responseJson = codescoopClient.proceedComponentsCompositeJson(responseStrBuilder.toString());
+            } else if (CODESCOOP_ACTION_COMPONENT.equals(action)) {
+                responseJson = codescoopClient.proceedComponentsJson(responseStrBuilder.toString());
+            } else if (CODESCOOP_ACTION_RELEASES.equals(action)) {
+                responseJson = codescoopClient.proceedComponentReleasesJson(responseStrBuilder.toString());
+            } else if (CODESCOOP_ACTION_AUTOCOMPLETE.equals(action)) {
+                responseJson = codescoopClient.proceedAutocompleteJson(responseStrBuilder.toString());
+            } else if (CODESCOOP_ACTION_PURL.equals(action)) {
+                responseJson = codescoopClient.proceedComponentsPurlJson(responseStrBuilder.toString());
+            }
+            writeJsonResponse(responseJson, response);
+        } catch (Exception e) {
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "500");
+            log.error("Error serveCodescoop", e);
+            throw new PortletException(e.getMessage(), e);
+        }
+    }
+
+    private void writeJsonResponse(String json, ResourceResponse response) throws IOException {
+        byte[] bytes = json.getBytes(Charset.forName("UTF-8"));
+        response.setContentType(ContentTypes.APPLICATION_JSON);
+        response.setContentLength(bytes.length);
+        OutputStream outputStream = response.getPortletOutputStream();
+        outputStream.write(bytes, 0, bytes.length);
+        response.flushBuffer();
+    }
+
     //! VIEW and helpers
     @Override
     public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
         String pageName = request.getParameter(PAGENAME);
+
+        try {
+            CodescoopService.Iface codescoopClient = thriftClients.makeCodescoopClient();
+            request.setAttribute(PortalConstants.CODESCOOP_ACTIVE, codescoopClient.isEnabled());
+        } catch (TException e) {
+            log.debug("CodescoopService has not connected", e);
+            request.setAttribute(PortalConstants.CODESCOOP_ACTIVE, false);
+        }
+
         if (PAGENAME_DETAIL.equals(pageName)) {
             prepareDetailView(request, response);
             include("/html/components/detail.jsp", request, response);
@@ -564,6 +624,14 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             if (!isNullOrEmpty(release.getId())) { //Otherwise the link is meaningless
                 addReleaseBreadcrumb(request, response, release);
             }
+
+            Map<String, String> externalIds = component.getExternalIds();
+            if (externalIds != null && externalIds.containsKey("purl.id")) {
+                request.setAttribute(COMPONENT_PURL, externalIds.get("purl.id"));
+            } else {
+                request.setAttribute(COMPONENT_PURL, "");
+            }
+
             request.setAttribute(COMPONENT, component);
             request.setAttribute(IS_USER_AT_LEAST_ECC_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.ECC_ADMIN, user) ? "Yes" : "No");
 

@@ -12,6 +12,15 @@
 <portlet:resourceURL var="deleteReleaseAjaxURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.DELETE_RELEASE%>'/>
 </portlet:resourceURL>
+<portlet:resourceURL var="sw360ComponentUrl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CODESCOOP_ACTION_COMPONENT%>'/>
+</portlet:resourceURL>
+<portlet:resourceURL var="sw360ReleasesUrl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CODESCOOP_ACTION_RELEASES%>'/>
+</portlet:resourceURL>
+<portlet:resourceURL var="sw360PurlUrl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CODESCOOP_ACTION_PURL%>'/>
+</portlet:resourceURL>
 <portlet:renderURL var="addReleaseURL">
     <portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="${component.id}"/>
     <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_EDIT_RELEASE%>"/>
@@ -70,18 +79,19 @@
     };
 </script>
 
-<core_rt:set var="CODESCOOP_URL" value="<%=PortalConstants.CODESCOOP_URL%>"/>
-<core_rt:set var="CODESCOOP_TOKEN" value="<%=PortalConstants.CODESCOOP_TOKEN%>"/>
-<core_rt:if test="${not empty CODESCOOP_URL && not empty CODESCOOP_TOKEN}">
+<core_rt:if test="${codescoopActive}">
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             require(['modules/codeScoop' ], function(codeScoop) {
-                var api = new codeScoop('<%=PortalConstants.CODESCOOP_URL%>', '<%=PortalConstants.CODESCOOP_TOKEN%>');
+                var api = new codeScoop();
                 api.activateMissedReleases(
                     releaseData,
                     "componentOverview",
                     "releaseAggregateTable",
-                    '<portlet:renderURL ><portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="${component.id}"/><portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_EDIT_RELEASE%>"/></portlet:renderURL>');
+                    '<portlet:renderURL ><portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="${component.id}"/><portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_EDIT_RELEASE%>"/></portlet:renderURL>',
+                    "<%=sw360ComponentUrl%>",
+                    "<%=sw360ReleasesUrl%>",
+                    "<%=sw360PurlUrl%>");
             });
         });
     </script>

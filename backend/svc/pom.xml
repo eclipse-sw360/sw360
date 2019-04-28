@@ -87,6 +87,18 @@
           </plugins>
         </build>
       </profile>
+      <profile>
+          <id>codescoop</id>
+          <modules>
+              <module>svc-codescoop</module>
+          </modules>
+      </profile>
+      <profile>
+          <id>default</id>
+          <activation>
+              <activeByDefault>true</activeByDefault>
+          </activation>
+      </profile>
     </profiles>
 
     <dependencies>
