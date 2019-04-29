@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -9,9 +9,43 @@
   ~ http://www.eclipse.org/legal/epl-v10.html
 --%>
 
+<portlet:resourceURL var="loadSpdxLicenseInfoUrl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.LOAD_SPDX_LICENSE_INFO%>'/>
+</portlet:resourceURL>
+<portlet:resourceURL var="writeSpdxLicenseInfoIntoReleaseUrl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.WRITE_SPDX_LICENSE_INFO_INTO_RELEASE%>'/>
+</portlet:resourceURL>
+
 <%@include file="/html/utils/includes/fossologyClearing.jspf"%>
 
 <core_rt:set var="clearingInfo" value="${release.clearingInformation}"/>
+
+<table class="table info_table" id="spdxAttachments"
+        data-load-spdx-license-info-url="<%=loadSpdxLicenseInfoUrl%>"
+        data-write-spdx-license-info-into-release-url="<%=writeSpdxLicenseInfoIntoReleaseUrl%>"
+        data-release-id-parameter-name="<%=PortalConstants.RELEASE_ID%>"
+        data-attachment-id-parameter-name="<%=PortalConstants.ATTACHMENT_ID%>"
+        data-spdx-license-info-parameter-name="<%=PortalConstants.SPDX_LICENSE_INFO%>">
+    <thead>
+        <tr>
+            <th colspan="3">SPDX Attachments</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        <core_rt:forEach items="${spdxAttachments}" var="spdxAttachment">
+            <tr id="${spdxAttachment.attachmentContentId}">
+                <td colspan="2">
+                    <sw360:out value="${spdxAttachment.filename}"/>
+                </td>
+                <td data-attachment-id="${spdxAttachment.attachmentContentId}">
+                    <button class="showSpdxContentBtn" data-release-id="${release.id}" data-attachment-id="${spdxAttachment.attachmentContentId}">Show License Info</button>
+                </td>
+            </tr>
+        </core_rt:forEach>
+    </tbody>
+</table>
+
 <table class="table info_table" id="ReleaseClearingOverview">
     <thead>
     <tr>
@@ -167,6 +201,115 @@
                 var data = $(event.currentTarget).data();
                 fossology.openSelectClearingDialog('fossologySending', data.releaseId);
             });
+
+            $('.showSpdxContentBtn').on('click', function(event) {
+                handleShowSpdxContentClick($(event.currentTarget));
+            });
+
+            function handleShowSpdxContentClick($btn) {
+                var tableData = $('#spdxAttachments').data(),
+                    rawUrl = tableData.loadSpdxLicenseInfoUrl,
+                    url = Liferay.PortletURL.createURL(rawUrl),
+                    btnData = $btn.data(),
+                    releaseId = btnData.releaseId,
+                    attachmentId = btnData.attachmentId,
+                    $row = $('#' + attachmentId),
+                    $btnCell = $row.find('td[data-attachment-id=' + attachmentId + ']');
+
+                url.setParameter(tableData.releaseIdParameterName, releaseId);
+                url.setParameter(tableData.attachmentIdParameterName, attachmentId);
+
+                replaceContentWithSpinner($btnCell);
+
+                $.ajax({
+                    type: 'GET',
+                    dataType: 'json',
+                    url: url.toString(),
+                }).done(function(result) {
+                    if (!result || result.length == 0 || Object.getOwnPropertyNames(result).length == 0) {
+                        replaceContentWithWarning($btnCell, 'No license information found in file.');
+                    } else {
+                        printResult($row, result);
+                        addTakeOverBtn($btnCell, releaseId, attachmentId, result);
+                    }
+                }).fail(function(error) {
+                    replaceContentWithError($btnCell, 'Cannot load license information: ' + error.statusText + ' (' + error.status + ').');
+                });
+            }
+
+            function printResult($sibbling, data) {
+                var $resultRow = $('<tr style="background-color: #f8f7f7;">');
+
+                $resultRow.append($('<td>'));
+                $resultRow.append($('<td>').append($('<span>', { text: 'Concluded License Ids'})));
+                $resultRow.append($('<td>').append($('<span>', { text: data.concludedLicenseIds.join(', ')})));
+
+                $sibbling.after($resultRow);
+            }
+
+            function addTakeOverBtn($parent, releaseId, attachmentId, data) {
+                var $newBtn = $('<button>', { 'class': 'spdxTakeOverBtn', 'data-release-id': releaseId, 'data-attachment-id': attachmentId, text: 'Add data to this release' });
+
+                $newBtn.data('result', data);
+                $parent.html('');
+                $parent.append($newBtn);
+
+                $newBtn.on('click', function(event) {
+                    handleTakeOverClick($(event.currentTarget));
+                });
+            }
+
+            function handleTakeOverClick($btn) {
+                var tableData = $('#spdxAttachments').data(),
+                    rawUrl = tableData.writeSpdxLicenseInfoIntoReleaseUrl,
+                    url = Liferay.PortletURL.createURL(rawUrl),
+                    btnData = $btn.data(),
+                    releaseId = btnData.releaseId,
+                    attachmentId = btnData.attachmentId,
+                    data = btnData.result,
+                    $row = $('#' + attachmentId),
+                    $btnCell = $row.find('td[data-attachment-id=' + attachmentId + ']'),
+                    dataObj = {};
+
+                url.setParameter(tableData.releaseIdParameterName, releaseId);
+                dataObj[ '<portlet:namespace/>' + tableData.spdxLicenseInfoParameterName ] = JSON.stringify(data);
+
+                replaceContentWithSpinner($btnCell);
+
+                $.ajax({
+                    type: 'POST',
+                    dataType: 'json',
+                    url: url.toString(),
+                    data: dataObj
+                }).done(function(result) {
+                    if (!result || result.length == 0 || result.result !== 'SUCCESS') {
+                        replaceContentWithError($btnCell, 'Could not write SPDX data into release: ' + result.result);
+                    } else {
+                        replaceContentWithSuccess($btnCell, 'Success! Please reload page to see the changes!');
+                    }
+                }).fail(function(error) {
+                    replaceContentWithError($btnCell, 'Could not write SPDX data into release: ' + error.statusText + ' (' + error.status + ').');
+                });
+            }
+
+            function replaceContentWithSuccess($parent, message) {
+                replaceContentWith($parent, 'backgroundOK', null, message);
+            }
+            function replaceContentWithWarning($parent, message) {
+                replaceContentWith($parent, 'backgroundWarning', null, message);
+            }
+            function replaceContentWithError($parent, message) {
+                replaceContentWith($parent, 'backgroundAlert', null, message);
+            }
+            function replaceContentWithSpinner($parent) {
+                replaceContentWith($parent, null, 'spinner', 'Loading SPDX file information. Please wait...');
+            }
+            function replaceContentWith($parent, parentStyleClass, styleClass, message) {
+                $parent.html('');
+                $parent.attr('class', parentStyleClass ? parentStyleClass : '');
+                $parent.append($('<div>', { 'class': styleClass ? styleClass : '' })
+                       .append($('<span>', { 'text': message })));
+            }
         });
 
     });

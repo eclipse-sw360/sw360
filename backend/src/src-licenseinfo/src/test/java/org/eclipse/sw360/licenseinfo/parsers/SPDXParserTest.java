@@ -11,6 +11,11 @@
  */
 package org.eclipse.sw360.licenseinfo.parsers;
 
+import com.google.common.collect.Sets;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
@@ -22,28 +27,24 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.licenseinfo.TestHelper.AttachmentContentStore;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.spdx.rdfparser.model.SpdxDocument;
 import org.spdx.rdfparser.SPDXDocumentFactory;
+import org.spdx.rdfparser.model.SpdxDocument;
 
 import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-
-import com.tngtech.java.junit.dataprovider.DataProvider;
-import com.tngtech.java.junit.dataprovider.DataProviderRunner;
-import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import java.util.*;
 
 import static org.eclipse.sw360.licenseinfo.TestHelper.*;
 import static org.eclipse.sw360.licenseinfo.parsers.SPDXParser.FILETYPE_SPDX_INTERNAL;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 /**
  * @author: maximilian.huber@tngtech.com
@@ -71,15 +72,18 @@ public class SPDXParserTest {
                 { spdxExampleFile,
                         Arrays.asList("Apache-2.0", "LGPL-2.0", "1", "GPL-2.0", "CyberNeko License", "2"),
                         4,
-                        "Copyright 2008-2010 John Smith" },
+                        "Copyright 2008-2010 John Smith",
+                        Sets.newHashSet("3", "LGPL-2.0") },
                 { spdx11ExampleFile,
                         Arrays.asList("4", "1", "Apache-2.0", "2", "Apache-1.0", "MPL-1.1", "CyberNeko License"),
                         2,
-                        "Hewlett-Packard Development Company, LP" },
+                        "Hewlett-Packard Development Company, LP",
+                        Sets.newHashSet("1", "2", "3", "4", "Apache-1.0", "Apache-2.0", "MPL-1.1") },
                 { spdx12ExampleFile,
                         Arrays.asList("4", "1", "Apache-2.0", "2", "Apache-1.0", "MPL-1.1", "CyberNeko License"),
                         3,
-                        "Hewlett-Packard Development Company, LP" },
+                        "Hewlett-Packard Development Company, LP",
+                        Sets.newHashSet("1", "2", "3", "4", "Apache-1.0", "Apache-2.0", "MPL-1.1") },
         };
         // @formatter:on
     }
@@ -96,7 +100,8 @@ public class SPDXParserTest {
         attachmentContentStore.put(spdx12ExampleFile);
     }
 
-    private void assertIsResultOfExample(LicenseInfo result, String exampleFile, List<String> expectedLicenses, int numberOfCoyprights, String exampleCopyright){
+    private void assertIsResultOfExample(LicenseInfo result, String exampleFile, List<String> expectedLicenses,
+            int numberOfCoyprights, String exampleCopyright, Set<String> exampleConcludedLicenseIds) {
         assertLicenseInfo(result);
 
         assertThat(result.getFilenames().size(), is(1));
@@ -116,11 +121,14 @@ public class SPDXParserTest {
         assertThat(result.getCopyrights().stream()
                         .anyMatch(c -> c.contains(exampleCopyright)),
                 is(true));
+
+        assertThat(result.getConcludedLicenseIds(), containsInAnyOrder(exampleConcludedLicenseIds.toArray()));
     }
 
     @Test
     @UseDataProvider("dataProviderAdd")
-    public void testAddSPDXContentToCLI(String exampleFile, List<String> expectedLicenses, int numberOfCoyprights, String exampleCopyright) throws Exception {
+    public void testAddSPDXContentToCLI(String exampleFile, List<String> expectedLicenses, int numberOfCoyprights,
+            String exampleCopyright, Set<String> exampleConcludedLicenseIds) throws Exception {
         AttachmentContent attachmentContent = new AttachmentContent()
                 .setFilename(exampleFile);
 
@@ -130,12 +138,14 @@ public class SPDXParserTest {
                 FILETYPE_SPDX_INTERNAL);
 
         LicenseInfoParsingResult result = SPDXParserTools.getLicenseInfoFromSpdx(attachmentContent, spdxDocument);
-        assertIsResultOfExample(result.getLicenseInfo(), exampleFile, expectedLicenses, numberOfCoyprights, exampleCopyright);
+        assertIsResultOfExample(result.getLicenseInfo(), exampleFile, expectedLicenses, numberOfCoyprights,
+                exampleCopyright, exampleConcludedLicenseIds);
     }
 
     @Test
     @UseDataProvider("dataProviderAdd")
-    public void testGetLicenseInfo(String exampleFile, List<String> expectedLicenses, int numberOfCoyprights, String exampleCopyright) throws Exception {
+    public void testGetLicenseInfo(String exampleFile, List<String> expectedLicenses, int numberOfCoyprights,
+            String exampleCopyright, Set<String> exampleConcludedLicenseIds) throws Exception {
 
         Attachment attachment = makeAttachment(exampleFile,
                 Arrays.stream(AttachmentType.values())
@@ -153,6 +163,7 @@ public class SPDXParserTest {
                 .orElseThrow(()->new RuntimeException("Parser returned empty LisenceInfoParsingResult list"));
 
         assertLicenseInfoParsingResult(result);
-        assertIsResultOfExample(result.getLicenseInfo(), exampleFile, expectedLicenses, numberOfCoyprights, exampleCopyright);
+        assertIsResultOfExample(result.getLicenseInfo(), exampleFile, expectedLicenses, numberOfCoyprights,
+                exampleCopyright, exampleConcludedLicenseIds);
     }
 }

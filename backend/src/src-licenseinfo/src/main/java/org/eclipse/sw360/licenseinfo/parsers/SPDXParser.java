@@ -12,27 +12,28 @@
  */
 package org.eclipse.sw360.licenseinfo.parsers;
 
-import com.google.common.collect.ImmutableList;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+
+import org.apache.log4j.Logger;
+import org.apache.thrift.TException;
 import org.spdx.rdfparser.InvalidSPDXAnalysisException;
 import org.spdx.rdfparser.SPDXDocumentFactory;
-import org.spdx.rdfparser.model.*;
+import org.spdx.rdfparser.model.SpdxDocument;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 import static org.eclipse.sw360.licenseinfo.parsers.SPDXParserTools.getLicenseInfoFromSpdx;
 

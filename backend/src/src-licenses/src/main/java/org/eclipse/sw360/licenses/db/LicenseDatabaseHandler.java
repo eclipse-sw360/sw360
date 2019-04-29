@@ -11,7 +11,6 @@
  */
 package org.eclipse.sw360.licenses.db;
 
-import org.apache.log4j.Logger;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -28,8 +27,9 @@ import org.eclipse.sw360.datahandler.thrift.licenses.*;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.licenses.tools.SpdxConnector;
+
+import org.apache.log4j.Logger;
 import org.ektorp.DocumentOperationResult;
 import org.ektorp.http.HttpClient;
 import org.jetbrains.annotations.NotNull;
@@ -140,7 +140,9 @@ public class LicenseDatabaseHandler {
     public License getLicenseForOrganisation(String id, String organisation) throws SW360Exception {
         License license = licenseRepository.get(id);
 
-        assertNotNull(license);
+        if (license == null) {
+            throw new SW360Exception("No license details found in the database for id " + id + ".");
+        }
 
         fillLicenseForOrganisation(organisation, license);
 

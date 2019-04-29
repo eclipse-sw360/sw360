@@ -199,7 +199,7 @@ public class LicensesPortlet extends Sw360Portlet {
                 addLicenseBreadcrumb(request, response, moderationLicense);
 
             } catch (TException e) {
-                log.error("Error fetching license details from backend", e);
+                log.error("Error fetching license details for id " + id + " from backend", e);
                 setSW360SessionError(request, ErrorMessages.ERROR_GETTING_LICENSE);
             }
         }
