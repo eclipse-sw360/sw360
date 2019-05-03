@@ -28,6 +28,10 @@ public class WsLicenseToSw360LicenseTranslator implements EntityTranslator<WsLic
         String licenseShortName = licenseName
                 .replaceAll("[\\s+/]","-");
 
+        if (licenseShortName.endsWith("-")) {
+            licenseShortName = licenseShortName.substring(0, licenseShortName.length()-1) + "+";
+        }
+
         License sw360License = new License();
         sw360License.setId(licenseShortName);
         sw360License.setExternalIds(new HashMap<>());

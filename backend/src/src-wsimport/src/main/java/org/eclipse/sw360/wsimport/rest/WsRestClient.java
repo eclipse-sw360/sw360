@@ -71,7 +71,7 @@ public class WsRestClient {
             return IOUtils.toString(response.getEntity().getContent(), "UTF-8");
         } else {
             LOGGER.info("Request unsuccessful: " + response.getStatusLine().getReasonPhrase());
-            throw new HttpException();
+            throw new HttpException("Response code from Whitesource not OK");
         }
     }
 }
