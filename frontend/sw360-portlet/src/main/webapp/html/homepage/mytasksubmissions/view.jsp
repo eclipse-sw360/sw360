@@ -104,6 +104,15 @@ require(['jquery', 'modules/confirm', 'datatables.net', 'jquery-confirm'], funct
     }
 });
 
+    window.addEventListener( "pageshow", function ( event ) {
+        var doNotRefresh = ((typeof window.performance != "undefined"
+                                && typeof window.performance.now !== 'undefined'
+	                            && window.performance.navigation.type !== 2 ));
+        if (!doNotRefresh) {
+            window.location.reload();
+        }
+    });
+
 </script>
 
 
