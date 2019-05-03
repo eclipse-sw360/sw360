@@ -30,10 +30,6 @@ public class WsLibraryToSw360ComponentTranslator implements EntityTranslator<WsL
         sw360Component.setCategories(new HashSet<>(Collections.singletonList(wsLibrary.getType())));
         sw360Component.setComponentType(ComponentType.OSS);
 
-        if (wsLibrary.getReferences() != null) {
-            sw360Component.setHomepage(wsLibrary.getReferences().getUrl());
-        }
-
         return sw360Component;
     }
 

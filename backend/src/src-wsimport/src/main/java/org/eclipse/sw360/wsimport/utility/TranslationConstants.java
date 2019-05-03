@@ -21,6 +21,7 @@ public class TranslationConstants {
     public static final String UNKNOWN = "UNKNOWN";
     public static final String FILENAME = "Filename";
     public static final String POM_FILE_URL = "POM File URL";
+    public static final String SCM_URL = "SCM URL";
     public static final String SUSPECTED = "Suspected";
     public static final String IMPORTED_FROM_WHITESOURCE = "Imported from Whitesource";
     public static final String APPLICATION_JSON = "application/json";
