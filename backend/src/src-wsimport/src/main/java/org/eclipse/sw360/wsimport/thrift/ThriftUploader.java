@@ -230,25 +230,6 @@ public class ThriftUploader {
         } else {
             libraryList = new ArrayList<>(Arrays.asList(libraries));
         }
-
-        WsProjectVitalInformation[] projectVitalInformations = null;
-        List<String> projectNameList = new ArrayList<>();
-        try {
-            projectVitalInformations =  new WsImportService().getOrganizationalProjectVitals(tokenCredentials);
-        } catch (JsonSyntaxException jse) {
-            LOGGER.error(jse);
-        }
-        if(projectVitalInformations != null) {
-            projectNameList = Arrays.stream(projectVitalInformations)
-                    .map(WsProjectVitalInformation::getName)
-                    .collect(Collectors.toList());
-        }
-        for (String project : projectNameList) {
-            project = project.trim();
-            String toBeRemoved = project.contains(" ") ? project.split(" ")[0] : project;
-            libraryList.removeIf(library -> library.getName().equals(toBeRemoved));
-        }
-
         Set<ReleaseRelation> releases = libraryList.stream()
                 .map(c -> createReleaseRelation(c, sw360User))
                 .filter(Objects::nonNull)

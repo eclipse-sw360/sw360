@@ -77,21 +77,4 @@ public class WsImportService {
 
     }
 
-    public  WsProjectVitalInformation[] getOrganizationalProjectVitals(TokenCredentials tokenCredentials) throws JsonSyntaxException {
-        String projectVitalString;
-        try {
-            projectVitalString = restClient.getData(GET_ORGANIZATION_PROJECT_VITALS, tokenCredentials.getToken(), WsTokenType.ORGANIZATION, tokenCredentials);
-        } catch (IOException | HttpException e) {
-            LOGGER.error("Exception with " + GET_PROJECT_VITALS + " request to " + tokenCredentials.getServerUrl() + ", with exception: " + e);
-            return null;
-        }
-        WsProjectVitals wsProjectVitals = gson.fromJson(projectVitalString, WsProjectVitals.class);
-        if (wsProjectVitals.getProjectVitals() != null) {
-            return wsProjectVitals.getProjectVitals();
-        } else {
-            LOGGER.error("WsProjectVitals is empty...");
-            return null;
-        }
-    }
-
 }
