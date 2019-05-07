@@ -236,3 +236,14 @@ include::{snippets}/should_document_create_project/curl-request.adoc[]
 ===== Example response
 include::{snippets}/should_document_create_project/http-response.adoc[]
 
+[[resources-project-link-releases]]
+==== Link Releases to the project
+
+A `POST` request is used to link releases to the project. Please pass an array of release ids to be linked as request body.
+
+===== Example request
+include::{snippets}/should_document_link_releases/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_link_releases/http-response.adoc[]
+

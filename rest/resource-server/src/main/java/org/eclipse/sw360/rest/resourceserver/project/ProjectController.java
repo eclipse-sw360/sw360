@@ -155,7 +155,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
 
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = PROJECTS_URL + "/{id}/releases", method = RequestMethod.POST)
-    public ResponseEntity createReleases(
+    public ResponseEntity linkReleases(
             @PathVariable("id") String id,
             @RequestBody List<String> releaseURIs) throws URISyntaxException, TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -166,7 +166,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
             String path = releaseURI.getPath();
             String releaseId = path.substring(path.lastIndexOf('/') + 1);
             releaseIdToUsage.put(releaseId,
-                    new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE));
+                    new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.OPEN));
         }
         project.setReleaseIdToUsage(releaseIdToUsage);
         projectService.updateProject(project, sw360User);
