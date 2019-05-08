@@ -132,6 +132,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         projectList.add(project);
         projectListByName.add(project);
         project.setAttachments(attachmentList);
+        project.setSecurityResponsibles(new HashSet<>(Arrays.asList("securityresponsible1@sw360.org", "securityresponsible2@sw360.org")));
+        project.setProjectResponsible("projectresponsible@sw360.org");
 
 
         Project project2 = new Project();
@@ -158,6 +160,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project2.setSpecialRisks3rdParty("Lorem Ipsum");
         project2.setDeliveryChannels("Lorem Ipsum");
         project2.setRemarksAdditionalRequirements("Lorem Ipsum");
+        project2.setSecurityResponsibles(new HashSet<>(Arrays.asList("securityresponsible1@sw360.org", "securityresponsible2@sw360.org")));
+        project2.setProjectResponsible("projectresponsible@sw360.org");
         Map<String, String> projExtKeys = new HashMap();
         projExtKeys.put("mainline-id-project", "7657");
         projExtKeys.put("portal-id", "13319-XX3");
@@ -297,6 +301,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("systemTestEnd").description("Date of the project system end phase"),
                                 fieldWithPath("linkedProjects").description("The relationship between linked projects of the project"),
                                 fieldWithPath("linkedReleases").description("The relationship between linked releases of the project"),
+                                fieldWithPath("securityResponsibles").description("An array of users responsible for security of the project."),
+                                fieldWithPath("projectResponsible").description("A user who is responsible for the project."),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 fieldWithPath("_embedded.createdBy").description("The user who created this project"),
                                 fieldWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
@@ -472,6 +478,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("createdOn").description("The date the project was created"),
                                 fieldWithPath("description").description("The project description"),
                                 fieldWithPath("projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
+                                fieldWithPath("securityResponsibles").description("An array of users responsible for security of the project."),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 fieldWithPath("_embedded.createdBy").description("The user who created this project")
                         )));
