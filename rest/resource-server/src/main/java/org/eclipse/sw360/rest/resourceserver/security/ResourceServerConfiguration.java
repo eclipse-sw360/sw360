@@ -11,8 +11,11 @@
 
 package org.eclipse.sw360.rest.resourceserver.security;
 
+import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationFilter;
+import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.security.oauth2.resource.ResourceServerProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
@@ -38,10 +41,14 @@ public class ResourceServerConfiguration extends WebSecurityConfigurerAdapter im
     private ApiTokenAuthenticationFilter filter;
 
     @Autowired
-    private ResourceAuthenticationProvider authProvider;
+    private ApiTokenAuthenticationProvider authProvider;
 
-    @Value("${security.oauth2.resource.id:sw360-REST-API}")
-    private String resourceId;
+    @Autowired
+    private ResourceServerProperties resourceServerProperties;
+
+    public ResourceServerConfiguration(ResourceServerProperties resourceServerProperties) {
+        this.resourceServerProperties = resourceServerProperties;
+    }
 
     @Override
     protected void configure(AuthenticationManagerBuilder authenticationManagerBuilder) {
@@ -50,7 +57,7 @@ public class ResourceServerConfiguration extends WebSecurityConfigurerAdapter im
 
     @Override
     public void configure(ResourceServerSecurityConfigurer resources) {
-        resources.resourceId(resourceId);
+        resources.resourceId(resourceServerProperties.getResourceId());
     }
 
     @Override

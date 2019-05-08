@@ -14,7 +14,7 @@ package org.eclipse.sw360.rest.resourceserver;
 import org.eclipse.sw360.rest.common.Sw360CORSFilter;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
-import org.eclipse.sw360.rest.resourceserver.security.ApiTokenAuthenticationFilter;
+import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

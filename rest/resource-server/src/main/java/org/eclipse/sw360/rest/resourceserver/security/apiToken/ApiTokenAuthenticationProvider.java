@@ -9,7 +9,7 @@
  * http://www.eclipse.org/legal/epl-v10.html
  */
 
-package org.eclipse.sw360.rest.resourceserver.security;
+package org.eclipse.sw360.rest.resourceserver.security.apiToken;
 
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang.time.DateUtils;
@@ -43,9 +43,9 @@ import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.*;
 @Profile("!SECURITY_MOCK")
 @Component
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class ResourceAuthenticationProvider implements AuthenticationProvider {
+public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
 
-    private static final Logger log = Logger.getLogger(ResourceAuthenticationProvider.class);
+    private static final Logger log = Logger.getLogger(ApiTokenAuthenticationProvider.class);
 
     @NotNull
     private final Sw360UserService userService;
