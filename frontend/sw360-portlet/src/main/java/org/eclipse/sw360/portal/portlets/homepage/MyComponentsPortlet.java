@@ -46,7 +46,7 @@ public class MyComponentsPortlet extends Sw360Portlet {
         List<Component> components;
         try {
             final User user = UserCacheHolder.getUserFromRequest(request);
-            components = thriftClients.makeComponentClient().getComponentSummary(user);
+            components = thriftClients.makeComponentClient().getMyComponents(user);
         } catch (TException e) {
             log.error("Could not fetch your components from backend", e);
             components = new ArrayList<>();
