@@ -43,7 +43,7 @@ public class MyProjectsPortlet extends Sw360Portlet {
         List<Project> myProjects = new ArrayList<>();
         User user = UserCacheHolder.getUserFromRequest(request);
         try {
-            myProjects = thriftClients.makeProjectClient().getAccessibleProjectsSummary(user);
+            myProjects = thriftClients.makeProjectClient().getMyProjects(user.getEmail());
         } catch (TException e) {
             LOGGER.error("Could not fetch myProjects from backend for user, " + user.getEmail(), e);
         }
