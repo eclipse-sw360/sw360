@@ -136,6 +136,7 @@
 
     <jsp:include page="/html/utils/includes/searchAndSelectUsers.jsp" />
     <jsp:include page="/html/utils/includes/searchUsers.jsp" />
+    <%@include file="/html/components/includes/vendors/searchVendor.jspf" %>
 
     <c:if test="${codescoopActive}">
         <script>
@@ -160,7 +161,7 @@
         /* baseUrl also used in method in require block */
         baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
 
-require(['jquery', 'modules/sw360Validate', 'modules/autocomplete', 'modules/confirm' ], function($, sw360Validate, autocomplete, confirm) {
+require(['jquery', 'modules/sw360Validate', 'modules/autocomplete', 'modules/confirm', 'components/includes/vendors/searchVendor'  ], function($, sw360Validate, autocomplete, confirm, vendorsearch) {
 
     Liferay.on('allPortletsReady', function() {
         var contextpath = '<%=request.getContextPath()%>',
@@ -248,5 +249,19 @@ require(['jquery', 'modules/sw360Validate', 'modules/autocomplete', 'modules/con
         $('#componentEditForm').submit();
     }
 
+    // vendor handling
+
+    $('#ComponentGeneralInfo input.edit-vendor').on('click', function() {
+        vendorsearch.openSearchDialog('<portlet:namespace/>what', '<portlet:namespace/>where',
+                  '<portlet:namespace/>FULLNAME', '<portlet:namespace/>SHORTNAME', '<portlet:namespace/>URL', fillVendorInfo);
+    });
+
+    function fillVendorInfo(vendorInfo) {
+        var beforeComma = vendorInfo.substr(0, vendorInfo.indexOf(","));
+        var afterComma = vendorInfo.substr(vendorInfo.indexOf(",") + 1);
+
+        $('#<%=Component._Fields.DEFAULT_VENDOR_ID.toString()%>').val(beforeComma.trim());
+        $('#<%=Component._Fields.DEFAULT_VENDOR_ID.toString()%>Display').val(afterComma.trim());
+    }
 });
 </script>
