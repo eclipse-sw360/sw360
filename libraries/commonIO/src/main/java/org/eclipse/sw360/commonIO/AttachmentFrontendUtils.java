@@ -49,11 +49,20 @@ public class AttachmentFrontendUtils {
 
     public InputStream getStreamToServeAFile(Collection<AttachmentContent> attachments, User user, Object context)
             throws TException, IOException {
-        if(attachments == null || attachments.size() == 0){
+        if (attachments == null || attachments.size() == 0) {
             throw new SW360Exception("Tried to download empty set of Attachments");
-        }else if(attachments.size() == 1){
+        } else if(attachments.size() == 1) {
             // Temporary solutions, permission check needs to be implemented (getAttachmentStream)
             return getConnector().unsafeGetAttachmentStream(attachments.iterator().next());
+        } else {
+            return getConnector().getAttachmentBundleStream(new HashSet<>(attachments), user, context);
+        }
+    }
+
+    public InputStream getStreamToServeBundle(Collection<AttachmentContent> attachments, User user, Object context)
+            throws TException, IOException {
+        if (attachments == null || attachments.size() == 0) {
+            throw new SW360Exception("Tried to download empty set of Attachments");
         } else {
             return getConnector().getAttachmentBundleStream(new HashSet<>(attachments), user, context);
         }
