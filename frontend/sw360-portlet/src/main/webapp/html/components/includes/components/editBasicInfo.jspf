@@ -130,11 +130,9 @@
 <core_rt:set var="customMap" value="${component.roles}"/>
 <%@include file="/html/utils/includes/mapEdit.jspf" %>
 
-<%@include file="/html/components/includes/vendors/searchVendor.jspf" %>
-
 <!-- Adding similar component popup for new component case -->
 <script>
-    require([ 'modules/linkListDialog', 'components/includes/vendors/searchVendor' ], function(linkListDialog, vendorsearch) {
+    require([ 'modules/linkListDialog' ], function(linkListDialog) {
         <portlet:resourceURL var="checkComponentNameUrl">
             <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.CHECK_COMPONENT_NAME%>"/>
         </portlet:resourceURL>
@@ -146,21 +144,5 @@
         <core_rt:if test="${not codescoopActive}">
         linkListDialog.registerLinkListDialog(openOnBlurOfElementId, checkComponentNameUrl, checkComponentNameParamKey);
         </core_rt:if>
-
-
-        // vendor handling
-
-        $('#ComponentGeneralInfo input.edit-vendor').on('click', function() {
-            vendorsearch.openSearchDialog('<portlet:namespace/>what', '<portlet:namespace/>where',
-                      '<portlet:namespace/>FULLNAME', '<portlet:namespace/>SHORTNAME', '<portlet:namespace/>URL', fillVendorInfo);
-        });
-
-        function fillVendorInfo(vendorInfo) {
-            var beforeComma = vendorInfo.substr(0, vendorInfo.indexOf(","));
-            var afterComma = vendorInfo.substr(vendorInfo.indexOf(",") + 1);
-
-            $('#<%=Component._Fields.DEFAULT_VENDOR_ID.toString()%>').val(beforeComma.trim());
-            $('#<%=Component._Fields.DEFAULT_VENDOR_ID.toString()%>Display').val(afterComma.trim());
-        }
     });
 </script>
