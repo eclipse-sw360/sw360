@@ -36,6 +36,7 @@ import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.Resources;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -78,7 +79,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
 
     @Before
-    public void before() throws TException {
+    public void before() throws TException, IOException {
         Set<Attachment> attachmentList = new HashSet<>();
         List<Resource<Attachment>> attachmentResources = new ArrayList<>();
         attachment = new Attachment("1231231254", "spring-core-4.3.4.RELEASE.jar");
@@ -88,6 +89,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
         given(this.attachmentServiceMock.getAttachmentContent(anyObject())).willReturn(new AttachmentContent().setId("1231231254").setFilename("spring-core-4.3.4.RELEASE.jar").setContentType("binary"));
         given(this.attachmentServiceMock.getResourcesFromList(anyObject())).willReturn(new Resources<>(attachmentResources));
+        given(this.attachmentServiceMock.uploadAttachment(anyObject(), anyObject(), anyObject())).willReturn(attachment);
 
         Map<String, ProjectReleaseRelationship> linkedReleases = new HashMap<>();
         Map<String, ProjectRelationship> linkedProjects = new HashMap<>();
@@ -483,4 +485,10 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("_embedded.createdBy").description("The user who created this project")
                         )));
     }
+
+    @Test
+    public void should_document_upload_attachment_to_project() throws Exception {
+        testAttachmentUpload("/api/projects/", project.getId());
+    }
+
 }

@@ -81,6 +81,39 @@ include::{snippets}/should_document_get_release_attachment_info/curl-request.ado
 include::{snippets}/should_document_get_release_attachment_info/http-response.adoc[]
 
 
+[[resources-release-attachment-upload]]
+==== Upload attachment to release
+
+A `POST` request is used to upload attachment to release
+
+[red]#Request structure#
+|===
+|Path |Type |Description
+
+|file
+|file
+|File path of the attachment
+
+|attachment.filename
+|String
+|Name of the file
+
+|attachment.attachmentContentId
+|String
+|Attachment content id
+|===
+
+[red]#Response structure#
+|===
+|Complete Release will be returned
+|===
+
+===== Example request
+include::{snippets}/should_document_upload_attachment_to_release/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_upload_attachment_to_release/http-response.adoc[]
+
 [[resources-release-attachment-get]]
 ==== Download attachment
 

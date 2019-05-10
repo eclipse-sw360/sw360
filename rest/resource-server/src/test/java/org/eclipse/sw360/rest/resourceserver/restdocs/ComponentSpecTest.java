@@ -33,6 +33,7 @@ import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.Resources;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -72,7 +73,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
     private Attachment attachment;
 
     @Before
-    public void before() throws TException {
+    public void before() throws TException, IOException {
         Set<Attachment> attachmentList = new HashSet<>();
         List<Resource<Attachment>> attachmentResources = new ArrayList<>();
         attachment = new Attachment("1231231254", "spring-core-4.3.4.RELEASE.jar");
@@ -82,7 +83,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
         given(this.attachmentServiceMock.getAttachmentContent(anyObject())).willReturn(new AttachmentContent().setId("1231231254").setFilename("spring-core-4.3.4.RELEASE.jar").setContentType("binary"));
         given(this.attachmentServiceMock.getResourcesFromList(anyObject())).willReturn(new Resources<>(attachmentResources));
-
+        given(this.attachmentServiceMock.uploadAttachment(anyObject(), anyObject(), anyObject())).willReturn(attachment);
         Map<String, Set<String>> externalIds = new HashMap<>();
         externalIds.put("component-id-key", Collections.singleton(""));
 
@@ -505,5 +506,10 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("_embedded.sw360:components[]externalIds").description("External Ids of the component"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
+    }
+
+    @Test
+    public void should_document_upload_attachment_to_component() throws Exception {
+        testAttachmentUpload("/api/components/", angularComponent.getId());
     }
 }
