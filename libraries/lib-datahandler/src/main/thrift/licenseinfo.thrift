@@ -58,6 +58,7 @@ struct LicenseInfo {
     21: optional set<LicenseNameWithText> licenseNamesWithTexts,
     22: optional string sha1Hash,
     23: optional string componentName,
+    24: optional set<string> concludedLicenseIds,
 }
 
 struct LicenseInfoParsingResult {

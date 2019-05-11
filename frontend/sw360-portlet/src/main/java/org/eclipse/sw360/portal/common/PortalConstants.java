@@ -128,6 +128,7 @@ public class PortalConstants {
 
     //! Specialized keys for attachments
     public static final String ATTACHMENTS = "attachments";
+    public static final String SPDX_ATTACHMENTS = "spdxAttachments";
     public static final String ADDED_ATTACHMENTS = "added_attachments";
     public static final String REMOVED_ATTACHMENTS = "removed_attachments";
     public static final String ATTACHMENT_ID = "attachmentId";
@@ -137,6 +138,7 @@ public class PortalConstants {
     public static final String ATTACHMENT_USAGE_COUNT_MAP = "attachmenUsageCountMap";
     public static final String ATTACHMENT_USAGES = "attachmentUsages";
     public static final String ATTACHMENT_USAGES_RESTRICTED_COUNTS = "attachmentUsagesRestrictedCounts";
+    public static final String SPDX_LICENSE_INFO = "spdxLicenseInfo";
 
     //! Specialized keys for projects
     public static final String PROJECT_ID = "projectid";
@@ -287,6 +289,8 @@ public class PortalConstants {
     public static final String DOWNLOAD_SAMPLE_RELEASE_LINK_INFO = "DownloadSampleReleaseLinkInfo";
     public static final String DOWNLOAD_RELEASE_LINK_INFO = "DownloadReleaseLinkInfo";
     public static final String DOWNLOAD_LICENSE_BACKUP = "DownloadLicenseBackup";
+    public static final String LOAD_SPDX_LICENSE_INFO = "LoadSpdxLicenseInfo";
+    public static final String WRITE_SPDX_LICENSE_INFO_INTO_RELEASE = "WriteSpdxLicenseInfoIntoRelease";
 
     // linked projects and releases actions
     public static final String LINKED_OBJECTS_PREFIX = "load_linked_";
