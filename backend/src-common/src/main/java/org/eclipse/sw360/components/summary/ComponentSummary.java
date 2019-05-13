@@ -70,6 +70,7 @@ public class ComponentSummary extends DocumentSummary<Component> {
         copyField(document, copy, Component._Fields.NAME);
         copyField(document, copy, Component._Fields.VENDOR_NAMES);
         copyField(document, copy, Component._Fields.COMPONENT_TYPE);
+        copyField(document, copy, Component._Fields.CATEGORIES);
 
         if (type == SummaryType.SUMMARY) {
             for (Component._Fields field : Component.metaDataMap.keySet()) {
