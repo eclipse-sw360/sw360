@@ -12,6 +12,10 @@
  */
 package org.eclipse.sw360.datahandler.thrift;
 
+import org.apache.http.HttpHost;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.codescoop.CodescoopService;
@@ -34,6 +38,8 @@ import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Properties;
 
 import static org.apache.log4j.Logger.getLogger;
@@ -51,6 +57,7 @@ public class ThriftClients {
     public static final String PROPERTIES_FILE_PATH = "/sw360.properties";
 
     public static final String BACKEND_URL;
+    public static final String BACKEND_PROXY_URL;
 
     //! Service addresses
     private static final String ATTACHMENT_SERVICE_URL = "/attachments/thrift";
@@ -78,8 +85,9 @@ public class ThriftClients {
         Properties props = CommonUtils.loadProperties(ThriftClients.class, PROPERTIES_FILE_PATH);
 
         BACKEND_URL = props.getProperty("backend.url", "http://127.0.0.1:8080");
+        //Proxy can be set e.g. with "http://localhost:3128". if set all request to the thrift backend are routed through the proxy
+        BACKEND_PROXY_URL = props.getProperty("backend.proxy.url", null);
     }
-
     public ThriftClients() {
     }
 
@@ -90,9 +98,19 @@ public class ThriftClients {
         THttpClient thriftClient = null;
         final String destinationAddress = url + service;
         try {
-            thriftClient = new THttpClient(destinationAddress);
+            if (BACKEND_PROXY_URL != null) {
+                URL proxyUrl = new URL(BACKEND_PROXY_URL);
+                HttpHost proxy = new HttpHost(proxyUrl.getHost(), proxyUrl.getPort(), proxyUrl.getProtocol());
+                DefaultProxyRoutePlanner routePlanner = new DefaultProxyRoutePlanner(proxy);
+                CloseableHttpClient httpClient = HttpClients.custom().setRoutePlanner(routePlanner).build();
+                thriftClient = new THttpClient(destinationAddress, httpClient);
+            } else {
+                thriftClient = new THttpClient(destinationAddress);
+            }
         } catch (TTransportException e) {
             log.error("cannot connect to backend on " + destinationAddress, e);
+        } catch (MalformedURLException e) {
+            log.error("cannot connect via http proxy (REASON:MalformedURLException) to thrift backend", e);
         }
         return new TCompactProtocol(thriftClient);
     }
