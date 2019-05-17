@@ -49,6 +49,10 @@
         <td><sw360:DisplayEnum value="${project.projectType}"/></td>
     </tr>
     <tr>
+        <td>Domain:</td>
+        <td><sw360:out value="${project.domain}"/></td>
+    </tr>
+    <tr>
         <td>Tag:</td>
         <td><sw360:out value="${project.tag}"/></td>
     </tr>

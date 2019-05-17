@@ -73,6 +73,7 @@ struct Project {
     4: required string name,
     5: optional string description,
     6: optional string version,
+    7: optional string domain,
 
     // information from external data sources
     9: optional map<string, string> externalIds,

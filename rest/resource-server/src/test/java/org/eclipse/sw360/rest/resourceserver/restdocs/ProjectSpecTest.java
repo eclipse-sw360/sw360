@@ -24,6 +24,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
@@ -118,6 +119,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project.setProjectType(ProjectType.PRODUCT);
         project.setVersion("1.0.2");
         project.setDescription("Emerald Web provides a suite of components for Critical Infrastructures.");
+        project.setDomain("Hardware");
         project.setCreatedOn("2016-12-15");
         project.setCreatedBy("admin@sw360.org");
         project.setModerators(new HashSet<>(Arrays.asList("admin@sw360.org", "jane@sw360.org")));
@@ -155,6 +157,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project2.setVersion("2.0.1");
         project2.setProjectType(ProjectType.PRODUCT);
         project2.setDescription("Orange Web provides a suite of components for documentation.");
+        project.setDomain("Hardware");
         project2.setCreatedOn("2016-12-17");
         project2.setCreatedBy("john@sw360.org");
         project2.setBusinessUnit("sw360 EX DF");
@@ -302,6 +305,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("createdOn").description("The date the project was created"),
                                 fieldWithPath("description").description("The project description"),
                                 fieldWithPath("projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
+                                fieldWithPath("domain").description("The domain, possible values are:"  + Sw360ResourceServer.DOMAIN.toString()),
                                 fieldWithPath("visibility").description("The project visibility, possible values are: " + Arrays.asList(Visibility.values())),
                                 fieldWithPath("businessUnit").description("The business unit this project belongs to"),
                                 fieldWithPath("externalIds").description("When projects are imported from other tools, the external ids can be stored here"),
@@ -547,6 +551,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         fieldWithPath("version").description("The project version"),
                         fieldWithPath("createdOn").description("The date the project was created"),
                         fieldWithPath("description").description("The project description"),
+                        fieldWithPath("domain").description("The domain, possible values are:"  + Sw360ResourceServer.DOMAIN.toString()),
                         fieldWithPath("projectType").description("The project type, possible values are: "
                                 + Arrays.asList(ProjectType.values())),
                         fieldWithPath("visibility").description("The project visibility, possible values are: "

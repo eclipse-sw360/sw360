@@ -18,6 +18,7 @@
 
 <core_rt:set var="clearingTeamsStringSet" value='<%=PortalConstants.SET_CLEARING_TEAMS_STRING%>'/>
 <core_rt:set var="preferredCountryCodes" value='<%=PortalConstants.PREFERRED_COUNTRY_CODES%>'/>
+<core_rt:set var="domain" value='<%=PortalConstants.DOMAIN%>'/>
 
 <table class="table info_table" id="ProjectBasicInfo">
     <thead>
@@ -94,6 +95,29 @@
                       name="<portlet:namespace/><%=Project._Fields.DESCRIPTION%>" rows="4" cols="30"
                       style="width: 200px; height: 25px; resize:both;"
                       placeholder="Enter Description"><sw360:out value="${project.description}" stripNewlines="false"/></textarea>
+        </td>
+    </tr>
+    <tr>
+        <td width="33%">
+            <label class="textlabel stackedLabel" for="proj_domain">Domain</label>
+             <select class="toplabelledInput" id="domain" name="<portlet:namespace/><%=Project._Fields.DOMAIN%>" data-selected="${project.domain}"
+                style="min-width: 162px; min-height: 28px;">
+                <option value>-- Select Domain --</option>
+                <core_rt:forEach items="${domain}" var="entry">
+                    <c:choose>
+                        <c:when test="${entry eq project.domain}">
+                            <option selected="selected" value="<sw360:out value="${entry}"/>" class="textlabel stackedLabel"> ${entry} </option>
+                        </c:when>
+                        <c:otherwise>
+                            <option value="<sw360:out value="${entry}"/>" class="textlabel stackedLabel"> ${entry} </option>
+                        </c:otherwise>
+                    </c:choose>
+                </core_rt:forEach>
+            </select>
+        </td>
+        <td width="33%">
+        </td>
+        <td width="33%">
         </td>
     </tr>
     <tr>

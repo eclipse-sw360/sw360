@@ -99,6 +99,7 @@ class JacksonCustomizations {
                 "setType",
                 "setName",
                 "setDescription",
+                "setDomain",
                 "setVersion",
                 "setExternalIds",
                 "setAttachments",
