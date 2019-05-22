@@ -17,13 +17,22 @@ sw360:
     allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:#{null}}
 
 security:
+  customheader:
+    headername:
+      # Attention: please make sure that the proxy is removing there headers
+      # if they are coming from anywhere else then the authentication server
+      intermediateauthstore: custom-header-auth-marker
+      email: authenticated-email
+      extid: authenticated-extid
+      # also available - at least in saml pre auth - are "givenname", "surname" and "department"
+
   oauth2:
     resource:
       id: sw360-REST-API
     client:
       client-id: trusted-sw360-client
       client-secret: sw360-secret
+      scope: BASIC, READ, WRITE
       resource-ids: sw360-REST-API
       authorized-grant-types: client_credentials,password
       access-token-validity-seconds: 3600
-      scope: all

@@ -9,14 +9,16 @@
  * http://www.eclipse.org/legal/epl-v10.html
  */
 
-package org.eclipse.sw360.rest.authserver.security;
+package org.eclipse.sw360.rest.authserver.security.basicauth;
 
 import com.google.common.base.Strings;
-import org.apache.thrift.TException;
+
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
+
+import org.apache.thrift.TException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -28,7 +30,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.UnsupportedEncodingException;
@@ -41,8 +42,11 @@ import static org.eclipse.sw360.rest.authserver.Sw360AuthorizationServer.CONFIG_
 import static org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority.READ;
 import static org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority.WRITE;
 
-@Component
-public class Sw360AuthenticationProvider implements AuthenticationProvider {
+/**
+ * This {@link AuthenticationProvider} is able to verify the given credentials
+ * of the {@link Authentication} object against a configured Liferay instance.
+ */
+public class Sw360LiferayAuthenticationProvider implements AuthenticationProvider {
 
     @Value("${sw360.test-user-id:#{null}}")
     private String testUserId;
@@ -64,8 +68,14 @@ public class Sw360AuthenticationProvider implements AuthenticationProvider {
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         String userIdentifier = authentication.getName();
-        String password = authentication.getCredentials().toString();
+        Object possiblePassword = authentication.getCredentials();
+        if (possiblePassword == null) {
+            return null;
+        }
+        String password = possiblePassword.toString();
 
+        // FIXME: we should definitely find a way to remove this test code in production
+        // code!
         if (isDevEnvironment() && testUserId != null && testUserPassword != null) {
             // For easy testing without having a Liferay portal running, we mock an existing sw360 user
             if (userIdentifier.equals(testUserId) && password.equals(testUserPassword)) {
