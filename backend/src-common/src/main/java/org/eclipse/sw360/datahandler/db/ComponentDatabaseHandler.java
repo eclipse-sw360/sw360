@@ -13,6 +13,7 @@ package org.eclipse.sw360.datahandler.db;
 
 import com.google.common.collect.*;
 
+import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
@@ -36,6 +37,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
@@ -43,7 +45,6 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityCheckSt
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
 import org.eclipse.sw360.mail.MailConstants;
 import org.eclipse.sw360.mail.MailUtil;
-
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.ektorp.DocumentOperationResult;
@@ -300,7 +301,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     /**
      * Add a single new release to the database
      */
-    public AddDocumentRequestSummary addRelease(Release release, String user) throws SW360Exception {
+    public AddDocumentRequestSummary addRelease(Release release, User user) throws SW360Exception {
         // Prepare the release and get underlying component ID
         prepareRelease(release);
         if(isDuplicate(release)) {
@@ -314,12 +315,14 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         assertNotNull(component);
 
         // Save creating user
-        release.setCreatedBy(user);
+        release.setCreatedBy(user.getEmail());
         release.setCreatedOn(SW360Utils.getCreatedOn());
 
         // Add default ECC options if download url is set
         autosetEccFieldsForReleaseWithDownloadUrl(release);
 
+        // check for MainlineState change
+        setMainlineState(release, user, null);
         // Add release to database
         releaseRepository.add(release);
         final String id = release.getId();
@@ -343,7 +346,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         updateReleaseDependentFieldsForComponent(component, release);
         componentRepository.update(component);
 
-        sendMailNotificationsForNewRelease(release, user);
+        sendMailNotificationsForNewRelease(release, user.getEmail());
         return new AddDocumentRequestSummary()
                 .setRequestStatus(AddDocumentRequestStatus.SUCCESS)
                 .setId(id);
@@ -716,6 +719,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 release.setAttachments(
                         getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), release.getAttachments()));
                 deleteAttachmentUsagesOfUnlinkedReleases(release, actual);
+                // check for MainlineState change
+                setMainlineState(release, user, actual);
                 releaseRepository.update(release);
                 updateReleaseDependentFieldsForComponentId(release.getComponentId());
                 // clean up attachments in database
@@ -731,6 +736,17 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }
 
             return RequestStatus.SUCCESS;
+        }
+    }
+
+    private void setMainlineState(Release updated, User user, Release current) {
+        boolean isMainlineStateDisabled = !(BackendUtils.MAINLINE_STATE_ENABLED_FOR_USER
+                || PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user));
+
+        if ((null == current || null == current.getMainlineState()) && isMainlineStateDisabled) {
+            updated.setMainlineState(MainlineState.OPEN);
+        } else if (isMainlineStateDisabled) {
+            updated.setMainlineState(current.getMainlineState());
         }
     }
 

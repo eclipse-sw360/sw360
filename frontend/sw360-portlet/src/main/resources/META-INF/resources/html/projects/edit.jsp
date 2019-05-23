@@ -55,6 +55,7 @@
     <jsp:useBean id="attachments" type="java.util.Set<org.eclipse.sw360.datahandler.thrift.attachments.Attachment>" scope="request"/>
     <jsp:useBean id="defaultLicenseInfoHeaderText" class="java.lang.String" scope="request" />
     <jsp:useBean id="defaultObligationsText" class="java.lang.String" scope="request" />
+    <jsp:useBean id="isUserAtLeastClearingAdmin" type="java.lang.Boolean" scope="request" />
 
     <core_rt:set  var="addMode"  value="${empty project.id}" />
     <core_rt:set  var="pageName"  value="<%= request.getParameter("pagename") %>" />
@@ -234,6 +235,7 @@ require(['jquery', 'modules/dialog', 'modules/listgroup', 'modules/validation', 
     function submitForm() {
         disableLicenseInfoHeaderTextIfNecessary();
         disableObligationsTextIfNecessary();
+        $('#LinkedReleasesInfo tbody tr #mainlineState').prop('disabled', false);
         $('#projectEditForm').submit();
     }
 

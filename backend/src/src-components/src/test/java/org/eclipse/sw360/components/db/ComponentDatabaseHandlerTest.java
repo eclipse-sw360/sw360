@@ -161,7 +161,7 @@ public class ComponentDatabaseHandlerTest {
                 .setCreatedBy(email1).setVendorId("V1").setReleaseIdToRelationship(releaseLink);
 
         handler.addComponent(component, email1);
-        handler.addRelease(release, email1);
+        handler.addRelease(release, user1);
 
         final Set<Component> usingComponents = handler.getUsingComponents("R1A");
 
@@ -182,7 +182,7 @@ public class ComponentDatabaseHandlerTest {
                 .setCreatedBy(email1).setVendorId("V1").setReleaseIdToRelationship(releaseLink);
 
         handler.addComponent(component, email1);
-        handler.addRelease(release, email1);
+        handler.addRelease(release, user1);
 
         final Set<Component> usingComponents = handler.getUsingComponents(ImmutableSet.of("R1A", "R2A"));
 
@@ -484,7 +484,7 @@ public class ComponentDatabaseHandlerTest {
         Release release = new Release().setId("DelR").setComponentId("Del").setName("delete Release").setVersion("1.0").setCreatedBy(email1).setVendorId("V1").setClearingState(ClearingState.NEW_CLEARING);
 
         handler.addComponent(component, email1);
-        handler.addRelease(release, email1);
+        handler.addRelease(release, user1);
 
         {
             Component del = handler.getComponent("Del", user1);
@@ -591,7 +591,7 @@ public class ComponentDatabaseHandlerTest {
         Release expected = new Release().setName("REL").setVersion("VER");
         expected.setComponentId("C1");
 
-        String id = handler.addRelease(expected, "new@mail.com").getId();
+        String id = handler.addRelease(expected, user1).getId();
         assertNotNull(id);
 
         Release actual = handler.getRelease(id, user1);
@@ -648,7 +648,7 @@ public class ComponentDatabaseHandlerTest {
                 .setMainLicenseIds(licenseIds)
                 .setComponentId(componentId);
         nextReleaseVersion++;
-        String id = handler.addRelease(release, user1.getEmail()).getId();
+        String id = handler.addRelease(release, user1).getId();
         assertNotNull(id);
         return id;
     }
@@ -680,7 +680,7 @@ public class ComponentDatabaseHandlerTest {
         Release release = new Release().setName("REL").setVersion("VER").setOperatingSystems(os).setLanguages(lang).setVendorId("V1");
         release.setComponentId(componentId);
 
-        String id = handler.addRelease(release, user1.getEmail()).getId();
+        String id = handler.addRelease(release, user1).getId();
         assertNotNull(id);
 
         {
@@ -701,7 +701,7 @@ public class ComponentDatabaseHandlerTest {
         Release release2 = new Release().setName("REL2").setVersion("VER2").setOperatingSystems(os2).setLanguages(lang2).setVendorId("V2");
         release2.setComponentId(componentId);
 
-        String id2 = handler.addRelease(release2, user1.getEmail()).getId();
+        String id2 = handler.addRelease(release2, user1).getId();
 
         {
             Component component = handler.getComponent(componentId, user1);
@@ -1002,7 +1002,7 @@ public class ComponentDatabaseHandlerTest {
         final Release tmp = handler.getRelease(originalReleaseId, user1);
         tmp.unsetId();
         tmp.unsetRevision();
-        String newReleaseId = handler.addRelease(tmp, email1).getId();
+        String newReleaseId = handler.addRelease(tmp, user1).getId();
 
         final Map<String, List<String>> duplicateReleases = handler.getDuplicateReleases();
 
@@ -1018,7 +1018,7 @@ public class ComponentDatabaseHandlerTest {
         tmp.unsetId();
         tmp.unsetRevision();
         tmp.setName(tmp.getName().substring(0, 4));
-        String newReleaseId = handler.addRelease(tmp, email1).getId();
+        String newReleaseId = handler.addRelease(tmp, user1).getId();
 
         assertThat(newReleaseId, not(isEmptyOrNullString()));
     }

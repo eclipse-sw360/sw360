@@ -15,6 +15,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.collect.*;
 
+import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.businessrules.ReleaseClearingStateSummaryComputer;
 import org.eclipse.sw360.datahandler.common.*;
@@ -32,7 +33,6 @@ import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
 import org.eclipse.sw360.mail.MailConstants;
 import org.eclipse.sw360.mail.MailUtil;
-
 import org.apache.log4j.Logger;
 import org.ektorp.http.HttpClient;
 
@@ -172,6 +172,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         project.createdBy = user.getEmail();
         project.createdOn = getCreatedOn();
         project.businessUnit = getBUFromOrganisation(user.getDepartment());
+        setReleaseRelatoins(project, user, null);
 
         // Add project to database and return ID
         repository.add(project);
@@ -207,6 +208,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             copyImmutableFields(project,actual);
             project.setAttachments( getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), project.getAttachments()) );
             deleteAttachmentUsagesOfUnlinkedReleases(project, actual);
+            setReleaseRelatoins(project, user, actual);
             repository.update(project);
 
             //clean up attachments in database
@@ -215,6 +217,30 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return RequestStatus.SUCCESS;
         } else {
             return moderator.updateProject(project, user);
+        }
+    }
+
+    private void setReleaseRelatoins(Project updated, User user, Project current) {
+        boolean isMainlineStateDisabled = !(BackendUtils.MAINLINE_STATE_ENABLED_FOR_USER
+                || PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user))
+                && updated.getReleaseIdToUsageSize() > 0;
+
+        Map<String, ProjectReleaseRelationship> updatedReleaseIdToUsage = updated.getReleaseIdToUsage();
+
+        if ((null == current || current.getReleaseIdToUsage().isEmpty()) && isMainlineStateDisabled) {
+            updatedReleaseIdToUsage.forEach((k, v) -> v.setMainlineState(MainlineState.OPEN));
+        } else if (isMainlineStateDisabled) {
+            Map<String, ProjectReleaseRelationship> currentReleaseIdToUsage = current.getReleaseIdToUsage();
+            // currentReleaseIdToUsage.keySet().retainAll(updatedReleaseIdToUsage.keySet());
+
+            for (Map.Entry<String, ProjectReleaseRelationship> entry : updatedReleaseIdToUsage.entrySet()) {
+                ProjectReleaseRelationship prr = currentReleaseIdToUsage.get(entry.getKey());
+                if (null != prr) {
+                    entry.getValue().setMainlineState(prr.getMainlineState());
+                } else {
+                    entry.getValue().setMainlineState(MainlineState.OPEN);
+                }
+            }
         }
     }
 

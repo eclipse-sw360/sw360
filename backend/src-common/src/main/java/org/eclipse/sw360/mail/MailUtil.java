@@ -13,6 +13,7 @@ package org.eclipse.sw360.mail;
 import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
@@ -36,7 +37,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
  *
  * @author birgit.heydenreich@tngtech.com
  */
-public class MailUtil {
+public class MailUtil extends BackendUtils {
 
     private static final Logger log = Logger.getLogger(MailUtil.class);
 
@@ -45,7 +46,6 @@ public class MailUtil {
     private static final int MAIL_ASYNC_SEND_QUEUE_LIMIT = 1000;
 
     private static ExecutorService mailExecutor;
-    private Properties loadedProperties;
     private Session session;
 
     private String from;
@@ -60,7 +60,6 @@ public class MailUtil {
     private String supportMailAddress;
 
     public MailUtil() {
-        loadedProperties = CommonUtils.loadProperties(MailUtil.class, MailConstants.MAIL_PROPERTIES_FILE_PATH);
         mailExecutor = fixedThreadPoolWithQueueSize(MAIL_ASYNC_SEND_THREAD_LIMIT, MAIL_ASYNC_SEND_QUEUE_LIMIT);
         setBasicProperties();
         setSession();
