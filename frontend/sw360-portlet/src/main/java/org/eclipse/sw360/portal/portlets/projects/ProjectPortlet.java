@@ -32,6 +32,7 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
+import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.*;
@@ -194,6 +195,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             serveAttachmentUsagesRows(request, response);
         } else if (PortalConstants.SAVE_ATTACHMENT_USAGES.equals(action)) {
             saveAttachmentUsages(request, response);
+        } else if (PortalConstants.CHECK_DUPLICATE_ATTACHMENT.equals(action)) {
+            duplicateAttachmentExist(request, response);
         } else if (isGenericAction(action)) {
             dealWithGenericAction(request, response, action);
         }
@@ -1492,5 +1495,36 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         Comparator<Project> comparator = Comparator.comparing(
                 p -> nullToEmptyString(p.getState()));
         return isAscending ? comparator : comparator.reversed();
+    }
+
+    private boolean duplicateAttachmentExist(Project project) {
+        if (project.attachments != null && !project.attachments.isEmpty()) {
+            return AttachmentConnector.isDuplicateAttachment(project.attachments);
+        }
+        return false;
+    }
+
+    private void duplicateAttachmentExist(ResourceRequest request, ResourceResponse response) {
+        String id = request.getParameter(PROJECT_ID);
+        User user = UserCacheHolder.getUserFromRequest(request);
+        boolean duplicateAttachmentExists = false;
+        try {
+            ProjectService.Iface client = thriftClients.makeProjectClient();
+            if (id != null) {
+                Project project = client.getProjectByIdForEdit(id, user);
+                ProjectPortletUtils.updateProjectFromRequest(request, project);
+                duplicateAttachmentExists = duplicateAttachmentExist(project);
+                JSONObject responseData = JSONFactoryUtil.createJSONObject();
+                responseData.put("result", duplicateAttachmentExists);
+                try {
+                    writeJSON(request, response, responseData);
+                } catch (IOException e) {
+                    log.error("Problem rendering RemoveModerationRequestStatus", e);
+                }
+            }
+        } catch (TException e) {
+            log.error("Error checking for duplicate attachments in project", e);
+            setSW360SessionError(request, ErrorMessages.DEFAULT_ERROR_MESSAGE);
+        }
     }
 }

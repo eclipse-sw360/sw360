@@ -41,6 +41,7 @@ import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.Resource;
@@ -343,7 +344,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
     @RequestMapping(value = PROJECTS_URL + "/{projectId}/attachments", method = RequestMethod.POST, consumes = {"multipart/mixed", "multipart/form-data"})
     public ResponseEntity<HalResource> addAttachmentToProject(@PathVariable("projectId") String projectId,
                                                               @RequestPart("file") MultipartFile file,
-                                                              @RequestPart("attachment") Attachment newAttachment) throws TException {
+                                                              @RequestPart("attachment") Attachment newAttachment, @RequestParam(value = "allowDuplicateAttachment", required = false) boolean allowDuplicate) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
         Attachment attachment;
@@ -356,7 +357,11 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
 
         final Project project = projectService.getProjectForUserById(projectId, sw360User);
         project.addToAttachments(attachment);
-        projectService.updateProject(project, sw360User);
+
+        if (!attachmentService.isDuplicateAttachment(project.attachments) || allowDuplicate)
+            projectService.updateProject(project, sw360User);
+        else
+            throw new DataIntegrityViolationException("sw360 project with name '" + project.getName() + "' contains duplicate attachment.");
 
         final HalResource<Project> halResource = createHalProject(project, sw360User);
         return new ResponseEntity<>(halResource, HttpStatus.OK);

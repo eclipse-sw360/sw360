@@ -46,6 +46,8 @@ import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuild
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
+import static org.springframework.restdocs.request.RequestDocumentation.requestParameters;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class ReleaseSpecTest extends TestRestDocsSpecBase {
@@ -253,11 +255,14 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                 .contentType(MediaTypes.HAL_JSON)
                 .content(this.objectMapper.writeValueAsString(updateRelease))
                 .header("Authorization", "Bearer" + accessToken)
+                .param("allowDuplicateAttachment", "true")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        links(
-                                linkWithRel("self").description("The <<resources-release,Release resource>>"),
+                        requestParameters(
+                                parameterWithName("allowDuplicateAttachment").description("Please pass as `true` to allow duplicate attachments.")
+                        ),
+                        links(linkWithRel("self").description("The <<resources-release,Release resource>>"),
                                 linkWithRel("sw360:component").description("The link to the corresponding component"),
                                 linkWithRel("curies").description("The curies for documentation")
                         ),

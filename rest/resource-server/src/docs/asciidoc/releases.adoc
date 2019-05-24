@@ -103,6 +103,15 @@ A `POST` request is used to upload attachment to release
 |Attachment content id
 |===
 
+[red]#Request Parameter#
+|===
+|Path |Type |Description
+
+|allowDuplicateAttachment
+|Boolean
+|Please pass `true` to allow duplicate attachments in the release.
+|===
+
 [red]#Response structure#
 |===
 |Complete Release will be returned

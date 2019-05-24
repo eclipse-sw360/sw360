@@ -423,9 +423,13 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                 .contentType(MediaTypes.HAL_JSON)
                 .content(this.objectMapper.writeValueAsString(updateComponent))
                 .header("Authorization", "Bearer " + accessToken)
+                .param("allowDuplicateAttachment", "true")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("allowDuplicateAttachment").description("Please pass as `true` to allow duplicate attachments.")
+                        ),
                         links(
                                 linkWithRel("self").description("The <<resources-components,Component resource>>")
                         ),

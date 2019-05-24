@@ -17,6 +17,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
+import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.Before;
@@ -28,6 +29,7 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.http.*;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,6 +42,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anySet;
 import static org.mockito.Mockito.when;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -55,6 +58,9 @@ public class ComponentTest extends TestIntegrationBase {
 
     @MockBean
     private Sw360ComponentService componentServiceMock;
+
+    @MockBean
+    private Sw360AttachmentService attachmentServiceMock;
 
     private Component component;
     private final String componentId = "123456789";
@@ -78,6 +84,7 @@ public class ComponentTest extends TestIntegrationBase {
         user.setFullname("John Doe");
 
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
+        given(this.attachmentServiceMock.isDuplicateAttachment(anySet())).willReturn(false);
     }
 
     @Test
@@ -143,8 +150,10 @@ public class ComponentTest extends TestIntegrationBase {
         Map<String, String> body = new HashMap<>();
         body.put("name", updatedComponentName);
         body.put("invalid_property", "abcde123");
+        String url = "http://localhost:" + port + "/api/components/" + componentId;
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(url).queryParam("allowDuplicateAttachment", "true");
         ResponseEntity<String> response =
-                new TestRestTemplate().exchange("http://localhost:" + port + "/api/components/" + componentId,
+                new TestRestTemplate().exchange(url,
                         HttpMethod.PATCH,
                         new HttpEntity<>(body, headers),
                         String.class);

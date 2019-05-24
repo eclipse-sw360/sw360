@@ -19,6 +19,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
+import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
@@ -30,6 +31,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -44,6 +46,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Matchers.anySet;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class ReleaseTest extends TestIntegrationBase {
@@ -56,6 +59,9 @@ public class ReleaseTest extends TestIntegrationBase {
 
     @MockBean
     private Sw360ReleaseService releaseServiceMock;
+
+    @MockBean
+    private Sw360AttachmentService attachmentServiceMock;
 
     private Release release;
     private String releaseId = "121831bjh1v2j";
@@ -79,6 +85,7 @@ public class ReleaseTest extends TestIntegrationBase {
         user.setFullname("John Doe");
 
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
+        given(this.attachmentServiceMock.isDuplicateAttachment(anySet())).willReturn(false);
     }
 
     @Test
@@ -86,13 +93,15 @@ public class ReleaseTest extends TestIntegrationBase {
         String updatedReleaseName = "updatedReleaseName";
         given(this.releaseServiceMock.updateRelease(anyObject(), anyObject())).willReturn(RequestStatus.SUCCESS);
         given(this.releaseServiceMock.getReleaseForUserById(eq(releaseId), anyObject())).willReturn(release);
+        String url= "http://localhost:" + port + "/api/releases/" + releaseId;
         HttpHeaders headers = getHeaders(port);
         headers.setContentType(MediaType.APPLICATION_JSON);
         Map<String, String> body = new HashMap<>();
         body.put("name", updatedReleaseName);
         body.put("wrong_prop", "abc123");
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(url).queryParam("allowDuplicateAttachment", "true");
         ResponseEntity<String> response =
-                new TestRestTemplate().exchange("http://localhost:" + port + "/api/releases/" + releaseId,
+                new TestRestTemplate().exchange(builder.toUriString(),
                         HttpMethod.PATCH,
                         new HttpEntity<>(body, headers),
                         String.class);

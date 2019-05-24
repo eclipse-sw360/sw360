@@ -35,6 +35,7 @@ import org.eclipse.sw360.rest.resourceserver.vendor.VendorController;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
@@ -136,11 +137,17 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
     @RequestMapping(value = COMPONENTS_URL + "/{id}", method = RequestMethod.PATCH)
     public ResponseEntity<Resource<Component>> patchComponent(
             @PathVariable("id") String id,
-            @RequestBody Component updateComponent) throws TException {
+            @RequestBody Component updateComponent,
+            @RequestParam(value = "allowDuplicateAttachment", required = false) boolean allowDuplicate) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Component sw360Component = componentService.getComponentForUserById(id, user);
         sw360Component = this.restControllerHelper.updateComponent(sw360Component, updateComponent);
-        componentService.updateComponent(sw360Component, user);
+
+        if (!attachmentService.isDuplicateAttachment(sw360Component.attachments) || allowDuplicate)
+            componentService.updateComponent(sw360Component, user);
+        else
+            throw new DataIntegrityViolationException("sw360 component with name '" + sw360Component.getName() + "' contains duplicate attachment.");
+
         HalResource<Component> userHalResource = createHalComponent(sw360Component, user);
         return new ResponseEntity<>(userHalResource, HttpStatus.OK);
     }
@@ -205,7 +212,8 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
     @RequestMapping(value = COMPONENTS_URL + "/{componentId}/attachments", method = RequestMethod.POST, consumes = {"multipart/mixed", "multipart/form-data"})
     public ResponseEntity<HalResource> addAttachmentToComponent(@PathVariable("componentId") String componentId,
                                                                 @RequestPart("file") MultipartFile file,
-                                                                @RequestPart("attachment") Attachment newAttachment) throws TException {
+                                                                @RequestPart("attachment") Attachment newAttachment,
+                                                                @RequestParam(value = "allowDuplicateAttachment", required = false) boolean allowDuplicate) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
         Attachment attachment;
@@ -218,7 +226,10 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
 
         final Component component = componentService.getComponentForUserById(componentId, sw360User);
         component.addToAttachments(attachment);
-        componentService.updateComponent(component, sw360User);
+        if (!attachmentService.isDuplicateAttachment(component.attachments) || allowDuplicate)
+            componentService.updateComponent(component, sw360User);
+        else
+            throw new DataIntegrityViolationException("sw360 component with name '" + component.getName() + "' contains duplicate attachment.");
 
         final HalResource halRelease = createHalComponent(component, sw360User);
 

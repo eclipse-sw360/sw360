@@ -28,6 +28,7 @@ import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.Link;
@@ -68,6 +69,9 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
 
     @NonNull
     private RestControllerHelper restControllerHelper;
+
+    @NonNull
+    private Sw360AttachmentService sw360AttachmentServics;
 
     @RequestMapping(value = RELEASES_URL, method = RequestMethod.GET)
     public ResponseEntity<Resources<Resource>> getReleasesForUser(
@@ -136,11 +140,17 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
     @RequestMapping(value = RELEASES_URL + "/{id}", method = RequestMethod.PATCH)
     public ResponseEntity<Resource<Release>> patchComponent(
             @PathVariable("id") String id,
-            @RequestBody Release updateRelease) throws TException {
+            @RequestBody Release updateRelease,
+            @RequestParam(value = "allowDuplicateAttachment", required = false)  boolean allowDuplicate) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Release sw360Release = releaseService.getReleaseForUserById(id, user);
         sw360Release = this.restControllerHelper.updateRelease(sw360Release, updateRelease);
-        releaseService.updateRelease(sw360Release, user);
+
+        if (!this.sw360AttachmentServics.isDuplicateAttachment(sw360Release.attachments) || allowDuplicate)
+            releaseService.updateRelease(sw360Release, user);
+        else
+            throw new DataIntegrityViolationException("sw360 release with name '" + sw360Release.getName() + "' contains duplicate attachment.");
+
         HalResource<Release> halRelease = createHalReleaseResource(sw360Release, true);
         return new ResponseEntity<>(halRelease, HttpStatus.OK);
     }
@@ -198,7 +208,7 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
     @RequestMapping(value = RELEASES_URL + "/{releaseId}/attachments", method = RequestMethod.POST, consumes = {"multipart/mixed", "multipart/form-data"})
     public ResponseEntity<HalResource> addAttachmentToRelease(@PathVariable("releaseId") String releaseId,
                                                               @RequestPart("file") MultipartFile file,
-                                                              @RequestPart("attachment") Attachment newAttachment) throws TException {
+                                                              @RequestPart("attachment") Attachment newAttachment, @RequestParam(value = "allowDuplicateAttachment", required = false)  boolean allowDuplicate) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
         Attachment attachment;
@@ -211,7 +221,11 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
 
         final Release release = releaseService.getReleaseForUserById(releaseId, sw360User);
         release.addToAttachments(attachment);
-        releaseService.updateRelease(release, sw360User);
+
+        if (!sw360AttachmentServics.isDuplicateAttachment(release.attachments) || allowDuplicate)
+            releaseService.updateRelease(release, sw360User);
+        else
+            throw new DataIntegrityViolationException("sw360 release with name '" + release.getName() + "' contains duplicate attachment.");
 
         final HalResource halRelease = createHalReleaseResource(release, true);
 

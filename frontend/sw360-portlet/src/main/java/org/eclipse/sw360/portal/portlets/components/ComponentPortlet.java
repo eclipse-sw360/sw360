@@ -31,6 +31,7 @@ import com.liferay.portlet.PortletURLFactoryUtil;
 
 import org.eclipse.sw360.datahandler.common.*;
 import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
+import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.*;
@@ -190,6 +191,10 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             loadSpdxLicenseInfo(request, response);
         } else if (PortalConstants.WRITE_SPDX_LICENSE_INFO_INTO_RELEASE.equals(action)) {
             writeSpdxLicenseInfoIntoRelease(request, response);
+        } else if (PortalConstants.CHECK_DUPLICATE_ATTACHMENT_RELEASE.equals(action)) {
+            duplicateAttachmentExistRelease(request, response);
+        } else if (PortalConstants.CHECK_DUPLICATE_ATTACHMENT_COMPONENT.equals(action)) {
+            duplicateAttachmentExistComponent(request, response);
         } else if (isGenericAction(action)) {
             dealWithGenericAction(request, response, action);
         } else if (action.contains(PortalConstants.CODESCOOP_ACTION)) {
@@ -1636,4 +1641,67 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             return CommonUtils.COMMA_JOINER.join(strings.stream().sorted().collect(Collectors.toList()));
         }
     }
+
+    private boolean duplicateAttachmentExistComponent(Component component) {
+        if (component.attachments != null && !component.attachments.isEmpty()) {
+            return AttachmentConnector.isDuplicateAttachment(component.attachments);
+        }
+        return false;
+    }
+
+    private boolean duplicateAttachmentExistRelease(Release release) {
+        if (release.attachments != null && !release.attachments.isEmpty()) {
+            return AttachmentConnector.isDuplicateAttachment(release.attachments);
+        }
+        return false;
+    }
+
+    private void duplicateAttachmentExistComponent(ResourceRequest request, ResourceResponse response) {
+        String id = request.getParameter(COMPONENT_ID);
+        User user = UserCacheHolder.getUserFromRequest(request);
+        boolean duplicateAttachmentExists = false;
+        try {
+            ComponentService.Iface client = thriftClients.makeComponentClient();
+            if (id != null) {
+                Component component = client.getComponentByIdForEdit(id, user);
+                ComponentPortletUtils.updateComponentFromRequest(request, component);
+                duplicateAttachmentExists = duplicateAttachmentExistComponent(component);
+                JSONObject responseData = JSONFactoryUtil.createJSONObject();
+                responseData.put("result", duplicateAttachmentExists);
+                try {
+                    writeJSON(request, response, responseData);
+                } catch (IOException e) {
+                    log.error("Problem rendering RemoveModerationRequestStatus", e);
+                }
+            }
+        } catch (TException e) {
+            log.error("Error checking for duplicate attachments in project", e);
+            setSW360SessionError(request, ErrorMessages.DEFAULT_ERROR_MESSAGE);
+        }
+    }
+
+    private void duplicateAttachmentExistRelease(ResourceRequest request, ResourceResponse response) {
+        String id = request.getParameter(RELEASE_ID);
+        User user = UserCacheHolder.getUserFromRequest(request);
+        boolean duplicateAttachmentExists = false;
+        try {
+            ComponentService.Iface client = thriftClients.makeComponentClient();
+            if (id != null) {
+                Release release = client.getReleaseByIdForEdit(id, user);
+                ComponentPortletUtils.updateReleaseFromRequest(request, release);
+                duplicateAttachmentExists = duplicateAttachmentExistRelease(release);
+                JSONObject responseData = JSONFactoryUtil.createJSONObject();
+                responseData.put("result", duplicateAttachmentExists);
+                try {
+                    writeJSON(request, response, responseData);
+                } catch (IOException e) {
+                    log.error("Problem rendering RemoveModerationRequestStatus", e);
+                }
+            }
+        } catch (TException e) {
+            log.error("Error checking for duplicate attachments in project", e);
+            setSW360SessionError(request, ErrorMessages.DEFAULT_ERROR_MESSAGE);
+        }
+    }
+
 }

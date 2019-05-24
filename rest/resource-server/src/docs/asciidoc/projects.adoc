@@ -123,6 +123,15 @@ A `POST` request is used to upload attachment to project
 |Attachment content id
 |===
 
+[red]#Request Parameter#
+|===
+|Path |Type |Description
+
+|allowDuplicateAttachment
+|Boolean
+|Please pass `true` to allow duplicate attachments in the project.
+|===
+
 [red]#Response structure#
 |===
 |Complete Project will be returned

@@ -35,6 +35,11 @@
     <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${project.id}" />
 </portlet:actionURL>
 
+<portlet:resourceURL var="checkDuplicateAttachmentAjaxUrl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CHECK_DUPLICATE_ATTACHMENT%>'/>
+    <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${project.id}" />
+</portlet:resourceURL>
+
 <portlet:actionURL var="deleteAttachmentsOnCancelURL" name='<%=PortalConstants.ATTACHMENT_DELETE_ON_CANCEL%>'>
 </portlet:actionURL>
 
@@ -144,7 +149,7 @@
 </core_rt:if>
 
 <script>
-require(['jquery', 'modules/sw360Validate', 'modules/confirm', 'modules/tabview' ], function($, sw360Validate, confirm, tabview) {
+require(['jquery', 'modules/sw360Validate', 'modules/confirm', 'modules/tabview', 'utils/includes/validateAttachments' ], function($, sw360Validate, confirm, tabview, validateAttachments) {
     document.title = "${project.name} - " + document.title;
 
     tabview.create('myTab');
@@ -233,7 +238,7 @@ require(['jquery', 'modules/sw360Validate', 'modules/confirm', 'modules/tabview'
     function submitForm() {
         disableLicenseInfoHeaderTextIfNecessary();
         disableObligationsTextIfNecessary();
-        $('#projectEditForm').submit();
+        validateAttachments.attachmentValidation('<%=checkDuplicateAttachmentAjaxUrl%>',"projectEditForm","project");
     }
 
     function disableLicenseInfoHeaderTextIfNecessary() {

@@ -313,6 +313,9 @@ public class PortalConstants {
     public static final String LOAD_LICENSE_INFO_ATTACHMENT_USAGE = "LoadLicenseInfoAttachmentUsage";
     public static final String LOAD_SOURCE_PACKAGE_ATTACHMENT_USAGE = "LoadSourcePackageAttachmentUsage";
     public static final String LOAD_PROJECT_LIST = "load_project_list";
+    public static final String CHECK_DUPLICATE_ATTACHMENT = "check_duplicate_attachments";
+    public static final String CHECK_DUPLICATE_ATTACHMENT_RELEASE = "check_duplicate_attachments_release";
+    public static final String CHECK_DUPLICATE_ATTACHMENT_COMPONENT = "check_duplicate_attachments_component";
 
     //component actions
     public static final String ADD_VENDOR = "add_vendor";

@@ -157,6 +157,15 @@ A `POST` request is used to upload attachment to component
 |Attachment content id
 |===
 
+[red]#Request Parameter#
+|===
+|Path |Type |Description
+
+|allowDuplicateAttachment
+|Boolean
+|Please pass `true` to allow duplicate attachments in the component.
+|===
+
 [red]#Response structure#
 |===
 |Complete Component will be returned

@@ -23,6 +23,10 @@
 <%-- the following is needed by liferay to display error messages--%>
 <%@ include file="/html/utils/includes/errorKeyToMessage.jspf"%>
 
+<portlet:resourceURL var="checkDuplicateAttachmentAjaxUrl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CHECK_DUPLICATE_ATTACHMENT_COMPONENT%>'/>
+    <portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="${component.id}" />
+</portlet:resourceURL>
 
 <portlet:actionURL var="updateComponentURL" name="updateComponent">
     <portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="${component.id}"/>
@@ -161,7 +165,7 @@
         /* baseUrl also used in method in require block */
         baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
 
-require(['jquery', 'modules/sw360Validate', 'modules/autocomplete', 'modules/confirm', 'components/includes/vendors/searchVendor'  ], function($, sw360Validate, autocomplete, confirm, vendorsearch) {
+require(['jquery', 'modules/sw360Validate', 'modules/autocomplete', 'modules/confirm', 'components/includes/vendors/searchVendor', 'utils/includes/validateAttachments' ], function($, sw360Validate, autocomplete, confirm, vendorsearch, validateAttachments) {
 
     Liferay.on('allPortletsReady', function() {
         var contextpath = '<%=request.getContextPath()%>',
@@ -180,7 +184,7 @@ require(['jquery', 'modules/sw360Validate', 'modules/autocomplete', 'modules/con
             function () {
                 <core_rt:choose>
                 <core_rt:when test="${componentDivAddMode || component.permissions[WRITE]}">
-                $('#componentEditForm').submit();
+                validateAttachments.attachmentValidation('<%=checkDuplicateAttachmentAjaxUrl%>',"componentEditForm","component");
                 </core_rt:when>
                 <core_rt:otherwise>
                 showCommentField();

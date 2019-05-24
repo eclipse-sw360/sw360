@@ -47,6 +47,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -185,5 +186,11 @@ public class Sw360AttachmentService {
             attachmentResources.add(attachmentResource);
         }
         return new Resources<>(attachmentResources);
+    }
+
+    public boolean isDuplicateAttachment(Set<Attachment> attachments) {
+        boolean duplicateSha1 = attachments.parallelStream().collect(Collectors.groupingBy(Attachment::getSha1)).size() < attachments.size();
+        boolean duplicateFileName = attachments.parallelStream().collect(Collectors.groupingBy(Attachment::getFilename)).size() < attachments.size();
+        return (duplicateSha1 || duplicateFileName);
     }
 }

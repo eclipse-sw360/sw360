@@ -36,6 +36,11 @@
     <portlet:param name="<%=PortalConstants.RELEASE_ID%>" value="${release.id}"/>
 </portlet:actionURL>
 
+<portlet:resourceURL var="checkDuplicateAttachmentAjaxUrl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CHECK_DUPLICATE_ATTACHMENT_RELEASE%>'/>
+    <portlet:param name="<%=PortalConstants.RELEASE_ID%>" value="${release.id}" />
+</portlet:resourceURL>
+
 <portlet:actionURL var="deleteAttachmentsOnCancelURL" name='<%=PortalConstants.ATTACHMENT_DELETE_ON_CANCEL%>'>
 </portlet:actionURL>
 
@@ -171,7 +176,7 @@
     var sw360Purl = "${componentpurl}";
 </script>
 <script>
-    require(['jquery', 'modules/sw360Validate', 'components/includes/vendors/searchVendor', 'modules/confirm', 'modules/autocomplete', 'modules/tabview', /* jquery-plugins */ 'jquery-ui' ], function($, sw360Validate, vendorsearch, confirm, autocomplete, tabview) {
+    require(['jquery', 'modules/sw360Validate', 'components/includes/vendors/searchVendor', 'modules/confirm', 'modules/autocomplete', 'modules/tabview', 'utils/includes/validateAttachments', /* jquery-plugins */ 'jquery-ui' ], function($, sw360Validate, vendorsearch, confirm, autocomplete, tabview, validateAttachments) {
         document.title = "${component.name} - " + document.title;
 
         tabview.create('myTab');
@@ -186,7 +191,7 @@
                 function() {
                     <core_rt:choose>
                     <core_rt:when test="${addMode || release.permissions[WRITE]}">
-                    $('#releaseEditForm').submit();
+                    validateAttachments.attachmentValidation('<%=checkDuplicateAttachmentAjaxUrl%>',"releaseEditForm","release");
                     </core_rt:when>
                     <core_rt:otherwise>
                     showCommentField();
