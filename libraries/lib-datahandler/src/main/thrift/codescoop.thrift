@@ -51,7 +51,7 @@ struct CodescoopComponentOrigin {
 }
 
 struct CodescoopSearchFilter {
-    1: required list<i32> type;
+    1: required list<string> type;
     2: required list<string> languages;
     3: required list<string> licenses;
     4: required i32 minScore;
@@ -64,6 +64,11 @@ struct CodescoopComponentSearch {
     4: required i32 limit,
     5: required i32 offset,
     6: required CodescoopSearchFilter filter;
+}
+
+struct CodescoopReleaseSearch {
+    1: required string componentId,
+    2: required string purl;
 }
 
 struct CodescoopRelease {
@@ -98,7 +103,7 @@ struct CodescoopComponent {
     3: required string owner,
     4: required string name,
     5: required string purl,
-    6: required i32 type,
+    6: required string type,
     7: optional CodescoopComponentOrigin origin,
     8: string uuid;
 }
@@ -119,7 +124,7 @@ service CodescoopService {
 
      string proceedComponentsPurlJson(1: string json);
 
-     list<CodescoopRelease> searchComponentReleases(1: CodescoopComponentSearch request);
+     list<CodescoopRelease> searchComponentReleases(1: CodescoopReleaseSearch request);
 
      string proceedComponentReleasesJson(1: string json);
 

@@ -13,6 +13,7 @@ package org.eclipse.sw360.codescoop;
 import com.codescoop.client.model.autocomplete.AutocompleteRequest;
 import com.codescoop.client.model.autocomplete.AutocompleteResponse;
 import com.codescoop.client.model.component.*;
+import com.codescoop.client.model.search.SearchReleaseRequest;
 import com.codescoop.client.model.search.SearchRequest;
 import org.eclipse.sw360.datahandler.thrift.codescoop.*;
 
@@ -21,7 +22,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang.StringUtils.isNotBlank;
-import static org.apache.commons.lang.StringUtils.mid;
 
 public class ModelTranslator {
 
@@ -55,6 +55,13 @@ public class ModelTranslator {
         return builder.create();
     }
 
+    public static SearchReleaseRequest translateSearchRequest(CodescoopReleaseSearch sw360Request) {
+        return SearchReleaseRequest
+                .build()
+                .componentId(sw360Request.getComponentId())
+                .purl(sw360Request.getPurl()).create();
+    }
+
     public static List<CodescoopComponent> translateComponent(List<Component> external) {
         return external.stream().map(ModelTranslator::translateComponent).collect(Collectors.toList());
     }
@@ -66,7 +73,7 @@ public class ModelTranslator {
                 external.getOwner(),
                 external.getName(),
                 external.getPurl(),
-                external.getType(),
+                external.getComponentType(),
                 external.getUuid());
         if (external.getOrigin() != null) {
             c.setOrigin(translateOrigin(external.getOrigin()));

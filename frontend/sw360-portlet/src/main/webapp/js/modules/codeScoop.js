@@ -667,7 +667,7 @@ define("modules/codeScoop", [], function () {
                     _this.modal.setLoader();
                     var component = JSON.parse(e.target.getAttribute("data"));
 
-                    _this._fetch_releases_by_component_id(_this.api.releaseUrl, {searchQuery: component.id}, function (releasesList) {
+                    _this._fetch_releases_by_component_id(_this.api.releaseUrl, {componentId: component.id}, function (releasesList) {
                         var languageInput = document.getElementById("programminglanguages");
                         var languages = component.origin.languages;
                         for (var k = 0; k < languages.length; k++) {
@@ -835,7 +835,7 @@ define("modules/codeScoop", [], function () {
 
             _this._match_component(callTo, query, function (componentList) {
                 if (componentList.length > 0) {
-                    _this._fetch_releases_by_component_id(_this.api.releasesUrl, {searchQuery: componentList[0].id}, function (externalReleases) {
+                    _this._fetch_releases_by_component_id(_this.api.releasesUrl, {componentId: componentList[0].id}, function (externalReleases) {
                         var absentReleases = [];
 
                         for (var i = 0; i < externalReleases.length; i++) {

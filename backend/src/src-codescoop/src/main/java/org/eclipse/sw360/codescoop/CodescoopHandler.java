@@ -48,27 +48,41 @@ public class CodescoopHandler implements CodescoopService.Iface {
     public CodescoopHandler() {
         Properties props = CommonUtils.loadProperties(CodescoopHandler.class, PROPERTY_FILE);
         String host = props.getProperty(PROPERTY_HOST, null);
-        String client = props.getProperty(PROPERTY_CLIENT, null);
+        String user = props.getProperty(PROPERTY_CLIENT, null);
         String credentials = props.getProperty(PROPERTY_CREDENTIALS, null);
         String proxy = props.getProperty(PROPERTY_PROXY, null);
 
         log.info("Codescoop client construct : host=" + host + ", client=" + client
                 + ", credentials=" + credentials + ", proxy=" + proxy);
 
-        try {
-            if (isNotBlank(host) && isNotBlank(client) && isNotBlank(credentials)) {
-                this.client = ClosableCodescoopClient
-                        .build()
-                        .withApiUrl(host)
-                        .withApiUser(client)
-                        .withApiKey(credentials)
-                        .withProxyHost(proxy)
-                        .create();
+        if (isNotBlank(host) && isNotBlank(user) && isNotBlank(credentials)) {
+            while (client == null) {
+                login(host, user, credentials, proxy);
             }
+            log.warn("Codescoop client was established");
+        } else {
+            log.warn("Codescoop integration disabled");
+        }
+    }
+
+    private void login(String host, String user, String credentials, String proxy) {
+        try {
+            ClosableCodescoopClient.Builder builder = ClosableCodescoopClient
+                    .build()
+                    .withApiUrl(host)
+                    .withApiUser(user)
+                    .withApiPassword(credentials);
+            if (isNotBlank(proxy)) {
+                builder.withProxyHost(proxy);
+            }
+            this.client = builder.create();
         } catch (Exception e) {
-            log.warn("Codescoop init client error", e);
-        } finally {
-            log.warn(client == null ? "Codescoop integration disabled" : "Codescoop client was established");
+            log.error("Codescoop init client error");
+            try {
+                Thread.sleep(30000);
+            } catch (Exception ex) {
+                log.error("Error codescoop login retry", ex);
+            }
         }
     }
 
@@ -173,7 +187,7 @@ public class CodescoopHandler implements CodescoopService.Iface {
     }
 
     @Override
-    public List<CodescoopRelease> searchComponentReleases(CodescoopComponentSearch request) throws TException {
+    public List<CodescoopRelease> searchComponentReleases(CodescoopReleaseSearch request) throws TException {
         try {
             List<com.codescoop.client.model.component.Release> response =
                     this.client.searchComponentReleases(ModelTranslator.translateSearchRequest(request));
@@ -186,9 +200,9 @@ public class CodescoopHandler implements CodescoopService.Iface {
 
     @Override
     public String proceedComponentReleasesJson(String json) throws TException {
-        CodescoopComponentSearch request;
+        CodescoopReleaseSearch request;
         try {
-            request = mapper.readValue(json, CodescoopComponentSearch.class);
+            request = mapper.readValue(json, CodescoopReleaseSearch.class);
         } catch (Exception e) {
             log.error("Error parse json", e);
             throw new TException("Error parse json", e);
