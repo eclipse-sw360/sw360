@@ -206,6 +206,7 @@ struct Release {
     53: optional set<string> operatingSystems,
     54: optional COTSDetails cotsDetails,
     55: optional EccInformation eccInformation,
+    56: optional set<string> softwarePlatforms,
 
     65: optional set<string> mainLicenseIds,
 

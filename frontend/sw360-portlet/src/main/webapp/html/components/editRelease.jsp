@@ -53,6 +53,7 @@
 
     <core_rt:set var="programmingLanguages" value='<%=PortalConstants.PROGRAMMING_LANGUAGES%>'/>
     <core_rt:set var="operatingSystemsAutoC" value='<%=PortalConstants.OPERATING_SYSTEMS%>'/>
+    <core_rt:set var="platformsAutoC" value='<%=PortalConstants.SOFTWARE_PLATFORMS%>'/>
 
     <core_rt:set var="addMode" value="${empty release.id}"/>
     <core_rt:set var="cotsMode" value="<%=component.componentType == ComponentType.COTS%>"/>
@@ -179,6 +180,7 @@
         Liferay.on('allPortletsReady', function() {
             autocomplete.prepareForMultipleHits('programminglanguages', ${programmingLanguages});
             autocomplete.prepareForMultipleHits('op_systems', ${operatingSystemsAutoC});
+            autocomplete.prepareForMultipleHits('platformsTB', ${platformsAutoC});
 
             sw360Validate.validateWithInvalidHandlerNoIgnore('#releaseEditForm');
 

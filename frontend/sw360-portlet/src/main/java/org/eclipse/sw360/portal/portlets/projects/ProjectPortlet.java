@@ -320,8 +320,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     }
 
     private void sendLicenseInfoResponse(ResourceRequest request, ResourceResponse response, Project project, LicenseInfoFile licenseInfoFile) throws IOException {
-    	OutputFormatInfo outputFormatInfo = licenseInfoFile.getOutputFormatInfo();
-	String filename = String.format("LicenseInfo-%s%s-%s.%s", project.getName(),
+        OutputFormatInfo outputFormatInfo = licenseInfoFile.getOutputFormatInfo();
+        String documentVariant = licenseInfoFile.getOutputFormatInfo().getVariant() == OutputFormatVariant.DISCLOSURE ? "LicenseInfo" : "ProjectClearingReport";
+        String filename = String.format("%s-%s%s-%s.%s", documentVariant, project.getName(),
 			StringUtils.isBlank(project.getVersion()) ? "" : "-" + project.getVersion(),
 			SW360Utils.getCreatedOnTime().replaceAll("\\s", "_").replace(":", "_"),
 			outputFormatInfo.getFileExtension());

@@ -94,7 +94,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
                 new TextGenerator(DISCLOSURE, "License Disclosure as TEXT"),
                 new XhtmlGenerator(DISCLOSURE, "License Disclosure as XHTML"),
                 new DocxGenerator(DISCLOSURE, "License Disclosure as DOCX"),
-                new DocxGenerator(REPORT, "License Report as DOCX")
+                new DocxGenerator(REPORT, "Project Clearing Report as DOCX")
         );
         // @formatter:on
     }
