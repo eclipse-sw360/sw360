@@ -8,40 +8,35 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-
 package org.eclipse.sw360.rest.authserver.security;
 
+import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.rest.authserver.security.basicauth.Sw360LiferayAuthenticationProvider;
+import org.eclipse.sw360.rest.authserver.security.customheaderauth.Sw360CustomHeaderAuthenticationFilter;
 import org.eclipse.sw360.rest.authserver.security.customheaderauth.Sw360CustomHeaderAuthenticationProvider;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.AuthenticationManagerConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
 
 /**
- * This class configures the standard spring security for this server. Only
- * exception is that the {@link AuthenticationManager} is shared with the oauth2
- * security and this one is configured with the oauth2
- * {@link AuthenticationProvider}s from
+ * This class configures the standard spring security for this server. Some of
+ * the created beans are also necessary in the special oauth 2 flows, so they
+ * are injected and used in the second security config class
  * {@link Sw360AuthorizationServerConfiguration}.
  */
 @Configuration
 @EnableWebSecurity
+@EnableGlobalMethodSecurity(prePostEnabled = true)
 public class Sw360WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
-
-    @Autowired
-    private Sw360LiferayAuthenticationProvider sw360LiferayAuthenticationProvider;
-
-    @Autowired
-    private Sw360CustomHeaderAuthenticationProvider sw360CustomHeaderAuthenticationProvider;
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -52,7 +47,9 @@ public class Sw360WebSecurityConfiguration extends WebSecurityConfigurerAdapter 
                 .anyRequest()
                     .authenticated()
                 .and()
-                    .httpBasic()
+                .addFilterBefore(sw360CustomHeaderAuthenticationFilter(),
+                        AbstractPreAuthenticatedProcessingFilter.class)
+                .httpBasic()
                 .and()
                     .csrf().disable();
     }
@@ -60,8 +57,8 @@ public class Sw360WebSecurityConfiguration extends WebSecurityConfigurerAdapter 
     @Override
     protected void configure(AuthenticationManagerBuilder authenticationManagerBuilder) {
         authenticationManagerBuilder
-                .authenticationProvider(sw360LiferayAuthenticationProvider)
-                .authenticationProvider(sw360CustomHeaderAuthenticationProvider);
+                .authenticationProvider(sw360LiferayAuthenticationProvider())
+                .authenticationProvider(sw360CustomHeaderAuthenticationProvider());
     }
 
     /**
@@ -75,4 +72,28 @@ public class Sw360WebSecurityConfiguration extends WebSecurityConfigurerAdapter 
         return super.authenticationManagerBean();
     }
 
+    @Bean
+    protected Sw360CustomHeaderAuthenticationFilter sw360CustomHeaderAuthenticationFilter() {
+        return new Sw360CustomHeaderAuthenticationFilter();
+    }
+
+    @Bean
+    protected Sw360CustomHeaderAuthenticationProvider sw360CustomHeaderAuthenticationProvider() {
+        return new Sw360CustomHeaderAuthenticationProvider();
+    }
+
+    @Bean
+    protected Sw360LiferayAuthenticationProvider sw360LiferayAuthenticationProvider() {
+        return new Sw360LiferayAuthenticationProvider();
+    }
+
+    @Bean
+    protected Sw360UserDetailsProvider principalProvider() {
+        return new Sw360UserDetailsProvider();
+    }
+
+    @Bean
+    protected ThriftClients thriftClients() {
+        return new ThriftClients();
+    }
 }

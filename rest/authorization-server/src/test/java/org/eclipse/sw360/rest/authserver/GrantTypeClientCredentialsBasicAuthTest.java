@@ -24,8 +24,9 @@ public class GrantTypeClientCredentialsBasicAuthTest extends GrantTypeClientCred
     @Before
     public void before() throws IOException {
         String url = "http://localhost:" + String.valueOf(port) + "/oauth/token?grant_type=" + PARAMETER_GRANT_TYPE
-                + "&client_id=" + clientId;
+                + "&client_id=" + testClient.getClientId();
 
-        responseEntity = new TestRestTemplate(clientId, clientSecret).postForEntity(url, null, String.class);
+        responseEntity = new TestRestTemplate(testClient.getClientId(), testClient.getClientSecret()).postForEntity(url,
+                null, String.class);
     }
 }

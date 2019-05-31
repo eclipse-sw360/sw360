@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2017, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -31,7 +31,13 @@ public enum Sw360GrantedAuthority implements GrantedAuthority {
     * WRITE
     *    authorized with clientName/clientSecret and valid sw360 user with rest api write privileges
     */
-    WRITE;
+    WRITE,
+
+    /*
+     * ADMIN
+     *    authorized and valid sw360 user with auth server administration privileges
+     */
+    ADMIN;
 
     @Override
     public String getAuthority() {

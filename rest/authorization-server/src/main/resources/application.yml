@@ -1,5 +1,5 @@
 #
-# Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+# Copyright Siemens AG, 2017, 2019. Part of the SW360 Portal Project.
 #
 # All rights reserved. This configuration file is provided to you under the
 # terms and conditions of the Eclipse Distribution License v1.0 which
@@ -9,6 +9,18 @@
 
 server:
   port: 8090
+
+couchdb:
+  url: http://sw360couchdb:5984
+  database: sw360oauthclients
+  # if your couchdb does not use authentication, pls just don't use the settings for username and password
+  #username:
+  #password:
+
+spring:
+  jackson:
+    serialization:
+      indent_output: true
 
 sw360:
   sw360-portal-server-url: ${SW360_PORTAL_SERVER_URL:http://127.0.0.1:8080}
@@ -29,10 +41,3 @@ security:
   oauth2:
     resource:
       id: sw360-REST-API
-    client:
-      client-id: trusted-sw360-client
-      client-secret: sw360-secret
-      scope: BASIC, READ, WRITE
-      resource-ids: sw360-REST-API
-      authorized-grant-types: client_credentials,password
-      access-token-validity-seconds: 3600

@@ -39,6 +39,6 @@ public abstract class GrantTypePasswordTestBase extends IntegrationTestBase {
     @Test
     public void should_get_expected_jwt_attributes() throws IOException {
         JsonNode jwtClaimsJsonNode = checkJwtClaims(READ.getAuthority());
-        assertThat(jwtClaimsJsonNode.get("user_name").asText(), is(testUser.email));
+        assertThat(jwtClaimsJsonNode.get("user_name").asText(), is(adminTestUser.email));
     }
 }

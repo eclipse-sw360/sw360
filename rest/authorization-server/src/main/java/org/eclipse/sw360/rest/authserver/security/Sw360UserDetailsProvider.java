@@ -8,7 +8,7 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-package org.eclipse.sw360.rest.authserver.security.customheaderauth;
+package org.eclipse.sw360.rest.authserver.security;
 
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -23,7 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * This user details provider is able to query the sw360 user thrift service to
  * check if a user identified by an email address or an external id exists.
  */
-public class Sw360CustomHeaderUserDetailsProvider {
+public class Sw360UserDetailsProvider {
 
     private final Logger log = Logger.getLogger(this.getClass());
 
