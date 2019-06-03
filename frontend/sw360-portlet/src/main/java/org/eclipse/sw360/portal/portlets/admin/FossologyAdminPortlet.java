@@ -14,6 +14,7 @@ import com.liferay.portal.kernel.portlet.PortletResponseUtil;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyHostFingerPrint;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
+import org.eclipse.sw360.portal.common.FossologyConnectionHelper;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
@@ -103,13 +104,9 @@ public class FossologyAdminPortlet extends Sw360Portlet {
     }
 
     public void serveCheckConnection(ResourceRequest request, ResourceResponse response) throws PortletException, IOException {
-        RequestStatus checkConnection = RequestStatus.FAILURE;
-        try {
-            checkConnection = thriftClients.makeFossologyClient().checkConnection();
-        } catch (TException e) {
-            log.error("Error connecting to backend", e);
-        }
-        renderRequestStatus(request, response, checkConnection);
+		RequestStatus checkConnection = RequestStatus.FAILURE;
+		checkConnection = FossologyConnectionHelper.getInstance().checkFossologyConnection();
+		renderRequestStatus(request, response, checkConnection);
     }
 
 }
