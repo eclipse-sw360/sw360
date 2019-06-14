@@ -8,6 +8,7 @@ To migrate it is recommended to do this in the following order:
 1. stop SW360 (i.e. the tomcat)
 2. ensure that couchdb is accessible (try to open `http://localhost:5984/_utils/`)
 3. run the migration scripts (i.e. for each script call `python2 /PATH/TO/00?_some_migration_script.py`)
+    * be aware that some scripts are using an internal dry-run switch which you have to change manually in the script's code
 4. deploy the new `.war` files
 5. start SW360 again
 
@@ -27,6 +28,8 @@ To migrate it is recommended to do this in the following order:
 ### 2.2.0 -> 3.0.0
 - `007_add_submitters_usergroup_to_moderation_request.py`
 - `008_add_component_type_to_moderation_requests.py`
+### 3.3.0 -> 3.4.0
+- `011_migrate_attachment_usages_license_info.py`
 
 ## Optional usage
 - `009_overwrite_release_name_with_component_name.py`
