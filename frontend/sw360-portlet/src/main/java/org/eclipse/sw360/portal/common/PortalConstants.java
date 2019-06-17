@@ -38,6 +38,7 @@ public class PortalConstants {
     public static final String LICENSE_IDENTIFIERS;
     public static final String PREFERRED_COUNTRY_CODES;
     public static final Boolean MAINLINE_STATE_ENABLED_FOR_USER;
+    public static final Boolean IS_CLEARING_TEAM_UNKNOWN_ENABLED;
 
     // DO NOT CHANGE THIS UNLESS YOU KNOW WHAT YOU ARE DOING !!!
     // - friendly url mapping files must be changed
@@ -516,6 +517,7 @@ public class PortalConstants {
         PROJECTIMPORT_HOSTS = props.getProperty("projectimport.hosts", "");
         PREFERRED_COUNTRY_CODES = props.getProperty("preferred.country.codes", "DE,AT,CH,US");
         MAINLINE_STATE_ENABLED_FOR_USER = Boolean.parseBoolean(props.getProperty("mainline.state.enabled.for.user", "false"));
+        IS_CLEARING_TEAM_UNKNOWN_ENABLED = Boolean.parseBoolean(props.getProperty("clearing.team.unknown.enabled", "true"));
 
         // SW360 REST API Constants
         API_TOKEN_ENABLE_GENERATOR = Boolean.parseBoolean(props.getProperty("rest.apitoken.generator.enable", "false"));
