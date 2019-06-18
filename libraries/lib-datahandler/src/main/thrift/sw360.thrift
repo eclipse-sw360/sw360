@@ -28,6 +28,7 @@ enum RequestStatus {
     DUPLICATE = 5,
     DUPLICATE_ATTACHMENT = 6,
     ACCESS_DENIED = 7,
+    CLOSED_UPDATE_NOT_ALLOWED = 8,
 }
 
 enum RemoveModeratorRequestStatus {

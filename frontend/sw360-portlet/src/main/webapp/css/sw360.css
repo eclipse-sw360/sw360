@@ -717,3 +717,7 @@ textarea.broader {
     vertical-align: middle;
     line-height: 50px;
 }
+
+.editdisabled{
+  opacity: 0.4;
+}

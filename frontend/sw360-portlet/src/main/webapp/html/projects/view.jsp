@@ -279,12 +279,18 @@
                                            +" alt='SelectClearing' title='send to Fossology'>";
                     </core_rt:otherwise>
                 </core_rt:choose>
+                var editProject;
+
+                if(row.cState == 'CLOSED' && ${isUserAdmin != 'Yes'}) {
+                    editProject = "<img class='editdisabled' src='<%=request.getContextPath()%>/images/edit.png' alt='Edit' title='Only Admin can edit a closed project'>";
+                } else {
+                    editProject = renderLinkTo(makeProjectUrl(id, '<%=PortalConstants.PAGENAME_EDIT%>'),"",
+                                          "<img src='<%=request.getContextPath()%>/images/edit.png' alt='Edit' title='Edit'>");
+                }
+
                 return sendingToFossology +
                         "<span id='projectAction" + id + "'></span>"
-                    + renderLinkTo(
-                        makeProjectUrl(id, '<%=PortalConstants.PAGENAME_EDIT%>'),
-                        "",
-                        "<img src='<%=request.getContextPath()%>/images/edit.png' alt='Edit' title='Edit'>")
+                    + editProject
                     + renderLinkTo(
                         makeProjectUrl(id, '<%=PortalConstants.PAGENAME_DUPLICATE%>'),
                         "",

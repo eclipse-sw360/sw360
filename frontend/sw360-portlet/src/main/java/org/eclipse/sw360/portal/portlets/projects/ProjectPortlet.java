@@ -46,6 +46,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.exporter.ProjectExporter;
@@ -804,8 +805,10 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     }
 
     private void prepareStandardView(RenderRequest request) throws IOException {
+        User user = UserCacheHolder.getUserFromRequest(request);
         List<Organization> organizations = UserUtils.getOrganizations(request);
         request.setAttribute(PortalConstants.ORGANIZATIONS, organizations);
+        request.setAttribute(IS_USER_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user) ? "Yes" : "No");
         for (Project._Fields filteredField : projectFilteredFields) {
             String parameter = request.getParameter(filteredField.toString());
             request.setAttribute(filteredField.getFieldName(), nullToEmpty(parameter));
@@ -909,6 +912,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
                 addProjectBreadcrumb(request, response, project);
                 request.setAttribute(PROJECT_OBLIGATIONS, SW360Utils.getProjectObligations(project));
+                request.setAttribute(IS_USER_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user) ? "Yes" : "No");
 
             } catch (TException e) {
                 log.error("Error fetching project from backend!", e);

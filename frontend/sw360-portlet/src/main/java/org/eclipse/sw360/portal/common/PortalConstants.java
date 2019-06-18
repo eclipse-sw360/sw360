@@ -71,6 +71,7 @@ public class PortalConstants {
 
     public static final String IS_USER_AT_LEAST_CLEARING_ADMIN = "isUserAtLeastClearingAdmin";
     public static final String IS_USER_AT_LEAST_ECC_ADMIN = "isUserAtLeastECCAdmin";
+    public static final String IS_USER_ADMIN = "isUserAdmin";
 
     //! Specialized keys for licenses
     public static final String KEY_LICENSE_DETAIL = "licenseDetail";

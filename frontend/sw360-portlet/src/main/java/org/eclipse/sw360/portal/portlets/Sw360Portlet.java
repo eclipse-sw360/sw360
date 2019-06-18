@@ -274,6 +274,9 @@ abstract public class Sw360Portlet extends MVCPortlet {
         case FAILED_SANITY_CHECK:
             setSW360SessionError(request, ErrorMessages.UPDATE_FAILED_SANITY_CHECK);
             break;
+        case CLOSED_UPDATE_NOT_ALLOWED:
+            setSW360SessionError(request, ErrorMessages.CLOSED_UPDATE_NOT_ALLOWED);
+            break;
         case DUPLICATE:
         case DUPLICATE_ATTACHMENT:
             // just break to not throw an exception, error message has to be set by caller
