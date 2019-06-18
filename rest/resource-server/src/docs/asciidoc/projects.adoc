@@ -236,6 +236,24 @@ include::{snippets}/should_document_create_project/curl-request.adoc[]
 ===== Example response
 include::{snippets}/should_document_create_project/http-response.adoc[]
 
+[[resources-projects-update]]
+==== Update a project
+
+A `PATCH` request is used to update an existing project
+
+===== Request structure
+Almost every editable fields can be updated. Only a few fields are explicitly given as an example.
+include::{snippets}/should_document_update_project/request-fields.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_update_project/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_update_project/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_project/http-response.adoc[]
+
 [[resources-project-link-releases]]
 ==== Link Releases to the project
 
