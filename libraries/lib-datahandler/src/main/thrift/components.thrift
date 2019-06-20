@@ -184,6 +184,7 @@ struct Release {
     12: optional Repository repository, // Repository where the release is maintained
     16: optional MainlineState mainlineState, // enum: specific, open, mainline, phaseout
     17: optional ClearingState clearingState, // TODO we probably need to map by clearing team?
+    18: optional string comment, // comments specific to release
 
     // FOSSology Information
     20: optional string fossologyId,

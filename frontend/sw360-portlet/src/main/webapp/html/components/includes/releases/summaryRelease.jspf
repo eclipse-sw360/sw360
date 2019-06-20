@@ -12,6 +12,7 @@
 <%@ taglib prefix="tags" tagdir="/WEB-INF/tags" %>
 
 <core_rt:if test="${release != null}">
+    <div class="up_Summary" id="up_Summary"><p><sw360:out value="${release.comment}" maxChar="500"/></p></div>
     <table class="table info_table" id="ReleaseDetailOverview">
         <thead>
         <tr>

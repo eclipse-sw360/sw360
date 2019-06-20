@@ -133,6 +133,14 @@
                                    description="Moderators" multiUsers="true" readonly="false"/>
         </td>
     </tr>
+    <tr>
+        <td colspan="3">
+            <label class="textlabel stackedLabel" for="release_comment">Comment</label>
+            <textarea class="toplabelledInput" id="release_comment" name="<portlet:namespace/><%=Release._Fields.COMMENT%>" rows="4" cols="30"
+                      style="width: 97%; height: 25px; resize:both;"
+                      placeholder="Enter Comments"><sw360:out value="${release.comment}"/></textarea>
+        </td>
+    </tr>
 </table>
 
 <script>
