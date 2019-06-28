@@ -117,7 +117,7 @@ public class ReleaseHelper implements ExporterHelper<Release> {
                 // second, add joined data, remark that headers have already been added
                 // accordingly
 
-                // add component type in every case
+                // add component type and categories in every case
                 Component component = this.preloadedComponents.get(release.componentId);
                 if (component == null) {
                     // maybe cache was not initialized properly, so try to load manually
@@ -132,8 +132,14 @@ public class ReleaseHelper implements ExporterHelper<Release> {
                 // check again and add value
                 if (component == null) {
                     row.add("");
+                    row.add("");
                 } else {
                     row.add(ThriftEnumUtils.enumToString(component.getComponentType()));
+                    if (component.getCategories() == null) {
+                        row.add("");
+                    } else {
+                        row.add(component.getCategories().toString());
+                    }
                 }
 
                 // project origin and project mainline state only if wanted

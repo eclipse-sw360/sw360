@@ -108,6 +108,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         angularComponent.setAttachments(attachmentList);
         angularComponent.setExternalIds(Collections.singletonMap("component-id-key", "1831A3"));
         angularComponent.setMailinglist("test@liferay.com");
+        angularComponent.setHomepage("https://angular.io");
         componentList.add(angularComponent);
         componentListByName.add(angularComponent);
 
@@ -307,6 +308,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("externalIds").description("When projects are imported from other tools, the external ids can be stored here"),
                                 fieldWithPath("operatingSystems").description("The OS on which the component operates"),
                                 fieldWithPath("mailinglist").description("Component mailing lists"),
+                                fieldWithPath("homepage").description("The homepage url of the component"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 fieldWithPath("_embedded.createdBy").description("The user who created this component"),
                                 fieldWithPath("_embedded.sw360:releases").description("An array of all component releases with version and link to their <<resources-releases,Releases resource>>"),
@@ -322,6 +324,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         component.put("name", "Spring Framework");
         component.put("description", "The Spring Framework provides a comprehensive programming and configuration model for modern Java-based enterprise applications.");
         component.put("componentType", ComponentType.OSS.toString());
+        component.put("homepage", "https://angular.io");
 
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         this.mockMvc.perform(
@@ -334,7 +337,8 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                         requestFields(
                                 fieldWithPath("name").description("The name of the component"),
                                 fieldWithPath("description").description("The component description"),
-                                fieldWithPath("componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values()))
+                                fieldWithPath("componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
+                                fieldWithPath("homepage").description("The homepage url of the component")
                         ),
                         responseFields(
                                 fieldWithPath("name").description("The name of the component"),
@@ -446,6 +450,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("languages").description("The language of the component"),
                                 fieldWithPath("mailinglist").description("Component mailing lists"),
                                 fieldWithPath("operatingSystems").description("The OS on which the component operates"),
+                                fieldWithPath("homepage").description("The homepage url of the component"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 fieldWithPath("_embedded.createdBy").description("The user who created this component"),
                                 fieldWithPath("_embedded.sw360:releases").description("An array of all component releases with version and link to their <<resources-releases,Releases resource>>"),

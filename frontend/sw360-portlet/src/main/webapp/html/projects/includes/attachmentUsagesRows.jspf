@@ -40,6 +40,9 @@
                 /></a>
             </td>
             <td>
+            	<sw360:DisplayEnum value="${projectLink.relation}"/>
+            </td>
+            <td>
             </td>
             <td>
             </td>
@@ -61,6 +64,9 @@
                 </a>
             </td>
             <td>
+            	<sw360:DisplayEnum value="${releaseLink.releaseRelationship}"/>
+            </td>
+            <td>
             </td>
             <td>
             </td>
@@ -73,10 +79,19 @@
         <core_rt:forEach items="${releaseLink.attachments}" var="attachment" varStatus="attachmentloop">
             <tr data-tt-id="${releaseLink.nodeId}_${attachment.attachmentContentId}" data-tt-branch="false"
                 data-tt-parent-id="${releaseLink.nodeId}"
+                title="Created On: ${attachment.createdOn} &#10; Status: ${attachment.checkStatus}
+                <core_rt:if test="${attachment.checkStatus != 'NOTCHECKED'}">
+	            	&#10; Checked By: ${attachment.checkedBy} &#10; Checked On: ${attachment.checkedOn}
+                </core_rt:if>"
             >
                 <td>
                     <sw360:out value="${attachment.filename}" maxChar="60"/>
                     <%--<sw360:DisplayDownloadAttachmentFile attachment="${attachment}" contextType="release" contextId="${releaseLink.id}"/>--%>
+                </td>
+                <td>
+                </td>
+                <td>
+                    <sw360:out value="${attachment.createdBy}"/>
                 </td>
                 <td>
                     <sw360:DisplayEnumShort value="${attachment.attachmentType}"/>

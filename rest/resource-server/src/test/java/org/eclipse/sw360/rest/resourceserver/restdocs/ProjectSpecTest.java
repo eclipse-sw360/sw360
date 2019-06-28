@@ -306,6 +306,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("linkedReleases").description("The relationship between linked releases of the project"),
                                 fieldWithPath("securityResponsibles").description("An array of users responsible for security of the project."),
                                 fieldWithPath("projectResponsible").description("A user who is responsible for the project."),
+                                fieldWithPath("enableSvm").description("Security vulnerability monitoring flag"),
+                                fieldWithPath("enableVulnerabilitiesDisplay").description("Displaying vulnerabilities flag."),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 fieldWithPath("_embedded.createdBy").description("The user who created this project"),
                                 fieldWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
@@ -490,6 +492,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("description").description("The project description"),
                                 fieldWithPath("projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
                                 fieldWithPath("securityResponsibles").description("An array of users responsible for security of the project."),
+                                fieldWithPath("enableSvm").description("Security vulnerability monitoring flag"),
+                                fieldWithPath("enableVulnerabilitiesDisplay").description("Displaying vulnerabilities flag."),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 fieldWithPath("_embedded.createdBy").description("The user who created this project")
                         )));

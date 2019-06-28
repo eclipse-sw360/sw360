@@ -109,6 +109,7 @@ public class ReleaseExporter extends ExcelExporter<Release, ReleaseHelper> {
             case COMPONENT_ID:
                 headers.add(displayNameFor(field.getFieldName(), nameToDisplayName));
                 headers.add(displayNameFor("component type", nameToDisplayName));
+                headers.add(displayNameFor("categories", nameToDisplayName));
                 break;
             case VENDOR:
                 Vendor.metaDataMap.keySet().stream()
