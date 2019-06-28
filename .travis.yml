@@ -45,6 +45,9 @@ matrix:
     - name: mvn validate
       env: MVN_ARGS="validate"
       before_install:
+    - name: mvn pmd:pmd
+      env: MVN_ARGS="pmd:pmd"
+      before_install:
     - name: mvn dependency:analyze
       env: MVN_ARGS="dependency:analyze -DfailOnWarning"
       install: mvn package -DskipTests
