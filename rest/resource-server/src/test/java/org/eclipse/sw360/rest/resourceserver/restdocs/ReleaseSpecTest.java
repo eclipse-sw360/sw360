@@ -354,6 +354,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("name").description("The name of the release, optional"),
                                 fieldWithPath("version").description("The version of the release"),
                                 fieldWithPath("createdOn").description("The creation date of the internal sw360 release"),
+                                fieldWithPath("createdBy").description("Email of the release creator"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
