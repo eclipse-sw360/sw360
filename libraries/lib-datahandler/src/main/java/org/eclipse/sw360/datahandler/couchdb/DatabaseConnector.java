@@ -222,7 +222,7 @@ public class DatabaseConnector extends StdCouchDbConnector {
      * Returns true if the database contains a document with the given ID.
      */
     public boolean contains(String id) {
-        return (id != null) && super.contains(id);
+        return id != null && super.contains(id);
     }
 
     /**

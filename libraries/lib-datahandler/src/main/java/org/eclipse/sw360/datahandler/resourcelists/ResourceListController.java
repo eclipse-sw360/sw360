@@ -12,7 +12,6 @@
 
 package org.eclipse.sw360.datahandler.resourcelists;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;

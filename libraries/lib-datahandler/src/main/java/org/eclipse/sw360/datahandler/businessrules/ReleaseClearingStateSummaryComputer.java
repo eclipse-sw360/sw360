@@ -10,19 +10,17 @@
  */
 package org.eclipse.sw360.datahandler.businessrules;
 
-import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary;
-import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
 
 import java.util.List;
 
 /**
  * In earlier days, this computer was important and did a lot of computation.
  * Nowadays, the
- * {@link ComponentService.Iface#updateRelease(Release, org.eclipse.sw360.datahandler.thrift.users.User)}
+ * {@link org.eclipse.sw360.datahandler.thrift.components.ComponentService.Iface#updateRelease(Release, org.eclipse.sw360.datahandler.thrift.users.User)}
  * and the
- * {@link FossologyService.Iface#process(String, org.eclipse.sw360.datahandler.thrift.users.User)}
+ * {@link org.eclipse.sw360.datahandler.thrift.fossology.FossologyService.Iface#process(String, org.eclipse.sw360.datahandler.thrift.users.User)}
  * methods take care of keeping the {@link Release#clearingState} up to date so
  * that this computer really only needs to aggregate the state of all releases.
  */

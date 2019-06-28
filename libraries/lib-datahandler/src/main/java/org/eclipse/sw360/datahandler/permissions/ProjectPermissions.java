@@ -12,10 +12,12 @@ package org.eclipse.sw360.datahandler.permissions;
 
 import com.google.common.collect.ImmutableSet;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
+import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
@@ -24,13 +26,10 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.common.base.Strings.*;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.toSingletonSet;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getBUFromOrganisation;
-import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.isUserAtLeast;
-import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.ADMIN;
-import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.CLEARING_ADMIN;
 
 /**
  * Created by bodet on 16/02/15.
@@ -58,7 +57,7 @@ public class ProjectPermissions extends DocumentPermissions<Project> {
                 .addAll(toSingletonSet(document.getLeadArchitect()))
                 .build();
         attachmentContentIds = nullToEmptySet(document.getAttachments()).stream()
-                .map(a -> a.getAttachmentContentId())
+                .map(Attachment::getAttachmentContentId)
                 .collect(Collectors.toSet());
     }
 
@@ -94,7 +93,7 @@ public class ProjectPermissions extends DocumentPermissions<Project> {
                     return userIsEquivalentToModeratorInProject(input, user.getEmail());
                 }
                 case BUISNESSUNIT_AND_MODERATORS: {
-                    return isUserInBU(input, user.getDepartment()) || userIsEquivalentToModeratorInProject(input, user.getEmail()) || isUserAtLeast(CLEARING_ADMIN, user);
+                    return isUserInBU(input, user.getDepartment()) || userIsEquivalentToModeratorInProject(input, user.getEmail()) || PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user);
                 }
                 case EVERYONE:
                     return true;
@@ -117,7 +116,7 @@ public class ProjectPermissions extends DocumentPermissions<Project> {
             switch (action) {
                 case WRITE:
                 case ATTACHMENTS:
-                    return isClearingAdminOfOwnGroup() || PermissionUtils.isUserAtLeast(ADMIN, user);
+                    return isClearingAdminOfOwnGroup() || PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user);
                 case DELETE:
                 case USERS:
                 case CLEARING:

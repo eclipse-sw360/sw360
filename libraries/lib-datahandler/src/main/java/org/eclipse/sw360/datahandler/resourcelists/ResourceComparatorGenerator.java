@@ -12,8 +12,6 @@
 
 package org.eclipse.sw360.datahandler.resourcelists;
 
-import org.apache.thrift.TBase;
-import org.apache.thrift.TFieldIdEnum;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 

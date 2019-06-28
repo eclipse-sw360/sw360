@@ -11,13 +11,9 @@
 
 package org.eclipse.sw360.datahandler.couchdb;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 
 public class AttachmentContentWrapper extends DocumentWrapper<AttachmentContent> {
-
-    @JsonProperty("issetBitfield")
-    private byte __isset_bitfield = 0; //TODO set it
 
     /**
      * must have a copy of all fields in @see Attachment

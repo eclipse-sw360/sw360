@@ -12,7 +12,6 @@ package org.eclipse.sw360.datahandler.couchdb;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import static org.eclipse.sw360.datahandler.common.SW360Constants.KEY_ID;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.KEY_REV;

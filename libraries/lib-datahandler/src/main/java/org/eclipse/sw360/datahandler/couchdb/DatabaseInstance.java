@@ -11,7 +11,6 @@
 package org.eclipse.sw360.datahandler.couchdb;
 
 import org.ektorp.http.HttpClient;
-import org.ektorp.http.StdHttpClient;
 import org.ektorp.impl.StdCouchDbInstance;
 
 import java.net.MalformedURLException;

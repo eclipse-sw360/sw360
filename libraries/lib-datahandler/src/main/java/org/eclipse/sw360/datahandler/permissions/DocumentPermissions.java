@@ -70,7 +70,7 @@ public abstract class DocumentPermissions<T> {
         return Collections.emptySet();
     }
 
-    protected boolean isContributor() {
+    private boolean isContributor() {
         return user != null && CommonUtils.contains(user.email, getContributors());
     }
 
@@ -129,8 +129,8 @@ public abstract class DocumentPermissions<T> {
         return isAllowedToDownload(attachment.getId());
     }
 
-    public boolean isAllowedToDownload(String attachmentContentId){
+    private boolean isAllowedToDownload(String attachmentContentId){
         return nullToEmptySet(getAttachmentContentIds()).contains(attachmentContentId) &&
-                isActionAllowed(RequestedAction.READ);
+                isActionAllowed(READ);
     }
 }
