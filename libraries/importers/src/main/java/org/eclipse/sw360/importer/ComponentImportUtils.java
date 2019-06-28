@@ -18,6 +18,7 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -26,7 +27,6 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
@@ -357,7 +357,7 @@ public class ComponentImportUtils {
                     if (componentCSVRecord.isSetAttachmentContent()) {
                         List<AttachmentContent> attachmentContents = componentCSVRecord.getAttachmentContents();
 
-                        final ImmutableList<String> attachmentURLs = CommonUtils.getAttachmentURLsFromAttachmentContents(attachmentContents);
+                        final List<String> attachmentURLs = CommonUtils.getAttachmentURLsFromAttachmentContents(attachmentContents);
 
                         releaseIdentifierToDownloadURL.put(releaseIdentifier, attachmentURLs);
 

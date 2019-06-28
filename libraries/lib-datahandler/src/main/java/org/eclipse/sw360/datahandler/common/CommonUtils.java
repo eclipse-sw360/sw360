@@ -12,16 +12,16 @@
  */
 package org.eclipse.sw360.datahandler.common;
 
-import com.google.common.base.*;
-import com.google.common.collect.*;
-
+import com.google.common.base.Joiner;
+import com.google.common.base.Predicates;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ListMultimap;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.Todo;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserService;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.QuoteMode;
@@ -29,7 +29,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TBase;
-import org.apache.thrift.TException;
 import org.apache.thrift.TFieldIdEnum;
 import org.ektorp.DocumentOperationResult;
 import org.jetbrains.annotations.NotNull;
@@ -39,8 +38,10 @@ import java.lang.reflect.Array;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
-import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.apache.log4j.LogManager.getLogger;
@@ -57,8 +58,6 @@ public class CommonUtils {
     private CommonUtils() {
         // Utility class with only static functions
     }
-
-    private static final Ordering<String> CASE_INSENSITIVE_ORDERING = Ordering.from(String.CASE_INSENSITIVE_ORDER);
 
     public static final CSVFormat sw360CsvFormat = CSVFormat.RFC4180.withQuote('\'').withEscape('\\').withIgnoreSurroundingSpaces(true).withQuoteMode(QuoteMode.ALL);
 
@@ -81,20 +80,7 @@ public class CommonUtils {
 
     public static final String TMP_TODO_ID_PREFIX = "tmp";
 
-    private static final Predicate<String> NOT_EMPTY_OR_NULL = new Predicate<String>() {
-        @Override
-        public boolean apply(String input) {
-            return !Strings.isNullOrEmpty(input);
-        }
-    };
-
-    /**
-     * Returns a sorted list containing the elements of the given collection.
-     * The list is sorted alphabetically, ignoring case.
-     */
-    public static List<String> getSortedList(Collection<String> collection) {
-        return collection != null ? CASE_INSENSITIVE_ORDERING.immutableSortedCopy(collection) : ImmutableList.<String>of();
-    }
+    private static final Predicate<String> NOT_EMPTY_OR_NULL = input -> !isNullOrEmpty(input);
 
     public static String joinStrings(Iterable<String> strings) {
         return strings != null ? COMMA_JOINER.join(strings) : "";
@@ -112,7 +98,7 @@ public class CommonUtils {
     }
 
     public static <T> boolean contains(T item, T[] array) {
-        return array != null && contains(item, ImmutableList.copyOf(array));
+        return array != null && contains(item, Arrays.asList(array));
     }
 
     /**
@@ -133,7 +119,7 @@ public class CommonUtils {
         }
     }
 
-    public static <T> void removeAll(Collection<T> left, Collection<T> right) {
+    static <T> void removeAll(Collection<T> left, Collection<T> right) {
         if (left != null && right != null) {
             left.removeAll(right);
         }
@@ -149,14 +135,17 @@ public class CommonUtils {
      */
     public static <T> Set<T> intersectionIfNotNull(Set<T> left, Set<T> right) {
         if (left != null && right != null) {
-            return Sets.intersection(left, right);
-        } else {
-            return MoreObjects.firstNonNull(left, right);
+            return left.stream()
+                    .filter(right::contains)
+                    .collect(Collectors.toSet());
+        } else if (left != null) {
+            return left;
         }
+        return right;
     }
 
     public static <T> List<T> nullToEmptyList(List<T> in) {
-        return in != null ? in : ImmutableList.<T>of();
+        return in != null ? in : Collections.emptyList();
     }
 
     public static <T> List<T> arrayToList(T[] in) {
@@ -164,19 +153,19 @@ public class CommonUtils {
     }
 
     public static <T> Collection<T> nullToEmptyCollection(Collection<T> in) {
-        return in != null ? in : ImmutableList.<T>of();
+        return in != null ? in : Collections.emptySet();
     }
 
     public static <T> Set<T> nullToEmptySet(Set<T> in) {
-        return in != null ? in : ImmutableSet.<T>of();
+        return in != null ? in : Collections.emptySet();
     }
 
     public static <K, V> Map<K, V> nullToEmptyMap(Map<K, V> in) {
-        return in != null ? in : ImmutableMap.<K, V>of();
+        return in != null ? in : Collections.emptyMap();
     }
 
     public static <T> Set<T> toSingletonSet(T in) {
-        return in != null ? ImmutableSet.of(in) : ImmutableSet.<T>of();
+        return in != null ? Collections.singleton(in) : Collections.emptySet();
     }
 
     public static String nullToEmptyString(Object in) {
@@ -184,7 +173,8 @@ public class CommonUtils {
     }
 
     public static Set<String> splitToSet(String value) {
-        return ImmutableSet.copyOf(COMMA_SPLITTER.split(value));
+        return StreamSupport.stream(COMMA_SPLITTER.split(value).spliterator(), false)
+                .collect(Collectors.toSet());
     }
 
     /**
@@ -192,12 +182,11 @@ public class CommonUtils {
      * @return int value if input positive, negative on error
      */
     public static int toUnsignedInt(String string) {
-        int integer = -1;
         try {
-            integer = Integer.valueOf(string);
-        } catch (NullPointerException | NumberFormatException ignored) { // sic.
+            return Integer.valueOf(string);
+        } catch (NullPointerException | NumberFormatException ignored) {
+            return -1;
         }
-        return integer;
     }
 
     public static boolean oneIsNull(Object... objects) {
@@ -220,51 +209,25 @@ public class CommonUtils {
         return !atLeastOneIsNotEmpty(strings);
     }
 
-    public static boolean atLeastOneIsNotEmpty(Collection... collections) {
+    private static boolean atLeastOneIsNotEmpty(Collection... collections) {
         for (Collection collection : collections) {
             if (collection != null && !collection.isEmpty()) return true;
         }
         return false;
     }
 
-    public static boolean atLeastOneIsNotEmpty(Map... maps) {
+    private static boolean atLeastOneIsNotEmpty(Map... maps) {
         for (Map map : maps) {
             if (map != null && !map.isEmpty()) return true;
         }
         return false;
     }
 
-    public static boolean atLeastOneIsNotEmpty(String... strings) {
+    private static boolean atLeastOneIsNotEmpty(String... strings) {
         for (String string : strings) {
-            if (!Strings.isNullOrEmpty(string)) return true;
+            if (!isNullOrEmpty(string)) return true;
         }
         return false;
-    }
-
-
-    public static boolean allAreEmpty(Object... objects) {
-        return !atLeastOneIsNotEmpty(objects);
-    }
-
-    public static boolean atLeastOneIsNotEmpty(Object... objects) {
-
-
-        for (Object object : objects) {
-            if (object instanceof Collection)
-                if (!((Collection) object).isEmpty()) return true;
-        }
-
-        return false;
-    }
-
-    public static int compareAsNullsAreSmaller(Object o1, Object o2) {
-        if (o1 == null) {
-            return o2 == null ? 0 : -1;
-        }
-        if (o2 == null)
-            return 1;
-
-        return 0;
     }
 
     public static boolean allHaveSameLength(Object... arrays) {
@@ -307,12 +270,7 @@ public class CommonUtils {
 
     @NotNull
     public static Comparator<ModerationRequest> compareByTimeStampDescending() {
-        return new Comparator<ModerationRequest>() {
-            @Override
-            public int compare(ModerationRequest o1, ModerationRequest o2) {
-                return Long.compare(o2.getTimestamp(), o1.getTimestamp());
-            }
-        };
+        return (o1, o2) -> Long.compare(o2.getTimestamp(), o1.getTimestamp());
     }
 
     public static boolean isInProgressOrPending(ModerationRequest moderationRequest) {
@@ -381,8 +339,11 @@ public class CommonUtils {
     public static Boolean getBoolOrNull(String in) {
         if (!isNullOrEmpty(in)) {
             //elegance in redundancy :)
-            if (in.equalsIgnoreCase("true")) return true;
-            else if (in.equalsIgnoreCase("false")) return false;
+            if (in.equalsIgnoreCase("true")) {
+                return true;
+            } else if (in.equalsIgnoreCase("false")) {
+                return false;
+            }
         }
         return null;
     }
@@ -412,18 +373,7 @@ public class CommonUtils {
         return null;
     }
 
-    public static Map<String, User> getStringUserMap(UserService.Iface userClient) throws TException {
-        Map<String, User> userMap;
-        userMap = Maps.uniqueIndex(userClient.getAllUsers(), new Function<User, String>() {
-            @Override
-            public String apply(User input) {
-                return input.getEmail();
-            }
-        });
-        return userMap;
-    }
-
-    public static void getMessageForRequestSummary(RequestSummary releaseRequestSummary, String typeInfo, StringBuilder stringBuilder) {
+    private static void getMessageForRequestSummary(RequestSummary releaseRequestSummary, String typeInfo, StringBuilder stringBuilder) {
         if (releaseRequestSummary.isSetTotalAffectedElements() && releaseRequestSummary.isSetTotalElements()) {
             stringBuilder.append("Affected ").append(typeInfo).append(" elements: ")
                     .append(releaseRequestSummary.getTotalAffectedElements())
@@ -432,7 +382,7 @@ public class CommonUtils {
         }
     }
 
-    public static RequestSummary prepareMessage(RequestSummary input, String info) {
+    private static RequestSummary prepareMessage(RequestSummary input, String info) {
         StringBuilder stringBuilder = new StringBuilder();
         if (input.isSetMessage()) {
             stringBuilder.append(input.message);
@@ -472,13 +422,10 @@ public class CommonUtils {
         return addToMessage(requestSummary, right, typeInfoRight);
     }
 
-    public static ImmutableList<String> getAttachmentURLsFromAttachmentContents(List<AttachmentContent> attachmentContents) {
-        return FluentIterable.from(attachmentContents).transform(new Function<AttachmentContent, String>() {
-            @Override
-            public String apply(AttachmentContent input) {
-                return input.getRemoteUrl();
-            }
-        }).toList();
+    public static List<String> getAttachmentURLsFromAttachmentContents(List<AttachmentContent> attachmentContents) {
+        return attachmentContents.stream()
+                .map(AttachmentContent::getRemoteUrl)
+                .collect(Collectors.toList());
     }
 
     public static RequestSummary addRequestSummaries(RequestSummary left, RequestSummary right) {
@@ -543,9 +490,6 @@ public class CommonUtils {
             File systemPropertiesFile = new File(SYSTEM_CONFIGURATION_PATH, propertiesFilePath);
             if (systemPropertiesFile.exists()) {
                 try (InputStream resourceAsStream = new FileInputStream(systemPropertiesFile.getPath())) {
-                    if (resourceAsStream == null)
-                        throw new IOException("cannot open " + systemPropertiesFile.getPath());
-
                     props.load(resourceAsStream);
                 } catch (IOException e) {
                     getLogger(clazz).error("Error opening resources " + systemPropertiesFile.getPath() + ".", e);
@@ -559,7 +503,7 @@ public class CommonUtils {
         return loadResource(clazz, resourceFilePath, true);
     }
 
-    public static Optional<byte[]> loadResource(Class<?> clazz, String resourceFilePath, boolean useSystemResourses) {
+    private static Optional<byte[]> loadResource(Class<?> clazz, String resourceFilePath, boolean useSystemResourses) {
         if (isNullOrEmpty(resourceFilePath)) {
             return Optional.empty();
         }
@@ -567,9 +511,6 @@ public class CommonUtils {
             File systemResourceFile = new File(SYSTEM_CONFIGURATION_PATH, resourceFilePath);
             if (systemResourceFile.exists()) {
                 try (InputStream resourceAsStream = new FileInputStream(systemResourceFile.getPath())) {
-                    if (resourceAsStream == null) {
-                        throw new IOException("cannot open " + systemResourceFile.getPath());
-                    }
                     return Optional.of(IOUtils.toByteArray(resourceAsStream));
                 } catch (IOException e) {
                     getLogger(clazz).error("Error opening resources " + systemResourceFile.getPath() + ".", e);
@@ -616,7 +557,7 @@ public class CommonUtils {
         }
 
         public Predicate<V> is(Predicate<T> predicate) {
-            return Predicates.compose(predicate, transformer);
+            return Predicates.compose(predicate::test, transformer::apply)::apply;
         }
     }
 
@@ -648,7 +589,7 @@ public class CommonUtils {
         if (source == null) {
             return destination;
         }
-        source.keySet().stream().forEach(k -> {
+        source.keySet().forEach(k -> {
                     if (destination.containsKey(k)) {
                         destination.get(k).addAll(source.get(k));
                     } else {
@@ -663,12 +604,12 @@ public class CommonUtils {
         return string == null || string.trim().length() == 0;
     }
 
-    public static <T> java.util.function.Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {
+    public static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {
         Set<Object> visitedKeys = new HashSet<>();
         return t -> visitedKeys.add(keyExtractor.apply(t));
     }
 
-    public static Set<String> getNullToEmptyKeyset(Map<String, ?> map) {
+    private static Set<String> getNullToEmptyKeyset(Map<String, ?> map) {
         return nullToEmptyMap(map).keySet();
     }
 
@@ -676,6 +617,7 @@ public class CommonUtils {
         return nullToEmptySet(nullToEmptyMap(map).get(key));
     }
 
+    @SafeVarargs
     public static Set<String> unifiedKeyset(Map<String, ?>... maps) {
         Set<String> keys = new HashSet<>();
         for (Map<String, ?> map : maps) {
@@ -693,7 +635,9 @@ public class CommonUtils {
                 (Map<String, Object>) document.getFieldValue(field),
                 (Map<String, Object>) documentAdditions.getFieldValue(field),
                 (Map<String, Object>) documentDeletions.getFieldValue(field));
-        List<Map<String, ?>> nonEmptyMaps = maps.stream().filter(m -> m != null && !m.isEmpty()).collect(Collectors.toList());
+        List<Map<String, ?>> nonEmptyMaps = maps.stream()
+                .filter(m -> m != null && !m.isEmpty())
+                .collect(Collectors.toList());
         if (nonEmptyMaps.isEmpty()) {
             logger.info("Field was empty in document, documentAdditions and documentDeletions: " + field.getFieldName());
             return false;
@@ -718,7 +662,7 @@ public class CommonUtils {
         Map<String, Set<Object>> mapWithNonEmptySet = (Map<String, Set<Object>>) nonEmptyMapsContainingNonEmptySet.stream().findAny().get();
         Object element = getNonEmptySetFromMapOfSets(mapWithNonEmptySet).get().stream()
                 .findAny().get();
-        return (element instanceof String);
+        return element instanceof String;
     }
 
     private static boolean nonEmptyMapOfSetsContainsNonEmptySet(Map<String, Set<Object>> map) {
@@ -727,8 +671,7 @@ public class CommonUtils {
     }
 
     private static Optional<Set<Object>> getNonEmptySetFromMapOfSets(Map<String, Set<Object>> map) {
-        return map.entrySet().stream()
-                .map(e -> ((Map.Entry<String, Set<Object>>) e).getValue())
+        return map.values().stream()
                 .filter(s -> !s.isEmpty()).findAny();
     }
 

@@ -14,6 +14,8 @@ package org.eclipse.sw360.exporter.utils;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.*;
+import org.apache.commons.csv.CSVRecord;
+import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.ImportCSV;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
@@ -21,8 +23,6 @@ import org.eclipse.sw360.datahandler.thrift.CustomProperties;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenses.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.apache.commons.csv.CSVRecord;
-import org.apache.thrift.TException;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.InputStream;
@@ -49,12 +49,12 @@ public class TypeMappings {
 
     public static <T, U> ImmutableList<T> getElementsWithIdentifiersNotInMap(Function<T, U> getIdentifier, Map<U, T> theMap, List<T> candidates) {
         return FluentIterable.from(candidates).filter(
-                CommonUtils.afterFunction(getIdentifier).is(containedWithAddIn(Sets.newHashSet(theMap.keySet())))).toList();
+                CommonUtils.afterFunction(getIdentifier::apply).is(containedWithAddIn(Sets.newHashSet(theMap.keySet()))::apply)::apply).toList();
     }
 
     public static <T, U> ImmutableList<T> getElementsWithIdentifiersNotInSet(Function<T, U> getIdentifier, Set<U> theSet, List<T> candidates) {
         return FluentIterable.from(candidates).filter(
-                CommonUtils.afterFunction(getIdentifier).is(containedWithAddIn(theSet))).toList();
+                CommonUtils.afterFunction(getIdentifier::apply).is(containedWithAddIn(theSet)::apply)::apply).toList();
     }
 
     @NotNull

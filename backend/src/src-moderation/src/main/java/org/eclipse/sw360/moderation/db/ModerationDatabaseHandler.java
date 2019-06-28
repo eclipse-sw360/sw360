@@ -12,6 +12,8 @@
 package org.eclipse.sw360.moderation.db;
 
 import com.google.common.collect.Sets;
+import org.apache.log4j.Logger;
+import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -37,8 +39,6 @@ import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.licenses.db.LicenseDatabaseHandler;
 import org.eclipse.sw360.mail.MailConstants;
 import org.eclipse.sw360.mail.MailUtil;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
 import org.ektorp.http.HttpClient;
 import org.jetbrains.annotations.NotNull;
 
@@ -466,7 +466,7 @@ public class ModerationDatabaseHandler {
         request.setTimestamp(System.currentTimeMillis());
         request.setModerationState(ModerationState.PENDING);
         request.setRequestDocumentDelete(isDeleteRequest);
-        request.setModerators(Sets.filter(moderators, notEmptyOrNull()));
+        request.setModerators(Sets.filter(moderators, notEmptyOrNull()::apply));
         request.setRequestingUserDepartment(user.getDepartment());
 
         fillRequestWithCommentOfUser(request, user);;
