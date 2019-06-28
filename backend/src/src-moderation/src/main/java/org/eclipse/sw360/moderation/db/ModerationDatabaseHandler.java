@@ -466,7 +466,9 @@ public class ModerationDatabaseHandler {
         request.setTimestamp(System.currentTimeMillis());
         request.setModerationState(ModerationState.PENDING);
         request.setRequestDocumentDelete(isDeleteRequest);
-        request.setModerators(Sets.filter(moderators, notEmptyOrNull()::apply));
+        request.setModerators(moderators.stream()
+                .filter(notEmptyOrNull())
+                .collect(Collectors.toSet()));
         request.setRequestingUserDepartment(user.getDepartment());
 
         fillRequestWithCommentOfUser(request, user);;

@@ -194,7 +194,7 @@ public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
     protected Map<String, Set<String>> updateCustomMap(Map<String, Set<String>> map, Map<String, Set<String>> addMap, Map<String, Set<String>> deleteMap) {
         Map<String, Set<String>> resultMap = new HashMap<>();
 
-        Set<String> keys = CommonUtils.unifiedKeyset(map, addMap, deleteMap);
+        Set<String> keys = unifiedKeyset(map, addMap, deleteMap);
 
         for(String key: keys){
             resultMap.put(key, new HashSet<>());

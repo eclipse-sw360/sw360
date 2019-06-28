@@ -16,18 +16,16 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.google.common.base.Joiner;
-import com.google.common.base.Predicate;
-import com.google.common.base.Strings;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.Todo;
-import org.eclipse.sw360.datahandler.thrift.projects.*;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectTodo;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -43,11 +41,12 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Strings.nullToEmpty;
-import static org.apache.log4j.Logger.getLogger;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyMap;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 
@@ -59,15 +58,13 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
  */
 public class SW360Utils {
 
-    private final static Logger log = getLogger(SW360Utils.class);
+    private final static Logger log = Logger.getLogger(SW360Utils.class);
 
-    public static final String FORMAT_DATE = "yyyy-MM-dd";
-    public static final String FORMAT_DATE_TIME = "yyyy-MM-dd HH:mm:ss";
+    private static final String FORMAT_DATE = "yyyy-MM-dd";
+    private static final String FORMAT_DATE_TIME = "yyyy-MM-dd HH:mm:ss";
     public static final Comparator<ReleaseLink> RELEASE_LINK_COMPARATOR = Comparator.comparing(rl -> getReleaseFullname(rl.getVendor(), rl.getName(), rl.getVersion()).toLowerCase());
 
     private static final ObjectMapper objectMapper;
-
-    private static Joiner spaceJoiner = Joiner.on(" ");
 
     private SW360Utils() {
         // Utility class with only static functions
@@ -78,7 +75,7 @@ public class SW360Utils {
         public final String timestamp;
         public final String user;
 
-        public TodoInfo(ProjectTodo projectTodo) {
+        TodoInfo(ProjectTodo projectTodo) {
             final UserService.Iface userClient = new ThriftClients().makeUserClient();
 
             String userString = "";
@@ -97,7 +94,7 @@ public class SW360Utils {
 
             this.user = userString;
             this.fulfilled = projectTodo.fulfilled;
-            this.timestamp = Strings.nullToEmpty(projectTodo.updated);
+            this.timestamp = nullToEmpty(projectTodo.updated);
         }
 
         public String getModificationHint() {
@@ -158,23 +155,25 @@ public class SW360Utils {
      * Filter BU to first three blocks
      */
     public static String getBUFromOrganisation(String organisation) {
-        if(Strings.isNullOrEmpty(organisation)) return "";
+        if(isNullOrEmpty(organisation)) {
+            return "";
+        }
 
         List<String> parts = Arrays.asList(organisation.toUpperCase().split("\\s"));
 
         int maxIndex = Math.min(parts.size(), 3);
 
-        return spaceJoiner.join(parts.subList(0, maxIndex)).toUpperCase();
+        return String.join(" ", parts.subList(0, maxIndex))
+                .toUpperCase();
     }
 
     public static Set<String> filterBUSet(String organisation, Set<String> strings) {
         if (strings == null || isNullOrEmpty(organisation)) {
-            return new HashSet<String>();
+            return new HashSet<>();
         }
         String bu = getBUFromOrganisation(organisation);
-        return strings
-                .stream()
-                .filter(string-> bu.equals(string))
+        return strings.stream()
+                .filter(bu::equals)
                 .collect(Collectors.toSet());
     }
 
@@ -243,7 +242,7 @@ public class SW360Utils {
         Set<ProjectTodo> projectTodos = project.getTodosSize() > 0 ? project.getTodos() : Collections.emptySet();
         try {
             return licenseClient.getTodos().stream()
-                    .filter(o -> o.isValidForProject())
+                    .filter(Todo::isValidForProject)
                     .collect(Collectors.toMap(
                             todo -> todo,
                             todo -> new TodoInfo(projectTodos.stream()
@@ -302,8 +301,7 @@ public class SW360Utils {
         if (project != null) {
             try {
                 ProjectService.Iface client = thriftClients.makeProjectClient();
-                List<ProjectLink> linkedProjects = client.getLinkedProjectsOfProject(project, deep, user);
-                return linkedProjects;
+                return client.getLinkedProjectsOfProject(project, deep, user);
             } catch (TException e) {
                 log.error("Could not get linked projects", e);
             }
@@ -315,8 +313,7 @@ public class SW360Utils {
         if (id != null) {
             try {
                 ProjectService.Iface client = thriftClients.makeProjectClient();
-                List<ProjectLink> linkedProjects = client.getLinkedProjectsById(id, deep, user);
-                return linkedProjects;
+                return client.getLinkedProjectsById(id, deep, user);
             } catch (TException e) {
                 log.error("Could not get linked projects", e);
             }
@@ -332,7 +329,7 @@ public class SW360Utils {
         return flattenProjectLinkTree(getLinkedProjects(id, deep, thriftClients, log, user));
     }
 
-    public static Collection<ProjectLink> flattenProjectLinkTree(Collection<ProjectLink> linkedProjects) {
+    private static Collection<ProjectLink> flattenProjectLinkTree(Collection<ProjectLink> linkedProjects) {
         List<ProjectLink> result = new ArrayList<>();
 
         for (ProjectLink projectLink : linkedProjects) {
@@ -370,46 +367,7 @@ public class SW360Utils {
     }
 
     public static Predicate<String> startsWith(final String prefix) {
-        return new Predicate<String>() {
-            @Override
-            public boolean apply(String input) {
-                return input != null && input.startsWith(prefix);
-            }
-        };
-    }
-
-    public static List<String> getLicenseNamesFromIds(Collection<String> ids, String department) throws TException {
-        final List<License> licenseList = getLicenses(ids, department);
-
-        return getLicenseNamesFromLicenses(licenseList);
-    }
-
-    public static List<License> getLicenses(Collection<String> ids, String department) throws TException {
-        if (ids != null && ids.size() > 0) {
-            LicenseService.Iface client = new ThriftClients().makeLicenseClient();
-            return client.getByIds(new HashSet<>(ids), department);
-        } else return Collections.emptyList();
-    }
-
-    @NotNull
-    public static List<String> getLicenseNamesFromLicenses(List<License> licenseList) {
-        List<String> resultList = new ArrayList<>();
-        for (License license : licenseList) {
-            resultList.add(license.getFullname());
-        }
-        return resultList;
-    }
-
-    public static Map<String, License> getStringLicenseMap(User user, Set<String> licenseIds) {
-        Map<String, License> idToLicense;
-
-        try {
-            final List<License> licenses = getLicenses(licenseIds, user.getDepartment());
-            idToLicense = ThriftUtils.getIdMap(licenses);
-        } catch (TException e) {
-            idToLicense = Collections.emptyMap();
-        }
-        return idToLicense;
+        return input -> input != null && input.startsWith(prefix);
     }
 
     public static String fieldValueAsString(Object fieldValue) throws SW360Exception {
@@ -423,10 +381,9 @@ public class SW360Utils {
             return nullToEmpty((String) fieldValue);
         }
         if (fieldValue instanceof Map) {
-            Map<String, Object> originalMap = nullToEmptyMap(((Map<String, Object>) fieldValue));
-            // cannot use CommonUtils.nullToEmptyString here, because it calls toString() on non-null objects,
-            // which destroys the chance for ObjectMapper to serialize values according to its configuration
-            Map<String, Object> map = Maps.transformValues(originalMap, v -> v == null ? "" : v);
+            Map<String, Object> map = ((Map<String, Object>) fieldValue).entrySet()
+                    .stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue()== null ? "" : e.getValue()));
             return serializeToJson(map);
         }
         if (fieldValue instanceof Iterable){
@@ -456,7 +413,7 @@ public class SW360Utils {
             user.setWantsMailNotification(true);
         }
         if (!user.isSetNotificationPreferences()){
-            user.setNotificationPreferences(Maps.newHashMap(SW360Constants.DEFAULT_NOTIFICATION_PREFERENCES));
+            user.setNotificationPreferences(Collections.unmodifiableMap(SW360Constants.DEFAULT_NOTIFICATION_PREFERENCES));
         }
     }
 
@@ -466,14 +423,14 @@ public class SW360Utils {
 
     private static class TEnumSerializer extends JsonSerializer<TEnum>{
         @Override
-        public void serialize(TEnum value, JsonGenerator jgen, SerializerProvider provider) throws IOException, JsonProcessingException {
+        public void serialize(TEnum value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
             jgen.writeString(nullToEmpty(ThriftEnumUtils.enumToString(value)));
         }
     }
 
     private static class ProjectReleaseRelationshipSerializer extends JsonSerializer<ProjectReleaseRelationship>{
         @Override
-        public void serialize(ProjectReleaseRelationship value, JsonGenerator jgen, SerializerProvider provider) throws IOException, JsonProcessingException {
+        public void serialize(ProjectReleaseRelationship value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
             jgen.writeStartObject();
             jgen.writeObjectField("releaseRelation", value.getReleaseRelation());
             jgen.writeObjectField("mainlineState", value.getMainlineState());
@@ -482,27 +439,25 @@ public class SW360Utils {
     }
 
     public static String displayNameFor(String name, Map<String, String> nameToDisplayName){
-        return nameToDisplayName.containsKey(name)? nameToDisplayName.get(name) : name;
+        return nameToDisplayName.getOrDefault(name, name);
     }
 
-    public static <T> Map<String, T> putReleaseNamesInMap(Map<String, T> map, List<Release> releases) {
-        if(map == null || releases == null) {
+    private static <T,S> Map<String, T> putItemNamesInMap(Map<String, T> map, List<S> items,
+                                                          Function<S, String> printName, Function<S, String> getId) {
+        if(map == null || items == null) {
             return Collections.emptyMap();
         }
-        Map<String, T> releaseNamesMap = new HashMap<>();
-        releases.stream()
-                .forEach(r -> releaseNamesMap.put(printName(r),map.get(r.getId())));
-        return releaseNamesMap;
+        Map<String, T> itemsNamesMap = new HashMap<>();
+        items.forEach(r -> itemsNamesMap.put(printName.apply(r),map.get(getId.apply(r))));
+        return itemsNamesMap;
+    }
+
+    public static <T,S> Map<String, T> putReleaseNamesInMap(Map<String, T> map, List<Release> releases) {
+        return putItemNamesInMap(map, releases, SW360Utils::printName, Release::getId);
     }
 
     public static <T> Map<String, T> putProjectNamesInMap(Map<String, T> map, List<Project> projects) {
-        if(map == null || projects == null) {
-            return Collections.emptyMap();
-        }
-        Map<String, T> projectNamesMap = new HashMap<>();
-        projects.stream()
-                .forEach(p -> projectNamesMap.put(printName(p),map.get(p.getId())));
-        return projectNamesMap;
+        return putItemNamesInMap(map, projects, SW360Utils::printName, Project::getId);
     }
 
     public static List<String> getReleaseNames(List<Release> releases) {
@@ -516,7 +471,10 @@ public class SW360Utils {
 
     @NotNull
     public static <T> Set<T> unionValues(Map<?, Set<T>>map){
-        return nullToEmptyMap(map).values().stream().filter(Objects::nonNull).reduce(Sets::union).orElse(Sets.newHashSet());
+        return nullToEmptyMap(map).values().stream()
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
     }
 
     public static Set<ExternalToolProcess> getExternalToolProcessesForTool(Release release, ExternalTool et) {

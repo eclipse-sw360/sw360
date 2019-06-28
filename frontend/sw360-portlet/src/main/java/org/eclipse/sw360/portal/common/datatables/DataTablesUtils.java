@@ -27,7 +27,7 @@ public class DataTablesUtils {
         ImmutableList.Builder<Map<String, String[]>> builder = ImmutableList.builder();
         Set<String> parametersName = parametersMap.keySet();
 
-        while (Iterables.any(parametersName, startsWith("[" + i + "]"))) {
+        while (parametersName.stream().anyMatch(startsWith("[" + i + "]"))) {
             builder.add(unprefix(parametersMap, "[" + i + "]"));
             i++;
         }
