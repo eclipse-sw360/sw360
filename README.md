@@ -103,7 +103,7 @@ Actually, there is a hierarchy of maven files, in general
 2. to run all targets including build the .war file at the end
   - `mvn install`
 
-  this needs a couchdb running on the host on port 5984
+  this needs a couchdb running on the host on port 5984. To start such a couchdb via docker one can use the script `scripts/startCouchdbForTests.sh`
 
 3. to install without running the tests
   - `mvn install -DskipTests`
