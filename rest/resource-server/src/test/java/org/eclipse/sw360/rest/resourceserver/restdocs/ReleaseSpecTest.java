@@ -32,6 +32,8 @@ import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.Resources;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import com.google.common.collect.ImmutableSet;
+
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -114,6 +116,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         release.setExternalIds(Collections.singletonMap("mainline-id-component", "1432"));
         release.setAttachments(attachmentList);
         release.setLanguages(new HashSet<>(Arrays.asList("C++", "Java")));
+        release.setOperatingSystems(ImmutableSet.of("Windows", "Linux"));
         releaseList.add(release);
 
         Release release2 = new Release();
@@ -131,6 +134,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         release2.setMainlineState(MainlineState.MAINLINE);
         release2.setExternalIds(Collections.singletonMap("mainline-id-component", "4876"));
         release2.setLanguages(new HashSet<>(Arrays.asList("C++", "Java")));
+        release2.setOperatingSystems(ImmutableSet.of("Windows", "Linux"));
         releaseList.add(release2);
 
         given(this.releaseServiceMock.getReleasesForUser(anyObject())).willReturn(releaseList);
@@ -212,6 +216,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                         responseFields(
                                 fieldWithPath("name").description("The name of the release, optional"),
                                 fieldWithPath("version").description("The version of the release"),
+                                fieldWithPath("createdBy").description("Email of the release creator"),
                                 fieldWithPath("cpeId").description("CpeId of the release"),
                                 fieldWithPath("clearingState").description("The clearing of the release, possible values are " + Arrays.asList(ClearingState.values())),
                                 fieldWithPath("cpeId").description("The CPE id"),
@@ -221,6 +226,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("downloadurl").description("the download url of the release"),
                                 fieldWithPath("externalIds").description("When releases are imported from other tools, the external ids can be stored here"),
                                 fieldWithPath("languages").description("The language of the component"),
+                                fieldWithPath("operatingSystems").description("The OS on which the release operates"),
                                 fieldWithPath("_embedded.sw360:moderators").description("An array of all release moderators with email and link to their <<resources-user-get,User resource>>"),
                                 fieldWithPath("_embedded.sw360:attachments").description("An array of all release attachments and link to their <<resources-attachment-get,Attachment resource>>"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
@@ -264,6 +270,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                         responseFields(
                                 fieldWithPath("name").description("The name of the release, optional"),
                                 fieldWithPath("version").description("The version of the release"),
+                                fieldWithPath("createdBy").description("Email of the release creator"),
                                 fieldWithPath("cpeId").description("CpeId of the release"),
                                 fieldWithPath("clearingState").description("The clearing of the release, possible values are " + Arrays.asList(ClearingState.values())),
                                 fieldWithPath("cpeId").description("The CPE id"),
@@ -273,6 +280,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("downloadurl").description("the download url of the release"),
                                 fieldWithPath("externalIds").description("When releases are imported from other tools, the external ids can be stored here"),
                                 fieldWithPath("languages").description("The language of the component"),
+                                fieldWithPath("operatingSystems").description("The OS on which the release operates"),
                                 fieldWithPath("_embedded.sw360:moderators").description("An array of all release moderators with email and link to their <<resources-user-get,User resource>>"),
                                 fieldWithPath("_embedded.sw360:attachments").description("An array of all release attachments and link to their <<resources-attachment-get,Attachment resource>>"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
