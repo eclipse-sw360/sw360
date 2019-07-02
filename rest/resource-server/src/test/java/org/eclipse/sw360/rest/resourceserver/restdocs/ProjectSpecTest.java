@@ -17,12 +17,16 @@ import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
 import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
+import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
@@ -51,6 +55,8 @@ import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.li
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
+import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
+import static org.springframework.restdocs.request.RequestDocumentation.requestParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -75,6 +81,9 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
     @MockBean
     private Sw360AttachmentService attachmentServiceMock;
+
+    @MockBean
+    private Sw360LicenseInfoService licenseInfoMockService;
 
     private Project project;
     private Attachment attachment;
@@ -246,6 +255,14 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 new User("admin@sw360.org", "sw360").setId("123456789"));
         given(this.userServiceMock.getUserByEmail("jane@sw360.org")).willReturn(
                 new User("jane@sw360.org", "sw360").setId("209582812"));
+        OutputFormatInfo outputFormatInfo = new OutputFormatInfo();
+        outputFormatInfo.setFileExtension("html");
+        given(this.licenseInfoMockService.getOutputFormatInfoForGeneratorClass(anyObject()))
+                .willReturn(outputFormatInfo);
+        LicenseInfoFile licenseInfoFile = new LicenseInfoFile();
+        licenseInfoFile.setGeneratedOutput(new byte[0]);
+        given(this.licenseInfoMockService.getLicenseInfoFile(anyObject(), anyObject(), anyObject(), anyObject(),
+                anyObject())).willReturn(licenseInfoFile);
     }
 
     @Test
@@ -594,5 +611,21 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         this.mockMvc.perform(post("/api/projects/" + project.getId() + "/releases").contentType(MediaTypes.HAL_JSON)
                 .content(this.objectMapper.writeValueAsString(releaseIds))
                 .header("Authorization", "Bearer " + accessToken)).andExpect(status().isCreated());
+    }
+
+    @Test
+    public void should_document_get_download_license_info() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        this.mockMvc.perform(get("/api/projects/" + project.getId()+ "/licenseinfo?generatorClassName=XhtmlGenerator&variant=DISCLOSURE")
+                .header("Authorization", "Bearer " + accessToken)
+                .accept("application/xhtml+xml"))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler
+                        .document(requestParameters(
+                                parameterWithName("generatorClassName")
+                                        .description("All possible values for output generator class names are "
+                                                + Arrays.asList("DocxGenerator", "XhtmlGenerator", "TextGenerator")),
+                                parameterWithName("variant").description("All the possible values for variants are "
+                                        + Arrays.asList(OutputFormatVariant.values())))));
     }
 }

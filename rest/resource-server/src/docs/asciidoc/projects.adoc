@@ -265,3 +265,16 @@ include::{snippets}/should_document_link_releases/curl-request.adoc[]
 ===== Example response
 include::{snippets}/should_document_link_releases/http-response.adoc[]
 
+[[resources-project-get-download-licenseinfo]]
+==== Download License Info
+
+A `GET` request is used to download license info for the project.
+
+===== Request parameter
+include::{snippets}/should_document_get_download_license_info/request-parameters.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_download_license_info/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_download_license_info/http-response.adoc[]
