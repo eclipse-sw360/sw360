@@ -45,8 +45,11 @@ matrix:
     - name: mvn validate
       env: MVN_ARGS="validate"
       before_install:
-    - name: mvn pmd:pmd
-      env: MVN_ARGS="pmd:pmd"
+    - name: pmd for already refactored packages
+      env: MVN_ARGS="-DskipTests -Ppmd -pl libraries/lib-datahandler"
+      before_install:
+    - name: pmd for whole project
+      env: MVN_ARGS="-DskipTests -Ppmd"
       before_install:
     - name: mvn dependency:analyze
       env: MVN_ARGS="dependency:analyze -DfailOnWarning"
@@ -62,4 +65,5 @@ matrix:
     #   script: scripts/compileWithDocker.sh
   allow_failures:
     - name: mvn dependency:analyze
+    - name: pmd for whole project
 
