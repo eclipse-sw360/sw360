@@ -52,6 +52,7 @@ import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.li
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -497,6 +498,87 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 fieldWithPath("_embedded.createdBy").description("The user who created this project")
                         )));
+    }
+
+    @Test
+    public void should_document_update_project() throws Exception {
+        Project updateProject = new Project();
+        updateProject.setName("updated project");
+        updateProject.setDescription("Project description updated");
+        updateProject.setVersion("1.0");
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        this.mockMvc
+                .perform(patch("/api/projects/376576").contentType(MediaTypes.HAL_JSON)
+                        .content(this.objectMapper.writeValueAsString(updateProject))
+                        .header("Authorization", "Bearer " + accessToken).accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                links(linkWithRel("self").description("The <<resources-projects,Projects resource>>")),
+                requestFields(
+                        fieldWithPath("name").description("The name of the project"),
+                        fieldWithPath("type").description("project"),
+                        fieldWithPath("version").description("The version of the new project"),
+                        fieldWithPath("visibility").description("The project visibility, possible values are: "
+                                + Arrays.asList(Visibility.values())),
+                        fieldWithPath("description").description("The project description"),
+                        fieldWithPath("projectType").description("The project type, possible values are: "
+                                + Arrays.asList(ProjectType.values())),
+                        fieldWithPath("securityResponsibles").description("An array of users responsible for security of the project."),
+                        fieldWithPath("enableSvm").description("Security vulnerability monitoring flag"),
+                        fieldWithPath("enableVulnerabilitiesDisplay").description("Displaying vulnerabilities flag.")),
+                responseFields(fieldWithPath("name").description("The name of the project"),
+                        fieldWithPath("version").description("The project version"),
+                        fieldWithPath("createdOn").description("The date the project was created"),
+                        fieldWithPath("description").description("The project description"),
+                        fieldWithPath("projectType").description("The project type, possible values are: "
+                                + Arrays.asList(ProjectType.values())),
+                        fieldWithPath("visibility").description("The project visibility, possible values are: "
+                                + Arrays.asList(Visibility.values())),
+                        fieldWithPath("businessUnit").description("The business unit this project belongs to"),
+                        fieldWithPath("externalIds").description(
+                                "When projects are imported from other tools, the external ids can be stored here"),
+                        fieldWithPath("ownerAccountingUnit")
+                                .description("The owner accounting unit of the project"),
+                        fieldWithPath("ownerGroup").description("The owner group of the project"),
+                        fieldWithPath("ownerCountry").description("The owner country of the project"),
+                        fieldWithPath("obligationsText").description("The obligations text of the project"),
+                        fieldWithPath("clearingSummary")
+                                .description("The clearing summary text of the project"),
+                        fieldWithPath("specialRisksOSS")
+                                .description("The special risks OSS text of the project"),
+                        fieldWithPath("generalRisks3rdParty")
+                                .description("The general risks 3rd party text of the project"),
+                        fieldWithPath("specialRisks3rdParty")
+                                .description("The special risks 3rd party text of the project"),
+                        fieldWithPath("deliveryChannels")
+                                .description("The sales and delivery channels text of the project"),
+                        fieldWithPath("remarksAdditionalRequirements")
+                                .description("The remark additional requirements text of the project"),
+                        fieldWithPath("tag").description("The project tag"),
+                        fieldWithPath("deliveryStart").description("The project delivery start date"),
+                        fieldWithPath("preevaluationDeadline")
+                                .description("The project preevaluation deadline"),
+                        fieldWithPath("systemTestStart").description("Date of the project system begin phase"),
+                        fieldWithPath("systemTestEnd").description("Date of the project system end phase"),
+                        fieldWithPath("linkedProjects")
+                                .description("The relationship between linked projects of the project"),
+                        fieldWithPath("linkedReleases")
+                                .description("The relationship between linked releases of the project"),
+                        fieldWithPath("securityResponsibles")
+                                .description("An array of users responsible for security of the project."),
+                        fieldWithPath("projectResponsible")
+                                .description("A user who is responsible for the project."),
+                                  fieldWithPath("_links")
+                                  .description("<<resources-index-links,Links>> to other resources"),
+                        fieldWithPath("_embedded.createdBy").description("The user who created this project"),
+                        fieldWithPath("enableSvm").description("Security vulnerability monitoring flag"),
+                        fieldWithPath("enableVulnerabilitiesDisplay").description("Displaying vulnerabilities flag."),
+                        fieldWithPath("_embedded.sw360:projects")
+                                .description("An array of <<resources-projects, Projects resources>>"),
+                                  fieldWithPath("_embedded.sw360:releases")
+                                  .description("An array of <<resources-releases, Releases resources>>"),
+                        fieldWithPath("_embedded.sw360:attachments").description(
+                                "An array of all project attachments and link to their <<resources-attachment-get,Attachment resource>>"))));
     }
 
     @Test

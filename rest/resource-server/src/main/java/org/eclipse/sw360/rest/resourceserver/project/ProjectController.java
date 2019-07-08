@@ -340,6 +340,19 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         }
     }
 
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = PROJECTS_URL + "/{id}", method = RequestMethod.PATCH)
+    public ResponseEntity<Resource<Project>> patchProject(
+            @PathVariable("id") String id,
+            @RequestBody Project updateProject) throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        Project sw360Project = projectService.getProjectForUserById(id, user);
+        sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject);
+        projectService.updateProject(sw360Project, user);
+        HalResource<Project> userHalResource = createHalProject(sw360Project, user);
+        return new ResponseEntity<>(userHalResource, HttpStatus.OK);
+    }
+
     @RequestMapping(value = PROJECTS_URL + "/{projectId}/attachments", method = RequestMethod.POST, consumes = {"multipart/mixed", "multipart/form-data"})
     public ResponseEntity<HalResource> addAttachmentToProject(@PathVariable("projectId") String projectId,
                                                               @RequestPart("file") MultipartFile file,

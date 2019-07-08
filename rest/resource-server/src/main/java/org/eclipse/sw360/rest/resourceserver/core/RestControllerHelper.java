@@ -331,6 +331,16 @@ public class RestControllerHelper<T> {
         halResource.addEmbeddedResource("sw360:projects", halProject);
     }
 
+    public Project updateProject(Project projectToUpdate, Project requestBodyProject) {
+        for(Project._Fields field:Project._Fields.values()) {
+            Object fieldValue = requestBodyProject.getFieldValue(field);
+            if(fieldValue != null) {
+                projectToUpdate.setFieldValue(field, fieldValue);
+            }
+        }
+        return projectToUpdate;
+    }
+
     public Component updateComponent(Component componentToUpdate, Component requestBodyComponent) {
         for(Component._Fields field:Component._Fields.values()) {
             Object fieldValue = requestBodyComponent.getFieldValue(field);
