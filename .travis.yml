@@ -46,11 +46,13 @@ matrix:
       env: MVN_ARGS="validate"
       before_install:
     - name: pmd for already refactored packages
-      env: MVN_ARGS="-DskipTests -Ppmd -pl libraries/lib-datahandler"
+      env: MVN_ARGS="install -DskipTests -Ppmd -pl build-configuration;libraries/lib-datahandler"
       before_install:
+        - ./scripts/install-thrift.sh --no-cleanup
     - name: pmd for whole project
-      env: MVN_ARGS="-DskipTests -Ppmd"
+      env: MVN_ARGS="install -DskipTests -Ppmd"
       before_install:
+        - ./scripts/install-thrift.sh --no-cleanup
     - name: mvn dependency:analyze
       env: MVN_ARGS="dependency:analyze -DfailOnWarning"
       install: mvn package -DskipTests

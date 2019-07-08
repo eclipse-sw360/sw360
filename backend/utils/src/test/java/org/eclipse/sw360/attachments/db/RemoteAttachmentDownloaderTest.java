@@ -54,7 +54,7 @@ import static org.junit.Assume.assumeThat;
  */
 public class RemoteAttachmentDownloaderTest {
 
-    private static final String url = DatabaseSettings.COUCH_DB_URL;
+    private static final String dbURL = DatabaseSettings.COUCH_DB_URL;
     private static final String dbName = DatabaseSettings.COUCH_DB_ATTACHMENTS;
 
     private AttachmentConnector attachmentConnector;
@@ -81,7 +81,7 @@ public class RemoteAttachmentDownloaderTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         for (String id : garbage) {
             repository.remove(id);
         }
@@ -89,7 +89,7 @@ public class RemoteAttachmentDownloaderTest {
 
     @Test
     public void testIntegration() throws Exception {
-        AttachmentContent attachmentContent = saveRemoteAttachment(url);
+        AttachmentContent attachmentContent = saveRemoteAttachment(dbURL);
 
         assertThat(retrieveRemoteAttachments(DatabaseSettings.getConfiguredHttpClient(), dbName, downloadTimeout), is(1));
 
@@ -113,12 +113,7 @@ public class RemoteAttachmentDownloaderTest {
         ExecutorService executor = newSingleThreadExecutor();
 
         try {
-            Future<Integer> future = executor.submit(new Callable<Integer>() {
-                @Override
-                public Integer call() throws Exception {
-                    return retrieveRemoteAttachments(DatabaseSettings.getConfiguredHttpClient(), dbName, downloadTimeout);
-                }
-            });
+            Future<Integer> future = executor.submit(() -> retrieveRemoteAttachments(DatabaseSettings.getConfiguredHttpClient(), dbName, downloadTimeout));
 
             try {
                 Integer downloadedSuccessfully = future.get(1, TimeUnit.MINUTES);
@@ -138,7 +133,7 @@ public class RemoteAttachmentDownloaderTest {
     @Test
     public void testWithBrokenURL() throws Exception {
         AttachmentContent attachmentContent = saveRemoteAttachment(TestUtils.BLACK_HOLE_ADDRESS);
-        AttachmentContent attachmentGood = saveRemoteAttachment(url);
+        AttachmentContent attachmentGood = saveRemoteAttachment(dbURL);
 
         assertThat(repository.getOnlyRemoteAttachments(), hasSize(2));
         assertThat(retrieveRemoteAttachments(DatabaseSettings.getConfiguredHttpClient(), dbName, downloadTimeout), is(1));

@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-import static org.eclipse.sw360.datahandler.common.CommonUtils.closeQuietly;
 import static org.eclipse.sw360.datahandler.common.Duration.durationOf;
 import static java.lang.String.format;
 import static org.apache.log4j.Logger.getLogger;
@@ -65,9 +64,7 @@ public class RemoteAttachmentDownloader {
             log.info(format("retrieving attachment (%s) {filename=%s}", attachmentContentId, attachmentContent.getFilename()));
             log.debug("url is " + attachmentContent.getRemoteUrl());
 
-            InputStream content = null;
-            try {
-                content = attachmentConnector.unsafeGetAttachmentStream(attachmentContent);
+            try (InputStream content = attachmentConnector.unsafeGetAttachmentStream(attachmentContent)) {
                 if (content == null) {
                     log.error("null content retrieving attachment " + attachmentContentId);
                     continue;
@@ -79,10 +76,8 @@ public class RemoteAttachmentDownloader {
                 } catch (IOException e) {
                     log.error("attachment was downloaded but somehow not available in database " + attachmentContentId, e);
                 }
-            } catch (SW360Exception e) {
+            } catch (SW360Exception | IOException e) {
                 log.error("cannot retrieve attachment " + attachmentContentId, e);
-            } finally {
-                closeQuietly(content, log);
             }
         }
 

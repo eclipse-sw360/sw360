@@ -166,38 +166,29 @@ public class AttachmentStreamConnector {
     }
 
     private AttachmentContent downloadRemoteAttachmentAndUpdate(AttachmentContent attachmentContent) throws SW360Exception {
-        final InputStream downloadStream;
+        try (InputStream downloadStream = attachmentContentDownloader.download(attachmentContent, downloadTimeout)){
+            uploadAttachment(attachmentContent, downloadStream);
 
-        try {
-            downloadStream = attachmentContentDownloader.download(attachmentContent, downloadTimeout);
+            attachmentContent = connector.get(AttachmentContent.class, attachmentContent.getId());
+            attachmentContent.setOnlyRemote(false);
+            connector.update(attachmentContent);
+
+            return attachmentContent;
         } catch (IOException e) {
             String msg = "Cannot download attachment " + attachmentContent.getId() + " from URL";
             log.error(msg, e);
             throw new SW360Exception(msg);
         }
-
-
-        uploadAttachment(attachmentContent, downloadStream);
-
-        attachmentContent = connector.get(AttachmentContent.class, attachmentContent.getId());
-        attachmentContent.setOnlyRemote(false);
-        connector.update(attachmentContent);
-
-        return attachmentContent;
     }
 
     protected InputStream readAttachmentStream(AttachmentContent attachment) {
-        int partsCount = -1;
-
         if (attachment.isSetPartsCount()) {
-            partsCount = CommonUtils.toUnsignedInt(attachment.getPartsCount());
+            int partsCount = CommonUtils.toUnsignedInt(attachment.getPartsCount());
+            if (partsCount >= 0) {
+                return getConcatenatedAttachmentPartsStream(attachment, partsCount);
+            }
         }
-
-        if (partsCount < 0) {
-            return connector.getAttachment(attachment.getId(), attachment.getFilename());
-        } else {
-            return getConcatenatedAttachmentPartsStream(attachment, partsCount);
-        }
+        return connector.getAttachment(attachment.getId(), attachment.getFilename());
     }
 
     protected InputStream getConcatenatedAttachmentPartsStream(final AttachmentContent attachment, final int partsCount) {
