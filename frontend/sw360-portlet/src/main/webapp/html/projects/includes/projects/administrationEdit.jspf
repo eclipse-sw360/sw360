@@ -187,7 +187,7 @@
         <td>
             <textarea name="<portlet:namespace/><%=Project._Fields.LICENSE_INFO_HEADER_TEXT%>" rows="5"
                       class="projectLicenseInfoHeaderText broader" id="licenseInfoHeaderText"
-                      data-defaulttext="${defaultLicenseInfoHeaderText}"><sw360:DisplayLicenseInfoHeader
+                      data-defaulttext="<c:out value='${defaultLicenseInfoHeaderText}'/>"><sw360:DisplayLicenseInfoHeader
                     project="${project}" defaultText="${defaultLicenseInfoHeaderText}"/></textarea>
             <input id="setToDefaultLicenseInfoHeaderTextButton" type="button" class="addButton pull-right"
                    value="Set To Default Text">
@@ -225,4 +225,3 @@
 
     });
 </script>
-
