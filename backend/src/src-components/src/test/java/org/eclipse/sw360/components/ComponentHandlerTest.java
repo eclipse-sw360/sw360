@@ -13,15 +13,17 @@ package org.eclipse.sw360.components;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import static org.eclipse.sw360.datahandler.TestUtils.*;
-import static org.eclipse.sw360.datahandler.thrift.components.Component._Fields.*;
+import static org.eclipse.sw360.datahandler.thrift.components.Component._Fields.DESCRIPTION;
+import static org.eclipse.sw360.datahandler.thrift.components.Component._Fields.ID;
+import static org.eclipse.sw360.datahandler.thrift.components.Component._Fields.NAME;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -55,10 +57,14 @@ public class ComponentHandlerTest {
         Component originalComponent = new Component("name").setDescription("a desc");
         String componentId = componentHandler.addComponent(originalComponent, adminUser).getId();
 
-        Release release = new Release("name", "version", componentId).setFossologyId("id");
+        Release release = new Release("name", "version", componentId);
+        ExternalToolRequest etr = new ExternalToolRequest();
+        etr.setExternalTool(ExternalTool.FOSSOLOGY);
+        etr.setToolId("12345");
+        release.addToExternalToolRequests(etr);
         String releaseId = componentHandler.addRelease(release, adminUser).getId();
 
-        Component component = componentHandler.getComponentForReportFromFossologyUploadId("id");
+        Component component = componentHandler.getComponentForReportFromFossologyUploadId("12345");
 
         assertThat(component, is(not(nullValue())));
         assertThat(component, is(equalTo(originalComponent, restrictedToFields(ID, NAME, DESCRIPTION))));

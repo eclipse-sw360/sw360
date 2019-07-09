@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -10,21 +10,20 @@
  */
 package org.eclipse.sw360.datahandler.businessrules.jgivens;
 
-import org.eclipse.sw360.datahandler.TEnumToString;
-import org.eclipse.sw360.datahandler.businessrules.ReleaseClearingStateSummaryComputer;
-import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
-import org.eclipse.sw360.datahandler.thrift.components.FossologyStatus;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary;
 import com.tngtech.jgiven.Stage;
 import com.tngtech.jgiven.annotation.ExpectedScenarioState;
 import com.tngtech.jgiven.annotation.ProvidedScenarioState;
 import com.tngtech.jgiven.annotation.Quoted;
+
+import org.eclipse.sw360.datahandler.TEnumToString;
+import org.eclipse.sw360.datahandler.businessrules.ReleaseClearingStateSummaryComputer;
+import org.eclipse.sw360.datahandler.thrift.components.*;
+
 import org.junit.internal.AssumptionViolatedException;
 import org.mockito.Mockito;
 
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 /**
  * @author daniele.fognini@tngtech.com
@@ -45,11 +44,17 @@ public class WhenComputeClearingState extends Stage<WhenComputeClearingState> {
         return self();
     }
 
-    public WhenComputeClearingState team_$_sets_fossology_status_to(@Quoted String clearingTeam, @TEnumToString FossologyStatus fossologyStatus) {
+    public WhenComputeClearingState team_$_sets_external_tool_workflow_status_$_and_external_tool_status_$(
+            @Quoted String clearingTeam,
+            @TEnumToString ExternalToolWorkflowStatus w1, @TEnumToString ExternalToolStatus s1) {
         Release release = getFirstRelease();
-        Map<String, FossologyStatus> clearingTeamToFossologyStatus = release.getClearingTeamToFossologyStatus();
+        Set<ExternalToolRequest> externalToolRequests = release.getExternalToolRequests();
 
-        clearingTeamToFossologyStatus.put(clearingTeam, fossologyStatus);
+        ExternalToolRequest clearingTeamsRequest = externalToolRequests.stream()
+                .filter(etr -> clearingTeam.equals(etr.getToolUserGroup())).findFirst().get();
+
+        clearingTeamsRequest.setExternalToolWorkflowStatus(w1);
+        clearingTeamsRequest.setExternalToolStatus(s1);
 
         the_clearing_state_is_computed_for(lastTestedClearingTeam);
         return self();
@@ -57,9 +62,15 @@ public class WhenComputeClearingState extends Stage<WhenComputeClearingState> {
 
     public WhenComputeClearingState the_release_is_sent_for_clearing_to(@Quoted String clearingTeam) {
         Release release = getFirstRelease();
-        Map<String, FossologyStatus> clearingTeamToFossologyStatus = release.getClearingTeamToFossologyStatus();
 
-        clearingTeamToFossologyStatus.put(clearingTeam, FossologyStatus.SENT);
+        ExternalToolRequest etr = new ExternalToolRequest();
+        etr.setExternalTool(ExternalTool.FOSSOLOGY);
+        etr.setExternalToolWorkflowStatus(ExternalToolWorkflowStatus.SENT);
+        etr.setExternalToolStatus(ExternalToolStatus.OPEN);
+        etr.setToolUserGroup(clearingTeam);
+
+        Set<ExternalToolRequest> externalToolRequests = release.getExternalToolRequests();
+        externalToolRequests.add(etr);
 
         the_clearing_state_is_computed_for(lastTestedClearingTeam);
         return self();

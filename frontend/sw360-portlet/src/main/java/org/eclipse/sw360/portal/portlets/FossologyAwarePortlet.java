@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -13,17 +13,14 @@ package org.eclipse.sw360.portal.portlets;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
+
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
-import org.eclipse.sw360.datahandler.thrift.components.FossologyStatus;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
+import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
@@ -33,17 +30,20 @@ import org.eclipse.sw360.portal.common.datatables.DataTablesParser;
 import org.eclipse.sw360.portal.common.datatables.data.DataTablesParameters;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 
-import javax.portlet.PortletException;
-import javax.portlet.PortletRequest;
-import javax.portlet.ResourceRequest;
-import javax.portlet.ResourceResponse;
+import org.apache.log4j.Logger;
+import org.apache.thrift.TException;
+
+import javax.portlet.*;
+
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyMap;
 import static org.eclipse.sw360.datahandler.thrift.projects.projectsConstants.CLEARING_TEAM_UNKNOWN;
-import static org.eclipse.sw360.portal.common.PortalConstants.*;
+import static org.eclipse.sw360.portal.common.PortalConstants.CLEARING_TEAM;
+import static org.eclipse.sw360.portal.common.PortalConstants.PROJECT_ID;
+import static org.eclipse.sw360.portal.common.PortalConstants.RELEASE_ID;
 
 /**
  * Fossology aware portlet implementation
@@ -64,6 +64,26 @@ public abstract class FossologyAwarePortlet extends LinkedReleasesAndProjectsAwa
         super(clients);
     }
 
+    @Override
+    protected void dealWithGenericAction(ResourceRequest request, ResourceResponse response, String action)
+            throws IOException, PortletException {
+
+        if (super.isGenericAction(action)) {
+            super.dealWithGenericAction(request, response, action);
+        } else if (isFossologyAwareAction(action)) {
+            dealWithFossologyAction(request, response, action);
+        }
+    }
+
+    @Override
+    protected boolean isGenericAction(String action) {
+        return super.isGenericAction(action) || isFossologyAwareAction(action);
+    }
+
+    protected boolean isFossologyAwareAction(String action) {
+        return action.startsWith(PortalConstants.FOSSOLOGY_PREFIX);
+    }
+
     protected abstract void dealWithFossologyAction(ResourceRequest request, ResourceResponse response, String action) throws IOException, PortletException;
 
     protected void serveSendToFossology(ResourceRequest request, ResourceResponse response) throws PortletException {
@@ -71,7 +91,7 @@ public abstract class FossologyAwarePortlet extends LinkedReleasesAndProjectsAwa
         renderRequestStatus(request, response, requestStatus);
     }
 
-    protected RequestStatus sendToFossology(ResourceRequest request) {
+    private RequestStatus sendToFossology(ResourceRequest request) {
         final String releaseId = request.getParameter(RELEASE_ID);
         final String clearingTeam = request.getParameter(CLEARING_TEAM);
 
@@ -89,16 +109,16 @@ public abstract class FossologyAwarePortlet extends LinkedReleasesAndProjectsAwa
 
         Release release = getReleaseForFossologyStatus(request);
 
-        Map<String, FossologyStatus> fossologyStatus = getFossologyStatus(release);
+        Map<String, String> fossologyStatus = getFossologyStatus(release);
 
         JSONObject jsonResponse = JSONFactoryUtil.createJSONObject();
 
         JSONArray data = JSONFactoryUtil.createJSONArray();
 
-        for (Map.Entry<String, FossologyStatus> entry : fossologyStatus.entrySet()) {
+        for (Map.Entry<String, String> entry : fossologyStatus.entrySet()) {
             JSONObject row = JSONFactoryUtil.createJSONObject();
             row.put("0", entry.getKey());
-            row.put("1", ThriftEnumUtils.enumToString(entry.getValue()));
+            row.put("1", entry.getValue());
             data.put(row);
         }
 
@@ -112,38 +132,7 @@ public abstract class FossologyAwarePortlet extends LinkedReleasesAndProjectsAwa
         writeJSON(request, response, jsonResponse);
     }
 
-    private String getFossologyUploadableAttachment(Release release) {
-        String sourceAttachment = null;
-        if (release != null) {
-            try {
-                ComponentService.Iface fossologyClient = thriftClients.makeComponentClient();
-                final Set<Attachment> sourceAttachments = fossologyClient.getSourceAttachments(release.getId());
-                if (sourceAttachments.size() == 1) {
-                    sourceAttachment = CommonUtils.getFirst(sourceAttachments).getFilename();
-                }
-            } catch (TException e) {
-                log.error("cannot get name of the attachment of release", e);
-            }
-        }
-
-        if (isNullOrEmpty(sourceAttachment)) {
-            return "no unique source attachment found!";
-        } else {
-            return sourceAttachment;
-        }
-    }
-
-    protected Map<String, FossologyStatus> getFossologyStatus(Release release) {
-        if (release != null) {
-            return nullToEmptyMap(release.getClearingTeamToFossologyStatus());
-        } else {
-            log.error("no response from backend!");
-        }
-
-        return Collections.emptyMap();
-    }
-
-    protected Release getReleaseForFossologyStatus(ResourceRequest request) {
+    private Release getReleaseForFossologyStatus(ResourceRequest request) {
         String releaseId = request.getParameter(RELEASE_ID);
         String clearingTeam = request.getParameter(CLEARING_TEAM);
 
@@ -173,22 +162,54 @@ public abstract class FossologyAwarePortlet extends LinkedReleasesAndProjectsAwa
         return null;
     }
 
-    protected boolean isFossologyAwareAction(String action) {
-        return action.startsWith(PortalConstants.FOSSOLOGY_PREFIX);
+    private Map<String, String> getFossologyStatus(Release release) {
+        if (release != null) {
+            Set<ExternalToolRequest> fossologyRequests = SW360Utils.getExternalToolRequestsForTool(release, ExternalTool.FOSSOLOGY);
+            return fossologyRequests.stream().collect(Collectors.toMap(etr -> {
+                return etr.getToolUserGroup();
+            }, etr -> {
+                ExternalToolWorkflowStatus externalToolWorkflowStatus = etr.getExternalToolWorkflowStatus();
+                switch (externalToolWorkflowStatus) {
+                case NOT_SENT:
+                case UPLOADING:
+                case ACCESS_DENIED:
+                case NOT_FOUND:
+                case CONNECTION_TIMEOUT:
+                case CONNECTION_FAILED:
+                case SERVER_ERROR:
+                    return ThriftEnumUtils.enumToString(externalToolWorkflowStatus);
+                case SENT:
+                    ExternalToolStatus externalToolStatus = etr.getExternalToolStatus();
+                    return ThriftEnumUtils.enumToString(externalToolStatus);
+                default:
+                    return "";
+                }
+            }));
+        } else {
+            log.error("no response from backend!");
+        }
+
+        return Collections.emptyMap();
     }
 
-    @Override
-    protected boolean isGenericAction(String action) {
-        return super.isGenericAction(action) || isFossologyAwareAction(action);
-    }
+    private String getFossologyUploadableAttachment(Release release) {
+        String sourceAttachment = null;
+        if (release != null) {
+            try {
+                ComponentService.Iface fossologyClient = thriftClients.makeComponentClient();
+                final Set<Attachment> sourceAttachments = fossologyClient.getSourceAttachments(release.getId());
+                if (sourceAttachments.size() == 1) {
+                    sourceAttachment = CommonUtils.getFirst(sourceAttachments).getFilename();
+                }
+            } catch (TException e) {
+                log.error("cannot get name of the attachment of release", e);
+            }
+        }
 
-    @Override
-    protected void dealWithGenericAction(ResourceRequest request, ResourceResponse response, String action) throws IOException, PortletException {
-
-        if (super.isGenericAction(action)) {
-            super.dealWithGenericAction(request, response, action);
-        } else if (isFossologyAwareAction(action)) {
-            dealWithFossologyAction(request, response, action);
+        if (isNullOrEmpty(sourceAttachment)) {
+            return "no unique source attachment found!";
+        } else {
+            return sourceAttachment;
         }
     }
 

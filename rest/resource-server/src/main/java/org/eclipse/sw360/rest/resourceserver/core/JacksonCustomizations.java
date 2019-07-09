@@ -36,6 +36,7 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.eclipse.sw360.rest.resourceserver.core.serializer.JsonProjectRelationSerializer;
 import org.eclipse.sw360.rest.resourceserver.core.serializer.JsonReleaseRelationSerializer;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProject;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -335,7 +336,6 @@ class JacksonCustomizations {
                 "setAttachments",
                 "setCreatedOn",
                 "setRepository",
-                "setFossologyId",
                 "setCreatedBy",
                 "setModerators",
                 "setSubscribers",
@@ -351,7 +351,6 @@ class JacksonCustomizations {
                 "attachmentsSize",
                 "setMainlineState",
                 "setClearingState",
-                "setAttachmentInFossology",
                 "contributorsSize",
                 "setContributors",
                 "moderatorsSize",
@@ -375,8 +374,8 @@ class JacksonCustomizations {
                 "setComponentId",
                 "setReleaseDate",
                 "setExternalIds",
-                "clearingTeamToFossologyStatusSize",
-                "setClearingTeamToFossologyStatus",
+                "externalToolRequestsSize",
+                "setExternalToolRequests",
                 "setEccInformation",
                 "languagesIterator",
                 "operatingSystemsIterator",

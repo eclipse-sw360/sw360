@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -11,7 +11,10 @@
 package org.eclipse.sw360.fossology.ssh;
 
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.components.FossologyStatus;
+import org.eclipse.sw360.datahandler.thrift.components.ExternalToolRequest;
+import org.eclipse.sw360.datahandler.thrift.components.ExternalToolStatus;
+import org.eclipse.sw360.datahandler.thrift.components.ExternalToolWorkflowStatus;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,6 +30,9 @@ import java.io.OutputStream;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -184,7 +190,7 @@ public class FossologyUploaderTest {
 
         String clearingTeam = "team d";
 
-        final String output = "output result\nfrom the get status script";
+        final String output = "output result\nstatus=21 heißt in_progress\nfrom the get status script";
         doAnswer(new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
@@ -194,17 +200,16 @@ public class FossologyUploaderTest {
             }
         }).when(sshConnector).runInFossologyViaSsh(anyString(), any(OutputStream.class));
 
-        FossologyStatus parseResult = FossologyStatus.IN_PROGRESS;
-        doReturn(parseResult).when(fossologyUploader).parseResultStatus(output);
+        ExternalToolRequest etr = new ExternalToolRequest();
+        etr.setToolId(String.valueOf(uploadId));
+        etr.setToolUserGroup(clearingTeam);
 
-        FossologyStatus statusInFossology = fossologyUploader.getStatusInFossology(uploadId, clearingTeam);
+        ExternalToolWorkflowStatus etrs = fossologyUploader.updateStatusInFossologyRequest(etr);
 
-        assertThat(statusInFossology, is(parseResult));
-
-        verify(fossologyUploader).parseResultStatus(output);
+        assertThat(etrs, is(ExternalToolWorkflowStatus.SENT));
+        assertThat(etr.getExternalToolStatus(), is(ExternalToolStatus.IN_PROGRESS));
 
         verify(sshConnector).runInFossologyViaSsh(anyString(), any(OutputStream.class));
-        verify(fossologyUploader).getStatusInFossology(uploadId, clearingTeam);
     }
 
     @Test
@@ -215,16 +220,26 @@ public class FossologyUploaderTest {
 
         doReturn(1).when(sshConnector).runInFossologyViaSsh(anyString(), any(OutputStream.class));
 
-        FossologyStatus statusInFossology = fossologyUploader.getStatusInFossology(uploadId, clearingTeam);
+        ExternalToolRequest etr = new ExternalToolRequest();
+        etr.setToolId(String.valueOf(uploadId));
+        etr.setToolUserGroup(clearingTeam);
 
-        assertThat(statusInFossology, is(FossologyStatus.CONNECTION_FAILED));
+        ExternalToolWorkflowStatus etrs = fossologyUploader.updateStatusInFossologyRequest(etr);
+
+        assertThat(etrs, is(ExternalToolWorkflowStatus.CONNECTION_FAILED));
 
         verify(sshConnector).runInFossologyViaSsh(anyString(), any(OutputStream.class));
     }
 
     @Test
     public void testGetStatusInFossologyIsErrorForBadUploadId() throws Exception {
-        assertThat(fossologyUploader.getStatusInFossology(-1, "a"), is(FossologyStatus.ERROR));
+        ExternalToolRequest etr = new ExternalToolRequest();
+        etr.setToolId("-1");
+        etr.setToolUserGroup("a");
+
+        ExternalToolWorkflowStatus etrs = fossologyUploader.updateStatusInFossologyRequest(etr);
+
+        assertThat(etrs, is(ExternalToolWorkflowStatus.SERVER_ERROR));
     }
 
     @Test
@@ -262,16 +277,21 @@ public class FossologyUploaderTest {
 
     @Test
     public void testParseResult() {
-        final FossologyStatus fossologyStatus = FossologyStatus.CLOSED;
-        assertThat(
-                fossologyUploader.parseResultStatus("status=" + fossologyStatus),
-                is(fossologyStatus));
+        ExternalToolRequest etr = new ExternalToolRequest();
+
+        ExternalToolWorkflowStatus workflowStatus = fossologyUploader.parseResultStatus("status=22", etr);
+
+        assertThat(workflowStatus, is(ExternalToolWorkflowStatus.SENT));
+        assertThat(etr.getExternalToolStatus(), is(ExternalToolStatus.CLOSED));
     }
 
     @Test
     public void testParseResultWithBadStatus() {
-        assertThat(
-                fossologyUploader.parseResultStatus("status=CLOPED"),
-                is(FossologyStatus.CONNECTION_FAILED));
+        ExternalToolRequest etr = new ExternalToolRequest();
+
+        ExternalToolWorkflowStatus workflowStatus = fossologyUploader.parseResultStatus("status=CLOPED", etr);
+
+        assertThat(workflowStatus, is(ExternalToolWorkflowStatus.CONNECTION_FAILED));
+        assertThat(etr.getExternalToolStatus(), is(ExternalToolStatus.OPEN));
     }
 }
