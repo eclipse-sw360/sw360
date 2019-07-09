@@ -13,6 +13,7 @@
 
 package org.eclipse.sw360.rest.resourceserver.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -182,13 +183,14 @@ class JacksonCustomizations {
             abstract public String getId();
         }
 
-	@JsonInclude(JsonInclude.Include.NON_NULL)
-	@JsonIgnoreProperties({
-		"enableSvm",
-		"enableVulnerabilitiesDisplay"
-	})
 	static abstract class EmbeddedProjectMixin extends ProjectMixin {
+            @Override
+            @JsonIgnore
+            abstract public boolean isEnableSvm();
 
+            @Override
+            @JsonIgnore
+            abstract public boolean isEnableVulnerabilitiesDisplay();
 	}
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
