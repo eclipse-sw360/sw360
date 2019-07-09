@@ -60,6 +60,10 @@
         <td>External ids:</td>
         <td><sw360:DisplayMap value="${project.externalIds}"/></td>
     </tr>
+    <tr>
+        <td>Additional Data:</td>
+        <td><sw360:DisplayMap value="${project.additionalData}"/></td>
+    </tr>
 </table>
 
 <table class="table info_table" id="roles">

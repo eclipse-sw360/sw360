@@ -121,6 +121,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         release.setClearingState(ClearingState.APPROVED);
         release.setMainlineState(MainlineState.OPEN);
         release.setExternalIds(Collections.singletonMap("mainline-id-component", "1432"));
+        release.setAdditionalData(Collections.singletonMap("Key", "Value"));
         release.setAttachments(attachmentList);
         release.setLanguages(new HashSet<>(Arrays.asList("C++", "Java")));
         release.setMainLicenseIds(new HashSet<>(Arrays.asList("GPL-2.0-or-later", "Apache-2.0")));
@@ -244,6 +245,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("mainlineState").description("the mainline state of the release, possible values are: " + Arrays.asList(MainlineState.values())),
                                 fieldWithPath("downloadurl").description("the download url of the release"),
                                 fieldWithPath("externalIds").description("When releases are imported from other tools, the external ids can be stored here"),
+                                fieldWithPath("additionalData").description("A place to store additional data used by external tools"),
                                 fieldWithPath("languages").description("The language of the component"),
                                 fieldWithPath("_embedded.sw360:licenses").description("An array of all main licenses with their fullName and link to their <<resources-license-get,License resource>>"),
                                 fieldWithPath("operatingSystems").description("The OS on which the release operates"),
@@ -300,6 +302,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("mainlineState").description("the mainline state of the release, possible values are: " + Arrays.asList(MainlineState.values())),
                                 fieldWithPath("downloadurl").description("the download url of the release"),
                                 fieldWithPath("externalIds").description("When releases are imported from other tools, the external ids can be stored here"),
+                                fieldWithPath("additionalData").description("A place to store additional data used by external tools"),
                                 fieldWithPath("languages").description("The language of the component"),
                                 fieldWithPath("_embedded.sw360:licenses").description("An array of all main licenses with their fullName and link to their <<resources-license-get,License resource>>"),
                                 fieldWithPath("operatingSystems").description("The OS on which the release operates"),

@@ -78,8 +78,13 @@ public abstract class ComponentPortletUtils {
                     break;
                 case ROLES:
                     release.setRoles(PortletUtils.getCustomMapFromRequest(request));
+                    break;
                 case EXTERNAL_IDS:
                     release.setExternalIds(PortletUtils.getExternalIdMapFromRequest(request));
+                    break;
+                case ADDITIONAL_DATA:
+                    release.setAdditionalData(PortletUtils.getAdditionalDataMapFromRequest(request));
+                    break;
                 default:
                     setFieldValue(request, release, field);
             }
@@ -125,14 +130,24 @@ public abstract class ComponentPortletUtils {
     }
 
     static void updateComponentFromRequest(PortletRequest request, Component component) {
-        List<String> requestParams = Collections.list(request.getParameterNames());
-        for (Component._Fields field : extractFieldsForComponentUpdate(requestParams, component)) {
-            setFieldValue(request, component, field);
+        for (Component._Fields field : Component._Fields.values()) {
+            switch (field) {
+                case ATTACHMENTS:
+                    component.setAttachments(PortletUtils.updateAttachmentsFromRequest(request, component.getAttachments()));
+                    break;
+                case ROLES:
+                    component.setRoles(PortletUtils.getCustomMapFromRequest(request));
+                case EXTERNAL_IDS:
+                    component.setExternalIds(PortletUtils.getExternalIdMapFromRequest(request));
+                    break;
+                case ADDITIONAL_DATA:
+                    component.setAdditionalData(PortletUtils.getAdditionalDataMapFromRequest(request));
+                    break;
+                default:
+                    setFieldValue(request, component, field);
+                    break;
+            }
         }
-
-        component.setAttachments(PortletUtils.updateAttachmentsFromRequest(request, component.getAttachments()));
-        component.setRoles(PortletUtils.getCustomMapFromRequest(request));
-        component.setExternalIds(PortletUtils.getExternalIdMapFromRequest(request));
     }
 
     private static List<Component._Fields> extractFieldsForComponentUpdate(List<String> requestParams, Component component) {

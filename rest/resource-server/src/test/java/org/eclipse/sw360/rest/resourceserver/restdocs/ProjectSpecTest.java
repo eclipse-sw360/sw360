@@ -87,6 +87,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     private Sw360LicenseInfoService licenseInfoMockService;
 
     private Project project;
+    private List<Project> projectList = new ArrayList<>();
     private Attachment attachment;
 
 
@@ -107,11 +108,13 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         Map<String, ProjectRelationship> linkedProjects = new HashMap<>();
         ProjectReleaseRelationship projectReleaseRelationship = new ProjectReleaseRelationship(CONTAINED, MAINLINE);
 
-        Map<String, Set<String>> externalIds = new HashMap<>();
-        externalIds.put("portal-id", new HashSet<>(Arrays.asList("13319-XX3")));
-        externalIds.put("project-ext", new HashSet<>(Arrays.asList("515432", "7657")));
+        Map<String, String> externalIds = new HashMap<>();
+        externalIds.put("portal-id", "13319-XX3");
+        externalIds.put("project-ext", "515432");
 
-        List<Project> projectList = new ArrayList<>();
+        Map<String, String> additionalData = new HashMap<>();
+        additionalData.put("OSPO-Comment", "Some Comment");
+
         List<Project> projectListByName = new ArrayList<>();
         project = new Project();
         project.setId("376576");
@@ -144,12 +147,18 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project.setReleaseIdToUsage(linkedReleases);
         linkedProjects.put("376576", ProjectRelationship.CONTAINED);
         project.setLinkedProjects(linkedProjects);
-        projectList.add(project);
-        projectListByName.add(project);
         project.setAttachments(attachmentList);
         project.setSecurityResponsibles(new HashSet<>(Arrays.asList("securityresponsible1@sw360.org", "securityresponsible2@sw360.org")));
         project.setProjectResponsible("projectresponsible@sw360.org");
+        project.setExternalIds(externalIds);
+        project.setAdditionalData(additionalData);
 
+        projectListByName.add(project);
+        projectList.add(project);
+
+
+        Map<String, String> externalIds2 = new HashMap<>();
+        externalIds2.put("project-ext", "7657");
 
         Project project2 = new Project();
         project2.setId("376570");
@@ -185,13 +194,14 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         linkedReleases = new HashMap<>();
         linkedReleases.put("5578999", projectReleaseRelationship);
         project2.setReleaseIdToUsage(linkedReleases);
+        project2.setExternalIds(externalIds2);
+
         projectList.add(project2);
 
         Set<String> releaseIds = new HashSet<>(Arrays.asList("3765276512"));
         Set<String> releaseIdsTransitive = new HashSet<>(Arrays.asList("3765276512", "5578999"));
 
         given(this.projectServiceMock.getProjectsForUser(anyObject())).willReturn(projectList);
-        given(this.projectServiceMock.searchByExternalIds(eq(externalIds), anyObject())).willReturn((new HashSet<>(projectList)));
         given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), anyObject())).willReturn(project);
         given(this.projectServiceMock.searchProjectByName(eq(project.getName()), anyObject())).willReturn(projectListByName);
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), anyObject(), eq("false"))).willReturn(releaseIds);
@@ -309,6 +319,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("visibility").description("The project visibility, possible values are: " + Arrays.asList(Visibility.values())),
                                 fieldWithPath("businessUnit").description("The business unit this project belongs to"),
                                 fieldWithPath("externalIds").description("When projects are imported from other tools, the external ids can be stored here"),
+                                fieldWithPath("additionalData").description("A place to store additional data used by external tools"),
                                 fieldWithPath("ownerAccountingUnit").description("The owner accounting unit of the project"),
                                 fieldWithPath("ownerGroup").description("The owner group of the project"),
                                 fieldWithPath("ownerCountry").description("The owner country of the project"),
@@ -381,6 +392,11 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_projects_by_externalIds() throws Exception {
+        Map<String, Set<String>> externalIdsQuery = new HashMap<>();
+        externalIdsQuery.put("portal-id", new HashSet<>(Arrays.asList("13319-XX3")));
+        externalIdsQuery.put("project-ext", new HashSet<>(Arrays.asList("515432", "7657")));
+        given(this.projectServiceMock.searchByExternalIds(eq(externalIdsQuery), anyObject())).willReturn((new HashSet<>(projectList)));
+
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/projects/searchByExternalIds?project-ext=515432&project-ext=7657&portal-id=13319-XX3")
                 .contentType(MediaTypes.HAL_JSON)
@@ -559,6 +575,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         fieldWithPath("businessUnit").description("The business unit this project belongs to"),
                         fieldWithPath("externalIds").description(
                                 "When projects are imported from other tools, the external ids can be stored here"),
+                        fieldWithPath("additionalData").description("A place to store additional data used by external tools"),
                         fieldWithPath("ownerAccountingUnit")
                                 .description("The owner accounting unit of the project"),
                         fieldWithPath("ownerGroup").description("The owner group of the project"),

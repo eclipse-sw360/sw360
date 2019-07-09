@@ -385,6 +385,8 @@ public class PortalConstants {
     public static final String CUSTOM_MAP_VALUE = "customMapValue";
     public static final String EXTERNAL_ID_KEY = "externalIdKey";
     public static final String EXTERNAL_ID_VALUE = "externalIdValue";
+    public static final String ADDITIONAL_DATA_KEY = "additionalDataKey";
+    public static final String ADDITIONAL_DATA_VALUE = "additionalDataValue";
 
     //! request status
     public static final String REQUEST_STATUS = "request_status";

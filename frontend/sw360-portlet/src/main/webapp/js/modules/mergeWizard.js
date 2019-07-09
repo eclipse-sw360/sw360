@@ -83,6 +83,40 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         return result;
     };
 
+    mergeWizard.createMapMergeLine = function createMapMergeLine(propName, target, source, detailFormatter) {
+        var result,
+            keys = [],
+            existInBoth = [];
+
+        target = target == null ? {} : target;
+        source = source == null ? {} : source;
+        detailFormatter = detailFormatter || function(element) { return element; };
+
+        result = $($.parseHTML('<fieldset id="' + propName.replace(/ /g, '') + '" class="merge line">' +
+            '    <div class="merge multi header">' + propName + '</div>' +
+            '</fieldset>'));
+
+        $.each(target, function(key, value) {
+            if (!source[key]) {
+                result.append(mergeWizard.createSingleMergeLine(key, value, [], detailFormatter));
+            } else {
+                result.append(mergeWizard.createSingleMergeLine(key, value, source[key], detailFormatter));
+                existInBoth.push(key);
+            }
+            keys.push(key);
+        });
+        $.each(source, function(key, value) {
+            if ($.inArray(key, existInBoth) === -1) {
+                result.append(mergeWizard.createSingleMergeLine(key, [], value, detailFormatter));
+                keys.push(key);
+            }
+        });
+
+        result.data('mapKeys', keys);
+
+        return result;
+    };
+
     mergeWizard.createMultiMapMergeLine = function createMultiMapMergeLine(propName, target, source, detailFormatter) {
         var result,
             keys = [],
@@ -174,6 +208,23 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
 
         $.each(values, function(index, value) {
             result.append(createSingleDisplayContent(value, detailFormatter));
+        });
+
+        return result;
+    };
+
+    mergeWizard.createMapDisplayLine = function createMapDisplayLine(propName, values, detailFormatter) {
+        var result;
+
+        values = values == null ? {} : values;
+        detailFormatter = detailFormatter || function(element) { return element; };
+
+        result = $($.parseHTML('<fieldset id="' + propName.replace(/ /g, '') + '" class="display line">' +
+            '    <div class="display multi header">' + propName + '</div>' +
+            '</fieldset>'));
+
+        $.each(values, function(key, value) {
+            result.append(mergeWizard.createSingleDisplayLine(key, value, detailFormatter));
         });
 
         return result;
@@ -303,6 +354,22 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
             finalVal = getFinalValue($(value));
             if (finalVal !== undefined) {
                 result.push(finalVal);
+            }
+        });
+
+        return result;
+    };
+
+    mergeWizard.getFinalMapValue = function getFinalMapValue(propName) {
+        var $fieldset = $('#' + propName.replace(/ /g, '')),
+            keys = $fieldset.data('mapKeys'),
+            result = {},
+            finalVal;
+
+        $.each(keys, function(index, value) {
+            finalVal = mergeWizard.getFinalSingleValue(value);
+            if (finalVal !== undefined) {
+                result[value] = finalVal;
             }
         });
 

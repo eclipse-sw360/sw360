@@ -103,6 +103,8 @@
                         <core_rt:set var="externalIdsSet" value="${project.externalIds.entrySet()}"/>
                         <core_rt:set var="externalIdKeys" value="<%=PortalConstants.PROJECT_EXTERNAL_ID_KEYS%>"/>
                         <%@include file="/html/utils/includes/editExternalIds.jsp" %>
+                        <core_rt:set var="additionalDataSet" value="${project.additionalData.entrySet()}"/>
+                        <%@include file="/html/utils/includes/editAdditionalData.jsp" %>
                     </div>
                     <div id="tab-Administration" >
                         <%@include file="/html/projects/includes/projects/administrationEdit.jspf" %>
