@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -10,22 +10,11 @@
  */
 package org.eclipse.sw360.datahandler.businessrules;
 
-import com.google.common.base.Function;
-import com.google.common.collect.FluentIterable;
-import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
-import org.eclipse.sw360.datahandler.thrift.components.FossologyStatus;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.thrift.components.*;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
-import static com.google.common.base.Predicates.equalTo;
-import static com.google.common.base.Predicates.not;
-import static com.google.common.collect.Maps.filterKeys;
-import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyMap;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author daniele.fognini@tngtech.com
@@ -39,10 +28,16 @@ public class ReleaseClearingStateSummaryComputer {
         }
 
         for (Release release : releases) {
-            Map<String, FossologyStatus> fossologyStatuses = nullToEmptyMap(release.getClearingTeamToFossologyStatus());
+            // once there are other clearing tools available, this filtering need to differentiate between tools
+            Set<ExternalToolRequest> fossologyStatuses = SW360Utils.getExternalToolRequestsForTool(release,
+                    ExternalTool.FOSSOLOGY);
+            Set<ExternalToolRequest> clearingTeamETRSet = fossologyStatuses.stream()
+                    .filter(etr -> clearingTeam.equals(etr.getToolUserGroup())).collect(Collectors.toSet());
+            ExternalToolRequest clearingTeamETR = clearingTeamETRSet.size() == 1 ? clearingTeamETRSet.iterator().next()
+                    : null;
 
             ViewedState globalState = getGlobalState(release.getClearingState());
-            ViewedState myTeamState = getStateOfFossology(fossologyStatuses.get(clearingTeam));
+            ViewedState myTeamState = getStateOfFossology(clearingTeamETR);
             ViewedState otherTeamState = getBestStateOfFossologyForOtherTeams(clearingTeam, fossologyStatuses);
 
             addReleaseWithStates(summary, globalState, myTeamState, otherTeamState);
@@ -84,26 +79,38 @@ public class ReleaseClearingStateSummaryComputer {
         return ViewedState.NONE;
     }
 
-    static ViewedState getStateOfFossology(FossologyStatus fossologyStatus) {
-        if (fossologyStatus != null) {
-            switch (fossologyStatus) {
+    static ViewedState getStateOfFossology(ExternalToolRequest etr) {
+        if (etr != null) {
+            ExternalToolWorkflowStatus workflowStatus = etr.getExternalToolWorkflowStatus();
+            if (workflowStatus != null) {
+                switch (workflowStatus) {
                 case NOT_SENT:
+                case UPLOADING:
                     return ViewedState.NEW;
-                case OPEN:
-                case SCANNING:
-                case IN_PROGRESS:
                 case SENT:
-                    return ViewedState.CLEARING;
-                case CLOSED:
-                case REPORT_AVAILABLE:
-                    return ViewedState.REPORT_AVAILABLE;
+                    ExternalToolStatus externalToolStatus = etr.getExternalToolStatus();
+                    if (externalToolStatus != null) {
+                        switch (externalToolStatus) {
+                        case OPEN:
+                        case IN_PROGRESS:
+                            return ViewedState.CLEARING;
+                        case CLOSED:
+                        case RESULT_AVAILABLE:
+                            return ViewedState.REPORT_AVAILABLE;
+                        case REJECTED:
+                        default:
+                            break;
+                        }
+                    }
+                    break;
+                case ACCESS_DENIED:
+                case NOT_FOUND:
+                case CONNECTION_TIMEOUT:
                 case CONNECTION_FAILED:
-                case ERROR:
-                case NON_EXISTENT:
-                case INACCESSIBLE:
-                case REJECTED: // ???
+                case SERVER_ERROR:
                 default:
                     break;
+                }
             }
         }
         return ViewedState.NONE;
@@ -155,23 +162,14 @@ public class ReleaseClearingStateSummaryComputer {
         }
     }
 
-    static ViewedState getBestStateOfFossologyForOtherTeams(String clearingTeam, Map<String, FossologyStatus> fossologyStatuses) {
-        Collection<FossologyStatus> fossologyStatusesOfOtherTeams =
-                filterKeys(fossologyStatuses, not(equalTo(clearingTeam))).values();
+    static ViewedState getBestStateOfFossologyForOtherTeams(String clearingTeam,
+            Set<ExternalToolRequest> fossologyStatuses) {
+        Optional<ViewedState> fossologyStatusesOfOtherTeamsOptional = fossologyStatuses.stream()
+                .filter(etr -> !clearingTeam.equals(etr.getToolUserGroup()))
+                .map(ReleaseClearingStateSummaryComputer::getStateOfFossology)
+                .collect(Collectors.maxBy(Comparator.naturalOrder()));
 
-        Collection<ViewedState> otherTeamsStates = FluentIterable.from(fossologyStatusesOfOtherTeams)
-                .transform(functionGetStateOfFossology()).toList();
-
-        return otherTeamsStates.isEmpty() ? ViewedState.NONE : Collections.max(otherTeamsStates);
-    }
-
-    static Function<FossologyStatus, ViewedState> functionGetStateOfFossology() {
-        return new Function<FossologyStatus, ViewedState>() {
-            @Override
-            public ViewedState apply(FossologyStatus fossologyStatus) {
-                return getStateOfFossology(fossologyStatus);
-            }
-        };
+        return fossologyStatusesOfOtherTeamsOptional.orElse(ViewedState.NONE);
     }
 
     static Void throwBadState(ViewedState state) {

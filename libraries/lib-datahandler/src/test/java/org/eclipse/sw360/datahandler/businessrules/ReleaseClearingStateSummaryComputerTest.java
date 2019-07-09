@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2016. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2016, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -11,19 +11,22 @@
 
 package org.eclipse.sw360.datahandler.businessrules;
 
-import org.eclipse.sw360.datahandler.businessrules.jgivens.GivenReleasesWithFossologyStatus;
+import com.tngtech.jgiven.junit.ScenarioTest;
+
+import org.eclipse.sw360.datahandler.businessrules.jgivens.GivenReleasesWithExternalToolStatus;
 import org.eclipse.sw360.datahandler.businessrules.jgivens.ThenReleaseClearingState;
 import org.eclipse.sw360.datahandler.businessrules.jgivens.WhenComputeClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
-import org.eclipse.sw360.datahandler.thrift.components.FossologyStatus;
-import com.tngtech.jgiven.junit.ScenarioTest;
+import org.eclipse.sw360.datahandler.thrift.components.ExternalToolStatus;
+import org.eclipse.sw360.datahandler.thrift.components.ExternalToolWorkflowStatus;
+
 import org.junit.Test;
 
 /**
  * @author daniele.fognini@tngtech.com
  * @author alex.borodin@evosoft.com
  */
-public class ReleaseClearingStateSummaryComputerTest extends ScenarioTest<GivenReleasesWithFossologyStatus, WhenComputeClearingState, ThenReleaseClearingState> {
+public class ReleaseClearingStateSummaryComputerTest extends ScenarioTest<GivenReleasesWithExternalToolStatus, WhenComputeClearingState, ThenReleaseClearingState> {
 
     public static final String CLEARING_TEAM = "the project clearing team";
     public static final String ANOTHER_CLEARING_TEAM = "another clearing team";
@@ -47,9 +50,9 @@ public class ReleaseClearingStateSummaryComputerTest extends ScenarioTest<GivenR
     @Test
     public void test1() throws Exception {
         given()
-                .a_release_with_fossology_status_$_for_$_and_$_for_$(
-                        FossologyStatus.SCANNING, CLEARING_TEAM,
-                        FossologyStatus.SENT, ANOTHER_CLEARING_TEAM);
+                .a_release_with_external_tool_workflow_status_$_with_external_tool_status_$_for_$_and_$_with_$_for_$(
+                        ExternalToolWorkflowStatus.SENT, ExternalToolStatus.IN_PROGRESS, CLEARING_TEAM,
+                        ExternalToolWorkflowStatus.SENT, ExternalToolStatus.OPEN, ANOTHER_CLEARING_TEAM);
 
         when().the_clearing_state_is_computed_for(CLEARING_TEAM);
 
@@ -64,10 +67,10 @@ public class ReleaseClearingStateSummaryComputerTest extends ScenarioTest<GivenR
     @Test
     public void test2() throws Exception {
         given()
-                .a_release_with_clearing_status_$_and_fossology_status_$_for_$_and_$_for_$(
+                .a_release_with_clearing_status_$_and_external_tool_workflow_status_$_with_external_tool_status_$_for_$_and_$_with_$_for_$(
                         ClearingState.REPORT_AVAILABLE,
-                        FossologyStatus.SCANNING, CLEARING_TEAM,
-                        FossologyStatus.REPORT_AVAILABLE, ANOTHER_CLEARING_TEAM)
+                        ExternalToolWorkflowStatus.SENT, ExternalToolStatus.IN_PROGRESS, CLEARING_TEAM,
+                        ExternalToolWorkflowStatus.SENT, ExternalToolStatus.RESULT_AVAILABLE, ANOTHER_CLEARING_TEAM)
                 .and()
                 .a_new_release();
 
@@ -86,10 +89,10 @@ public class ReleaseClearingStateSummaryComputerTest extends ScenarioTest<GivenR
         given()
                 .a_release_with_clearing_status(ClearingState.NEW_CLEARING)
                 .and()
-                .a_release_with_clearing_status_$_and_fossology_status_$_for_$_and_$_for_$(
+                .a_release_with_clearing_status_$_and_external_tool_workflow_status_$_with_external_tool_status_$_for_$_and_$_with_$_for_$(
                         ClearingState.SENT_TO_FOSSOLOGY,
-                        FossologyStatus.SCANNING, CLEARING_TEAM,
-                        FossologyStatus.CLOSED, ANOTHER_CLEARING_TEAM);
+                        ExternalToolWorkflowStatus.SENT, ExternalToolStatus.IN_PROGRESS, CLEARING_TEAM,
+                        ExternalToolWorkflowStatus.SENT, ExternalToolStatus.CLOSED, ANOTHER_CLEARING_TEAM);
 
         when().the_clearing_state_is_computed_for(CLEARING_TEAM);
 
@@ -104,9 +107,9 @@ public class ReleaseClearingStateSummaryComputerTest extends ScenarioTest<GivenR
     @Test
     public void test4() throws Exception {
         given()
-                .a_release_with_clearing_status_$_and_fossology_status_$_for_$(
+                .a_release_with_clearing_status_$_and_external_tool_workflow_status_$_with_external_tool_status_$_for_$(
                         ClearingState.REPORT_AVAILABLE,
-                        FossologyStatus.IN_PROGRESS, ANOTHER_CLEARING_TEAM)
+                        ExternalToolWorkflowStatus.SENT, ExternalToolStatus.IN_PROGRESS, ANOTHER_CLEARING_TEAM)
                 .and()
                 .a_new_release();
 
@@ -123,14 +126,14 @@ public class ReleaseClearingStateSummaryComputerTest extends ScenarioTest<GivenR
     @Test
     public void test5() throws Exception {
         given()
-                .a_release_with_clearing_status_$_and_fossology_status_$_for_$(
+                .a_release_with_clearing_status_$_and_external_tool_workflow_status_$_with_external_tool_status_$_for_$(
                         ClearingState.REPORT_AVAILABLE,
-                        FossologyStatus.SENT, ANOTHER_CLEARING_TEAM)
+                        ExternalToolWorkflowStatus.SENT, ExternalToolStatus.OPEN, ANOTHER_CLEARING_TEAM)
                 .and()
-                .a_release_with_clearing_status_$_and_fossology_status_$_for_$_and_$_for_$(
+                .a_release_with_clearing_status_$_and_external_tool_workflow_status_$_with_external_tool_status_$_for_$_and_$_with_$_for_$(
                         ClearingState.REPORT_AVAILABLE,
-                        FossologyStatus.SCANNING, CLEARING_TEAM,
-                        FossologyStatus.SENT, ANOTHER_CLEARING_TEAM)
+                        ExternalToolWorkflowStatus.SENT, ExternalToolStatus.IN_PROGRESS, CLEARING_TEAM,
+                        ExternalToolWorkflowStatus.SENT, ExternalToolStatus.OPEN, ANOTHER_CLEARING_TEAM)
                 .and()
                 .a_new_release();
 
@@ -147,17 +150,17 @@ public class ReleaseClearingStateSummaryComputerTest extends ScenarioTest<GivenR
     @Test
     public void test6() throws Exception {
         given()
-                .a_release_with_fossology_status_$_for_$_and_$_for_$_and_$_for_$(
-                        FossologyStatus.IN_PROGRESS, CLEARING_TEAM,
-                        FossologyStatus.REPORT_AVAILABLE, ANOTHER_CLEARING_TEAM,
-                        FossologyStatus.OPEN, "yet " + ANOTHER_CLEARING_TEAM)
+                .a_release_with_external_tool_workflow_status_$_with_external_tool_status_$_for_$_and_$_with_$_for_$_and_$_with_$_for_$(
+                        ExternalToolWorkflowStatus.SENT, ExternalToolStatus.IN_PROGRESS, CLEARING_TEAM,
+                        ExternalToolWorkflowStatus.SENT, ExternalToolStatus.RESULT_AVAILABLE, ANOTHER_CLEARING_TEAM,
+                        ExternalToolWorkflowStatus.SENT, ExternalToolStatus.OPEN, "yet " + ANOTHER_CLEARING_TEAM)
                 .and()
                 .a_new_release()
                 .and()
-                .a_release_with_clearing_status_$_and_fossology_status_$_for_$_and_$_for_$(
+                .a_release_with_clearing_status_$_and_external_tool_workflow_status_$_with_external_tool_status_$_for_$_and_$_with_$_for_$(
                         ClearingState.REPORT_AVAILABLE,
-                        FossologyStatus.IN_PROGRESS, CLEARING_TEAM,
-                        FossologyStatus.REPORT_AVAILABLE, ANOTHER_CLEARING_TEAM)
+                        ExternalToolWorkflowStatus.SENT, ExternalToolStatus.IN_PROGRESS, CLEARING_TEAM,
+                        ExternalToolWorkflowStatus.SENT, ExternalToolStatus.RESULT_AVAILABLE, ANOTHER_CLEARING_TEAM)
                 .and()
                 .a_new_release();
 
@@ -174,7 +177,9 @@ public class ReleaseClearingStateSummaryComputerTest extends ScenarioTest<GivenR
     @Test
     public void test7() throws Exception {
         given()
-                .a_release_with_clearing_status_$_and_fossology_status_$_for_$(ClearingState.SENT_TO_FOSSOLOGY, FossologyStatus.OPEN, ANOTHER_CLEARING_TEAM);
+                .a_release_with_clearing_status_$_and_external_tool_workflow_status_$_with_external_tool_status_$_for_$(
+                        ClearingState.SENT_TO_FOSSOLOGY,
+                        ExternalToolWorkflowStatus.SENT, ExternalToolStatus.OPEN, ANOTHER_CLEARING_TEAM);
 
         when().the_clearing_state_is_computed_for(CLEARING_TEAM);
 
@@ -205,7 +210,9 @@ public class ReleaseClearingStateSummaryComputerTest extends ScenarioTest<GivenR
     @Test
     public void test9() throws Exception {
         given()
-                .a_release_with_fossology_status_$_for_$(FossologyStatus.CLOSED, ANOTHER_CLEARING_TEAM);
+                .a_release_with_external_tool_workflow_status_$_with_external_tool_status_$_for_$(
+                        ExternalToolWorkflowStatus.SENT, ExternalToolStatus.CLOSED,
+                        ANOTHER_CLEARING_TEAM);
 
         when().the_clearing_state_is_computed_for(CLEARING_TEAM);
 
@@ -220,7 +227,9 @@ public class ReleaseClearingStateSummaryComputerTest extends ScenarioTest<GivenR
     @Test
     public void test90() throws Exception {
         given()
-                .a_release_with_fossology_status_$_for_$(FossologyStatus.OPEN, ANOTHER_CLEARING_TEAM);
+                .a_release_with_external_tool_workflow_status_$_with_external_tool_status_$_for_$(
+                        ExternalToolWorkflowStatus.SENT, ExternalToolStatus.OPEN,
+                        ANOTHER_CLEARING_TEAM);
 
         when().the_clearing_state_is_computed_for(CLEARING_TEAM);
 

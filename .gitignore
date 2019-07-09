@@ -14,6 +14,7 @@ hs_err_pid*
 # Maven artifacts
 target/
 .flattened-pom.xml
+jgiven-reports/
 
 # sass cache directory
 .sass-cache/

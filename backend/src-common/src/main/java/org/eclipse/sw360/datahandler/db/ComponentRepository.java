@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -17,6 +17,7 @@ import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+
 import org.ektorp.ViewQuery;
 import org.ektorp.support.View;
 import org.ektorp.support.Views;
@@ -77,12 +78,18 @@ import java.util.*;
                     "  }" +
                     "}"),
         @View(name = "byFossologyId",
-                map = "function(doc) {  " +
-                    "  if (doc.type == 'release') { " +
-                    "     if(doc.fossologyId) {    " +
-                    "         emit(doc.fossologyId, doc.componentId);  " +
-                    "     } " +
-                    "  } " +
+                map = "function(doc) {\n" +
+                    "  if (doc.type == 'release') {\n" +
+                    "    if (Array.isArray(doc.externalToolRequests)) {\n" +
+                    "      for (var i = 0; i < doc.externalToolRequests.length; i++) {\n" +
+                    "        externalToolRequest = doc.externalToolRequests[i];\n" +
+                    "        if (externalToolRequest.externalTool === 'FOSSOLOGY' && externalToolRequest.toolId) {\n" +
+                    "          emit(externalToolRequest.toolId, doc.componentId);\n" +
+                    "          break;\n" +
+                    "        }\n" +
+                    "      }\n" +
+                    "    }\n" +
+                    "  }\n" +
                     "}"),
         @View(name = "byExternalIds",
                 map = "function(doc) {" +

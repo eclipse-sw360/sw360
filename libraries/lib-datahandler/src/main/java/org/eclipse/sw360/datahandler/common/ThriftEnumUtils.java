@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2014-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2014-2017, 2019. Part of the SW360 Portal Project.
  * With modifications by Bosch Software Innovations GmbH, 2016.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -14,18 +14,17 @@ package org.eclipse.sw360.datahandler.common;
 
 
 import com.google.common.collect.ImmutableMap;
-import org.apache.thrift.TEnum;
+
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.moderation.DocumentType;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
+import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityRatingForProject;
+
+import org.apache.thrift.TEnum;
 
 import java.util.Map;
 
@@ -109,7 +108,6 @@ public class ThriftEnumUtils {
             .put(AttachmentType.README_OSS, "RDM")
             .put(AttachmentType.OTHER, "OTH")
             .build();
-    // @formatter:on
 
     private static final ImmutableMap<ClearingState, String> MAP_CLEARING_STATUS_STRING = ImmutableMap.of(
             ClearingState.NEW_CLEARING, "New",
@@ -118,20 +116,32 @@ public class ThriftEnumUtils {
             ClearingState.REPORT_AVAILABLE, "Report available",
             ClearingState.APPROVED, "Report Approved");
 
-    private static final ImmutableMap<FossologyStatus, String> MAP_FOSSOLOGY_STATE_STRING = ImmutableMap.<FossologyStatus, String>builder()
-            .put(FossologyStatus.CONNECTION_FAILED, "Connection to FOSSology failed")
-            .put(FossologyStatus.NON_EXISTENT, "Non available or removed on remote server")
-            .put(FossologyStatus.INACCESSIBLE, "Read permission to upload is denied")
-            .put(FossologyStatus.ERROR, "Error")
-            .put(FossologyStatus.NOT_SENT, "Not yet sent")
-            .put(FossologyStatus.SENT, "Sent")
-            .put(FossologyStatus.SCANNING, "Job scanning")
-            .put(FossologyStatus.OPEN, "Open")
-            .put(FossologyStatus.IN_PROGRESS, "Assigned in progress")
-            .put(FossologyStatus.CLOSED, "Closed by assignee")
-            .put(FossologyStatus.REJECTED, "Rejected by assignee")
-            .put(FossologyStatus.REPORT_AVAILABLE, "Clearing report is available")
+    private static final ImmutableMap<ExternalTool, String> MAP_EXTERNAL_TOOL_STRING = ImmutableMap
+            .<ExternalTool, String>builder()
+            .put(ExternalTool.FOSSOLOGY, "Fossology")
             .build();
+
+    private static final ImmutableMap<ExternalToolWorkflowStatus, String> MAP_EXTERNAL_TOOL_WORKFLOW_STATUS_STRING = ImmutableMap
+            .<ExternalToolWorkflowStatus, String>builder()
+            .put(ExternalToolWorkflowStatus.NOT_SENT, "Not sent")
+            .put(ExternalToolWorkflowStatus.UPLOADING, "Uploading")
+            .put(ExternalToolWorkflowStatus.SENT, "Sent")
+            .put(ExternalToolWorkflowStatus.ACCESS_DENIED, "Access denied")
+            .put(ExternalToolWorkflowStatus.NOT_FOUND, "Not found")
+            .put(ExternalToolWorkflowStatus.CONNECTION_TIMEOUT, "Connection timeout")
+            .put(ExternalToolWorkflowStatus.CONNECTION_FAILED, "Connection failed")
+            .put(ExternalToolWorkflowStatus.SERVER_ERROR, "Server error")
+            .build();
+
+    private static final ImmutableMap<ExternalToolStatus, String> MAP_EXTERNAL_TOOL_STATUS_STRING = ImmutableMap
+            .<ExternalToolStatus, String>builder()
+            .put(ExternalToolStatus.OPEN, "Open")
+            .put(ExternalToolStatus.IN_PROGRESS, "In progress")
+            .put(ExternalToolStatus.CLOSED, "Closed")
+            .put(ExternalToolStatus.RESULT_AVAILABLE, "Result available")
+            .put(ExternalToolStatus.REJECTED, "Rejected")
+            .build();
+    // @formatter:on
 
     private static final ImmutableMap<ModerationState, String> MAP_MODERATION_STATE_STRING = ImmutableMap.of(
             ModerationState.APPROVED, "Approved",
@@ -257,7 +267,9 @@ public class ThriftEnumUtils {
             .put(ProjectType.class, MAP_PROJECT_TYPE_STRING)
             .put(AttachmentType.class, MAP_ATTACHMENT_TYPE_STRING)
             .put(ClearingState.class, MAP_CLEARING_STATUS_STRING)
-            .put(FossologyStatus.class, MAP_FOSSOLOGY_STATE_STRING)
+            .put(ExternalTool.class, MAP_EXTERNAL_TOOL_STRING)
+            .put(ExternalToolWorkflowStatus.class, MAP_EXTERNAL_TOOL_WORKFLOW_STATUS_STRING)
+            .put(ExternalToolStatus.class, MAP_EXTERNAL_TOOL_STATUS_STRING)
             .put(ModerationState.class, MAP_MODERATION_STATE_STRING)
             .put(ProjectRelationship.class, MAP_PROJECT_RELATION_STRING)
             .put(ReleaseRelationship.class, MAP_RELEASE_RELATION_STRING)

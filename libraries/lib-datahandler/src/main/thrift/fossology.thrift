@@ -60,8 +60,8 @@ service FossologyService {
 
     /**
      * for release specified by releaseId update status of attachment sent to fossology, i.e.
-     * update fossology status for clearing teams already in release.clearingTeamToFossologyStatus,
-     * add clearingTeam and corresponding fossology status to release.clearingTeamToFossologyStatus,
+     * update fossology status for clearing teams already in release.externalToolRequests,
+     * add clearingTeam and corresponding fossology status to release.externalToolRequests,
      * return resulting release,
      * user is necessary to get release from database
      **/

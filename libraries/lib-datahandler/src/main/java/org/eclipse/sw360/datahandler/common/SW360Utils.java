@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2014-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2014-2017, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -21,25 +21,22 @@ import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TEnum;
-import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
+
+import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.Todo;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectTodo;
+import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.apache.thrift.TEnum;
+import org.apache.thrift.TException;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -52,6 +49,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Strings.nullToEmpty;
 import static org.apache.log4j.Logger.getLogger;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyMap;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 
 /**
  * @author Cedric.Bodet@tngtech.com
@@ -519,5 +517,29 @@ public class SW360Utils {
     @NotNull
     public static <T> Set<T> unionValues(Map<?, Set<T>>map){
         return nullToEmptyMap(map).values().stream().filter(Objects::nonNull).reduce(Sets::union).orElse(Sets.newHashSet());
+    }
+
+    public static Set<ExternalToolRequest> getExternalToolRequestsForTool(Release release, ExternalTool et) {
+        if (release == null || et == null) {
+            return new HashSet<>();
+        }
+        //@formatter:off
+        return nullToEmptySet(release.getExternalToolRequests())
+                .stream()
+                .filter(etr -> et.equals(etr.getExternalTool()))
+                .collect(Collectors.toSet());
+        //@formatter:on
+    }
+
+    public static Set<ExternalToolRequest> getExternalToolRequestsForToolAndToolId(Release release, ExternalTool et, String toolId) {
+        if (release == null || et == null || StringUtils.isNotEmpty(toolId)) {
+            return new HashSet<>();
+        }
+        //@formatter:off
+        return getExternalToolRequestsForTool(release, et)
+                .stream()
+                .filter(etr -> toolId.equals(etr.getToolId()))
+                .collect(Collectors.toSet());
+        //@formatter:on
     }
 }

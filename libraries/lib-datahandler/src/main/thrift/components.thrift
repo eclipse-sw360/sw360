@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2014-2018. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2014-2019. Part of the SW360 Portal Project.
  * With contributions by Bosch Software Innovations GmbH, 2016.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -62,24 +62,64 @@ struct Repository {
     2: optional RepositoryType repositorytype
 }
 
-enum FossologyStatus {
-    CONNECTION_FAILED = 0,
+/**
+ * A list of all known external tools.
+ **/
+enum ExternalTool {
+    FOSSOLOGY = 0
+}
 
-    ERROR = 1,
+/**
+ * The status of the progress of an ExternalToolRequest in sw360. This status is really only used for the workflow
+ * progress. If you want to know anything about the result from the external tool, please have a look at
+ * ExternalToolStatus.
+ * The values of this enum are close to the HTTP status codes.
+ **/
+enum ExternalToolWorkflowStatus {
+    NOT_SENT = 0,
+    UPLOADING = 102,
+    SENT = 200,
+    ACCESS_DENIED = 403,
+    NOT_FOUND = 404,
+    CONNECTION_TIMEOUT = 408,
+    CONNECTION_FAILED = 900,
+    SERVER_ERROR = 500
+}
 
-    NON_EXISTENT = 2,
-    NOT_SENT = 3,
-    INACCESSIBLE = 4,
-
-    SENT = 10,
-    SCANNING = 11,
-
+/**
+ * The result status of an ExternalToolRequest in the external tool. If you want to know anything about the progress of
+ * the request, please have a look at ExternalToolWorkflowStatus.
+ **/
+enum ExternalToolStatus {
     OPEN = 20,
     IN_PROGRESS = 21,
     CLOSED = 22,
     REJECTED = 23,
+    RESULT_AVAILABLE = 30
+}
 
-    REPORT_AVAILABLE = 30
+/**
+ * This object represents a request to some external tool initiated for a release from sw360. Examples could be
+ * clearing tools like Fossology or code analysis tools where the source code bundle is sent to. In the future, also
+ * other parameters then attachments might be needed as input for the external tools. In this case it might be an idea
+ * to remove the attachmentX fields and replace it by some common map that takes key-value-pairs, that describe the
+ * input sent to the tool. Each tool implementation then needs to know its own parameter keys to retrieve them from the
+ * map.
+ **/
+struct ExternalToolRequest {
+    1: optional string id,
+    2: required ExternalTool externalTool,
+    3: required string createdOn,
+    4: required string createdBy,
+    5: required string createdByGroup,
+    6: optional string toolId,
+    7: optional string toolUserId,
+    8: optional string toolUserGroup,
+    9: optional string attachmentId,
+    10: optional string attachmentHash,
+    11: required ExternalToolWorkflowStatus externalToolWorkflowStatus,
+    12: required ExternalToolStatus externalToolStatus,
+    13: optional string linkToJob
 }
 
 enum ClearingState {
@@ -187,9 +227,10 @@ struct Release {
     17: optional ClearingState clearingState, // TODO we probably need to map by clearing team?
 
     // FOSSology Information
-    20: optional string fossologyId,
-    21: optional map<string, FossologyStatus> clearingTeamToFossologyStatus,
-    22: optional string attachmentInFossology, // id of the attachment currently in fossology
+    // 20: optional string fossologyId,
+    // 21: optional map<string, FossologyStatus> clearingTeamToFossologyStatus,
+    // 22: optional string attachmentInFossology, // id of the attachment currently in fossology
+    25: optional set<ExternalToolRequest> externalToolRequests,
 
     // string details
     30: optional string createdBy, // person who created the release
@@ -494,7 +535,7 @@ service ComponentService {
     RequestStatus updateRelease(1: Release release, 2: User user);
 
     /**
-     * update release called by fossology service
+     * update release called only by fossology service - is allowed to manipulate external requests.
      * update release in database if user has permissions
      * otherwise create moderation request
      **/

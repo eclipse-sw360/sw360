@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -10,22 +10,25 @@
  */
 package org.eclipse.sw360.fossology.ssh;
 
-import org.apache.log4j.Logger;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.components.FossologyStatus;
+import org.eclipse.sw360.datahandler.thrift.components.ExternalToolRequest;
+import org.eclipse.sw360.datahandler.thrift.components.ExternalToolStatus;
+import org.eclipse.sw360.datahandler.thrift.components.ExternalToolWorkflowStatus;
+
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.apache.log4j.Logger.getLogger;
-import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
+import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotEmpty;
+import static org.eclipse.sw360.datahandler.common.SW360Assert.fail;
+import static org.eclipse.sw360.datahandler.common.SW360Assert.failIf;
 import static org.eclipse.sw360.datahandler.thrift.projects.projectsConstants.CLEARING_TEAM_UNKNOWN;
 
 /**
@@ -107,44 +110,82 @@ public class FossologyUploader {
         return success;
     }
 
-    public FossologyStatus getStatusInFossology(int uploadId, String clearingTeam) {
-        try {
-            final CapturerOutputStream os = new CapturerOutputStream();
+    public ExternalToolWorkflowStatus updateStatusInFossologyRequest(ExternalToolRequest etr) {
 
+        final int uploadId = CommonUtils.toUnsignedInt(etr.getToolId());
+        try (CapturerOutputStream os = new CapturerOutputStream()) {
             if (uploadId < 0) {
-                throw fail("bad Upload Id");
+                throw fail("bad UploadId " + uploadId);
             }
 
+            final String clearingTeam = etr.getToolUserGroup();
             validateClearingTeam(clearingTeam);
 
             final String command = String.format(FOSSOLOGY_COMMAND_GET_STATUS, uploadId, sanitizeQuotes(clearingTeam));
-
             final int exitCode = fossologySshConnector.runInFossologyViaSsh(command, os);
 
             String output = os.getContent();
             if (exitCode != 0) {
                 log.error("get status in fossology failed: " + output);
-                return FossologyStatus.CONNECTION_FAILED;
+                return ExternalToolWorkflowStatus.CONNECTION_FAILED;
             }
-            return parseResultStatus(output);
-        } catch (SW360Exception e) {
+
+            return parseResultStatus(output, etr);
+        } catch (SW360Exception | IOException e) {
             log.error("cannot check status of upload with id " + uploadId + " in fossology", e);
-            return FossologyStatus.ERROR;
+            return ExternalToolWorkflowStatus.SERVER_ERROR;
         }
     }
 
-    protected FossologyStatus parseResultStatus(String output) {
+    protected ExternalToolWorkflowStatus parseResultStatus(String output, ExternalToolRequest etr) {
         final Pattern pattern = Pattern.compile("status=(\\w*)");
         final Matcher matcher = pattern.matcher(output);
         if (matcher.find()) {
             try {
-                return FossologyStatus.valueOf(matcher.group(1));
+                int status = Integer.valueOf(matcher.group(1));
+                etr.setExternalToolStatus(ExternalToolStatus.OPEN);
+                switch(status) {
+                case 0:
+                    return ExternalToolWorkflowStatus.CONNECTION_FAILED;
+                case 1:
+                    return ExternalToolWorkflowStatus.SERVER_ERROR;
+                case 2:
+                    return ExternalToolWorkflowStatus.NOT_FOUND;
+                case 3:
+                    return ExternalToolWorkflowStatus.NOT_SENT;
+                case 4:
+                    return ExternalToolWorkflowStatus.ACCESS_DENIED;
+                case 10:
+                    etr.setExternalToolStatus(ExternalToolStatus.OPEN);
+                    return ExternalToolWorkflowStatus.SENT;
+                case 11:
+                    etr.setExternalToolStatus(ExternalToolStatus.IN_PROGRESS);
+                    return ExternalToolWorkflowStatus.SENT;
+                case 20:
+                    etr.setExternalToolStatus(ExternalToolStatus.OPEN);
+                    return ExternalToolWorkflowStatus.SENT;
+                case 21:
+                    etr.setExternalToolStatus(ExternalToolStatus.IN_PROGRESS);
+                    return ExternalToolWorkflowStatus.SENT;
+                case 22:
+                    etr.setExternalToolStatus(ExternalToolStatus.CLOSED);
+                    return ExternalToolWorkflowStatus.SENT;
+                case 23:
+                    etr.setExternalToolStatus(ExternalToolStatus.REJECTED);
+                    return ExternalToolWorkflowStatus.SENT;
+                case 30:
+                    etr.setExternalToolStatus(ExternalToolStatus.RESULT_AVAILABLE);
+                    return ExternalToolWorkflowStatus.SENT;
+                default:
+                    return ExternalToolWorkflowStatus.SERVER_ERROR;
+                }
             } catch (Exception e) {
                 log.error("fossology output parser caught exception: " + e.getMessage(), e);
             }
         }
         log.error("cannot parse output from fossology check status: '" + output + "'");
-        return FossologyStatus.CONNECTION_FAILED;
+        etr.setExternalToolStatus(ExternalToolStatus.OPEN);
+        return ExternalToolWorkflowStatus.CONNECTION_FAILED;
     }
 
     public boolean copyToFossology(String filename, InputStream content, boolean execBit) throws SW360Exception {

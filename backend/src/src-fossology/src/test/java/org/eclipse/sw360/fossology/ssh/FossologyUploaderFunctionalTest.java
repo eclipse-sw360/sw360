@@ -11,13 +11,17 @@
 package org.eclipse.sw360.fossology.ssh;
 
 import com.google.common.collect.ImmutableList;
+
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.components.FossologyStatus;
+import org.eclipse.sw360.datahandler.thrift.components.ExternalToolRequest;
+import org.eclipse.sw360.datahandler.thrift.components.ExternalToolStatus;
+import org.eclipse.sw360.datahandler.thrift.components.ExternalToolWorkflowStatus;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyHostFingerPrint;
 import org.eclipse.sw360.fossology.config.TestConfig;
 import org.eclipse.sw360.fossology.db.FossologyFingerPrintRepository;
 import org.eclipse.sw360.fossology.handler.FossologyScriptsHandler;
 import org.eclipse.sw360.fossology.ssh.FossologyUploader.CapturerOutputStream;
+
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -26,19 +30,19 @@ import org.mockito.stubbing.Answer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 
 import static java.lang.StrictMath.max;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.startsWith;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
-
 
 /**
  * N.B. this tests will try to connect to the FOSSology installation on the other side if correctly configured
@@ -157,9 +161,11 @@ public class FossologyUploaderFunctionalTest {
             }
             final String outputget = new String(osget.toByteArray());
 
-            final FossologyStatus status = fossologyUploader.parseResultStatus(outputget);
-            System.out.println("status is " + status + ", try changing it from FOSSology");
-            if (status.equals(FossologyStatus.CLOSED)) {
+            final ExternalToolRequest resultContainer = new ExternalToolRequest();
+            final ExternalToolWorkflowStatus result = fossologyUploader.parseResultStatus(outputget, resultContainer);
+            System.out.println("Workflow status is " + result + " and tool status is "
+                    + resultContainer.getExternalToolStatus() + ", try changing it from FOSSology");
+            if (resultContainer.getExternalToolStatus().equals(ExternalToolStatus.CLOSED)) {
                 break;
             }
 

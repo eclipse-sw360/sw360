@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2015, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -10,9 +10,9 @@
  */
 package org.eclipse.sw360.fossology.handler;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
+
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
@@ -22,31 +22,29 @@ import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.FilledAttachment;
-import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
-import org.eclipse.sw360.datahandler.thrift.components.FossologyStatus;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.fossology.ssh.FossologyUploader;
+
 import org.apache.thrift.TException;
-import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.mockito.stubbing.Answer;
 
 import java.io.InputStream;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 
-import static com.google.common.collect.Maps.newHashMap;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.any;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.notNull;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -106,169 +104,175 @@ public class FossologyFileHandlerTest {
     @Test
     public void testSendToFossologyDuplicates() throws Exception {
         final FilledAttachment filledAttachment = getMockFilledAttachment("17");
+        final Attachment attachment = filledAttachment.getAttachment();
+        doReturn(filledAttachment).when(fossologyFileHandler).fillAttachment(attachment);
 
         final Release release = mock(Release.class);
         when(componentService.getReleaseById(releaseId, user)).thenReturn(release);
+        when(componentService.getSourceAttachments(releaseId)).thenReturn(ImmutableSet.of(attachment));
 
-        when(release.getFossologyId()).thenReturn("41");
-        when(release.isSetFossologyId()).thenReturn(true);
+        Set<ExternalToolRequest> etrs = new HashSet<>();
+        etrs.add(mockExternalToolRequestInRelease(release, clearingTeam, attachment.getAttachmentContentId(),
+                attachment.getSha1()));
+        when(release.getExternalToolRequests()).thenReturn(etrs);
         when(release.getClearingState()).thenReturn(ClearingState.SENT_TO_FOSSOLOGY);
 
-        spyGetFilledSourceAttachment(filledAttachment);
-
+        when(fossologyUploader.updateStatusInFossologyRequest(any()))
+                .thenReturn(ExternalToolWorkflowStatus.ACCESS_DENIED);
         when(fossologyUploader.duplicateInFossology(41, clearingTeam)).thenReturn(true);
 
-        doNothing().when(fossologyFileHandler)
-                .setFossologyStatus(eq(release), anyString(), any(FossologyStatus.class));
-
-        doReturn(true).when(fossologyFileHandler).checkSourceAttachment(release, filledAttachment);
 
         assertThat(fossologyFileHandler.sendToFossology(releaseId, user, clearingTeam), is(RequestStatus.SUCCESS));
 
-        verify(fossologyUploader).duplicateInFossology(41, clearingTeam);
-        verify(fossologyUploader).getStatusInFossology(eq(41), eq(clearingTeam));
-        verify(fossologyFileHandler).setFossologyStatus(eq(release), eq(clearingTeam), eq(FossologyStatus.SENT));
 
-        verify(componentService).updateReleaseFossology(release, user);
+        verify(fossologyUploader)
+                .updateStatusInFossologyRequest(eq(release.getExternalToolRequests().iterator().next()));
+        verify(fossologyUploader).duplicateInFossology(41, clearingTeam);
+
+        // never, because the new upload cannot affect the overall state yet (directly
+        // after upload)
+        verify(release, never()).setClearingState(any());
+
         verify(componentService, atLeastOnce()).getReleaseById(releaseId, user);
-        verifyNoMoreInteractions(attachmentConnector);
+        verify(componentService).getSourceAttachments(releaseId);
+        verify(componentService).updateReleaseFossology(release, user);
     }
 
     @Test
     public void testSendToFossologyDuplicateDoesNotUpdateTheStatusOnErrors() throws Exception {
         final FilledAttachment filledAttachment = getMockFilledAttachment("17");
+        final Attachment attachment = filledAttachment.getAttachment();
+        doReturn(filledAttachment).when(fossologyFileHandler).fillAttachment(attachment);
 
         final Release release = mock(Release.class);
         when(componentService.getReleaseById(releaseId, user)).thenReturn(release);
+        when(componentService.getSourceAttachments(releaseId)).thenReturn(ImmutableSet.of(attachment));
 
-        when(release.getFossologyId()).thenReturn("41");
-        when(release.isSetFossologyId()).thenReturn(true);
+        Set<ExternalToolRequest> etrs = new HashSet<>();
+        etrs.add(mockExternalToolRequestInRelease(release, clearingTeam, attachment.getAttachmentContentId(),
+                attachment.getSha1()));
+        when(release.getExternalToolRequests()).thenReturn(etrs);
 
-        spyGetFilledSourceAttachment(filledAttachment);
-
+        when(fossologyUploader.updateStatusInFossologyRequest(any()))
+                .thenReturn(ExternalToolWorkflowStatus.ACCESS_DENIED);
         when(fossologyUploader.duplicateInFossology(41, clearingTeam)).thenReturn(false);
 
-        doNothing().when(fossologyFileHandler)
-                .setFossologyStatus(eq(release), anyString(), any(FossologyStatus.class));
-        doReturn(true).when(fossologyFileHandler).checkSourceAttachment(release, filledAttachment);
 
         assertThat(fossologyFileHandler.sendToFossology(releaseId, user, clearingTeam), is(RequestStatus.FAILURE));
 
-        verify(fossologyUploader).duplicateInFossology(41, clearingTeam);
-        verify(fossologyFileHandler, never()).setFossologyStatus(eq(release), eq(clearingTeam), any(FossologyStatus.class));
-        verify(fossologyUploader).getStatusInFossology(eq(41), eq(clearingTeam));
 
-        verify(componentService, never()).updateReleaseFossology(release, user);
+        verify(fossologyUploader)
+                .updateStatusInFossologyRequest(eq(release.getExternalToolRequests().iterator().next()));
+        verify(fossologyUploader).duplicateInFossology(41, clearingTeam);
+
+        // never, because the duplicateInFossology call fails
+        verify(release, never()).setClearingState(any());
+
+        verify(componentService).updateReleaseFossology(release, user);
+        verify(componentService).getSourceAttachments(releaseId);
         verify(componentService).getReleaseById(releaseId, user);
-        verifyNoMoreInteractions(attachmentConnector);
     }
 
     @Test
     public void testSendToFossologySendsAnAttachment() throws Exception {
-        final String id = "41";
-        final FilledAttachment filledAttachment = getMockFilledAttachment(id);
+        final FilledAttachment filledAttachment = getMockFilledAttachment("17");
         final AttachmentContent attachmentContent = filledAttachment.getAttachmentContent();
+        final Attachment attachment = filledAttachment.getAttachment();
+        doReturn(filledAttachment).when(fossologyFileHandler).fillAttachment(attachment);
 
         final Release release = mock(Release.class);
         when(componentService.getReleaseById(releaseId, user)).thenReturn(release);
-
-        spyGetFilledSourceAttachment(filledAttachment);
+        when(componentService.getSourceAttachments(releaseId)).thenReturn(ImmutableSet.of(attachment));
 
         final InputStream inputStream = mock(InputStream.class);
-        when(release.isSetFossologyId()).thenReturn(false);
-        when(release.getClearingState()).thenReturn(ClearingState.NEW_CLEARING);
         when(attachmentConnector.getAttachmentStream(attachmentContent, user, release)).thenReturn(inputStream);
         when(fossologyUploader.uploadToFossology(inputStream, attachmentContent, clearingTeam)).thenReturn(1);
 
-        doNothing().when(fossologyFileHandler)
-                .setFossologyStatus(eq(release), anyString(), eq(FossologyStatus.SENT), eq("" + 1), eq(id));
-        doReturn(true).when(fossologyFileHandler).checkSourceAttachment(release, filledAttachment);
 
         assertThat(fossologyFileHandler.sendToFossology(releaseId, user, clearingTeam), is(RequestStatus.SUCCESS));
+
 
         verify(inputStream).close();
 
         // the release should be updated
         verify(componentService).updateReleaseFossology(release, user);
-        verify(fossologyFileHandler)
-                .setFossologyStatus(eq(release), anyString(), eq(FossologyStatus.SENT), eq("" + 1), eq(id));
+
+        verify(release).addToExternalToolRequests(notNull(ExternalToolRequest.class));
+        verify(release).setClearingState(any());
+        // new upload does not have to check previous state
+        verify(release, never()).getClearingState();
 
         // unimportant verifies
         verify(componentService, times(1)).getReleaseById(releaseId, user);
+        verify(componentService).getSourceAttachments(releaseId);
         verify(attachmentConnector).getAttachmentStream(attachmentContent, user, release);
         verify(fossologyUploader).uploadToFossology(inputStream, attachmentContent, clearingTeam);
     }
 
-    private void spyGetFilledSourceAttachment(FilledAttachment filledAttachment) throws TException {
-        final Attachment attachment = filledAttachment.getAttachment();
-        doReturn(ImmutableSet.of(attachment)).when(fossologyFileHandler).getSourceAttachment(releaseId, user, componentService);
-        doReturn(filledAttachment).when(fossologyFileHandler).fillAttachment(attachment);
-    }
-
     @Test
     public void testAFailedSendToFossology() throws Exception {
-        final String id = "41";
-        final FilledAttachment filledAttachment = getMockFilledAttachment(id);
+        final FilledAttachment filledAttachment = getMockFilledAttachment("17");
         final AttachmentContent attachmentContent = filledAttachment.getAttachmentContent();
+        final Attachment attachment = filledAttachment.getAttachment();
+        doReturn(filledAttachment).when(fossologyFileHandler).fillAttachment(attachment);
 
         final Release release = mock(Release.class);
         when(componentService.getReleaseById(releaseId, user)).thenReturn(release);
-
-        spyGetFilledSourceAttachment(filledAttachment);
+        when(componentService.getSourceAttachments(releaseId)).thenReturn(ImmutableSet.of(attachment));
 
         final InputStream inputStream = mock(InputStream.class);
-        when(release.isSetFossologyId()).thenReturn(false);
         when(attachmentConnector.getAttachmentStream(attachmentContent, user, release)).thenReturn(inputStream);
         when(fossologyUploader.uploadToFossology(inputStream, attachmentContent, clearingTeam)).thenReturn(-1);
 
+
         assertThat(fossologyFileHandler.sendToFossology(releaseId, user, clearingTeam), is(RequestStatus.FAILURE));
 
+
         verify(inputStream).close();
+        verify(release, never()).setClearingState(any());
+        verify(componentService, never()).updateReleaseFossology(release, user);
 
         // unimportant verifies
         verify(componentService, atLeastOnce()).getReleaseById(releaseId, user);
+        verify(componentService).getSourceAttachments(releaseId);
         verify(attachmentConnector).getAttachmentStream(attachmentContent, user, release);
         verify(fossologyUploader).uploadToFossology(inputStream, attachmentContent, clearingTeam);
     }
 
     @Test
     public void testGetStatusInFossology() throws Exception {
-        final String id1 = "41";
-        final FilledAttachment filledAttachment = getMockFilledAttachment(id1);
+        final FilledAttachment filledAttachment = getMockFilledAttachment("17");
+        final Attachment attachment = filledAttachment.getAttachment();
 
         final Release release = mock(Release.class);
         final Release updated = mock(Release.class);
 
         when(componentService.getReleaseById(releaseId, user)).thenReturn(release, updated);
-
-        spyGetFilledSourceAttachment(filledAttachment);
-
-        int fossologyId = 14;
-        when(release.isSetFossologyId()).thenReturn(true);
-        when(release.getFossologyId()).thenReturn("" + fossologyId);
+        when(componentService.getSourceAttachments(releaseId)).thenReturn(ImmutableSet.of(attachment));
 
         String clearingTeam2 = "anotherClearingTeam";
+        // external tool id is 41
+        ExternalToolRequest etr1 = mockExternalToolRequestInRelease(release, clearingTeam,
+                attachment.getAttachmentContentId(), attachment.getSha1());
+        etr1.setExternalToolStatus(ExternalToolStatus.IN_PROGRESS);
+        ExternalToolRequest etr2 = mockExternalToolRequestInRelease(release, clearingTeam2,
+                attachment.getAttachmentContentId(), attachment.getSha1());
+        etr2.setExternalToolStatus(ExternalToolStatus.OPEN);
+        Set<ExternalToolRequest> etrs = Sets.newHashSet(etr1, etr2);
+        when(release.getExternalToolRequests()).thenReturn(etrs);
 
-        when(fossologyUploader.getStatusInFossology(eq(fossologyId), eq(clearingTeam)))
-                .thenReturn(FossologyStatus.IN_PROGRESS);
-        when(fossologyUploader.getStatusInFossology(eq(fossologyId), eq(clearingTeam2)))
-                .thenReturn(FossologyStatus.OPEN);
+        when(fossologyUploader.updateStatusInFossologyRequest(any())).thenReturn(ExternalToolWorkflowStatus.SENT);
 
-        doNothing().when(fossologyFileHandler)
-                .setFossologyStatus(eq(release), eq(clearingTeam), eq(FossologyStatus.IN_PROGRESS), eq("" + fossologyId), eq(id1));
-
-        doReturn(ImmutableList.of(clearingTeam, clearingTeam2))
-                .when(fossologyFileHandler).getAllClearingTeams(release, clearingTeam);
 
         final Release resultRelease = fossologyFileHandler.getStatusInFossology(releaseId, user, clearingTeam);
 
+
         assertThat(resultRelease, is(sameInstance(release)));
 
-        verify(fossologyFileHandler).setFossologyStatus(release, clearingTeam, FossologyStatus.IN_PROGRESS);
-        verify(fossologyFileHandler).setFossologyStatus(release, clearingTeam2, FossologyStatus.OPEN);
+        verify(release).setClearingState(ClearingState.UNDER_CLEARING);
 
-        verify(fossologyUploader).getStatusInFossology(fossologyId, clearingTeam);
-        verify(fossologyUploader).getStatusInFossology(fossologyId, clearingTeam2);
+        verify(fossologyUploader).updateStatusInFossologyRequest(etr1);
+        verify(fossologyUploader).updateStatusInFossologyRequest(etr2);
 
         verify(componentService, atLeastOnce()).getReleaseById(releaseId, user);
         verify(componentService).updateReleaseFossology(release, user);
@@ -276,41 +280,41 @@ public class FossologyFileHandlerTest {
 
     @Test
     public void testGetStatusInFossologyDoesNotUpdateInDatabaseOnConnectionFailures() throws Exception {
-        final String id1 = "41";
-        final FilledAttachment filledAttachment = getMockFilledAttachment(id1);
+        final FilledAttachment filledAttachment = getMockFilledAttachment("17");
+        final Attachment attachment = filledAttachment.getAttachment();
 
         final Release release = mock(Release.class);
 
         when(componentService.getReleaseById(releaseId, user)).thenReturn(release);
-
-        spyGetFilledSourceAttachment(filledAttachment);
-
-        int fossologyId = 14;
-        when(release.isSetFossologyId()).thenReturn(true);
-        when(release.getFossologyId()).thenReturn("" + fossologyId);
+        when(componentService.getSourceAttachments(releaseId)).thenReturn(ImmutableSet.of(attachment));
 
         String clearingTeam2 = "anotherClearingTeam";
+        // external tool id is 41
+        ExternalToolRequest etr1 = mockExternalToolRequestInRelease(release, clearingTeam,
+                attachment.getAttachmentContentId(), attachment.getSha1());
+        etr1.setExternalToolStatus(ExternalToolStatus.IN_PROGRESS);
+        ExternalToolRequest etr2 = mockExternalToolRequestInRelease(release, clearingTeam2,
+                attachment.getAttachmentContentId(), attachment.getSha1());
+        etr2.setExternalToolStatus(ExternalToolStatus.OPEN);
+        Set<ExternalToolRequest> etrs = Sets.newHashSet(etr1, etr2);
+        when(release.getExternalToolRequests()).thenReturn(etrs);
 
-        when(fossologyUploader.getStatusInFossology(eq(fossologyId), eq(clearingTeam)))
-                .thenReturn(FossologyStatus.IN_PROGRESS);
-        when(fossologyUploader.getStatusInFossology(eq(fossologyId), eq(clearingTeam2)))
-                .thenReturn(FossologyStatus.CONNECTION_FAILED);
+        when(fossologyUploader.updateStatusInFossologyRequest(eq(etr1))).thenReturn(ExternalToolWorkflowStatus.SENT);
+        when(fossologyUploader.updateStatusInFossologyRequest(eq(etr2)))
+                .thenReturn(ExternalToolWorkflowStatus.CONNECTION_FAILED);
 
-        doNothing().when(fossologyFileHandler)
-                .setFossologyStatus(eq(release), eq(clearingTeam), eq(FossologyStatus.IN_PROGRESS), eq("" + fossologyId), eq(id1));
-
-        doReturn(ImmutableList.of(clearingTeam, clearingTeam2))
-                .when(fossologyFileHandler).getAllClearingTeams(release, clearingTeam);
 
         final Release resultRelease = fossologyFileHandler.getStatusInFossology(releaseId, user, clearingTeam);
 
+
         assertThat(resultRelease, is(sameInstance(release)));
 
-        verify(fossologyFileHandler).setFossologyStatus(release, clearingTeam, FossologyStatus.IN_PROGRESS);
-        verify(fossologyFileHandler).setFossologyStatus(release, clearingTeam2, FossologyStatus.CONNECTION_FAILED);
+        // clearing state gets set, but release will not be saved
+        // (updateReleaseFossology is not called)
+        verify(release).setClearingState(any());
 
-        verify(fossologyUploader).getStatusInFossology(fossologyId, clearingTeam);
-        verify(fossologyUploader).getStatusInFossology(fossologyId, clearingTeam2);
+        verify(fossologyUploader).updateStatusInFossologyRequest(etr1);
+        verify(fossologyUploader).updateStatusInFossologyRequest(etr2);
 
         verify(componentService, atLeastOnce()).getReleaseById(releaseId, user);
         verify(componentService, never()).updateReleaseFossology(release, user);
@@ -319,165 +323,65 @@ public class FossologyFileHandlerTest {
     @Test
     public void testNotUnlockingForNoClearing() throws Exception {
         Release release = mock(Release.class);
-        doReturn(null).when(fossologyFileHandler).updateRelease(release, user, componentService);
         doReturn(release).when(componentService).getReleaseById(releaseId, user);
+
 
         fossologyFileHandler.getReleaseAndUnlockIt(releaseId, user, componentService);
 
-        verify(fossologyFileHandler, never()).updateRelease(release, user, componentService);
+
         verify(componentService).getReleaseById(releaseId, user);
-        verify(release).getClearingTeamToFossologyStatus();
+        verify(componentService, never()).updateReleaseFossology(release, user);
+        verify(release).getExternalToolRequests();
         verifyNoMoreInteractions(release);
     }
 
     @Test
     public void testUnlocking() throws Exception {
         Release release = mock(Release.class);
-        doReturn(null).when(fossologyFileHandler).updateRelease(release, user, componentService);
         doReturn(release).when(componentService).getReleaseById(releaseId, user);
 
-        when(release.getClearingTeamToFossologyStatus()).thenReturn(ImmutableMap.of(
-                "a", FossologyStatus.REJECTED,
-                "b", FossologyStatus.REJECTED
-        ));
+        String clearingTeam2 = "anotherClearingTeam";
+        // external tool id is 41
+        ExternalToolRequest etr1 = mockExternalToolRequestInRelease(release, clearingTeam, "1", "2");
+        etr1.setExternalToolStatus(ExternalToolStatus.REJECTED);
+        ExternalToolRequest etr2 = mockExternalToolRequestInRelease(release, clearingTeam2, "1", "2");
+        etr2.setExternalToolStatus(ExternalToolStatus.REJECTED);
+        Set<ExternalToolRequest> etrs = Sets.newHashSet(etr1, etr2);
+        when(release.getExternalToolRequests()).thenReturn(etrs);
+        when(fossologyUploader.updateStatusInFossologyRequest(any())).thenReturn(ExternalToolWorkflowStatus.SENT);
+
 
         fossologyFileHandler.getReleaseAndUnlockIt(releaseId, user, componentService);
 
-        verify(fossologyFileHandler).updateRelease(release, user, componentService);
+
         verify(componentService).getReleaseById(releaseId, user);
-        verify(release).unsetAttachmentInFossology();
-        verify(release).unsetFossologyId();
+        verify(componentService).updateReleaseFossology(release, user);
+        verify(release).unsetExternalToolRequests();
     }
 
     @Test
     public void testNotUnlockingIfATeamIsWorkingOnIt() throws Exception {
         Release release = mock(Release.class);
-        doReturn(null).when(fossologyFileHandler).updateRelease(release, user, componentService);
         doReturn(release).when(componentService).getReleaseById(releaseId, user);
 
-        when(release.getClearingTeamToFossologyStatus()).thenReturn(ImmutableMap.of(
-                "a", FossologyStatus.OPEN,
-                "b", FossologyStatus.REJECTED
-        ));
+        String clearingTeam2 = "anotherClearingTeam";
+        // external tool id is 41
+        ExternalToolRequest etr1 = mockExternalToolRequestInRelease(release, clearingTeam, "1", "2");
+        etr1.setExternalToolStatus(ExternalToolStatus.OPEN);
+        ExternalToolRequest etr2 = mockExternalToolRequestInRelease(release, clearingTeam2, "1", "2");
+        etr2.setExternalToolStatus(ExternalToolStatus.REJECTED);
+        Set<ExternalToolRequest> etrs = Sets.newHashSet(etr1, etr2);
+        when(release.getExternalToolRequests()).thenReturn(etrs);
+        when(fossologyUploader.updateStatusInFossologyRequest(any())).thenReturn(ExternalToolWorkflowStatus.SENT);
+
 
         fossologyFileHandler.getReleaseAndUnlockIt(releaseId, user, componentService);
 
-        verify(fossologyFileHandler, never()).updateRelease(release, user, componentService);
+
         verify(componentService).getReleaseById(releaseId, user);
-        verify(release).getClearingTeamToFossologyStatus();
+        verify(componentService, never()).updateReleaseFossology(release, user);
+        verify(release).getExternalToolRequests();
         verifyNoMoreInteractions(release);
-    }
-
-    @Test
-    public void testGetAllClearingTeams() throws Exception {
-        Release release = mock(Release.class);
-
-        String clearingTeam2 = "team2";
-        String clearingTeam3 = "yetAnotherTeam";
-
-        when(release.getClearingTeamToFossologyStatus())
-                .thenReturn(ImmutableMap.of(
-                        clearingTeam, FossologyStatus.CLOSED,
-                        clearingTeam2, FossologyStatus.ERROR
-                ));
-
-        assertThat(fossologyFileHandler.getAllClearingTeams(release, clearingTeam),
-                containsInAnyOrder(clearingTeam, clearingTeam2));
-
-        assertThat(fossologyFileHandler.getAllClearingTeams(release, clearingTeam3),
-                containsInAnyOrder(clearingTeam, clearingTeam2, clearingTeam3));
-    }
-
-    @Test
-    public void testUpdateFossologyStatusAddTheNewStatus() {
-        Release release = mock(Release.class);
-        final String clearingTeam2 = "team2";
-
-        final Map<String, FossologyStatus> existingStatuses = newHashMap();
-        existingStatuses.put(clearingTeam, FossologyStatus.SENT);
-        existingStatuses.put(clearingTeam2, FossologyStatus.CLOSED);
-
-        when(release.getClearingTeamToFossologyStatus()).thenReturn(existingStatuses);
-
-        fossologyFileHandler.setFossologyStatus(release, clearingTeam, FossologyStatus.SCANNING);
-
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                try {
-                    @SuppressWarnings("unchecked")
-                    Map<String, FossologyStatus> statusMap = (Map<String, FossologyStatus>) invocation.getArguments()[0];
-
-                    assertThat(statusMap, hasEntry(clearingTeam, FossologyStatus.SCANNING));
-                    assertThat(statusMap, hasEntry(clearingTeam2, FossologyStatus.CLOSED));
-                    assertThat(statusMap.keySet(), containsInAnyOrder(clearingTeam, clearingTeam2));
-                } catch (ClassCastException e) {
-                    fail("status was supposed to be a map :-/" + e.getMessage());
-                }
-                return null;
-            }
-        }).when(release).setClearingTeamToFossologyStatus(anyMapOf(String.class, FossologyStatus.class));
-
-        verify(release).setClearingTeamToFossologyStatus(anyMapOf(String.class, FossologyStatus.class));
-    }
-
-    @Test
-    public void testUpdateFossologyStatusForTheFirstTimeCreatesTheStatusMap() {
-        Release release = mock(Release.class);
-
-        fossologyFileHandler.setFossologyStatus(release, clearingTeam, FossologyStatus.SCANNING, "13", "14");
-
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                try {
-                    @SuppressWarnings("unchecked")
-                    Map<String, FossologyStatus> statusMap = (Map<String, FossologyStatus>) invocation.getArguments()[0];
-
-                    assertThat(statusMap, hasEntry(clearingTeam, FossologyStatus.SCANNING));
-                    assertThat(statusMap.keySet(), containsInAnyOrder(clearingTeam));
-                } catch (ClassCastException e) {
-                    fail("status was supposed to be a map :-/" + e.getMessage());
-                }
-                return null;
-            }
-        }).when(release).setClearingTeamToFossologyStatus(anyMapOf(String.class, FossologyStatus.class));
-
-        verify(release).setClearingTeamToFossologyStatus(anyMapOf(String.class, FossologyStatus.class));
-
-        verify(release).setFossologyId("13");
-        verify(release).setAttachmentInFossology("14");
-    }
-
-    @Test
-    public void testIsVisible() throws Exception {
-        assertThat(FossologyFileHandler.isVisible(null), is(false));
-        for (FossologyStatus fossologyStatus : FossologyStatus.values()) {
-            final boolean expectedVisible;
-
-            switch (fossologyStatus) {
-                case CONNECTION_FAILED:
-                case ERROR:
-                case NON_EXISTENT:
-                case NOT_SENT:
-                case INACCESSIBLE:
-                    expectedVisible = false;
-                    break;
-                case SENT:
-                case SCANNING:
-                case OPEN:
-                case IN_PROGRESS:
-                case CLOSED:
-                case REJECTED:
-                case REPORT_AVAILABLE:
-                default:
-                    expectedVisible = true;
-                    break;
-            }
-
-            String errorMessage = "" + fossologyStatus + " should" + (expectedVisible ? "" : " not") + " be visible";
-            assertThat(errorMessage, FossologyFileHandler.isVisible(fossologyStatus), is(expectedVisible));
-        }
     }
 
     private static FilledAttachment getMockFilledAttachment(String attachmentContentId) {
@@ -491,4 +395,17 @@ public class FossologyFileHandlerTest {
         return filledAttachment;
     }
 
+    private ExternalToolRequest mockExternalToolRequestInRelease(Release release, String clearingTeam,
+            String attachmentContentId, String hash) {
+        ExternalToolRequest etr = new ExternalToolRequest();
+
+        etr.setExternalTool(ExternalTool.FOSSOLOGY);
+        etr.setToolId("41");
+        etr.setToolUserGroup(clearingTeam);
+        etr.setAttachmentId(attachmentContentId);
+        etr.setAttachmentHash(hash);
+        etr.setExternalToolStatus(ExternalToolStatus.OPEN);
+
+        return etr;
+    }
 }
