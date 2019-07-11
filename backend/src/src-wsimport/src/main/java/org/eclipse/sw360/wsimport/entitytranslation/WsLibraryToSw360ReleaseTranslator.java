@@ -37,9 +37,12 @@ public class WsLibraryToSw360ReleaseTranslator implements EntityTranslator<WsLib
         sw360Release.getExternalIds().put(FILENAME, wsLibrary.getFilename());
 
         if (wsLibrary.getReferences() != null) {
-                sw360Release.setDownloadurl(wsLibrary.getReferences().getScmUrl());
+            sw360Release.setDownloadurl(wsLibrary.getReferences().getUrl());
             if (!isNullOrEmpty(wsLibrary.getReferences().getPomUrl())) {
                 sw360Release.getExternalIds().put(POM_FILE_URL, wsLibrary.getReferences().getPomUrl());
+            }
+            if (!isNullOrEmpty(wsLibrary.getReferences().getScmUrl())) {
+                sw360Release.getExternalIds().put(SCM_URL, wsLibrary.getReferences().getScmUrl());
             }
         }
 

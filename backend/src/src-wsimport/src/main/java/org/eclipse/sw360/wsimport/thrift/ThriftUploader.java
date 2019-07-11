@@ -1,6 +1,6 @@
 /*
  * Copyright (c) Bosch Software Innovations GmbH 2017.
- * With modifications by Verifa Oy, 2018.
+ * With modifications by Verifa Oy, 2018-2019.
  * Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -14,7 +14,6 @@ package org.eclipse.sw360.wsimport.thrift;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonSyntaxException;
-import org.apache.commons.lang.ArrayUtils;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.wsimport.domain.*;
 import org.eclipse.sw360.wsimport.entitytranslation.WsLibraryToSw360ComponentTranslator;
@@ -231,25 +230,6 @@ public class ThriftUploader {
         } else {
             libraryList = new ArrayList<>(Arrays.asList(libraries));
         }
-
-        WsProjectVitalInformation[] projectVitalInformations = null;
-        List<String> projectNameList = new ArrayList<>();
-        try {
-            projectVitalInformations =  new WsImportService().getOrganizationalProjectVitals(tokenCredentials);
-        } catch (JsonSyntaxException jse) {
-            LOGGER.error(jse);
-        }
-        if(projectVitalInformations != null) {
-            projectNameList = Arrays.stream(projectVitalInformations)
-                    .map(WsProjectVitalInformation::getName)
-                    .collect(Collectors.toList());
-        }
-        for (String project : projectNameList) {
-            project = project.trim();
-            String toBeRemoved = project.contains(" ") ? project.split(" ")[0] : project;
-            libraryList.removeIf(library -> library.getName().equals(toBeRemoved));
-        }
-
         Set<ReleaseRelation> releases = libraryList.stream()
                 .map(c -> createReleaseRelation(c, sw360User))
                 .filter(Objects::nonNull)

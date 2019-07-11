@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Verifa Oy, 2018.
+ * Copyright (c) Verifa Oy, 2018-2019.
  * Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -11,6 +11,7 @@
  */
 package org.eclipse.sw360.wsimport.entitytranslation;
 
+import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.wsimport.domain.WsLibrary;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 
@@ -27,10 +28,7 @@ public class WsLibraryToSw360ComponentTranslator implements EntityTranslator<WsL
 
         Component sw360Component = new Component(wsLibrary.getName());
         sw360Component.setCategories(new HashSet<>(Collections.singletonList(wsLibrary.getType())));
-
-        if (wsLibrary.getReferences() != null) {
-            sw360Component.setHomepage(wsLibrary.getReferences().getUrl());
-        }
+        sw360Component.setComponentType(ComponentType.OSS);
 
         return sw360Component;
     }
