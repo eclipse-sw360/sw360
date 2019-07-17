@@ -20,6 +20,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultHandler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,13 +52,13 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
     @Before
     public void before() throws TException {
         license = new License();
-        license.setId("apache20");
+        license.setId("Apache-2.0");
         license.setFullname("Apache License 2.0");
         license.setShortname("Apache 2.0");
         license.setText("placeholder for the Apache 2.0 license text");
 
         License license2 = new License();
-        license2.setId("mit");
+        license2.setId("MIT");
         license2.setFullname("The MIT License (MIT)");
         license2.setShortname("MIT");
         license2.setText("placeholder for the MIT license text");
