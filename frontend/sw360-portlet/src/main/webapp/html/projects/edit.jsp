@@ -33,6 +33,9 @@
 
 <portlet:actionURL var="updateURL" name="update">
     <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${project.id}" />
+    <c:if test="${not empty sourceProjectId}">
+        <portlet:param name="sourceProjectId" value="${sourceProjectId}" />
+    </c:if>
 </portlet:actionURL>
 
 <portlet:actionURL var="deleteAttachmentsOnCancelURL" name='<%=PortalConstants.ATTACHMENT_DELETE_ON_CANCEL%>'>

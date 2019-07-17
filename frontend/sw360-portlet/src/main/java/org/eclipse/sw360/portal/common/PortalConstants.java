@@ -175,6 +175,7 @@ public class PortalConstants {
     public static final String MANUAL_ATTACHMENT_USAGES = "manualAttUsages";
     public static final String PROJECT_PATH = "projectPath";
     public static final String PROJECT_PATHS = "projectPaths";
+    public static final String SOURCE_PROJECT_ID = "sourceProjectId";
 
 
     public static final String FOSSOLOGY_FINGER_PRINTS = "fingerPrints";
