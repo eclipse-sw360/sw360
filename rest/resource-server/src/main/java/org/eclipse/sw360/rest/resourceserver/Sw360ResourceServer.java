@@ -30,6 +30,7 @@ import org.springframework.hateoas.hal.CurieProvider;
 import org.springframework.hateoas.hal.DefaultCurieProvider;
 
 import java.util.Properties;
+import java.util.Set;
 
 @SpringBootApplication
 @Import(Sw360CORSFilter.class)
@@ -44,12 +45,15 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
     public static final String API_TOKEN_HASH_SALT;
     public static final String API_TOKEN_MAX_VALIDITY_READ_IN_DAYS;
     public static final String API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS;
+    public static final Set<String> DOMAIN;
 
     static {
         Properties props = CommonUtils.loadProperties(Sw360ResourceServer.class, PROPERTIES_FILE_PATH);
         API_TOKEN_MAX_VALIDITY_READ_IN_DAYS = props.getProperty("rest.apitoken.read.validity.days", "90");
         API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS = props.getProperty("rest.apitoken.write.validity.days", "30");
         API_TOKEN_HASH_SALT = props.getProperty("rest.apitoken.hash.salt", "$2a$04$Software360RestApiSalt");
+        DOMAIN = CommonUtils.splitToSet(props.getProperty("domain",
+                "Application Software, Documentation, Embedded Software, Hardware, Test and Diagnostics"));
     }
 
     @Bean
