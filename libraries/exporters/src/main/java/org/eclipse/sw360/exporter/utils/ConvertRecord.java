@@ -21,9 +21,6 @@ import org.eclipse.sw360.commonIO.ConvertUtil;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.licenses.*;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.thrift.Ternary;
 import org.jetbrains.annotations.NotNull;
@@ -169,13 +166,13 @@ public class ConvertRecord {
         return true;
     }
 
-    public static void fillTodoCustomPropertyInfo(List<Todo> todos, List<PropertyWithValueAndId> customProperties, SetMultimap<Integer, Integer> todoCustomPropertyMap) {
+    public static void fillTodoCustomPropertyInfo(List<Todo> todos, List<PropertyWithValueAndId> customProperties, SetMultimap<String, Integer> todoCustomPropertyMap) {
         int nextPropertyId = 0;
         for(Todo todo : todos){
             if(todo.isSetCustomPropertyToValue()){
                 for(Map.Entry<String, String> entry : todo.getCustomPropertyToValue().entrySet()){
                     customProperties.add(new PropertyWithValueAndId(nextPropertyId, entry.getKey(), entry.getValue()));
-                    todoCustomPropertyMap.put(todo.getTodoId(), nextPropertyId);
+                    todoCustomPropertyMap.put(todo.getId(), nextPropertyId);
                     nextPropertyId++;
                 }
             }
@@ -210,10 +207,13 @@ public class ConvertRecord {
 
         for (CSVRecord record : records) {
             if (record.size() < 2) break;
-            String id = record.get(0);
+
+            String title = record.get(0);
             String text = record.get(1);
 
-            Todo todo = new Todo().setTodoId(Integer.parseInt(id)).setText(text);
+            Todo todo = new Todo();
+            todo.setTitle(title);
+            todo.setText(text);
 
             // Parse boolean values
 
@@ -249,7 +249,7 @@ public class ConvertRecord {
 
                     final ArrayList<String> out = new ArrayList<>(5);
 
-                    out.add(((Integer) todo.getTodoId()).toString());
+                    out.add(todo.getTitle());
                     out.add(todo.getText());
                     out.add(((Boolean) todo.isDevelopment()).toString());
                     out.add(((Boolean) todo.isDistribution()).toString());
@@ -263,7 +263,7 @@ public class ConvertRecord {
 
             @Override
             public List<String> headers() {
-                return ImmutableList.of("ID", "Text", "Development", "Distribution", "External IDs");
+                return ImmutableList.of("Title", "Text", "Development", "Distribution", "External IDs");
             }
         };
     }
@@ -541,13 +541,13 @@ public class ConvertRecord {
     }
 
     @NotNull
-    public static SetMultimap<Integer, Integer> getTodoToObligationMap(List<Todo> todos) {
-        SetMultimap<Integer, Integer> obligationTodo = HashMultimap.create();
+    public static SetMultimap<Integer, String> getTodoToObligationMap(List<Todo> todos) {
+        SetMultimap<Integer, String> obligationTodo = HashMultimap.create();
 
         for (Todo todo : todos) {
             if (todo.isSetObligations()) {
                 for (Obligation obligation : todo.getObligations()) {
-                    obligationTodo.put(obligation.getObligationId(), todo.getTodoId());
+                    obligationTodo.put(obligation.getObligationId(), todo.getId());
                 }
             }
         }
@@ -555,13 +555,13 @@ public class ConvertRecord {
     }
 
     @NotNull
-    public static SetMultimap<String, Integer> getLicenseToTodoMap(List<License> licenses) {
-        SetMultimap<String, Integer> licenseToTodo = HashMultimap.create();
+    public static SetMultimap<String, String> getLicenseToTodoMap(List<License> licenses) {
+        SetMultimap<String, String> licenseToTodo = HashMultimap.create();
 
         for (License license : licenses) {
             if (license.isSetTodos()) {
                 for (Todo todo : license.getTodos()) {
-                    licenseToTodo.put(license.getId(), todo.getTodoId());
+                    licenseToTodo.put(license.getId(), todo.getId());
                 }
             }
         }

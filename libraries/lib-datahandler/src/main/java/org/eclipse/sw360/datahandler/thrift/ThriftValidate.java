@@ -58,7 +58,7 @@ public class ThriftValidate {
         // Check required fields
         assertNotNull(todo);
         assertNotEmpty(todo.getText());
-        assertNotNull(todo.getTodoId());
+        assertNotNull(todo.getTitle());
 
         if (todo.isSetObligations() && !todo.isSetObligationDatabaseIds()) {
             for (Obligation obligation : todo.getObligations()) {

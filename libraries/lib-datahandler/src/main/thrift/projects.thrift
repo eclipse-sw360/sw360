@@ -14,6 +14,7 @@ include "attachments.thrift"
 include "vendors.thrift"
 include "components.thrift"
 include "sw360.thrift"
+include "commonobligations.thrift"
 include "licenses.thrift"
 
 namespace java org.eclipse.sw360.datahandler.thrift.projects

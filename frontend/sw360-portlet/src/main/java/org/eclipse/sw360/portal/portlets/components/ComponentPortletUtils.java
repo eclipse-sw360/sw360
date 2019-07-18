@@ -15,6 +15,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
+import org.eclipse.sw360.datahandler.thrift.licenses.Todo;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -148,6 +149,12 @@ public abstract class ComponentPortletUtils {
         setFieldValue(request, vendor, Vendor._Fields.URL);
     }
 
+    public static void updateTodoFromRequest(PortletRequest request, Todo todo) {
+        setFieldValue(request, todo, Todo._Fields.TITLE);
+        setFieldValue(request, todo, Todo._Fields.TEXT);
+        setFieldValue(request, todo, Todo._Fields.VALID_FOR_PROJECT);
+    }
+
     private static void updateLinkedReleaseFromRequest(PortletRequest request, Map<String, ReleaseRelationship> linkedReleases) {
         linkedReleases.clear();
         String[] ids = request.getParameterValues(Release._Fields.RELEASE_ID_TO_RELATIONSHIP.toString() + ReleaseLink._Fields.ID.toString());
@@ -184,6 +191,10 @@ public abstract class ComponentPortletUtils {
 
     private static void setFieldValue(PortletRequest request, Vendor vendor, Vendor._Fields field) {
         PortletUtils.setFieldValue(request, vendor, field, Vendor.metaDataMap.get(field), "");
+    }
+
+    private static void setFieldValue(PortletRequest request, Todo todo, Todo._Fields field) {
+        PortletUtils.setFieldValue(request, todo, field, Todo.metaDataMap.get(field), "");
     }
 
     public static RequestStatus deleteRelease(PortletRequest request, Logger log) {

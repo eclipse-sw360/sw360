@@ -319,4 +319,11 @@ public class LicenseHandler implements LicenseService.Iface {
         return handler.importAllSpdxLicenses(user);
     }
 
+    @Override
+    public RequestStatus deleteTodo(String id, User user) throws TException {
+        assertId(id);
+        assertUser(user);
+        return handler.deleteTodo(id, user);
+    }
+
 }

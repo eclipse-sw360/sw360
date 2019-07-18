@@ -15,6 +15,7 @@
 		<portlet id="licenses"/>
 		<portlet id="components"/>
 		<portlet id="vendors"/>
+		<portlet id="todos"/>
 		<portlet id="projects"/>
 		<portlet id="search"/>
 		<portlet id="users"/>
