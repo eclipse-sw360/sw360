@@ -290,7 +290,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         final String timestamp = SW360Utils.getCreatedOnTime().replaceAll("\\s", "_").replace(":", "_");
         String outputGeneratorClassNameWithVariant = generatorClassName+"::"+variant;
         final OutputFormatInfo outputFormatInfo = licenseInfoService.getOutputFormatInfoForGeneratorClass(generatorClassName);
-        final String filename = String.format("%s-%s%s-%s.%s", Strings.nullToEmpty("DISCLOSURE") ? "LicenseInfo" : "ProjectClearingReport", projectName,
+        final String filename = String.format("%s-%s%s-%s.%s", Strings.nullToEmpty(variant).equals("DISCLOSURE") ? "LicenseInfo" : "ProjectClearingReport", projectName,
 			StringUtils.isBlank(projectVersion) ? "" : "-" + projectVersion, timestamp,
 			outputFormatInfo.getFileExtension());
 
