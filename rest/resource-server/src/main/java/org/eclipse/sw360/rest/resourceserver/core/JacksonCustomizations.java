@@ -382,7 +382,10 @@ class JacksonCustomizations {
                 "contributorsIterator",
                 "rolesSize",
                 "setRoles",
-                "setCreatorDepartment"
+                "setCreatorDepartment",
+                "setSoftwarePlatforms",
+                "softwarePlatformsSize",
+                "softwarePlatformsIterator",
         })
         static abstract class ReleaseMixin extends Release {
             @Override
