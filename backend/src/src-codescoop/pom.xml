@@ -50,10 +50,4 @@
     <artifactId>src-codescoop</artifactId>
     <packaging>jar</packaging>
     <name>src-codescoop</name>
-
-    <developers>
-        <developer>
-            <name>alex.skorohod@codescoop.com</name>
-        </developer>
-    </developers>
 </project>

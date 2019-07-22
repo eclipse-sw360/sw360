@@ -21,12 +21,6 @@
     <packaging>war</packaging>
     <name>svc-licenseinfo</name>
 
-    <developers>
-        <developer>
-            <name>alex.borodin@evosoft.com</name>
-        </developer>
-    </developers>
-
     <build>
         <finalName>licenseinfo</finalName>
 

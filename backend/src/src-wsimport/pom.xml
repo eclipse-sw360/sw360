@@ -36,10 +36,4 @@
             <version>1.1.1</version>
         </dependency>
     </dependencies>
-
-    <developers>
-        <developer>
-            <name>ksoranko@verifa.io</name>
-        </developer>
-    </developers>
 </project>

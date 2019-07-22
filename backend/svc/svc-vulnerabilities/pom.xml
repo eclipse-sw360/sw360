@@ -24,12 +24,6 @@
     <packaging>war</packaging>
     <name>svc-vulnerabilities</name>
 
-    <developers>
-        <developer>
-            <name>stefan.jaeger@evosoft.com</name>
-        </developer>
-    </developers>
-
     <build>
         <finalName>vulnerabilities</finalName>
 

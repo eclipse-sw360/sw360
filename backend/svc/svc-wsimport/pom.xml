@@ -64,10 +64,4 @@
             <type>jar</type>
         </dependency>
     </dependencies>
-
-    <developers>
-        <developer>
-            <name>ksoranko@verifa.io</name>
-        </developer>
-    </developers>
 </project>

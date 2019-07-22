@@ -24,12 +24,6 @@
     <packaging>war</packaging>
     <name>svc-licenses</name>
 
-    <developers>
-        <developer>
-            <name>cedric.bodet@tngtech.com</name>
-        </developer>
-    </developers>
-
     <build>
         <finalName>licenses</finalName>
 

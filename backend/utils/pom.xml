@@ -20,12 +20,6 @@
     <artifactId>backend-utils</artifactId>
     <name>backend-utils</name>
 
-    <developers>
-        <developer>
-            <name>daniele.fognini@tngtech.com</name>
-        </developer>
-    </developers>
-
     <dependencies>
         <dependency>
             <groupId>org.eclipse.sw360</groupId>

@@ -30,13 +30,4 @@
     <artifactId>src-components</artifactId>
     <packaging>jar</packaging>
     <name>src-components</name>
-
-    <developers>
-        <developer>
-            <name>cedric.bodet@tngtech.com</name>
-        </developer>
-        <developer>
-            <name>johannes.najjar@tngtech.com</name>
-        </developer>
-    </developers>
 </project>

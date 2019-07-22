@@ -23,18 +23,6 @@
     <packaging>jar</packaging>
     <name>src-fossology</name>
 
-    <developers>
-        <developer>
-            <name>cedric.bodet@tngtech.com</name>
-        </developer>
-        <developer>
-            <name>johannes.najjar@tngtech.com</name>
-        </developer>
-        <developer>
-            <name>daniele.fognini@tngtech.com</name>
-        </developer>
-    </developers>
-
     <dependencies>
         <dependency>
             <groupId>com.jcraft</groupId>
@@ -57,5 +45,4 @@
             <version>${spring.version}</version>
         </dependency>
     </dependencies>
-
 </project>

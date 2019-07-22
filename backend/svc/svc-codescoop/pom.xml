@@ -23,12 +23,6 @@
     <artifactId>svc-codescoop</artifactId>
     <packaging>war</packaging>
 
-    <developers>
-        <developer>
-            <name>alex.skorohod@codescoop.com</name>
-        </developer>
-    </developers>
-
     <build>
         <finalName>codescoop</finalName>
 

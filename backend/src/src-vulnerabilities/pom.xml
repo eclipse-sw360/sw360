@@ -24,12 +24,6 @@
     <packaging>jar</packaging>
     <name>src-vulnerabilities</name>
 
-    <developers>
-        <developer>
-            <name>stefan.jaeger@evosoft.com</name>
-        </developer>
-    </developers>
-
     <dependencies>
         <dependency>
             <groupId>com.googlecode.json-simple</groupId>
