@@ -90,6 +90,9 @@ public class Sw360CustomHeaderAuthenticationFilter extends GenericFilterBean {
     @Value("${security.customheader.headername.intermediateauthstore:#{null}}")
     private String customHeaderHeadernameIntermediateAuthStore;
 
+    @Value("${security.customheader.headername.enabled:#{false}}")
+    private boolean customHeaderEnabled;
+
     private boolean active;
 
     @Autowired
@@ -97,16 +100,29 @@ public class Sw360CustomHeaderAuthenticationFilter extends GenericFilterBean {
 
     @PostConstruct
     public void postSw360CustomHeaderAuthenticationFilterConstruction() {
+        if(!customHeaderEnabled) {
+            active = false;
+            log.info("AuthenticationFilter is NOT active!");
+            return;
+        }
+
+        log.info("NOTE: Custom Header Authentication is enabled with the following configuration: \n" +
+            "  - email header      : " + customHeaderHeadernameEmail + "\n" +
+            "  - external id header: " + customHeaderHeadernameExtid + "\n" +
+            "  - internal header   : " + customHeaderHeadernameIntermediateAuthStore + "\n" +
+            "!!! BE SURE THAT THESE HEADRES ARE FILTERED BY YOUR PROXY! EACH CLIENT THAT IS ABLE TO SEND THESE HEADERS CAN LOG IN AS ANY PRINCIPAL !!!"
+        );
+
         if (StringUtils.isEmpty(customHeaderHeadernameEmail) || StringUtils.isEmpty(customHeaderHeadernameExtid)
                 || StringUtils.isEmpty(customHeaderHeadernameIntermediateAuthStore)) {
-            log.info("Filter is NOT active! If you want to activate it, please provide a complete configuration. "
+            log.info("AuthenticationFilter is NOT active due to incomplete configuration. "
                     + "Needed config keys:\n"
                     + "- security.customheader.headername.email\n"
                     + "- security.customheader.headername.extid\n"
                     + "- security.customheader.headername.intermediateauthstore");
             active = false;
         } else {
-            log.info("Filter is active!");
+            log.info("AuthenticationFilter is active!");
             active = true;
         }
     }

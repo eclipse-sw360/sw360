@@ -22,7 +22,7 @@ import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientRepositor
 import org.eclipse.sw360.rest.authserver.client.service.Sw360ClientDetailsService;
 import org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority;
 import org.eclipse.sw360.rest.authserver.security.basicauth.Sw360LiferayAuthenticationProvider;
-
+import org.apache.commons.lang.StringUtils;
 import org.apache.thrift.TException;
 import org.junit.Before;
 import org.junit.runner.RunWith;
@@ -59,7 +59,7 @@ import static org.mockito.Mockito.when;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Sw360AuthorizationServer.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles({"dev"})
+@ActiveProfiles({"dev", "test"})
 public abstract class IntegrationTestBase {
 
     @Value("${local.server.port}")
@@ -216,6 +216,8 @@ public abstract class IntegrationTestBase {
         } else {
             actualAuthorities.add(authoritiesJsonNode.asText());
         }
+        System.out.println("ACTUAL: " + actualAuthorities);
+        System.out.println("EXPECTED: " + StringUtils.join(expectedAuthority, ", "));
         assertThat(actualAuthorities, containsInAnyOrder(expectedAuthority));
 
         return jwtClaimsJsonNode;

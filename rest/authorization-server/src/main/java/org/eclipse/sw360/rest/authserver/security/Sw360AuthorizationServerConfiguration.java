@@ -80,12 +80,12 @@ public class Sw360AuthorizationServerConfiguration extends AuthorizationServerCo
     @Bean
     public UserDetailsService userDetailsService() {
         return new Sw360UserDetailsService(sw360UserDetailsProvider, sw360ClientDetailsService(),
-                sw360UserAndClientAuthoritiesMerger());
+                sw360UserAndClientAuthoritiesCalculator());
     }
 
     @Bean
-    public Sw360UserAndClientAuthoritiesMerger sw360UserAndClientAuthoritiesMerger() {
-        return new Sw360UserAndClientAuthoritiesMerger();
+    public Sw360GrantedAuthoritiesCalculator sw360UserAndClientAuthoritiesCalculator() {
+        return new Sw360GrantedAuthoritiesCalculator();
     }
 
     @Bean

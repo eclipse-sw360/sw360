@@ -73,13 +73,15 @@ public class OAuthClientController {
             }
         } else {
             clientEntity = new OAuthClientEntity();
-            clientEntity.setId(UUID.randomUUID().toString().replace("-", ""));
+
+            // store entity to get a new id
+            repo.add(clientEntity);
+
             clientEntity.setClientId(clientEntity.getId());
             clientEntity.setClientSecret(UUID.randomUUID().toString());
         }
 
         updateClientEntityFromResource(clientEntity, clientResource);
-
         repo.update(clientEntity);
 
         return new ResponseEntity<OAuthClientResource>(

@@ -25,20 +25,20 @@ import java.util.stream.Collectors;
 import static org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority.READ;
 
 /**
- * Class only offers one single but very important method. It can calculate the
- * correct intersection between user and client authorities! Therefore it has to
+ * This class offer helper methods to calculate the {@GrantedAuthority} for a user and/or client. 
+ * In addition it can calculate the correct intersection between them! Therefore it has to
  * know how to map the sw360 user groups on rest authorities. This logic is also
  * centralized here implicitly.
  */
-public class Sw360UserAndClientAuthoritiesMerger {
+public class Sw360GrantedAuthoritiesCalculator {
 
     private final Logger log = Logger.getLogger(this.getClass());
 
-    public List<GrantedAuthority> mergeAuthoritiesOf(User user, ClientDetails clientDetails) {
+    public List<GrantedAuthority> generateFromUser(User user) {
         List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
+        
         grantedAuthorities.add(new SimpleGrantedAuthority(READ.getAuthority()));
-
-        if (!Objects.isNull(user)) {
+        if(user != null) {
             if (PermissionUtils.isUserAtLeast(Sw360AuthorizationServer.CONFIG_WRITE_ACCESS_USERGROUP, user)) {
                 grantedAuthorities.add(new SimpleGrantedAuthority(Sw360GrantedAuthority.WRITE.getAuthority()));
             }
@@ -47,16 +47,27 @@ public class Sw360UserAndClientAuthoritiesMerger {
             }
         }
 
-        if (!Objects.isNull(clientDetails)) {
-            Set<String> clientScopes = clientDetails.getScope();
+        return grantedAuthorities;
+    }
 
+    public List<GrantedAuthority> intersectWithClient(List<GrantedAuthority> grantedAuthorities, ClientDetails clientDetails) {
+        Set<String> clientScopes = clientDetails.getScope();
+
+        grantedAuthorities = grantedAuthorities.stream()
+                .filter(ga -> clientScopes.contains(ga.toString()))
+                .collect(Collectors.toList());
+        
+        return grantedAuthorities;
+    }
+
+    public List<GrantedAuthority> mergedAuthoritiesOf(User user, ClientDetails clientDetails) {
+        List<GrantedAuthority> grantedAuthorities = generateFromUser(user);
+
+        if(clientDetails != null) {
             log.debug("User " + user.email + " has authorities " + grantedAuthorities + " while used client "
-                    + clientDetails.getClientId() + " has scopes " + clientScopes
-                    + ". Setting intersection as granted authorities for access token!");
-
-            grantedAuthorities = grantedAuthorities.stream()
-                    .filter(ga -> clientScopes.contains(ga.toString()))
-                    .collect(Collectors.toList());
+                        + clientDetails.getClientId() + " has scopes " + clientDetails.getScope()
+                        + ". Setting intersection as granted authorities for access token!");
+            grantedAuthorities = intersectWithClient(grantedAuthorities, clientDetails);
         }
 
         return grantedAuthorities;

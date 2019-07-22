@@ -12,9 +12,10 @@ package org.eclipse.sw360.rest.authserver.security.customheaderauth;
 
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.authserver.StringTransformer;
 import org.eclipse.sw360.rest.authserver.Sw360AuthorizationServer;
 import org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority;
-import org.eclipse.sw360.rest.authserver.security.Sw360UserAndClientAuthoritiesMerger;
+import org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthoritiesCalculator;
 import org.eclipse.sw360.rest.authserver.security.Sw360UserDetailsProvider;
 
 import org.apache.commons.lang.StringUtils;
@@ -50,7 +51,7 @@ import java.util.Map;
  * client's scopes. The result will be the intersection between these two lists.
  * Of course this is only done for an oauth request and not for normal ones
  * (that have nothing to do with clients). And in fact he uses for this task the
- * {@link Sw360UserAndClientAuthoritiesMerger}.
+ * {@link Sw360GrantedAuthoritiesCalculator}.
  */
 public class Sw360CustomHeaderAuthenticationProvider implements AuthenticationProvider {
 
@@ -59,6 +60,9 @@ public class Sw360CustomHeaderAuthenticationProvider implements AuthenticationPr
     @Value("${security.customheader.headername.intermediateauthstore:#{null}}")
     private String customHeaderHeadernameIntermediateAuthStore;
 
+    @Value("${security.customheader.headername.enabled:#{false}}")
+    private boolean customHeaderEnabled;
+
     @Autowired
     private Sw360UserDetailsProvider sw360CustomHeaderUserDetailsProvider;
 
@@ -66,12 +70,18 @@ public class Sw360CustomHeaderAuthenticationProvider implements AuthenticationPr
     private ClientDetailsService clientDetailsService;
 
     @Autowired
-    private Sw360UserAndClientAuthoritiesMerger sw360UserAndClientAuthoritiesMerger;
+    private Sw360GrantedAuthoritiesCalculator sw360UserAndClientAuthoritiesCalculator;
 
     private boolean active;
 
     @PostConstruct
     public void postSw360CustomHeaderAuthenticationProviderConstruction() {
+        if(!customHeaderEnabled) {
+            log.info("AuthenticationProvider is NOT active!");
+            active = false;
+            return;
+        }
+
         if (StringUtils.isEmpty(customHeaderHeadernameIntermediateAuthStore)) {
             log.warn("AuthenticationProvider is NOT active! Some configuration is missing. Needed config keys:\n"
                     + "- security.customheader.headername.intermediateauthstore");
@@ -90,84 +100,66 @@ public class Sw360CustomHeaderAuthenticationProvider implements AuthenticationPr
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        // check if the marker header of our filter is available
-        if (authentication.getDetails() instanceof Map<?, ?>
-                && ((Map<?, ?>) authentication.getDetails()).containsKey(customHeaderHeadernameIntermediateAuthStore)) {
-            Map<?, ?> authDetails = ((Map<?, ?>) authentication.getDetails());
-
-            // get user details
-            String email = (String) authentication.getPrincipal();
-            Object externalIds = authDetails.get(customHeaderHeadernameIntermediateAuthStore);
-            String externalId;
-            if (externalIds != null && externalIds instanceof String[]) {
-                externalId = ((String[]) externalIds)[0];
-            } else {
-                externalId = (String) externalIds;
-            }
-            User userDetails = sw360CustomHeaderUserDetailsProvider.provideUserDetails(email, externalId);
-
-            List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
-            if (authentication instanceof UsernamePasswordAuthenticationToken) {
-                // if we have a UsernamePasswordAuthenticationToken, then we have an OAuth
-                // request in which case we only want to keep intersection of user authorities
-                // and client scopes
-                grantedAuthorities = handleOAuthAuthentication(authDetails, userDetails);
-            } else {
-                // if we have a PreAuthenticationToken (no other case possible, see supports()
-                // method), then we have a normal REST request in which case we can grant all
-                // authorities calculated from the user profile, so calculate user authorities
-                grantedAuthorities = handleRestAuthentication(email, userDetails);
-            }
-
-            return new PreAuthenticatedAuthenticationToken(email, "N/A", grantedAuthorities);
+        if(!(authentication.getDetails() instanceof Map<?, ?>)) {
+            return null;
         }
 
-        return null;
+        // check if the marker header of our filter is available
+        if(!((Map<?, ?>) authentication.getDetails()).containsKey(customHeaderHeadernameIntermediateAuthStore)) {
+            return null;
+        }
+        
+        User userDetails = getUserDetails(authentication);
+        List<GrantedAuthority> grantedAuthorities = calculateGrantedAuthorities(authentication, userDetails);
+        
+        return new PreAuthenticatedAuthenticationToken(userDetails.getEmail(), "N/A", grantedAuthorities);
     }
 
-    private List<GrantedAuthority> handleOAuthAuthentication(Map<?, ?> authDetails, User userDetails) {
-        List<GrantedAuthority> grantedAuthorities;
+    private User getUserDetails(Authentication authentication) {
+        String email = (String) authentication.getPrincipal();
+        Object externalIds = ((Map<?, ?>)authentication.getDetails()).get(customHeaderHeadernameIntermediateAuthStore);
+        String externalId = StringTransformer.transformIntoString(externalIds);
+        
+        return sw360CustomHeaderUserDetailsProvider.provideUserDetails(email, externalId);
+    }
 
-        Object clientIds = authDetails.get(OAuth2Utils.CLIENT_ID);
-        String clientId;
-        if (clientIds != null && clientIds instanceof String[]) {
-            clientId = ((String[]) clientIds)[0];
+    private List<GrantedAuthority> calculateGrantedAuthorities(Authentication authentication, User userDetails) {
+        List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
+        
+        if (authentication instanceof UsernamePasswordAuthenticationToken) {
+            // if we have a UsernamePasswordAuthenticationToken, then we have an OAuth
+            // request in which case we only want to keep intersection of user authorities
+            // and client scopes
+            grantedAuthorities = handleOAuthAuthentication((Map<?, ?>) authentication.getDetails(), userDetails);
         } else {
-            clientId = (String) clientIds;
-        }
-
-        ClientDetails clientDetails = null;
-        try {
-            clientDetails = clientDetailsService.loadClientByClientId(clientId);
-
-            log.debug("Found client " + clientDetails + " for id " + clientId + " in authentication details.");
-
-            grantedAuthorities = sw360UserAndClientAuthoritiesMerger.mergeAuthoritiesOf(userDetails,
-                    clientDetails);
-        } catch (ClientRegistrationException e) {
-            log.warn("No valid client for id " + clientId + " could be found. It is possible that it is locked,"
-                    + " expired, disabled, or invalid for any other reason. So absolutely no authorities granted!");
-
-            grantedAuthorities = new ArrayList<>();
+            // if we have a PreAuthenticationToken (no other case possible, see supports()
+            // method), then we have a normal REST request in which case we can grant all
+            // authorities calculated from the user profile, so calculate user authorities
+            grantedAuthorities = handleRestAuthentication(userDetails.getEmail(), userDetails);
         }
 
         return grantedAuthorities;
     }
 
-    private List<GrantedAuthority> handleRestAuthentication(String email, User userDetails) {
-        List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
-        grantedAuthorities.add(new SimpleGrantedAuthority(Sw360GrantedAuthority.READ.getAuthority()));
+    private List<GrantedAuthority> handleOAuthAuthentication(Map<?, ?> authDetails, User userDetails) {
+        String clientId = StringTransformer.transformIntoString(authDetails.get(OAuth2Utils.CLIENT_ID));
+        try {
+            ClientDetails clientDetails = clientDetailsService.loadClientByClientId(clientId);
 
-        if (userDetails != null) {
-            if (PermissionUtils.isUserAtLeast(Sw360AuthorizationServer.CONFIG_WRITE_ACCESS_USERGROUP,
-                    userDetails)) {
-                grantedAuthorities.add(new SimpleGrantedAuthority(Sw360GrantedAuthority.WRITE.getAuthority()));
-            }
-            if (PermissionUtils.isUserAtLeast(Sw360AuthorizationServer.CONFIG_ADMIN_ACCESS_USERGROUP,
-                    userDetails)) {
-                grantedAuthorities.add(new SimpleGrantedAuthority(Sw360GrantedAuthority.ADMIN.getAuthority()));
-            }
+            log.debug("Found client " + clientDetails + " for id " + clientId + " in authentication details.");
+
+            return sw360UserAndClientAuthoritiesCalculator.mergedAuthoritiesOf(userDetails, clientDetails);
+        } catch (ClientRegistrationException e) {
+            log.warn("No valid client for id " + clientId + " could be found. It is possible that it is locked,"
+                    + " expired, disabled, or invalid for any other reason. So absolutely no authorities granted!");
+
+            return new ArrayList<>();
         }
+    }
+
+    private List<GrantedAuthority> handleRestAuthentication(String email, User userDetails) {
+        List<GrantedAuthority> grantedAuthorities = 
+            sw360UserAndClientAuthoritiesCalculator.generateFromUser(userDetails);
 
         log.debug("User " + email + " has authorities " + grantedAuthorities
                 + " which he will be granted during this request!");

@@ -36,13 +36,13 @@ public class Sw360UserDetailsService implements UserDetailsService {
 
     private Sw360ClientDetailsService clientProvider;
 
-    private Sw360UserAndClientAuthoritiesMerger authoritiesMerger;
+    private Sw360GrantedAuthoritiesCalculator authoritiesCalculator;
 
     public Sw360UserDetailsService(Sw360UserDetailsProvider userProvider, Sw360ClientDetailsService clientProvider,
-            Sw360UserAndClientAuthoritiesMerger authoritiesMerger) {
+            Sw360GrantedAuthoritiesCalculator authoritiesMerger) {
         this.userProvider = userProvider;
         this.clientProvider = clientProvider;
-        this.authoritiesMerger = authoritiesMerger;
+        this.authoritiesCalculator = authoritiesMerger;
     }
 
     @Override
@@ -63,7 +63,7 @@ public class Sw360UserDetailsService implements UserDetailsService {
 
                 if (clientDetails != null && user != null) {
                     result = new org.springframework.security.core.userdetails.User(user.getEmail(),
-                            "PreAuthenticatedPassword", authoritiesMerger.mergeAuthoritiesOf(user, clientDetails));
+                            "PreAuthenticatedPassword", authoritiesCalculator.mergedAuthoritiesOf(user, clientDetails));
                 }
             } catch (ClientRegistrationException e) {
                 log.warn("No valid client for id " + clientId + " could be found. It is possible that it is "
