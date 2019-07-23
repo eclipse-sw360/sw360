@@ -18,12 +18,10 @@ import java.io.BufferedReader;
 import java.lang.reflect.Type;
 import java.util.function.Function;
 
-public class CveSearchJsonParser implements Function<BufferedReader, Object> {
-    private Type type;
+public abstract class CveSearchJsonParser<T> implements Function<BufferedReader, T> {
     private Gson gson;
 
-    public CveSearchJsonParser(Type type) {
-        this.type = type;
+    public CveSearchJsonParser() {
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeAdapter(CveSearchData.DateTimeObject.class, new DateTimeObjectDeserializer());
         gsonBuilder.registerTypeAdapter(CveSearchData.VulnerableConfigurationEntry.class, new VulnerableConfigurationEntryDeserializer());
@@ -61,8 +59,10 @@ public class CveSearchJsonParser implements Function<BufferedReader, Object> {
         }
     }
 
+    public abstract Type getType();
+
     @Override
-    public Object apply(BufferedReader json) {
-        return gson.fromJson(json,type);
+    public T apply(BufferedReader json) {
+        return gson.fromJson(json,getType());
     }
 }

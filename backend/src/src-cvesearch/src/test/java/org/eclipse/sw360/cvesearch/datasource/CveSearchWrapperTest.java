@@ -12,6 +12,7 @@
  */
 package org.eclipse.sw360.cvesearch.datasource;
 
+import org.eclipse.sw360.cvesearch.TestWithCveSearchConnection;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -29,13 +30,12 @@ import java.util.Properties;
 import static org.eclipse.sw360.cvesearch.datasource.CveSearchDataTestHelper.isEquivalent;
 import static org.eclipse.sw360.cvesearch.datasource.CveSearchDataTestHelper.isUrlReachable;
 
-public class CveSearchWrapperTest {
-    CveSearchApi cveSearchApi;
-    CveSearchWrapper cveSearchWrapper;
+public class CveSearchWrapperTest extends TestWithCveSearchConnection {
+    private CveSearchWrapper cveSearchWrapper;
 
-    String VENDORNAME = "zyxel";
-    String PRODUCTNAME = "zywall";
-    String CPE = "cpe:2.3:a:zyxel:zywall:1050";
+    private String VENDORNAME = "zyxel";
+    private String PRODUCTNAME = "zywall";
+    private String CPE = "cpe:2.3:a:zyxel:zywall:1050";
 
     private class ReleaseBuilder {
         private String releaseName, releaseVersion, cpe, vendorFullname, vendorShortname;
@@ -118,24 +118,18 @@ public class CveSearchWrapperTest {
 
     @Before
     public void setUp() {
-        Properties props = CommonUtils.loadProperties(CveSearchWrapperTest.class, "/cvesearch.properties");
-        String host = props.getProperty(CveSearchHandler.CVESEARCH_HOST_PROPERTY, "https://cve.circl.lu");
-        Assume.assumeTrue("CVE Search host is reachable", isUrlReachable(host));
-        cveSearchApi = new CveSearchApiImpl(host);
-
         cveSearchWrapper = new CveSearchWrapper(cveSearchApi);
     }
 
     @Ignore
     @Test
-    public void testLargeData() throws IOException {
+    public void testLargeData() {
         Release release = new ReleaseBuilder()
                 .setName("server")
                 .get();
 
         Optional<List<CveSearchData>> resultWrapped = cveSearchWrapper.searchForRelease(release);
         assert(resultWrapped.isPresent());
-        assert(resultWrapped.get() != null);
     }
 
     @Test
@@ -152,7 +146,6 @@ public class CveSearchWrapperTest {
         Optional<List<CveSearchData>> resultWrapped = cveSearchWrapper.searchForRelease(release);
 
         assert(resultWrapped.isPresent());
-        assert(resultWrapped.get() != null);
 
         assert(isEquivalent(resultDirect,resultWrapped.get()));
     }
@@ -170,7 +163,6 @@ public class CveSearchWrapperTest {
         Optional<List<CveSearchData>> resultWrapped = cveSearchWrapper.searchForRelease(release);
 
         assert(resultWrapped.isPresent());
-        assert(resultWrapped.get() != null);
         assert(resultWrapped.get().size() > 0);
         assert(isEquivalent(resultDirect,resultWrapped.get()));
     }

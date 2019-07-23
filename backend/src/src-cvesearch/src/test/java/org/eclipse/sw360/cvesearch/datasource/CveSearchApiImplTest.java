@@ -12,6 +12,7 @@
  */
 package org.eclipse.sw360.cvesearch.datasource;
 
+import org.eclipse.sw360.cvesearch.TestWithCveSearchConnection;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.cvesearch.service.CveSearchHandler;
 import org.junit.Assume;
@@ -24,22 +25,12 @@ import java.util.Properties;
 
 import static org.eclipse.sw360.cvesearch.datasource.CveSearchDataTestHelper.isUrlReachable;
 
-public class CveSearchApiImplTest {
+public class CveSearchApiImplTest extends TestWithCveSearchConnection {
 
-    String VENDOR  = "zyxel";
-    String PRODUCT = "zywall";
-    String CPE     = "cpe:2.3:a:zyxel:zywall:1050";
-    String CVE     = "CVE-2008-1160";
-
-    private CveSearchApiImpl cveSearchApi;
-
-    @Before
-    public void setUp() {
-        Properties props = CommonUtils.loadProperties(CveSearchApiImplTest.class, "/cvesearch.properties");
-        String host = props.getProperty(CveSearchHandler.CVESEARCH_HOST_PROPERTY, "https://localhost:5000");
-        Assume.assumeTrue("CVE Search host is reachable", isUrlReachable(host));
-        cveSearchApi = new CveSearchApiImpl(host);
-    }
+    private String VENDOR  = "zyxel";
+    private String PRODUCT = "zywall";
+    private String CPE     = "cpe:2.3:a:zyxel:zywall:1050";
+    private String CVE     = "CVE-2008-1160";
 
     @Test
     public void exactSearchTest() throws IOException {

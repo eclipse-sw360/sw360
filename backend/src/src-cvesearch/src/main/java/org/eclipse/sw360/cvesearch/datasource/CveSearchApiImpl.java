@@ -11,10 +11,11 @@
  */
 package org.eclipse.sw360.cvesearch.datasource;
 
-import org.eclipse.sw360.cvesearch.datasource.json.CveSearchJsonParser;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import org.eclipse.sw360.cvesearch.datasource.json.ListCveSearchJsonParser;
+import org.eclipse.sw360.cvesearch.datasource.json.SingleCveSearchJsonParser;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.apache.log4j.Logger;
 
@@ -31,7 +32,7 @@ import java.util.function.Function;
 
 public class CveSearchApiImpl implements CveSearchApi {
 
-    Logger log = Logger.getLogger(CveSearchApiImpl.class);
+    private Logger log = Logger.getLogger(CveSearchApiImpl.class);
 
     private String host;
 
@@ -41,46 +42,41 @@ public class CveSearchApiImpl implements CveSearchApi {
     private String CVE_SEARCH_CVE     = "cve";
     public String CVE_SEARCH_WILDCARD = ".*";
 
-    private Type LIST_TARGET_TYPE = new TypeToken<List<CveSearchData>>(){}.getType();
-    private Type SINGLE_TARGET_TYPE = new TypeToken<CveSearchData>(){}.getType();
     private Type META_TARGET_TYPE = new TypeToken<Map<String,Object>>(){}.getType();
 
     public CveSearchApiImpl(String host) {
         this.host = host;
     }
 
-    private Object getParsedContentFor(String query, Function<BufferedReader,Object> parser) throws IOException {
+    private <T> T getParsedContentFor(String query, Function<BufferedReader,T> parser) throws IOException {
         log.debug("Execute query: " + query);
-        InputStream is = new URL(query).openStream();
-
-        if (is != null) {
-            try (BufferedReader content = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")))) {
-                return parser.apply(content);
-            }
+        try(InputStream is = new URL(query).openStream();
+            InputStreamReader inputStreamReader = new InputStreamReader(is, Charset.forName("UTF-8"));
+            BufferedReader content = new BufferedReader(inputStreamReader)) {
+            return parser.apply(content);
         }
-        return null;
     }
 
     private String composeQuery(String call, String ... path) throws UnsupportedEncodingException {
-        String query = host + "/api/" + call;
+        StringBuilder query = new StringBuilder(host + "/api/" + call);
         for (String p : path){
-            query += "/" + URLEncoder.encode(p,"UTF-8");
+            query.append("/").append(URLEncoder.encode(p, "UTF-8"));
         }
-        return query;
+        return query.toString();
     }
 
     private List<CveSearchData> getParsedCveSearchDatas(String query) throws IOException {
-        return (List<CveSearchData>) getParsedContentFor(query, new CveSearchJsonParser(LIST_TARGET_TYPE));
+        return getParsedContentFor(query, new ListCveSearchJsonParser());
     }
 
     private CveSearchData getParsedCveSearchData(String query) throws IOException {
-        return (CveSearchData) getParsedContentFor(query, new CveSearchJsonParser(SINGLE_TARGET_TYPE));
+        return getParsedContentFor(query, new SingleCveSearchJsonParser());
     }
 
     private List<String> getParsedCveSearchMetadata(String query, String key) throws IOException {
-        Map<String,Object> rawMap = (Map<String,Object>) getParsedContentFor(query, json -> new Gson().fromJson(json, META_TARGET_TYPE));
-        if(rawMap.containsKey(key)){
-            return (List<String>) rawMap.get(key);
+        Map<String,List<String>> rawMap = getParsedContentFor(query, json -> new Gson().fromJson(json, META_TARGET_TYPE));
+        if(rawMap != null && rawMap.containsKey(key)){
+            return rawMap.get(key);
         }
         return new ArrayList<>();
     }
