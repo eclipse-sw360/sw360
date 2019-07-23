@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2017-2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -8,15 +8,18 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-
 package org.eclipse.sw360.rest.authserver.security;
 
+import org.eclipse.sw360.rest.authserver.client.service.Sw360ClientDetailsService;
+import org.eclipse.sw360.rest.authserver.security.customheaderauth.Sw360CustomHeaderAuthenticationFilter;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
@@ -27,79 +30,62 @@ import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenCo
 import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
 import org.springframework.security.oauth2.provider.token.store.KeyStoreKeyFactory;
 
-import javax.annotation.PostConstruct;
-import java.io.IOException;
-
-import static org.eclipse.sw360.rest.authserver.Sw360AuthorizationServer.*;
 import static org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority.BASIC;
-import static org.eclipse.sw360.rest.authserver.security.Sw360SecurityEncryptor.decrypt;
 
+/**
+ * This class configures the oauth2 authorization server specialties for the
+ * authorization parts of this server.
+ */
 @Configuration
 @EnableAuthorizationServer
 public class Sw360AuthorizationServerConfiguration extends AuthorizationServerConfigurerAdapter {
-    private final AuthenticationManager authenticationManager;
-
-    @Value("${security.oauth2.client.client-id}")
-    private String clientId;
-
-    @Value("${security.oauth2.client.authorized-grant-types}")
-    private String[] authorizedGrantTypes;
-
-    @Value("${security.oauth2.client.resource-ids}")
-    private String resourceIds;
-
-    @Value("${security.oauth2.client.scope}")
-    private String[] scopes;
-
-    @Value("${security.oauth2.client.client-secret}")
-    private String clientSecret;
-
-    @Value("${security.oauth2.client.access-token-validity-seconds}")
-    private Integer accessTokenValiditySeconds;
 
     @Autowired
-    public Sw360AuthorizationServerConfiguration(AuthenticationManager authenticationManager) {
-        this.authenticationManager = authenticationManager;
-    }
+    private AuthenticationManager authenticationManager;
 
-    @PostConstruct
-    public void postSw360AuthorizationServerConfiguration() throws IOException {
-        if (CONFIG_CLIENT_ID != null) {
-            clientId = CONFIG_CLIENT_ID;
-        }
-        if (CONFIG_CLIENT_SECRET != null) {
-            clientSecret = decrypt(CONFIG_CLIENT_SECRET);
-        }
-        if (CONFIG_ACCESS_TOKEN_VALIDITY_SECONDS != null) {
-            accessTokenValiditySeconds = Integer.parseInt(CONFIG_ACCESS_TOKEN_VALIDITY_SECONDS);
-        }
-    }
+    @Autowired
+    private Sw360CustomHeaderAuthenticationFilter sw360CustomHeaderAuthenticationFilter;
+
+    @Autowired
+    private Sw360UserDetailsProvider sw360UserDetailsProvider;
 
     @Override
     public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
         endpoints
+                .allowedTokenEndpointRequestMethods(HttpMethod.GET, HttpMethod.POST)
                 .tokenStore(tokenStore())
                 .tokenEnhancer(jwtAccessTokenConverter())
-                .authenticationManager(authenticationManager);
+                .authenticationManager(authenticationManager)
+                .userDetailsService(userDetailsService());
     }
 
     @Override
     public void configure(AuthorizationServerSecurityConfigurer oauthServer) throws Exception {
         String serverAuthority = BASIC.getAuthority();
         oauthServer.tokenKeyAccess("isAnonymous() || hasAuthority('" + serverAuthority + "')")
-                .checkTokenAccess("hasAuthority('" + serverAuthority + "')");
+                .checkTokenAccess("hasAuthority('" + serverAuthority + "')")
+                .addTokenEndpointAuthenticationFilter(sw360CustomHeaderAuthenticationFilter);
     }
 
     @Override
     public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
-        clients.inMemory()
-                .withClient(clientId)
-                .authorizedGrantTypes(authorizedGrantTypes)
-                .authorities(BASIC.getAuthority())
-                .scopes(scopes)
-                .resourceIds(resourceIds)
-                .accessTokenValiditySeconds(accessTokenValiditySeconds)
-                .secret(clientSecret);
+        clients.withClientDetails(sw360ClientDetailsService());
+    }
+
+    @Bean
+    public Sw360ClientDetailsService sw360ClientDetailsService() {
+        return new Sw360ClientDetailsService();
+    }
+
+    @Bean
+    public UserDetailsService userDetailsService() {
+        return new Sw360UserDetailsService(sw360UserDetailsProvider, sw360ClientDetailsService(),
+                sw360UserAndClientAuthoritiesCalculator());
+    }
+
+    @Bean
+    public Sw360GrantedAuthoritiesCalculator sw360UserAndClientAuthoritiesCalculator() {
+        return new Sw360GrantedAuthoritiesCalculator();
     }
 
     @Bean
@@ -115,4 +101,5 @@ public class Sw360AuthorizationServerConfiguration extends AuthorizationServerCo
         jwtAccessTokenConverter.setKeyPair(keyStoreKeyFactory.getKeyPair("jwt"));
         return jwtAccessTokenConverter;
     }
+
 }

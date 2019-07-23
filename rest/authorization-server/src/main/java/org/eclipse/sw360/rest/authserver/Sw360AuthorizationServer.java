@@ -11,10 +11,11 @@
 
 package org.eclipse.sw360.rest.authserver;
 
-import org.apache.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.common.Sw360CORSFilter;
+
+import org.apache.log4j.Logger;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -22,6 +23,7 @@ import org.springframework.boot.web.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.Import;
 
 import javax.crypto.SealedObject;
+
 import java.io.IOException;
 import java.util.Properties;
 
@@ -35,18 +37,17 @@ public class Sw360AuthorizationServer extends SpringBootServletInitializer {
 
     private static final String PROPERTIES_FILE_PATH = "/sw360.properties";
     private static final String DEFAULT_WRITE_ACCESS_USERGROUP = UserGroup.SW360_ADMIN.name();
+    private static final String DEFAULT_ADMIN_ACCESS_USERGROUP = UserGroup.SW360_ADMIN.name();
 
     public static final String CONFIG_ACCESS_TOKEN_VALIDITY_SECONDS;
     public static final UserGroup CONFIG_WRITE_ACCESS_USERGROUP;
-    public static final String CONFIG_CLIENT_ID;
-    public static final SealedObject CONFIG_CLIENT_SECRET;
+    public static final UserGroup CONFIG_ADMIN_ACCESS_USERGROUP;
 
     static {
         Properties props = CommonUtils.loadProperties(Sw360AuthorizationServer.class, PROPERTIES_FILE_PATH);
         CONFIG_WRITE_ACCESS_USERGROUP = UserGroup.valueOf(props.getProperty("rest.write.access.usergroup", DEFAULT_WRITE_ACCESS_USERGROUP));
+        CONFIG_ADMIN_ACCESS_USERGROUP = UserGroup.valueOf(props.getProperty("rest.admin.access.usergroup", DEFAULT_ADMIN_ACCESS_USERGROUP));
         CONFIG_ACCESS_TOKEN_VALIDITY_SECONDS = props.getProperty("rest.access.token.validity.seconds", null);
-        CONFIG_CLIENT_ID = props.getProperty("rest.security.client.id", null);
-        CONFIG_CLIENT_SECRET = getConfigClientSecret(props);
     }
 
     private static SealedObject getConfigClientSecret(Properties props) {

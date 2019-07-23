@@ -1,5 +1,5 @@
 #
-# Copyright Siemens AG, 2017, 2019. Part of the SW360 Portal Project.
+# Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
 #
 # All rights reserved. This configuration file is provided to you under the
 # terms and conditions of the Eclipse Distribution License v1.0 which
@@ -7,9 +7,8 @@
 # http://www.eclipse.org/org/documents/edl-v10.php
 #
 
-couchdb:
-  database: sw360_test_oauthclients
-
-sw360:
-  test-user-id: mockedserviceadminuser@sw360.org
-  test-user-password: sw360-admin-password
+security:
+  customheader:
+    headername:
+      # You have to enable authorization by headers explicitly here
+      enabled: true
