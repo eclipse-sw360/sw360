@@ -61,6 +61,10 @@
         <td>External ids:</td>
         <td><sw360:DisplayMap value="${component.externalIds}"/></td>
     </tr>
+    <tr>
+        <td>Additional Data:</td>
+        <td><sw360:DisplayMap value="${component.additionalData}"/></td>
+    </tr>
 </table>
 <table class="table info_table" id="releaseAggregateTable">
     <thead>

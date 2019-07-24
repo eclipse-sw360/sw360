@@ -42,6 +42,9 @@ public class ProjectSummaryTest {
                 case EXTERNAL_IDS:
                     project.externalIds = Collections.emptyMap();
                     break;
+                case ADDITIONAL_DATA:
+                    project.additionalData = Collections.emptyMap();
+                    break;
                 case ATTACHMENTS:
                     project.attachments = Collections.emptySet();
                     break;

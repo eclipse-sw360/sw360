@@ -50,6 +50,7 @@ struct Todo {
 
     // information from external data sources
     19: optional map<string, string> externalIds,
+    300: optional map<string, string> additionalData,
 
     // is valid for Projects
     20: optional bool validForProject,
@@ -93,6 +94,7 @@ struct License {
 
     // information from external data sources
      9: optional map<string, string> externalIds,
+    300: optional map<string, string> additionalData,
 
     // Additional informations
 	// 10: optional bool GPLv2Compat,

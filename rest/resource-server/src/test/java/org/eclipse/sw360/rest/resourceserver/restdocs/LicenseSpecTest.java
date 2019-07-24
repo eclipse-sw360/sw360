@@ -23,8 +23,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultHandler;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.eq;
@@ -56,6 +55,11 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         license.setFullname("Apache License 2.0");
         license.setShortname("Apache 2.0");
         license.setText("placeholder for the Apache 2.0 license text");
+        Map<String,String> externalIds = new HashMap<>();
+        externalIds.put("SPDX", "Apache-2.0");
+        externalIds.put("Trove", "License :: OSI Approved :: Apache Software License");
+        license.setExternalIds(externalIds);
+        license.setAdditionalData(Collections.singletonMap("Key", "Value"));
 
         License license2 = new License();
         license2.setId("MIT");
@@ -102,6 +106,8 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
                         responseFields(
                                 fieldWithPath("fullName").description("The full name of the license"),
                                 fieldWithPath("shortName").description("The short name of the license, optional"),
+                                fieldWithPath("externalIds").description("When releases are imported from other tools, the external ids can be stored here"),
+                                fieldWithPath("additionalData").description("A place to store additional data used by external tools"),
                                 fieldWithPath("text").description("The license's original text"),
                                 fieldWithPath("checked").description("The information, whether the license is already checked, optional and defaults to true"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")

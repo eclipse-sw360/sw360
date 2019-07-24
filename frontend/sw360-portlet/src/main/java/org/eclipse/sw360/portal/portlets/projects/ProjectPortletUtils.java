@@ -108,6 +108,8 @@ public class ProjectPortletUtils {
                 case EXTERNAL_IDS:
                     project.setExternalIds(PortletUtils.getExternalIdMapFromRequest(request));
                     break;
+                case ADDITIONAL_DATA:
+                    project.setAdditionalData(PortletUtils.getAdditionalDataMapFromRequest(request));
                 case TODOS:
                     String userId = UserCacheHolder.getUserFromRequest(request).getId();
                     updateProjectTodosFromRequest(request.getParameterValues(field.toString()), userId, project);

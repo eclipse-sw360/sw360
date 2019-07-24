@@ -355,12 +355,20 @@ public class PortletUtils {
         return customMap;
     }
 
-    public static Map<String,String> getExternalIdMapFromRequest(PortletRequest request) {
-        Map<String, Set<String>> customMap = getCustomMapFromRequest(request, PortalConstants.EXTERNAL_ID_KEY, PortalConstants.EXTERNAL_ID_VALUE);
+    public static Map<String,String> getMapFromRequest(PortletRequest request, String key, String value) {
+        Map<String, Set<String>> customMap = getCustomMapFromRequest(request, key, value);
         return customMap.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey,
                         e -> e.getValue().stream()
                                 .findFirst()
                                 .orElse("")));
+    }
+
+    public static Map<String,String> getExternalIdMapFromRequest(PortletRequest request) {
+        return getMapFromRequest(request, PortalConstants.EXTERNAL_ID_KEY, PortalConstants.EXTERNAL_ID_VALUE);
+    }
+
+    public static Map<String,String> getAdditionalDataMapFromRequest(PortletRequest request) {
+        return getMapFromRequest(request, PortalConstants.ADDITIONAL_DATA_KEY, PortalConstants.ADDITIONAL_DATA_VALUE);
     }
 }

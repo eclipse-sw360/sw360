@@ -116,6 +116,8 @@
                             <core_rt:set var="externalIdsSet" value="${release.externalIds.entrySet()}"/>
                             <core_rt:set var="externalIdKeys" value="<%=PortalConstants.RELEASE_EXTERNAL_ID_KEYS%>"/>
                             <%@include file="/html/utils/includes/editExternalIds.jsp" %>
+                            <core_rt:set var="additionalDataSet" value="${release.additionalData.entrySet()}"/>
+                            <%@include file="/html/utils/includes/editAdditionalData.jsp" %>
                             <%@include file="/html/components/includes/releases/editReleaseRepository.jspf" %>
                         </div>
                         <div id="tab-ReleaseLinks">

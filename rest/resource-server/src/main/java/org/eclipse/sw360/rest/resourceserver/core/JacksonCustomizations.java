@@ -157,7 +157,9 @@ class JacksonCustomizations {
                 "setLicenseInfoHeaderText",
                 "setProjectOwner",
                 "setEnableSvm",
-                "setEnableVulnerabilitiesDisplay"
+                "setEnableVulnerabilitiesDisplay",
+                "additionalDataSize",
+                "setAdditionalData",
         })
         static abstract class ProjectMixin extends Project {
 
@@ -313,6 +315,8 @@ class JacksonCustomizations {
                 "setOwnerCountry",
                 "rolesSize",
                 "setRoles",
+                "additionalDataSize",
+                "setAdditionalData",
         })
         static abstract class ComponentMixin extends Component {
             @Override
@@ -386,6 +390,8 @@ class JacksonCustomizations {
                 "setSoftwarePlatforms",
                 "softwarePlatformsSize",
                 "softwarePlatformsIterator",
+                "additionalDataSize",
+                "setAdditionalData",
         })
         static abstract class ReleaseMixin extends Release {
             @Override
@@ -492,7 +498,9 @@ class JacksonCustomizations {
                 "setRisks",
                 "setText",
                 "mainLicenseIdsIterator",
-                "setChecked"
+                "setChecked",
+                "additionalDataSize",
+                "setAdditionalData",
         })
         static abstract class LicenseMixin extends License {
             @Override

@@ -65,6 +65,9 @@ public class ComponentModerationRequestGenerator extends ModerationRequestGenera
                     case EXTERNAL_IDS:
                         dealWithStringtoStringMap(Component._Fields.EXTERNAL_IDS);
                         break;
+                    case ADDITIONAL_DATA:
+                        dealWithStringKeyedMap(Component._Fields.ADDITIONAL_DATA);
+                        break;
                     default:
                         dealWithBaseTypes(field, Component.metaDataMap.get(field));
                 }

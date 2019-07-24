@@ -160,7 +160,8 @@
             $stepElement.append(wizard.createSingleMergeLine('Wiki', data.componentTarget.wiki, data.componentSource.wiki));
             $stepElement.append(wizard.createSingleMergeLine('Mailing list', data.componentTarget.mailinglist, data.componentSource.mailinglist));
             $stepElement.append(wizard.createSingleMergeLine('Description', data.componentTarget.description, data.componentSource.description));
-            $stepElement.append(wizard.createSingleMergeLine('External ids', data.componentTarget.externalids, data.componentSource.externalids));
+            $stepElement.append(wizard.createMapMergeLine('External ids', data.componentTarget.externalIds, data.componentSource.externalIds));
+            $stepElement.append(wizard.createMapMergeLine('Additional Data', data.componentTarget.additionalData, data.componentSource.additionalData));
 
             $stepElement.append(wizard.createCategoryLine('Roles'));
             $stepElement.append(wizard.createSingleMergeLine('Component owner', data.componentTarget.componentOwner, data.componentSource.componentOwner));
@@ -209,7 +210,8 @@
             componentSelection.wiki = wizard.getFinalSingleValue('Wiki');
             componentSelection.mailinglist = wizard.getFinalSingleValue('Mailing list');
             componentSelection.description = wizard.getFinalSingleValue('Description');
-            componentSelection.externalids = wizard.getFinalSingleValue('External ids');
+            componentSelection.externalIds = wizard.getFinalMapValue('External ids');
+            componentSelection.additionalData = wizard.getFinalMapValue('Additional Data');
 
             componentSelection.componentOwner = wizard.getFinalSingleValue('Component owner');
             componentSelection.ownerAccountingUnit = wizard.getFinalSingleValue('Owner accounting unit');
@@ -264,6 +266,8 @@
             $stepElement.append(wizard.createSingleDisplayLine('Wiki', data.componentSelection.wiki));
             $stepElement.append(wizard.createSingleDisplayLine('Mailing list', data.componentSelection.mailinglist));
             $stepElement.append(wizard.createSingleDisplayLine('Description', data.componentSelection.description));
+            $stepElement.append(wizard.createMapDisplayLine('External ids', data.componentSelection.externalIds));
+            $stepElement.append(wizard.createMapDisplayLine('Additional Data', data.componentSelection.additionalData));
 
             $stepElement.append(wizard.createCategoryLine('Roles'));
             $stepElement.append(wizard.createSingleDisplayLine('Component owner', data.componentSelection.componentOwner));

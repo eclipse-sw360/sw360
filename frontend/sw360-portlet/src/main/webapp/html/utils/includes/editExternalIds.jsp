@@ -42,10 +42,11 @@
 
         function addRowToExternalIdsTable(key, value, rowId) {
             if (!rowId) {
-                var rowId = "externalIdsTableRow" + Date.now();
+                rowId = "externalIdsTableRow" + Date.now();
             }
             if ((!key) && (!value)) {
-                var key = "", value = "";
+                key = "";
+                value = "";
             }
 
             var newRowAsString =

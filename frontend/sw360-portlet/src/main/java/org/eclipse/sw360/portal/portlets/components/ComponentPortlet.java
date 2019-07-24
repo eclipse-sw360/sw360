@@ -1067,14 +1067,14 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
         long numberOfCorrectVuls = vuls.stream()
                 .filter(vul -> ! VerificationState.INCORRECT.equals(getVerificationState(vul)))
-                .map(vul -> vul.getExternalId())
+                .map(VulnerabilityDTO::getExternalId)
                 .collect(Collectors.toSet())
                 .size();
         request.setAttribute(NUMBER_OF_CHECKED_OR_UNCHECKED_VULNERABILITIES, numberOfCorrectVuls);
         if (PermissionUtils.isAdmin(UserCacheHolder.getUserFromRequest(request))) {
             long numberOfIncorrectVuls = vuls.stream()
                     .filter(v -> VerificationState.INCORRECT.equals(getVerificationState(v)))
-                    .map(vul -> vul.getExternalId())
+                    .map(VulnerabilityDTO::getExternalId)
                     .collect(Collectors.toSet())
                     .size();
             request.setAttribute(NUMBER_OF_INCORRECT_VULNERABILITIES, numberOfIncorrectVuls);

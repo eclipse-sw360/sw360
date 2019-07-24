@@ -125,6 +125,8 @@
             <core_rt:set var="externalIdsSet" value="${component.externalIds.entrySet()}"/>
             <core_rt:set var="externalIdKeys" value="<%=PortalConstants.COMPONENT_EXTERNAL_ID_KEYS%>"/>
             <%@include file="/html/utils/includes/editExternalIds.jsp" %>
+            <core_rt:set var="additionalDataSet" value="${component.additionalData.entrySet()}"/>
+            <%@include file="/html/utils/includes/editAdditionalData.jsp" %>
             <core_rt:if test="${not componentDivAddMode}">
                 <%@include file="/html/utils/includes/editAttachments.jspf" %>
             <core_rt:set var="documentName"><sw360:out value='${component.name}'/></core_rt:set>
