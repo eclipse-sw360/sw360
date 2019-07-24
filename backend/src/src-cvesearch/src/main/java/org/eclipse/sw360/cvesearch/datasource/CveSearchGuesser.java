@@ -29,7 +29,7 @@ public class CveSearchGuesser {
     private int productThreshold = 0;
     private int cutoff = Integer.MAX_VALUE;
 
-    Logger log = Logger.getLogger(CveSearchGuesser.class);
+    private Logger log = Logger.getLogger(CveSearchGuesser.class);
 
     public CveSearchGuesser(CveSearchApi cveSearchApi) {
         this.cveSearchApi=cveSearchApi;
@@ -75,7 +75,7 @@ public class CveSearchGuesser {
 
     public List<Match> getBest(List<Match> matches, int threshold) {
         if(matches.size() == 0){
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
         List<Match> bestMatches = new ArrayList<>();
         int minDistance = matches.get(0).getDistance();

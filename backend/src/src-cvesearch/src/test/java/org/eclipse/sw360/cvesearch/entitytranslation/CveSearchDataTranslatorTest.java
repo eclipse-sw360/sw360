@@ -12,6 +12,7 @@
  */
 package org.eclipse.sw360.cvesearch.entitytranslation;
 
+import org.eclipse.sw360.cvesearch.TestWithCveSearchConnection;
 import org.eclipse.sw360.cvesearch.datasource.CveSearchApiImpl;
 import org.eclipse.sw360.cvesearch.datasource.CveSearchData;
 import org.eclipse.sw360.cvesearch.service.CveSearchHandler;
@@ -28,15 +29,14 @@ import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.cvesearch.datasource.CveSearchDataTestHelper.isUrlReachable;
 
-public class CveSearchDataTranslatorTest {
+public class CveSearchDataTranslatorTest extends TestWithCveSearchConnection {
 
-    CveSearchData cveSearchData;
-    String host;
+    private CveSearchData cveSearchData;
 
-    String ID = "1";
-    String CVEYEAR = "2007";
-    String CVENUMBER = "5432";
-    String CVE = "CVE-" + CVEYEAR + "-" + CVENUMBER;
+    private String ID = "1";
+    private String CVEYEAR = "2007";
+    private String CVENUMBER = "5432";
+    private String CVE = "CVE-" + CVEYEAR + "-" + CVENUMBER;
 
     private CveSearchDataTranslator cveSearchDataTranslator;
     private CveSearchDataToVulnerabilityTranslator cveSearchDataToVulnerabilityTranslator;
@@ -99,10 +99,6 @@ public class CveSearchDataTranslatorTest {
         cveSearchData = generateCveSearchData("1");
         cveSearchDataTranslator = new CveSearchDataTranslator();
         cveSearchDataToVulnerabilityTranslator = new CveSearchDataToVulnerabilityTranslator();
-
-        Properties props = CommonUtils.loadProperties(CveSearchDataTranslatorTest.class, "/cvesearch.properties");
-        host = props.getProperty(CveSearchHandler.CVESEARCH_HOST_PROPERTY, "http://localhost:5000");
-        Assume.assumeTrue("CVE Search host is reachable", isUrlReachable(host));
     }
 
     @Test
@@ -141,20 +137,18 @@ public class CveSearchDataTranslatorTest {
 
     @Test
     public void testWithRealData() throws IOException {
-        List<CveSearchData> cveSearchDatas = new CveSearchApiImpl(host).search("zyxel","zywall");
+        List<CveSearchData> cveSearchDatas = cveSearchApi.search("zyxel","zywall");
         List<CveSearchDataTranslator.VulnerabilityWithRelation> vms = cveSearchDatas.stream()
                 .map(cveSearchData -> cveSearchDataTranslator.apply(cveSearchData))
                 .collect(Collectors.toList());
-        assert(vms != null);
     }
 
     @Test
     public void testWithApacheData() throws IOException {
-        List<CveSearchData> cveSearchDatas = new CveSearchApiImpl(host).search("apache",".*");
+        List<CveSearchData> cveSearchDatas = cveSearchApi.search("apache",".*");
         List<CveSearchDataTranslator.VulnerabilityWithRelation> vms = cveSearchDatas.stream()
                 .map(cveSearchData -> cveSearchDataTranslator.apply(cveSearchData))
                 .collect(Collectors.toList());
-        assert(vms != null);
         List<Vulnerability> vs = vms.stream()
                 .map(vm -> vm.vulnerability)
                 .collect(Collectors.toList());
