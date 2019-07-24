@@ -20,12 +20,14 @@ import org.eclipse.sw360.datahandler.common.*;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
 import org.eclipse.sw360.mail.MailConstants;
 import org.eclipse.sw360.mail.MailUtil;
@@ -196,6 +198,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return RequestStatus.DUPLICATE;
         } else if (duplicateAttachmentExist(project)) {
             return RequestStatus.DUPLICATE_ATTACHMENT;
+        } else if (!updateProjectAllowed(actual, user)) {
+            return RequestStatus.CLOSED_UPDATE_NOT_ALLOWED;
         } else if (!changePassesSanityCheck(project, actual)){
             return RequestStatus.FAILED_SANITY_CHECK;
         } else if (makePermission(actual, user).isActionAllowed(RequestedAction.WRITE)) {
@@ -228,6 +232,14 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return AttachmentConnector.isDuplicateAttachment(project.attachments);
         }
         return false;
+    }
+
+    private boolean updateProjectAllowed(Project project, User user) {
+        if (project.clearingState != null && project.clearingState.equals(ProjectClearingState.CLOSED)
+                && !PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user)) {
+            return false;
+        }
+        return true;
     }
 
     private void deleteAttachmentUsagesOfUnlinkedReleases(Project updated, Project actual) throws SW360Exception {

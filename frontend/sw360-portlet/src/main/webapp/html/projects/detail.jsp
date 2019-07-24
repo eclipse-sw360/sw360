@@ -44,7 +44,11 @@
     <div id="header"></div>
     <p class="pageHeader"><span class="pageHeaderBigSpan">Project: <sw360:ProjectName project="${project}"/></span>
         <span class="pull-right">
-        <input type="button" id="edit" value="Edit" class="addButton">
+        <input type="button" id="edit" value="Edit" class="addButton"
+            <c:if test = "${(project.clearingState eq 'CLOSED') && (isUserAdmin != 'Yes')}">
+                disabled="disabled"
+            </c:if>
+        </input>
     </span>
     </p>
 
