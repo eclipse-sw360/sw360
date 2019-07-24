@@ -28,8 +28,9 @@ To migrate it is recommended to do this in the following order:
 ### 2.2.0 -> 3.0.0
 - `007_add_submitters_usergroup_to_moderation_request.py`
 - `008_add_component_type_to_moderation_requests.py`
-### 3.3.0 -> 3.4.0
+### 3.3.0 -> 4.0.0
 - `011_migrate_attachment_usages_license_info.py`
+- `012_migrate_todoid_to_title.py`
 
 ## Optional usage
 - `009_overwrite_release_name_with_component_name.py`
