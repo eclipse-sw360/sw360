@@ -205,7 +205,7 @@ public class UserPortlet extends Sw360Portlet {
             org.eclipse.sw360.datahandler.thrift.users.User sw360user = UserCacheHolder.getUserFromEmail(emailAddress);
             boolean wantsMailNotification =
                     sw360user.isSetWantsMailNotification() ? sw360user.wantsMailNotification : true;
-            String userGroup = sw360user.getUserGroup().toString();
+            String userGroup = sw360user.getUserGroup() != null ? sw360user.getUserGroup().toString() : null;
 
             csvPrinter.printRecord(firstName, lastName, emailAddress, department, userGroup, gid, isMale, passwordHash, wantsMailNotification);
         }
