@@ -30,7 +30,7 @@ import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
-
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 
@@ -403,6 +403,7 @@ public class LicensesPortlet extends Sw360Portlet {
             todo.setObligationDatabaseIds(Collections.emptySet());
         }
         todo.setText(todoText);
+        todo.setTitle(StringUtils.EMPTY);
 
         User user = UserCacheHolder.getUserFromRequest(request);
         String moderationComment = request.getParameter(PortalConstants.MODERATION_REQUEST_COMMENT);
