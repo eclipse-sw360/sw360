@@ -123,17 +123,6 @@
                             <a class="top" href="#releaseHeader">&#8679;</a>
                         </h3>
                     </div>
-
-                        #set($copyrights = [])
-                        #if(${licenseInfoResults.get($releaseName).licenseInfo})
-                            #set($copyrights = $licenseInfoResults.get($releaseName).licenseInfo.copyrights)
-    <pre class="copyrights">
-#foreach($copyright in ${copyrights})
-$esc.xml($copyright)
-#end
-    </pre>
-                        #end
-
                     #if(${acknowledgements.get($releaseName)})
                         Acknowledgements:<br/>
                             #set($acks = [])
@@ -147,18 +136,19 @@ $esc.xml($ack)
 
                     Licenses:<br/>
                     #set($licenses = [])
+                    #set($licenseId = 1)
                     #if(${licenseInfoResults.get($releaseName).licenseInfo})
                         #set($licenses = $licenseInfoResults.get($releaseName).licenseInfo.licenseNamesWithTexts)
                         #if($licenses.size() > 0)
                             <ul style="list-style-type:none" class="licenseEntries">
-                            #foreach($license in ${licenses})
+                            #foreach($license in ${licenseNames})
                                 #set($licenseName = "&lt;no license name available&gt;")
-                                #if($license.licenseName)
-                                    #set($licenseName = $esc.xml($license.licenseName))
+                                #if($license)
+                                    #set($licenseName = $esc.xml($license))
                                 #end
-                                #set($licenseId = $licenseNameWithTextToReferenceId.get($license))
                                 <li class="licenseEntry" id="licenseEntry$licenseId" title="$licenseName">
-                                    <a href="#licenseTextItem$licenseId">$licenseName ($licenseId)</a>
+                                    <a href="#$licenseName">($licenseId) $licenseName </a>
+                                    #set($licenseId = $licenseId + 1)
                                </li>
                             #end
                             </ul>
@@ -188,7 +178,7 @@ $esc.xml($ack)
             #end
 
             #set($licenseId = $licenseNameWithTextToReferenceId.get($license))
-            <li id="licenseTextItem$licenseId">
+            <li id="$licenseName">
                 <h3>$licenseId: $licenseName<a class="top" href="#releaseHeader">&#8679;</a></h3>
     <pre class="licenseText" id="licenseText$licenseId">
 $licenseText
@@ -197,6 +187,21 @@ $licenseText
         #end
         </ul>
     #end
-
+<ul id="releases" style="list-style-type:none">
+    #foreach($releaseName in $licenseInfoResults.keySet())
+        <li id="$esc.xml($releaseName).replace(" ","_").replace(",","-")" class="release" title="$esc.xml($releaseName)">
+        #set($copyrights = [])
+       #if(${licenseInfoResults.get($releaseName).licenseInfo})
+           #set($copyrights = $licenseInfoResults.get($releaseName).licenseInfo.copyrights)
+           <pre class="copyrights">
+           #foreach($copyright in ${copyrights})
+$esc.xml($copyright)
+           #end
+           </pre>
+       #end
+            </li>
+    #end
+</ul>
+<h3><a class="top" href="#releaseHeader">&#8679;</a></h3>
 </body>
 </html>
