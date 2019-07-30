@@ -26,6 +26,25 @@
 				<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-attachmentUsages'}">active</core_rt:if>" href="#tab-attachmentUsages" data-toggle="list" role="tab">Attachment Usages</a>
 			</core_rt:if>
 			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ClearingStatus'}">active</core_rt:if>" href="#tab-ClearingStatus" data-toggle="list" role="tab">Clearing Status</a>
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Obligations'}">active</core_rt:if>" href="#tab-Obligations" data-toggle="list" role="tab">Obligations
+				<core_rt:if test="${isObligationPresent}">
+					<span id="obligtionsCount"
+						<core_rt:choose>
+							<core_rt:when test="${approvedObligationsCount == 0}">
+							class="badge badge-danger"
+							</core_rt:when>
+							<core_rt:when test="${approvedObligationsCount == project.linkedObligations.size()}">
+							class="badge badge-success"
+							</core_rt:when>
+							<core_rt:otherwise>
+							class="badge badge-light"
+							</core_rt:otherwise>
+						</core_rt:choose>
+					>
+						${approvedObligationsCount} / ${project.linkedObligations.size()}
+					</span>
+				</core_rt:if>
+			</a>
 			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ECCStatus'}">active</core_rt:if>" href="#tab-ECCStatus" data-toggle="list" role="tab">ECC Status</a>
 			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Attachments'}">active</core_rt:if>" href="#tab-Attachments" data-toggle="list" role="tab">Attachments</a>
 			<core_rt:if test="${inProjectDetailsContext}">
@@ -97,6 +116,16 @@
 									<button id="exportReleasesSpreadsheetClearingButton" type="button" class="btn btn-secondary">Export Spreadsheet</button>
 								</div>
 							</div>
+							<div class="list-group-companion" data-belong-to="tab-Obligations">
+								<core_rt:if test="${isObligationPresent}">
+									<div class="nav nav-pills justify-content-center bg-light font-weight-bold" id="pills-tab" role="tablist">
+										<a class="nav-item nav-link active" id="pills-obligations-tab" data-toggle="pill" href="#pills-obligationsView" role="tab" aria-controls="pills-obligationsView" aria-selected="true">
+										View Obligations</a>
+										<a class="nav-item nav-link" id="pills-releases-tab" data-toggle="pill" href="#pills-releasesView" role="tab" aria-controls="pills-releasesView" aria-selected="false">
+										View by Releases</a>
+									</div>
+								</core_rt:if>
+							</div>
 							<div class="list-group-companion" data-belong-to="tab-Vulnerabilities">
 								<div class="btn-group" role="group">
 									<button id="btnShowVulnerabilityCount" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -147,6 +176,9 @@
 		                </core_rt:if>
 		                <div id="tab-ClearingStatus" class="tab-pane <core_rt:if test="${selectedTab == 'tab-ClearingStatus'}">active show</core_rt:if>">
 		                    <%@include file="/html/projects/includes/projects/clearingStatus.jspf" %>
+		                </div>
+		                <div id="tab-Obligations"  class="tab-pane <core_rt:if test="${selectedTab == 'tab-Obligations'}">active show</core_rt:if>">
+		                    <%@include file="/html/projects/includes/projects/linkedObligations.jspf" %>
 		                </div>
 		                <div id="tab-ECCStatus" class="tab-pane <core_rt:if test="${selectedTab == 'tab-ECCStatus'}">active show</core_rt:if>">
 		                    <%@include file="/html/projects/includes/projects/eccStatus.jspf" %>

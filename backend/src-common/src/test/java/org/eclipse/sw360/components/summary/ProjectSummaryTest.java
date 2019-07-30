@@ -87,6 +87,9 @@ public class ProjectSummaryTest {
                 case TODOS:
                     project.todos = Collections.emptySet();
                     break;
+                case LINKED_OBLIGATIONS:
+                    project.linkedObligations = Collections.emptyMap();
+                    break;
                 default: //most fields are string
                     project.setFieldValue(renderedField, "asd");
                     break;

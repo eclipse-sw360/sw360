@@ -1,0 +1,207 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+<%@include file="/html/init.jsp"%>
+
+<portlet:defineObjects />
+<liferay-theme:defineObjects />
+<%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
+<%@ page import="javax.portlet.PortletRequest"%>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.projects.Project"%>
+<%@ page import="org.eclipse.sw360.portal.common.PortalConstants"%>
+
+<%--for javascript library loading --%>
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
+
+<!-- Obligation View -->
+<div id="obligation-view">
+    <table id="obligationsDetailTable" class="table table-bordered" >
+        <colgroup>
+            <col />
+            <col style="width: 25%;" />
+            <col style="width: 15%;" />
+            <col style="width: 25%;" />
+            <col style="width: 7%;" />
+            <col style="width: 8%;" />
+            <col style="width: 20%;" />
+            <col />
+        </colgroup>
+        <thead>
+            <tr>
+                <th>
+                    <span class="more-info shown" title="Expand the icon to see obligation text" data-show="false">&#x25BA</span>
+                </th>
+                <th>Obligation</th>
+                <th>Licenses</th>
+                <th>Releases</th>
+                <th>Status</th>
+                <th>Action</th>
+                <th>Comment</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</div>
+<script>
+require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatables, render) {
+    var obligationJSON = [],
+        licenseIds,
+        releaseIds,
+        releaseNames;
+
+    /* Print all attachment table data as array into the html page */
+    <core_rt:forEach items="${project.linkedObligations}" var="entry" varStatus="loop">
+        <core_rt:set var="projectObligations" value="${entry.value}" />
+        licenseIds = [];
+        releaseIds = [];
+        releaseNames = [];
+
+        <core_rt:forEach items="${projectObligations.licenseIds}" var="licenseId">
+            licenseIds.push("${licenseId}");
+        </core_rt:forEach >
+
+        <core_rt:forEach items="${projectObligations.releases}" var="release">
+            releaseIds.push("${release.id}");
+            releaseNames.push("${release.name} (${release.version})");
+        </core_rt:forEach >
+
+        obligationJSON.push({
+            "obligation": '${entry.key}',
+            "lIds": licenseIds.join(', <br>'),
+            "rIds": releaseIds,
+            "rNames": releaseNames.join(', <br>'),
+            "status": "<sw360:DisplayEnum value='${projectObligations.status}'/>",
+            "action": '${projectObligations.action}',
+            "comment": '${projectObligations.comment}',
+            "text": '<sw360:out value="${projectObligations.text}" maxChar="200" />',
+            "modifiedBy": '${projectObligations.modifiedBy}',
+            "modifiedOn": '${projectObligations.modifiedOn}'
+        });
+    </core_rt:forEach >
+
+    /* create table */
+    var table = datatables.create('#obligationsDetailTable', {
+        "data": obligationJSON,
+        "deferRender": false, // do not change this value
+        "columns": [
+            {
+                "className": 'details-control',
+                "data": null,
+                "defaultContent": ''
+            },
+            { "data": "obligation", render: $.fn.dataTable.render.ellipsis },
+            { "data": "lIds", "render": { display: renderLicenseLink } },
+            { "data": "rNames", "render": { display: renderReleaseLink } },
+            { "data": "status", className: 'text-center' },
+            { "data": "action" },
+            { "data": "comment", render: $.fn.dataTable.render.ellipsis },
+        ],
+        "columnDefs": [
+            {
+                "targets": 4,
+                "createdCell": function (td, cellData, rowData, row, col) {
+                    var status = $(rowData.status).text();
+                    if (status === 'Open') {
+                        $(td).addClass('text-danger');
+                    } else if (status === 'Fulfilled') {
+                        $(td).addClass('text-success');
+                    } else if (status === 'In Progress') {
+                        $(td).addClass('text-warning');
+                    }
+                }
+            }
+        ],
+        'createdRow': function (row, data, dataIndex, cell) {
+            if (data.modifiedBy && data.modifiedOn) {
+                $(row).attr('title', 'Modified by: ' + data.modifiedBy + ' | Modified on: ' + data.modifiedOn);
+            }
+        },
+        "order": [[1, 'asc']],
+        "initComplete": datatables.showPageContainer
+    }, [1, 2, 3, 4, 5, 6], [0, 5, 6]);
+
+    function renderReleaseLink(rNames, type, row) {
+        var releaseLinks = [],
+            releaseNames = rNames.split(", <br>"),
+            releasePortletURL = '<%=friendlyReleaseURL%>'.replace(/projects/g, "components");
+        for (var i = 0; i < releaseNames.length; i++) {
+            releaseLinks[i] = render.linkTo(replaceFriendlyUrlParameter(releasePortletURL.toString(), row.rIds[i], '<%=PortalConstants.PAGENAME_RELEASE_DETAIL%>'), releaseNames[i]);
+        }
+        return render.renderExpandableUrls(releaseLinks, 'Release', 28);
+    }
+
+    function renderLicenseLink(lIds, type, row) {
+        var licenseLinks = [],
+            licenseIds = lIds.split(", <br>"),
+            licensePortletURL = '<%=friendlyLicenseURL%>'.replace(/projects/g, "licenses");
+        for (var i = 0; i < licenseIds.length; i++) {
+            licenseLinks[i] = render.linkTo(replaceFriendlyUrlParameter(licensePortletURL.toString(), licenseIds[i], '<%=PortalConstants.PAGENAME_DETAIL%>'), licenseIds[i]);
+        }
+        return render.renderExpandableUrls(licenseLinks, 'License', 21);
+    }
+
+    function replaceFriendlyUrlParameter(portletUrl, id, page) {
+        return portletUrl
+            .replace('<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>', page)
+            .replace('<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>', id);
+    }
+
+    /* Add event listener for opening and closing list of licenses */
+    $('#obligationsDetailTable tbody').on('click', 'td .TogglerLicenseList', function () {
+        render.toggleExpandableList($(this), 'License');
+    });
+
+    /* Add event listener for opening and closing list of releases */
+    $('#obligationsDetailTable tbody').on('click', 'td .TogglerReleaseList', function () {
+        render.toggleExpandableList($(this), 'Release');
+    });
+
+    /* Add event listener for opening and closing details as child row */
+    $('#obligationsDetailTable thead').on('click', 'th .more-info', function() {
+        var textShown = $(this).attr('data-show');
+        table.rows().every(function (rowIdx, tableLoop, rowLoop) {
+            var tr = $(this.node()),
+                row = table.row(tr);
+
+            if (row.child.isShown()) {
+                row.child.hide();
+                tr.removeClass('shown');
+                row.child().removeClass('active')
+            } else {
+                row.child(createChildRow(row.data())).show();
+                tr.addClass('shown');
+                row.child().addClass('active')
+            }
+        });
+
+        if (textShown === 'false') {
+            $(this).attr('data-show', 'true');
+            $(this).html('&#x25BC');
+        } else {
+            $(this).attr('data-show', 'false');
+            $(this).html('&#x25BA')
+        }
+    });
+
+    /*
+     * Define function for child row creation, which will contain additional data for a clicked table row
+     */
+    function createChildRow(rowData) {
+        var childHtmlString = '' +
+            '<div>' +
+            '<span class="dataTableChildRowCell" style="padding-right: 10px; width: 10%;"/>' +
+            '<span class="dataTableChildRowCell" style="padding-right: 50px; width: 90%;">' + rowData.text + '</span>' +
+            '</div>';
+
+        return childHtmlString;
+    }
+});
+</script>

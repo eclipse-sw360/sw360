@@ -74,7 +74,7 @@ define('modules/datatables-renderer', ['jquery', 'modules/dialog', /* jquery-plu
             $select.append($('<option>', { "class": optionClazz, value: key }).text(selectData[key]));
         });
         // use the html attribute to select the value in order to be serializable
-        $select.find('option[value=' + currentKey + ']').attr('selected', true);
+        $select.find('option[value="' + currentKey + '"]').attr('selected', true);
 
         $container.append($select);
         return $container;
@@ -210,12 +210,22 @@ define('modules/datatables-renderer', ['jquery', 'modules/dialog', /* jquery-plu
      */
     $.fn.dataTable.render.inputSelect = function(selectDataKey, name, clazz, optionClazz, hook) {
         return function(key, type, row, meta) {
-            var select;
+            var select,
+                isString = typeof selectDataKey === 'string',
+                isObject = typeof selectDataKey === 'object';
 
             if(type === 'filter' || type === 'sort' || type === 'print') {
-                return meta.settings.json[selectDataKey][key];
+                if (isString) {
+                    return meta.settings.json[selectDataKey][key];
+                } else if (isObject) {
+                    return selectDataKey[key];
+                }
             } else if(type === 'display') {
-                select = createSelectInput(selectDataKey, meta.settings.json[selectDataKey], name, clazz, optionClazz, key);
+                if (isString) {
+                    select = createSelectInput(selectDataKey, meta.settings.json[selectDataKey], name, clazz, optionClazz, key);
+                } else if (isObject) {
+                    select = createSelectInput(selectDataKey, selectDataKey, name, clazz, optionClazz, key);
+                }
                 if(typeof hook === 'function') {
                     hook.call(select, key, type, row, meta);
                 }

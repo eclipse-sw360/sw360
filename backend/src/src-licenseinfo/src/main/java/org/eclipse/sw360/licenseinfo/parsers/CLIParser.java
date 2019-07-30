@@ -10,6 +10,7 @@
  */
 package org.eclipse.sw360.licenseinfo.parsers;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
@@ -37,7 +38,6 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Set;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.closeQuietly;
@@ -84,12 +84,12 @@ public class CLIParser extends AbstractCLIParser {
             Set<String> copyrights = getCopyrights(doc);
             licenseInfo.setCopyrights(copyrights);
 
-            Set<LicenseNameWithText> licenseNamesWithTexts = getLicenseNameWithTexts(doc);
-            licenseInfo.setLicenseNamesWithTexts(licenseNamesWithTexts);
+            licenseInfo.setLicenseNamesWithTexts(getLicenseNameWithTexts(doc));
 
             licenseInfo.setSha1Hash(getSha1Hash(doc));
             licenseInfo.setComponentName(getComponent(doc));
 
+            result.setAttachmentContentId(attachment.getAttachmentContentId());
             result.setStatus(LicenseInfoRequestStatus.SUCCESS);
         } catch (ParserConfigurationException | IOException | XPathExpressionException | SAXException | SW360Exception e) {
             log.error(e);
@@ -111,14 +111,8 @@ public class CLIParser extends AbstractCLIParser {
             attachmentStream = attachmentConnector.getAttachmentStream(attachmentContent, user, context);
             Document doc = getDocument(attachmentStream);
 
-            NodeList obligationNodes = getNodeListByXpath(doc, OBLIGATIONS_XPATH);
-            List<Obligation> obligations = new ArrayList<Obligation>();
-
-            for (int i = 0; i < obligationNodes.getLength(); i++){
-                obligations.add(getObligationFromObligationNode(obligationNodes.item(i)));
-            }
-
-            result.setObligations(obligations);
+            result.setObligations(getObligations(doc));
+            result.setAttachmentContentId(attachment.getAttachmentContentId());
             result.setStatus(ObligationInfoRequestStatus.SUCCESS);
         } catch (ParserConfigurationException | IOException | XPathExpressionException | SAXException | SW360Exception e) {
             log.error(e);
@@ -127,6 +121,11 @@ public class CLIParser extends AbstractCLIParser {
             closeQuietly(attachmentStream, log);
         }
         return result;
+    }
+
+    private List<Obligation> getObligations(Document doc) throws XPathExpressionException {
+        NodeList obligationNodes = getNodeListByXpath(doc, OBLIGATIONS_XPATH);
+        return nodeListToObligationList(obligationNodes);
     }
 
     private Set<LicenseNameWithText> getLicenseNameWithTexts(Document doc) throws XPathExpressionException {
@@ -171,5 +170,13 @@ public class CLIParser extends AbstractCLIParser {
             licenseNamesWithTexts.add(getLicenseNameWithTextFromLicenseNode(nodes.item(i)));
         }
         return licenseNamesWithTexts;
+    }
+
+    private List<Obligation> nodeListToObligationList(NodeList nodes) {
+        List<Obligation> obligations = Lists.newArrayList();
+        for (int i = 0; i < nodes.getLength(); i++) {
+            obligations.add(getObligationFromObligationNode(nodes.item(i)));
+        }
+        return obligations;
     }
 }
