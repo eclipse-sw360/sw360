@@ -17,6 +17,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.*;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 
@@ -269,6 +270,9 @@ public class ThriftValidate {
     public static void prepareProject(Project project) throws SW360Exception {
         assertNotEmpty(project.getName());
         project.setType(TYPE_PROJECT);
+        if (!project.isSetClearingState()) {
+            project.setClearingState(ProjectClearingState.OPEN);
+        }
 
         // Unset temporary fields
         project.unsetPermissions();
