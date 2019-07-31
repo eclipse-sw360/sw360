@@ -15,7 +15,7 @@
     <parent>
         <artifactId>backend</artifactId>
         <groupId>org.eclipse.sw360</groupId>
-        <version>3.4.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 

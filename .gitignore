@@ -11,7 +11,9 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
+# Maven artifacts
 target/
+.flattened-pom.xml
 
 # Ignore private and public keys
 *id_rsa*
@@ -35,3 +37,4 @@ target/
 *.log
 
 /backend/src-common/src/main/resources/sw360.properties
+

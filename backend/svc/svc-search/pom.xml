@@ -15,7 +15,7 @@
     <parent>
         <groupId>org.eclipse.sw360</groupId>
         <artifactId>backend-svc</artifactId>
-        <version>3.4.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>svc-search</artifactId>
