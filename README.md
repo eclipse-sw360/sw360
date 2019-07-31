@@ -4,22 +4,22 @@
 
 A software component catalogue application - designed to work with FOSSology.
 
-SW360 is a liferay portal application to maintain your projects / products and
-the software components within. It can send files to the open source
-license scanner FOSSology for checking the license conditions and 
-maintain license information.
+SW360 is a server with a REST interface and a liferay portal application
+to maintain your projects / products and the software components within.
+
+It can manage SPDX files for checking the license conditions and maintain
+license information.
 
 ### Introduction
 
 It is comprised of one frontend (portal) part, backend (services) part and additionally a REST API:
 
-* Frontend: Liferay-(Tomcat-)based portal application using the Alloy UI framework.
+* Frontend: Liferay-(Tomcat-)based portal application using portlets.
 * Backend: Tomcat-based thrift services for being called by different applications.
 * Database: we store software components and metadata about them in couchdb.
-* Rest: this REST API provides access to project resources for external clients.
-        Please note the state of the REST API is experimental and its may exposed by breaking changes.
+* Rest: this REST API provides access to project resources for external integration.
 
-The reference platform is the Ubuntu server 14.04 (which is a LTS version). However, it
+The reference platform is the Ubuntu server 16.04 (which is a LTS version). However, it
 runs well on other OSes (see below).
 
 ### Project structure
@@ -57,21 +57,27 @@ The software is tested with
 * Liferay GA5
 * CouchDB 1.5 / 1.5.1
 * OpenJDK Java 1.8.0_45 (64-bit) 
-* Tested with windows 7 SP1, ubuntu 14.04, macosx 10.8, 10.9 10.10
-* We run Liferay with PostgreSQL 9.3, but HSQL (as of the bundle) runs also OK.
+* Tested with debian 8, debian 9, ubuntu 16.04, macosx 10.8 - 10.14
+* We run Liferay with PostgreSQL 9.X, as the Lifera requires, but HSQL (as of the bundle) runs also OK.
 
 ### PROBLEMS
 
-Running with the tested software shows no problems if you encounter some please report them at https://github.com/eclipse/sw360/issues.
+Running with the tested software shows no problems if you encounter some please report them at: 
 
+https://github.com/eclipse/sw360/issues
 
 ### Deployment
 
-There is a vagrant project for one-step-deployment. See the project wiki for details.
+There is a vagrant project for one-step-deployment. See the project wiki for details:
 
-Apart from the vagrant way, the software can be deployed using the provided scripts.
+https://github.com/eclipse/sw360/wiki
+
+Apart from the vagrant way, the software can be deployed using sw360chores:
+
+https://github.com/sw360/sw360chores
 
 ### Commands
+
 Most commands are using maven which is a dependency to build SW360.
 
 #### Compiling, testing and deploying
