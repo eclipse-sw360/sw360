@@ -51,6 +51,10 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyString
 import static org.eclipse.sw360.licenseinfo.outputGenerators.DocxUtils.*;
 
 public class DocxGenerator extends OutputGenerator<byte[]> {
+    private static final int TABLE_WIDTH = 8800;
+    private static final String CAPTION_EXTID_TABLE_VALUE = "External Identifiers for this Product:";
+    private static final String CAPTION_EXTID_TABLE = "$caption-extid-table";
+    private static final String EXTERNAL_ID_TABLE = "$external-id-table";
     private static final Logger LOGGER = Logger.getLogger(DocxGenerator.class);
     private static final String UNKNOWN_LICENSE_NAME = "Unknown license name";
     private static final String UNKNOWN_FILE_NAME = "Unknown file name";
@@ -71,14 +75,15 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
     private static final int COMMON_RULES_TABLE_INDEX = 4;
     public static final int ADDITIONAL_REQ_TABLE_INDEX = 5;
 
-
+    private static final String EXT_ID_TABLE_HEADER_COL1 = "Identifier Name";
+    private static final String EXT_ID_TABLE_HEADER_COL2 = "Identifier Value";
 
     public DocxGenerator(OutputFormatVariant outputFormatVariant, String description) {
         super(DOCX_OUTPUT_TYPE, description, true, DOCX_MIME_TYPE, outputFormatVariant);
     }
 
     @Override
-    public byte[] generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project, Collection<ObligationParsingResult> obligationResults, User user) throws SW360Exception {
+    public byte[] generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project, Collection<ObligationParsingResult> obligationResults, User user, Map<String, String> externalIds) throws SW360Exception {
         String licenseInfoHeaderText = project.getLicenseInfoHeaderText();
 
         ByteArrayOutputStream docxOutputStream = new ByteArrayOutputStream();
@@ -95,7 +100,8 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                             projectLicenseInfoResults,
                             project,
                             licenseInfoHeaderText,
-                            false
+                            false,
+                            externalIds
                             );
                     } else {
                         throw new SW360Exception("Could not load the template for xwpf document: " + DOCX_TEMPLATE_FILE);
@@ -138,7 +144,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         Collection<LicenseInfoParsingResult> projectLicenseInfoResults,
         Project project,
         String licenseInfoHeaderText,
-        boolean includeObligations) throws XmlException, TException {
+        boolean includeObligations, Map<String, String> externalIds) throws XmlException, TException {
 
             String projectName = project.getName();
             String projectVersion = project.getVersion();
@@ -147,9 +153,53 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
             replaceText(document, "$project-name", projectName);
             replaceText(document, "$project-version", projectVersion);
 
+            fillExternalIds(document, externalIds);
             fillReleaseBulletList(document, projectLicenseInfoResults);
             fillReleaseDetailList(document, projectLicenseInfoResults, includeObligations);
             fillLicenseList(document, projectLicenseInfoResults);
+    }
+
+    private void fillExternalIds(XWPFDocument document, Map<String, String> externalIdMap) {
+        if(!externalIdMap.isEmpty()) {
+            replaceText(document, CAPTION_EXTID_TABLE, CAPTION_EXTID_TABLE_VALUE);
+            List<XWPFParagraph> list = document.getParagraphs().stream()
+                    .filter(x -> x.getParagraphText().equalsIgnoreCase(EXTERNAL_ID_TABLE)).collect(Collectors.toList());
+            if (!list.isEmpty()) {
+                XmlCursor cursor = list.get(0).getCTP().newCursor();
+                XWPFTable table = document.insertNewTbl(cursor);
+                XWPFTableRow tableHeader = table.getRow(0);
+                tableHeader.addNewTableCell();
+
+                addFormattedText(tableHeader.getCell(0).addParagraph().createRun(),
+                        EXT_ID_TABLE_HEADER_COL1, FONT_SIZE, true);
+                addFormattedText(tableHeader.getCell(1).addParagraph().createRun(),
+                        EXT_ID_TABLE_HEADER_COL2, FONT_SIZE, true);
+
+                externalIdMap.entrySet().forEach(x -> {
+                    XWPFTableRow row = table.createRow();
+                    row.getCell(0).setText(x.getKey());
+                    row.getCell(1).setText(x.getValue());
+                });
+
+                setTableRowSize(table);
+                removeParagraph(document, EXTERNAL_ID_TABLE);
+                addNewLines(document, 1);
+            }
+        }else {
+            removeParagraph(document,EXTERNAL_ID_TABLE);
+            removeParagraph(document, CAPTION_EXTID_TABLE);
+        }
+    }
+
+    private void setTableRowSize(XWPFTable table) {
+        for(int x = 0;x < table.getNumberOfRows(); x++){
+            XWPFTableRow row = table.getRow(x);
+            int numberOfCell = row.getTableCells().size();
+            for(int y = 0; y < numberOfCell ; y++){
+                XWPFTableCell cell = row.getCell(y);
+                cell.getCTTc().addNewTcPr().addNewTcW().setW(BigInteger.valueOf(TABLE_WIDTH));
+            }
+          }
     }
 
     private void fillReportDocument(

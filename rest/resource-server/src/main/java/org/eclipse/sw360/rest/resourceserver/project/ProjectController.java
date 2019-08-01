@@ -264,6 +264,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
     public void downloadLicenseInfo(@PathVariable("id") String id,
                                     @RequestParam("generatorClassName") String generatorClassName,
                                     @RequestParam("variant") String variant,
+                                    @RequestParam(value = "externalIds", required=false) String externalIds,
                                     HttpServletResponse response) throws TException, IOException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
@@ -294,7 +295,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
 			StringUtils.isBlank(projectVersion) ? "" : "-" + projectVersion, timestamp,
 			outputFormatInfo.getFileExtension());
 
-        final LicenseInfoFile licenseInfoFile = licenseInfoService.getLicenseInfoFile(sw360Project, sw360User, outputGeneratorClassNameWithVariant, selectedReleaseAndAttachmentIds, excludedLicenses);
+        final LicenseInfoFile licenseInfoFile = licenseInfoService.getLicenseInfoFile(sw360Project, sw360User, outputGeneratorClassNameWithVariant, selectedReleaseAndAttachmentIds, excludedLicenses, externalIds);
         byte[] byteContent = licenseInfoFile.bufferForGeneratedOutput().array();
         response.setContentType(outputFormatInfo.getMimeType());
         response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", filename));

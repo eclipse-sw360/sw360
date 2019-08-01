@@ -109,7 +109,7 @@ service LicenseInfoService {
      * get a copyright and license information file on all linked releases and linked releases of linked projects (recursively)
      * output format as specified by outputType
      */
-    LicenseInfoFile getLicenseInfoFile(1: Project project, 2: User user, 3: string outputGeneratorClassName, 4: map<string, set<string>> releaseIdsToSelectedAttachmentIds, 5: map<string, set<LicenseNameWithText>> excludedLicensesPerAttachment);
+    LicenseInfoFile getLicenseInfoFile(1: Project project, 2: User user, 3: string outputGeneratorClassName, 4: map<string, set<string>> releaseIdsToSelectedAttachmentIds, 5: map<string, set<LicenseNameWithText>> excludedLicensesPerAttachment, 6: string externalIds);
 
     /**
       * returns all available output types

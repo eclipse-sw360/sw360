@@ -65,6 +65,16 @@
             background: #e95850;
         }
 
+        table {
+              border-collapse: collapse;
+              width: 50%;
+         }
+         th {
+             height: 40px;
+         }
+         table, th, td {
+              border: 1px solid black;
+         }
     </style>
     <title>
         Open Source Software
@@ -74,6 +84,22 @@
     <h1>$projectTitle</h1>
     <h2>Open Source Software</h2>
     $licenseInfoHeader
+
+#if($externalIds.keySet().size() > 0)
+    <h2>External Identifiers for this Product</h2>
+    <table>
+    <tr>
+        <th>Identifier Name</th>
+        <th>Identifier Value</th>
+    </tr>
+    #foreach ($externalId in $externalIds.keySet())
+   <tr>
+       <td>$externalId</td>
+       <td>$externalIds[$externalId]</td>
+   </tr>
+#end
+   </table>
+#end
 
     <h2 id="releaseHeader">Releases</h2>
 

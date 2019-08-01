@@ -51,19 +51,77 @@
         </div>
         <div class="row">
             <div class="col" >
+            <button id="selectVariantAndDownload" type="button" class="btn btn-primary">Download</button>
                 <form id="downloadLicenseInfoForm" class="form-inline" name="downloadLicenseInfoForm" action="<%=downloadLicenseInfoURL%>" method="post">
                     <%@include file="/html/projects/includes/attachmentSelectTable.jspf" %>
-
-                    <div class="form-group">
-                        <select id="<%=PortalConstants.LICENSE_INFO_SELECTED_OUTPUT_FORMAT%>" class="form-control"
-                                name="<portlet:namespace/><%=PortalConstants.LICENSE_INFO_SELECTED_OUTPUT_FORMAT%>">
-                                            <sw360:DisplayOutputFormats options='${licenseInfoOutputFormats}'/>
-                        </select>
-                        <input type="submit" value="Download File" class="btn btn-primary"/>
-                    </div>
                 </form>
             </div>
         </div>
     </div>
     <%@ include file="/html/utils/includes/pageSpinner.jspf" %>
 </core_rt:if>
+
+<div class="dialogs auto-dialogs">
+<div id="downloadLicenseInfoDialog" class="modal fade" tabindex="-1" role="dialog">
+<div class="modal-dialog modal-lg modal-dialog-centered modal-info" role="document">
+  <!-- <div class="modal-dialog" role="document"> -->
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Select Other Options</h5>
+        <button id="closeModalButton" type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+						<c:if test="${not empty externalIds}">
+								<div class="form-group form-check">
+									<label for="externalIdLabel" class="font-weight-bold h3">Select the external Ids:</label>
+							        <c:forEach var="extId" items="${externalIds}">
+									   <div class="checkbox form-check">
+										  <label><input id="<%=PortalConstants.EXTERNAL_ID_SELECTED_KEYS%>" name="externalIdsSelection" type="checkbox" value="${extId}">
+									      <c:out value="${extId}" /></input></label>
+									   </div>
+							        </c:forEach>
+								</div>
+						</c:if>
+					<div class="form-group form-check">
+						<label for="outputFormatLabel" class="licenseInfoOpFormat font-weight-bold h3">Select output format and variant:</label>
+						<sw360:DisplayOutputFormats options='${licenseInfoOutputFormats}' />
+					</div>
+	  </div>
+      <div class="modal-footer">
+        <button id="downloadFileModal" type="button" value="Download" class="btn btn-primary">Download</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+require(['jquery', 'modules/dialog'], function($, dialog) {
+    $('#selectVariantAndDownload').on('click', selectVariantAndSubmit);
+    function selectVariantAndSubmit(){
+        dialog.open('#downloadLicenseInfoDialog','',function(submit, callback) {
+            callback(true);
+        });
+    }
+    $('#downloadFileModal').on('click', downloadFile);
+    function downloadFile(){
+        var licenseInfoSelectedOutputFormat = $('input[name="outputFormat"]:checked').val();
+        var externalIds = [];
+        $.each($("input[name='externalIdsSelection']:checked"), function(){
+            externalIds.push($(this).val());
+        });
+        var extIdsHidden = externalIds.join(',');
+
+        $('#downloadLicenseInfoForm').append('<input id="extIdHidden" type="hidden" name="<portlet:namespace/><%=PortalConstants.EXTERNAL_ID_SELECTED_KEYS%>"/>');
+        $('#downloadLicenseInfoForm').append('<input id="licensInfoFileFormat" type="hidden" name="<portlet:namespace/><%=PortalConstants.LICENSE_INFO_SELECTED_OUTPUT_FORMAT%>"/>');
+
+        $("#extIdHidden").val(extIdsHidden);
+        $("#licensInfoFileFormat").val(licenseInfoSelectedOutputFormat);
+
+        $('#downloadLicenseInfoForm').submit();
+    }
+});
+</script>

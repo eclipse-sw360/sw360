@@ -32,7 +32,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.licenseinfo.outputGenerators.*;
 import org.eclipse.sw360.licenseinfo.parsers.*;
 import org.eclipse.sw360.licenseinfo.util.LicenseNameWithTextUtils;
-
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 
@@ -101,7 +101,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
 
     @Override
     public LicenseInfoFile getLicenseInfoFile(Project project, User user, String outputGenerator,
-                                              Map<String, Set<String>> releaseIdsToSelectedAttachmentIds, Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachment)
+                                              Map<String, Set<String>> releaseIdsToSelectedAttachmentIds, Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachment, String externalIds)
             throws TException {
         assertNotNull(project);
         assertNotNull(user);
@@ -128,7 +128,14 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
 
         fillDefaults(project);
 
-        Object output = generator.generateOutputFile(projectLicenseInfoResults, project, obligationsResults, user);
+        Map<String,String> filteredExtIdMap = Collections.emptyMap();
+        if(!StringUtils.isEmpty(externalIds)) {
+            Map<String,String> extIdMap = project.getExternalIds();
+            List<String> externalId = Arrays.asList(externalIds.split(","));
+            filteredExtIdMap = extIdMap.entrySet().stream().filter(x->externalId.contains(x.getKey())).collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+        }
+
+        Object output = generator.generateOutputFile(projectLicenseInfoResults, project, obligationsResults, user, filteredExtIdMap);
         if (output instanceof byte[]) {
             licenseInfoFile.setGeneratedOutput((byte[]) output);
         } else if (output instanceof String) {
