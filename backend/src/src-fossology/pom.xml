@@ -16,24 +16,12 @@
     <parent>
         <groupId>org.eclipse.sw360</groupId>
         <artifactId>backend-src</artifactId>
-        <version>3.4.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>src-fossology</artifactId>
     <packaging>jar</packaging>
     <name>src-fossology</name>
-
-    <developers>
-        <developer>
-            <name>cedric.bodet@tngtech.com</name>
-        </developer>
-        <developer>
-            <name>johannes.najjar@tngtech.com</name>
-        </developer>
-        <developer>
-            <name>daniele.fognini@tngtech.com</name>
-        </developer>
-    </developers>
 
     <dependencies>
         <dependency>
@@ -57,5 +45,4 @@
             <version>${spring.version}</version>
         </dependency>
     </dependencies>
-
 </project>

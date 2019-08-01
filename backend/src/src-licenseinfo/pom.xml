@@ -11,6 +11,16 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    
+    <parent>
+        <groupId>org.eclipse.sw360</groupId>
+        <artifactId>backend-src</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>src-licenseinfo</artifactId>
+    <packaging>jar</packaging>
+    <name>src-licenseinfo</name>
 
     <dependencyManagement>
         <dependencies>
@@ -25,6 +35,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.eclipse.sw360</groupId>
+            <artifactId>src-attachments</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.12</version>
@@ -35,11 +50,6 @@
             <artifactId>junit-dataprovider</artifactId>
             <version>1.12.0</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.sw360</groupId>
-            <artifactId>src-attachments</artifactId>
-            <version>3.4.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.spdx</groupId>
@@ -101,22 +111,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-    <parent>
-        <groupId>org.eclipse.sw360</groupId>
-        <artifactId>backend-src</artifactId>
-        <version>3.4.0-SNAPSHOT</version>
-    </parent>
-
-    <artifactId>src-licenseinfo</artifactId>
-    <packaging>jar</packaging>
-    <name>src-licenseinfo</name>
-
-    <developers>
-        <developer>
-            <name>alex.borodin@evosoft.com</name>
-        </developer>
-        <developer>
-            <name>maximilian.huber@tngtech.com</name>
-        </developer>
-    </developers>
 </project>

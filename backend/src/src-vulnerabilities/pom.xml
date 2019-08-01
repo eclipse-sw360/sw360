@@ -17,18 +17,12 @@
     <parent>
         <groupId>org.eclipse.sw360</groupId>
         <artifactId>backend-src</artifactId>
-        <version>3.4.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>src-vulnerabilities</artifactId>
     <packaging>jar</packaging>
     <name>src-vulnerabilities</name>
-
-    <developers>
-        <developer>
-            <name>stefan.jaeger@evosoft.com</name>
-        </developer>
-    </developers>
 
     <dependencies>
         <dependency>

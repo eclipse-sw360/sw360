@@ -17,21 +17,12 @@
     <parent>
         <artifactId>backend-svc</artifactId>
         <groupId>org.eclipse.sw360</groupId>
-        <version>3.4.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>svc-schedule</artifactId>
     <packaging>war</packaging>
-
-    <developers>
-        <developer>
-            <name>birgit.heydenreich@tngtech.com</name>
-        </developer>
-        <developer>
-            <name>maximilian.huber@tngtech.com</name>
-        </developer>
-    </developers>
 
     <build>
         <finalName>schedule</finalName>

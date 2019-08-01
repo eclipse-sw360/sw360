@@ -16,7 +16,7 @@
     <parent>
         <groupId>org.eclipse.sw360</groupId>
         <artifactId>backend-src</artifactId>
-        <version>3.4.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -36,10 +36,4 @@
             <version>1.1.1</version>
         </dependency>
     </dependencies>
-
-    <developers>
-        <developer>
-            <name>ksoranko@verifa.io</name>
-        </developer>
-    </developers>
 </project>

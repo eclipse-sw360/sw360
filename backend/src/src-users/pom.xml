@@ -17,11 +17,10 @@
     <parent>
         <artifactId>backend-src</artifactId>
         <groupId>org.eclipse.sw360</groupId>
-        <version>3.4.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>src-users</artifactId>
     <packaging>jar</packaging>
     <name>src-users</name>
-
 </project>

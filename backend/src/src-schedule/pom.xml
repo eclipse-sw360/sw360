@@ -14,33 +14,22 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <dependencies>
-        <dependency>
-            <groupId>org.eclipse.sw360</groupId>
-            <artifactId>datahandler</artifactId>
-            <version>3.4.0-SNAPSHOT</version>
-        </dependency>
-    </dependencies>
-
+    
     <parent>
         <groupId>org.eclipse.sw360</groupId>
         <artifactId>backend-src</artifactId>
-        <version>3.4.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
-
-    <developers>
-        <developer>
-            <name>birgit.heydenreich@tngtech.com</name>
-        </developer>
-        <developer>
-            <name>maximilian.huber@tngtech.com</name>
-        </developer>
-        <developer>
-            <name>stefan.jaeger@evosoft.com</name>
-        </developer>
-    </developers>
 
     <artifactId>src-schedule</artifactId>
     <packaging>jar</packaging>
     <name>src-schedule</name>
+    
+    <dependencies>
+        <dependency>
+            <groupId>org.eclipse.sw360</groupId>
+            <artifactId>datahandler</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
 </project>

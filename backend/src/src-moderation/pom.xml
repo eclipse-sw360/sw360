@@ -15,7 +15,7 @@
     <parent>
         <artifactId>backend-src</artifactId>
         <groupId>org.eclipse.sw360</groupId>
-        <version>3.4.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -23,19 +23,11 @@
     <packaging>jar</packaging>
     <name>src-moderation</name>
 
-    <developers>
-        <developer>
-            <name>cedric.bodet@tngtech.com</name>
-        </developer>
-        <developer>
-            <name>johannes.najjar@tngtech.com</name>
-        </developer>
-    </developers>
     <dependencies>
         <dependency>
             <groupId>org.eclipse.sw360</groupId>
             <artifactId>src-licenses</artifactId>
-            <version>3.4.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 </project>

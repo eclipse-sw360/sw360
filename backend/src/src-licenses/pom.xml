@@ -13,6 +13,17 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.eclipse.sw360</groupId>
+        <artifactId>backend-src</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>src-licenses</artifactId>
+    <packaging>jar</packaging>
+    <name>src-licenses</name>
+        
     <dependencies>
         <dependency>
             <groupId>org.spdx</groupId>
@@ -31,21 +42,4 @@
             <version>3.8.1</version>
         </dependency>
     </dependencies>
-
-    <parent>
-        <groupId>org.eclipse.sw360</groupId>
-        <artifactId>backend-src</artifactId>
-        <version>3.4.0-SNAPSHOT</version>
-    </parent>
-
-    <artifactId>src-licenses</artifactId>
-    <packaging>jar</packaging>
-    <name>src-licenses</name>
-
-    <developers>
-        <developer>
-            <name>cedric.bodet@tngtech.com</name>
-        </developer>
-    </developers>
-
 </project>

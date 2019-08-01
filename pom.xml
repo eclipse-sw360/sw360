@@ -21,18 +21,34 @@
         </license>
     </licenses>
 
+    <groupId>org.eclipse.sw360</groupId>
+    <artifactId>sw360</artifactId>
+    <packaging>pom</packaging>
+    <version>${revision}</version>
+
     <scm>
-      <connection>scm:git:https://github.com/eclipse/sw360</connection>
+        <connection>scm:git:https://github.com/eclipse/sw360</connection>
     </scm>
 
     <distributionManagement>
-      <repository>
-        <id>artifact-repository</id>
-        <url>https://github.com/eclipse/sw360</url>
-      </repository>
-    </distributionManagement>
+        <repository>
+            <id>artifact-repository</id>
+            <url>https://github.com/eclipse/sw360</url>
+        </repository>
+    </distributionManagement> 
+
+    <modules>
+        <module>build-configuration</module>
+        <module>libraries</module>
+        <module>backend</module>
+        <module>frontend</module>
+        <module>rest</module>
+    </modules>
 
     <properties>
+        <!-- This is the single place for changing the version of SW360 -->
+        <revision>4.0.0-M1</revision>
+
         <java.version>1.8</java.version>
         <liferay.version>6.2.2</liferay.version>
         <ektorp.version>1.5.0</ektorp.version>
@@ -70,19 +86,6 @@
         <argLine>-Dcatalina.home=${project.build.directory}/home -Xms64m -Xmx128m -XX:MaxPermSize=512m</argLine>
 
     </properties>
-
-    <groupId>org.eclipse.sw360</groupId>
-    <artifactId>sw360</artifactId>
-    <packaging>pom</packaging>
-    <version>3.4.0-SNAPSHOT</version>
-
-    <modules>
-        <module>build-configuration</module>
-        <module>libraries</module>
-        <module>backend</module>
-        <module>frontend</module>
-        <module>rest</module>
-    </modules>
 
     <dependencyManagement>
         <dependencies>
@@ -307,6 +310,30 @@
                 <configuration>
                     <shortRevisionLength>7</shortRevisionLength>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <version>1.0.0</version>
+                <configuration>
+                    <updatePomFile>true</updatePomFile>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>flatten</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>flatten</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>flatten.clean</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

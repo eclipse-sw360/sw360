@@ -44,16 +44,10 @@
     <parent>
         <groupId>org.eclipse.sw360</groupId>
         <artifactId>backend-src</artifactId>
-        <version>3.4.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>src-codescoop</artifactId>
     <packaging>jar</packaging>
     <name>src-codescoop</name>
-
-    <developers>
-        <developer>
-            <name>alex.skorohod@codescoop.com</name>
-        </developer>
-    </developers>
 </project>
