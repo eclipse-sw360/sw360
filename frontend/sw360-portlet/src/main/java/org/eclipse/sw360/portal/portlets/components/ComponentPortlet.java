@@ -1212,7 +1212,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                     response.setRenderParameter(PAGENAME, PAGENAME_EDIT);
                     request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_COMPONENT);
                     request.setAttribute(DOCUMENT_ID, id);
-                    prepareRequestForEditAfterDuplicateError(request, component);
+                    prepareRequestForEditAfterDuplicateOrNamingError(request, component);
                 } else {
                     cleanUploadHistory(user.getEmail(), id);
                     response.setRenderParameter(PAGENAME, PAGENAME_DETAIL);
@@ -1234,7 +1234,12 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                     case DUPLICATE:
                         setSW360SessionError(request, ErrorMessages.COMPONENT_DUPLICATE);
                         response.setRenderParameter(PAGENAME, PAGENAME_EDIT);
-                        prepareRequestForEditAfterDuplicateError(request, component);
+                        prepareRequestForEditAfterDuplicateOrNamingError(request, component);
+                        break;
+                    case NAMINGERROR:
+                        setSW360SessionError(request, ErrorMessages.COMPONENT_NAMING_ERROR);
+                        response.setRenderParameter(PAGENAME, PAGENAME_EDIT);
+                        prepareRequestForEditAfterDuplicateOrNamingError(request, component);
                         break;
                     default:
                         setSW360SessionError(request, ErrorMessages.COMPONENT_NOT_ADDED);
@@ -1247,7 +1252,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         }
     }
 
-    private void prepareRequestForEditAfterDuplicateError(ActionRequest request, Component component) throws TException {
+    private void prepareRequestForEditAfterDuplicateOrNamingError(ActionRequest request, Component component) throws TException {
         request.setAttribute(COMPONENT, component);
         setAttachmentsInRequest(request, component);
         request.setAttribute(USING_PROJECTS, Collections.emptySet());
