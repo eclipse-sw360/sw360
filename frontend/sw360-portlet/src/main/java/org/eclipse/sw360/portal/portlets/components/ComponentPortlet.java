@@ -62,16 +62,17 @@ import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
 import org.apache.thrift.protocol.TSimpleJSONProtocol;
-
-import javax.portlet.*;
-import javax.portlet.filter.ResourceRequestWrapper;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 
 import java.io.*;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import javax.portlet.*;
+import javax.portlet.filter.ResourceRequestWrapper;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Strings.nullToEmpty;
@@ -85,15 +86,24 @@ import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTExcepti
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
 import static org.eclipse.sw360.portal.common.PortletUtils.getVerificationState;
 
-/**
- * Component portlet implementation
- *
- * @author cedric.bodet@tngtech.com
- * @author Johannes.Najjar@tngtech.com
- * @author stefan.jaeger@evosoft.com
- * @author alex.borodin@evosoft.com
- * @author thomas.maier@evosoft.com
- */
+@org.osgi.service.component.annotations.Component(
+    immediate = true,
+    properties = {
+            "/org/eclipse/sw360/portal/portlets/base.properties",
+            "/org/eclipse/sw360/portal/portlets/default.properties"
+    },
+    property = {
+        "javax.portlet.name=" + COMPONENT_PORTLET_NAME,
+
+        "javax.portlet.display-name=Components",
+        "javax.portlet.info.short-title=Components",
+        "javax.portlet.info.title=Components",
+
+        "javax.portlet.init-param.view-template=/html/components/view.jsp",
+    },
+    service = Portlet.class,
+    configurationPolicy = ConfigurationPolicy.REQUIRE
+)
 public class ComponentPortlet extends FossologyAwarePortlet {
 
     private static final Logger log = Logger.getLogger(ComponentPortlet.class);

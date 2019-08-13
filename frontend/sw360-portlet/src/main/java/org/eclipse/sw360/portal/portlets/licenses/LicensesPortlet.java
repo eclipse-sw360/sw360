@@ -33,14 +33,15 @@ import org.eclipse.sw360.portal.users.UserCacheHolder;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
-
-import javax.portlet.*;
-import javax.servlet.http.HttpServletResponse;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import javax.portlet.*;
+import javax.servlet.http.HttpServletResponse;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.TMP_TODO_ID_PREFIX;
@@ -48,11 +49,24 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.CONTENT_TYPE_OPENXML_SPREADSHEET;
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
 
-/**
- * License portlet implementation
- *
- * @author cedric.bodet@tngtech.com
- */
+@org.osgi.service.component.annotations.Component(
+    immediate = true,
+    properties = {
+        "/org/eclipse/sw360/portal/portlets/base.properties",
+        "/org/eclipse/sw360/portal/portlets/default.properties"
+    },
+    property = {
+        "javax.portlet.name=" + LICENSES_PORTLET_NAME,
+
+        "javax.portlet.display-name=Licenses",
+        "javax.portlet.info.short-title=Licenses",
+        "javax.portlet.info.title=Licenses",
+
+        "javax.portlet.init-param.view-template=/html/licenses/view.jsp",
+    },
+    service = Portlet.class,
+    configurationPolicy = ConfigurationPolicy.REQUIRE
+)
 public class LicensesPortlet extends Sw360Portlet {
 
     private static final Logger log = Logger.getLogger(LicensesPortlet.class);

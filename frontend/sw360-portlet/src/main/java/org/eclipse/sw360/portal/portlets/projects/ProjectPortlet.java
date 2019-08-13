@@ -52,6 +52,7 @@ import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
 import org.apache.thrift.protocol.TSimpleJSONProtocol;
 import org.jetbrains.annotations.NotNull;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -78,14 +79,24 @@ import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTExcepti
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
 import static org.eclipse.sw360.portal.portlets.projects.ProjectPortletUtils.isUsageEquivalent;
 
+@org.osgi.service.component.annotations.Component(
+    immediate = true,
+    properties = {
+        "/org/eclipse/sw360/portal/portlets/base.properties",
+        "/org/eclipse/sw360/portal/portlets/default.properties",
+    },
+    property = {
+        "javax.portlet.name=" + PROJECT_PORTLET_NAME,
 
-/**
- * Project portlet implementation
- *
- * @author cedric.bodet@tngtech.com
- * @author Johannes.Najjar@tngtech.com
- * @author alex.borodin@evosoft.com
- */
+        "javax.portlet.display-name=Projects",
+        "javax.portlet.info.short-title=Projects",
+        "javax.portlet.info.title=Projects",
+
+        "javax.portlet.init-param.view-template=/html/projects/view.jsp",
+    },
+    service = Portlet.class,
+    configurationPolicy = ConfigurationPolicy.REQUIRE
+)
 public class ProjectPortlet extends FossologyAwarePortlet {
     private static final Logger log = Logger.getLogger(ProjectPortlet.class);
 

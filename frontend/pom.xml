@@ -24,9 +24,8 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>layouttpl</module>
         <module>sw360-portlet</module>
-        <module>sw360-theme</module>
+        <module>liferay-theme</module>
     </modules>
 
     <dependencies>

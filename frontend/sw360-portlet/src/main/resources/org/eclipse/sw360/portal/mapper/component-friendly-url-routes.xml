@@ -18,23 +18,23 @@
         <generated-parameter name="pagename">{page}</generated-parameter>
         <generated-parameter name="componentid">{id}</generated-parameter>
         <generated-parameter name="releaseId">{releaseId}</generated-parameter>
-        <implicit-parameter name="p_p_id">components_WAR_sw360portlet</implicit-parameter>
+        <implicit-parameter name="p_p_id">sw360_portlet_components</implicit-parameter>
     </route>
     <route>
         <pattern>/{page}/{id}</pattern>
         <generated-parameter name="pagename">{page}</generated-parameter>
         <generated-parameter name="componentid">{id}</generated-parameter>
-        <implicit-parameter name="p_p_id">components_WAR_sw360portlet</implicit-parameter>
+        <implicit-parameter name="p_p_id">sw360_portlet_components</implicit-parameter>
     </route>
     <route>
         <pattern>/release/{page}/{releaseId}</pattern>
         <generated-parameter name="pagename">{page}</generated-parameter>
         <generated-parameter name="releaseId">{releaseId}</generated-parameter>
-        <implicit-parameter name="p_p_id">components_WAR_sw360portlet</implicit-parameter>
+        <implicit-parameter name="p_p_id">sw360_portlet_components</implicit-parameter>
     </route>
     <route>
         <pattern>/add</pattern>
-        <implicit-parameter name="p_p_id">components_WAR_sw360portlet</implicit-parameter>
+        <implicit-parameter name="p_p_id">sw360_portlet_components</implicit-parameter>
         <implicit-parameter name="pagename">edit</implicit-parameter>
     </route>
     <route>
@@ -46,7 +46,7 @@
         <implicit-parameter name="pagename">detailRelease</implicit-parameter>
         <implicit-parameter name="context_type">release</implicit-parameter>
         <implicit-parameter name="action">AttachmentDownload</implicit-parameter>
-        <implicit-parameter name="p_p_id">components_WAR_sw360portlet</implicit-parameter>
+        <implicit-parameter name="p_p_id">sw360_portlet_components</implicit-parameter>
         <implicit-parameter name="p_p_lifecycle">2</implicit-parameter>
         <implicit-parameter name="p_p_state">normal</implicit-parameter>
         <implicit-parameter name="p_p_mode">view</implicit-parameter>
@@ -62,7 +62,7 @@
         <implicit-parameter name="pagename">detail</implicit-parameter>
         <implicit-parameter name="context_type">component</implicit-parameter>
         <implicit-parameter name="action">AttachmentDownload</implicit-parameter>
-        <implicit-parameter name="p_p_id">components_WAR_sw360portlet</implicit-parameter>
+        <implicit-parameter name="p_p_id">sw360_portlet_components</implicit-parameter>
         <implicit-parameter name="p_p_lifecycle">2</implicit-parameter>
         <implicit-parameter name="p_p_state">normal</implicit-parameter>
         <implicit-parameter name="p_p_mode">view</implicit-parameter>

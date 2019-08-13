@@ -10,15 +10,17 @@
  */
 package org.eclipse.sw360.portal.tags;
 
-import org.apache.thrift.TEnum;
-import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.portal.common.PortalConstants;
 
+import org.apache.thrift.TEnum;
+
+import java.io.IOException;
+
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
+import javax.servlet.jsp.PageContext;
 import javax.servlet.jsp.tagext.SimpleTagSupport;
-import java.io.IOException;
-import java.util.Iterator;
 
 import static com.google.common.base.Predicates.instanceOf;
 import static com.google.common.collect.Iterables.all;
@@ -28,7 +30,7 @@ import static com.google.common.collect.Iterables.all;
  */
 public class DisplayEnumInfo extends SimpleTagSupport {
 
-    private static final String SW360_INFO_IMG_PATH = "/sw360-portlet/images/ic_info.png";
+    private static final String SW360_INFO_IMG_PATH = "/images/ic_info.png";
     private static final String SW360_INFO_IMG = "infopic";
 
     private Class type;
@@ -59,11 +61,13 @@ public class DisplayEnumInfo extends SimpleTagSupport {
     }
 
     private void printEnumValuesInfo(Class enumClass) throws IOException {
+        PageContext pageContext = (PageContext) getJspContext();
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
         JspWriter jspWriter = getJspContext().getOut();
 
         String result = "<span class='" + PortalConstants.TOOLTIP_CLASS__CSS + " "
                 + PortalConstants.TOOLTIP_CLASS__CSS + "-" + enumClass.getSimpleName() + "'>"
-                + "<img class='" + SW360_INFO_IMG + "' src='" + SW360_INFO_IMG_PATH + "'></span>";
+                + "<img class='" + SW360_INFO_IMG + "' src='" + request.getContextPath() + SW360_INFO_IMG_PATH + "'></span>";
 
         jspWriter.print(result);
 

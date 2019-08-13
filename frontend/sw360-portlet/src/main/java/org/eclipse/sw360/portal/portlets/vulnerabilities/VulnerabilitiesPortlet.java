@@ -13,37 +13,51 @@ package org.eclipse.sw360.portal.portlets.vulnerabilities;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
+
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityWithReleaseRelations;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.portal.common.CustomFieldHelper;
 import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 
-import javax.portlet.*;
+import org.apache.log4j.Logger;
+import org.apache.thrift.TException;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.portlet.*;
+
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Strings.nullToEmpty;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
 
-/**
- * Vulnerabilities portlet implementation
- *
- * @author birgit.heydenreich@tngtech.com
- */
+@org.osgi.service.component.annotations.Component(
+    immediate = true,
+    properties = {
+        "/org/eclipse/sw360/portal/portlets/base.properties",
+        "/org/eclipse/sw360/portal/portlets/default.properties"
+    },
+    property = {
+        "javax.portlet.name=" + VULNERABILITIES_PORTLET_NAME,
+
+        "javax.portlet.display-name=Vulnerabilities",
+        "javax.portlet.info.short-title=Vulnerabilities",
+        "javax.portlet.info.title=Vulnerabilities",
+
+        "javax.portlet.init-param.view-template=/html/vulnerabilities/view.jsp",
+    },
+    service = Portlet.class,
+    configurationPolicy = ConfigurationPolicy.REQUIRE
+)
 public class VulnerabilitiesPortlet extends Sw360Portlet {
 
     private static final Logger log = Logger.getLogger(VulnerabilitiesPortlet.class);

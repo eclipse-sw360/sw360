@@ -12,6 +12,7 @@ package org.eclipse.sw360.portal.portlets.admin;
 
 import com.google.common.collect.Sets;
 import com.liferay.portal.kernel.portlet.PortletResponseUtil;
+
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
@@ -24,24 +25,40 @@ import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.portlets.components.ComponentPortletUtils;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
+
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 
-import javax.portlet.*;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+
+import javax.portlet.*;
+import javax.servlet.http.HttpServletResponse;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.CONTENT_TYPE_OPENXML_SPREADSHEET;
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
 
-/**
- * Vendor portlet implementation
- *
- * @author Johannes.Najjar@tngtech.com
- */
+@org.osgi.service.component.annotations.Component(
+    immediate = true,
+    properties = {
+            "/org/eclipse/sw360/portal/portlets/base.properties",
+            "/org/eclipse/sw360/portal/portlets/admin.properties"
+    },
+    property = {
+        "javax.portlet.name=" + VENDOR_PORTLET_NAME,
+
+        "javax.portlet.display-name=Vendor Administration",
+        "javax.portlet.info.short-title=Vendors",
+        "javax.portlet.info.title=Vendor Administration",
+
+        "javax.portlet.init-param.view-template=/html/admin/vendors/view.jsp",
+    },
+    service = Portlet.class,
+    configurationPolicy = ConfigurationPolicy.REQUIRE
+)
 public class VendorPortlet extends Sw360Portlet {
 
     private static final Logger log = Logger.getLogger(VendorPortlet.class);

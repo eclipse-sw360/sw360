@@ -18,23 +18,40 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
+
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 
-import javax.portlet.PortletException;
-import javax.portlet.RenderRequest;
-import javax.portlet.RenderResponse;
 import java.io.IOException;
 import java.util.List;
 
+import javax.portlet.*;
+
 import static org.apache.log4j.Logger.getLogger;
 
-/**
- * Small homepage portlet
- *
- * @author cedric.bodet@tngtech.com
- * @author gerrit.grenzebach@tngtech.com
- */
+
+@org.osgi.service.component.annotations.Component(
+    immediate = true,
+    properties = {
+        "/org/eclipse/sw360/portal/portlets/base.properties",
+        "/org/eclipse/sw360/portal/portlets/user.properties"
+    },
+    property = {
+        "com.liferay.portlet.header-portlet-javascript=/webjars/jquery-ui/jquery-ui.min.js",
+        "com.liferay.portlet.header-portlet-javascript=/webjars/datatables.net/js/jquery.dataTables.min.js",
+
+        "javax.portlet.name=" + PortalConstants.MY_SUBSCRIPTIONS_PORTLET_NAME,
+
+        "javax.portlet.display-name=My Subscriptions",
+        "javax.portlet.info.short-title=My Subscriptions",
+        "javax.portlet.info.title=My Subscriptions",
+
+        "javax.portlet.init-param.view-template=/html/homepage/mysubscriptions/view.jsp",
+    },
+    service = Portlet.class,
+    configurationPolicy = ConfigurationPolicy.REQUIRE
+)
 public class MySubscriptionsPortlet extends Sw360Portlet {
 
     private static final Logger log = getLogger(MySubscriptionsPortlet.class);

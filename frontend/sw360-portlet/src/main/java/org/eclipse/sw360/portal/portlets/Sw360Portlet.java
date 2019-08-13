@@ -39,21 +39,22 @@ import org.eclipse.sw360.portal.users.UserCacheHolder;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
-
-import javax.portlet.*;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
 
 import java.io.IOException;
 import java.util.*;
+
+import javax.portlet.*;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 
 
 abstract public class Sw360Portlet extends MVCPortlet {
+    private static final int MAX_LENGTH_USERS_IN_DISPLAY = 100;
 
-    private final int MAX_LENGTH_USERS_IN_DISPLAY = 100;
-
-    private static final Logger log = Logger.getLogger(Sw360Portlet.class);
-
+    protected final Logger log = Logger.getLogger(this.getClass());
     protected final ThriftClients thriftClients;
 
     protected Sw360Portlet() {
@@ -62,6 +63,24 @@ abstract public class Sw360Portlet extends MVCPortlet {
 
     public Sw360Portlet(ThriftClients thriftClients) {
         this.thriftClients = thriftClients;
+    }
+
+    @Activate
+    public void activate(Map<String, Object> properties) {
+        Object portletName = properties.get("javax.portlet.name");
+        log.info("Portlet [" + (portletName != null ? portletName : this.getClass().getSimpleName()) + "] has been ENABLED.");
+    }
+
+    @Modified
+    public void modify(Map<String, Object> properties) {
+        Object portletName = properties.get("javax.portlet.name");
+        log.info("Portlet [" + (portletName != null ? portletName : this.getClass().getSimpleName()) + "] has been MODIFIED.");
+    }
+
+    @Deactivate
+    public void deactivate(Map<String, Object> properties) {
+        Object portletName = properties.get("javax.portlet.name");
+        log.info("Portlet [" + (portletName != null ? portletName : this.getClass().getSimpleName()) + "] has been DISABLED.");
     }
 
     @Override
@@ -205,7 +224,7 @@ abstract public class Sw360Portlet extends MVCPortlet {
                 LicenseService.Iface client = thriftClients.makeLicenseClient();
                 List<License> licenses = client.getLicenseSummary();
 
-           
+
                 licenses = FluentIterable.from(licenses).filter(new Predicate<License>() {
                     @Override
                     public boolean apply(License input) {
@@ -215,7 +234,7 @@ abstract public class Sw360Portlet extends MVCPortlet {
                                 || StringUtils.containsIgnoreCase(shortname, searchText));
                     }
                 }).toList();
-                
+
 
                 request.setAttribute(PortalConstants.LICENSE_LIST, licenses);
                 include("/html/utils/ajax/licenseListAjax.jsp", request, response, PortletRequest.RESOURCE_PHASE);

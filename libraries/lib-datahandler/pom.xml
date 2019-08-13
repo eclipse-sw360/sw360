@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -20,11 +20,12 @@
         <version>${revision}</version>
     </parent>
 
+    <name>datahandler</name>
     <artifactId>datahandler</artifactId>
-
-    <name>lib-datahandler</name>
+	<packaging>jar</packaging>
 
     <build>
+	<finalName>org.eclipse.sw360.datahandler-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.thrift.tools</groupId>
@@ -57,6 +58,10 @@
                 <version>${maven-source-plugin.version}</version>
             </plugin>
             <plugin>
+                <groupId>biz.aQute.bnd</groupId>
+                <artifactId>bnd-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>${maven-jar-plugin.version}</version>
@@ -67,6 +72,11 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+			<archive>
+                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                    </archive>
+                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -130,6 +140,12 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
         </dependency>
+        <dependency>
+			<groupId>org.slf4j</groupId>
+			<!-- commons-logging API required by apache httpclient -->
+			<artifactId>jcl-over-slf4j</artifactId>
+			<version>1.6.4</version>
+		</dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>

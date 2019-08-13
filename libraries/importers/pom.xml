@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
-  ~
-  ~ SPDX-License-Identifier: EPL-1.0
-  ~
-  ~ All rights reserved. This program and the accompanying materials
-  ~ are made available under the terms of the Eclipse Public License v1.0
-  ~ which accompanies this distribution, and is available at
-  ~ http://www.eclipse.org/legal/epl-v10.html
-  -->
+     ~ Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
+	 ~
+     ~ SPDX-License-Identifier: EPL-1.0
+     ~
+     ~ All rights reserved. This program and the accompanying materials
+     ~ are made available under the terms of the Eclipse Public License v1.0
+     ~ which accompanies this distribution, and is available at
+     ~ http://www.eclipse.org/legal/epl-v10.html
+-->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -20,52 +20,103 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>importers</artifactId>
-    <packaging>pom</packaging>
+	<name>importers</name>
+	<artifactId>importers</artifactId>
+	<packaging>jar</packaging>
 
-    <modules>
-        <module>license-importer</module>
-        <module>component-importer</module>
-    </modules>
+	<build>
+		<finalName>org.eclipse.sw360.importers-${project.version}</finalName>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>${maven-source-plugin.version}</version>
+			</plugin>
+			<plugin>
+				<groupId>biz.aQute.bnd</groupId>
+				<artifactId>bnd-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>${maven-jar-plugin.version}</version>
+				<configuration>
+					<archive>
+						<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+					</archive>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 
-    <dependencies>
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-csv</artifactId>
-        </dependency>
+	<dependencies>
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-csv</artifactId>
+		</dependency>
 
-        <dependency>
-            <groupId>org.eclipse.sw360</groupId>
-            <artifactId>datahandler</artifactId>
-            <version>${project.version}</version>
-        </dependency>
+		<dependency>
+			<groupId>org.eclipse.sw360</groupId>
+			<artifactId>datahandler</artifactId>
+			<version>${project.version}</version>
+		</dependency>
 
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-all</artifactId>
-        </dependency>
-    </dependencies>
+		<dependency>
+			<groupId>org.eclipse.sw360</groupId>
+			<artifactId>src-components</artifactId>
+			<version>${project.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.sw360</groupId>
+			<artifactId>src-vendors</artifactId>
+			<version>${project.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.sw360</groupId>
+			<artifactId>src-attachments</artifactId>
+			<version>${project.version}</version>
+			<scope>test</scope>
+		</dependency>
 
-    <build>
-        <plugins>
-            <plugin>
-                <artifactId>maven-dependency-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </build>
+		<dependency>
+			<groupId>org.eclipse.sw360</groupId>
+			<artifactId>commonIO</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.eclipse.sw360</groupId>
+			<artifactId>exporters</artifactId>
+			<version>${project.version}</version>
+			<scope>compile</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.eclipse.sw360</groupId>
+			<artifactId>datahandler</artifactId>
+			<version>${project.version}</version>
+			<type>test-jar</type>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.hamcrest</groupId>
+			<artifactId>hamcrest-all</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-all</artifactId>
+		</dependency>
+	</dependencies>
+
 </project>

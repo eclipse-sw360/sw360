@@ -36,20 +36,37 @@ import org.eclipse.sw360.portal.users.UserUtils;
 import org.apache.commons.csv.*;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
-
-import javax.portlet.*;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 
 import java.io.*;
 import java.util.*;
 
+import javax.portlet.*;
+import javax.portlet.Portlet;
+
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static org.eclipse.sw360.portal.common.PortalConstants.USER_ADMIN_PORTLET_NAME;
 import static org.eclipse.sw360.portal.users.UserUtils.getRoleConstantFromUserGroup;
 
-/**
- * Created by jn on 06.03.15.
- *
- * @author johannes.najjar@tngtech.com
- */
+@Component(
+    immediate = true,
+    properties = {
+            "/org/eclipse/sw360/portal/portlets/base.properties",
+            "/org/eclipse/sw360/portal/portlets/admin.properties"
+    },
+    property = {
+        "javax.portlet.name=" + USER_ADMIN_PORTLET_NAME,
+
+        "javax.portlet.display-name=User Administration",
+        "javax.portlet.info.short-title=User",
+        "javax.portlet.info.title=User Administration",
+
+        "javax.portlet.init-param.view-template=/html/admin/user/view.jsp",
+    },
+    service = Portlet.class,
+    configurationPolicy = ConfigurationPolicy.REQUIRE
+)
 public class UserPortlet extends Sw360Portlet {
     private static final Logger log = Logger.getLogger(UserPortlet.class);
 
@@ -290,7 +307,7 @@ public class UserPortlet extends Sw360Portlet {
         return OrganizationServiceUtil.addOrganization(
                 parentId,
                 headDepartment,
-                OrganizationConstants.TYPE_REGULAR_ORGANIZATION,
+                OrganizationConstants.TYPE_ORGANIZATION,
                 RegionConstants.DEFAULT_REGION_ID,
                 CountryConstants.DEFAULT_COUNTRY_ID,
                 ListTypeConstants.ORGANIZATION_STATUS_DEFAULT,

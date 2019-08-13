@@ -10,9 +10,6 @@
  */
 package org.eclipse.sw360.portal.portlets.preferences;
 
-import org.apache.commons.lang.RandomStringUtils;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -20,27 +17,44 @@ import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
-import org.eclipse.sw360.portal.common.ErrorMessages;
-import org.eclipse.sw360.portal.common.PortalConstants;
-import org.eclipse.sw360.portal.common.PortletUtils;
-import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
+import org.eclipse.sw360.portal.common.*;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
+
+import org.apache.commons.lang.RandomStringUtils;
+import org.apache.log4j.Logger;
+import org.apache.thrift.TException;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 
-import javax.portlet.*;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
+import javax.portlet.*;
+import javax.servlet.http.HttpServletResponse;
+
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
 
-/**
- * @author alex.borodin@evosoft.com
- * @author thomas.maier@evosoft.com
- */
+@org.osgi.service.component.annotations.Component(
+    immediate = true,
+    properties = {
+        "/org/eclipse/sw360/portal/portlets/base.properties",
+        "/org/eclipse/sw360/portal/portlets/user.properties"
+    },
+    property = {
+        "javax.portlet.name=" + PREFERENCES_PORTLET_NAME,
+
+        "javax.portlet.display-name=Preferences",
+        "javax.portlet.info.short-title=Preferences",
+        "javax.portlet.info.title=Preferences",
+
+        "javax.portlet.init-param.view-template=/html/preferences/view.jsp",
+    },
+    service = Portlet.class,
+    configurationPolicy = ConfigurationPolicy.REQUIRE
+)
 public class UserPreferencesPortlet extends Sw360Portlet {
 
     private static final Logger log = Logger.getLogger(UserPreferencesPortlet.class);

@@ -13,12 +13,12 @@ package org.eclipse.sw360.portal.users;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.ServiceContextFactory;
-import com.liferay.portal.kernel.servlet.SessionMessages;
-
-import javax.portlet.PortletRequest;
+import com.liferay.portal.kernel.servlet.SessionErrors;
 
 import java.util.Optional;
 import java.util.function.Consumer;
+
+import javax.portlet.PortletRequest;
 
 class PortletRequestAdapter implements RequestAdapter {
 
@@ -35,7 +35,7 @@ class PortletRequestAdapter implements RequestAdapter {
 
     @Override
     public Consumer<String> getErrorMessagesConsumer() {
-        return msg -> SessionMessages.add(request, "request_processed", msg);
+        return msg -> SessionErrors.add(request, msg);
     }
 
     @Override

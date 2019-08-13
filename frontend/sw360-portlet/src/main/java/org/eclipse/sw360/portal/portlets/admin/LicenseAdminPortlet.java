@@ -29,14 +29,36 @@ import org.eclipse.sw360.portal.users.UserCacheHolder;
 
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
-
-import javax.portlet.*;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.ZipOutputStream;
 
+import javax.portlet.*;
+
+import static org.eclipse.sw360.portal.common.PortalConstants.LICENSE_ADMIN_PORTLET_NAME;
+
+@Component(
+    immediate = true,
+    properties = {
+            "/org/eclipse/sw360/portal/portlets/base.properties",
+            "/org/eclipse/sw360/portal/portlets/admin.properties"
+    },
+    property = {
+        "javax.portlet.name=" + LICENSE_ADMIN_PORTLET_NAME,
+
+        "javax.portlet.display-name=License Administration",
+        "javax.portlet.info.short-title=License",
+        "javax.portlet.info.title=License Administration",
+
+        "javax.portlet.init-param.view-template=/html/admin/licenseAdmin/view.jsp",
+    },
+    service = Portlet.class,
+    configurationPolicy = ConfigurationPolicy.REQUIRE
+)
 public class LicenseAdminPortlet extends Sw360Portlet {
     private static final Logger log = Logger.getLogger(LicenseAdminPortlet.class);
 

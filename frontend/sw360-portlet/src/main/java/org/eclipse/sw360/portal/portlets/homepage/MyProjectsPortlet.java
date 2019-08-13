@@ -16,24 +16,41 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 
-import javax.portlet.PortletException;
-import javax.portlet.RenderRequest;
-import javax.portlet.RenderResponse;
+import org.apache.log4j.Logger;
+import org.apache.thrift.TException;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Small homepage portlet
- *
- * @author cedric.bodet@tngtech.com
- * @author gerrit.grenzebach@tngtech.com
- * @author ksoranko@verifa.io
- */
+import javax.portlet.*;
+
+import static org.eclipse.sw360.portal.common.PortalConstants.MY_PROJECTS_PORTLET_NAME;
+
+@org.osgi.service.component.annotations.Component(
+    immediate = true,
+    properties = {
+        "/org/eclipse/sw360/portal/portlets/base.properties",
+        "/org/eclipse/sw360/portal/portlets/user.properties"
+    },
+    property = {
+        "com.liferay.portlet.header-portlet-javascript=/webjars/jquery-ui/jquery-ui.min.js",
+        "com.liferay.portlet.header-portlet-javascript=/webjars/datatables.net/js/jquery.dataTables.min.js",
+
+        "javax.portlet.name=" + MY_PROJECTS_PORTLET_NAME,
+
+        "javax.portlet.display-name=My Projects",
+        "javax.portlet.info.short-title=My Projects",
+        "javax.portlet.info.title=My Projects",
+
+        "javax.portlet.init-param.view-template=/html/homepage/myprojects/view.jsp",
+    },
+    service = Portlet.class,
+    configurationPolicy = ConfigurationPolicy.REQUIRE
+)
 public class MyProjectsPortlet extends Sw360Portlet {
 
     private static final Logger LOGGER = Logger.getLogger(MyProjectsPortlet.class);

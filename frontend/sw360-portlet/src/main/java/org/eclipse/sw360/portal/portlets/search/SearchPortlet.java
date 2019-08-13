@@ -15,25 +15,39 @@ import org.eclipse.sw360.datahandler.thrift.search.SearchService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
+
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 
-import javax.portlet.PortletException;
-import javax.portlet.RenderRequest;
-import javax.portlet.RenderResponse;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import javax.portlet.*;
+
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
 
-/**
- * Created by bodet on 03/12/14.
- *
- * @author cedric.bodet@tngtech.com
- */
+@org.osgi.service.component.annotations.Component(
+    immediate = true,
+    properties = {
+        "/org/eclipse/sw360/portal/portlets/base.properties",
+        "/org/eclipse/sw360/portal/portlets/default.properties"
+    },
+    property = {
+        "javax.portlet.name=" + SEARCH_PORTLET_NAME,
+
+        "javax.portlet.display-name=Search Results",
+        "javax.portlet.info.short-title=Search Results",
+        "javax.portlet.info.title=Search Results",
+
+        "javax.portlet.init-param.view-template=/html/search/view.jsp",
+    },
+    service = Portlet.class,
+    configurationPolicy = ConfigurationPolicy.REQUIRE
+)
 public class SearchPortlet extends Sw360Portlet {
 
     private static final Logger log = Logger.getLogger(SearchPortlet.class);

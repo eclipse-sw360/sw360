@@ -37,13 +37,13 @@ This is a multi module maven file. please consider that we have the following mo
 
 * Java 1.8.X
 * CouchDB, at least 1.5
-* Liferay Portal CE 6.2 GA5
-* Apache Tomcat 7.0.X or 8.0.X
+* Liferay Portal CE 7.2.0 GA1
+* Apache Tomcat 9.0.X
 
 In order to build you will need:
 
 * A git client
-* Apache Maven 3.0.X
+* Apache Maven 3.6.X
 * Apache Thrift 0.11.0
 
 http://maven.apache.org/download.html#Installation
@@ -52,11 +52,11 @@ Then, you must install Apache Tomcat, CouchDB. And, Java of course.
 
 The software is tested with
 
-* Maven 3.0.4 / 3.0.5
-* Apache Tomcat 8.0.26 / 7.0.54 / 7.0.61
-* Liferay GA5
+* Maven 3.6.1
+* Apache Tomcat 9.0.17
+* Liferay 7.2.0 GA1
 * CouchDB 1.5 / 1.5.1
-* OpenJDK Java 1.8.0_45 (64-bit) 
+* Java 1.8.X
 * Tested with debian 8, debian 9, ubuntu 16.04, macosx 10.8 - 10.14
 * We run Liferay with PostgreSQL 9.X, as the Lifera requires, but HSQL (as of the bundle) runs also OK.
 

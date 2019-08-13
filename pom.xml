@@ -158,6 +158,12 @@
                 <version>0.15.1</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>com.liferay</groupId>
+                <artifactId>com.liferay.petra.lang</artifactId>
+                <version>3.0.0</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -248,6 +254,31 @@
                     <artifactId>buildnumber-maven-plugin</artifactId>
                     <version>1.4</version>
                 </plugin>
+
+                <plugin>
+                    <groupId>biz.aQute.bnd</groupId>
+                    <artifactId>bnd-maven-plugin</artifactId>
+                    <version>3.5.0</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>bnd-process</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <dependencies>
+                        <dependency>
+                            <groupId>biz.aQute.bnd</groupId>
+                            <artifactId>biz.aQute.bndlib</artifactId>
+                            <version>3.5.0</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>com.liferay</groupId>
+                            <artifactId>com.liferay.ant.bnd</artifactId>
+                            <version>2.0.50</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -336,4 +367,69 @@
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <id>deploy</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-jar</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>${project.groupId}</groupId>
+                                            <artifactId>${project.artifactId}</artifactId>
+                                            <version>${project.version}</version>
+                                            <type>${project.packaging}</type>
+                                            <destFileName>${project.build.finalName}.${project.packaging}</destFileName>
+                                        </artifactItem>
+                                    </artifactItems>
+                                    <!--
+                                        This property is set by the submodules themself, depending wether they are backend, frontend or library
+                                        modules.
+                                        All other submodule leave this property blank causing the dependency plugin to copy the artifact inside
+                                        the target folder.
+                                    -->
+                                    <outputDirectory>${artifact.deploy.dir}</outputDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <version>3.0.0-M2</version>
+                        <executions>
+                            <execution>
+                                <id>enforce</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>base.deploy.dir</property>
+                                            <message>You must set at least the property 'base.deploy.dir'!</message>
+                                            <regex>^.+$</regex>
+                                            <regexMessage>You must set at least the property 'base.deploy.dir'!</regexMessage>
+                                        </requireProperty>
+                                    </rules>
+                                    <fail>true</fail>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+>>>>>>> 15a6277... Minor fixes
 </project>

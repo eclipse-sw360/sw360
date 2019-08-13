@@ -19,12 +19,35 @@ import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
+
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 
-import javax.portlet.*;
 import java.io.IOException;
 
+import javax.portlet.*;
+
+import static org.eclipse.sw360.portal.common.PortalConstants.SCHEDULE_ADMIN_PORTLET_NAME;
+
+@org.osgi.service.component.annotations.Component(
+    immediate = true,
+    properties = {
+            "/org/eclipse/sw360/portal/portlets/base.properties",
+            "/org/eclipse/sw360/portal/portlets/admin.properties"
+    },
+    property = {
+        "javax.portlet.name=" + SCHEDULE_ADMIN_PORTLET_NAME,
+
+        "javax.portlet.display-name=Schedule Administration",
+        "javax.portlet.info.short-title=Schedule",
+        "javax.portlet.info.title=Schedule Administration",
+
+        "javax.portlet.init-param.view-template=/html/admin/scheduleAdmin/view.jsp",
+    },
+    service = Portlet.class,
+    configurationPolicy = ConfigurationPolicy.REQUIRE
+)
 public class ScheduleAdminPortlet extends Sw360Portlet {
 
     private static final Logger log = Logger.getLogger(ScheduleAdminPortlet.class);

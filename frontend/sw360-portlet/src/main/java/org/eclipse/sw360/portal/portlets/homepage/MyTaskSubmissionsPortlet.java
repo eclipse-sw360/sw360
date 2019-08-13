@@ -18,22 +18,39 @@ import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.portlets.moderation.ModerationPortletUtils;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
+
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 
-import javax.portlet.*;
 import java.io.IOException;
 import java.util.List;
 
-import static org.apache.log4j.Logger.getLogger;
+import javax.portlet.*;
 
-/**
- * Small homepage portlet
- *
- * @author cedric.bodet@tngtech.com
- * @author gerrit.grenzebach@tngtech.com
- * @author birgit.heydenreich@tngtech.com
- */
+import static org.apache.log4j.Logger.getLogger;
+import static org.eclipse.sw360.portal.common.PortalConstants.MY_TASK_SUBMISSIONS_PORTLET_NAME;
+
+@org.osgi.service.component.annotations.Component(
+    immediate = true,
+    properties = {
+        "/org/eclipse/sw360/portal/portlets/base.properties",
+        "/org/eclipse/sw360/portal/portlets/user.properties"
+    },
+    property = {
+        "com.liferay.portlet.header-portlet-javascript=/webjars/jquery-ui/jquery-ui.min.js",
+        "com.liferay.portlet.header-portlet-javascript=/webjars/datatables.net/js/jquery.dataTables.min.js",
+
+        "javax.portlet.name=" + MY_TASK_SUBMISSIONS_PORTLET_NAME,
+        "javax.portlet.display-name=My Task Submissions",
+        "javax.portlet.info.short-title=My Task Submissions",
+        "javax.portlet.info.title=My Task Submissions",
+
+        "javax.portlet.init-param.view-template=/html/homepage/mytasksubmissions/view.jsp",
+    },
+    service = Portlet.class,
+    configurationPolicy = ConfigurationPolicy.REQUIRE
+)
 public class MyTaskSubmissionsPortlet extends Sw360Portlet {
 
     private static final Logger log = getLogger(MyTaskSubmissionsPortlet.class);

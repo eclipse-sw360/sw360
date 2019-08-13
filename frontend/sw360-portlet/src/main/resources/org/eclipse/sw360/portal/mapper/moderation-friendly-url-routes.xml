@@ -17,6 +17,6 @@
         <pattern>/{page}/{id}</pattern>
         <generated-parameter name="pagename">{page}</generated-parameter>
         <generated-parameter name="moderationId">{id}</generated-parameter>
-        <implicit-parameter name="p_p_id">moderation_WAR_sw360portlet</implicit-parameter>
+        <implicit-parameter name="p_p_id">sw360_portlet_moderations</implicit-parameter>
     </route>
 </routes>

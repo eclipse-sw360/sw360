@@ -10,26 +10,43 @@
  */
 package org.eclipse.sw360.portal.portlets.ecc;
 
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 
-import javax.portlet.PortletException;
-import javax.portlet.RenderRequest;
-import javax.portlet.RenderResponse;
+import org.apache.log4j.Logger;
+import org.apache.thrift.TException;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
+import javax.portlet.*;
+
+import static org.eclipse.sw360.portal.common.PortalConstants.ECC_PORTLET_NAME;
 import static org.eclipse.sw360.portal.common.PortalConstants.RELEASE_LIST;
 
-/**
- * @author alex.borodin@evosoft.com
- */
+@org.osgi.service.component.annotations.Component(
+    immediate = true,
+    properties = {
+        "/org/eclipse/sw360/portal/portlets/base.properties",
+        "/org/eclipse/sw360/portal/portlets/default.properties"
+    },
+    property = {
+        "javax.portlet.name=" + ECC_PORTLET_NAME,
+
+        "javax.portlet.display-name=ECC",
+        "javax.portlet.info.short-title=ECC",
+        "javax.portlet.info.title=ECC",
+
+        "javax.portlet.init-param.view-template=/html/ecc/view.jsp",
+    },
+    service = Portlet.class,
+    configurationPolicy = ConfigurationPolicy.REQUIRE
+)
 public class EccPortlet extends Sw360Portlet {
 
     private static final Logger log = Logger.getLogger(EccPortlet.class);
