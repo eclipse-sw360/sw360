@@ -24,6 +24,10 @@
 	<artifactId>importers</artifactId>
 	<packaging>jar</packaging>
 
+	<properties>
+		<artifact.deploy.dir>${liferay.deploy.dir}</artifact.deploy.dir>
+	</properties>
+
 	<build>
 		<finalName>org.eclipse.sw360.importers-${project.version}</finalName>
 		<plugins>

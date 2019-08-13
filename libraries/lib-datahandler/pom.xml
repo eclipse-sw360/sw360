@@ -22,7 +22,11 @@
 
     <name>datahandler</name>
     <artifactId>datahandler</artifactId>
-	<packaging>jar</packaging>
+    <packaging>jar</packaging>
+
+    <properties>
+        <artifact.deploy.dir>${liferay.deploy.dir}</artifact.deploy.dir>
+    </properties>
 
     <build>
 	<finalName>org.eclipse.sw360.datahandler-${project.version}</finalName>

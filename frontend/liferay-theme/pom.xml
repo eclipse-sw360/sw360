@@ -32,6 +32,8 @@
 		<com.liferay.frontend.theme.unstyled.version>3.0.22</com.liferay.frontend.theme.unstyled.version>
 		<!-- The 4.x branch will fail -->
 		<com.liferay.frontend.theme.styled.version>3.0.16</com.liferay.frontend.theme.styled.version>
+
+		<artifact.deploy.dir>${liferay.deploy.dir}</artifact.deploy.dir>
 	</properties>
 
 	<build>

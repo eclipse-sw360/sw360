@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright Siemens AG, 2016. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2016, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -23,6 +23,10 @@
     <artifactId>svc-vulnerabilities</artifactId>
     <packaging>war</packaging>
     <name>svc-vulnerabilities</name>
+
+    <properties>
+        <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+    </properties>
 
     <build>
         <finalName>vulnerabilities</finalName>
@@ -64,5 +68,4 @@
             <type>jar</type>
         </dependency>
     </dependencies>
-
 </project>

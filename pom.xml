@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -72,17 +72,28 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <!--  User should provide below property configuration based on his/her liferay deployment environment -->
-        <deploy.dir>
-            ${env.LIFERAY_PATH}/deploy
-        </deploy.dir>
-        <webapps.dir>
-            ${deploy.dir}
-        </webapps.dir>
+        <!--  User must provide below property configuration based on his/her liferay deployment environment -->
+        <base.deploy.dir />
+
+        <!--
+            This is were the liferay OSGi modules go to on upload:
+                - frontend/*
+                - libraries/*
+        -->
+        <liferay.deploy.dir>${base.deploy.dir}/liferay</liferay.deploy.dir>
+        <!--
+            This is were the backend services go to on upload:
+                - backend/svc/*
+        -->
+        <backend.deploy.dir>${base.deploy.dir}/tomcat</backend.deploy.dir>
+        <!--
+            This is were the rest services go to on upload:
+                - rest/*
+        -->
+        <rest.deploy.dir>${base.deploy.dir}/tomcat</rest.deploy.dir>
 
         <!-- some mem optimization here -->
         <argLine>-Dcatalina.home=${project.build.directory}/home -Xms64m -Xmx128m -XX:MaxPermSize=512m</argLine>
-
     </properties>
 
     <dependencyManagement>
@@ -431,5 +442,4 @@
             </build>
         </profile>
     </profiles>
->>>>>>> 15a6277... Minor fixes
 </project>

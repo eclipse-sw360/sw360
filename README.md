@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/eclipse/sw360.svg?branch=master)](https://travis-ci.org/eclipse/sw360)
 
-### sw360portal
+### SW360 Portal
 
 A software component catalogue application - designed to work with FOSSology.
 
@@ -29,7 +29,6 @@ This is a multi module maven file. please consider that we have the following mo
 * frontend: for portlets, themes and layouts, the liferay part.
 * backend: for the thrift based services.
 * libraries: for general stuff that is reused among the above, for example, couchdb access.
-* importers: for provisioning tasks.
 * scripts: for deploying either inside the vagrant or on your development machine.
 * rest: for the REST API which contains an authorization and resource server.
 
@@ -39,6 +38,20 @@ This is a multi module maven file. please consider that we have the following mo
 * CouchDB, at least 1.5
 * Liferay Portal CE 7.2.0 GA1
 * Apache Tomcat 9.0.X
+
+In addition, the Liferay instance must provide the following dependecies via OSGi:
+
+* Apache Commons Codec 1.12
+* Apache Commons Collections4 4.1
+* Apache Commons CSV 1.4
+* Apache Commons IO 2.6
+* Apache Commons Lang 2.4
+* Apache Commons Logging 1.2
+* Google Gson 2.8.5
+* Google Guava 21.0
+* Jackson Annotations 2.9.8
+* Jackson Core 2.9.8
+* Jackson Databind 2.9.8
 
 In order to build you will need:
 
@@ -97,21 +110,20 @@ Actually, there is a hierarchy of maven files, in general
 
 For deployment run the command
 ```
-mvn install -Pdeploy
+mvn install -Dbase.deploy.dir=<SOME_ABSOLUTE_PATH> -P deploy
 ```
-which copies the war files to the liferay auto deploy folder (if `LIFERAY_PATH` is set).
-Otherwise one has to specify the absolute path to the deploy folder in the following way:
-```
-mvn install -Pdeploy \
-    -Ddeploy.dir=/ABSOLUTE/PATH/TO/DEPLOY/FOLDER
-```
-It is even better to also pass the path to the webapps folder, thus allowing maven to deploy the backend services directly via the native tomcat hot deploy mechanism.
-This is done in the following way:
-```
-mvn install -Pdeploy \
-    -Ddeploy.dir=/ABSOLUTE/PATH/TO/DEPLOY/FOLDER \
-    -Dwebapps.dir=/ABSOLUTE/PATH/TO/WEBAPPS/FOLDER
-```
+which copies the artifacts depending on their type to the following folders:
+  - backend: `<SOME_ABSOLUTE_PATH>/tomcat`
+  - rest: `<SOME_ABSOLUTE_PATH>/tomcat`
+  - frontend: `<SOME_ABSOLUTE_PATH>/liferay`
+  - libraries: `<SOME_ABSOLUTE_PATH>/liferay`
+
+You may also specify the paths using these properties:
+  - backend artifacts: `backend.deploy.dir`
+  - rest artifacts: `rest.deploy.dir`
+  - liferay artifacts (frontend, libraries): `liferay.deploy.dir`
+Be aware that you have to deploy the liferay artifacts in the Liferay auto-deploy folder.
+On the other hand you must not deploy rest and backend artifacts to the auto-deploy folder.
 
 ### Liferay Configuration
 

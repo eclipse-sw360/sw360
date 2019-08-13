@@ -21,6 +21,9 @@
         <version>${revision}</version>
     </parent>
 
+    <artifactId>sw360-portlet</artifactId>
+    <packaging>jar</packaging>
+
     <properties>
         <jquery.ui.version>1.12.1</jquery.ui.version>
         <jquery.datatables.version>1.10.19</jquery.datatables.version>
@@ -38,10 +41,9 @@
         <require.js.version>2.3.6</require.js.version>
 
         <resumable.js.version>1.1.0</resumable.js.version>
-    </properties>
 
-    <artifactId>sw360-portlet</artifactId>
-    <packaging>jar</packaging>
+        <artifact.deploy.dir>${liferay.deploy.dir}</artifact.deploy.dir>
+    </properties>
 
     <build>
 	<finalName>org.eclipse.sw360.portlet-${project.version}</finalName>

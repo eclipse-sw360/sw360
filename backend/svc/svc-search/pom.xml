@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -21,6 +21,10 @@
     <artifactId>svc-search</artifactId>
     <packaging>war</packaging>
     <name>svc-search</name>
+
+    <properties>
+        <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+    </properties>
 
     <build>
         <finalName>search</finalName>
@@ -62,5 +66,4 @@
             <type>jar</type>
         </dependency>
     </dependencies>
-
 </project>

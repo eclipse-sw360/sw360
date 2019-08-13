@@ -24,6 +24,10 @@
     <packaging>war</packaging>
     <name>svc-projects</name>
 
+    <properties>
+        <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+    </properties>
+
     <build>
         <finalName>projects</finalName>
 

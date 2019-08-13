@@ -25,6 +25,10 @@
     <artifactId>commonIO</artifactId>
     <packaging>jar</packaging>
 
+    <properties>
+        <artifact.deploy.dir>${liferay.deploy.dir}</artifact.deploy.dir>
+    </properties>
+
     <build>
 	<finalName>org.eclipse.sw360.common-io-${project.version}</finalName>
         <plugins>
