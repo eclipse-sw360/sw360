@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2014-2016. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2014-2016, 2019. Part of the SW360 Portal Project.
  * With modifications by Bosch Software Innovations GmbH, 2016.
  * With modifications by Verifa Oy, 2018.
  *
@@ -58,6 +58,8 @@ public class ThriftClients {
 
     public static final String BACKEND_URL;
     public static final String BACKEND_PROXY_URL;
+    public static final int THRIFT_CONNECTION_TIMEOUT;
+    public static final int THRIFT_READ_TIMEOUT;
 
     //! Service addresses
     private static final String ATTACHMENT_SERVICE_URL = "/attachments/thrift";
@@ -87,6 +89,15 @@ public class ThriftClients {
         BACKEND_URL = props.getProperty("backend.url", "http://127.0.0.1:8080");
         //Proxy can be set e.g. with "http://localhost:3128". if set all request to the thrift backend are routed through the proxy
         BACKEND_PROXY_URL = props.getProperty("backend.proxy.url", null);
+        // maximum timeout for connecting and reading
+        THRIFT_CONNECTION_TIMEOUT = Integer.valueOf(props.getProperty("backend.timeout.connection", "5000"));
+        THRIFT_READ_TIMEOUT = Integer.valueOf(props.getProperty("backend.timeout.read", "600000"));
+
+        log.info("The following configuration will be used for connections to the backend:\n" +
+            "\tURL                      : " + BACKEND_URL + "\n" +
+            "\tProxy                    : " + BACKEND_PROXY_URL + "\n" +
+            "\tTimeout Connecting (ms)  : " + THRIFT_CONNECTION_TIMEOUT + "\n" +
+            "\tTimeout Read (ms)        : " + THRIFT_READ_TIMEOUT + "\n");
     }
     public ThriftClients() {
     }
@@ -107,6 +118,8 @@ public class ThriftClients {
             } else {
                 thriftClient = new THttpClient(destinationAddress);
             }
+            thriftClient.setConnectTimeout(THRIFT_CONNECTION_TIMEOUT);
+            thriftClient.setReadTimeout(THRIFT_READ_TIMEOUT);
         } catch (TTransportException e) {
             log.error("cannot connect to backend on " + destinationAddress, e);
         } catch (MalformedURLException e) {
