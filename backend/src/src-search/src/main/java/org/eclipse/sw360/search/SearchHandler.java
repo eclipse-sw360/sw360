@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
  * With modifications by Bosch Software Innovations GmbH, 2016.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -47,15 +47,21 @@ public class SearchHandler implements SearchService.Iface {
 
     @Override
     public List<SearchResult> searchFiltered(String text, User user, List<String> typeMask) throws TException {
-        if(text == null) throw new TException("Search text was null.");
-        if("".equals(text)) return Collections.emptyList();
+        if(text == null) {
+            throw new TException("Search text was null.");
+        }
+        if(text.isEmpty()) {
+            return Collections.emptyList();
+        }
 
-        // Query new and old database
+        // Query user and other database
         List<SearchResult> results = Lists.newArrayList();
-        if (typeMask.contains(SW360Constants.TYPE_USER)) {
+        if (typeMask.isEmpty() || typeMask.contains(SW360Constants.TYPE_USER)) {
             results.addAll(dbSw360users.search(text, Arrays.asList(SW360Constants.TYPE_USER), user));
         }
-        results.addAll(dbSw360db.search(text, typeMask, user));
+        if(typeMask.isEmpty() || !typeMask.get(0).equals(SW360Constants.TYPE_USER) || typeMask.size() > 1) {
+            results.addAll(dbSw360db.search(text, typeMask, user));
+        }
         Collections.sort(results, new SearchResultComparator());
 
         if (log.isTraceEnabled())
