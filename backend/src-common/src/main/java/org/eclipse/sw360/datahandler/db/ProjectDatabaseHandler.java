@@ -12,6 +12,7 @@
 package org.eclipse.sw360.datahandler.db;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Strings;
 import com.google.common.collect.*;
 
 import org.eclipse.sw360.components.summary.SummaryType;
@@ -218,8 +219,12 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private boolean changeWouldResultInDuplicate(Project before, Project after) {
-        if (before.getName().equals(after.getName()) && ((before.getVersion() == null && after.getVersion() == null)
-                || (before.getVersion() != null && before.getVersion().equals(after.getVersion())))) {
+        if (before.getName().equals(after.getName()) &&
+            (
+                  (Strings.isNullOrEmpty(before.getVersion()) && Strings.isNullOrEmpty(after.getVersion()))
+              ||  (before.getVersion() != null && before.getVersion().equals(after.getVersion()))
+            )
+        ) {
             // sth else was changed, not one of the duplication relevant properties
             return false;
         }
