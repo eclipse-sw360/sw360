@@ -9,10 +9,43 @@
  * http://www-eclipse-org/legal/epl-v10-html
  *
  * Description: Tooltips for sw360 enums
- *
- * Author: thomas.maier@evosoft.com
- *
  */
+
+.info-text {
+    ol.formatedMessageForVul {
+        list-style: none;
+
+        li:before {
+            content: "- ";
+            margin-left: -0.6rem;
+        }
+
+        li:not(:last-of-type) {
+            margin-bottom: 0.35rem;
+        }
+
+        .formatedMessageForVulDate,
+        .formatedMessageForVulPrefix,
+        .formatedMessageForVulCheckedBy:before,
+        .formatedMessageForVulComment:before {
+            font-size: 90%;
+        }
+
+        .formatedMessageForVulCheckedBy:before {
+            content: "Checked by: ";
+            font-style: italic;
+        }
+
+        .formatedMessageForVulCheckedBy b {
+            font-weight: normal !important;
+        }
+
+        .formatedMessageForVulComment:before {
+            content: "Comment: ";
+            font-style: italic;
+        }
+    }
+}
 
 .sw360-tt:hover:after {
     background-color: #333;

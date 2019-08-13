@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -73,72 +73,142 @@
     <core_rt:set var="componentCategoriesAutocomplete" value='<%=PortalConstants.COMPONENT_CATEGORIES%>'/>
 
     <core_rt:set var="componentDivAddMode" value="${empty component.id}"/>
-    <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/themes/base/jquery-ui.min.css">
-    <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.css">
-    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/dataTable_Siemens.css">
-    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
 
-    <script src="<%=request.getContextPath()%>/js/releaseTools.js"></script>
-    <!--include jQuery -->
+    <div class="container" style="display: none;">
+        <div class="row">
+            <div class="col-3 sidebar">
+                <div id="detailTab" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
+                    <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab">Summary</a>
+                    <core_rt:if test="${not componentDivAddMode}" >
+                        <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Releases'}">active</core_rt:if>" href="#tab-Releases" data-toggle="list" role="tab">Releases</a>
+                        <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Attachments'}">active</core_rt:if>" href="#tab-Attachments" data-toggle="list" role="tab">Attachments</a>
+                    </core_rt:if>
+                </div>
+            </div>
+            <div class="col">
+                <div class="row portlet-toolbar">
+                    <div class="col-auto">
+                        <div class="btn-toolbar" role="toolbar">
+                            <div class="btn-group" role="group">
+                                <core_rt:if test="${componentDivAddMode}" >
+                                    <button type="button" id="formSubmit" class="btn btn-primary">Create Component</button>
+                                </core_rt:if>
 
-    <!--  needed for some dialogs mostly regarding attachments -->
-    <script src="<%=request.getContextPath()%>/webjars/jquery-ui/jquery-ui.min.js"></script>
-    <!-- needed in mapEdit.jspf -->
-    <script src="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.js" type="text/javascript"></script>
-    <div id="where" class="content1">
-        <p class="pageHeader"><span class="pageHeaderBigSpan"><sw360:out value="${component.name}"/></span>
-            <core_rt:if test="${not componentDivAddMode}">
-                <input id="deleteComponentButton" type="button" class="addButton"
-                       value="Delete <sw360:out value="${component.name}"/>"
-                <core_rt:if test="${usingComponents.size()>0 or usingProjects.size()>0}"> disabled="disabled" title="Deletion is disabled as the component is used." </core_rt:if>
-                <core_rt:if test="${component.releasesSize>0}"> disabled="disabled" title="Deletion is disabled as the component contains releases." </core_rt:if>
-                >
-            </core_rt:if>
-        </p>
-        <core_rt:if test="${not componentDivAddMode}">
-            <core_rt:forEach items="${component.releases}" var="myRelease">
-                <p><span onclick="window.location=createDetailURLfromReleaseId( '${myRelease.id}')"
-                         class="clickAble"><sw360:ReleaseName release="${myRelease}"/></span></p>
-            </core_rt:forEach>
-            <input type="button" class="addButton" onclick="window.location.href='<%=addReleaseURL%>'" value="Add Release">
-            <br>
-            <hr>
-            <input type="button" id="formSubmit" value="Update Component" class="addButton">
-            <br>
-        </core_rt:if>
-        <core_rt:if test="${componentDivAddMode}">
-            <input type="button" id="formSubmit" value="Add Component" class="addButton">
-        </core_rt:if>
-        <input type="button" value="Cancel" class="cancelButton" id="componentEditCancelButton">
-        <div id="moderationRequestCommentDialog" style="display: none">
-            <hr>
-            <label class="textlabel stackedLabel">Comment your changes</label>
-            <textarea form=componentEditForm name="<portlet:namespace/><%=PortalConstants.MODERATION_REQUEST_COMMENT%>" id="moderationRequestCommentField" class="moderationCreationComment" placeholder="Leave a comment on your request"></textarea>
-            <input type="button" class="addButton" id="moderationRequestCommentSendButton" value="Send moderation request">
+                                <core_rt:if test="${not componentDivAddMode}" >
+                                    <button type="button" id="formSubmit" class="btn btn-primary">Update Component</button>
+                                </core_rt:if>
+                            </div>
+
+                            <core_rt:if test="${not componentDivAddMode}" >
+                                <div class="btn-group" role="group">
+                                    <button id="deleteComponentButton" type="button" class="btn btn-danger"
+                                        <core_rt:if test="${usingComponents.size()>0 or usingProjects.size()>0}"> disabled="disabled" title="Deletion is disabled as the component is used." </core_rt:if>
+                                        <core_rt:if test="${component.releasesSize>0}"> disabled="disabled" title="Deletion is disabled as the component contains releases." </core_rt:if>
+                                    >Delete Component</button>
+                                </div>
+                            </core_rt:if>
+
+                            <div class="btn-group" role="group">
+                                <button id="cancelEditButton" type="button" class="btn btn-light">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col portlet-title text-truncate" title="${sw360:printComponentName(component)}">
+                        <sw360:out value="${component.name}"/>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <form  id="componentEditForm" name="componentEditForm" action="<%=updateComponentURL%>" class="needs-validation" method="post" novalidate
+                            data-delete-url="<%=deleteComponentURL%>"
+                            data-component-name="${component.name}"
+                            data-comment-parameter-name="<%=PortalConstants.MODERATION_REQUEST_COMMENT%>"
+                            data-attachments="${component.attachmentsSize}"
+                        >
+                            <div class="tab-content">
+                                <div id="tab-Summary" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Summary'}">active show</core_rt:if>" >
+                                    <%@include file="/html/components/includes/components/editBasicInfo.jspf" %>
+
+                                    <core_rt:set var="externalIdsSet" value="${component.externalIds.entrySet()}"/>
+                                    <core_rt:set var="externalIdKeys" value="<%=PortalConstants.COMPONENT_EXTERNAL_ID_KEYS%>"/>
+                                    <%@include file="/html/utils/includes/editExternalIds.jsp" %>
+
+                                    <core_rt:set var="additionalDataSet" value="${component.additionalData.entrySet()}"/>
+                                    <%@include file="/html/utils/includes/editAdditionalData.jsp" %>
+
+                                    <core_rt:set var="documentName"><sw360:out value='${component.name}'/></core_rt:set>
+                                    <%@include file="/html/utils/includes/usingProjectsTable.jspf" %>
+                                    <%@include file="/html/utils/includes/usingComponentsTable.jspf"%>
+                                </div>
+                                <div id="tab-Releases" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Releases'}">active show</core_rt:if>" >
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Version</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <core_rt:forEach items="${component.releases}" var="myRelease">
+                                                <tr>
+                                                    <td><a href="${myRelease.id}">${myRelease.name}</a></td>
+                                                    <td>${myRelease.version}</td>
+                                                </tr>
+                                            </core_rt:forEach>
+                                        </tbody>
+                                    </table>
+                                    <button type="button" class="btn btn-secondary mt-3" onclick="window.location.href='<%=addReleaseURL%>'">Add Release</button>
+                                </div>
+                                <core_rt:if test="${not componentDivAddMode}" >
+                                    <div id="tab-Attachments" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Attachments'}">active show</core_rt:if>">
+                                        <%@include file="/html/utils/includes/editAttachments.jspf" %>
+                                    </div>
+                                </core_rt:if>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+    <%@ include file="/html/utils/includes/pageSpinner.jspf" %>
 
-    <%@ include file="/html/utils/includes/requirejs.jspf" %>
-    <div id="editField" class="content2">
-        <form id="componentEditForm" name="componentEditForm" action="<%=updateComponentURL%>" method="post">
-            <%@include file="/html/components/includes/components/editBasicInfo.jspf" %>
-            <core_rt:set var="externalIdsSet" value="${component.externalIds.entrySet()}"/>
-            <core_rt:set var="externalIdKeys" value="<%=PortalConstants.COMPONENT_EXTERNAL_ID_KEYS%>"/>
-            <%@include file="/html/utils/includes/editExternalIds.jsp" %>
-            <core_rt:set var="additionalDataSet" value="${component.additionalData.entrySet()}"/>
-            <%@include file="/html/utils/includes/editAdditionalData.jsp" %>
-            <core_rt:if test="${not componentDivAddMode}">
-                <%@include file="/html/utils/includes/editAttachments.jspf" %>
-            <core_rt:set var="documentName"><sw360:out value='${component.name}'/></core_rt:set>
-            <%@include file="/html/utils/includes/usingProjectsTable.jspf" %>
-            <%@include file="/html/utils/includes/usingComponentsTable.jspf"%>
-            </core_rt:if>
-        </form>
+    <div class="dialogs auto-dialogs">
+        <div id="deleteComponentDialog" class="modal fade" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg modal-dialog-centered modal-danger" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <clay:icon symbol="question-circle" />
+                            Delete Component?
+                        </h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Do you really want to delete the component <b data-name="name"></b>?</p>
+                        <div data-hide="hasNoAttachments">
+                            <p>
+                                This component <span data-name="name"></span> contains <b><span data-name="attachments"></span></b> attachments.
+                            </p>
+                        </div>
+                        <hr/>
+                        <form>
+                            <div class="form-group">
+                                <label for="deleteComponentDialogComment">Please comment your changes</label>
+                                <textarea id="deleteComponentDialogComment" class="form-control" data-name="comment" rows="4" placeholder="Comment your request..."></textarea>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger">Delete Component</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <jsp:include page="/html/utils/includes/searchAndSelectUsers.jsp" />
-    <jsp:include page="/html/utils/includes/searchUsers.jsp" />
-    <%@include file="/html/components/includes/vendors/searchVendor.jspf" %>
 
     <c:if test="${codescoopActive}">
         <script>
@@ -150,120 +220,125 @@
             });
         </script>
     </c:if>
-</core_rt:if>
 
-<script>
-    document.title = "${component.name} - " + document.title;
-    /* variables used in releaseTools.js ... */
-    var releaseIdInURL = '<%=PortalConstants.RELEASE_ID%>',
-        compIdInURL = '<%=PortalConstants.COMPONENT_ID%>',
-        componentId = '${component.id}',
-        pageName = '<%=PortalConstants.PAGENAME%>',
-        pageDetail = '<%=PortalConstants.PAGENAME_EDIT_RELEASE%>',
-        /* baseUrl also used in method in require block */
-        baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
+    <jsp:include page="/html/utils/includes/searchAndSelectUsers.jsp" />
+    <jsp:include page="/html/utils/includes/searchUsers.jsp" />
+    <%@include file="/html/components/includes/vendors/searchVendor.jspf" %>
 
-require(['jquery', 'modules/sw360Validate', 'modules/autocomplete', 'modules/confirm', 'components/includes/vendors/searchVendor'  ], function($, sw360Validate, autocomplete, confirm, vendorsearch) {
 
-    Liferay.on('allPortletsReady', function() {
-        var contextpath = '<%=request.getContextPath()%>',
-            deletionMessage;
+    <script>
+    require(['jquery', 'components/includes/vendors/searchVendor', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup', 'modules/validation' ], function($, vendorsearch, autocomplete, dialog, listgroup, validation) {
+        document.title = "${component.name} - " + document.title;
 
-        $('#moderationRequestCommentSendButton').on('click', submitModerationRequest);
-        $('#componentEditCancelButton').on('click', cancel);
-        $('#deleteComponentButton').on('click', openDeleteDialog);
+        listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
+
+        validation.enableForm('#componentEditForm');
+        validation.jumpToFailedTab('#componentEditForm');
 
         autocomplete.prepareForMultipleHits('comp_platforms', ${softwarePlatformsAutoC});
         autocomplete.prepareForMultipleHits('comp_categories', ${componentCategoriesAutocomplete});
 
-        sw360Validate.validateWithInvalidHandler('#componentEditForm');
-
         $('#formSubmit').click(
             function () {
                 <core_rt:choose>
-                <core_rt:when test="${componentDivAddMode || component.permissions[WRITE]}">
-                $('#componentEditForm').submit();
-                </core_rt:when>
-                <core_rt:otherwise>
-                showCommentField();
-                </core_rt:otherwise>
+                    <core_rt:when test="${componentDivAddMode || component.permissions[WRITE]}">
+                        $('#componentEditForm').submit();
+                    </core_rt:when>
+                    <core_rt:otherwise>
+                        showCommentDialog();
+                    </core_rt:otherwise>
                 </core_rt:choose>
             }
         );
-    });
+        $('#cancelEditButton').on('click', cancel);
+        $('#deleteComponentButton').on('click', deleteComponent);
 
-
-    function cancel() {
-        deleteAttachmentsOnCancel();
-
-        var portletURL = Liferay.PortletURL.createURL(baseUrl);
-        <core_rt:choose>
-            <core_rt:when test="${not empty component.id}">
-                portletURL.setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_DETAIL%>')
-                          .setParameter('<%=PortalConstants.COMPONENT_ID%>', '${component.id}');
-            </core_rt:when>
-            <core_rt:otherwise>
-                portletURL.setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_VIEW%>');
-            </core_rt:otherwise>
-        </core_rt:choose>
-        window.location = portletURL.toString();
-    }
-
-    function deleteAttachmentsOnCancel() {
-        $.ajax({
-            type: 'POST',
-            url: '<%=deleteAttachmentsOnCancelURL%>',
-            cache: false,
-            data: {
-                "<portlet:namespace/><%=PortalConstants.DOCUMENT_ID%>": "${component.id}"
-            },
+        $('#ComponentGeneralInfo input.edit-vendor').on('click', function() {
+            vendorsearch.openSearchDialog('<portlet:namespace/>what', '<portlet:namespace/>where',
+                    '<portlet:namespace/>FULLNAME', '<portlet:namespace/>SHORTNAME', '<portlet:namespace/>URL', fillVendorInfo);
         });
-    }
 
-    function openDeleteDialog() {
-        var htmlDialog  = '' + '<div>' +
-            'Do you really want to delete the component <b><sw360:out value="${component.name}"/></b> ?' +
-            '<core_rt:if test="${not empty component.attachments}" ><br/><br/>The component <b><sw360:out value="${component.name}"/></b>contains<br/><ul><li><sw360:out value="${component.attachmentsSize}"/> attachments</li></ul></core_rt:if>' +
-            '</div>' +
-            '<div ' + styleAsHiddenIfNeccessary(${component.permissions[DELETE] == true}) + '><hr><label class=\'textlabel stackedLabel\'>Comment your changes</label><textarea id=\'moderationDeleteCommentField\' class=\'moderationCreationComment\' placeholder=\'Comment on request...\'></textarea></div>';
-        deleteConfirmed(htmlDialog, deleteComponent);
-    }
+        function cancel() {
+            $.ajax({
+                type: 'POST',
+                url: '<%=deleteAttachmentsOnCancelURL%>',
+                cache: false,
+                data: {
+                    "<portlet:namespace/><%=PortalConstants.DOCUMENT_ID%>": "${component.id}"
+                }
+            }).always(function() {
+                var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>',
+                    portletURL = Liferay.PortletURL.createURL(baseUrl)
+                <core_rt:choose>
+                    <core_rt:when test="${not componentDivAddMode}">
+                            .setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_DETAIL%>')
+                            .setParameter('<%=PortalConstants.COMPONENT_ID%>', '${component.id}');
+                    </core_rt:when>
+                    <core_rt:otherwise>
+                            .setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_VIEW%>')
+                    </core_rt:otherwise>
+                </core_rt:choose>
+                window.location.href = portletURL.toString() + window.location.hash;
+            });
+        }
 
-    function deleteComponent() {
-        var commentText_encoded = btoa($("#moderationDeleteCommentField").val());
-        var baseUrl = '<%=deleteComponentURL%>';
-        var deleteURL = Liferay.PortletURL.createURL( baseUrl ).setParameter('<%=PortalConstants.MODERATION_REQUEST_COMMENT%>',commentText_encoded);
-        window.location.href = deleteURL;
-    }
+        function deleteComponent() {
+            var $dialog,
+                data = $('#componentEditForm').data(),
+                name = data.componentName,
+                attachmentsSize = data.attachments;
 
-    function focusOnCommentField() {
-        $("#moderationRequestCommentField").focus();
-        $("#moderationRequestCommentField").select();
-    }
+            function deleteComponentInternal() {
+                var baseUrl = data.deleteUrl,
+                    deleteURL = Liferay.PortletURL.createURL( baseUrl ).setParameter(data.commentParameterName, btoa($("#moderationDeleteCommentField").val()));
+                window.location.href = deleteURL;
+            }
 
-    function showCommentField() {
-        $("#moderationRequestCommentDialog").show();
-        $("#formSubmit").attr("disabled","disabled");
-        focusOnCommentField();
-    }
+            $dialog = dialog.open('#deleteComponentDialog', {
+                name: name,
+                attachments: attachmentsSize,
+                hasNoAttachments: attachmentsSize == 0
+            }, function(submit, callback) {
+                deleteComponentInternal();
+            });
+        }
 
-    function submitModerationRequest() {
-        $('#componentEditForm').submit();
-    }
+        function showCommentDialog() {
+            var $dialog;
 
-    // vendor handling
+            // validate first to be sure that form can be submitted
+            if(!validation.validate('#componentEditForm')) {
+                return;
+            }
 
-    $('#ComponentGeneralInfo input.edit-vendor').on('click', function() {
-        vendorsearch.openSearchDialog('<portlet:namespace/>what', '<portlet:namespace/>where',
-                  '<portlet:namespace/>FULLNAME', '<portlet:namespace/>SHORTNAME', '<portlet:namespace/>URL', fillVendorInfo);
+            $dialog = dialog.confirm(
+                null,
+                'pencil',
+                'Create moderation request',
+                '<form>' +
+                    '<div class="form-group">' +
+                        '<label for="moderationRequestCommentField">Please comment your changes</label>' +
+                        '<textarea form="componentEditForm" name="<portlet:namespace/><%=PortalConstants.MODERATION_REQUEST_COMMENT%>" id="moderationRequestCommentField" class="form-control" placeholder="Leave a comment on your request" data-name="comment" autofocus></textarea>' +
+                    '</div>' +
+                '</form>',
+                'Send moderation request',
+                {
+                    comment: ''
+                },
+                function() {
+                    $('#componentEditForm').submit();
+                }
+            );
+        }
+
+        // vendor handling
+        function fillVendorInfo(vendorInfo) {
+            var beforeComma = vendorInfo.substr(0, vendorInfo.indexOf(","));
+            var afterComma = vendorInfo.substr(vendorInfo.indexOf(",") + 1);
+
+            $('#<%=Component._Fields.DEFAULT_VENDOR_ID.toString()%>').val(beforeComma.trim());
+            $('#<%=Component._Fields.DEFAULT_VENDOR_ID.toString()%>Display').val(afterComma.trim());
+        }
     });
-
-    function fillVendorInfo(vendorInfo) {
-        var beforeComma = vendorInfo.substr(0, vendorInfo.indexOf(","));
-        var afterComma = vendorInfo.substr(vendorInfo.indexOf(",") + 1);
-
-        $('#<%=Component._Fields.DEFAULT_VENDOR_ID.toString()%>').val(beforeComma.trim());
-        $('#<%=Component._Fields.DEFAULT_VENDOR_ID.toString()%>Display').val(afterComma.trim());
-    }
-});
-</script>
+    </script>
+</core_rt:if>

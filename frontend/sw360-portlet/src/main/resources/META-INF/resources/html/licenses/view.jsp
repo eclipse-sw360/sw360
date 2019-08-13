@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -9,8 +9,6 @@
   ~ http://www.eclipse.org/legal/epl-v10.html
   --%>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
-
-
 
 <%@ include file="/html/init.jsp" %>
 <%-- the following is needed by liferay to display error messages--%>
@@ -25,6 +23,7 @@
     <jsp:useBean id="licenseList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenses.License>"
                  scope="request"/>
 </c:catch>
+
 <%@include file="/html/utils/includes/logError.jspf" %>
 
 <portlet:resourceURL var="exportLicensesURL">
@@ -35,47 +34,49 @@
     <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_EDIT%>"/>
 </portlet:renderURL>
 
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/datatables.net-buttons-bs/css/buttons.bootstrap.min.css"/>
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/dataTable_Siemens.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
+<div class="container" style="display: none;">
+	<div class="row">
+		<div class="col-3 sidebar">
+			<div class="card-deck">
+                <%@ include file="/html/utils/includes/quickfilter.jspf" %>
+            </div>
+		</div>
+		<div class="col">
+            <div class="row portlet-toolbar">
+				<div class="col-auto">
+					<div class="btn-toolbar" role="toolbar">
+						<div class="btn-group" role="group">
+							<button type="button" class="btn btn-primary" onclick="window.location.href='<%=addLicenseURL%>'">Add License</button>
+						</div>
+						<div class="btn-group" role="group">
+							<button type="button" class="btn btn-secondary" onclick="window.location.href='<%=exportLicensesURL%>'">Export Spreadsheet</button>
+						</div>
+					</div>
+				</div>
+                <div class="col portlet-title text-truncate" title="Licenses (${licenseList.size()})">
+					Licenses (${licenseList.size()})
+				</div>
+            </div>
 
-<div id="header"></div>
-<p class="pageHeader">
-    <span class="pageHeaderBigSpan">Licenses</span> <span class="pageHeaderSmallSpan">(${licenseList.size()})</span>
-    <span class="pull-right">
-        <input type="button" class="addButton" onclick="window.location.href='<%=exportLicensesURL%>'"
-               value="Export Licenses">
-        <input type="button" class="addButton" onclick="window.location.href='<%=addLicenseURL%>'" value="Add License">
-    </span>
-</p>
+            <div class="row">
+                <div class="col">
+			        <table id="licensesTable" class="table table-bordered"></table>
+                </div>
+            </div>
 
-<div id="searchInput" class="content1">
-    <%@ include file="/html/utils/includes/quickfilter.jspf" %>
+		</div>
+	</div>
 </div>
-
-<div id="licensesTableDiv" class="content2">
-    <table id="licensesTable" cellpadding="0" cellspacing="0" border="0" class="display">
-        <tfoot>
-        <tr>
-            <th style="width: 25%;"></th>
-            <th style="width: 35%;"></th>
-            <th style="width: 20%;"></th>
-            <th style="width: 20%;"></th>
-        </tr>
-        </tfoot>
-    </table>
-</div>
+<%@ include file="/html/utils/includes/pageSpinner.jspf" %>
 
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-    require(['jquery', 'utils/includes/quickfilter', /* jquery-plugins */ 'datatables.net', 'datatables.net-buttons', 'datatables.net-buttons.print'], function($, quickfilter) {
+    require(['jquery', 'bridges/datatables', 'utils/includes/quickfilter' ], function($, datatables, quickfilter) {
         var licenseTable;
 
-        Liferay.on('allPortletsReady', function() {
-            licenseTable = createLicenseTable();
-            quickfilter.addTable(licenseTable);
-        });
+        licenseTable = createLicenseTable();
+        quickfilter.addTable(licenseTable);
 
         // catch ctrl+p and print dataTable
         $(document).on('keydown', function(e){
@@ -98,44 +99,29 @@
                     "2": '',
                     </core_rt:if>
                     <core_rt:if test="${not license.checked}">
-                    "2": 'UNCHECKED',
+                    "2": '<span class="text-danger"><clay:icon symbol="times-circle" /></span>',
+                    </core_rt:if>
+                    <core_rt:if test="${license.checked}">
+                    "2": '<span class="text-success"><clay:icon symbol="check-circle" /></span>',
                     </core_rt:if>
                     "3": '<sw360:out value="${license.licenseType.licenseType}" default="--"/>'
                 });
             </core_rt:forEach>
 
-            licenseTable = $('#licensesTable').DataTable({
-                "pagingType": "simple_numbers",
-                "dom": "lBrtip",
-                "buttons": [
-                    {
-                        extend: 'print',
-                        text: 'Print',
-                        autoPrint: true,
-                        className: 'custom-print-button'
-                    }
+            licenseTable = datatables.create('#licensesTable', {
+                searching: true,
+                data: result,
+                columns: [
+                    { "title": "License Shortname" },
+                    { "title": "License Fullname" },
+                    { "title": "Is checked?", className: 'text-center' },
+                    { "title": "License Type" }
                 ],
-                "pageLength": 10,
-                "language": {
-                  "lengthMenu": 'Display <select>\
-                  <option value="5">5</option>\
-                  <option value="10">10</option>\
-                  <option value="20">20</option>\
-                  <option value="50">50</option>\
-                  <option value="100">100</option>\
-                  </select> licenses'
-                },
-                "data": result,
-                "columns": [
-                  { "title": "License Shortname" },
-                  { "title": "License Fullname" },
-                  { "title": "Is checked?" },
-                  { "title": "License Type" }
-                  ],
-                "autoWidth": false
-            });
+                initComplete: datatables.showPageContainer
+            }, [0, 1, 2, 3]);
 
-              return licenseTable;
+            return licenseTable;
         }
-      });
+    });
 </script>
+

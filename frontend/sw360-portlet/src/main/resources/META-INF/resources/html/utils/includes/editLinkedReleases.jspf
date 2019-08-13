@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -11,24 +11,21 @@
 
 <%@ page import="org.eclipse.sw360.datahandler.thrift.ReleaseRelationship" %>
 
-<table class="table info_table" id="LinkedReleasesInfo">
+<table class="table edit-table" id="LinkedReleasesInfo">
        <colgroup>
            <col style="width: 25%;" />
            <col style="width: 25%;" />
            <col style="width: 25%;" />
            <col style="width: 25%;" />
-           <col style="width: 45px;" /> <!-- width of one action (25) with padding of 10 for the column-->
+           <col style="width: 1.7rem" />
        </colgroup>
     <thead>
         <tr>
-            <th class="headLabel" colspan="5">Linked Releases</th>
-        </tr>
-        <tr>
-            <th class="headlabel" rowspan="2">Vendor Name</th>
-            <th class="headlabel" rowspan="2">Release Name</th>
-            <th class="headlabel" rowspan="2">Release Version</th>
-            <th class="headlabel" rowspan="2">Release Relation <sw360:DisplayEnumInfo type="<%=ReleaseRelationship.class%>"/></th>
-            <th class="headlabel" rowspan="2"></th>
+            <th>Vendor Name</th>
+            <th>Release Name</th>
+            <th>Release Version</th>
+            <th>Release Relation <sw360:DisplayEnumInfo type="<%=ReleaseRelationship.class%>"/></th>
+            <th></th>
         </tr>
     </thead>
     <tbody>
@@ -36,6 +33,4 @@
     </tbody>
 </table>
 
-<input type="button" class="addButton" id="addLinkedReleasesToReleaseButton" value="Click to add Releases"  >
-<br/>
-<br/>
+<button type="button" class="btn btn-secondary" id="addLinkedReleasesToReleaseButton">Click to add Releases</button>

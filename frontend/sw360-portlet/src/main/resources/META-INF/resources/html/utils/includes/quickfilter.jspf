@@ -1,5 +1,5 @@
 <%--
- ~ Copyright Siemens AG, 2017.
+ ~ Copyright Siemens AG, 2017, 2019.
  ~ Part of the SW360 Portal Project.
  ~
  ~ SPDX-License-Identifier: EPL-1.0
@@ -10,15 +10,15 @@
  ~ http://www.eclipse.org/legal/epl-v10.html
  --%>
 
-<table id="component-quickfilter">
-    <thead>
-	    <tr>
-	        <th class="infoheading">Quick Filter</th>
-	    </tr>
-    </thead>
-    <tbody style="background-color: #f8f7f7; border: none;">
-	    <tr>
-	        <td><input type="text" class="searchbar" value="" /></td>
-	    </tr>
-    </tbody>
-</table>
+<div id="component-quickfilter" class="card">
+	<div class="card-header">
+		Quick Filter
+	</div>
+	<div class="card-body">
+		<form>
+			<div class="form-group">
+				<input type="text" class="form-control form-control-sm" value="" />
+			</div>
+		</form>
+	</div>
+</div>

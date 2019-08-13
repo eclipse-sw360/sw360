@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017.
+ * Copyright Siemens AG, 2017, 2019.
  * Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -9,52 +9,49 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-define('components/includes/vendors/addVendor', ['jquery', /* jquery-plugins: */ 'jquery-ui', 'jquery.validate.min'], function($) {
+define('components/includes/vendors/addVendor', ['jquery', 'modules/dialog', 'modules/validation', 'utils/keyboard' ], function($, dialog, validation, keyboard) {
 
-    function addVendor() {
-        openDialog('add-vendor-form', 'addVendorFullName');
-        $('#addVendorFullName').val("");
-        $('#addVendorShortName').val("");
-        $('#addVendorUrl').val("");
-        $('#divVendorSearchAddVendorError').html("");
-
-        $('#add-vendor-form form').validate().resetForm();
+    function showDialog(fullnameKey, shortnameKey, urlKey, vendorAddedCb) {
+        var $dialog = dialog.open('#addVendorDialog', {
+            fullname: '',
+            shortname: '',
+            url: ''
+        }, function(submit, callback, data) {
+            if(validation.validate('#addVendorDialog .modal-body form')) {
+                addVendor(data.fullname, data.shortname, data.url, fullnameKey, shortnameKey, urlKey, $dialog, callback, vendorAddedCb);
+            } else {
+                callback();
+            }
+        }, function() {
+            this.$.find('.modal-body form').removeClass('was-validated');
+            keyboard.bindkeyPressToClick('vendorURL', this.$.find('button[name="add-vendor"]'));
+        });
     }
 
-    function submitAddVendor(fullnameId, shortnameId, urlId, fullnameKey, shortnameKey, urlKey, vendorAddedCb) {
+    function addVendor(fullname, shortname, url, fullnameKey, shortnameKey, urlKey, $dialog, callback, vendorAddedCb) {
         var data = {},
-            fullnameText = $('#' + fullnameId).val(),
-            shortnameText = $('#' + shortnameId).val(),
-            urlText = $('#' + urlId).val(),
-            addVendorUrl = $('#add-vendor-form').data().addVendorUrl;
+            addVendorUrl = $('#addVendorDialog').data().addVendorUrl;
 
-        data[fullnameKey] = fullnameText;
-        data[shortnameKey] = shortnameText;
-        data[urlKey] = urlText;
+        data[fullnameKey] = fullname;
+        data[shortnameKey] = shortname;
+        data[urlKey] = url;
 
-        if ($('#add-vendor-form form').valid()) {
-            jQuery.ajax({
-                type: 'POST',
-                url: addVendorUrl,
-                data: data,
-                success: function (data) {
-                    closeOpenDialogs();
-                    vendorAddedCb(data.id + ',' + $('#' + fullnameId).val());
-                }
-            });
-        }
+        jQuery.ajax({
+            type: 'POST',
+            url: addVendorUrl,
+            data: data,
+            success: function (data) {
+                vendorAddedCb(data.id + ',' + fullname);
+                callback(true);
+            },
+            error: function() {
+                $dialog.alert('Cannot add vendor.');
+                callback();
+            }
+        });
     }
 
     return {
-        showDialog: function(fullnameKey, shortnameKey, urlKey, vendorAddedCb) {
-            addVendor();
-
-            $('#add-vendor-form input[name=add-vendor]').off('click.add-vendor');
-            $('#add-vendor-form input[name=add-vendor]').on('click.add-vendor', function() {
-                submitAddVendor('addVendorFullName', 'addVendorShortName', 'addVendorUrl',
-                        fullnameKey, shortnameKey, urlKey, vendorAddedCb);
-            });
-
-        }
+        showDialog: showDialog
     };
 });

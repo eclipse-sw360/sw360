@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -36,105 +36,148 @@
     <portlet:param name="<%=PortalConstants.VENDOR_ID%>" value="${vendor.id}"/>
 </portlet:actionURL>
 
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/themes/base/jquery-ui.min.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.css">
 
-<script src="<%=request.getContextPath()%>/webjars/jquery-validation/dist/jquery.validate.min.js" type="text/javascript"></script>
-<script src="<%=request.getContextPath()%>/webjars/jquery-validation/dist/additional-methods.min.js" type="text/javascript"></script>
-<script src="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.js" type="text/javascript"></script>
-<script src="<%=request.getContextPath()%>/webjars/jquery-ui/jquery-ui.min.js"></script>
+<div class="container">
+	<div class="row">
+		<div class="col">
+            <div class="row portlet-toolbar">
+				<div class="col-auto">
+					<div class="btn-toolbar" role="toolbar">
+                        <core_rt:if test="${addMode}" >
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-primary" data-action="save">Create Vendor</button>
+                            </div>
+                        </core_rt:if>
+						<core_rt:if test="${not addMode}" >
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-primary" data-action="save">Update Vendor</button>
+                            </div>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-danger" data-action="delete" data-vendor-name="<sw360:out value="${vendor.fullname}"/>">Delete Vendor</button>
+						    </div>
+                        </core_rt:if>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-light" data-action="cancel">Cancel</button>
+                        </div>
+					</div>
+				</div>
+                <div class="col portlet-title text-truncate" title="<sw360:out value="${vendor.fullname}"/>">
+					<sw360:out value="${vendor.fullname}"/>
+				</div>
+            </div>
 
+            <div class="row">
+                <div class="col">
+                    <form id="vendorEditForm" name="vendorEditForm" action="<%=updateURL%>" method="post" class="form needs-validation" novalidate>
+                        <table id="VendorEdit" class="table edit-table three-columns">
+                            <thead>
+                                <tr>
+                                    <th colspan="3">Edit Vendor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="form-group">
+                                            <label for="vendorFullname">Full Name</label>
+                                            <input id="vendorFullname" type="text" required class="form-control" placeholder="Enter vendor fullname" name="<portlet:namespace/><%=Vendor._Fields.FULLNAME%>"
+                                                value="<sw360:out value="${vendor.fullname}"/>" />
+                                             <div class="invalid-feedback">
+                                                Please enter a full name!
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="form-group">
+                                            <label for="vendorShortname">Short Name</label>
+                                            <input id="vendorShortname" type="text" required class="form-control" placeholder="Enter vendor short name" name="<portlet:namespace/><%=Vendor._Fields.SHORTNAME%>"
+                                                value="<sw360:out value="${vendor.shortname}"/>" />
+                                            <div class="invalid-feedback">
+                                                Please enter a short name!
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="form-group">
+                                            <label for="vendorURL">URL</label>
+                                            <input id="vendorURL" type="text" required class="form-control" placeholder="Enter vendor url" name="<portlet:namespace/><%=Vendor._Fields.URL%>"
+                                                value="<sw360:out value="${vendor.url}"/>" />
+                                            <div class="invalid-feedback">
+                                                Please enter an url!
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </form>
+                </div>
+            </div>
 
-<div id="where" class="content1">
-    <p class="pageHeader"><span class="pageHeaderBigSpan"><sw360:out value="${vendor.fullname}"/></span>
-        <core_rt:if test="${not addMode}" >
-            <input type="button" class="addButton" onclick="deleteConfirmed('Do you really want to delete the vendor <b><sw360:out value="${vendor.fullname}"/></b> ?', deleteVendor)"
-                   value="Delete <sw360:out value="${vendor.fullname}"/>">
-        </core_rt:if>
-    </p>
+            <div class="row">
+                <div class="col">
+                    <core_rt:if test="${releaseList.size() > 0}" >
+                        <h4 class="mt-4">Used by the following release(s)</h4>
+                        <table class="table bordered-table">
+                            <tbody>
+                                <tr>
+                                    <core_rt:forEach var="release" items="${releaseList}" varStatus="loop">
+                                        <td><sw360:DisplayReleaseLink release="${release}"/></td>
+                                        <core_rt:if test="${loop.count > 0 and  loop.count %  4 == 0}">
+                                            </tr><tr>
+                                        </core_rt:if>
+                                    </core_rt:forEach>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </core_rt:if>
+                </div>
+            </div>
+		</div>
+	</div>
 </div>
 
-<div id="editField" class="content2">
+<div class="dialogs auto-dialogs"></div>
 
-    <form  id="vendorEditForm" name="vendorEditForm" action="<%=updateURL%>" method="post" >
-        <table class="table info_table" id="VendorEdit">
-            <thead>
-            <tr>
-                <th colspan="3" class="headlabel">Edit Vendor</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr>
-                <td width="30%">
-                    <label class="textlabel stackedLabel mandatory" for="vendorFullname">Full Name</label>
-                    <input id="vendorFullname" type="text" required class="toplabelledInput" placeholder="Enter vendor fullname" name="<portlet:namespace/><%=Vendor._Fields.FULLNAME%>"
-                           value="<sw360:out value="${vendor.fullname}"/>" />
-                </td>
-
-                <td width="30%">
-                    <label class="textlabel stackedLabel mandatory" for="vendorShortname">Short Name</label>
-                    <input id="vendorShortname" type="text" required class="toplabelledInput" placeholder="Enter vendor short name" name="<portlet:namespace/><%=Vendor._Fields.SHORTNAME%>"
-                           value="<sw360:out value="${vendor.shortname}"/>" />
-                </td>
-
-                <td width="30%">
-                    <label class="textlabel stackedLabel mandatory" for="vendorURL">URL</label>
-                    <input id="vendorURL" type="text" required class="toplabelledInput" placeholder="Enter vendor url" name="<portlet:namespace/><%=Vendor._Fields.URL%>"
-                           value="<sw360:out value="${vendor.url}"/>" />
-                </td>
-            </tr>
-
-            </tbody>
-        </table>
-        <core_rt:if test="${not addMode}" >
-            <input type="submit" value="Update Vendor" class="addButton">
-            <input type="button" value="Cancel" onclick="cancel()" class="cancelButton">
-        </core_rt:if>
-        <core_rt:if test="${addMode}" >
-            <input type="submit" value="Add Vendor" class="addButton">
-            <input type="button" value="Cancel" onclick="cancel()" class="cancelButton">
-        </core_rt:if>
-    </form>
-
-    <core_rt:if test="${releaseList.size() > 0}" >
-        <p>Used by the following release(s)</p>
-        <table style="padding-left: 3px; padding-right: 3px"> <tr>
-        <core_rt:forEach var="release" items="${releaseList}" varStatus="loop">
-            <td><sw360:DisplayReleaseLink release="${release}" /></td>
-            <core_rt:if test="${loop.count > 0 and  loop.count %  4 == 0}" ></tr> <tr> </core_rt:if>
-        </core_rt:forEach>
-        </tr>
-        </table>
-    </core_rt:if>
-
-</div>
-
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-    function cancel() {
-        var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
-        var portletURL = Liferay.PortletURL.createURL( baseUrl )
-                <core_rt:if test="${not addMode}" >
-                .setParameter('<%=PortalConstants.PAGENAME%>','<%=PortalConstants.PAGENAME_DETAIL%>')
-                </core_rt:if>
-                <core_rt:if test="${addMode}" >
-                .setParameter('<%=PortalConstants.PAGENAME%>','<%=PortalConstants.PAGENAME_VIEW%>')
-                </core_rt:if>
-                .setParameter('<%=PortalConstants.VENDOR_ID%>','${vendor.id}');
-        window.location = portletURL.toString();
-    }
+    require(['jquery', 'modules/dialog', 'modules/validation' ], function($, dialog, validation) {
 
-    function deleteVendor() {
-        window.location.href = '<%=deleteVendorURL%>';
-    }
+        validation.enableForm('#vendorEditForm');
 
-    var contextpath;
-    $( document ).ready(function() {
-        contextpath = '<%=request.getContextPath()%>';
-        $('#vendorEditForm').validate({
-            ignore: [],
-            invalidHandler: invalidHandlerShowErrorTab
+        $('.portlet-toolbar button[data-action="cancel"]').on('click', function() {
+            var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
+            var portletURL = Liferay.PortletURL.createURL( baseUrl )
+                    <core_rt:if test="${not addMode}" >
+                    .setParameter('<%=PortalConstants.PAGENAME%>','<%=PortalConstants.PAGENAME_DETAIL%>')
+                    </core_rt:if>
+                    <core_rt:if test="${addMode}" >
+                    .setParameter('<%=PortalConstants.PAGENAME%>','<%=PortalConstants.PAGENAME_VIEW%>')
+                    </core_rt:if>
+                    .setParameter('<%=PortalConstants.VENDOR_ID%>','${vendor.id}');
+            window.location = portletURL.toString();
+        });
+
+        $('.portlet-toolbar button[data-action="delete"]').on('click', function(event) {
+            var data = $(event.currentTarget).data();
+
+            dialog.confirm(
+                'danger',
+                'question-circle',
+                'Delete Vendor?',
+                '<p>Do you really want to delete the vendor <b data-name="name"></b>?</p>',
+                'Delete Vendor',
+                {
+                    name: data.vendorName,
+                },
+                function(submit, callback) {
+                    window.location.href = '<%=deleteVendorURL%>';
+                }
+            );
+        });
+
+        $('.portlet-toolbar button[data-action="save"]').on('click', function() {
+            $('#vendorEditForm').submit();
         });
     });
-
 </script>

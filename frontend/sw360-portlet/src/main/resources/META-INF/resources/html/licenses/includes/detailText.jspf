@@ -1,6 +1,6 @@
 <%@ page import="org.eclipse.sw360.datahandler.thrift.licenses.License" %>
 <%--
-  ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
   ~ With modifications by Bosch Software Innovations GmbH, 2016.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
@@ -11,17 +11,17 @@
   ~ http://www.eclipse.org/legal/epl-v10.html
 --%>
 
-<table class="table info_table" id="LicenseText">
+<table class="table table-bordered" id="LicenseText">
     <thead>
-    <tr>
-        <th class="headlabel">License Text</th>
-    </tr>
+        <tr>
+            <th>License Text</th>
+        </tr>
     </thead>
     <tr>
         <td>
-        <pre style="white-space: pre-line;">
-        ${licenseDetail.text}
-        </pre>
+            <pre style="white-space: pre-line;">
+                ${licenseDetail.text}
+            </pre>
         </td>
     </tr>
 </table>

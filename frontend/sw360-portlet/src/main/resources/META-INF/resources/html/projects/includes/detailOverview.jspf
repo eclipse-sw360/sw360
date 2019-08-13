@@ -14,7 +14,7 @@
 	<portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_EDIT%>"/>
 </portlet:renderURL>
 
-<div class="container">
+<div class="container" style="display: none;">
 	<div class="row">
 		<div class="col-3 sidebar">
 			<div id="detailTab" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
@@ -31,43 +31,40 @@
 			<core_rt:if test="${inProjectDetailsContext}">
 				<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Vulnerabilities'}">active</core_rt:if>" href="#tab-Vulnerabilities" data-toggle="list" role="tab">
 					Vulnerabilities
+						<span id="numberOfVulnerabilities"
 						<core_rt:if test="${numberOfUncheckedVulnerabilities.intValue() == 0 || !project.enableSvm || !project.enableVulnerabilitiesDisplay}">
-							<span class="badge badge-light">
+							class="badge badge-light"
 						</core_rt:if>
-								<core_rt:if test="${numberOfUncheckedVulnerabilities.intValue() > 0 && project.enableSvm}">
-									<span class="badge badge-danger">
-								</core_rt:if>
-								<core_rt:if test="${project.enableVulnerabilitiesDisplay}">
-									${numberOfUncheckedVulnerabilities} / ${numberOfVulnerabilities}
-								</core_rt:if>
-								<core_rt:if test="${not project.enableVulnerabilitiesDisplay}">
-									? / ?
-								</core_rt:if>
+						<core_rt:if test="${numberOfUncheckedVulnerabilities.intValue() > 0 && project.enableSvm}">
+							class="badge badge-danger"
+						</core_rt:if>
+						>
+						<core_rt:if test="${project.enableVulnerabilitiesDisplay}">
+							${numberOfUncheckedVulnerabilities} / ${numberOfVulnerabilities}
+						</core_rt:if>
+						<core_rt:if test="${not project.enableVulnerabilitiesDisplay}">
+							? / ?
+						</core_rt:if>
 						</span>
 				</a>
 			</core_rt:if>
 		    </div>
 	    </div>
 	    <div class="col">
-		<div class="row">
-				<div class="col portlet-title">
-					<sw360:ProjectName project="${project}"/>
-				</div>
-		</div>
 		<div class="row portlet-toolbar">
-				<div class="col">
-					<div class="btn-toolbar" role="toolbar">
-						<div class="btn-group" role="group">
-							<button type="button" class="btn btn-primary" onclick="window.location.href='<%=editProjectURL%>'"
-								<c:if test = "${(project.clearingState eq 'CLOSED') && (isUserAdmin != 'Yes')}">
-									disabled="disabled"
-								</c:if>
-							>
-								Edit Project
-							</button>
-						</div>
-						<div class="list-group-companion" data-belong-to="tab-linkedProjects">
-							<core_rt:if test="${inProjectDetailsContext}">
+				<core_rt:if test="${inProjectDetailsContext}">
+					<div class="col-auto">
+						<div class="btn-toolbar" role="toolbar">
+							<div class="btn-group" role="group">
+								<button type="button" class="btn btn-primary" onclick="window.location.href='<%=editProjectURL%>' + window.location.hash"
+									<core_rt:if test = "${(project.clearingState eq 'CLOSED') && (isUserAdmin != 'Yes')}">
+										disabled="disabled"
+									</core_rt:if>
+								>
+									Edit Project
+								</button>
+							</div>
+							<div class="list-group-companion" data-belong-to="tab-linkedProjects">
 								<div id="btnExportGroup" class="btn-group" role="group">
 									<button id="btnExport" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 										Export Spreadsheet
@@ -82,45 +79,49 @@
 									<button id="downloadLicenseInfoButton" type="button" class="btn btn-secondary">Generate License Info</button>
 									<button id="downloadSourceCodeBundleButton" type="button" class="btn btn-secondary">Generate Source Code Bundle</button>
 								</div>
-							</core_rt:if>
-						</div>
-						<div class="list-group-companion" data-belong-to="tab-attachmentUsages">
-							<core_rt:if test="${inProjectDetailsContext and writeAccessUser}">
+							</div>
+							<div class="list-group-companion" data-belong-to="tab-attachmentUsages">
+								<core_rt:if test="${writeAccessUser}">
+									<div class="btn-group" role="group">
+										<button id="saveAttachmentUsagesButton" type="button" class="btn btn-secondary">Save Usages</button>
+									</div>
+								</core_rt:if>
+							</div>
+							<div class="list-group-companion" data-belong-to="tab-ECCStatus">
 								<div class="btn-group" role="group">
-									<button id="saveAttachmentUsagesButton" type="button" class="btn btn-secondary">Save Usages</button>
+									<button id="exportReleasesSpreadsheetECCButton" type="button" class="btn btn-secondary">Export Spreadsheet</button>
 								</div>
-							</core_rt:if>
-						</div>
-						<div class="list-group-companion" data-belong-to="tab-ECCStatus">
-							<core_rt:if test="${inProjectDetailsContext}">
+							</div>
+							<div class="list-group-companion" data-belong-to="tab-ClearingStatus">
 								<div class="btn-group" role="group">
-							<button id="exportReleasesSpreadsheetECCButton" type="button" class="btn btn-secondary">Export Spreadsheet</button>
+									<button id="exportReleasesSpreadsheetClearingButton" type="button" class="btn btn-secondary">Export Spreadsheet</button>
 								</div>
-						</core_rt:if>
-						</div>
-						<div class="list-group-companion" data-belong-to="tab-ClearingStatus">
-							<core_rt:if test="${inProjectDetailsContext}">
+							</div>
+							<div class="list-group-companion" data-belong-to="tab-Vulnerabilities">
 								<div class="btn-group" role="group">
-						<button id="exportReleasesSpreadsheetClearingButton" type="button" class="btn btn-secondary">Export Spreadsheet</button>
+									<button id="btnShowVulnerabilityCount" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+										Show <span data-name="count"></span>
+										<clay:icon symbol="caret-bottom" />
+									</button>
+									<div class="dropdown-menu" aria-labelledby="btnExport">
+										<a class="dropdown-item" data-type="200">200</a>
+										<a class="dropdown-item" data-type="500">500</a>
+										<a class="dropdown-item" data-type="1000">1000</a>
+										<a class="dropdown-item" data-type="-1">All</a>
+									</div>
 								</div>
-					</core_rt:if>
-						</div>
-						<div class="list-group-companion" data-belong-to="tab-Vulnerabilities">
-							<div class="btn-group" role="group">
-								<button id="btnShowVulnerabilityCount" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-									Show <span data-name="count"></span>
-									<clay:icon symbol="caret-bottom" />
-								</button>
-								<div class="dropdown-menu" aria-labelledby="btnExport">
-									<a class="dropdown-item" data-type="200">200</a>
-									<a class="dropdown-item" data-type="500">500</a>
-									<a class="dropdown-item" data-type="1000">1000</a>
-									<a class="dropdown-item" data-type="-1">All</a>
+							</div>
+							<div class="list-group-companion" data-belong-to="tab-Attachments">
+								<div class="btn-group" role="group">
+									<button id="downloadAttachmentBundle" type="button" class="btn btn-secondary">Download Attachment Bundle</button>
 								</div>
 							</div>
 						</div>
 					</div>
-				</div>
+					<div class="col portlet-title text-truncate" title="${sw360:printProjectName(project)}">
+						<sw360:ProjectName project="${project}"/>
+					</div>
+				</core_rt:if>
 			</div>
 			<div class="row">
 				<div class="col">
@@ -130,31 +131,31 @@
 		                    <%@include file="/html/utils/includes/usingProjectsTable.jspf" %>
 		                    <%@include file="/html/utils/includes/usingComponentsTable.jspf"%>
 		                </div>
-		                <div id="tab-Administration" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Administration'}">active</core_rt:if>">
+		                <div id="tab-Administration" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Administration'}">active show</core_rt:if>">
 		                    <%@include file="/html/projects/includes/projects/administration.jspf" %>
 		                </div>
-		                <div id="tab-linkedProjects" class="tab-pane <core_rt:if test="${selectedTab == 'tab-linkedProjects'}">active</core_rt:if>">
+		                <div id="tab-linkedProjects" class="tab-pane <core_rt:if test="${selectedTab == 'tab-linkedProjects'}">active show</core_rt:if>">
 		                    <%@include file="/html/projects/includes/linkedProjects.jspf" %>
 		                </div>
-		                <div id="tab-linkedReleases" class="tab-pane <core_rt:if test="${selectedTab == 'tab-linkedReleases'}">active</core_rt:if>">
+		                <div id="tab-linkedReleases" class="tab-pane <core_rt:if test="${selectedTab == 'tab-linkedReleases'}">active show</core_rt:if>">
 		                    <%@include file="/html/utils/includes/linkedReleaseDetails.jspf" %>
 		                </div>
 		                <core_rt:if test="${inProjectDetailsContext}">
-			                <div id="tab-attachmentUsages" class="tab-pane <core_rt:if test="${selectedTab == 'tab-attachmentUsages'}">active</core_rt:if>">
+			                <div id="tab-attachmentUsages" class="tab-pane <core_rt:if test="${selectedTab == 'tab-attachmentUsages'}">active show</core_rt:if>">
 			                    <%@include file="/html/projects/includes/attachmentUsages.jspf" %>
 			                </div>
 		                </core_rt:if>
-		                <div id="tab-ClearingStatus" class="tab-pane <core_rt:if test="${selectedTab == 'tab-ClearingStatus'}">active</core_rt:if>">
+		                <div id="tab-ClearingStatus" class="tab-pane <core_rt:if test="${selectedTab == 'tab-ClearingStatus'}">active show</core_rt:if>">
 		                    <%@include file="/html/projects/includes/projects/clearingStatus.jspf" %>
 		                </div>
-		                <div id="tab-ECCStatus" class="tab-pane <core_rt:if test="${selectedTab == 'tab-ECCStatus'}">active</core_rt:if>">
+		                <div id="tab-ECCStatus" class="tab-pane <core_rt:if test="${selectedTab == 'tab-ECCStatus'}">active show</core_rt:if>">
 		                    <%@include file="/html/projects/includes/projects/eccStatus.jspf" %>
 		                </div>
-		                <div id="tab-Attachments" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Attachments'}">active</core_rt:if>">
+		                <div id="tab-Attachments" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Attachments'}">active show</core_rt:if>">
 		                    <jsp:include page="/html/utils/includes/attachmentsDetail.jsp" />
 		                </div>
 		                <core_rt:if test="${inProjectDetailsContext}">
-			                <div id="tab-Vulnerabilities" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Vulnerabilities'}">active</core_rt:if>">
+			                <div id="tab-Vulnerabilities" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Vulnerabilities'}">active show</core_rt:if>">
 			                    <%@include file="/html/projects/includes/projects/vulnerabilities.jspf" %>
 			                </div>
 		                </core_rt:if>
@@ -164,6 +165,12 @@
         </div>
     </div>
 </div>
+<%@ include file="/html/utils/includes/pageSpinner.jspf" %>
+
+<div class="dialogs auto-dialogs"></div>
+
+<%--for javascript library loading --%>
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
 	document.title = "<sw360:ProjectName project="${project}"/> - " + document.title;
 

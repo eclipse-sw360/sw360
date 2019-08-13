@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
   ~ With modifications by Bosch Software Innovations GmbH, 2016.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
@@ -20,25 +20,25 @@
 <jsp:useBean id="releaseList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.components.ReleaseLink>"
              scope="request"/>
 
-<table class="table" id="LinkedReleasesInfo""
+<table class="table table-bordered" id="LinkedReleasesInfo""
   data-load-node-url="<%=loadLinkedReleasesRowsURL%>"
   data-portlet-namespace="<portlet:namespace/>"
   data-parent-branch-key="<%=PortalConstants.PARENT_BRANCH_ID%>"
   data-scope-group-id="${pageContext.getAttribute('scopeGroupId')}"
  >
     <thead>
-    <tr>
-        <th>Name</th>
-        <th>Release relation</th>
-        <th>License names</th>
-        <th>Clearing state</th>
-    </tr>
+        <tr>
+            <th>Name</th>
+            <th>Release relation</th>
+            <th>License names</th>
+            <th>Clearing state</th>
+        </tr>
     </thead>
     <tbody>
         <%@include file="/html/utils/ajax/linkedReleasesRows.jspf" %>
         <core_rt:if test="${releaseList.size() < 1}">
             <tr>
-                <td colspan="4"> No linked releases</td>
+                <td colspan="4">No linked releases yet.</td>
             </tr>
         </core_rt:if>
     </tbody>
@@ -46,20 +46,16 @@
 
 <script>
     require(['jquery', 'modules/ajax-treetable'], function($, ajaxTreeTable) {
+        var config = $('#LinkedReleasesInfo').data();
 
-        Liferay.on('allPortletsReady', function() {
-            var config = $('#LinkedReleasesInfo').data();
-
-            ajaxTreeTable.setup('LinkedReleasesInfo', config.loadNodeUrl, function(table, node) {
-                var data = {};
-                data[config.portletNamespace + config.parentBranchKey] = node.id;
-                data[config.portletNamespace + 'parentScopeGroupId'] =  config.scopeGroupId;
-                return data;
-            }, function(table, node, result) {
-                var rows = $(result).filter('tr');
-                table.treetable('loadBranch', node, rows);
-            });
+        ajaxTreeTable.setup('LinkedReleasesInfo', config.loadNodeUrl, function(table, node) {
+            var data = {};
+            data[config.portletNamespace + config.parentBranchKey] = node.id;
+            data[config.portletNamespace + 'parentScopeGroupId'] =  config.scopeGroupId;
+            return data;
+        }, function(table, node, result) {
+            var rows = $(result).filter('tr');
+            table.treetable('loadBranch', node, rows);
         });
-
     });
 </script>

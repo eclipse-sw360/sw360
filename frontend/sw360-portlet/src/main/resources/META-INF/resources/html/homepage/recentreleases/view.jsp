@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -16,26 +16,23 @@
 <portlet:defineObjects/>
 <liferay-theme:defineObjects/>
 
-
-
-
 <jsp:useBean id="releases" type="java.util.List<org.eclipse.sw360.datahandler.thrift.components.Release>"
              class="java.util.ArrayList" scope="request"/>
 
-<div id="recentReleasesDiv">
-    <h4>
-        Recent Releases
-    </h4>
-    <div class="homepageListingRight">
+<h4>Recent Releases</h4>
+<div class="row">
+    <div class="col">
         <core_rt:if test="${releases.size() > 0 }">
-            <core_rt:forEach var="release" items="${releases}">
-                <li style="color: red">
-                    <sw360:DisplayReleaseLink release="${release}"/>
-                </li>
-            </core_rt:forEach>
+            <ul>
+                <core_rt:forEach var="release" items="${releases}">
+                    <li>
+                        <sw360:DisplayReleaseLink release="${release}"/>
+                    </li>
+                </core_rt:forEach>
+            </ul>
         </core_rt:if>
         <core_rt:if test="${releases.size() == 0}">
-            <p style="color: red">No recent releases</p>
+            <div class="alert alert-info">No recent releases.</div>
         </core_rt:if>
     </div>
 </div>

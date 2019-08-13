@@ -14,7 +14,9 @@
 @import "portal/breadcrumbs";
 @import "portal/footer";
 @import "portal/header";
+@import "portal/loadingbar";
 @import "portlet/login";
+@import "portlet/components";
 @import "portlet/portlet_decorators";
 @import "sw360/sw360";
 
@@ -30,11 +32,6 @@
 // often container therefore an additional padding is applied there.
 #content {
 	padding: 0.5rem 1rem 0 1rem;
-}
-
-// The first row in main content would make the content div bigger than the browser view with margins
-#main-content > row {
-	margin: 0;
 }
 
 #wrapper {

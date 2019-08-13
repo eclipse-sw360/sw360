@@ -33,14 +33,17 @@
 			}
 		}
 
-		.col {
+		h4 + table.table:nth-child(n + 2) {
+			margin-top: 0.25rem;
+		}
+
+		h4:nth-child(n + 2) {
+			margin-top: 2rem;
+		}
+
+		> .row > .col {
 			padding-left: 0;
 			padding-right: 0;
-
-			&.content-right {
-				display: flex;
-				justify-content: flex-end;
-			}
 		}
 	}
 }

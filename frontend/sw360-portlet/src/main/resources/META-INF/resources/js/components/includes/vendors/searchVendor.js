@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017.
+ * Copyright Siemens AG, 2017, 2019.
  * Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -9,43 +9,91 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-define('components/includes/vendors/searchVendor', ['jquery', 'components/includes/vendors/addVendor', /* jquery-plugins: */ 'jquery-ui'], function(jQuery, vendoradd) {
-    function showSetVendorDialog() {
-        openDialog('search-vendor-form', 'searchvendor');
+define('components/includes/vendors/searchVendor', ['jquery', 'bridges/datatables', 'components/includes/vendors/addVendor', 'modules/button', 'modules/dialog', 'utils/keyboard' ], function($, datatables, vendoradd, button, dialog, keyboard) {
+    var $dialog,
+        $datatable;
+
+    function showSetVendorDialog(fullnameKey, shortnameKey, urlKey, vendorSelectedCb) {
+        $dialog = dialog.open('#searchVendorDialog', {}, function(submit, callback, data) {
+            if(submit ==  'select') {
+                vendorSelectedCb(data.vendor);
+                callback(true);
+            } else if(submit == 'add') {
+                callback(true);
+                vendoradd.showDialog(fullnameKey, shortnameKey, urlKey, vendorSelectedCb);
+            }
+        }, function() {
+            var dialog = this;
+
+            // we do not reset the datatable. This way a new search is not necessary
+            if(!$datatable) {
+                $datatable = createDatatable();
+                datatables.enableCheckboxForSelection($datatable, 0);
+            }
+
+            $('#searchresultstable').off('change.vendor-search');
+            $('#searchresultstable').on('change.vendor-search', 'input[data-name="vendor"]', function() {
+                dialog.enablePrimaryButtons(dialog.$.find('input[data-name="vendor"]:checked').length > 0);
+            });
+
+            dialog.enablePrimaryButtons(false);
+            keyboard.bindkeyPressToClick('searchvendor', 'searchbuttonvendor');
+        }, function() {
+            this.enablePrimaryButtons(this.$.find('input[data-name="vendor"]:checked').length > 0);
+        });
     }
 
-    function selectVendor(vendorSelectedCb) {
-        $('#searchresultstable').find(':radio').each(
-            function(){
-                if(this.checked){
-                    vendorSelectedCb($(this).val());
-                    closeOpenDialogs();
-                    return false;
-                }
-            }
-        );
+    function createDatatable() {
+        return datatables.create('#searchresultstable', {
+            destroy: true,
+            paging: false,
+            info: false,
+            searching: false,
+            order: [
+                [2, 'asc']
+            ],
+            columnDefs: [
+                { targets: [0], orderable: false },
+            ],
+            initComplete: function() {
+                $('#searchbuttonvendor').prop('disabled', false);
+            },
+            language: {
+                emptyTable: 'Please perform a new search.'
+            },
+            select: 'single'
+        });
     }
 
     function vendorContentFromAjax(id, whatKey, what, whereKey, where) {
         var data = {},
-            viewVendorUrl = $('#search-vendor-form').data().viewVendorUrl;
+            viewVendorUrl = $('#searchVendorDialog').data().viewVendorUrl;
 
         data[whatKey] = what;
         data[whereKey] = where;
 
-        jQuery.ajax({
+        button.wait('#searchbuttonvendor');
+        $dialog.closeMessage();
+
+        $.ajax({
             type: 'POST',
             url: viewVendorUrl,
             data: data,
             success: function (data) {
+                button.finish('#searchbuttonvendor');
+
+                $datatable.clear();
+                $datatable.destroy();
+
                 $('#' + id + ' tbody').html(data);
+                $datatable = createDatatable();
+            },
+            error: function() {
+                button.finish('#searchbuttonvendor');
+                $dialog.alert('Error searching for vendors.')
             }
         });
     }
-
-    jQuery(document).ready(function () {
-        bindkeyPressToClick('searchvendor', 'searchbuttonvendor');
-    });
 
     return {
         openSearchDialog: function(whatKey, whereKey, fullnameKey, shortnameKey, urlKey, vendorSelectedCb) {
@@ -54,17 +102,7 @@ define('components/includes/vendors/searchVendor', ['jquery', 'components/includ
                 vendorContentFromAjax('searchresultstable', whatKey, 'vendorSearch', whereKey, $('#searchvendor').val());
             });
 
-            $('#vendorsearchresults input[name=select-vendor]').off('click.vendor-search');
-            $('#vendorsearchresults input[name=select-vendor]').on('click.vendor-search', function(event) {
-                selectVendor(vendorSelectedCb);
-            });
-
-            $('#vendorsearchresults input[name=add-vendor]').off('click.vendor-search');
-            $('#vendorsearchresults input[name=add-vendor]').on('click.vendor-search', function(event) {
-                vendoradd.showDialog(fullnameKey, shortnameKey, urlKey, vendorSelectedCb);
-            });
-
-            showSetVendorDialog();
+            showSetVendorDialog(fullnameKey, shortnameKey, urlKey, vendorSelectedCb);
         }
     }
 });

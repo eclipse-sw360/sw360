@@ -68,179 +68,271 @@
 
 <core_rt:if test="${empty attributeNotFoundException}">
 
-    <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/themes/base/jquery-ui.min.css">
-    <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.css">
-    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/dataTable_Siemens.css">
-    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
+    <div class="container" style="display: none;">
+        <div class="row">
+            <div class="col-3 sidebar">
+                <div id="detailTab" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
+                    <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab">Summary</a>
+                    <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-linkedReleases'}">active</core_rt:if>" href="#tab-linkedReleases" data-toggle="list" role="tab">Linked Releases</a>
 
-    <div id="header"></div>
-    <p class="pageHeader"><span class="pageHeaderBigSpan"><sw360:out value="${component.name}"/>: <sw360:ReleaseName release="${release}" /> Edit</span>
-        <span class="pull-right">
-                   <core_rt:if test="${not addMode}">
-                       <input type="button" class="addButton delete-release"
-                               data-release-name="<sw360:ReleaseName release="${release}" />"
-                               data-linked-releases="${release.releaseIdToRelationshipSize}"
-                               data-attachments="${release.attachmentsSize}"
-                               value="Delete <sw360:ReleaseName release="${release}"/>"
-                            <core_rt:if test="${usingComponents.size()>0 or usingProjects.size()>0}"> disabled="disabled" title="Deletion is disabled as the release is used." </core_rt:if>
-                       />
-                   </core_rt:if>
-    </span>
-    </p>
+                    <core_rt:if test="${not addMode}" >
+                        <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ClearingDetails'}">active</core_rt:if>" href="#tab-ClearingDetails" data-toggle="list" role="tab">Clearing Details</a>
+                        <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ECCDetails'}">active</core_rt:if>" href="#tab-ECCDetails" data-toggle="list" role="tab">ECC Details</a>
+                        <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Attachments'}">active</core_rt:if>" href="#tab-Attachments" data-toggle="list" role="tab">Attachments</a>
+                    </core_rt:if>
+                    <core_rt:if test="${cotsMode}">
+                        <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-CommercialDetails'}">active</core_rt:if>" href="#tab-CommercialDetails" data-toggle="list" role="tab">Commercial Details</a>
+                    </core_rt:if>
+                </div>
+            </div>
+            <div class="col">
+                <div class="row portlet-toolbar">
+                    <div class="col-auto">
+                        <div class="btn-toolbar" role="toolbar">
+                            <div class="btn-group" role="group">
+                                <core_rt:if test="${addMode}" >
+                                    <button type="button" id="formSubmit" class="btn btn-primary">Create Release</button>
+                                </core_rt:if>
 
-    <div id="content">
-        <div class="container-fluid">
-            <form id="releaseEditForm" name="releaseEditForm" action="<%=updateReleaseURL%>" method="post">
-                <div id="myTab" class="row-fluid" <core_rt:if test="${not empty selectedTab}"> data-initial-tab="${selectedTab}" </core_rt:if>>
-                    <ul class="nav nav-tabs span2">
-                        <li><a href="#tab-ReleaseInformation">Summary</a></li>
-                        <li><a href="#tab-ReleaseLinks">Linked Releases</a></li>
-                        <core_rt:if test="${not addMode}">
-                            <li><a href="#tab-ReleaseClearingInformation">Clearing Details</a></li>
-                            <li><a href="#tab-ReleaseECCInformation">ECC Details</a></li>
-                            <li><a href="#tab-Attachments">Attachments</a></li>
-                        </core_rt:if>
-                        <core_rt:if test="${cotsMode}">
-                            <li><a href="#tab-COTSDetails">Commercial Details</a></li>
-                        </core_rt:if>
-                    </ul>
-                    <div class="tab-content span10">
-                        <div id="tab-ReleaseInformation" class="tab-pane">
-                            <%@include file="/html/components/includes/releases/editReleaseInformation.jspf" %>
-                            <core_rt:set var="keys" value="<%=PortalConstants.RELEASE_ROLES%>"/>
-                            <core_rt:set var="mapTitle" value="Additional Roles"/>
-                            <core_rt:set var="inputType" value="email"/>
-                            <core_rt:set var="inputSubtitle" value="Enter mail address"/>
-                            <core_rt:set var="customMap" value="${release.roles}"/>
-                            <%@include file="/html/utils/includes/mapEdit.jspf" %>
-                            <core_rt:set var="externalIdsSet" value="${release.externalIds.entrySet()}"/>
-                            <core_rt:set var="externalIdKeys" value="<%=PortalConstants.RELEASE_EXTERNAL_ID_KEYS%>"/>
-                            <%@include file="/html/utils/includes/editExternalIds.jsp" %>
-                            <core_rt:set var="additionalDataSet" value="${release.additionalData.entrySet()}"/>
-                            <%@include file="/html/utils/includes/editAdditionalData.jsp" %>
-                            <%@include file="/html/components/includes/releases/editReleaseRepository.jspf" %>
-                        </div>
-                        <div id="tab-ReleaseLinks">
-                            <%@include file="/html/utils/includes/editLinkedReleases.jspf" %>
-                        </div>
-                        <core_rt:if test="${not addMode}">
-                        <div id="tab-ReleaseClearingInformation">
-                                <%@include file="/html/components/includes/releases/editReleaseClearingInformation.jspf" %>
-                             </div>
-                             <div id="tab-ReleaseECCInformation">
-                                 <%@include file="/html/components/includes/releases/editReleaseECCInformation.jspf" %>
-                             </div>
-                        <div id="tab-Attachments">
-                            <%@include file="/html/utils/includes/editAttachments.jspf" %>
-                        </div>
-                        </core_rt:if>
-                        <core_rt:if test="${cotsMode}">
-                            <div id="tab-COTSDetails">
-                                <%@include file="/html/components/includes/releases/editCommercialDetails.jspf" %>
+                                <core_rt:if test="${not addMode}" >
+                                    <button type="button" id="formSubmit" class="btn btn-primary">Update Release</button>
+                                </core_rt:if>
                             </div>
-                        </core_rt:if>
+
+                            <core_rt:if test="${not addMode}" >
+                                <div class="btn-group" role="group">
+                                    <button id="deleteReleaseButton" type="button" class="btn btn-danger"
+                                        <core_rt:if test="${usingComponents.size()>0 or usingProjects.size()>0}"> disabled="disabled" title="Deletion is disabled as the release is used." </core_rt:if>
+                                    >Delete Release</button>
+                                </div>
+                            </core_rt:if>
+
+                            <div class="btn-group" role="group">
+                                <button id="cancelEditButton" type="button" class="btn btn-light">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col portlet-title text-truncate" title="<sw360:out value="${release.name}"/> <sw360:out value="${release.version}" />">
+                        <sw360:out value="${release.name}"/> <sw360:out value="${release.version}" />
                     </div>
                 </div>
-                <core_rt:if test="${not addMode}">
-                    <input type="hidden" value="true" name="<portlet:namespace/>clearingInformation">
-                    <input type="button" id="formSubmit" value="Update Release" class="addButton" >
-                </core_rt:if>
-                <core_rt:if test="${addMode}">
-                    <input type="hidden" value="false" name="<portlet:namespace/>clearingInformation">
-                    <input type="submit" value="Add Release" class="addButton" >
-                </core_rt:if>
-                <input type="button" value="Cancel" class="cancelButton">
-                <div id="moderationRequestCommentDialog" style="display: none">
-                    <hr>
-                    <label class="textlabel stackedLabel">Comment your changes</label>
-                    <textarea form=releaseEditForm name="<portlet:namespace/><%=PortalConstants.MODERATION_REQUEST_COMMENT%>" id="moderationRequestCommentField" class="moderationCreationComment" placeholder="Leave a comment on your request"></textarea>
-                    <input type="button" class="addButton" id="moderationRequestCommentSendButton" value="Send moderation request">
+                <div class="row">
+                    <div class="col">
+                        <form  id="releaseEditForm" name="releaseEditForm" action="<%=updateReleaseURL%>" class="needs-validation" method="post" novalidate
+                            data-name="<sw360:ReleaseName release="${release}" />"
+                            data-delete-url="<%= deleteReleaseURL %>"
+                            data-linked-releases="${release.releaseIdToRelationshipSize}"
+                            data-attachments="${release.attachmentsSize}"
+                        >
+                            <div class="tab-content">
+                                <div id="tab-Summary" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Summary'}">active show</core_rt:if>" >
+                                    <%@include file="/html/components/includes/releases/editReleaseInformation.jspf" %>
+
+                                    <core_rt:set var="keys" value="<%=PortalConstants.RELEASE_ROLES%>"/>
+                                    <core_rt:set var="mapTitle" value="Additional Roles"/>
+                                    <core_rt:set var="inputType" value="email"/>
+                                    <core_rt:set var="inputSubtitle" value="Enter mail address"/>
+                                    <core_rt:set var="customMap" value="${release.roles}"/>
+                                    <%@include file="/html/utils/includes/mapEdit.jspf" %>
+
+                                    <core_rt:set var="externalIdsSet" value="${release.externalIds.entrySet()}"/>
+                                    <core_rt:set var="externalIdKeys" value="<%=PortalConstants.RELEASE_EXTERNAL_ID_KEYS%>"/>
+                                    <%@include file="/html/utils/includes/editExternalIds.jsp" %>
+
+                                    <core_rt:set var="additionalDataSet" value="${release.additionalData.entrySet()}"/>
+                                    <%@include file="/html/utils/includes/editAdditionalData.jsp" %>
+
+                                    <%@include file="/html/components/includes/releases/editReleaseRepository.jspf" %>
+                                </div>
+                                <div id="tab-linkedReleases" class="tab-pane <core_rt:if test="${selectedTab == 'tab-linkedReleases'}">active show</core_rt:if>" >
+                                    <%@include file="/html/utils/includes/editLinkedReleases.jspf" %>
+                                </div>
+                                <div id="tab-ClearingDetails" class="tab-pane <core_rt:if test="${selectedTab == 'tab-ClearingDetails'}">active show</core_rt:if>" >
+                                    <%@include file="/html/components/includes/releases/editReleaseClearingInformation.jspf" %>
+                                </div>
+                                <div id="tab-ECCDetails" class="tab-pane <core_rt:if test="${selectedTab == 'tab-ECCDetails'}">active show</core_rt:if>" >
+                                    <%@include file="/html/components/includes/releases/editReleaseECCInformation.jspf" %>
+                                </div>
+                                <core_rt:if test="${not addMode}" >
+                                    <div id="tab-Attachments" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Attachments'}">active show</core_rt:if>">
+                                        <%@include file="/html/utils/includes/editAttachments.jspf" %>
+                                    </div>
+                                </core_rt:if>
+                                 <core_rt:if test="${cotsMode}">
+                                    <div id="tab-CommercialDetails" class="tab-pane <core_rt:if test="${selectedTab == 'tab-CommercialDetails'}">active show</core_rt:if>">
+                                        <%@include file="/html/components/includes/releases/editCommercialDetails.jspf" %>
+                                    </div>
+                                </core_rt:if>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-            </form>
+            </div>
+        </div>
+    </div>
+    <%@ include file="/html/utils/includes/pageSpinner.jspf" %>
+
+    <div class="dialogs auto-dialogs">
+        <div id="deleteReleaseDialog" class="modal fade" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg modal-dialog-centered modal-danger" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <clay:icon symbol="question-circle" />
+                            Delete Release?
+                        </h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Do you really want to delete the release <b data-name="name"></b>?</p>
+                        <div data-hide="hasNoDependencies">
+                            <p>
+                                This release <span data-name="name"></span> contains:
+                            </p>
+                            <ul>
+                                <li data-hide="hasNoLinkedReleases"><span data-name="linkedReleases"></span> linked releases</li>
+                                <li data-hide="hasNoAttachments"><span data-name="attachments"></span> attachments</li>
+                            </ul>
+                        </div>
+                        <hr/>
+                        <form>
+                            <div class="form-group">
+                                <label for="deleteReleaseDialogComment">Please comment your changes</label>
+                                <textarea id="deleteReleaseDialogComment" class="form-control" data-name="comment" rows="4" placeholder="Comment your request..."></textarea>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger">Delete Release</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <jsp:include page="/html/utils/includes/searchAndSelectUsers.jsp" />
-    <jsp:include page="/html/utils/includes/searchAndSelectLicenses.jsp" />
-    <jsp:include page="/html/utils/includes/searchUsers.jsp" />
+
     <jsp:include page="/html/utils/includes/searchLicenses.jsp" />
+    <jsp:include page="/html/utils/includes/searchAndSelectLicenses.jsp" />
+
+    <jsp:include page="/html/utils/includes/searchUsers.jsp" />
+    <jsp:include page="/html/utils/includes/searchAndSelectUsers.jsp" />
+
+    <%@include file="/html/components/includes/vendors/searchVendor.jspf" %>
+
     <core_rt:set var="enableSearchForReleasesFromLinkedProjects" value="${false}" scope="request"/>
     <jsp:include page="/html/utils/includes/searchReleases.jsp" />
 </core_rt:if>
 
-<%@include file="/html/components/includes/vendors/searchVendor.jspf" %>
+<c:if test="${codescoopActive}">
+    <script>
+        var sw360Purl = "${componentpurl}";
+    </script>
+</c:if>
 
 <script>
-    var sw360Purl = "${componentpurl}";
-</script>
-<script>
-    require(['jquery', 'modules/sw360Validate', 'components/includes/vendors/searchVendor', 'modules/confirm', 'modules/autocomplete', 'modules/tabview', /* jquery-plugins */ 'jquery-ui' ], function($, sw360Validate, vendorsearch, confirm, autocomplete, tabview) {
+    require(['jquery', 'components/includes/vendors/searchVendor', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup', 'modules/validation' ], function($, vendorsearch, autocomplete, dialog, listgroup, validation) {
         document.title = "${component.name} - " + document.title;
 
-        tabview.create('myTab');
+        listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
 
-        Liferay.on('allPortletsReady', function() {
-            autocomplete.prepareForMultipleHits('programminglanguages', ${programmingLanguages});
-            autocomplete.prepareForMultipleHits('op_systems', ${operatingSystemsAutoC});
-            autocomplete.prepareForMultipleHits('platformsTB', ${platformsAutoC});
+        validation.enableForm('#releaseEditForm');
+        validation.jumpToFailedTab('#releaseEditForm');
 
-            sw360Validate.validateWithInvalidHandlerNoIgnore('#releaseEditForm');
+        autocomplete.prepareForMultipleHits('programminglanguages', ${programmingLanguages});
+        autocomplete.prepareForMultipleHits('op_systems', ${operatingSystemsAutoC});
+        autocomplete.prepareForMultipleHits('platformsTB', ${platformsAutoC});
 
-            $('#formSubmit').click(
-                function() {
-                    <core_rt:choose>
+        $('#formSubmit').click(
+            function() {
+                <core_rt:choose>
                     <core_rt:when test="${addMode || release.permissions[WRITE]}">
-                    $('#releaseEditForm').submit();
+                        $('#releaseEditForm').submit();
                     </core_rt:when>
                     <core_rt:otherwise>
-                    showCommentField();
+                        showCommentDialog();
                     </core_rt:otherwise>
-                    </core_rt:choose>
-                }
-            );
-        });
+                </core_rt:choose>
+            }
+        );
+        $('#cancelEditButton').on('click', cancel);
+        $('#deleteReleaseButton').on('click', deleteRelease);
 
-	$('#ComponentBasicInfo input.edit-vendor').on('click', function() {
+        $('#ComponentBasicInfo input.edit-vendor').on('click', function() {
             vendorsearch.openSearchDialog('<portlet:namespace/>what', '<portlet:namespace/>where',
                       '<portlet:namespace/>FULLNAME', '<portlet:namespace/>SHORTNAME', '<portlet:namespace/>URL', fillVendorInfo);
         });
 
-        $('input[type=button].delete-release').on('click', function(event) {
-            var message = '',
-                data = $(event.target).data(),
-                releaseName = data.releaseName,
-                linkedReleases = data.linkedReleases,
-                attachments = data.attachments;
-
-            message = 'Do you really want to delete the release <b>' + releaseName + '</b> ?';
-            if(linkedReleases > 0 || attachments > 0) {
-                message += '<ul>';
-                if(linkedReleases > 0) {
-                    message += '<li><b>' + linkedReleases + '</b> linked releases</li>';
+        function cancel() {
+            $.ajax({
+                type: 'POST',
+                url: '<%=deleteAttachmentsOnCancelURL%>',
+                cache: false,
+                data: {
+                    "<portlet:namespace/><%=PortalConstants.DOCUMENT_ID%>": "${release.id}"
                 }
-                if(attachments > 0) {
-                    message += '<li><b>' + attachments + '</b> attachments</li>';
-                }
-                message += '</ul>';
-            }
-
-            message += '<div ' + styleAsHiddenIfNeccessary(${release.permissions[DELETE] == true}) + '><hr><label class=\'textlabel stackedLabel\'>Comment your changes</label><textarea id=\'moderationDeleteCommentField\' class=\'moderationCreationComment\' placeholder=\'Comment on request...\'></textarea></div>';
-            confirm.confirmDeletion(message, deleteRelease);
-        });
-
-        $('#releaseEditForm .cancelButton').on('click', function() {
-		deleteAttachmentsOnCancel(function() {
-			var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
-                var portletURL = Liferay.PortletURL.createURL(baseUrl)
+            }).always(function() {
+                var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>',
+                    portletURL = Liferay.PortletURL.createURL(baseUrl)
                         .setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_DETAIL%>')
                         .setParameter('<%=PortalConstants.COMPONENT_ID%>', '${component.id}');
-                window.location = portletURL.toString();
-		});
-        });
+                window.location.href = portletURL.toString() + window.location.hash;
+            });
+        }
 
-        $('#moderationRequestCommentSendButton').on('click', function() {
-		$('#releaseEditForm').submit();
-        });
+        function deleteRelease() {
+            var $dialog,
+                data = $('#releaseEditForm').data(),
+                linkedReleases = data.linkedReleases,
+                attachmentsSize = data.attachments;
+
+            function deleteReleaseInternal() {
+                var baseUrl = data.deleteUrl,
+                    deleteURL = Liferay.PortletURL.createURL( baseUrl ).setParameter(data.commentParameterName, btoa($("#moderationDeleteCommentField").val()));
+                window.location.href = deleteURL;
+            }
+
+            $dialog = dialog.open('#deleteReleaseDialog', {
+                name: data.name,
+                attachments: attachmentsSize,
+                hasNoAttachments: attachmentsSize == 0,
+                linkedReleases: linkedReleases,
+                hasNoLinkedReleases: linkedReleases == 0,
+                hasNoDependencies: attachmentsSize == 0 && linkedReleases == 0
+            }, function(submit, callback) {
+                deleteReleaseInternal();
+            });
+        }
+
+        function showCommentDialog() {
+            var $dialog;
+
+            // validate first to be sure that form can be submitted
+            if(!validation.validate('#releaseEditForm')) {
+                return;
+            }
+
+            $dialog = dialog.confirm(
+                null,
+                'pencil',
+                'Create moderation request',
+                '<form>' +
+                    '<div class="form-group">' +
+                        '<label for="moderationRequestCommentField">Please comment your changes</label>' +
+                        '<textarea form=releaseEditForm name="<portlet:namespace/><%=PortalConstants.MODERATION_REQUEST_COMMENT%>" id="moderationRequestCommentField" class="form-control" placeholder="Leave a comment on your request" data-name="comment" autofocus></textarea>' +
+                    '</div>' +
+                '</form>',
+                'Send moderation request',
+                {
+                    comment: ''
+                },
+                function() {
+                    $('#releaseEditForm').submit();
+                }
+            );
+        }
 
         function fillVendorInfo(vendorInfo) {
             var beforeComma = vendorInfo.substr(0, vendorInfo.indexOf(","));
@@ -248,36 +340,6 @@
 
             $('#<%=Release._Fields.VENDOR_ID.toString()%>').val(beforeComma.trim());
             $('#<%=Release._Fields.VENDOR_ID.toString()%>Display').val(afterComma.trim());
-        }
-
-        function deleteRelease() {
-            var commentText_encoded = btoa($("#moderationDeleteCommentField").val());
-            var baseUrl = '<%=deleteReleaseURL%>';
-            var deleteURL = Liferay.PortletURL.createURL( baseUrl ).setParameter('<%=PortalConstants.MODERATION_REQUEST_COMMENT%>',commentText_encoded);
-            window.location.href = deleteURL;
-        }
-
-        function deleteAttachmentsOnCancel(callback) {
-            $.ajax({
-                type: 'POST',
-                url: '<%=deleteAttachmentsOnCancelURL%>',
-                cache: false,
-                data: {
-                    "<portlet:namespace/><%=PortalConstants.DOCUMENT_ID%>": "${release.id}"
-                },
-                success: callback
-            });
-        }
-
-        function focusOnCommentField() {
-            $("#moderationRequestCommentField").focus();
-            $("#moderationRequestCommentField").select();
-        }
-
-        function showCommentField() {
-            $("#moderationRequestCommentDialog").show();
-            $("#formSubmit").attr("disabled","disabled");
-            focusOnCommentField();
         }
     });
 </script>

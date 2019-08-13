@@ -1,6 +1,6 @@
 /*
  * Copyright Bosch Software Innovations GmbH, 2016.
- * Copyright Siemens AG, 2016-2018.
+ * Copyright Siemens AG, 2016-2019.
  * Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -47,6 +47,7 @@ public class OrganizationHelper {
     private static final String MATCH_PREFIX_KEY = "match.prefix";
     private static final String ENABLE_CUSTOM_MAPPING_KEY = "enable.custom.mapping";
     private static final String PROPERTIES_FILE_PATH = "/orgmapping.properties";
+    private static final String TYPE_REGULAR_ORGANIZATION = "organization";
 
     static {
         loadOrganizationHelperSettings();
@@ -94,7 +95,7 @@ public class OrganizationHelper {
                             user.getUserId(),
                             OrganizationConstants.DEFAULT_PARENT_ORGANIZATION_ID,
                             organizationName,
-                            OrganizationConstants.TYPE_REGULAR_ORGANIZATION,
+                            TYPE_REGULAR_ORGANIZATION,
                             RegionConstants.DEFAULT_REGION_ID,
                             CountryConstants.DEFAULT_COUNTRY_ID,
                             ListTypeConstants.ORGANIZATION_STATUS_DEFAULT,

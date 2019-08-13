@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -13,124 +13,166 @@
 <%@ page import="org.eclipse.sw360.datahandler.thrift.components.Release"%>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.MainlineState" %>
 
-<table class="table info_table" id="ComponentBasicInfo">
+<table class="table edit-table three-columns" id="ComponentBasicInfo">
     <thead>
-    <tr>
-        <th colspan="4" class="headlabel">Release Summary</th>
-    </tr>
+        <tr>
+            <th colspan="3">Release Summary</th>
+        </tr>
     </thead>
     <tr>
-        <td width="33%">
+        <td>
             <sw360:DisplayVendorEdit id="<%=Release._Fields.VENDOR_ID.toString()%>" vendor="${release.vendor}" label="Vendor"/>
         </td>
-        <td width="33%">
-            <label class="textlabel stackedLabel mandatory" for="comp_name">Name</label>
-            <input id="comp_name" name="<portlet:namespace/><%=Release._Fields.NAME%>" type="text" readonly="true"
-                   placeholder="Enter Name" required="" class="followedByImg" value="<sw360:out value="${component.name}"/>"/>
-            <img class="infopic" src="<%=request.getContextPath()%>/images/ic_info.png"
-                 title="Name of the component"/>
+        <td>
+            <div class="form-group">
+                <label class="mandatory" for="comp_name">Name</label>
+                <input id="comp_name" name="<portlet:namespace/><%=Release._Fields.NAME%>" type="text" readonly
+                    required class="form-control" value="<sw360:out value="${component.name}"/>" />
+                <small class="form-text">
+                    <span title="title="Name of the component"">
+                        <clay:icon symbol="info-circle-open" />
+                        Name of the component.
+                    </span>
+                </small>
+            </div>
         </td>
-        <td width="33%">
-            <label class="textlabel stackedLabel mandatory" for="comp_version">Version</label>
-            <input id="comp_version" name="<portlet:namespace/><%=Release._Fields.VERSION%>" type="text"
-                   placeholder="Enter Version" required=""
-                   value="<sw360:out value="${release.version}"/>"/>
+        <td>
+            <div class="form-group">
+                <label class="mandatory" for="comp_version">Version</label>
+                <input id="comp_version" class="form-control" name="<portlet:namespace/><%=Release._Fields.VERSION%>" type="text"
+                    placeholder="Enter Version" required
+                    value="<sw360:out value="${release.version}"/>" />
+            </div>
         </td>
     </tr>
     <tr>
-        <td width="33%">
-            <label class="textlabel stackedLabel" for="programminglanguages">Programming Languages</label>
-            <input class="toplabelledInput" name="<portlet:namespace/><%=Component._Fields.LANGUAGES%>"
-                   id="programminglanguages" type="text"
-                   placeholder="e.g., Java,C++, C#,..."
-                   value="<sw360:DisplayCollection value='${release.languages}' />"/>
+        <td>
+            <div class="form-group">
+                <label for="programminglanguages">Programming Languages</label>
+                <input class="form-control" name="<portlet:namespace/><%=Component._Fields.LANGUAGES%>"
+                    id="programminglanguages" type="text"
+                    placeholder="e.g., Java,C++, C#,..."
+                    value="<sw360:DisplayCollection value='${release.languages}' />"/>
+            </div>
         </td>
-        <td width="33%">
-            <label class="textlabel stackedLabel" for="op_systems">Operating Systems</label>
-            <input class="toplabelledInput" id="op_systems"
-                   name="<portlet:namespace/><%=Component._Fields.OPERATING_SYSTEMS%>" type="text" align="middle"
-                   placeholder="e.g.,Linux,MAC,Windows,..."
-                   value="<sw360:DisplayCollection value="${release.operatingSystems}" />"/>
+        <td>
+            <div class="form-group">
+                <label for="op_systems">Operating Systems</label>
+                <input class="form-control" id="op_systems"
+                    name="<portlet:namespace/><%=Component._Fields.OPERATING_SYSTEMS%>" type="text"
+                    placeholder="e.g.,Linux,MAC,Windows,..."
+                    value="<sw360:DisplayCollection value="${release.operatingSystems}" />"/>
+            </div>
         </td>
-        <td width="33%">
-            <label class="textlabel stackedLabel" for="platformsTB">Software Platforms</label>
-            <input class="toplabelledInput" id="platformsTB"
-                   name="<portlet:namespace/><%=Component._Fields.SOFTWARE_PLATFORMS%>" type="text" align="middle"
-                   placeholder="e.g.,Adobe AIR,.NET,Qt,..."
-                   value="<sw360:DisplayCollection value="${release.softwarePlatforms}" />"/>
+        <td>
+            <div class="form-group">
+                <label for="comp_id">CPE ID</label>
+                <input id="comp_id" name="<portlet:namespace/><%=Release._Fields.CPEID%>" type="text"
+                    class="form-control"
+                    value="<sw360:out value="${release.cpeid}"/>"
+                    placeholder="Enter CPE ID"/>
+                <small class="form-text">
+                    <span title="The formula for CPE ID creation is &#13;'cpe:2.3:a:VENDORNAME:COMPONENTNAME:VERSION'">
+                        <clay:icon symbol="info-circle-open" />
+                        Learn more about the CPE ID format.
+                    </span>
+                </small>
+            </div>
         </td>
-
+    </tr>
+    <tr>
+        <td>
+            <div class="form-group">
+                <label for="platformsTB">Software Platforms</label>
+                <input class="form-control" id="platformsTB"
+                    name="<portlet:namespace/><%=Component._Fields.SOFTWARE_PLATFORMS%>" type="text"
+                    placeholder="e.g.,Adobe AIR,.NET,Qt,..."
+                    value="<sw360:DisplayCollection value="${release.softwarePlatforms}" />"/>
+            </div>
+        </td>
+        <td></td>
+        <td></td>
     </tr>
 
     <tr>
-        <td width="33%">
-            <label class="textlabel stackedLabel" for="comp_id">CPE ID</label>
-            <input id="comp_id" name="<portlet:namespace/><%=Release._Fields.CPEID%>" type="text"
-                   class="toplabelledInput followedByImg"
-                   value="<sw360:out value="${release.cpeid}"/>"
-                   placeholder="Enter CPE ID"/>
-            <img class="infopic" src="<%=request.getContextPath()%>/images/ic_info.png"
-                 title="The formula for CPE ID creation is &#13;'cpe:2.3:a:VENDORNAME:COMPONENTNAME:VERSION'  "/>
-        </td>
-        <td width="33%">
-            <label class="textlabel stackedLabel" for="releaseDate">Release Date</label>
-            <input id="releaseDate" class="datepicker" name="<portlet:namespace/><%=Release._Fields.RELEASE_DATE%>" type="text"
-                   placeholder="Enter Release Date"
-                   pattern="\d{4}-\d{2}-\d{2}"
-                   value="<sw360:out value="${release.releaseDate}"/>"/>
-        </td>
-        <td width="33%">
-            <label class="textlabel stackedLabel" for="downloadUrl">Download URL</label>
-            <input id="downloadUrl" name="<portlet:namespace/><%=Release._Fields.DOWNLOADURL%>" type="URL"
-                   placeholder="Enter URL"
-                   value="<sw360:out value="${release.downloadurl}"/>"/>
-        </td>
-    </tr>
-
-    <tr>
-        <td width="33%">
-            <label class="textlabel stackedLabel" for="clearing_state">Clearing State</label>
-            <input id="clearing_state"
-                    name="<portlet:namespace/><%=Release._Fields.CLEARING_STATE%>"
-                    type="text" readonly
-                    value="<sw360:DisplayEnum value="${release.clearingState}" bare="true"/>"/>
-        </td>
-        <td width="33%">
-            <label class="textlabel stackedLabel" for="mainline_state">Release Mainline State</label>
-            <select class="toplabelledInput" id="mainline_state"
-                    name="<portlet:namespace/><%=Release._Fields.MAINLINE_STATE%>"
-                    style="min-width: 162px; min-height: 28px;">
-
-                <sw360:DisplayEnumOptions type="<%=MainlineState.class%>" selected="${release.mainlineState}"/>
-            </select>
-            <sw360:DisplayEnumInfo type="<%=MainlineState.class%>"/>
+        <td>
+            <div class="form-group">
+                <label for="releaseDate">Release Date</label>
+                <input id="releaseDate" class="datepicker form-control" name="<portlet:namespace/><%=Release._Fields.RELEASE_DATE%>" type="text"
+                    placeholder="Enter Release Date"
+                    pattern="\d{4}-\d{2}-\d{2}"
+                    value="<sw360:out value="${release.releaseDate}"/>"/>
+            </div>
         </td>
 
-        <td width="33%">
-            <label class="textlabel stackedLabel" for="created_on">Created on</label>
-            <input id="created_on" name="<portlet:namespace/><%=Release._Fields.CREATED_ON%>" type="date"
-                   placeholder="Creation date YYYY-MM-DD" required=""
-                    <core_rt:if test="${addMode}">
-                        value="<%=SW360Utils.getCreatedOn()%>"
-                    </core_rt:if>
-                    <core_rt:if test="${not addMode}">
-                        value="<sw360:out value="${release.createdOn}"/>"
-                    </core_rt:if>
-                   readonly/>
+        <td>
+            <sw360:DisplayMainLicensesEdit id="<%=Release._Fields.MAIN_LICENSE_IDS.toString()%>"
+                                           licenseIds="${release.mainLicenseIds}"/>
+        </td>
+
+        <td>
+            <div class="form-group">
+                <label for="downloadUrl">Download URL</label>
+                <input id="downloadUrl" class="form-control" name="<portlet:namespace/><%=Release._Fields.DOWNLOADURL%>" type="URL"
+                    placeholder="Enter URL"
+                    value="<sw360:out value="${release.downloadurl}"/>"/>
+            </div>
         </td>
     </tr>
 
     <tr>
-        <td width="33%">
+        <td>
+            <div class="form-group">
+                <label for="clearing_state">Clearing State</label>
+                <input id="clearing_state" class="form-control"
+                        name="<portlet:namespace/><%=Release._Fields.CLEARING_STATE%>"
+                        type="text" readonly
+                        value="<sw360:DisplayEnum value="${release.clearingState}" bare="true"/>"/>
+            </div>
+        </td>
+
+        <td>
+            <div class="form-group">
+                <label for="mainline_state">Release Mainline State</label>
+                <select class="form-control" id="mainline_state"
+                        name="<portlet:namespace/><%=Release._Fields.MAINLINE_STATE%>"
+                >
+                    <sw360:DisplayEnumOptions type="<%=MainlineState.class%>" selected="${release.mainlineState}"/>
+                </select>
+                <small class="form-text">
+                    <sw360:DisplayEnumInfo type="<%=MainlineState.class%>"/>
+                    Learn more about mainline states.
+                </small>
+            </div>
+        </td>
+
+        <td>
+            <div class="form-group">
+                <label for="created_on">Created on</label>
+                <input id="created_on" name="<portlet:namespace/><%=Release._Fields.CREATED_ON%>" type="date"
+                    placeholder="Creation date YYYY-MM-DD" required=""
+                        <core_rt:if test="${addMode}">
+                            value="<%=SW360Utils.getCreatedOn()%>"
+                        </core_rt:if>
+                        <core_rt:if test="${not addMode}">
+                            value="<sw360:out value="${release.createdOn}"/>"
+                        </core_rt:if>
+                    readonly class="form-control"/>
+            </div>
+        </td>
+    </tr>
+
+    <tr>
+        <td>
             <sw360:DisplayUserEdit email="${release.createdBy}" id="<%=Release._Fields.CREATED_BY.toString()%>"
                                    description="Created by" multiUsers="false" readonly="true"/>
         </td>
 
-        <td width="33%">
+        <td>
             <sw360:DisplayUserEdit emails="${release.contributors}" id="<%=Release._Fields.CONTRIBUTORS.toString()%>"
                                    description="Contributors" multiUsers="true" readonly="false"/>
         </td>
-        <td width="33%">
+        <td>
             <sw360:DisplayUserEdit emails="${release.moderators}" id="<%=Release._Fields.MODERATORS.toString()%>"
                                    description="Moderators" multiUsers="true" readonly="false"/>
         </td>
@@ -145,32 +187,29 @@
 
 <script>
 	require(['jquery', /* jquery-plugins */ 'jquery-ui'], function($) {
-
-        Liferay.on('allPortletsReady', function() {
-            $(".datepicker").datepicker({changeMonth:true,changeYear:true,dateFormat: "yy-mm-dd"});
-        });
-
+        $(".datepicker").datepicker({changeMonth:true,changeYear:true,dateFormat: "yy-mm-dd"});
 	});
 </script>
 
-<portlet:resourceURL var="sw360ComponentUrl">
-    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CODESCOOP_ACTION_COMPONENT%>'/>
-</portlet:resourceURL>
-<portlet:resourceURL var="sw360ReleasesUrl">
-    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CODESCOOP_ACTION_RELEASES%>'/>
-</portlet:resourceURL>
-<portlet:resourceURL var="sw360PurlUrl">
-    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CODESCOOP_ACTION_PURL%>'/>
-</portlet:resourceURL>
 <core_rt:if test="${codescoopActive}">
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        require(['modules/codeScoop' ], function(codeScoop) {
-            var api = new codeScoop();
-            setTimeout(function () {
-                api.activateReleaseAutocomplete("<%=sw360ComponentUrl%>", "<%=sw360ReleasesUrl%>", "<%=sw360PurlUrl%>");
-            }, 500);
+    <portlet:resourceURL var="sw360ComponentUrl">
+        <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CODESCOOP_ACTION_COMPONENT%>'/>
+    </portlet:resourceURL>
+    <portlet:resourceURL var="sw360ReleasesUrl">
+        <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CODESCOOP_ACTION_RELEASES%>'/>
+    </portlet:resourceURL>
+    <portlet:resourceURL var="sw360PurlUrl">
+        <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CODESCOOP_ACTION_PURL%>'/>
+    </portlet:resourceURL>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            require(['modules/codeScoop' ], function(codeScoop) {
+                var api = new codeScoop();
+                setTimeout(function () {
+                    api.activateReleaseAutocomplete("<%=sw360ComponentUrl%>", "<%=sw360ReleasesUrl%>", "<%=sw360PurlUrl%>");
+                }, 500);
+            });
         });
-    });
-</script>
+    </script>
 </core_rt:if>

@@ -9,13 +9,15 @@
   ~ http://www.eclipse.org/legal/epl-v10.html
   --%>
 
-<table class="table info_table" id="VulnerabilityOverview">
+<table class="table">
     <thead>
-    <tr>
-        <th colspan="1">Vulnerability Meta Data: <sw360:out value="${vulnerability.title}"/></th>
-    </tr>
+        <tr>
+            <th>Vulnerability Metadata</th>
+        </tr>
     </thead>
     <tr>
-        <td><sw360:DisplayMapOfMaps value ="${vulnerability.cveFurtherMetaDataPerSource}"/></td>
+        <td>
+            <sw360:DisplayMapOfMaps value ="${vulnerability.cveFurtherMetaDataPerSource}"/>
+        </td>
     </tr>
 </table>

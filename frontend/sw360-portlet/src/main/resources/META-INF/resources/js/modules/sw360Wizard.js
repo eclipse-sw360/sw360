@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017.
+ * Copyright Siemens AG, 2017, 2019.
  * Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -9,7 +9,7 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-define('modules/sw360Wizard', [ 'jquery' ], function($) {
+define('modules/sw360Wizard', [ 'jquery', 'modules/button' ], function($, button) {
 
     /**
      * This module provides a wizardination of some given html, specialized on doing backend calls after each
@@ -105,12 +105,10 @@ define('modules/sw360Wizard', [ 'jquery' ], function($) {
             firstStep = $('.wizardBody div.step:first', $wizardRoot),
             lastStep = $('.wizardBody div.step:last', $wizardRoot);
 
-        $('head').append('<link rel="stylesheet" href="/sw360-portlet/css/sw360Wizard.css" type="text/css" />');
-
         $wizardRoot.append('' +
-            '<div class="wizardFooter">' +
-            '    <input type="button" class="wizardNext addButton" value="Next" />' +
-            '    <input type="button" class="wizardBack cancelButton" value="Back" disabled/>' +
+            '<div class="wizardFooter btn-group content-right">' +
+            '    <button type="button" class="wizardBack btn btn-secondary" disabled>Back</button>' +
+            '    <button type="button" class="wizardNext btn btn-primary">Next</button>' +
             '</div>'
         );
 
@@ -133,9 +131,9 @@ define('modules/sw360Wizard', [ 'jquery' ], function($) {
             }
 
             if (lastStep.hasClass('active')) {
-                $('.wizardNext', $wizardRoot).val('Finish')
+                $('.wizardNext', $wizardRoot).text('Finish')
             } else {
-                $('.wizardNext', $wizardRoot).val('Next');
+                $('.wizardNext', $wizardRoot).text('Next');
             }
         }
 
@@ -165,21 +163,28 @@ define('modules/sw360Wizard', [ 'jquery' ], function($) {
             }
 
             if (proceed) {
+                button.wait($('.wizardNext', $wizardRoot));
                 $.ajax({
                     method: 'POST',
                     url: config.postUrl,
                     data: reworkPostData(activeElement.data()),
                     cache: false
                 }).done(function(data, textStatus, xhr) {
-                    var dataJson = JSON.parse(data);
-                    if (activeElement[0] === lastStep[0]) {
-                        config.finishCb(dataJson);
-                    } else {
-                        config.steps[nextIndex].renderHook(nextElement, dataJson);
+                    try {
+                        var dataJson = JSON.parse(data);
+                        if (activeElement[0] === lastStep[0]) {
+                            config.finishCb(dataJson);
+                        } else {
+                            config.steps[nextIndex].renderHook(nextElement, dataJson);
+                        }
+                    } catch(error) {
+                        config.steps[activeIndex].submitErrorHook(activeElement, '', error);
                     }
                 }).fail(function(xhr, textStatus, error){
                     config.steps[activeIndex].submitErrorHook(activeElement, textStatus, error);
                     return false;
+                }).always(function() {
+                    button.finish($('.wizardNext', $wizardRoot));
                 });
             } else {
                 return false;

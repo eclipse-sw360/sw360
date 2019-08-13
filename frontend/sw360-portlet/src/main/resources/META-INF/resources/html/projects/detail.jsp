@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -14,8 +14,6 @@
 <%@include file="/html/init.jsp"%>
 <%-- the following is needed by liferay to display error messages--%>
 <%@include file="/html/utils/includes/errorKeyToMessage.jspf"%>
-<%--for javascript library loading --%>
-<%@ include file="/html/utils/includes/requirejs.jspf" %>
 
 <portlet:defineObjects />
 <liferay-theme:defineObjects />

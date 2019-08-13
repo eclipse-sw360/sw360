@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2017, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -155,6 +155,8 @@
     </tr>
 </table>
 
+<%--for javascript library loading --%>
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
     require(['jquery'], function($) {
         $('#detailTab a[href="#tab-Administration"]').on('shown.bs.tab', function (event) {

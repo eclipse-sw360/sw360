@@ -17,7 +17,6 @@
         baseUrl: contextPath + "/js",
         paths: {
 		"jquery-ui":              				[ contextPath + "/webjars/jquery-ui/jquery-ui.min" ],
-            "jquery-confirm":         				[ contextPath + "/webjars/jquery-confirm2/dist/jquery-confirm.min" ],
             "jquery-treetable":       				[ contextPath + "/webjars/jquery-treetable/jquery.treetable" ],
             /* Attention: validate needs .min as the dependency is referenced like that in additional-methods.min.js in webjars... */
             "jquery.validate.min":					[ contextPath + "/webjars/jquery-validation/dist/jquery.validate.min" ],
@@ -33,7 +32,6 @@
         },
         shim: {
             // only for libraries that do not support RequireJS out of the box
-            "jquery-confirm":                       [ "jquery" ],
             "jquery-treetable": 					[ "jquery" ],
             "datatables-plugins-sorting.natural": 	[ "jquery", "datatables.net" ]
         }

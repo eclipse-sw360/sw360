@@ -19,7 +19,7 @@
 
 
 <div class="dialogs">
-	<div id="fossologyClearingDialog" title="Fossology Clearing" class="modal fade" tabindex="-1" role="dialog"
+	<div id="fossologyClearingDialog" data-title="Fossology Clearing" class="modal fade" tabindex="-1" role="dialog"
       data-portlet-namespace="<portlet:namespace/>"
       data-fossology-send-url="<%=sendToFossologyURL%>"
       data-fossology-status-url="<%=getFossologyStatusURL%>"
@@ -51,8 +51,8 @@
 				</div>
 			    <div class="modal-footer">
 		        <button type="button" class="btn btn-light" data-dismiss="modal">Close</button>
-			        <button id="refreshStatusButton" type="button" class="btn btn-secondary" data-submit="refresh" title="Refresh the status for the selected ClearingTeam">Refresh Status</button>
-                    <button id="sendToFossolgyButton" type="button" class="btn btn-primary" data-submit="send" title="Send or make available this release to the selected Clearing Team">Send For Clearing</button>
+			        <button type="button" class="btn btn-secondary" data-submit="refresh" title="Refresh the status for the selected ClearingTeam">Refresh Status</button>
+                    <button type="button" class="btn btn-primary" data-submit="send" title="Send or make available this release to the selected Clearing Team">Send For Clearing</button>
 			    </div>
 			</div>
 		</div>

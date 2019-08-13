@@ -9,7 +9,12 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-define('modules/ajax-treetable', [ 'jquery', /* jquery-plugins: */ 'jquery-treetable' ], function($) {
+define('modules/ajax-treetable', [ 'jquery', 'utils/cssloader', /* jquery-plugins: */ 'jquery-treetable' ], function($, cssloader) {
+
+    cssloader.load([
+		'/webjars/jquery-treetable/css/jquery.treetable.css'
+	]);
+
     return {
         setup: function(tableId, ajaxUrl, dataCallback, renderCallback) {
             var table = $("#" + tableId);
@@ -32,6 +37,16 @@ define('modules/ajax-treetable', [ 'jquery', /* jquery-plugins: */ 'jquery-treet
                     }
                 }
             });
-        }
+            return table;
+        },
+        showPageContainer: function($treetable) {
+			$treetable = $treetable ? $treetable : $(this.table);
+
+			if(!($treetable instanceof $)) {
+				console.error('No jquery object found neither as parameter nor as \'this.table\'. Skipping.');
+				return;
+			}
+			$treetable.parents('.container:first').show().siblings('.container-spinner').hide();
+		}
     };
 });

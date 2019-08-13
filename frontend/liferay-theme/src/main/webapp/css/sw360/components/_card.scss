@@ -21,3 +21,26 @@
 		background-color: $bg-color-light;
 	}
 }
+
+.accordion .card {
+	.card-header {
+		background-color: $portlet-decorate-bg;
+
+		button[aria-expanded="true"] {
+			color: $list-group-action-active-color;
+			background-color: $list-group-action-active-bg;
+		}
+
+		button[aria-expanded="false"]:focus {
+			background-color: $portlet-decorate-bg;
+		}
+
+		button[aria-expanded="false"]:hover {
+			background-color: $list-group-hover-bg;
+		}
+	}
+
+	.card-body {
+		background-color: $body-bg;
+	}
+}

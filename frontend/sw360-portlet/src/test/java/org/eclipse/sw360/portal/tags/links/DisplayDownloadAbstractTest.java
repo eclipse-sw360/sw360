@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -39,7 +39,6 @@ public class DisplayDownloadAbstractTest {
 
         verify(displayDownloadAbstractAttachment, times(1)).configureUrlWriter(any());
         verify(displayDownloadAbstractAttachment, times(1)).getImage();
-        verify(displayDownloadAbstractAttachment, times(1)).getAlternativeText();
         verify(displayDownloadAbstractAttachment, times(1)).getTitleText();
     }
 }

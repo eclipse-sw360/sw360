@@ -38,9 +38,7 @@
 	</p>
 	<hr class="my-4">
 	<core_rt:if test="${themeDisplay.signedIn}">
-		<p>
-			You are signed in, please go ahead using SW360!
-		</p>
+		<h3>You are signed in, please go ahead using SW360!</h3>
 		<div class="buttons">
 			<a class="btn btn-primary btn-lg" href="/group/guest/home" role="button">Start</a>
 		</div>

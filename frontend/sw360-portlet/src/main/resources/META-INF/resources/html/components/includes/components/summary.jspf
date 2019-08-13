@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
   ~ With contributions by Bosch Software Innovations GmbH, 2016.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
@@ -10,12 +10,18 @@
   ~ http://www.eclipse.org/legal/epl-v10.html
 --%>
 <%@ taglib prefix="tags" tagdir="/WEB-INF/tags" %>
-<div class="up_Summary" id="up_Summary"><p><sw360:out value="${component.description}" maxChar="500"/></p></div>
-<table class="table info_table" id="componentOverview">
+
+<core_rt:if test="${not empty component.description}">
+    <div>
+        <p id="up_Summary"><sw360:out value="${component.description}" maxChar="500"/></p>
+    </div>
+</core_rt:if>
+
+<table class="table label-value-table" id="componentOverview">
     <thead>
-    <tr>
-        <th colspan="2">General</th>
-    </tr>
+        <tr>
+            <th colspan="2">General</th>
+        </tr>
     </thead>
     <tr>
         <td>Name:</td>
@@ -66,11 +72,12 @@
         <td><sw360:DisplayMap value="${component.additionalData}"/></td>
     </tr>
 </table>
-<table class="table info_table" id="releaseAggregateTable">
+
+<table class="table label-value-table" id="releaseAggregateTable">
     <thead>
-    <tr>
-        <th colspan="2">Release Aggregate Data</th>
-    </tr>
+        <tr>
+            <th colspan="2">Release Aggregate Data</th>
+        </tr>
     </thead>
     <tr>
         <td>Vendors:</td>
@@ -95,11 +102,12 @@
         </td>
     </tr>
 </table>
-<table class="table info_table" id="componentRolesTable">
+
+<table class="table label-value-table" id="componentRolesTable">
     <thead>
-    <tr>
-        <th colspan="2">Roles</th>
-    </tr>
+        <tr>
+            <th colspan="2">Roles</th>
+        </tr>
     </thead>
     <tr>
         <td>Component owner:</td>

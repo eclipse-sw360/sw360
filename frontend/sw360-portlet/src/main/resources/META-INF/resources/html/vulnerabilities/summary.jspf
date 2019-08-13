@@ -9,15 +9,11 @@
   ~ http://www.eclipse.org/legal/epl-v10.html
   --%>
 
-<table class="table info_table" id="VulnerabilityOverview">
-    <colgroup>
-        <col span="1" class="info_table_left_column">
-        <col span="1" class="info_table_right_column">
-    </colgroup>
+<table class="table label-value-table">
     <thead>
-    <tr>
-        <th colspan="2">Vulnerability Summary: <sw360:out value="${vulnerability.title}"/></th>
-    </tr>
+        <tr>
+            <th colspan="2">Vulnerability Summary</th>
+        </tr>
     </thead>
     <tr>
         <td>Title:</td>
@@ -92,8 +88,7 @@
         <td>Vulnerable configurations:</td>
         <td><sw360:DisplayMap value ="${vulnerability.vulnerableConfiguration}"/></td>
     </tr>
-
-    <core_rt:set var="documentName"><sw360:out value="${vulnerability.title}"/></core_rt:set>
-    <%@include file="/html/utils/includes/usingReleasesTable.jspf" %>
-
 </table>
+
+<core_rt:set var="documentName"><sw360:out value="${vulnerability.title}"/></core_rt:set>
+<%@include file="/html/utils/includes/usingReleasesTable.jspf" %>

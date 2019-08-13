@@ -1,6 +1,6 @@
 <%--
   ~ Copyright (c) Bosch Software Innovations GmbH 2016.
-  ~ Copyright (c) Siemens AG 2016-2018. Part of the SW360 Portal Project.
+  ~ Copyright (c) Siemens AG 2016-2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -34,106 +34,92 @@
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.VULNERABILITY_LIST%>'/>
 </portlet:resourceURL>
 
+<div class="container" style="display: none;">
+	<div class="row">
+		<div class="col-3 sidebar">
+			<div class="card-deck card-deck-vertical">
+                <%@ include file="/html/utils/includes/quickfilter.jspf" %>
+                <div class="card">
+                    <div class="card-header">
+                        Advanced Filter
+                    </div>
+                    <div class="card-body">
+                        <form action="<%=applyFiltersURL%>" method="post">
+                            <div class="form-group">
+                                <label for="external_id">CVE ID</label>
+                                <input type="text" class="form-control" name="<portlet:namespace/><%=Vulnerability._Fields.EXTERNAL_ID%>"
+                                    value="${externalId}" id="external_id">
+                            </div>
+                            <div class="form-group">
+                                <label for="vulnerable_config">Vulnerable Configuration</label>
+                                <input type="text" class="form-control" name="<portlet:namespace/><%=Vulnerability._Fields.VULNERABLE_CONFIGURATION%>"
+                                    value="${vulnerableConfiguration}" id="vulnerable_config">
+                            </div>
+                            <input id="viewSize" name="<portlet:namespace/><%=PortalConstants.VIEW_SIZE%>" value="${viewSize}" type="hidden">
+                            <button type="submit" class="btn btn-primary btn-sm btn-block">Filter</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+		</div>
+		<div class="col">
+            <div class="row portlet-toolbar">
+				<div class="col-auto">
+					<div class="btn-toolbar" role="toolbar">
+						<div class="btn-group" role="group">
+								<button id="viewSizeBtn" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+									Show <span data-name="count"></span>
+									<clay:icon symbol="caret-bottom" />
+								</button>
+								<div class="dropdown-menu" aria-labelledby="btnExport">
+									<a class="dropdown-item" data-type="200">200</a>
+									<a class="dropdown-item" data-type="500">500</a>
+									<a class="dropdown-item" data-type="1000">1000</a>
+									<a class="dropdown-item" data-type="-1">All</a>
+								</div>
+							</div>
+					</div>
+				</div>
+                <div class="col portlet-title text-truncate" title="Vulnerabilities (<core_rt:if test="${vulnerabilityList.size() == totalRows}">${totalRows}</core_rt:if><core_rt:if test="${vulnerabilityList.size() != totalRows}">${vulnerabilityList.size()} latest of ${totalRows}</core_rt:if>)">
+					Vulnerabilities (<core_rt:if test="${vulnerabilityList.size() == totalRows}">${totalRows}</core_rt:if><core_rt:if test="${vulnerabilityList.size() != totalRows}">${vulnerabilityList.size()} latest of ${totalRows}</core_rt:if>)
+				</div>
+            </div>
 
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/themes/base/jquery-ui.min.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/datatables.net-buttons-bs/css/buttons.bootstrap.min.css"/>
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/dataTable_Siemens.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
+            <div class="row">
+                <div class="col">
+			        <table id="vulnerabilitiesTable" class="table table-bordered" data-view-size="${viewSize}"></table>
+                </div>
+            </div>
 
-<div id="header"></div>
-<p class="pageHeader">
-    <span class="pageHeaderBigSpan">Vulnerabilities</span>
-    <span class="pageHeaderMediumSpan">(<core_rt:if test="${vulnerabilityList.size() == totalRows}">${totalRows}</core_rt:if><core_rt:if test="${vulnerabilityList.size() != totalRows}">${vulnerabilityList.size()} latest of ${totalRows}</core_rt:if>)</span>
-</p>
-<div id="searchInput" class="content1">
-    <%@ include file="/html/utils/includes/quickfilter.jspf" %>
-
-    <form action="<%=applyFiltersURL%>" method="post">
-        <table>
-            <thead>
-            <tr>
-                <th class="infoheading">
-                    Loading
-                </th>
-            </tr>
-            </thead>
-            <tbody style="background-color: #f8f7f7; border: none;">
-            <tr>
-                <td>
-                    <select class="searchbar" id="view_size" name="<portlet:namespace/><%=PortalConstants.VIEW_SIZE%>" onchange="reloadViewSize()">
-                        <option value="200" <core_rt:if test="${viewSize == 200}">selected</core_rt:if>>200 latest</option>
-                        <option value="500" <core_rt:if test="${viewSize == 500}">selected</core_rt:if>>500 latest</option>
-                        <option value="1000" <core_rt:if test="${viewSize == 1000}">selected</core_rt:if>>1000 latest</option>
-                        <option value="-1" <core_rt:if test="${viewSize == -1}">selected</core_rt:if>>All</option>
-                    </select>
-                </td>
-            </tr>
-            </tbody>
-        </table>
-        <table>
-            <thead>
-            <tr>
-                <th class="infoheading">
-                    Filters
-                </th>
-            </tr>
-            </thead>
-            <tbody style="background-color: #f8f7f7; border: none;">
-            <tr>
-                <td>
-                    <label for="external_id">CVE ID</label>
-                    <input type="text" class="searchbar filterInput" name="<portlet:namespace/><%=Vulnerability._Fields.EXTERNAL_ID%>"
-                           value="${externalId}" id="external_id">
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <label for="vulnerable_config">Vulnerable Configuration</label>
-                    <input type="text" class="searchbar filterInput" name="<portlet:namespace/><%=Vulnerability._Fields.VULNERABLE_CONFIGURATION%>"
-                           value="${vulnerableConfiguration}" id="vulnerable_config">
-                </td>
-            </tr>
-        </table>
-        <br/>
-        <input type="submit" class="addButton" value="Apply Filters">
-    </form>
+		</div>
+	</div>
 </div>
-<div id="vulnerabilitiesTableDiv" class="content2">
-    <table id="vulnerabilitiesTable" cellpadding="0" cellspacing="0" border="0" class="display">
-        <tfoot>
-        <tr>
-            <th colspan="5"></th>
-        </tr>
-        </tfoot>
-    </table>
-</div>
-
+<%@ include file="/html/utils/includes/pageSpinner.jspf" %>
 
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-
-    function reloadViewSize(){
-        var PortletURL = Liferay.PortletURL;
-        var portletURL = PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>');
-        portletURL.setParameter('<%=PortalConstants.VIEW_SIZE%>', $('#view_size').val());
-        window.location.href=portletURL.toString();
-    }
-
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;
 
-        require(['jquery', 'utils/includes/quickfilter', /* jquery-plugins */ 'datatables.net', 'datatables.net-buttons', 'datatables.net-buttons.print', 'jquery-ui'], function($, quickfilter) {
+        require(['jquery', 'bridges/datatables', 'utils/includes/quickfilter', 'bridges/jquery-ui'], function($, datatables, quickfilter) {
             var vulnerabilityTable;
 
             // initializing
-            load();
+            vulnerabilityTable = createVulnerabilityTable();
+            quickfilter.addTable(vulnerabilityTable);
 
-             // helper functions
-            function load() {
-                vulnerabilityTable = createVulnerabilityTable();
-                quickfilter.addTable(vulnerabilityTable);
-            }
+            var viewSize = $('#vulnerabilitiesTable').data().viewSize;
+            $('#viewSizeBtn [data-name="count"]').text(viewSize > 0 ? 'latest ' + viewSize : 'all');
+            $('#viewSizeBtn + div > a').on('click', function(event) {
+                var viewSize = $(event.currentTarget).data().type;
+
+                var PortletURL = Liferay.PortletURL;
+                var portletURL = PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>');
+                portletURL.setParameter('<%=PortalConstants.VIEW_SIZE%>', viewSize);
+
+                window.location.href = portletURL.toString() + window.location.hash;
+            });
 
             // catch ctrl+p and print dataTable
             $(document).on('keydown', function(e){
@@ -144,55 +130,93 @@
             });
 
             function createVulnerabilityTable() {
-                var vulnerabilityTable,
+                var table,
                     result = [];
 
                 <core_rt:forEach items="${vulnerabilityList}" var="vulnerability">
-                result.push({
-                    "DT_RowId": "${vulnerability.externalId}",
-                    "0": "<a href='" + createDetailURLFromVulnerabilityId("${vulnerability.externalId}") + "' target='_self'><sw360:out value="${vulnerability.externalId}"/></a>",
-                    "1": "<span title='<sw360:out value='${vulnerability.description}'/>'><sw360:out value='${vulnerability.title}'/></span>",
-                    "2": <core_rt:if test="${vulnerability.isSetCvss}">
-                            "<div>cvss: <sw360:out value="${vulnerability.cvss}"/>"+
-                                <core_rt:if test="${not empty vulnerability.cvssTime}">
-                                    " (as of: <sw360:out value="${vulnerability.cvssTime}" default="not set"/>)"+
-                                </core_rt:if>
-                            "</div>"+
-                         </core_rt:if>
-                         <core_rt:if test="${not empty vulnerability.priority}">
-                            "<div title='<sw360:out value='${vulnerability.priorityText}'/>'>priority: <sw360:out value='${vulnerability.priority}'/><img class='infopic' src='/sw360-portlet/images/ic_info.png'/></div>"+
-                         </core_rt:if>
-                            "",
-                    "3": "<sw360:out value='${vulnerability.publishDate}'/>",
-                    "4": "<sw360:out value='${vulnerability.lastExternalUpdate}' default='not set'/>"
-                });
+                    result.push({
+                        externalId: "${vulnerability.externalId}",
+                        title: {
+                            text: "<sw360:out value='${vulnerability.title}'/>",
+                            tooltip: "<sw360:out value='${vulnerability.description}'/>"
+                        },
+                        cvss: {
+                            weighting: "${vulnerability.cvss}",
+                            time: "${vulnerability.cvssTime}",
+                        },
+                        priority: {
+                            text: "<sw360:out value='${vulnerability.priority}'/>",
+                            tooltip: "<sw360:out value='${vulnerability.priorityText}'/>"
+                        },
+                        publishDate: "<sw360:out value='${vulnerability.publishDate}'/>",
+                        lastExternalUpdate: "<sw360:out value='${vulnerability.lastExternalUpdate}' default='not set'/>"
+                    });
                 </core_rt:forEach>
 
-                vulnerabilityTable = $('#vulnerabilitiesTable').dataTable({
-                    "pagingType": "simple_numbers",
-                    "dom": "lBrtip",
-                    "buttons": [
-                        {
-                            extend: 'print',
-                            text: 'Print',
-                            autoPrint: true,
-                            className: 'custom-print-button'
-                        }
-                    ],
-                    "data": result,
-                    "columns": [
-                        {"title": "External Id"},
-                        {"title": "Title", "width": "30%"},
-                        {"title": "Weighting"},
-                        {"title": "Publish date"},
-                        {"title": "Last update"}
-                    ],
-                    "order": [[4, 'desc'],[3, 'desc']],
-                    "autoWidth": false
-                });
-                vulnerabilityTable.$('td').tooltip({"delay": 0, "track": true, "fade": 250});
+                function renderDetailURL(data, type, row, meta) {
+                    var $link;
 
-                return vulnerabilityTable;
+                    if(type === 'display') {
+                        $link = $('<a/>', {
+                            href: createDetailURLFromVulnerabilityId(data),
+                            _target: '_self'
+                        }).text(data);
+                        return $link[0].outerHTML;
+                    } else if(type === 'type') {
+                        return 'string';
+                    } else {
+                        return data;
+                    }
+                }
+
+                function renderCvss(data, type, row, meta) {
+                    var $cvss = $('<span/>', {
+                        'class': 'text-danger'
+                    });
+
+                    if(type === 'display') {
+                        if(data.weighting) {
+                            $cvss.text(data.weighting);
+                            if(data.time) {
+                                $cvss.append(" (as of: ").append($('<span/>').text(data.time)).append(")");
+                            }
+                        }
+                        $cvss.append($.fn.dataTable.render.infoText('/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle-open'));
+                        return $cvss[0].outerHTML;
+                    } else if(type === 'type') {
+                        return 'number';
+                    } else {
+                        return data.weighting;
+                    }
+                }
+
+                table = datatables.create('#vulnerabilitiesTable', {
+                    data:result,
+                    searching: true,
+                    columns: [
+                        { title: "External Id", data: 'externalId', render: renderDetailURL },
+                        { title: "Title", data: 'title', render: $.fn.dataTable.render.infoText() },
+                        { title: "Weighting", data: 'cvss', render: renderCvss },
+                        { title: "Publish Date", data: 'publishDate', default: '' },
+                        { title: "Last Update", data: 'lastExternalUpdate', default: '' }
+                    ],
+                    order: [[4, 'desc'],[3, 'desc']],
+                    initComplete: datatables.showPageContainer
+                }, [0, 1, 2, 3, 4]);
+
+                $('#vulnerabilitiesTable .info-text').tooltip({
+                    delay: 0,
+                    track: true,
+                    fade: 250,
+                    classes: {
+                        "ui-tooltip": "ui-corner-all ui-widget-shadow info-text"
+                    },
+                    content: function () {
+                        return $('<textarea/>').html($(this).prop('title')).val();
+                    }
+                });
+
+                return table;
             }
 
             function createDetailURLFromVulnerabilityId(paramVal) {

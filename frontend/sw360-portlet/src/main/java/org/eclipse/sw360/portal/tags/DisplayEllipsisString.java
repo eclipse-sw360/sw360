@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017.
+ * Copyright Siemens AG, 2017, 2019.
  * Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -30,7 +30,7 @@ public class DisplayEllipsisString extends SimpleTagSupport {
     }
 
     public void doTag() throws JspException, IOException {
-        getJspContext().getOut().print("<span class='sw360-ellipsis' title='" + TagUtils.escapeAttributeValue(value) + "'>"
+        getJspContext().getOut().print("<span class='text-truncate' title='" + TagUtils.escapeAttributeValue(value) + "'>"
                 + TagUtils.escapeAttributeValue(value) + "</span>");
     }
 }

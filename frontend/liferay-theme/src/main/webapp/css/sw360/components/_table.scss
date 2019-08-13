@@ -10,8 +10,20 @@
  */
 
 table.table {
+	&.label-value-table {
+		border-color: $light-color;
+	}
+
 	th {
 		color: $box-header-fg;
 		background-color: $box-header-bg;
+
+		a {
+			color: $box-header-fg;
+		}
+
+		a:hover {
+			color: $primary;
+		}
 	}
 }

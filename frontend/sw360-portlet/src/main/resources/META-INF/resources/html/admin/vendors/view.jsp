@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -15,7 +15,6 @@
 <%@ include file="/html/init.jsp" %>
 <%-- the following is needed by liferay to display error messages--%>
 <%@ include file="/html/utils/includes/errorKeyToMessage.jspf"%>
-
 
 <portlet:defineObjects/>
 <liferay-theme:defineObjects/>
@@ -34,33 +33,41 @@
 
 <jsp:useBean id="vendorList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.vendors.Vendor>"  scope="request"/>
 
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/datatables.net-buttons-bs/css/buttons.bootstrap.min.css"/>
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/dataTable_Siemens.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
+<div class="container">
+	<div class="row">
+		<div class="col-3 sidebar">
+			<div class="card-deck">
+                <%@ include file="/html/utils/includes/quickfilter.jspf" %>
+            </div>
+		</div>
+		<div class="col">
+            <div class="row portlet-toolbar">
+				<div class="col-auto">
+					<div class="btn-toolbar" role="toolbar">
+						<div class="btn-group" role="group">
+							<button type="button" class="btn btn-primary" onclick="window.location.href='<%=addVendorURL%>'">Add Vendor</button>
+						</div>
+						<div class="btn-group" role="group">
+							<button type="button" class="btn btn-secondary" onclick="window.location.href='<%=exportVendorsURL%>'">Export Spreadsheet</button>
+						</div>
+					</div>
+				</div>
+                <div class="col portlet-title text-truncate" title="Vendors (${vendorList.size()})">
+					Vendors (<span id="vendorCounter">${vendorList.size()}</span>)
+				</div>
+            </div>
 
-<div id="header"></div>
-<p class="pageHeader">
-    <span class="pageHeaderBigSpan">Vendors</span> <span class="pageHeaderSmallSpan">(${vendorList.size()})</span>
-    <span class="pull-right">
-        <input type="button" class="addButton" onclick="window.location.href='<%=exportVendorsURL%>'" value="Export Vendors">
-        <input type="button" class="addButton" onclick="window.location.href='<%=addVendorURL%>'" value="Add Vendor">
-    </span>
-</p>
+            <div class="row">
+                <div class="col">
+			        <table id="vendorsTable" class="table table-bordered"></table>
+                </div>
+            </div>
 
-<div id="searchInput" class="content1">
-    <%@ include file="/html/utils/includes/quickfilter.jspf" %>
+		</div>
+	</div>
 </div>
-<div id="vendorsTableDiv" class="content2">
-    <table id="vendorsTable" cellpadding="0" cellspacing="0" border="0" class="display">
-        <tfoot>
-        <tr>
-            <th colspan="4"></th>
-        </tr>
-        </tfoot>
-    </table>
-</div>
 
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.css">
+<div class="dialogs auto-dialogs"></div>
 
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
@@ -68,7 +75,7 @@
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;
 
-        require(['jquery', 'utils/includes/quickfilter', 'modules/confirm', /* jquery-plugins: */ 'datatables.net', 'datatables.net-buttons', 'datatables.net-buttons.print', 'jquery-confirm'], function($, quickfilter, confirm) {
+        require(['jquery', 'bridges/datatables', 'modules/dialog', 'utils/includes/quickfilter' ], function($, datatables, dialog, quickfilter) {
             var vendorsTable,
                 vendorIdInURL = '<%=PortalConstants.VENDOR_ID%>',
                 pageName = '<%=PortalConstants.PAGENAME%>';
@@ -80,9 +87,13 @@
             quickfilter.addTable(vendorsTable);
 
             // register event handlers
-            $('#vendorsTable').on('click', 'img.delete', function (event) {
+            $('#vendorsTable').on('click', 'svg.delete', function (event) {
                 var data = $(event.currentTarget).data();
                 deleteVendor(data.vendorId, data.vendorName);
+            });
+            $('#vendorsTable').on('click', 'svg.edit', function (event) {
+                var data = $(event.currentTarget).data();
+                window.location.href = createDetailURLfromVendorId(data.vendorId);
             });
 
             // helper functions
@@ -106,43 +117,38 @@
                 <core_rt:forEach items="${vendorList}" var="vendor">
                     result.push({
                         "DT_RowId": "${vendor.id}",
-                        "0": "<a href='"+createDetailURLfromVendorId('${vendor.id}')+"' target='_self'><sw360:out value="${vendor.fullname}"/></a>",
+                        "0": "<a href='" + createDetailURLfromVendorId('${vendor.id}') + "' target='_self'><sw360:out value="${vendor.fullname}"/></a>",
                         "1": "<sw360:out value="${vendor.shortname}"/>",
                         "2": "<sw360:out value="${vendor.url}"/>",
-                        "3": "<a href='"+createDetailURLfromVendorId('${vendor.id}')+"' target='_self'><img src='<%=request.getContextPath()%>/images/edit.png' alt='Edit' title='Edit'></a>"
-                        +"<img class='delete' src='<%=request.getContextPath()%>/images/Trash.png' data-vendor-id='${vendor.id}' data-vendor-name='<sw360:out value="${vendor.fullname}"/>')\"  alt='Delete' title='Delete'>"
+                        "3":  '<div class="actions">'
+                            +   '<svg class="edit lexicon-icon" data-vendor-id="${vendor.id}"><title>Edit</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>'
+                            +   '<svg class="delete lexicon-icon" data-vendor-id="${vendor.id}" data-vendor-name="<sw360:out value="${vendor.fullname}"/>"><title>Delete</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/></svg>'
+                            + '</div>'
+
                     });
                 </core_rt:forEach>
 
-                vendorsTable = $('#vendorsTable').DataTable({
-                    pagingType: "simple_numbers",
-                    dom: "lBrtip",
-                    buttons: [
-                        {
-                            extend: 'print',
-                            text: 'Print',
-                            autoPrint: true,
-                            className: 'custom-print-button',
-                            exportOptions: {
-                                columns: [0, 1, 2]
-                            }
-                        }
-                    ],
+                vendorsTable = datatables.create('#vendorsTable', {
                     data: result,
                     columns: [
                         {"title": "Full Name"},
                         {"title": "Short Name"},
                         {"title": "URL"},
-                        {"title": "Actions"}
+                        {"title": "Actions", className: "two actions" }
                     ],
-                    autoWidth: false
-                });
+                    searching: true,
+                    language: {
+                        emptyTable: 'No vendors found.'
+                    }
+                }, [0, 1, 2], [3]);
 
                 return vendorsTable;
             }
 
             function deleteVendor(id, name) {
-                function deleteVendorInternal() {
+                var $dialog;
+
+                function deleteVendorInternal(callback) {
                     jQuery.ajax({
                         type: 'POST',
                         url: '<%=deleteAjaxURL%>',
@@ -151,19 +157,37 @@
                             <portlet:namespace/>vendorId: id
                         },
                         success: function (data) {
-                            if(data.result == 'SUCCESS')
+                            callback();
+
+                            if(data.result == 'SUCCESS') {
                                 vendorsTable.row('#' + id).remove().draw(false);
-                            else {
-                                $.alert("I could not delete the vendor!");
+                                $('#vendorCounter').text(parseInt($('#vendorCounter').text()) - 1);
+                                $('#vendorCounter').parent().attr('title', $('#vendorCounter').parent().text());
+                                $dialog.close();
+                            } else {
+                                $dialog.alert("I could not delete the vendor!");
                             }
                         },
                         error: function () {
-                            $.alert("I could not delete the vendor!");
+                            callback();
+                            $dialog.alert("I could not delete the vendor!");
                         }
                     });
                 }
 
-                confirm.confirmDeletion("Do you really want to delete the vendor <b>" + name + "</b> ?", deleteVendorInternal);
+                $dialog = dialog.confirm(
+                    'danger',
+                    'question-circle',
+                    'Delete Vendor?',
+                    '<p>Do you really want to delete the vendor <b data-name="name"></b>?</p>',
+                    'Delete Vendor',
+                    {
+                        name: name,
+                    },
+                    function(submit, callback) {
+                        deleteVendorInternal(callback);
+                    }
+                );
             }
         });
     });

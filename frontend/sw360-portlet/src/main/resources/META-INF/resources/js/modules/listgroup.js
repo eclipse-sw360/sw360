@@ -20,6 +20,11 @@ define('modules/listgroup', [
 
 			// blur all list items (otherwise the old tab may still be focused and highlighted)
 			$(this).find('a[data-toggle="list"]').blur();
+
+			// update belonging sections. The event below is not enough since the active tab may already be visible on reload
+			// (e.g. its set from server side) and then the event is not fired resulting in hidden companion sections.
+			$('.list-group-companion').hide();
+			$('.list-group-companion[data-belong-to="' + id + '"]').show();
 		}
 	}
 
@@ -39,7 +44,8 @@ define('modules/listgroup', [
 			activeId = $activeListItem.attr('href').substring(1);
 
 			// update hash (/ prevents jumping)
-			window.location.hash = '/' + activeId;
+			var end = window.location.href.indexOf('#');
+			window.location.replace((end > 0 ? window.location.href.substring(0, end) : window.location.href) + '#/' + activeId);
 
 			// update belonging sections
 			$('.list-group-companion').hide();
@@ -52,11 +58,15 @@ define('modules/listgroup', [
 			}
 		}, true);
 
-		if(location.hash && location.hash.startsWith('#/')) {
+		if(location.hash && location.hash.startsWith('#/') && $('#' + location.hash.substring(2)).length > 0) {
 			selectTab.call($listgroup, activeId, location.hash.substring(2));
-		} else if(initialTab) {
+		} else if(initialTab && $('#' + initialTab).length > 0) {
 			selectTab.call($listgroup, activeId, initialTab);
+		} else {
+			selectTab.call($listgroup, activeId, $listgroup.find('a:first').attr('href').substring(1));
 		}
+
+		$listgroup.parents('.container:first').show().siblings('.container-spinner').hide();
 	}
 
 	return {

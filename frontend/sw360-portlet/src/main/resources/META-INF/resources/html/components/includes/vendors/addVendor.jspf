@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -13,35 +13,57 @@
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.ADD_VENDOR%>"/>
 </portlet:resourceURL>
 
-<div id="add-vendor-form" title="Create New Vendor" style="display: none; background-color: #ffffff;" data-add-vendor-url="<%=addVendorURL%>">
-    <form width="100%">
-        <table width="100%" class="table" style="padding:3px">
-          <tr>
-            <td >
-              <label class="textlabel stackedLabel mandatory" for="addVendorFullName">Full name</label>
-              <input id="addVendorFullName" type="text" name="Fullname" placeholder="Enter Vendor full name" required="">
-            </td>
-          </tr>
-
-          <tr>
-            <td >
-              <label class="textlabel stackedLabel mandatory" for="addVendorShortName">Short name</label>
-              <input id="addVendorShortName" type="text" name="Shortname" placeholder="Enter Vendor short name" required="">
-            </td>
-          </tr>
-
-          <tr>
-            <td >
-              <label class="textlabel stackedLabel mandatory" for="addVendorUrl">URL</label>
-              <input id="addVendorUrl" type="url" name="URL" placeholder="Enter Vendor url" required="">
-            </td>
-          </tr>
-
-        </table>
-     </form>
-
-    <hr noshade size="1" style="background-color: #66c1c2; border-color: #59D1C4;"/>
-    <div>
-      <input type="button" value="Add Vendor" name="add-vendor" class="addButton"/>
+<div class="dialogs">
+    <div id="addVendorDialog" data-title="Create new Vendor" class="modal fade" tabindex="-1" role="dialog" data-add-vendor-url="<%=addVendorURL%>">
+        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-body container">
+                    <form class="needs-validation" novalidate>
+                        <table class="table edit-table three-columns">
+                            <thead>
+                                <tr>
+                                    <th colspan="3">Edit Vendor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="form-group">
+                                            <label for="vendorFullname">Full Name</label>
+                                            <input id="vendorFullname" type="text" required class="form-control" placeholder="Enter vendor fullname" data-name="fullname" autofocus/>
+                                                <div class="invalid-feedback">
+                                                Please enter a full name!
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="form-group">
+                                            <label for="vendorShortname">Short Name</label>
+                                            <input id="vendorShortname" type="text" required class="form-control" placeholder="Enter vendor short name" data-name="shortname" />
+                                            <div class="invalid-feedback">
+                                                Please enter a short name!
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="form-group">
+                                            <label for="vendorURL">URL</label>
+                                            <input id="vendorURL" type="url" required class="form-control" placeholder="Enter vendor url" data-name="url" />
+                                            <div class="invalid-feedback">
+                                                Please enter an url!
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </form>
+                </div>
+                <div class="modal-footer">
+		        <button type="button" class="btn btn-light" data-dismiss="modal">Close</button>
+			        <button name="add-vendor" data-submit="add" type="button" class="btn btn-primary">Add Vendor</button>
+			    </div>
+            </div>
+        </div>
     </div>
 </div>

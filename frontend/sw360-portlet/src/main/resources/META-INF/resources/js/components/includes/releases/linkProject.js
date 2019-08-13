@@ -9,60 +9,47 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-define('components/includes/releases/linkProject', ['jquery', 'datatables.net', 'modules/datatables-renderer', /* jquery-plugins */ 'jquery-ui', 'jquery-confirm', /* datatables pluigns */ 'datatables.net-select' ], function($) {
-    var dataTable,
+define('components/includes/releases/linkProject', ['jquery', 'bridges/datatables', 'modules/dialog', 'modules/button', 'utils/keyboard', 'utils/link' ], function($, datatables, dialog, button, keyboard, link) {
+    var $dialog,
+        datatable,
         releaseId,
-        releaseName,
-        homeUrl = $('#search-project-form').data().homeUrl.replace(/\/web\//, '/group/'),
-        contextPath = $('#search-project-form').data().contextPath;
+        releaseName;
 
-    $('#linkToProjectButton').on('click', function() {
-        linkToProject($('#projectSearchResultstable input[name=project]:checked').val());
-    });
-    $('#searchbuttonproject').on('click', function() {
-        searchProjects($('#searchproject').val());
-    });
-    $('#filterlinkedprojects').on('click', function() {
-        if($('#filterlinkedprojects').is(':checked')) {
-            $.fn.dataTable.ext.search.pop();
-        } else {
-            $.fn.dataTable.ext.search.push(
-                   function(settings, data, index) {
-                       return !dataTable.row(index).data().releaseIdToUsage[releaseId];
-                   }
-               );
-        }
-        dataTable.draw();
-    });
-    $('.action.done button').on('click', function(event) {
-        closeOpenDialogs();
-        event.preventDefault();
-        event.stopPropagation();
-    });
-    Liferay.on('allPortletsReady', function() {
-        bindkeyPressToClick('searchproject', 'searchbuttonproject');
-    });
+    function initialize() {
+        $('#searchbuttonproject').on('click', function() {
+            searchProjects($('#searchproject').val());
+        });
+
+        $('#filterlinkedprojects').on('click', function() {
+            if($('#filterlinkedprojects').is(':checked')) {
+                $.fn.dataTable.ext.search.pop();
+            } else {
+                $.fn.dataTable.ext.search.push(
+                    function(settings, data, index) {
+                        return !datatable.row(index).data().releaseIdToUsage[releaseId];
+                    }
+                );
+            }
+            datatable.draw();
+        });
+
+        keyboard.bindkeyPressToClick('searchproject', 'searchbuttonproject');
+    }
 
     function makeProjectsDataTable() {
-        return $('#projectSearchResultstable').DataTable({
-               rowId: 'id',
-               dom: 'rti',
-               scrollY: 220,
-               info: false,
-               paging: false,
-            autoWidth: false,
-            select: {
-                style: 'single'
-            },
+        var table = datatables.create('#projectSearchResultstable', {
+            destroy: true,
+            paging: false,
+            info: false,
+            searching: true,
+            order: [ [1, 'asc'] ],
+            rowId: 'id',
             columns: [
                 /* 0 */ { data: 'id',
                           render: function(data, type, row, meta) {
                                         if(row.releaseIdToUsage && row.releaseIdToUsage[releaseId]) {
                                             if(type === 'display') {
-                                                return $('<img>', {
-                                                   style: 'width: 16px;',
-                                                   src: contextPath + '/images/ok.png'
-                                                })[0].outerHTML;
+                                                return $('<svg class="lexicon-icon text-success"><title>Already linked</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#check"/></svg>')[0].outerHTML;
                                             } else {
                                                 return '';
                                             };
@@ -80,53 +67,44 @@ define('components/includes/releases/linkProject', ['jquery', 'datatables.net', 
                 /* 4 */ { data: 'projectResponsible', defaultContent: "" },
                 /* 5 */ { data: 'description', defaultContent: "", render: $.fn.dataTable.render.ellipsis }
             ],
-            order: [ [1, 'asc'] ],
-            deferRender: true,
+            initComplete: function() {
+                $('#searchbuttonproject').prop('disabled', false);
+            },
+            select: 'single',
             language: {
                 emptyTable: "Please search for a project."
-            },
-            destroy: true
+            }
         });
+
+        datatables.enableCheckboxForSelection(table, 0);
+        return table;
     }
 
     function showProjectDialog() {
-        var $close = $('#search-project-form .action.done'),
-            $input = $('#search-project-form .header, #search-project-form .table, #search-project-form .action.link'),
-            $result = $('#search-project-form .result');
+        $dialog = dialog.open('#linkProjectDialog', {}, function(submit, callback) {
+            linkToProject($('#projectSearchResultstable input[name=project]:checked').val(), callback);
+        }, function() {
+            var dialog = this;
 
-        $input.show();
-        $result.html('');
-        $result.hide();
-        $close.hide();
-        $('#linkToProjectButton').prop('disabled', false);
-        $('#linkToProjectButton').removeClass('spinner');
-
-        openDialog('search-project-form', 'searchproject');
-
-        dataTable = makeProjectsDataTable();
-        dataTable.clear();
-        dataTable.on('select', function(event, dataTable, type, index) {
-            var $input;
-
-            if(type === 'row') {
-                $input = $(dataTable.row(index).node()).find('input[name=project]');
-                if($input.length > 0) {
-                    $input.prop('checked', true);
-                } else {
-                    dataTable.row(index).deselect();
-                }
+            if(datatable) {
+                datatable.clear();
             }
+            datatable = makeProjectsDataTable();
+
+            $('#projectSearchResultstable').off('change.project-search');
+            $('#projectSearchResultstable').on('change.project-search', 'input[name="project"]', function() {
+                dialog.enablePrimaryButtons(dialog.$.find('input[name="project"]:checked').length > 0);
+            });
+
+            dialog.enablePrimaryButtons(false);
         });
-        dataTable.draw();
     }
 
     function searchProjects(searchTerm) {
         var data = {},
-            config = $('#projectSearchResultstable').data(),
-            table = $('#projectSearchResultstable').DataTable();
+            config = $('#projectSearchResultstable').data();
 
-        $('#searchbuttonproject').prop('disabled', true);
-        $('#loadingProjectsTableNotifier').show();
+        button.wait('#searchbuttonproject');
 
         data[config.whereKey] = searchTerm;
         jQuery.ajax({
@@ -134,28 +112,23 @@ define('components/includes/releases/linkProject', ['jquery', 'datatables.net', 
             url: config.searchUrl,
             data: data,
             success: function (data) {
-                table.clear();
-                table.rows.add(data);
-                table.draw();
+                datatable.clear();
+                datatable.rows.add(data);
+                datatable.draw();
             },
             complete: function() {
-                $('#searchbuttonproject').prop('disabled', false);
-                $('#loadingProjectsTableNotifier').hide();
+                button.finish('#searchbuttonproject');
             }
         });
     }
 
-    function linkToProject(projectId) {
+    function linkToProject(projectId, callback) {
         var data = {},
             config = $('#projectSearchResultstable').data();
 
         if(!projectId) {
             return;
         }
-
-        $('#linkToProjectButton').prop('disabled', true);
-        $('#linkToProjectButton').addClass('spinner');
-
 
         data[config.projectIdKey] = projectId;
         data[config.releaseIdKey] = releaseId;
@@ -164,12 +137,10 @@ define('components/includes/releases/linkProject', ['jquery', 'datatables.net', 
             url: config.linkUrl,
             data: data,
             success: function (data) {
-                var $close = $('#search-project-form .action.done'),
-                    $input = $('#search-project-form .header, #search-project-form .table, #search-project-form .action.link'),
-                    $result = $('#search-project-form .result'),
+                var $result = $('<div></div>'),
                     projectName = $('#projectSearchResultstable input[name=project]:checked').parents('tr').find('td .name').data().name;
 
-                $result.html();
+                callback();
 
                 var $p1 = $('<p/>');
                 $p1.append('The release ');
@@ -181,20 +152,31 @@ define('components/includes/releases/linkProject', ['jquery', 'datatables.net', 
                 var $p2 = $('<p/>');
                 $p2.append('Click ');
                 $('<a/>', {
-                  href: homeUrl + '/projects/-/project/edit/' + projectId + '#tab-linkedProjects',
+                  href: link.to('project', 'edit', projectId) + '#/tab-linkedProjects',
                   style: 'text-decoration: underline;'
+                }).on('click', function(event) {
+                    $dialog.close();
+                    window.location.href = $(event.currentTarget).attr('href');
                 }).text('here').appendTo($p2);
                 $p2.append(' to edit the release relation as well as the project mainline state in the project.');
                 $p2.appendTo($result);
+                $p2.addClass('mb-0');
 
-                $input.hide();
-                $result.fadeIn(500);
-                $close.show();
+                $dialog.success($result, true);
+            },
+            error: function() {
+                callback();
+                $dialog.alert('The release could not be linked to the project.');
             }
         });
     }
 
     return {
+        /**
+         * Initializes the module. Must be called before the module is used.
+         */
+        initialize: initialize,
+
         /**
          * Opens up the dialog for searching and linking the given release to a project.
          *

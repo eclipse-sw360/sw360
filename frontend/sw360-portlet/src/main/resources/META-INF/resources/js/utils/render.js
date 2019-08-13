@@ -12,6 +12,16 @@ define('utils/render', [
 	'jquery',
 	'utils/escape'
 ], function($, escape) {
+	function renderTrashIcon() {
+		var $trashIcon = $('<svg>', {
+			'class': 'delete lexicon-icon',
+			title: 'Delete',
+		});
+		$trashIcon.append($('<use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
+
+		return $trashIcon;
+	}
+
 	function renderLinkTo(url, content, htmlContent) {
 	    var $link = $("<a href='" + encodeURI(url) + "'/>");
 	    if (typeof htmlContent == 'string' && htmlContent) {
@@ -44,6 +54,7 @@ define('utils/render', [
 	return {
 		linkTo: renderLinkTo,
 		userEmail: renderUserEmail,
-		truncate: truncate
+		truncate: truncate,
+		trashIcon: renderTrashIcon
 	};
 });

@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2017, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -29,10 +29,6 @@ import static com.google.common.collect.Iterables.all;
  * @author thomas.maier@evosoft.com
  */
 public class DisplayEnumInfo extends SimpleTagSupport {
-
-    private static final String SW360_INFO_IMG_PATH = "/images/ic_info.png";
-    private static final String SW360_INFO_IMG = "infopic";
-
     private Class type;
 
     private Iterable<? extends TEnum> options;
@@ -67,7 +63,7 @@ public class DisplayEnumInfo extends SimpleTagSupport {
 
         String result = "<span class='" + PortalConstants.TOOLTIP_CLASS__CSS + " "
                 + PortalConstants.TOOLTIP_CLASS__CSS + "-" + enumClass.getSimpleName() + "'>"
-                + "<img class='" + SW360_INFO_IMG + "' src='" + request.getContextPath() + SW360_INFO_IMG_PATH + "'></span>";
+                + "<svg class='lexicon-icon'><use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle-open' /></svg></span>";
 
         jspWriter.print(result);
 

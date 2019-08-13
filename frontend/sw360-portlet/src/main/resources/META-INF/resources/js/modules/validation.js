@@ -9,24 +9,78 @@
  * http://www.eclipse.org/legal/epl-v10.html
  */
 define('modules/validation', [ 'jquery' ], function($) {
+
+	function jumpToFailedInput($form) {
+		// wait a short moment for the tab to change
+		setTimeout(function() {
+			$form.find(':invalid').first().focus();
+		}, 50);
+	}
+
+	function jumpToFailedTab($form) {
+		var $input = $form.find(':invalid').first(),
+			$tab = $input.parents('.tab-pane:first');
+
+		window.location.hash = '/' + $tab.attr('id');
+		jumpToFailedInput($form);
+	}
+
 	return {
 		enableForm: function(formSelector) {
-			var form,
+			var $form = $(formSelector);
+
+			if($form.length == 0) {
+				console.error('Form not found: ' + formSelector);
+				return;
+			}
+
+			$form.on('submit', function(event) {
+				if($form[0].checkValidity() === false) {
+				    jumpToFailedInput($form);
+		            event.preventDefault();
+		            event.stopPropagation();
+		        }
+		        $form.addClass('was-validated');
+			});
+		},
+
+		jumpToFailedTab: function(formSelector) {
+			var $form = $(formSelector);
+
+			if($form.length == 0) {
+				console.error('Form not found: ' + formSelector);
+				return;
+			}
+
+			$form.attr('data-jump-to-failed-tab', 'true');
+			$form.on('submit', function(event) {
+				if($form[0].checkValidity() === false) {
+					jumpToFailedTab($form);
+				}
+			});
+		},
+
+		validate: function(formSelector) {
+			var result,
 				$form = $(formSelector);
 
 			if($form.length == 0) {
 				console.error('Form not found: ' + formSelector);
 				return;
 			}
-			form = $form[0];
 
-			form.addEventListener('submit', function(event) {
-				if(form.checkValidity() === false) {
-		          event.preventDefault();
-		          event.stopPropagation();
-		        }
-		        form.classList.add('was-validated');
-			}, false);
+			result = $form[0].checkValidity()
+			$form.addClass('was-validated');
+
+			if(result === false) {
+				if($form.attr('data-jump-to-failed-tab') === 'true') {
+					jumpToFailedTab($form);
+				} else {
+					jumpToFailedInput($form);
+				}
+			}
+
+			return result;
 		},
 
 		confirmField: function(fieldSelector, confirmSelector, doesnotMatchText) {

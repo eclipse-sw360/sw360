@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017.
+ * Copyright Siemens AG, 2017, 2019.
  * Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -10,8 +10,6 @@
  * http://www.eclipse.org/legal/epl-v10.html
  */
 define('utils/includes/quickfilter', ['jquery'], function(jquery) {
-    var updateSearchFunctions = [];
-
     function searchCallbackApiLegacy(searchTerm) {
         this.fnFilter(searchTerm);
     }
@@ -28,8 +26,8 @@ define('utils/includes/quickfilter', ['jquery'], function(jquery) {
             var lastSearch,
                 inputTimeout,
                 updateSearchFunction,
-                $inputField = jquery('#component-quickfilter input[type=text]'),
-                $searchButton = jquery('#component-quickfilter input[type=button]');
+                $form = jquery('#component-quickfilter form'),
+                $inputField = jquery('#component-quickfilter input[type=text]');
 
                // We use the external search function if given. Otherwise use an API implementation depending on the datatables version
                // Bind to datatable so the table object is accessible with 'this' inside the search callback
@@ -46,6 +44,11 @@ define('utils/includes/quickfilter', ['jquery'], function(jquery) {
             // always perform a search on initializing, fixes e.g. #441
             updateSearchFunction($inputField.val());
 
+            // prevent enter to reload page
+            $form.on('submit', function() {
+                return false;
+            });
+
             // filter on input or click. Wait some time on input to increase performance
             $inputField.on('keyup change', function() {
                 var newSearch = $inputField.val();
@@ -56,14 +59,6 @@ define('utils/includes/quickfilter', ['jquery'], function(jquery) {
 
                     lastSearch = newSearch;
                 }
-            });
-
-            updateSearchFunctions.push(updateSearchFunction);
-        },
-
-        setSearchTerm: function(searchTerm) {
-            updateSearchFunctions.forEach(function(updateSearchFunction) {
-                updateSearchFunction(searchTerm);
             });
         }
     };

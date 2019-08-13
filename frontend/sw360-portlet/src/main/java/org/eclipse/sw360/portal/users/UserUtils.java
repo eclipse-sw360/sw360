@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
  * With modifications by Bosch Software Innovations GmbH, 2016.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -16,6 +16,7 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.model.*;
 import com.liferay.portal.kernel.service.OrganizationLocalServiceUtil;
+import com.liferay.portal.kernel.service.ServiceContextFactory;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -130,7 +131,8 @@ public class UserUtils {
     public static void activateLiferayUser(PortletRequest request, org.eclipse.sw360.datahandler.thrift.users.User user) {
         try {
             User liferayUser = findLiferayUser(request, user);
-            UserLocalServiceUtil.updateStatus(liferayUser.getUserId(), WorkflowConstants.STATUS_APPROVED);
+            UserLocalServiceUtil.updateStatus(liferayUser.getUserId(), WorkflowConstants.STATUS_APPROVED,
+                ServiceContextFactory.getInstance(request));
         } catch (SystemException | PortalException e) {
             log.error("Could not activate Liferay user", e);
         }

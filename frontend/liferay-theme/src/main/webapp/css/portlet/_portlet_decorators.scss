@@ -36,7 +36,7 @@
 		border-color: $primary;
 
 		.portlet-content {
-			background-color: #FFF;
+			background-color: transparent;
 		}
 	}
 }
@@ -47,8 +47,8 @@
 			display: none;
 		}
 
-		.portlet:hover > .portlet-content-editable {
-			border-color: transparent;
+		.portlet-content-editable {
+			border-color: transparent !important;
 		}
 	}
 }

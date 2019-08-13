@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017.
+ * Copyright Siemens AG, 2017, 2019.
  * Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -9,7 +9,7 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-define('modules/linkListDialog', ['jquery', /* jquery-plugins: */ 'jquery-confirm' ], function($) {
+define('modules/linkListDialog', ['jquery', 'modules/dialog' ], function($, dialog) {
 
 	/**
 	 * Method registers a blur event handler on elements matching given elementSelector. On blur a
@@ -28,7 +28,7 @@ define('modules/linkListDialog', ['jquery', /* jquery-plugins: */ 'jquery-confir
 	 *             }
 	 *         ]
 	 * }
-	 * The title will be set as title of the opened jquery-confirm dialog while errors - if set - or links
+	 * The title will be set as title of the opened dialog while errors - if set - or links
 	 * otherwise are displayed as content of the dialog.
 	 *
 	 * @param {string} elementSelector a jquery selector matching optimally exactly one element on whose blur
@@ -40,56 +40,53 @@ define('modules/linkListDialog', ['jquery', /* jquery-plugins: */ 'jquery-confir
 	 */
 	function registerLinkListDialog(elementSelector, postUrl, postParamKey) {
         $(elementSelector).blur(function() {
-            $.confirm({
-                title: 'Loading...',
-                content: function () {
-                    var self = this,
+            var $dialog;
+
+            $dialog = dialog.info(
+                'Please wait...',
+                '<div class="spinner text-center">' +
+                    '<div class="spinner-border" role="status">' +
+                        '<span class="sr-only">Loading list...</span>' +
+                    '</div>' +
+                '</div>' +
+                '<p class="description">' +
+                '<div class="result-list">' +
+                '</div>',
+                {},
+                function() {
+                    var $list,
+                        $dialog = this,
                         postData = {};
 
                     postData[postParamKey] = $(elementSelector).val();
-
-                    return $.ajax({
-                            type: 'POST',
-                            url: postUrl,
-                            dataType: 'json',
-                            data: postData
-                        }).done(function(data, textStatus, jqXHR) {
-                            self.setTitle(data.title, true);
-                            if (data.errors.length > 0) {
-                                self.setContentAppend('<div class="alert alert-error">Sorry, an error occured while looking for links:');
-                                data.errors.forEach(function(error) {
-                                    self.setContentAppend('<br />' + error);
-                                });
-                                self.setContentAppend('</div>');
-                            } else if (data.links.length === 0) {
-                                self.setContentAppend('<div class="alert alert-success">No reasonable links found!</div>');
-                                self.setContentAppend('<div class="link-list-dialog-links">');
-                                self.setContentAppend('    <ul>');
-                                self.setContentAppend('    </ul>');
-                                self.setContentAppend('</div>');
-                            } else {
-                                self.setContentAppend('<div class="link-list-dialog-links">');
-                                self.setContentAppend('    <ul>');
-                                data.links.forEach(function(link) {
-                                    self.setContentAppend('        <li><a target="_blank" href="' + link.target + '">' + link.text + '</a></li>');
-                                });
-                                self.setContentAppend('    </ul>');
-                                self.setContentAppend('</div>');
-                            }
-                        }).fail(function(jqXHR, textStatus, errorThrown) {
-                            self.setContentAppend('<div class="alert alert-error">');
-                            self.setContentAppend('    Sorry, communication to server failed! Please check your internet connection and try again:<br /><br />');
-                            self.setContentAppend('   ' + textStatus + ' - ' + errorThrown);
-                            self.setContentAppend('</div>');
-                        })
-                    ;
-                },
-                buttons: {
-                    close: {
-                        action: function () {}
-                    }
+                    $.ajax({
+                        type: 'POST',
+                        url: postUrl,
+                        dataType: 'json',
+                        data: postData
+                    }).done(function(data, textStatus, jqXHR) {
+                        $dialog.$.find('.spinner').hide();
+                        $dialog.setTitle(data.title);
+                        if (data.errors.length > 0) {
+                            $list = $('<ul></ul>');
+                            data.errors.forEach(function(error) {
+                                $list.append('<li>' + error + '</li>');
+                            });
+                            $dialog.alert("Sorry, an error occured while looking for links:<br/>" + $list[0].outerHTML);
+                        } else if (data.links.length === 0) {
+                            $dialog.success('No reasonable links found!');
+                        } else {
+                            $dialog.$.find('.description').html(data.description);
+                            $list = $('<ul></ul>').appendTo($dialog.$.find('.result-list'));
+                            data.links.forEach(function(link) {
+                                $list.append('<li><a target="_blank" href="' + link.target + '">' + link.text + '</a></li>');
+                            });
+                        }
+                    }).fail(function(jqXHR, textStatus, errorThrown) {
+                        $dialog.alert('Sorry, communication to server failed! Please check your internet connection and try again:<br/>' + textStatus + ' - ' + errorThrown);
+                    });
                 }
-            });
+            );
         });
     }
 

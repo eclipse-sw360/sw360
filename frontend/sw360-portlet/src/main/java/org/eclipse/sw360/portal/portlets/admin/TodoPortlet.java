@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -39,6 +39,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.*;
     },
     property = {
         "javax.portlet.name=" + TODOS_PORTLET_NAME,
+
         "javax.portlet.display-name=ToDos",
         "javax.portlet.info.short-title=ToDos",
         "javax.portlet.info.title=ToDos",

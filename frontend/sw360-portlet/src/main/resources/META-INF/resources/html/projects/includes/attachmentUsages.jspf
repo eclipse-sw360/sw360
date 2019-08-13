@@ -3,7 +3,7 @@
 <%@ page import="javax.portlet.PortletRequest" %>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 <%--
-  ~ Copyright Siemens AG, 2018. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2018-2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -27,34 +27,27 @@
 </portlet:resourceURL>
 
 <form id="attachmentUsagesForm" name="attachmentUsagesForm" action="<%=saveAttachmentUsagesURL%>" method="post">
-<table class="table table-bordered" id="AttachmentUsagesInfo" style="table-layout: auto"
-  data-load-node-url="<%=loadAttachmentUsagesRowsURL%>"
-  data-portlet-namespace="<portlet:namespace/>"
-  data-parent-branch-key="<%=PortalConstants.PARENT_BRANCH_ID%>"
-  data-scope-group-id="${httpServletRequest.getAttribute('scopeGroupId')}"
-    >
-    <thead>
-    <tr>
-        <th colspan="7" class="headlabel">Linked Releases And Projects</th>
-    </tr>
-    <tr>
-        <th rowspan="2">Name</th>
-        <th rowspan="2">Relation</th>
-        <th rowspan="2">Uploaded By</th>
-        <th rowspan="2">Type</th>
-        <th colspan="3">Used in</th>
-    </tr>
-    <tr>
-        <th>License Info</th>
-        <th>Source Code Bundle</th>
-        <th>Other</th>
-    </tr>
-    </thead>
-    <tbody>
-    <%@include file="/html/projects/includes/attachmentUsagesRows.jspf"%>
-    <core_rt:if test="${projectList.size() == 1 and empty projectList.get(0).linkedReleases}">
+    <table class="table table-bordered" id="AttachmentUsagesInfo" style="table-layout: auto"
+    data-load-node-url="<%=loadAttachmentUsagesRowsURL%>"
+    data-portlet-namespace="<portlet:namespace/>"
+    data-parent-branch-key="<%=PortalConstants.PARENT_BRANCH_ID%>"
+    data-scope-group-id="${httpServletRequest.getAttribute('scopeGroupId')}"
+        >
+        <thead>
         <tr>
-            <td colspan="7">No linked releases or projects</td>
+            <th colspan="7" class="headlabel">Linked Releases And Projects</th>
+        </tr>
+        <tr>
+            <th rowspan="2">Name</th>
+            <th rowspan="2">Relation</th>
+            <th rowspan="2">Uploaded By</th>
+            <th rowspan="2">Type</th>
+            <th colspan="3">Used in</th>
+        </tr>
+        <tr>
+            <th>License Info</th>
+            <th>Source Code Bundle</th>
+            <th>Other</th>
         </tr>
         </thead>
         <tbody>
@@ -63,6 +56,14 @@
                 <tr>
                     <td colspan="7">No linked releases or projects</td>
                 </tr>
+                </thead>
+                <tbody>
+                    <%@include file="/html/projects/includes/attachmentUsagesRows.jspf"%>
+                    <core_rt:if test="${projectList.size() == 1 and empty projectList.get(0).linkedReleases}">
+                        <tr>
+                            <td colspan="7">No linked releases or projects</td>
+                        </tr>
+                    </core_rt:if>
             </core_rt:if>
         </tbody>
     </table>

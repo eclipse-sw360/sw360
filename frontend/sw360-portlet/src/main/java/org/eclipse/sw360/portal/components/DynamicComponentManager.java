@@ -36,8 +36,12 @@ public class DynamicComponentManager extends LoggingComponent {
         super.activate();
 
         Properties properties = CommonUtils.loadProperties(DynamicComponentManager.class, PROPERTIES_FILE_PATH);
-        activateComponents(properties.getProperty("components.activate").split("\\s*,\\s*"));
-        activateComponents(properties.getProperty("portlets.activate").split("\\s*,\\s*"));
+
+        String components = properties.getProperty("components.activate");
+        activateComponents(components.split("\\s*,\\s*"));
+
+        String portlets = properties.getProperty("portlets.activate");
+        activateComponents(portlets.split("\\s*,\\s*"));
     }
 
     @Deactivate

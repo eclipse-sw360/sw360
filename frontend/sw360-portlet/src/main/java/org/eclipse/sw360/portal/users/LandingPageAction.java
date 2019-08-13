@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2018. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2018-2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -66,6 +66,7 @@ public class LandingPageAction extends Action {
     public void run(HttpServletRequest request, HttpServletResponse response) throws ActionException {
         if (isNullOrEmpty(request.getContextPath())) {
             try {
+                log.info("Redirect to [" + landingPage + "].");
                 response.sendRedirect(landingPage);
             } catch (IOException e) {
                 throw new ActionException(e);

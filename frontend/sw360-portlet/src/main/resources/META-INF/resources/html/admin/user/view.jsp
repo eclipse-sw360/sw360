@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -14,7 +14,6 @@
 <%-- the following is needed by liferay to display error messages--%>
 <%@ include file="/html/utils/includes/errorKeyToMessage.jspf"%>
 
-
 <portlet:defineObjects/>
 <liferay-theme:defineObjects/>
 
@@ -24,124 +23,114 @@
 <portlet:actionURL var="updateLifeRayUsers" name="updateUsers">
 </portlet:actionURL>
 
+<div class="container">
+	<div class="row">
+		<div class="col-3 sidebar">
+			<div class="card-deck">
+                <%@ include file="/html/utils/includes/quickfilter.jspf" %>
+            </div>
+		</div>
+		<div class="col">
+            <div class="row portlet-toolbar">
+				<div class="col-auto">
+					<div class="btn-toolbar" role="toolbar">
+						<div class="btn-group" role="group">
+							<button type="button" class="btn btn-primary"
+                              onclick="window.location.href='<portlet:resourceURL><portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.USER_LIST%>'/></portlet:resourceURL>'">
+                                Download Liferay Users
+                            </button>
+						</div>
+					</div>
+				</div>
+                <div class="col portlet-title text-truncate" title="Liferay Users (${userList.size()})">
+					Liferay Users (${userList.size()})
+				</div>
+            </div>
 
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/dataTable_Siemens.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
+            <div class="row">
+                <div class="col">
+                    <h4 class="mt-4">Users already in liferay</h4>
+			        <table id="userTable" class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Given name</th>
+                                <th>Last name</th>
+                                <th>Department</th>
+                                <th>User Role</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <core_rt:forEach var="user" items="${userList}">
+                                <tr>
+                                    <td><sw360:out value="${user.firstName}"/></td>
+                                    <td><sw360:out value="${user.lastName}"/></td>
+                                    <td><sw360:out value="${user.getOrganizations(false).get(0).getName()}"/></td>
+                                    <td>
+                                        <core_rt:forEach var="role" items="${user.roles}" varStatus="loop">
+                                            <sw360:out value="${role.getName()}"/>,
+                                        </core_rt:forEach>
+                                    </td>
+                                </tr>
+                            </core_rt:forEach>
+                        </tbody>
+                    </table>
 
-<div id="header"></div>
-<p class="pageHeader"><span class="pageHeaderBigSpan">Liferay Users</span> <span
-        class="pageHeaderSmallSpan">(${userList.size()}) </span></p>
+                    <h4 class="mt-4">Users not in liferay</h4>
+                    <table id="userMissingTable" class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Given name</th>
+                                <th>Last name</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <core_rt:forEach var="user" items="${missingUserList}">
+                                <tr>
+                                    <td><sw360:out value="${user.givenname}"/></td>
+                                    <td><sw360:out value="${user.lastname}"/></td>
+                                </tr>
+                            </core_rt:forEach>
+                        </tbody>
+                    </table>
 
-<div id="searchInput" class="content1">
-    <%@ include file="/html/utils/includes/quickfilter.jspf" %>
-</div>
-
-<div id="searchTableDiv" class="content2">
-    <h4>Users already in liferay</h4>
-    <table id="userTable" cellpadding="0" cellspacing="0" border="0" class="display">
-        <thead>
-        <tr>
-            <th>Given name</th>
-            <th>Last name</th>
-            <th>Department</th>
-            <th>User Role</th>
-        </tr>
-        </thead>
-        <tbody>
-        <core_rt:forEach var="user" items="${userList}">
-            <tr>
-                <td><sw360:out value="${user.firstName}"/></td>
-                <td><sw360:out value="${user.lastName}"/></td>
-                <td><sw360:out value="${user.getOrganizations(false).get(0).getName()}"/></td>
-                <td>
-                    <core_rt:forEach var="role" items="${user.roles}" varStatus="loop">
-                        <sw360:out value="${role.getName()}"/>,
-                    </core_rt:forEach>
-                </td>
-            </tr>
-
-        </core_rt:forEach>
-        </tbody>
-        <tfoot>
-        <tr>
-            <th style="width:25%;"></th>
-            <th style="width:25%;"></th>
-            <th style="width:25%;"></th>
-            <th style="width:25%;"></th>
-        </tr>
-        </tfoot>
-    </table>
-
-    <table class="info_table">
-        <thead>
-        <tr>
-            <th colspan="2"> Downloads</th>
-        </tr>
-        </thead>
-
-        <tbody>
-        <tr>
-            <td>Download Liferay User CSV</td>
-            <td><a href="<portlet:resourceURL>
-                               <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.USER_LIST%>'/>
-                         </portlet:resourceURL>">
-                <img src="<%=request.getContextPath()%>/images/download_enabled.jpg" alt="Download">
-            </a>
-            </td>
-        </tr>
-        </tbody>
-    </table>
-    <br>
-
-    <h4>Users not in liferay</h4>
-    <table id="userMissingTable" cellpadding="0" cellspacing="0" border="0" class="display">
-        <thead>
-        <tr>
-            <th>Given name</th>
-            <th>Last name</th>
-        </tr>
-        </thead>
-        <tbody>
-        <core_rt:forEach var="user" items="${missingUserList}">
-            <tr>
-                <td><sw360:out value="${user.givenname}"/></td>
-                <td><sw360:out value="${user.lastname}"/></td>
-            </tr>
-
-        </core_rt:forEach>
-        </tbody>
-        <tfoot>
-        <tr>
-            <th style="width:50%;"></th>
-            <th style="width:50%;"></th>
-        </tr>
-        </tfoot>
-    </table>
-
-    <form id="usersForm" name="usersForm" action="<%=updateLifeRayUsers%>" method="POST" enctype="multipart/form-data">
-        <div class="fileupload-buttons">
-            <span class="fileinput-button">
-                <span>Upload user CSV</span>
-                <input id="<portlet:namespace/>userFileUploadInput" type="file" name="<portlet:namespace/>file">
-            </span>
-            <input type="submit" value="Update Users" class="addButton" id="<portlet:namespace/>userCSV-Submit" disabled>
-        </div>
-    </form>
+                    <h4 class="mt-4">Upload Users</h4>
+                    <form id="usersForm" class="form needs-validation" name="usersForm" action="<%=updateLifeRayUsers%>" method="POST" enctype="multipart/form-data" novalidate>
+                        <div class="form-row">
+                            <div class="col">
+                                <div class="form-group">
+                                    <input type="file" class="form-control-file" id="<portlet:namespace/>userFileUploadInput" name="<portlet:namespace/>file" required>
+                                    <div class="invalid-feedback">
+                                        Please select a file!
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-2">
+                                <button type="submit" class="btn btn-secondary btn-block" id="<portlet:namespace/>userCSV-Submit">Upload Users</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+		</div>
+	</div>
 </div>
 
 <%--for javascript library loading --%>
-
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;
 
-        require(['jquery', 'utils/includes/quickfilter', /* jquery-plugins: */ 'datatables.net'], function($, quickfilter) {
+        require(['jquery', 'bridges/datatables', 'utils/includes/quickfilter'], function($, datatables, quickfilter) {
             var usersTable,
                 usersMissingTable;
 
             // initializing
-            load();
+            usersTable = createUserTable('#userTable');
+            usersMissingTable = createUserTable('#userMissingTable');
+
+            quickfilter.addTable(usersTable);
+            quickfilter.addTable(usersMissingTable);
 
             // register event handlers
             $('#<portlet:namespace/>userFileUploadInput').on('change', function (event) {
@@ -150,33 +139,10 @@
                 }
             });
 
-            // helper functions
-            function load() {
-                usersTable = configureUsersTable();
-                usersMissingTable = configureMissingUsersTable();
-
-                quickfilter.addTable(usersTable);
-                quickfilter.addTable(usersMissingTable);
-            }
-
-            function configureUsersTable() {
-                return setupPagination('#userTable');
-            }
-
-            function configureMissingUsersTable() {
-                return setupPagination('#userMissingTable');
-            }
-
-            function setupPagination(tableSelector){
-                var tbl;
-                if ($(tableSelector)){
-                    tbl = $(tableSelector).DataTable({
-                        "pagingType": "simple_numbers",
-                        "dom": "lrtip",
-                        "autoWidth": false
-                    });
-                }
-                return tbl;
+            function createUserTable(tableSelector){
+                return datatables.create(tableSelector, {
+                    searching: true
+                });
             }
         });
     });

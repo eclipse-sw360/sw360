@@ -15,13 +15,12 @@ table.dataTable {
 		background-color: $box-header-bg;
 	}
 
-	div.actions {
-		a, img, svg {
-			color: $secondary;
-
-			&:hover {
-				color: $primary;
-			}
+	tr.selected {
+		td {
+			background-color: transparent;
 		}
+
+		color: $datatable-select-fg;
+		background-color: $datatable-select-bg;
 	}
 }

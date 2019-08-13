@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -25,9 +25,11 @@
 
 <jsp:useBean id="duplicateProjects" type="java.util.Map<java.lang.String,  java.util.List<java.lang.String>>"
              scope="request"/>
+
+<h4>Releases with the same identifier [name(version)]</h4>
 <core_rt:if test="${duplicateReleases.size()>0}">
-            <h4>Releases with the same identifier [name(version)]</h4>
-    <table id="duplicateReleasesTable" class="display">
+    <h4>Releases with the same identifier [name(version)]</h4>
+    <table id="duplicateReleasesTable" class="table table-bordered">
         <thead>
         <tr>
             <th>Release Name</th><th>Links</th>
@@ -48,9 +50,10 @@
         </tbody>
     </table>
 </core_rt:if>
+
 <core_rt:if test="${duplicateReleaseSources.size()>0}">
     <h4>Releases with more than one source attachment</h4>
-    <table id="duplicateReleaseSourcesTable" class="display">
+    <table id="duplicateReleaseSourcesTable" class="table table-bordered">
         <thead>
         <tr>
             <th>Release Name</th><th>Source Attachments Count</th>
@@ -69,9 +72,10 @@
         </tbody>
     </table>
 </core_rt:if>
+
 <core_rt:if test="${duplicateComponents.size()>0}">
     <h4>Components with the same identifier [name]</h4>
-    <table id="duplicateComponentsTable" class="display">
+    <table id="duplicateComponentsTable" class="table table-bordered">
         <thead>
         <tr>
             <th>Component Name</th><th>Links</th>
@@ -92,9 +96,10 @@
         </tbody>
     </table>
 </core_rt:if>
+
 <core_rt:if test="${duplicateProjects.size()>0}">
     <h4>Projects with the same identifier [name(version)]</h4>
-    <table id="duplicateProjectsTable" class="display">
+    <table id="duplicateProjectsTable" class="table table-bordered">
         <thead>
         <tr>
             <th>Project Name</th><th>Links</th>

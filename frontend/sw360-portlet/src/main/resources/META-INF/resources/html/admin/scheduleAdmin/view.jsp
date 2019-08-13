@@ -12,7 +12,7 @@
 <%@include file="/html/init.jsp" %>
 <%-- the following is needed by liferay to display error messages--%>
 <%@include file="/html/utils/includes/errorKeyToMessage.jspf"%>
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
+
 <jsp:useBean id='cveSearchIsScheduled' type="java.lang.Boolean" scope="request"/>
 <jsp:useBean id='anyServiceIsScheduled' type="java.lang.Boolean" scope="request"/>
 <jsp:useBean id='cvesearchOffset' type="java.lang.String" scope="request"/>
@@ -32,29 +32,43 @@
 <portlet:actionURL var="unscheduleAllServicesURL" name="unscheduleAllServices">
 </portlet:actionURL>
 
-<div id="header"></div>
-<p class="pageHeader"><span class="pageHeaderBigSpan">Schedule Task Administration</span> </p>
+<div class="container">
+    <div class="row portlet-toolbar">
+        <div class="col-auto">
+            <div class="btn-toolbar" role="toolbar">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-danger" onclick="window.location.href='<%=unscheduleAllServicesURL%>'" <core_rt:if test="${not anyServiceIsScheduled}">disabled</core_rt:if>>Cancel all Scheduled Tasks</button>
+                </div>
+            </div>
+        </div>
+        <div class="col portlet-title text-truncate" title="Schedule Task Administration">
+            Schedule Task Administration
+        </div>
+    </div>
 
-<h4 class="withTopMargin">CVE Search: </h4>
-<br/>
-<b>Settings for scheduling the CVE search service:</b><br/>
-Offset: ${cvesearchOffset} (hh:mm:ss)<br/>
-Interval: ${cvesearchInterval} (hh:mm:ss)<br/>
-Next Synchronization: ${cvesearchNextSync}<br/>
-<br/>
-<input type="button"
-       <core_rt:if test="${cveSearchIsScheduled}">class="notApplicableButton"</core_rt:if>
-       <core_rt:if test="${not cveSearchIsScheduled}">class="addButton" onclick="window.location.href='<%=scheduleCvesearchURL%>'"</core_rt:if>
-       value="Schedule CveSearch Updates">
-
-<input type="button"
-       <core_rt:if test="${cveSearchIsScheduled}">class="addButton"  onclick="window.location.href='<%=unscheduleCvesearchURL%>'"</core_rt:if>
-       <core_rt:if test="${not cveSearchIsScheduled}">class="notApplicableButton"</core_rt:if>
-       value="Cancel Scheduled CveSearch Updates">
-
-<h4 class="withTopMargin">All Services:</h4>
-
-<input type="button"
-       <core_rt:if test="${anyServiceIsScheduled}">class="addButton" onclick="window.location.href='<%=unscheduleAllServicesURL%>'" </core_rt:if>
-       <core_rt:if test="${not anyServiceIsScheduled}">class="notApplicableButton" </core_rt:if>
-       value="Cancel All Scheduled Tasks">
+    <div class="row">
+        <div class="col-6">
+            <h4>CVE Search</h4>
+            <table class="table bordered-table">
+                <tr>
+                    <th>Schedule Offset</th>
+                    <td>${cvesearchOffset} (hh:mm:ss)</td>
+                </tr>
+                <tr>
+                    <th>Interval</th>
+                    <td>${cvesearchInterval} (hh:mm:ss)</td>
+                </tr>
+                <tr>
+                    <th>Next Synchronization</th>
+                    <td>${cvesearchNextSync}</td>
+                </tr>
+            </table>
+            <form class="form mt-3">
+                <div class="form-group">
+                    <button type="button" class="btn btn-primary" onclick="window.location.href='<%=scheduleCvesearchURL%>'" <core_rt:if test="${cveSearchIsScheduled}">disabled</core_rt:if>>Schedule CVE service</button>
+                    <button type="button" class="btn btn-light" onclick="window.location.href='<%=unscheduleCvesearchURL%>'" <core_rt:if test="${not cveSearchIsScheduled}">disabled</core_rt:if>>Cancel CVE service</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

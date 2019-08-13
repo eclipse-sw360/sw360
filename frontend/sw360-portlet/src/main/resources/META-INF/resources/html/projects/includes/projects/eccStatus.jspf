@@ -47,7 +47,7 @@
                 columns: [
                     {title: "Status"},
                     {title: "Release Name"},
-                    {title: "Release Version", className: 'content-right'},
+                    {title: "Release Version", className: 'text-right'},
                     {title: "Creator Group"},
                     {title: "ECC Assessor"},
                     {title: "ECC Assessor Group"},

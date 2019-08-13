@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2016-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2016-2017, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -40,12 +40,12 @@
                  scope="request"/>
 </c:catch>
 <core_rt:if test="${empty attributeNotFoundException}">
-    <div class="container">
+    <div class="container" style="display: none;">
 	<div class="row">
-            <div class="col portlet-title left">
+            <div class="col portlet-title left text-truncate" title="Generate License Information">
                 Generate License Information
             </div>
-            <div class="col portlet-title">
+            <div class="col portlet-title text-truncate" title="${sw360:printProjectName(project)}">
                 <sw360:ProjectName project="${project}"/>
             </div>
         </div>
@@ -65,4 +65,5 @@
             </div>
         </div>
     </div>
+    <%@ include file="/html/utils/includes/pageSpinner.jspf" %>
 </core_rt:if>

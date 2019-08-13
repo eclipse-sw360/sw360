@@ -2,7 +2,7 @@
 <%@ page import="org.eclipse.sw360.datahandler.common.SW360Constants" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.attachments.UsageData" %>
 <%--
-  ~ Copyright Siemens AG, 2018. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2018-2019. Part of the SW360 Portal Project.
   ~
   ~ All rights reserved. This program and the accompanying materials
   ~ are made available under the terms of the Eclipse Public License v1.0
@@ -42,14 +42,11 @@
             <td>
 		<sw360:DisplayEnum value="${projectLink.relation}"/>
             </td>
-            <td>
-            </td>
-            <td>
-            </td>
-            <td>
-            </td>
-            <td>
-            </td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
         </tr>
     </core_rt:if>
     <%--linked releases of linked projects--%>
@@ -66,14 +63,11 @@
             <td>
 		<sw360:DisplayEnum value="${releaseLink.releaseRelationship}"/>
             </td>
-            <td>
-            </td>
-            <td>
-            </td>
-            <td>
-            </td>
-            <td>
-            </td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
         </tr>
         <%--attachments of linked releases--%>
         <core_rt:forEach items="${releaseLink.attachments}" var="attachment" varStatus="attachmentloop">
@@ -88,8 +82,7 @@
                     <sw360:out value="${attachment.filename}" maxChar="60"/>
                     <%--<sw360:DisplayDownloadAttachmentFile attachment="${attachment}" contextType="release" contextId="${releaseLink.id}"/>--%>
                 </td>
-                <td>
-                </td>
+                <td></td>
                 <td>
                     <sw360:out value="${attachment.createdBy}"/>
                 </td>
@@ -103,7 +96,7 @@
                            id="${releaseLink.id}_<%=UsageData._Fields.LICENSE_INFO.getFieldName()%>_${attachment.attachmentContentId}"
                            <core_rt:if test="${!licenseInfoAttachmentTypes.contains(attachment.attachmentType) or !writeAccessUser}">disabled</core_rt:if>
                            <core_rt:if test="${licInfoAttUsages.containsKey(attachment.attachmentContentId)}">checked="checked"</core_rt:if>
-                           class="trackChange<core_rt:if test="${licInfoAttUsages.containsKey(attachment.attachmentContentId)}"> defaultChecked</core_rt:if>"
+                           class="form-check-input trackChange<core_rt:if test="${licInfoAttUsages.containsKey(attachment.attachmentContentId)}"> defaultChecked</core_rt:if>"
                     />
                     <input type="checkbox"
                            name="<portlet:namespace/><%=PortalConstants.PROJECT_SELECTED_ATTACHMENT_USAGES_SHADOWS%>"
@@ -119,7 +112,7 @@
                            id="${releaseLink.id}_<%=UsageData._Fields.SOURCE_PACKAGE.getFieldName()%>_${attachment.attachmentContentId}"
                            <core_rt:if test="${!sourceCodeAttachmentTypes.contains(attachment.attachmentType) or !writeAccessUser}">disabled</core_rt:if>
                            <core_rt:if test="${sourceAttUsages.containsKey(attachment.attachmentContentId)}">checked="checked"</core_rt:if>
-                           class="trackChange<core_rt:if test="${sourceAttUsages.containsKey(attachment.attachmentContentId)}"> defaultChecked</core_rt:if>"
+                           class="form-check-input trackChange<core_rt:if test="${sourceAttUsages.containsKey(attachment.attachmentContentId)}"> defaultChecked</core_rt:if>"
                     />
                     <input type="checkbox"
                            name="<portlet:namespace/><%=PortalConstants.PROJECT_SELECTED_ATTACHMENT_USAGES_SHADOWS%>"
@@ -134,7 +127,7 @@
                            value="${releaseLink.id}_<%=UsageData._Fields.MANUALLY_SET.getFieldName()%>_${attachment.attachmentContentId}"
                            id="${releaseLink.id}_<%=UsageData._Fields.MANUALLY_SET.getFieldName()%>_${attachment.attachmentContentId}"
                            <core_rt:if test="${manualAttUsages.containsKey(attachment.attachmentContentId)}">checked="checked"</core_rt:if>
-                           class="trackChange<core_rt:if test="${manualAttUsages.containsKey(attachment.attachmentContentId)}"> defaultChecked</core_rt:if>" <core_rt:if test="${manualAttUsages.containsKey(attachment.attachmentContentId)}">checked="checked" class="defaultChecked"</core_rt:if>
+                           class="form-check-input trackChange<core_rt:if test="${manualAttUsages.containsKey(attachment.attachmentContentId)}"> defaultChecked</core_rt:if>" <core_rt:if test="${manualAttUsages.containsKey(attachment.attachmentContentId)}">checked="checked" class="defaultChecked"</core_rt:if>
                            <core_rt:if test="${!writeAccessUser}">disabled</core_rt:if>
                     />
                     <input type="checkbox"

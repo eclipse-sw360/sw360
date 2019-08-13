@@ -24,70 +24,83 @@
 <jsp:useBean id="moderationRequest" class="org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest" scope="request"/>
 <jsp:useBean id="actual_project" class="org.eclipse.sw360.datahandler.thrift.projects.Project" scope="request" />
 <jsp:useBean id="defaultLicenseInfoHeaderText" class="java.lang.String" scope="request" />
+
 <core_rt:set var="project" value="${actual_project}" scope="request"/>
 
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/themes/base/jquery-ui.min.css">
+<div class="container" id="moderation-request-merge" data-document-type="<%=DocumentType.PROJECT%>">
 
-<script src="<%=request.getContextPath()%>/webjars/jquery-validation/dist/jquery.validate.min.js" type="text/javascript"></script>
-<script src="<%=request.getContextPath()%>/webjars/jquery-validation/dist/additional-methods.min.js" type="text/javascript"></script>
-<script src="<%=request.getContextPath()%>/webjars/jquery-ui/jquery-ui.min.js"></script>
-<script type="text/javascript" src="<%=request.getContextPath()%>/js/main.js"></script>
-<%@include file="/html/moderation/includes/moderationActions.jspf"%>
+    <core_rt:set var="moderationTitle" value="Change ${sw360:printProjectName(project)}" scope="request" />
+    <%@include file="/html/moderation/includes/moderationHeader.jspf"%>
 
-<div id="header"></div>
-<p class="pageHeader"><span class="pageHeaderBigSpan">Moderation Change Project:  <sw360:ProjectName project="${project}"/></span>
-</p>
-<%@include file="/html/moderation/includes/moderationActionButtons.jspf"%>
-<%@include file="/html/moderation/includes/moderationInfo.jspf"%>
+    <div class="row">
+        <div class="col">
+            <div id="moderation-wizard" class="accordion">
+                <div class="card">
+                    <div id="moderation-header-heading" class="card-header">
+                        <h2 class="mb-0">
+                            <button class="btn btn-secondary btn-block" type="button" data-toggle="collapse" data-target="#moderation-header" aria-expanded="true" aria-controls="moderation-header">
+                                Moderation Request Information
+                            </button>
+                        </h2>
+                    </div>
+                    <div id="moderation-header" class="collapse show" aria-labelledby="moderation-header-heading" data-parent="#moderation-wizard">
+                        <div class="card-body">
+                            <%@include file="/html/moderation/includes/moderationInfo.jspf"%>
+                        </div>
+                    </div>
+                </div>
+                <core_rt:if test="${sw360:isOpenModerationRequest(moderationRequest)}">
+                    <div class="card">
+                        <div id="moderation-changes-heading" class="card-header">
+                            <h2 class="mb-0">
+                                <button class="btn btn-secondary btn-block" type="button" data-toggle="collapse" data-target="#moderation-changes" aria-expanded="false" aria-controls="moderation-changes">
+                                    Proposed Changes
+                                </button>
+                            </h2>
+                        </div>
+                        <div id="moderation-changes" class="collapse" aria-labelledby="moderation-changes-heading" data-parent="#moderation-wizard">
+                            <div class="card-body">
+                                <h4 class="mt-2">Basic fields</h4>
+                                <sw360:DisplayProjectChanges
+                                    actual="${actual_project}"
+                                    additions="${moderationRequest.projectAdditions}"
+                                    deletions="${moderationRequest.projectDeletions}"
+                                    idPrefix="basicFields"
+                                    tableClasses="table table-bordered"
+                                    defaultLicenseInfoHeaderText="${defaultLicenseInfoHeaderText}"
+                                />
 
-<h2>Proposed changes</h2>
-<h3>Basic fields</h3>
-<sw360:DisplayProjectChanges actual="${actual_project}" additions="${moderationRequest.projectAdditions}" deletions="${moderationRequest.projectDeletions}" idPrefix="basicFields" tableClasses="table info_table" defaultLicenseInfoHeaderText="${defaultLicenseInfoHeaderText}"/>
-
-<h3>Attachments</h3>
-<sw360:CompareAttachments actual="${actual_project.attachments}"
-                          additions="${moderationRequest.projectAdditions.attachments}"
-                          deletions="${moderationRequest.projectDeletions.attachments}"
-                          idPrefix="attachments"
-                          tableClasses="table info_table"
-                          contextType="${project.type}"
-                          contextId="${project.id}"/>
-
-<h2>Current Project</h2>
-<core_rt:set var="inProjectDetailsContext" value="false" scope="request"/>
-<%@include file="/html/utils/includes/requirejs.jspf" %>
-<%@include file="/html/projects/includes/detailOverview.jspf"%>
-
-<script>
-    require(['jquery', 'modules/tabview'], function($, tabview) {
-        tabview.create('myTab');
-    });
-
-    function getBaseURL(){
-        var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
-        var portletURL = Liferay.PortletURL.createURL(baseUrl)
-                .setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_ACTION%>')
-                .setParameter('<%=PortalConstants.MODERATION_ID%>', '${moderationRequest.id}')
-                .setParameter('<%=PortalConstants.DOCUMENT_TYPE%>', '<%=DocumentType.PROJECT%>');
-
-        return portletURL;
-    }
-
-    function deleteAttachment(id1, id2) {
-        alert("You can not delete individual attachments in the moderation, if you accept the request all attachments will be deleted.");
-    }
-
-    function deleteReleaseLink(rowId, linkedRelease){
-        alert("You can not delete individual release links in the moderation, if you accept the request all links (original releases will prevail) will be deleted.");
-    }
-
-    function deleteProjectLink(rowId, linkedProjectId){
-        alert("You can not delete individual project links in the moderation, if you accept the request all links (original projects will prevail) will be deleted.");
-    }
-
-    function openSelectClearingDialog(fieldId, releaseId) {
-        alert("You can not send to fossology from moderation");
-    }
-
-</script>
+                                <h4 class="mt-4">Attachments</h4>
+                                <sw360:CompareAttachments
+                                    actual="${actual_project.attachments}"
+                                    additions="${moderationRequest.projectAdditions.attachments}"
+                                    deletions="${moderationRequest.projectDeletions.attachments}"
+                                    idPrefix="attachments"
+                                    tableClasses="table table-bordered"
+                                    contextType="${project.type}"
+                                    contextId="${project.id}"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </core_rt:if>
+                <div class="card">
+                    <div id="current-document-heading" class="card-header">
+                        <h2 class="mb-0">
+                            <button class="btn btn-secondary btn-block" type="button" data-toggle="collapse" data-target="#current-document" aria-expanded="false" aria-controls="current-document">
+                                Current Project
+                            </button>
+                        </h2>
+                    </div>
+                    <div id="current-document" class="collapse" aria-labelledby="current-document-heading" data-parent="#moderation-wizard">
+                        <div class="card-body">
+                            <core_rt:set var="inProjectDetailsContext" value="false" scope="request"/>
+                            <%@include file="/html/utils/includes/requirejs.jspf" %>
+                            <%@include file="/html/projects/includes/detailOverview.jspf"%>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -36,6 +36,16 @@
  * THE SOFTWARE.
  */
 
+.spinner-with-text {
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+
+  .spinner-border {
+    margin-right: 0.75rem;
+  }
+}
+
 /*
  * CAN BE REMOVED AFTER UPDGRADE TO AT LEAST BOOTSTRAP 4.3
  */

@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -12,8 +12,6 @@
 <%@include file="/html/init.jsp" %>
 <portlet:defineObjects/>
 <liferay-theme:defineObjects/>
-<%-- Note that the necessary includes are in liferay-portlet.xml --%>
-<% assert ("moderationRequests".equals(PortalConstants.MODERATION_REQUESTS)); %>
 
 <jsp:useBean id="moderationRequests"
              type="java.util.List<org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest>"
@@ -23,94 +21,100 @@
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.DELETE_MODERATION_REQUEST%>'/>
 </portlet:resourceURL>
 
-<br>
-<br>
 
-<div class="homepageheading">
-    My Task Submissions
-</div>
-<div id="tasksubmissionDiv" class="homepageListingTable">
-    <table id="tasksubmissionTable" cellpadding="0" cellspacing="0" border="0" class="display">
-         <colgroup>
-               <col style="width: 60%;"/>
-               <col style="width: 40%;"/>
-               <col style="width: 80px;"/>
-         </colgroup>
-    </table>
+<h4>My Task Submissions</h4>
+<div class="row">
+    <div class="col">
+        <table id="tasksubmissionTable" class="table table-bordered table-lowspace">
+            <colgroup>
+                <col style="width: 60%;"/>
+                <col style="width: 40%;"/>
+                <col style="width: 1.7rem"/>
+            </colgroup>
+        </table>
+    </div>
 </div>
 
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.css">
-<script src="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.js" type="text/javascript"></script>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-require(['jquery', 'modules/confirm', 'datatables.net', 'jquery-confirm'], function($, confirm) {
-    var moderationRequestsTable;
+    require(['jquery', 'bridges/datatables', 'modules/dialog' ], function($, datatables, dialog) {
+        var $datatable;
 
-    Liferay.on('allPortletsReady', function() {
-        var result = [];
-
-        <core_rt:forEach items="${moderationRequests}" var="moderation">
-        result.push({
-            "DT_RowId": "${moderation.id}",
-            "0": "<sw360:DisplayModerationRequestLink moderationRequest="${moderation}"/>",
-            "1": "<sw360:DisplayEnum value="${moderation.moderationState}"/>",
-            "2": "<img class='delete' src='<%=request.getContextPath()%>/images/Trash.png' data-moderation-id='${moderation.id}' data-document-name='<b><sw360:out value="${moderation.documentName}"/></b>' alt='Delete' title='Delete'>"
+        $datatable = createTable();
+        $('#tasksubmissionTable').on('click', 'svg.delete', function(event) {
+            var data = $(event.currentTarget).data();
+            deleteModerationRequest(data.moderationId, data.documentName);
         });
-        </core_rt:forEach>
 
-        moderationRequestsTable = $('#tasksubmissionTable').DataTable({
-            pagingType: "simple_numbers",
-            dom: "rtip",
-            data: result,
-            pageLength: 10,
-            columns: [
-                {"title": "Document Name"},
-                {"title": "Status"},
-                {"title": "Actions"}
-            ],
-            autoWidth: false
-        });
-    });
+        function createTable() {
+            var result = [];
 
-    $('#tasksubmissionTable').on('click', 'img.delete', function(event) {
-        var data = $(event.currentTarget).data();
-        deleteModerationRequest(data.moderationId, data.documentName);
-    });
+            <core_rt:forEach items="${moderationRequests}" var="moderation">
+                result.push({
+                    "DT_RowId": "${moderation.id}",
+                    "0": "<sw360:DisplayModerationRequestLink moderationRequest="${moderation}"/>",
+                    "1": "<sw360:DisplayEnum value="${moderation.moderationState}"/>",
+                    "2": '<div class="actions"><svg class="delete lexicon-icon" data-moderation-id="${moderation.id}" data-document-name="${moderation.documentName}"><title>Delete</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/></svg></div>'
+                });
+            </core_rt:forEach>
 
-    function deleteModerationRequest(id, docName) {
-
-        function deleteModerationRequestInternal() {
-            jQuery.ajax({
-                type: 'POST',
-                url: '<%=deleteAjaxURL%>',
-                cache: false,
-                data: {
-                    <portlet:namespace/>moderationId: id
-                },
-                success: function (data) {
-                    if (data.result == 'SUCCESS') {
-                        moderationRequestsTable.row('#' + id).remove().draw(false);
-                    }
-                    else {
-                        $.alert("I could not delete the moderation request!");
-                    }
-                },
-                error: function () {
-                    $.alert("I could not delete the moderation request!");
+            return datatables.create('#tasksubmissionTable', {
+                data: result,
+                dom:
+                    "<'row'<'col-sm-12'tr>>" +
+                    "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+                columns: [
+                    {"title": "Document Name"},
+                    {"title": "Status"},
+                    {"title": "Actions", className: "one action", orderable: false}
+                ],
+                language: {
+                    emptyTable: 'You do not have any open moderation requests.'
                 }
             });
         }
-        confirm.confirmDeletion("Do you really want to delete the moderation request for " + docName + " ?", deleteModerationRequestInternal);
-    }
-});
 
-    window.addEventListener( "pageshow", function ( event ) {
-        var doNotRefresh = ((typeof window.performance != "undefined"
-                                && typeof window.performance.now !== 'undefined'
-	                            && window.performance.navigation.type !== 2 ));
-        if (!doNotRefresh) {
-            window.location.reload();
+        function deleteModerationRequest(id, docName) {
+            var $dialog;
+
+            function deleteModerationRequestInternal(callback) {
+                jQuery.ajax({
+                    type: 'POST',
+                    url: '<%=deleteAjaxURL%>',
+                    cache: false,
+                    data: {
+                        <portlet:namespace/>moderationId: id
+                    },
+                    success: function (data) {
+                        if (data.result == 'SUCCESS') {
+                            callback(true);
+                            moderationRequestsTable.row('#' + id).remove().draw(false);
+                        }
+                        else {
+                            callback();
+                            $dialog.alert("I could not delete the moderation request!");
+                        }
+                    },
+                    error: function () {
+                        callback();
+                        $dialog.alert("I could not delete the moderation request!");
+                    }
+                });
+            }
+
+            $dialog = dialog.confirm(
+                'danger',
+                'question-circle',
+                'Delete Moderation Request?',
+                '<p>Do you really want to delete the moderation request for <b data-name="name"></b>?</p>',
+                'Delete Moderation Request',
+                {
+                    name: docName,
+                },
+                function(submit, callback) {
+                    deleteModerationRequestInternal(callback);
+                }
+            );
         }
     });
-
 </script>

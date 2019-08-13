@@ -11,7 +11,6 @@
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 
 
-
 <%@ include file="/html/init.jsp" %>
 <%-- the following is needed by liferay to display error messages--%>
 <%@ include file="/html/utils/includes/errorKeyToMessage.jspf"%>
@@ -31,72 +30,75 @@
 <jsp:useBean id="isUserAtLeastClearingAdmin" class="java.lang.String" scope="request" />
 
 
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/themes/base/jquery-ui.min.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/datatables.net-buttons-bs/css/buttons.bootstrap.min.css"/>
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/dataTable_Siemens.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
+<div class="container" style="display: none;">
+	<div class="row">
+		<div class="col-3 sidebar">
+			<div class="card-deck">
+                <%@ include file="/html/utils/includes/quickfilter.jspf" %>
+            </div>
+            <div id="moderationTabs" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
+                <a class="list-group-item list-group-item-action active" href="#tab-Open" data-toggle="list" role="tab">Open</a>
+                <a class="list-group-item list-group-item-action" href="#tab-Closed" data-toggle="list" role="tab">Closed</a>
+            </div>
+		</div>
+		<div class="col">
+            <div class="row portlet-toolbar">
+				<div class="col-auto">
 
-<div id="header"></div>
-<p class="pageHeader">
-    <span class="pageHeaderBigSpan">Moderations</span> <span class="pageHeaderSmallSpan" title="Count of open/closed moderation requests">(${moderationRequests.size()}/${closedModerationRequests.size()})</span>
-</p>
+				</div>
+                <div class="col portlet-title text-truncate" title="Moderations (${moderationRequests.size()}/${closedModerationRequests.size()})">
+					Moderations (${moderationRequests.size()}/<span id="requestCounter">${closedModerationRequests.size()}</span>)
+				</div>
+            </div>
 
-<div id="content">
-    <div class="container-fluid">
-        <div id="myTab" class="row-fluid" <core_rt:if test="${not empty selectedTab}"> data-initial-tab="${selectedTab}" </core_rt:if>>
-            <ul class="nav nav-tabs span2">
-                <div id="searchInput">
-                    <%@ include file="/html/utils/includes/quickfilter.jspf" %>
-                </div>
-                <br/>
-                <li class="active"><a href="#tab-Open">Open</a></li>
-                <li><a href="#tab-Closed">Closed</a></li>
-            </ul>
-            <div class="tab-content span10">
-                <div id="tab-Open" class="tab-pane">
-                    <table id="moderationsTable" cellpadding="0" cellspacing="0" border="0" class="display" style="width:100%">
-                        <tfoot>
-                        <tr>
-                            <th colspan="8"></th>
-                        </tr>
-                        </tfoot>
-                    </table>
-                </div>
-                <div id="tab-Closed">
-                    <table id="closedModerationsTable" cellpadding="0" cellspacing="0" border="0" class="display" style="width:100%">
-                        <tfoot>
-                        <tr>
-                            <th colspan="8"></th>
-                        </tr>
-                        </tfoot>
-                    </table>
+            <div class="row">
+                <div class="col">
+                    <div class="tab-content">
+                        <div id="tab-Open" class="tab-pane active show">
+                            <table id="moderationsTable" class="table table-bordered aligned-top">
+                            <colgroup>
+                                <col />
+                                <col />
+                                <col style="width: 25%;" />
+                                <col style="width: 20%;" />
+                                <col style="width: 20%;" />
+                                <col style="width: 35%;" />
+                                <col />
+                                <col style="width: 1.7rem;" />
+                            </colgroup>
+                            </table>
+                        </div>
+                        <div id="tab-Closed" class="tab-pane">
+                            <table id="closedModerationsTable" class="table table-bordered"></table>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
+
+		</div>
+	</div>
 </div>
+<%@ include file="/html/utils/includes/pageSpinner.jspf" %>
+
+<div class="dialogs auto-dialogs"></div>
 
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-    require(['jquery', 'utils/includes/quickfilter', 'modules/confirm', 'modules/tabview', /* jquery-plugins: */ 'datatables.net', 'datatables.net-buttons', 'datatables.net-buttons.print'], function($, quickfilter, confirm, tabview) {
+    require(['jquery', 'bridges/datatables', 'modules/dialog', 'modules/listgroup', 'utils/includes/quickfilter'], function($, datatables, dialog, listgroup, quickfilter) {
         var moderationsDataTable,
             closedModerationsDataTable;
 
-        tabview.create('myTab');
+        listgroup.initialize('moderationTabs', 'tab-Open');
 
-        Liferay.on('allPortletsReady', function() {
-            moderationsDataTable = createModerationsTable("#moderationsTable", prepareModerationsData());
-            closedModerationsDataTable = createModerationsTable("#closedModerationsTable", prepareClosedModerationsData());
+        moderationsDataTable = createModerationsTable("#moderationsTable", prepareModerationsData());
+        closedModerationsDataTable = createModerationsTable("#closedModerationsTable", prepareClosedModerationsData());
 
-            quickfilter.addTable(moderationsDataTable);
-            quickfilter.addTable(closedModerationsDataTable);
+        quickfilter.addTable(moderationsDataTable);
+        quickfilter.addTable(closedModerationsDataTable);
 
-            $('.TogglerModeratorsList').on('click', toggleModeratorsList );
-        });
-
-        $('#closedModerationsTable').on('click', 'img.delete', function(event) {
+        $('.TogglerModeratorsList').on('click', toggleModeratorsList );
+        $('#closedModerationsTable').on('click', 'svg.delete', function(event) {
             var data = $(event.currentTarget).data();
             deleteModerationRequest(data.moderationRequest, data.documentName);
         });
@@ -109,112 +111,112 @@
             }
         });
 
-
-    function useSearch(searchFieldId) {
-        var searchText = $('#'+searchFieldId).val();
-        moderationsDataTable.search(searchText).draw();
-        closedModerationsDataTable.search(searchText).draw();
-    }
-
-    function prepareModerationsData() {
-        var result = [];
-        <core_rt:forEach items="${moderationRequests}" var="moderation">
-            result.push({
-                "DT_RowId": "${moderation.id}",
-                "0": '<sw360:out value="${moderation.timestamp}"/>',
-                "1": "<sw360:DisplayEnum value="${moderation.componentType}"/>",
-                "2": "<sw360:DisplayModerationRequestLink moderationRequest="${moderation}"/>",
-                "3": '<sw360:DisplayUserEmail email="${moderation.requestingUser}" bare="true"/>',
-                "4": '<sw360:out value="${moderation.requestingUserDepartment}"/>',
-                "5": '<sw360:DisplayUserEmailCollection value="${moderation.moderators}" bare="true"/>',
-                "6": "<sw360:DisplayEnum value="${moderation.moderationState}"/>",
-                "7": ''
-            });
-        </core_rt:forEach>
-        return result;
-    }
-
-    function prepareClosedModerationsData() {
-        var result = [];
-        <core_rt:forEach items="${closedModerationRequests}" var="moderation">
-            result.push({
-                "DT_RowId": "${moderation.id}",
-                "0": '<sw360:out value="${moderation.timestamp}"/>',
-                "1": "<sw360:DisplayEnum value="${moderation.componentType}"/>",
-                "2": "<sw360:DisplayModerationRequestLink moderationRequest="${moderation}"/>",
-                "3": '<sw360:DisplayUserEmail email="${moderation.requestingUser}" bare="true"/>',
-                "4": '<sw360:out value="${moderation.requestingUserDepartment}"/>',
-                "5": '<sw360:DisplayUserEmailCollection value="${moderation.moderators}" bare="true"/>',
-                "6": "<sw360:DisplayEnum value="${moderation.moderationState}"/>",
-                <core_rt:if test="${isUserAtLeastClearingAdmin == 'Yes'}">
-                "7": "<img class='delete' src='<%=request.getContextPath()%>/images/Trash.png' onclick=\"deleteModerationRequest('<sw360:out value="${moderation.id}"/>','<b><sw360:out value="${moderation.documentName}"/></b>')\"  alt='Delete' title='Delete'>"
-                </core_rt:if>
-                <core_rt:if test="${isUserAtLeastClearingAdmin != 'Yes'}">
-                "7": "READY"
-                </core_rt:if>
-
+        function prepareModerationsData() {
+            var result = [];
+            <core_rt:forEach items="${moderationRequests}" var="moderation">
+                result.push({
+                    "DT_RowId": "${moderation.id}",
+                    "0": '<sw360:out value="${moderation.timestamp}"/>',
+                    "1": "<sw360:DisplayEnum value="${moderation.componentType}"/>",
+                    "2": "<sw360:DisplayModerationRequestLink moderationRequest="${moderation}"/>",
+                    "3": '<sw360:DisplayUserEmail email="${moderation.requestingUser}" bare="true"/>',
+                    "4": '<sw360:out value="${moderation.requestingUserDepartment}"/>',
+                    "5": '<sw360:DisplayUserEmailCollection value="${moderation.moderators}" bare="true"/>',
+                    "6": "<sw360:DisplayEnum value="${moderation.moderationState}"/>",
+                    "7": ''
                 });
-        </core_rt:forEach>
-        return result;
-
-    }
-
-    function createModerationsTable(tableId, tableData) {
-        var tbl = $(tableId).DataTable({
-            pagingType: "simple_numbers",
-            dom: "lBrtip",
-            buttons: [
-                {
-                    extend: 'print',
-                    text: 'Print',
-                    autoPrint: true,
-                    className: 'custom-print-button',
-                    exportOptions: {
-                        columns: [0,1,2,3,4,5,6]
-                    }
-                }
-            ],
-            data: tableData,
-            autoWidth: false,
-            columns: [
-                {title: "Date", render: {display: renderTimeToReadableFormat}},
-                {title: "Type"},
-                {title: "Document Name"},
-                {title: "Requesting User"},
-                {title: "Department"},
-                {title: "Moderators", render: {display: renderModeratorsListExpandable}},
-                {title: "State"},
-                {title: "Actions"}
-            ]
-        });
-
-        return tbl;
-    }
-
-    function deleteModerationRequest(id, docName) {
-        function deleteModerationRequestInternal() {
-            jQuery.ajax({
-                type: 'POST',
-                url: '<%=deleteModerationRequestAjaxURL%>',
-                cache: false,
-                data: {
-                    <portlet:namespace/>moderationId: id
-                },
-                success: function (data) {
-                    if (data.result == 'SUCCESS') {
-                        closedModerationsDataTable.row('#' + id).remove().draw(false);
-                    }
-                    else {
-                        $.alert("I could not delete the moderation request!");
-                    }
-                },
-                error: function () {
-                    $.alert("I could not delete the moderation request!");
-                }
-            });
+            </core_rt:forEach>
+            return result;
         }
 
-            confirm.confirmDeletion("Do you really want to delete the moderation request for <b>" + docName + "</b> ?", deleteModerationRequestInternal);
+        function prepareClosedModerationsData() {
+            var result = [];
+            <core_rt:forEach items="${closedModerationRequests}" var="moderation">
+                result.push({
+                    "DT_RowId": "${moderation.id}",
+                    "0": '<sw360:out value="${moderation.timestamp}"/>',
+                    "1": "<sw360:DisplayEnum value="${moderation.componentType}"/>",
+                    "2": "<sw360:DisplayModerationRequestLink moderationRequest="${moderation}"/>",
+                    "3": '<sw360:DisplayUserEmail email="${moderation.requestingUser}" bare="true"/>',
+                    "4": '<sw360:out value="${moderation.requestingUserDepartment}"/>',
+                    "5": '<sw360:DisplayUserEmailCollection value="${moderation.moderators}" bare="true"/>',
+                    "6": "<sw360:DisplayEnum value="${moderation.moderationState}"/>",
+                    <core_rt:if test="${isUserAtLeastClearingAdmin == 'Yes'}">
+                        "7": '<div class="actions"><svg class="delete lexicon-icon" data-moderation-request="<sw360:out value="${moderation.id}"/>" data-document-name="${moderation.documentName}"><title>Delete</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/></svg></div>'
+                    </core_rt:if>
+                    <core_rt:if test="${isUserAtLeastClearingAdmin != 'Yes'}">
+                        "7": '<span class="badge badge-success">READY</span>'
+                    </core_rt:if>
+
+                    });
+            </core_rt:forEach>
+            return result;
+        }
+
+        function createModerationsTable(tableId, tableData) {
+            return datatables.create(tableId, {
+                searching: true,
+                data: tableData,
+                columns: [
+                    {title: "Date", render: {display: renderTimeToReadableFormat}, className: 'text-nowrap' },
+                    {title: "Type", className: 'text-nowrap'},
+                    {title: "Document Name"},
+                    {title: "Requesting User"},
+                    {title: "Department"},
+                    {title: "Moderators", render: {display: renderModeratorsListExpandable}},
+                    {title: "State", className: 'text-nowrap'},
+                    {title: "Actions", className: 'one action'}
+                ],
+                language: {
+                    emptyTable: "No moderation requests found."
+                },
+                initComplete: datatables.showPageContainer
+            }, [0,1,2,3,4,5,6], [7]);
+        }
+
+        function deleteModerationRequest(id, docName) {
+            var $dialog;
+
+            function deleteModerationRequestInternal(callback) {
+                jQuery.ajax({
+                    type: 'POST',
+                    url: '<%=deleteModerationRequestAjaxURL%>',
+                    cache: false,
+                    data: {
+                        <portlet:namespace/>moderationId: id
+                    },
+                    success: function (data) {
+                        callback();
+
+                        if (data.result == 'SUCCESS') {
+                            closedModerationsDataTable.row('#' + id).remove().draw(false);
+                            $('#requestCounter').text(parseInt($('#requestCounter').text()) - 1);
+                            $('#requestCounter').parent().attr('title', $('#requestCounter').parent().text());
+                            $dialog.close();
+                        } else {
+                            $dialog.alert("I could not delete the moderation request!");
+                        }
+                    },
+                    error: function () {
+                        callback();
+                        $dialog.alert("I could not delete the moderation request!");
+                    }
+                });
+            }
+
+            $dialog = dialog.confirm(
+                'danger',
+                'question-circle',
+                'Delete Moderation Request?',
+                '<p>Do you really want to delete the moderation request <b data-name="name"></b>?</p>',
+                'Delete Moderation Request',
+                {
+                    name: docName,
+                },
+                function(submit, callback) {
+                    deleteModerationRequestInternal(callback);
+                }
+            );
         }
     });
 
@@ -235,12 +237,31 @@
     }
 
     function renderModeratorsListExpandable(moderators) {
-        htmlString  = "<div>"
-        htmlString += "<div class=\"TogglerModeratorsList\" style=\"display: block; float: left\"><div class=\"Toggler_off\">&#x25BA</div><div class=\"Toggler_on\" style=\"display: none; float: left\">&#x25BC</div></div>";
-        htmlString += "<div class=\"ModeratorsListHidden\" style=\"display: block; float: left\">" + cutModeratorsList(moderators) + "</div>";
-        htmlString += "<div class=\"ModeratorsListShown\" style=\"display: none; float: left\">" + moderators + "</div>";
-        htmlString += "</div>";
-        return htmlString;
+        var $container = $('<div/>', {
+                style: 'display: flex;'
+            }),
+            $toggler = $('<div/>', {
+                'class': 'TogglerModeratorsList',
+                'style': 'margin-right: 0.25rem; cursor: pointer;'
+            }),
+            $togglerOn = $('<div/>', {
+                'class': 'Toggler_on'
+            }).html('&#x25BC'),
+            $togglerOff = $('<div/>', {
+                'class': 'Toggler_off'
+            }).html('&#x25BA'),
+            $collapsed = $('<div/>', {
+                'class': 'ModeratorsListHidden'
+            }).text(cutModeratorsList(moderators)),
+            $expanded = $('<div/>', {
+                'class': 'ModeratorsListShown'
+            }).html(moderators);
+
+        $togglerOn.hide();
+        $expanded.hide();
+        $toggler.append($togglerOff, $togglerOn);
+        $container.append($toggler, $collapsed, $expanded);
+        return $container[0].outerHTML;
     }
 
     function toggleModeratorsList() {

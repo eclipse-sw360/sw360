@@ -9,18 +9,36 @@
  * http://www.eclipse.org/legal/epl-v10.html
  */
 
+@import "portlets/admin/buttons";
+@import "portlets/admin/fossolgy/buttons";
+@import "portlets/admin/importexport/buttons";
+@import "portlets/components/merge";
 @import "portlets/homepage/signup";
 @import "portlets/homepage/welcome";
+@import "portlets/search/sidebar";
+
+// Must be outside the portlet class because jquery-ui attaches
+// tooltips directly under the body
+@import "components/tooltips";
 
 .sw360-portlet {
 
 	@import "bootstrap43/spinner";
+
+	@import "components/accordion";
+	@import "components/attachments";
+	@import "components/card";
 	@import "components/dialog";
 	@import "components/form";
+	@import "components/listgroup";
 	@import "components/table";
 	@import "components/toolbar";
-	@import "components/listgroup";
-	@import "components/tooltips";
+	@import "components/treetable";
+	@import "components/wizard";
+
+	@import "utils/align";
+	@import "utils/badges";
+	@import "utils/upload";
 
 	.form-group {
 		margin-bottom: 0.75rem;
@@ -48,10 +66,21 @@
 
 		text-align: right;
 		text-transform: uppercase;
+		white-space: nowrap;
 
 		&.left {
 			justify-content: flex-start;
 		}
+
+		&.column {
+			justify-content: space-around;
+			align-items: flex-end;
+			flex-direction: column;
+		}
+	}
+
+	.modal-footer > :not(:first-child) {
+		margin-left: 0.75rem;
 	}
 
 	.sidebar {
@@ -93,6 +122,10 @@
 		}
 	}
 
+	.dataTables_processing {
+		z-index: 10000;
+	}
+
 	.dt-bootstrap4 {
 		th {
 			height: auto;
@@ -115,9 +148,19 @@
 			align-items: center;
 		}
 
+		th.one-action, td.one.action {
+			max-width: 1.7rem;
+			width: 1.7rem !important;
+		}
+
 		th.two.actions, td.two.actions {
 			max-width: 3.4rem;
 			width: 3.4rem !important;
+		}
+
+		th.three.actions, td.three.actions {
+			max-width: 5.1rem;
+			width: 5.1rem !important;
 		}
 
 		th.four.actions, td.four.actions {
@@ -125,29 +168,9 @@
 			width: 6.8rem !important;
 		}
 
-		div.actions {
-			display: flex;
-			justify-content: space-evenly;
-			align-items: center;
-
-			flex-wrap: nowrap;
-			white-space: nowrap;
-
-			a, img, svg {
-				margin: 0 0.1rem;
-				width: 1.2rem;
-				height: 1.2rem;
-
-				cursor: pointer;
-			}
-
-			a:first-child, img:first-child, svg:first-child {
-				margin-left: 0;
-			}
-
-			a:last-child, img:last-child, svg:last-child {
-				margin-right: 0;
-			}
+		th.five.actions, td.five.actions {
+			max-width: 8.5rem;
+			width: 8.5rem !important;
 		}
 
 		div.dataTables_info {
@@ -164,6 +187,36 @@
 		}
 	}
 
+	table {
+		div.actions {
+			display: flex;
+			justify-content: space-evenly;
+			align-items: center;
+
+			flex-wrap: nowrap;
+			white-space: nowrap;
+
+			a, img, svg {
+				margin: 0 0.1rem;
+				width: 1.2rem;
+				height: 1.2rem;
+
+				cursor: pointer;
+			}
+
+			img {
+				margin-top: 0.2rem;
+			}
+
+			a:first-child, img:first-child, svg:first-child {
+				margin-left: 0;
+			}
+
+			a:last-child, img:last-child, svg:last-child {
+				margin-right: 0;
+			}
+		}
+	}
 
 	.stateBox {
 	    height: 25px;
@@ -186,5 +239,45 @@
 
 	.dialogs > div[role=dialog] {
 		display: none;
+	}
+
+	h4 {
+		border-bottom: 1px solid;
+	}
+
+	ul {
+		font-size: 0.875rem;
+	}
+
+	a img {
+		height: 1em;
+	}
+
+	.mt-default {
+		margin-top: 2rem;
+	}
+
+	.btn-toolbar {
+		section {
+			display: flex;
+		}
+	}
+
+	section {
+		width: 100%;
+	}
+
+	.actions svg.disabled {
+		cursor: not-allowed;
+		opacity: 0.5;
+	}
+
+	.type-icon {
+		width: 1.2rem;
+		height: 1.2rem;
+	}
+
+	.text-truncate {
+		display: block;
 	}
 }

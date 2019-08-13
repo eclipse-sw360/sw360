@@ -10,7 +10,7 @@
  */
 
 .stateBox {
-	color: white;
+	color: $statebox-bg;
 
 	&.clearingStateOpen {
 		background-color: rgba($red, 0.7);

@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017.
+ * Copyright Siemens AG, 2017, 2019.
  * Part of the SW360 Portal Project.
  *
  * All rights reserved. This program and the accompanying materials
@@ -31,8 +31,6 @@ public class DisplayStateBoxes extends SimpleTagSupport {
     }
 
     public String makeBoxes() {
-        // The hardcoded strings correspond to CSS classes defined in sw360.css
-
         // Add project state color to boxes if the project is active
         //   (default color is grey)
         String projectStateBackgroundColour = PortalConstants.PROJECT_STATE_INACTIVE__CSS;

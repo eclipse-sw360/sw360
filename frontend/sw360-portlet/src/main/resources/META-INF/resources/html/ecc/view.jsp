@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -14,14 +14,11 @@
 <%-- the following is needed by liferay to display error messages--%>
 <%@ include file="/html/utils/includes/errorKeyToMessage.jspf"%>
 
-
 <portlet:defineObjects/>
 <liferay-theme:defineObjects/>
 
-<jsp:useBean id="releaseList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.components.Release>"
-             scope="request"/>
+<jsp:useBean id="releaseList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.components.Release>" scope="request"/>
 
-<%--TODO--%>
 <portlet:resourceURL var="viewVendorURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.VIEW_VENDOR%>"/>
 </portlet:resourceURL>
@@ -30,50 +27,62 @@
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.RELEASE%>"/>
 </portlet:resourceURL>
 
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/datatables.net-buttons-bs/css/buttons.bootstrap.min.css"/>
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/dataTable_Siemens.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
 
-<div id="header"></div>
-<p class="pageHeader"><span class="pageHeaderBigSpan">ECC Overview</span>
-</p>
-<div id="searchInput" class="content1">
-    <%@ include file="/html/utils/includes/quickfilter.jspf" %>
-</div>
+<div class="container">
+	<div class="row">
+		<div class="col-3 sidebar">
+			<div class="card-deck">
+                <%@ include file="/html/utils/includes/quickfilter.jspf" %>
+            </div>
+		</div>
+		<div class="col">
+            <div class="row portlet-toolbar">
+				<div class="col portlet-title text-truncate" title="ECC Overview">
+					ECC Overview
+				</div>
+            </div>
 
-<div id="content" class="content2">
-    <table class="table info_table" id="eccInfoTable">
-        <thead>
-        <tr>
-            <th width="10%">Status</th>
-            <th width="20%">Release Name</th>
-            <th width="10%">Release version</th>
-            <th width="10%">Creator Group</th>
-            <th width="20%">ECC Assessor</th>
-            <th width="20%">ECC Assessor Group</th>
-            <th width="10%">ECC Assessment Date</th>
-        </tr>
-        </thead>
-        <core_rt:forEach items="${releaseList}" var="release">
-            <tr id="TableRow${release.id}">
-                <td width="10%">
-                <div id="eccStatusDiv"
-                        <core_rt:if test="${release.eccInformation.eccStatus.value == 0 || release.eccInformation.eccStatus.value == 3}"> class="notificationBulletSpan backgroundAlert" </core_rt:if> <%--ECCStatus.OPEN || ECCStatus.REJECTED--%>
-                        <core_rt:if test="${release.eccInformation.eccStatus.value == 1}"> class="notificationBulletSpan backgroundWarning" </core_rt:if> <%--ECCStatus.IN_PROGRESS--%>
-                        <core_rt:if test="${release.eccInformation.eccStatus.value == 2}"> class="notificationBulletSpan backgroundOK" </core_rt:if>> <%--ECCStatus.APPROVED--%>
-                    <core_rt:if test="${release.eccInformation.eccStatus.value == 3}">!</core_rt:if> <%--ECCStatus.REJECTED--%>
-                    <core_rt:if test="${release.eccInformation.eccStatus.value != 3}">&nbsp;</core_rt:if> <%--ECCStatus.REJECTED--%>
+            <div class="row">
+                <div class="col">
+			        <table id="eccInfoTable" class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Release Name</th>
+                                <th>Release version</th>
+                                <th>Creator Group</th>
+                                <th>ECC Assessor</th>
+                                <th>ECC Assessor Group</th>
+                                <th>ECC Assessment Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <core_rt:forEach items="${releaseList}" var="release">
+                                <tr id="TableRow${release.id}">
+                                    <td class="content-space-between">
+                                        <sw360:DisplayEnum value="${release.eccInformation.eccStatus}"/>
+                                        <span
+                                            <core_rt:if test="${release.eccInformation.eccStatus.value == 0 || release.eccInformation.eccStatus.value == 3}"> class="badge badge-empty badge-danger" </core_rt:if> <%--ECCStatus.OPEN || ECCStatus.REJECTED--%>
+                                            <core_rt:if test="${release.eccInformation.eccStatus.value == 1}"> class="badge badge-empty badge-warning" </core_rt:if> <%--ECCStatus.IN_PROGRESS--%>
+                                            <core_rt:if test="${release.eccInformation.eccStatus.value == 2}"> class="badge badge-empty badge-success" </core_rt:if>> <%--ECCStatus.APPROVED--%>
+                                            <core_rt:if test="${release.eccInformation.eccStatus.value == 3}">!</core_rt:if> <%--ECCStatus.REJECTED--%>
+                                            <core_rt:if test="${release.eccInformation.eccStatus.value != 3}">&nbsp;</core_rt:if> <%--ECCStatus.REJECTED--%>
+                                        </span>
+                                    </td>
+                                    <td><sw360:DisplayReleaseLink showName="true" release="${release}"/></td>
+                                    <td><sw360:out value="${release.version}"/></td>
+                                    <td><sw360:out value="${release.creatorDepartment}"/></td>
+                                    <td><sw360:DisplayUserEmail email="${release.eccInformation.assessorContactPerson}" bare="true"/></td>
+                                    <td><sw360:out value="${release.eccInformation.assessorDepartment}"/></td>
+                                    <td><sw360:out value="${release.eccInformation.assessmentDate}"/></td>
+                                </tr>
+                            </core_rt:forEach>
+                        </tbody>
+                    </table>
                 </div>
-                    <sw360:DisplayEnum value="${release.eccInformation.eccStatus}"/></td>
-                <td width="20%"><sw360:DisplayReleaseLink showName="true" release="${release}"/></td>
-                <td width="10%"><sw360:out value="${release.version}"/></td>
-                <td width="10%"><sw360:out value="${release.creatorDepartment}"/></td>
-                <td width="20%"><sw360:DisplayUserEmail email="${release.eccInformation.assessorContactPerson}" bare="true"/></td>
-                <td width="20%"><sw360:out value="${release.eccInformation.assessorDepartment}"/></td>
-                <td width="10%"><sw360:out value="${release.eccInformation.assessmentDate}"/></td>
-            </tr>
-        </core_rt:forEach>
-    </table>
+            </div>
+		</div>
+	</div>
 </div>
 
 <%--for javascript library loading --%>
@@ -82,17 +91,12 @@
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;
 
-        require(['jquery', 'utils/includes/quickfilter', /* jquery-plugins: */ 'datatables.net', 'datatables.net-buttons', 'datatables.net-buttons.print'], function($, quickfilter) {
+        require(['jquery', 'utils/includes/quickfilter', 'bridges/datatables'], function($, quickfilter, datatables) {
             var eccInfoTable;
 
             // initializing
-            load();
-
-            // helper functions
-            function load() {
-                eccInfoTable = configureEccInfoTable();
-                quickfilter.addTable(eccInfoTable);
-            }
+            eccInfoTable = configureEccInfoTable();
+            quickfilter.addTable(eccInfoTable);
 
             // catch ctrl+p and print dataTable
             $(document).on('keydown', function(e){
@@ -103,24 +107,9 @@
             });
 
             function configureEccInfoTable(){
-                var tbl;
-                tbl = $('#eccInfoTable').DataTable({
-                    "pagingType": "simple_numbers",
-                    "dom": "lBrtip",
-                    "buttons": [
-                        {
-                            extend: 'print',
-                            text: 'Print',
-                            autoPrint: true,
-                            className: 'custom-print-button'
-                        }
-                    ],
-                    "autoWidth": false,
-                    "order": [],
-                    "pageLength": 25
-                });
-
-                return tbl;
+                return datatables.create('#eccInfoTable', {
+                    searching: true
+                }, [0, 1, 2, 3, 4, 5, 6, 7]);
             }
         });
     });

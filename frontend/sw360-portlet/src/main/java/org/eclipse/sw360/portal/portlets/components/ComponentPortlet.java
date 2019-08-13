@@ -314,8 +314,10 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         JsonGenerator jsonGenerator = JSON_FACTORY.createGenerator(response.getWriter());
         jsonGenerator.writeStartObject();
 
-        // adding common title
+        // adding common title and description
         jsonGenerator.writeStringField("title",
+                "Duplicate Component Check");
+        jsonGenerator.writeStringField("description",
                 "To avoid duplicate components, check these similar ones! Does yours already exist?");
 
         // adding errors or empty array if none occured

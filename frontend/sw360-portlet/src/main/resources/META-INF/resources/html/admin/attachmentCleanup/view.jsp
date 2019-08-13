@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -19,52 +19,69 @@
 <portlet:resourceURL var="cleanUpURL" >
   <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CLEANUP%>'/>
 </portlet:resourceURL>
-<div id="header"></div>
-<p class="pageHeader"><span class="pageHeaderBigSpan">Attachment DB Administration</span> </p>
 
-<table class="info_table">
-  <thead>
-  <tr>
-    <th colspan="2"> Actions</th>
-  </tr>
-  </thead>
 
-  <tbody>
-  <tr>
-    <td>Clean up Attachments</td>
-    <td> <img src="<%=request.getContextPath()%>/images/Trash.png" alt="CleanUp" onclick="cleanUp()">
-    </td>
-  </tr>
-  </tbody>
-</table>
-<br/>
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <div class="row portlet-toolbar">
+                <div class="col-auto">
+                    <div class="btn-toolbar" role="toolbar">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-danger" data-action="cleanup">Clean up attachments</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col portlet-title text-truncate" title="Attachment Administration">
+                    Attachment Administration
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.css">
-<script src="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.js" type="text/javascript"></script>
+<div class="dialogs auto-dialogs"></div>
+
+<%--for javascript library loading --%>
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-  function cleanUp() {
-      function cleanUpInternal() {
-          jQuery.ajax({
-              type: 'POST',
-              url: '<%=cleanUpURL%>',
-              cache: false,
-              data: "",
-              success: function (data) {
-                  if(data.result == 'SUCCESS')
-                      $.alert("I deleted " + data.totalAffectedObjects + " of " + data.totalObjects + " total Attachments in the DB.");
-                  else {
-                      $.alert("I could not cleanup the attachments!");
-                  }
-              },
-              error: function () {
-                  $.alert("I could not cleanup the attachments!");
-              }
-          });
-      }
+    require(['jquery', 'modules/dialog' ], function($, dialog) {
+        $('.portlet-toolbar button[data-action="cleanup"]').on("click", function() {
+            var $dialog;
 
-      deleteConfirmed("Do you really want to clean up the attachment db?", cleanUpInternal);
-  }
+            function cleanUpInternal(callback) {
+                jQuery.ajax({
+                    type: 'POST',
+                    url: '<%=cleanUpURL%>',
+                    cache: false,
+                    data: "",
+                    success: function (data) {
+                        callback();
+
+                        if(data.result == 'SUCCESS')
+                            $dialog.success("I deleted " + data.totalAffectedObjects + " out of " + data.totalObjects + " attachments in the database.", true);
+                        else {
+                            $dialog.alert("I could not cleanup the attachments!");
+                        }
+                    },
+                    error: function () {
+                        callback();
+                        $dialog.alert("I could not cleanup the attachments!");
+                    }
+                });
+            }
+
+            $dialog = dialog.confirm(
+                'danger',
+                'question-circle',
+                'Cleanup Attachment Database?',
+                '<p>Do you really want to clean up the attachment database?</p>',
+                'Clean up',
+                {},
+                function(submit, callback) {
+                    cleanUpInternal(callback);
+                }
+            );
+        });
+    });
 </script>
-
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/dataTable_Siemens.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">

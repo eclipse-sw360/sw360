@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -24,58 +24,7 @@
 <portlet:resourceURL var="getPubkeyURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.FOSSOLOGY_GET_PUBKEY%>"/>
 </portlet:resourceURL>
-
-<core_rt:set var="fossologyEnabled" value="<%=FossologyConnectionHelper.getInstance().isFossologyConnectionEnabled()%>"/>
-<core_rt:choose>
-	<core_rt:when test="${fossologyEnabled}">
-	    <core_rt:set var="currentConnStatus" value="SUCCESS" />
-	</core_rt:when>
-	<core_rt:otherwise>
-		<core_rt:set var="currentConnStatus" value="FAILURE" />
-	</core_rt:otherwise>
-</core_rt:choose>
-
-<div id="header"></div>
-<p class="pageHeader"><span class="pageHeaderBigSpan">Fossology Connection Administration</span> </p>
-<h4 class = "headerMarginTop"><u>Public Key</u></h4>
-<div><input type="button" class="addButton" onclick="window.location.href='<%=getPubkeyURL%>'" value="Download Public Key"></div>
-<h4 class = "headerMarginTop"><u>Fossology Connection</u></h4>
-<h5>Fossology Connection Status: <span id = "checkResult">${currentConnStatus}</span></h5>
-<div><button class="addButton" onclick="checkConnection('checkResult')">Check connectivity To Fossology Server</button></div>
-
 <portlet:actionURL var="setFingerPrintsURL" name="setFingerPrints"/>
-<h4 class="headerMarginTop"><u>Fossology Fingerprint</u></h4>
-<div>
-<jsp:useBean id="fingerPrints"
-             type="java.util.List<org.eclipse.sw360.datahandler.thrift.fossology.FossologyHostFingerPrint>"
-             scope="request"/>
-<form id="FingerPrintForm" action="<%=setFingerPrintsURL%>" method="post">
-
-    <core_rt:if test="${fingerPrints.size()>0}">
-        <h5 class="headerMarginButtom"><span>Known FingerPrints</span></h5>
-
-        <core_rt:forEach items="${fingerPrints}" var="fingerPrint" varStatus="loop">
-            <label for="FingerPrint${loop.count}">${fingerPrint.fingerPrint}</label>
-            <input type="checkbox" id="FingerPrint${loop.count}"
-                   <core_rt:if test="${fingerPrint.trusted}">checked="" </core_rt:if>
-                   value="on"
-                   name="<portlet:namespace/>${fingerPrint.fingerPrint}"> <br>
-        </core_rt:forEach>
-        <input type="submit" value="Accept fingerprints" class="addButton">
-    </core_rt:if>
-
-    <core_rt:if test="${fingerPrints.size()<1}">
-        <h5 class="headerMarginButtom">No fossology finger print in the system</h5>
-    </core_rt:if>
-</form>
-</div>
-
-<h4 class="headerMarginTop"><u>Deploy Scripts to Fossology Server</u></h4>
-<div>
-<button class="addButton" onclick="deployScripts('deployResult')">Deploy Scripts To Fossology Server</button>
-<span id="deployResult"></span>
-</div>
-
 <portlet:resourceURL var="checkConnectionURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.FOSSOLOGY_CHECK_CONNECTION%>"/>
 </portlet:resourceURL>
@@ -83,29 +32,120 @@
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.FOSSOLOGY_DEPLOY_SCRIPTS%>"/>
 </portlet:resourceURL>
 
+<jsp:useBean id="fingerPrints"
+             type="java.util.List<org.eclipse.sw360.datahandler.thrift.fossology.FossologyHostFingerPrint>"
+             scope="request"/>
 
+<core_rt:set var="fossologyEnabled" value="<%=FossologyConnectionHelper.getInstance().isFossologyConnectionEnabled()%>"/>
+<core_rt:choose>
+	<core_rt:when test="${fossologyEnabled}">
+	    <core_rt:set var="currentConnStatus" value="SUCCESS" />
+        <core_rt:set var="currentConnStatusBadge" value="badge-success" />
+	</core_rt:when>
+	<core_rt:otherwise>
+		<core_rt:set var="currentConnStatus" value="FAILURE" />
+        <core_rt:set var="currentConnStatusBadge" value="badge-danger" />
+	</core_rt:otherwise>
+</core_rt:choose>
+
+<div class="container">
+	<div class="row">
+		<div class="col">
+            <div class="row portlet-toolbar">
+				<div class="col-auto">
+					<div class="btn-toolbar" role="toolbar">
+						<div class="btn-group" role="group">
+							<button type="button" class="btn btn-primary" onclick="window.location.href='<%=getPubkeyURL%>'">Download Publickey</button>
+						</div>
+					</div>
+				</div>
+                <div class="col portlet-title text-truncate" title="Fossology Connection Administration">
+					Fossology Connection Administration
+				</div>
+            </div>
+            <div class="row mb-2">
+                <div class="col">
+			        <button type="button" class="btn btn-secondary btn-sm text-left" data-action="check-connectivity">Check connectivity to Fossology server</button>
+                    <span id="checkResult" class="badge ${currentConnStatusBadge} ml-3">${currentConnStatus}</span>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <button type="button" class="btn btn-secondary btn-sm text-left" data-action="deploy-scripts">Deploy Scripts To Fossology Server</button>
+                    <span id="deployResult" class="badge badge-light ml-3">Unknown</span>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <h4 class="mt-4">Fingerprints</h4>
+                    <form id="FingerPrintForm" action="<%=setFingerPrintsURL%>" method="post" class="form">
+                        <core_rt:if test="${fingerPrints.size() > 0}">
+                            <core_rt:forEach items="${fingerPrints}" var="fingerPrint" varStatus="loop">
+                                <div class="form-check">
+                                    <input type="checkbox" id="FingerPrint${loop.count}" class="form-check-input"
+                                        <core_rt:if test="${fingerPrint.trusted}">checked="" </core_rt:if>
+                                        value="on"
+                                        name="<portlet:namespace/>${fingerPrint.fingerPrint}">
+                                    <label for="FingerPrint${loop.count}" class="form-check-label">${fingerPrint.fingerPrint}</label>
+                                </div>
+                            </core_rt:forEach>
+                            <button type="submit" class="btn btn-secondary">Accept fingerprints</button>
+                        </core_rt:if>
+                        <core_rt:if test="${fingerPrints.size() < 1}">
+                            <div class="alert alert-info">No fossology finger print in the system</div>
+                        </core_rt:if>
+                    </form>
+                </div>
+            </div>
+		</div>
+	</div>
+</div>
+
+<%--for javascript library loading --%>
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-
-    function doAjax(url, $resultElement) {
-        $resultElement.text("...");
-        $.ajax({
-            type: 'POST',
-            url: url,
-            success: function (data) {
-                $resultElement.text(data.result);
-            },
-            error: function () {
-                $resultElement.text("error");
-            }
+    require(['jquery' ], function($) {
+        $('button[data-action="check-connectivity"]').on('click', function() {
+            checkConnection('checkResult');
         });
-    }
 
-    function checkConnection(id) {
-        doAjax('<%=checkConnectionURL%>', $('#' + id));
-    }
+        $('button[data-action="deploy-scripts"]').on('click', function() {
+            deployScripts('deployResult');
+        });
 
-    function deployScripts(id) {
-        doAjax('<%=deployScriptsURL%>', $('#' + id));
-    }
+        function doAjax(url, $resultElement) {
+            $resultElement.addClass('badge-light');
+            $resultElement.removeClass('badge-danger');
+            $resultElement.removeClass('badge-success');
+            $resultElement.text("...");
 
+            $.ajax({
+                type: 'POST',
+                url: url,
+                success: function (data) {
+                    $resultElement.removeClass('badge-light');
+                    if(data.result === 'FAILURE') {
+                        $resultElement.addClass('badge-danger');
+                    } else {
+                        $resultElement.addClass('badge-success');
+                    }
+
+                    $resultElement.text(data.result);
+                },
+                error: function () {
+                    $resultElement.removeClass('badge-light');
+                    $resultElement.addClass('badge-danger');
+                    $resultElement.text("Error");
+                }
+            });
+        }
+
+        function checkConnection(id) {
+            doAjax('<%=checkConnectionURL%>', $('#' + id));
+        }
+
+        function deployScripts(id) {
+            doAjax('<%=deployScriptsURL%>', $('#' + id));
+        }
+    });
 </script>

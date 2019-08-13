@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -53,8 +53,10 @@ public class DisplayLicensesEdit extends NameSpaceAwareTag {
     }
 
     private void printHtmlElements(StringBuilder display, String licenseIdsStr) {
-        display.append(String.format("<label class=\"textlabel stackedLabel\" for=\"%sDisplay\">Licenses</label>", id))
+        display.append("<div class=\"form-group\">");
+        display.append(String.format("<label for=\"%sDisplay\">Licenses</label>", id))
                 .append(String.format("<input type=\"hidden\" readonly=\"\" value=\"%s\" id=\"%s\" name=\"%s%s\"/>", licenseIdsStr, id, namespace, id))
-                .append(String.format("<input class=\"clickable licenseSearchDialogInteractive\" data-id=\"%s\" type=\"text\" readonly=\"\" placeholder=\"Click to set Licenses\" value=\"%s\" id=\"%sDisplay\" />", id, licenseIdsStr, id));
+                .append(String.format("<input class=\"clickable licenseSearchDialogInteractive form-control\" data-id=\"%s\" type=\"text\" readonly=\"\" placeholder=\"Click to set Licenses\" value=\"%s\" id=\"%sDisplay\" />", id, licenseIdsStr, id));
+        display.append("</div>");
     }
 }

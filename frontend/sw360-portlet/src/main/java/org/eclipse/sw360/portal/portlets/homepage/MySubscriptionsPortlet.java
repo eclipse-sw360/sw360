@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -38,9 +38,6 @@ import static org.apache.log4j.Logger.getLogger;
         "/org/eclipse/sw360/portal/portlets/user.properties"
     },
     property = {
-        "com.liferay.portlet.header-portlet-javascript=/webjars/jquery-ui/jquery-ui.min.js",
-        "com.liferay.portlet.header-portlet-javascript=/webjars/datatables.net/js/jquery.dataTables.min.js",
-
         "javax.portlet.name=" + PortalConstants.MY_SUBSCRIPTIONS_PORTLET_NAME,
 
         "javax.portlet.display-name=My Subscriptions",

@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017.
+ * Copyright Siemens AG, 2017, 2019.
  * Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -35,7 +35,7 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
     // public
 
     mergeWizard.createCategoryLine = function createCategoryLine(name) {
-        return '<div class="category">' + name + '</div>';
+        return '<h4 class="mt-4">' + name + '</h4>';
     };
 
     mergeWizard.createSingleMergeLine = function createSingleMergeLine(propName, target, source, detailFormatter) {
@@ -46,7 +46,7 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         detailFormatter = detailFormatter || function(element) { return element; };
 
         line = $.parseHTML('<fieldset id="' + propName.replace(/ /g, '') + '" class="merge line">' +
-                           '    <div class="merge single header">' + propName + '</div>' +
+                           '    <h5>' + propName + '</h5>' +
                            '</fieldset>');
 
         return $(line).append(createSingleMergeContent(target, source, 0, detailFormatter));
@@ -62,7 +62,7 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         detailFormatter = detailFormatter || function(element) { return element; };
 
         result = $($.parseHTML('<fieldset id="' + propName.replace(/ /g, '') + '" class="merge line">' +
-                               '    <div class="merge multi header">' + propName + '</div>' +
+                               '    <h5>' + propName + '</h5>' +
                                '</fieldset>'));
 
         $.each(target, function(index, value) {
@@ -127,7 +127,7 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         detailFormatter = detailFormatter || function(element) { return element; };
 
         result = $($.parseHTML('<fieldset id="' + propName.replace(/ /g, '') + '" class="merge line">' +
-                               '    <div class="merge multi header">' + propName + '</div>' +
+                               '    <h5>' + propName + '</h5>' +
                                '</fieldset>'));
 
         $.each(target, function(key, value) {
@@ -159,15 +159,15 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
             mid,
             right;
 
-        row =   $.parseHTML('        <div class="mergeRow"></div>');
+        row =   $.parseHTML('        <div class="row"></div>');
 
-        left =  $.parseHTML('        <div class="merge single left" data-row-index="' + rowIndex + '">' +
+        left =  $.parseHTML('        <div class="merge single left col-5" data-row-index="' + rowIndex + '">' +
                             '            <span>' + detailFormatter(target) + '</span>' +
                             '        </div>');
-        mid =   $.parseHTML('        <div class="merge single mid" data-row-index="' + rowIndex + '">' +
-                            (target === source ? '            <span>&#10003;</span>' : '            <input type="button" value="&#8656;" />') +
+        mid =   $.parseHTML('        <div class="merge single mid col-2" data-row-index="' + rowIndex + '">' +
+                            (target === source ? '            <span class="text-success">&#10003;</span>' : '            <input class="btn btn-secondary" type="button" value="&#8656;" />') +
                             '        </div>');
-        right = $.parseHTML('        <div class="merge single right" data-row-index="' + rowIndex + '">' +
+        right = $.parseHTML('        <div class="merge single right col-5" data-row-index="' + rowIndex + '">' +
                             '            <span>' + detailFormatter(source) + '</span>' +
                             '        </div>');
 
@@ -190,7 +190,7 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         detailFormatter = detailFormatter || function(element) { return element; };
 
         line = $.parseHTML('<fieldset id="' + propName.replace(/ /g, '') + '" class="display line">' +
-                           '    <div class="display single header">' + propName + '</div>' +
+                           '    <h5>' + propName + '</h5>' +
                            '</fieldset>');
 
         return $(line).append(createSingleDisplayContent(value, detailFormatter));
@@ -203,7 +203,7 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         detailFormatter = detailFormatter || function(element) { return element; };
 
         result = $($.parseHTML('<fieldset id="' + propName.replace(/ /g, '') + '" class="display line">' +
-                               '    <div class="display multi header">' + propName + '</div>' +
+                               '    <h5>' + propName + '</h5>' +
                                '</fieldset>'));
 
         $.each(values, function(index, value) {
@@ -237,7 +237,7 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         detailFormatter = detailFormatter || function(element) { return element; };
 
         result = $($.parseHTML('<fieldset id="' + propName.replace(/ /g, '') + '" class="display line">' +
-                               '    <div class="display multi header">' + propName + '</div>' +
+                               '    <h5>' + propName + '</h5>' +
                                '</fieldset>'));
 
         $.each(values, function(key, value) {
@@ -302,7 +302,7 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
             targetNode = $('.left[data-row-index="' + rowIndex + '"] span', $fieldset),
             target = targetNode.text();
 
-        $fieldset.css('background-color', 'orange');
+        $fieldset.addClass('modified');
 
         /* https://stackoverflow.com/questions/11591174/escaping-of-attribute-values-using-jquery-attr ... */
         buttonNode.val($('<div/>').html('&#8631;').text());
@@ -320,7 +320,7 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
             targetNode = $('.left[data-row-index="' + rowIndex + '"] span', $fieldset),
             target = targetNode.parent().attr('title');
 
-        $fieldset.css('background-color', 'white');
+        $fieldset.removeClass('modified');
 
         /* https://stackoverflow.com/questions/11591174/escaping-of-attribute-values-using-jquery-attr ... */
         buttonNode.val($('<div/>').html('&#8656;').text());

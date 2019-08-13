@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -29,68 +29,215 @@
 
 <core_rt:set var="FOSSOLOGY_CONNECTION_ENABLED" value="<%=FossologyConnectionHelper.getInstance().isFossologyConnectionEnabled()%>"/>
 <core_rt:if test="${component.releasesSize == 0 }">
-    <h1>Please add release to view their clearing status here.</h1>
+    <div class="alert alert-info">
+        Please add release to view their clearing status here.
+    </div>
 </core_rt:if>
 <core_rt:if test="${component.releasesSize > 0 }">
-    <div id="releasesTableDiv">
-        <table id="releasesTable" cellpadding="0" cellspacing="0" border="0" class="display">
-            <tfoot>
-            <tr>
-                <th colspan="6"></th>
-            </tr>
-            </tfoot>
-        </table>
-    </div>
+    <table id="releasesTable" class="table table-bordered" data-details-context="${inComponentDetailsContext}"></table>
 </core_rt:if>
 
 <%@include file="/html/utils/includes/fossologyClearing.jspf"%>
 <%@include file="/html/components/includes/releases/linkProject.jspf"%>
 
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/datatables.net-buttons-bs/css/buttons.bootstrap.min.css"/>
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/themes/base/jquery-ui.min.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/dataTable_Siemens.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
-
+<%--for javascript library loading --%>
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-    var sendingToFossology;
-    <core_rt:choose>
-        <core_rt:when test="${not empty FOSSOLOGY_CONNECTION_ENABLED and not FOSSOLOGY_CONNECTION_ENABLED}">
-            sendingToFossology = "<img src='<%=request.getContextPath()%>/images/fossology-logo-grey.gif' title='Fossology is not configured'/>";
-        </core_rt:when>
-        <core_rt:otherwise>
-            sendingToFossology = "<img class='action send-to-fossology' src='<%=request.getContextPath()%>/images/fossology-logo-24.gif' " +
-                               " data-release-id='${release.id}' alt='SelectClearing' " +
-                               " title='send to Fossology'>";
-        </core_rt:otherwise>
-    </core_rt:choose>
-    var releaseData =
-    [<core_rt:forEach items="${component.releases}" var="release">
-        {
-        "DT_RowId": "${release.id}",
-        "0": "<sw360:out value="${release.name}"/>",
-        "1": "<a href='<portlet:renderURL ><portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="${component.id}"/><portlet:param name="<%=PortalConstants.RELEASE_ID%>" value="${release.id}"/><portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_RELEASE_DETAIL%>"/></portlet:renderURL>' target='_self'><sw360:out value="${release.version}"/></a>",
-        "2": "<span id='clearingState${release.id}'><sw360:DisplayEnum value="${release.clearingState}"/></span>",
-        "3": "<sw360:DisplayDownloadReport attachments="${release.attachments}" filterAttachmentType="<%=AttachmentType.CLEARING_REPORT%>" var="attachment"><sw360:DisplayDownloadApprovedClearingReport attachment="${attachment}" contextType="${release.type}" contextId="${release.id}" /></sw360:DisplayDownloadReport>",
-        "4": "<span id='mainlineState${release.id}'><sw360:DisplayEnum value="${release.mainlineState}"/></span>",
-        <core_rt:if test="${inComponentDetailsContext}">
-        "5": "<span id='fossologySending${release.id}'></span>"
-        + "<span id='releaseAction${release.id}'>"
-        + sendingToFossology
-        + "<sw360:DisplayReleaseLink release="${release}" showName="false" page="<%=PortletReleasePage.EDIT%>"><img src='<%=request.getContextPath()%>/images/edit.png' class='action' alt='Edit' title='Edit'></sw360:DisplayReleaseLink>"
-        + "<sw360:DisplayReleaseLink release="${release}" showName="false" page="<%=PortletReleasePage.DUPLICATE%>"><img src='<%=request.getContextPath()%>/images/ic_clone.png' class='action' alt='Duplicate' title='Duplicate'></sw360:DisplayReleaseLink>"
-        + "<img class='action link-release' src='<%=request.getContextPath()%>/images/link.png' data-release-id='${release.id}' data-release-name='<sw360:ReleaseName release="${release}" />' alt='Link to Project' title='Link to Project'>"
-        + "<img class='action delete-release' src='<%=request.getContextPath()%>/images/Trash.png' data-release-id='${release.id}' data-release-name='<sw360:ReleaseName release="${release}" />' data-linked-releases='${release.releaseIdToRelationshipSize}' data-attachments='${release.attachmentsSize}' alt='Delete' title='Delete'>"
-        + "</span>"
-        </core_rt:if>
-        <core_rt:if test="${!inComponentDetailsContext}">
-        "5": "NONE"
-        </core_rt:if>
-        },
-    </core_rt:forEach>];
-    var renderCallback = function () {
-    };
+require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProject', 'modules/dialog', 'utils/includes/fossologyClearing', 'utils/render'], function ($, datatables, linkProject, dialog, fossology, render) {
+    var releaseTable,
+        homeUrl = themeDisplay.getURLHome().replace(/\/web\//, '/group/');
+
+    releaseTable = createClearingTable();
+    fossology.initialize();
+    linkProject.initialize();
+
+    $('#releasesTable').delegate('.actions .clearing', 'click', function(event) {
+        var data = $(event.currentTarget).data();
+        fossology.openSelectClearingDialog('clearingState', data.releaseId);
+    });
+    $('#releasesTable').delegate('.actions .link', 'click', function(event) {
+        var data = $(event.currentTarget).data();
+        linkProject.openLinkDialog(data.releaseId, data.releaseName);
+    });
+    $('#releasesTable').delegate('.actions .delete', 'click', function(event) {
+        var data = $(event.currentTarget).data();
+        deleteRelease(data.releaseId, data.releaseName, data.linkedReleases, data.attachments);
+    });
+
+    function createClearingTable() {
+        var table,
+            result = [];
+
+        <core_rt:forEach items="${component.releases}" var="release">
+            result.push({
+                "DT_RowId": "${release.id}",
+                "0": "<sw360:out value="${release.name}"/>",
+                "1": "<a href='<portlet:renderURL ><portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="${component.id}"/><portlet:param name="<%=PortalConstants.RELEASE_ID%>" value="${release.id}"/><portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_RELEASE_DETAIL%>"/></portlet:renderURL>' target='_self'><sw360:out value="${release.version}"/></a>",
+                "2": "<span id='clearingState${release.id}'><sw360:DisplayEnum value="${release.clearingState}"/></span>",
+                "3": "<sw360:DisplayDownloadReport attachments="${release.attachments}" filterAttachmentType="<%=AttachmentType.CLEARING_REPORT%>" var="attachment"><sw360:DisplayDownloadApprovedClearingReport attachment="${attachment}" contextType="${release.type}" contextId="${release.id}" /></sw360:DisplayDownloadReport>",
+                "4": "<span id='mainlineState${release.id}'><sw360:DisplayEnum value="${release.mainlineState}"/></span>",
+                "5": {
+                    name: '<sw360:ReleaseName release="${release}" />',
+                    linkedReleases: ${release.releaseIdToRelationshipSize},
+                    attachments: ${release.attachmentsSize}
+                }
+            });
+        </core_rt:forEach>
+
+        table = datatables.create('#releasesTable', {
+            data: result,
+            columns: [
+                {title: "Name"},
+                {title: "Version"},
+                {title: "Clearing State"},
+                {title: "Clearing Report"},
+                {title: "Release Mainline State"},
+                {title: "Actions", render: {display: renderActions}, className: "five actions", orderable: false }
+            ],
+            columnDefs: [
+                {
+                    targets: [1],
+                    type: 'natural-nohtml'
+                },
+                {
+                    targets: [5],
+                    visible: $('#releasesTable').data() ? $('#releasesTable').data().detailsContext : false
+                }
+            ],
+            order: [1, 'desc']
+        });
+
+        function renderActions(id, type, row) {
+            if(!row[5]) {
+                return '';
+            }
+
+            var $actions = $('<div>', {
+                    'class': 'actions'
+                }),
+                <core_rt:choose>
+                    <core_rt:when test="${not empty FOSSOLOGY_CONNECTION_ENABLED and not FOSSOLOGY_CONNECTION_ENABLED}">
+                        $clearingAction = $('<svg>', {
+                            'class': 'disabled lexicon-icon',
+                            'data-project-id': id,
+                        }).append('<title>Fossology is not configured</title>'),
+                    </core_rt:when>
+                    <core_rt:otherwise>
+                        $clearingAction = $('<svg>', {
+                            'class': 'clearing lexicon-icon',
+                            'data-project-id': id,
+                        }).append('<title>Send to Fossology</title>'),
+                    </core_rt:otherwise>
+                </core_rt:choose>
+                $editAction = render.linkTo(
+                    makeReleaseUrl(row.DT_RowId, 'edit'),
+                    "",
+                    '<svg class="lexicon-icon"><title>Edit</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>'
+                ),
+                $copyAction = render.linkTo(
+                    makeReleaseUrl(row.DT_RowId, 'duplicate'),
+                    "",
+                    '<svg class="lexicon-icon"><title>Duplicate</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#paste"/></svg>'
+                ),
+                $linkAction = $('<svg>', {
+                    'class': 'link lexicon-icon',
+                    'data-release-id': row.DT_RowId,
+                    'data-release-name': row[5].name
+                }),
+                $deleteAction = $('<svg>', {
+                    'class': 'delete lexicon-icon',
+                    'data-release-id': row.DT_RowId,
+                    'data-release-name': row[5].name,
+                    'data-linked-releases': row[5].linkedReleases,
+                    'data-attachments': row[5].attachments
+                });
+
+            $clearingAction.append($('<use href="<%=request.getContextPath()%>/images/icons.svg#fossology"/>'));
+            $linkAction.append($('<title>Link Project</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#link"/>'));
+            $deleteAction.append($('<title>Delete</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
+
+            $actions.append($clearingAction, $editAction, $copyAction, $linkAction, $deleteAction);
+            return $actions[0].outerHTML;
+        }
+
+        return table;
+    }
+
+    function deleteRelease(id, name, linkedReleasesSize, attachmentsSize) {
+        var $dialog;
+
+        function deleteReleaseInternal(callback) {
+            $.ajax({
+                type: 'POST',
+                url: '<%=deleteReleaseAjaxURL%>',
+                cache: false,
+                data: {
+                    <portlet:namespace/>releaseId: id,
+                    <portlet:namespace/><%=PortalConstants.MODERATION_REQUEST_COMMENT%>: btoa($("#moderationDeleteCommentField").val())
+                },
+                success: function(data) {
+                    callback();
+                    if (data.result == 'SUCCESS') {
+                        releaseTable.row('#' + id).remove().draw(false);
+                        $dialog.close();
+                    }
+                    else if (data.result == 'SENT_TO_MODERATOR') {
+                        $dialog.info("You may not delete the release, but a request was sent to a moderator!");
+                    } else if (data.result == 'IN_USE') {
+                        $dialog.warning("I could not delete the release, since it is used by another component (release) or project");
+                    } else {
+                        $dialog.alert("I could not delete the release!");
+                    }
+                },
+                error: function() {
+                    callback();
+                    $dialog.alert("I could not delete the release!");
+                }
+            });
+        }
+
+        $dialog = dialog.confirm(
+            'danger',
+            'question-circle',
+            'Delete Release?',
+                '<p>Do you really want to delete the release <b data-name="name"></b>?</p>' +
+                '<div data-hide="hasNoDependencies">' +
+                    '<p>' +
+                        'This release <b data-name="name"></b> contains:' +
+                    '</p>' +
+                    '<ul>' +
+                        '<li data-hide="hasNoReleases"><span data-name="releases"></span> releases</li>' +
+                        '<li data-hide="hasNoAttachments"><span data-name="attachments"></span> attachments</li>' +
+                    '</ul>' +
+                '</div>' +
+                '<hr/>' +
+                '<form>' +
+                    '<div class="form-group">' +
+                        '<label for="moderationDeleteCommentField">Please comment your changes</label>' +
+                        '<textarea id="moderationDeleteCommentField" class="form-control" data-name="comment" rows="4" placeholder="Comment your request..."></textarea>' +
+                    '</div>' +
+                '</form>',
+            'Delete Release',
+            {
+                name: name,
+                releases: linkedReleasesSize,
+                hasNoReleases: linkedReleasesSize == 0,
+                attachments: attachmentsSize,
+                hasNoAttachments: attachmentsSize == 0,
+                hasNoDependencies: linkedReleasesSize == 0 && attachmentsSize == 0
+            }, function(submit, callback) {
+                deleteReleaseInternal(callback);
+            }
+        );
+    }
+
+    // helper functions
+    function makeReleaseUrl(releaseId, action) {
+        return homeUrl + '/components/-/component/release/' + action + 'Release/' + releaseId;
+    }
+});
 </script>
+
 
 <core_rt:if test="${codescoopActive}">
     <script>
@@ -109,108 +256,3 @@
         });
     </script>
 </core_rt:if>
-<script type="text/javascript">
-    require([
-        'jquery',
-        'utils/includes/fossologyClearing',
-        'modules/confirm',
-        'components/includes/releases/linkProject',
-        'datatables.net',
-        'datatables.net-buttons',
-        'datatables.net-buttons.print',
-        'datatables-plugins-sorting.natural'], function ($, fossology, confirm, linkProject) {
-
-        var releaseTable;
-
-        Liferay.on('allPortletsReady', function() {
-            createClearingTable();
-            fossology.initialize();
-
-            $('#releasesTable').delegate('.action.send-to-fossology', 'click', function(event) {
-                var data = $(event.currentTarget).data();
-                fossology.openSelectClearingDialog('clearingState', data.releaseId);
-            });
-            $('#releasesTable').delegate('.action.delete-release', 'click', function(event) {
-                var data = $(event.currentTarget).data();
-                deleteRelease(data.releaseId, data.releaseName, data.linkedReleases, data.attachments);
-            });
-            $('#releasesTable').delegate('.action.link-release', 'click', function(event) {
-                var data = $(event.currentTarget).data();
-                linkProject.openLinkDialog(data.releaseId, data.releaseName);
-            });
-        });
-
-        function createClearingTable() {
-            releaseTable = $('#releasesTable').DataTable({
-                "pagingType": "simple_numbers",
-                "dom": "lBfrtip",
-                "buttons": [
-                    {
-                        extend: 'print',
-                        text: 'Print',
-                        autoPrint: true,
-                        className: 'custom-print-button',
-                        exportOptions: {
-                            columns: [0, 1, 2, 3, 4]
-                        }
-                    }
-                ],
-                "data": releaseData,
-                "columns": [
-                    {"sTitle": "Release name"},
-                    {"sTitle": "Release version"},
-                    {"sTitle": "Clearing state"},
-                    {"sTitle": "Clearing report"},
-                    {"sTitle": "Release Mainline state"},
-                    {"sTitle": "Actions", "className": "actions"}
-                ],
-                "autoWidth": false,
-                "drawCallback": renderCallback,
-                "order": [1, 'desc'],
-                "columnDefs" : [
-                    { type: 'natural-nohtml', targets: 1 }
-                ]
-            });
-        };
-
-        function deleteRelease(id, name, linkedReleasesSize, attachmentsSize) {
-
-            function deleteReleaseInternal() {
-                $.ajax({
-                    type: 'POST',
-                    url: '<%=deleteReleaseAjaxURL%>',
-                    cache: false,
-                    data: {
-                        <portlet:namespace/>releaseId: id,
-                        <portlet:namespace/><%=PortalConstants.MODERATION_REQUEST_COMMENT%>:btoa($("#moderationDeleteCommentField").val())
-                    },
-                    success: function(data) {
-                        if (data.result == 'SUCCESS') {
-                            releaseTable.row('#' + id).remove().draw(false);
-                        }
-                        else if (data.result == 'SENT_TO_MODERATOR') {
-                            $.alert("You may not delete the release, but a request was sent to a moderator!");
-                        } else if (data.result == 'IN_USE') {
-                            $.alert("I could not delete the release, since it is used by another component (release) or project");
-                        } else {
-                            $.alert("I could not delete the release!");
-                        }
-                    },
-                    error: function() {
-                        $.alert("I could not delete the release!");
-                    }
-                });
-            }
-
-            var confirmMessage = "Do you really want to delete the release <b>" + name + "</b> ?";
-            confirmMessage += (linkedReleasesSize > 0 || attachmentsSize > 0) ? "<br/><br/>The release " + name + " contains<br/><ul>" : "";
-            confirmMessage += (linkedReleasesSize > 0) ? "<li>" + linkedReleasesSize + " linked releases</li>" : "";
-            confirmMessage += (attachmentsSize > 0) ? "<li>" + attachmentsSize + " attachments</li>" : "";
-            confirmMessage += (linkedReleasesSize > 0 || attachmentsSize > 0) ? "</ul>" : "";
-            confirmMessage += '<div><hr><label class=\'textlabel stackedLabel\'>Comment your changes</label><textarea id=\'moderationDeleteCommentField\' class=\'moderationCreationComment\' placeholder=\'Comment on request...\'></textarea></div>';
-
-            confirm.confirmDeletion(confirmMessage, deleteReleaseInternal);
-        }
-    });
-
-</script>

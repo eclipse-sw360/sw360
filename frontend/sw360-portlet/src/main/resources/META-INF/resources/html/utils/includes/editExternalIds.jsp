@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2017-2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -10,35 +10,58 @@
 --%>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 
-<table class="table info_table" id="externalIdsTable">
+<table class="table edit-table two-columns-with-actions" id="externalIdsTable">
     <thead>
-    <tr>
-        <th colspan="3" class="headlabel">External Ids</th>
-    </tr>
+        <tr>
+            <th colspan="3" class="headlabel">External Ids</th>
+        </tr>
     </thead>
 </table>
 
-<input type="button" class="addButton" id="add-external-id" value="Click to add row to External Ids "/>
-<br/>
-<br/>
+<button type="button" class="btn btn-secondary" id="add-external-id">Click to add row to External Ids</button>
+
+<div class="dialogs">
+    <div id="deleteExternalIdDialog" class="modal fade" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-lg modal-dialog-centered modal-danger" role="document">
+		    <div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">
+					<clay:icon symbol="question-circle" />
+					Delete Item?
+				</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+				<div class="modal-body">
+			        <p data-name="text"></p>
+				</div>
+			    <div class="modal-footer">
+			        <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
+			        <button type="button" class="btn btn-danger">Delete Item</button>
+			    </div>
+			</div>
+		</div>
+	</div>
+</div>
 
 <script>
-    require(['jquery', 'modules/confirm'], function($, confirm) {
+    require(['jquery', 'modules/dialog'], function($, dialog) {
 
-        Liferay.on('allPortletsReady', function() {
-            createExternalIdsTable();
-
-            $('#add-external-id').on('click', function() {
+        createExternalIdsTable();
+        $('#add-external-id').on('click', function() {
                 addRowToExternalIdsTable();
+        });
+        $('#externalIdsTable').on('click', 'svg[data-row-id]', function(event) {
+            var rowId = $(event.currentTarget).data().rowId;
+
+            dialog.open('#deleteExternalIdDialog', {
+                text: "Do you really want to remove this item?",
+            }, function(submit, callback) {
+                $('#' + rowId).remove();
+                callback(true);
             });
         });
-
-        function deleteIDItem(rowIdOne) {
-            function deleteMapItemInternal() {
-                $('#' + rowIdOne).remove();
-            }
-            deleteConfirmed("Do you really want to remove this item?", deleteMapItemInternal);
-        }
 
         function addRowToExternalIdsTable(key, value, rowId) {
             if (!rowId) {
@@ -51,15 +74,17 @@
 
             var newRowAsString =
                 '<tr id="' + rowId + '" class="bodyRow">' +
-                '<td width="46%">' +
-                '<input list="externalKeyList" class="keyClass" id="<%=PortalConstants.EXTERNAL_ID_KEY%>' + rowId + '" name="<portlet:namespace/><%=PortalConstants.EXTERNAL_ID_KEY%>' + rowId + '" required="" minlength="1" class="toplabelledInput" placeholder="Enter external id key" title="external id name" value="' + key + '"/>' +
+                '<td>' +
+                '<input list="externalKeyList" class="form-control" id="<%=PortalConstants.EXTERNAL_ID_KEY%>' + rowId + '" name="<portlet:namespace/><%=PortalConstants.EXTERNAL_ID_KEY%>' + rowId + '" required="" minlength="1" placeholder="Enter external id key" title="external id name" value="' + key + '"/>' +
                 prepareKeyDatalist() + // creates a datalist with preferred key names
                 '</td>' +
-                '<td width="46%">' +
-                '<input class="valueClass" id="<%=PortalConstants.EXTERNAL_ID_VALUE%>' + rowId + '" name="<portlet:namespace/><%=PortalConstants.EXTERNAL_ID_VALUE%>' + rowId + '" required="" minlength="1" class="toplabelledInput" placeholder="Enter external id value" title="external id value" value="' + value + '"/>' +
+                '<td>' +
+                '<input class="form-control" id="<%=PortalConstants.EXTERNAL_ID_VALUE%>' + rowId + '" name="<portlet:namespace/><%=PortalConstants.EXTERNAL_ID_VALUE%>' + rowId + '" required="" minlength="1" placeholder="Enter external id value" title="external id value" value="' + value + '"/>' +
                 '</td>' +
-                '<td class="deletor" width="8%">' +
-                '<img src="<%=request.getContextPath()%>/images/Trash.png" onclick="deleteMapItem(\'' + rowId + '\')" alt="Delete">' +
+                '<td class="content-middle">' +
+                '<svg title="Delete" class="action lexicon-icon" data-row-id="' + rowId + '">' +
+                '<use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>' +
+                '</svg>' +
                 '</td>' +
                 '</tr>';
             $('#externalIdsTable tr:last').after(newRowAsString);

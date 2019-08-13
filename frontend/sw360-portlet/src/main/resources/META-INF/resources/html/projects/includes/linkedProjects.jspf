@@ -1,7 +1,5 @@
-<%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
-<%@ page import="org.eclipse.sw360.datahandler.thrift.projects.Project" %>
-<%@ page import="javax.portlet.PortletRequest" %><%--
-  ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+<%--
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -10,6 +8,9 @@
   ~ which accompanies this distribution, and is available at
   ~ http://www.eclipse.org/legal/epl-v10.html
 --%>
+<%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.projects.Project" %>
+<%@ page import="javax.portlet.PortletRequest" %>
 
 <%@include file="/html/init.jsp" %>
 
@@ -23,7 +24,7 @@
 <jsp:useBean id="projectList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.projects.ProjectLink>"
              scope="request"/>
 
-<table class="table" id="LinkedProjectsInfo"
+<table class="table table-bordered" id="LinkedProjectsInfo"
   data-load-node-url="<%=loadLinkedProjectsRowsURL%>"
   data-portlet-namespace="<portlet:namespace/>"
   data-parent-branch-key="<%=PortalConstants.PARENT_BRANCH_ID%>"
@@ -49,28 +50,27 @@
     </tbody>
 </table>
 
+<%--for javascript library loading --%>
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
     require(['jquery', 'modules/ajax-treetable'], function($, ajaxTreeTable) {
+        var config = $('#LinkedProjectsInfo').data();
 
-        Liferay.on('allPortletsReady', function() {
-            var config = $('#LinkedProjectsInfo').data();
+        ajaxTreeTable.setup('LinkedProjectsInfo', config.loadNodeUrl, function(table, node) {
+            var data = {};
+            data[config.portletNamespace + config.parentBranchKey] = node.id;
+            data[config.portletNamespace + 'parentScopeGroupId'] =  config.scopeGroupId;
+            return data;
+        }, function(table, node, result) {
+            var rows = $(result).filter("tr");
+            table.treetable("loadBranch", node, rows);
+        });
 
-            ajaxTreeTable.setup('LinkedProjectsInfo', config.loadNodeUrl, function(table, node) {
-                var data = {};
-                data[config.portletNamespace + config.parentBranchKey] = node.id;
-                data[config.portletNamespace + 'parentScopeGroupId'] =  config.scopeGroupId;
-                return data;
-            }, function(table, node, result) {
-                var rows = $(result).filter("tr");
-                table.treetable("loadBranch", node, rows);
-            });
+        $('#downloadLicenseInfoButton').click(downloadLicenseInfo);
+        $('#downloadSourceCodeBundleButton').click(downloadSourceCodeBundleButton);
 
-            $('#downloadLicenseInfoButton').click(downloadLicenseInfo);
-            $('#downloadSourceCodeBundleButton').click(downloadSourceCodeBundleButton);
-
-            $('#btnExportGroup a.dropdown-item').on('click', function(event) {
-                exportSpreadsheet($(event.currentTarget).data('type'));
-            });
+        $('#btnExportGroup a.dropdown-item').on('click', function(event) {
+            exportSpreadsheet($(event.currentTarget).data('type'));
         });
 
         function downloadLicenseInfo() {

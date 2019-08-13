@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -13,53 +13,58 @@
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.VIEW_VENDOR%>"/>
 </portlet:resourceURL>
 
-<div id="search-vendor-form" title="Search Vendor" style="display: none; background-color: #ffffff;" data-view-vendor-url="<%=viewVendorURL%>">
-    <form>
-        <div style="display: inline-block">
-            <input type="text" name="searchvendor" id="searchvendor" placeholder="search" class="searchbar"/>&nbsp;
-            <input type="button" value="Search" class="searchbutton" id="searchbuttonvendor"/>
-        </div>
+<div class="dialogs">
+    <div id="searchVendorDialog" data-title="Search Vendor" class="modal fade" tabindex="-1" role="dialog" data-view-vendor-url="<%=viewVendorURL%>">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <div class="modal-body container">
+                    <form class="form">
+                        <div class="row form-group">
+                            <div class="col-6">
+                                <input type="text" name="searchvendor" id="searchvendor" placeholder="Enter search text..." class="form-control" autofocus />
+                            </div>
+                            <div class="col">
+                                <button type="button" class="btn btn-secondary" id="searchbuttonvendor" disabled>Search</button>
+                            </div>
+                        </div>
 
-        <div id="vendorsearchresults">
-            <table width="100%" style="border-bottom: 2px solid #66c1c2;">
-                <colgroup>
-                    <col width="30px">
-                    <col width="150px">
-                    <col width="150px">
-                    <col>
-                </colgroup>
-                <thead>
-                    <tr class="trheader" style="text-align: left; height: 30px;">
-                        <th style="padding: 0;"></th>
-                        <th style="padding: 0;" class="textlabel">Vendor Full Name</th>
-                        <th style="padding: 0;" class="textlabel">Vendor Short Name</th>
-                        <th style="padding: 0;" class="textlabel">Vendor URL</th>
-                    </tr>
-                </thead>
-            </table>
-            <div style="overflow-y: scroll; height: 250px;">
-                <table id="searchresultstable" width="100%">
-                    <colgroup>
-                        <col width="30px">
-                        <col width="150px">
-                        <col width="150px">
-                        <col>
-                    </colgroup>
-                    <tbody>
-                        <tr class="trbodyClass">
-                            <td colspan="4"></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <hr noshade size="1" style="background-color: #66c1c2; border-color: #59D1C4; margin-top: 0;"/>
-            <br/>
+                        <div id="vendorsearchresults">
+                            <div id="search-spinner" class="spinner text-center" style="display: none;">
+                                <div class="spinner-border" role="status">
+                                    <span class="sr-only">Searching...</span>
+                                </div>
+                            </div>
 
-            <div>
-                <input type="button" name="select-vendor" value="Select" class="addButton"/>
-                <input type="button" name="add-vendor" class="addButton" value="Add New Vendor">
+                            <table id="searchresultstable" class="table table-bordered">
+                                <colgroup>
+                                    <col width="1.7rem">
+                                    <col width="40%">
+                                    <col width="40%">
+                                    <col width="20%">
+                                    <col>
+                                </colgroup>
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th>Full Name</th>
+                                        <th>Short Name</th>
+                                        <th>URL</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </form>
+				</div>
+			    <div class="modal-footer">
+		        <button type="button" class="btn btn-light" data-dismiss="modal">Close</button>
+			        <button name="add-vendor" data-submit="add" type="button" class="btn btn-secondary">Add Vendor</button>
+                    <button name="select-vendor" data-submit="select" type="button" class="btn btn-primary">Select Vendor</button>
+			    </div>
             </div>
         </div>
-    </form>
+    </div>
 </div>
+
 <%@include file="/html/components/includes/vendors/addVendor.jspf" %>

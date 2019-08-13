@@ -106,14 +106,6 @@
     </div>
 </div>
 
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/themes/base/jquery-ui.min.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/datatables.net-select-bs/css/select.bootstrap.min.css"/>
-
-<script src="<%=request.getContextPath()%>/webjars/jquery-ui/jquery-ui.min.js" type="text/javascript"></script>
-<script src="<%=request.getContextPath()%>/webjars/datatables.net/js/jquery.dataTables.min.js" type="text/javascript"></script>
-<script src="<%=request.getContextPath()%>/webjars/datatables.net-select/js/dataTables.select.min.js" type="text/javascript"></script>
-<script src="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.js" type="text/javascript"></script>
 
 <script>
     let productTable;
@@ -385,6 +377,3 @@
 </script>
 
 <%@include file="/html/utils/includes/modal.jspf" %>
-
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/dataTable_Siemens.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">

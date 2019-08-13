@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
   ~ With modifications by Bosch Software Innovations GmbH, 2016.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
@@ -19,30 +19,18 @@
 <%@ include file="/html/init.jsp" %>
 <%-- the following is needed by liferay to display error messages--%>
 <%@ include file="/html/utils/includes/errorKeyToMessage.jspf"%>
-<%--for javascript library loading --%>
-<%@ include file="/html/utils/includes/requirejs.jspf" %>
 
 <portlet:defineObjects/>
 <liferay-theme:defineObjects/>
 
-<portlet:resourceURL var="subscribeComponentURL">
-    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.SUBSCRIBE%>"/>
-    <portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="${component.id}"/>
-</portlet:resourceURL>
-
-
-<portlet:resourceURL var="unsubscribeComponentURL">
-    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.UNSUBSCRIBE%>"/>
-    <portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="${component.id}"/>
+<portlet:resourceURL var="sw360ComponentUrl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CODESCOOP_ACTION_COMPONENT%>'/>
 </portlet:resourceURL>
 
 <portlet:actionURL var="updateComponentURL" name="updateComponent">
     <portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="${component.id}"/>
 </portlet:actionURL>
 
-<portlet:resourceURL var="sw360ComponentUrl">
-    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CODESCOOP_ACTION_COMPONENT%>'/>
-</portlet:resourceURL>
 
 <c:catch var="attributeNotFoundException">
     <jsp:useBean id="component" class="org.eclipse.sw360.datahandler.thrift.components.Component" scope="request"/>
@@ -57,80 +45,16 @@
     </core_rt:if>
     <jsp:useBean id="numberOfCheckedOrUncheckedVulnerabilities" type="java.lang.Long" scope="request"/>
  </c:catch>
+
 <%@include file="/html/utils/includes/logError.jspf" %>
+
 <core_rt:if test="${empty attributeNotFoundException}">
-
-    <link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
-    <link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/themes/base/jquery-ui.min.css">
-
-    <div id="header"></div>
-    <p class="pageHeader"><span class="pageHeaderBigSpan">Component: <sw360:out value="${component.name}"/></span>
-        <span class="pull-right">
-        <core_rt:if test="${isUserAllowedToMerge}">
-            <input type="button" data-component-id="${component.id}" id="merge" value="Merge" class="addButton">
-        </core_rt:if>
-        <input type="button" id="edit" value="Edit" class="addButton">
-        <sw360:DisplaySubscribeButton email="<%=themeDisplay.getUser().getEmailAddress()%>" object="${component}"
-                                      id="SubscribeButton" />
-    </span>
-    </p>
-    <core_rt:set var="inComponentDetailsContext" value="true" scope="request"/>
+    <core_rt:set var="inComponentDetailsContext" value="true" scope="request" />
     <%@include file="/html/components/includes/components/detailOverview.jspf"%>
 </core_rt:if>
 
-<script>
-    require(['jquery', 'modules/tabview'], function($, tabview) {
-        tabview.create('myTab');
-
-        $('#edit').on('click', function() {
-            window.location ='<portlet:renderURL ><portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="${component.id}"/><portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_EDIT%>"/></portlet:renderURL>'
-        });
-
-        $('#SubscribeButton').on('click', function(event) {
-            var $button = $(event.currentTarget),
-                subscribed = $button.hasClass('subscribed'),
-                url = subscribed ? '<%=unsubscribeComponentURL%>' : '<%=subscribeComponentURL%>';
-
-            $button.val('...');
-            doAjax(url, function(data) {
-                if(data.result === "SUCCESS") {
-                    $button.val(!subscribed ? 'Unsubscribe': 'Subscribe');
-                    $button.toggleClass('subscribed');
-                } else {
-                    $button.val(data.result);
-                }
-            }, function() {
-                $button.val('error');
-            });
-        });
-
-        $('#merge').on('click', function(event) {
-            var data = $(event.currentTarget).data();
-            mergeComponent(data.componentId);
-        });
-
-        function doAjax(url, successCallback, errorCallback) {
-            $.ajax({
-                type: 'POST',
-                url: url,
-                success: function (data) {
-                    successCallback(data);
-                },
-                error: function () {
-                    errorCallback();
-                }
-            });
-        }
-
-        function mergeComponent(componentId) {
-            var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>',
-                portletURL = Liferay.PortletURL.createURL(baseUrl)
-                                               .setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_MERGE_COMPONENT%>')
-                                               .setParameter('<%=PortalConstants.COMPONENT_ID%>', componentId);
-            window.location = portletURL.toString();
-        }
-    });
-</script>
+<%--for javascript library loading --%>
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
 <c:if test="${codescoopActive}">
     <form id="component_edit_form" name="componentEditForm" action="<%=updateComponentURL%>&updateOnlyRequested" method="post" style="display: none;">
     </form>

@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017-2018.
+ * Copyright Siemens AG, 2017-2019.
  * Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -14,13 +14,13 @@
  * This module provides some useful renderers for jquery DataTable. Please the jsdoc on the
  * rendering functions for more information.
  */
-define('modules/datatables-renderer', ['jquery', /* jquery-plugins */ 'datatables.net', 'jquery-confirm'], function($) {
+define('modules/datatables-renderer', ['jquery', 'modules/dialog', /* jquery-plugins */ 'datatables.net' ], function($, dialog) {
 
     // helper functions
     function createEllipsisSpan(text) {
         return $('<span>', {
             title: text,
-            "class": "sw360-ellipsis",
+            "class": "text-truncate",
         }).text(text);
     }
 
@@ -66,7 +66,9 @@ define('modules/datatables-renderer', ['jquery', /* jquery-plugins */ 'datatable
     }
 
     function createSelectInput(selectDataKey, selectData, name, clazz, optionClazz, currentKey) {
-        var $select = $('<select>', { name: name, "class": clazz, title: selectData[currentKey] });
+        var $container = $('<div class="form-group"></div>'),
+            $select = $('<select>', { name: name, "class": clazz, title: selectData[currentKey] });
+        $select.addClass('form-control');
 
         Object.keys(selectData).forEach(function(key) {
             $select.append($('<option>', { "class": optionClazz, value: key }).text(selectData[key]));
@@ -74,23 +76,60 @@ define('modules/datatables-renderer', ['jquery', /* jquery-plugins */ 'datatable
         // use the html attribute to select the value in order to be serializable
         $select.find('option[value=' + currentKey + ']').attr('selected', true);
 
-        return $select;
+        $container.append($select);
+        return $container;
     }
 
     function createTextInput(name, clazz, placeholder, value) {
-        var $text = $('<input>', { type: 'text', name: name, "class": clazz, placeholder: placeholder, title: value, value: value });
+        var $container = $('<div class="form-group"></div>'),
+            $text = $('<input>', { type: 'text', name: name, "class": clazz, placeholder: placeholder, title: value, value: value });
+        $text.addClass('form-control');
 
-        return $text;
+        $container.append($text);
+        return $container;
     }
 
     function createRadioInput(name, clazz, value, selected) {
-        var $radio = $('<input>', { type: 'radio', name: name, "class": clazz, title: value, value: value });
+        var $container = $('<div class="form-check"></div>'),
+            $radio = $('<input>', { type: 'radio', name: name, "class": clazz, title: value, value: value });
+        $radio.addClass('form-check-input');
 
         if(selected) {
             $radio.attr('checked', 'checked');
         }
 
-        return $radio;
+        $container.append($radio);
+        return $container;
+    }
+
+    function createCheckboxInput(name, clazz, value, checked) {
+        var $container = $('<div class="form-check"></div>'),
+            $checkbox = $('<input>', { type: 'checkbox', name: name, "class": clazz, title: value, value: value });
+        $checkbox.addClass('form-check-input');
+
+        if(checked) {
+            $checkbox.attr('checked', 'checked');
+        }
+
+        $container.append($checkbox);
+        return $container;
+    }
+
+    function createInfoText(text, tooltip, icon) {
+        if(text || tooltip) {
+            var $text = $('<span>', {
+                'class': 'info-text',
+                title: tooltip,
+            }).text($('<div/>').html(text).text());
+
+            if(icon && (text || tooltip)) {
+                $text.prepend('<svg class="lexicon-icon"><use href="' + icon + '" /></svg>&nbsp;');
+            }
+
+            return $text;
+        } else {
+            return $('<span/>');
+        }
     }
 
     // renderer definitions
@@ -132,6 +171,26 @@ define('modules/datatables-renderer', ['jquery', /* jquery-plugins */ 'datatable
             return data;
         }
     };
+
+    /**
+     * Expects an object as data with the attributes text and tooltips. Renders the text with a tooltip as title attribute.
+     * Can optionally show an info icon.
+     *
+     * @param {string} icon path to icon
+     *
+     * Example usage in column definition: <code>..., renderer: $.fn.dataTable.render.infoText('/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle-open'), ...</code>
+     */
+    $.fn.dataTable.render.infoText = function(icon) {
+        return function(data, type, row, meta) {
+            if(type === 'display') {
+                return createInfoText(data.text, data.tooltip, icon)[0].outerHTML;
+            } else if(type === 'type') {
+                return 'string';
+            } else {
+                return data.text;
+            }
+        };
+    }
 
     /**
      * Renders an input select field with the given parameters. This function returns the appropriate render function on call.
@@ -252,6 +311,35 @@ define('modules/datatables-renderer', ['jquery', /* jquery-plugins */ 'datatable
     };
 
     /**
+     * Renders a checkbox field with the given parameters. This function returns the appropriate render function on call.
+     *
+     * @param {String} name name for the input field
+     * @param {String} clazz class or classes to be added to the select fields. Multiple classes must be space separated
+     * @param {Function} hook the hook is called on creation with this set to the input field and the default render parameters of datatables (value, type, row, meta)
+     *
+     * @return {Function} render function for DataTable
+     *
+     * Example usage in column definition: <code>..., renderer: $.fn.dataTable.render.inputCheckbox("gender", "", "female", true), ...</code>
+     */
+    $.fn.dataTable.render.inputCheckbox = function(name, clazz, checked, hook) {
+        return function(value, type, row, meta) {
+            var input;
+
+            if(type === 'display') {
+                input = createCheckboxInput(name, clazz, value, checked);
+                if(typeof hook === 'function') {
+                    hook.call(input.find('input'), value, type, row, meta);
+                }
+                return input[0].outerHTML;
+            } else if(type === 'type') {
+                return 'string';
+            } else {
+                return value;
+            }
+        }
+    };
+
+    /**
      * Automatically updates the title attribute of the input field if the value changes.
      *
      *  Must be called after a cell has been created.
@@ -297,43 +385,38 @@ define('modules/datatables-renderer', ['jquery', /* jquery-plugins */ 'datatable
                 return;
             }
 
-            $.confirm({
-                title: dialogTitle,
-                content: '<form action="">' +
-                            '<div style="padding-right: 15px;">' +
-                                '<input type="text" placeholder="' + dialogTitle + '" style="width: 100%;" />' +
-                            '</div>' +
-                         '</form>',
-                confirmButtonClass: 'btn-info',
-                cancelButtonClass: 'btn-danger',
-                buttons: {
-                    confirm: function() {
-                        var input = this.$content.find('input');
-                         $text.val(input.val()).trigger('change');
-                    },
-                    cancel: function() {
-                        // close
-                    }
+            var $dialog = dialog.confirm(
+                null,
+                'pencil',
+                dialogTitle,
+                '<form>' +
+                    '<div class="form-group">' +
+                        '<input type="text" placeholder="' + dialogTitle + '" class="form-control" data-name="comment" />' +
+                    '</div>' +
+                '</form>',
+                'Update',
+                {
+                    comment: $text.val()
                 },
-                escapeKey: 'cancel',
-                animation: 'none',
-                onContentReady: function() {
-                    var dialog = this,
-                        input = dialog.$content.find('input');
+                function(sumbit, callback, data) {
+                    $text.val(data.comment).trigger('change');
+                    callback(true);
+                }, function() {
+                    var $dialog = this;
 
-                    input.val($text.val());
-                    // for an unknown reason, the field is not focused if called directly
-                    setTimeout(function() {
-                        input.focus();
-                    }, 50);
+                    // supppress animation to be quicker
+                    $dialog.$.removeClass('fade');
 
-                    // if the user submits the form by pressing enter in the field.
-                    this.$content.find('form').on('submit', function (event) {
+                    $dialog.$.find('form').on('submit', function (event) {
                         event.preventDefault();
-                        dialog.$$confirm.trigger('click');
+                        $dialog.$.find('.modal-footer button:last').trigger('click');
                     });
-                },
-            });
+                }, function() {
+                    setTimeout(function() {
+                        $dialog.$.find('input').focus();
+                    }, 50);
+                }
+            );
         });
     };
 
@@ -359,17 +442,21 @@ define('modules/datatables-renderer', ['jquery', /* jquery-plugins */ 'datatable
             var actionsHtml = '';
             if(type === 'display') {
                 actions.forEach(function(action) {
-                    actionsHtml += $('<img>', {
-                        'class': action['class'],
-                        src: '/sw360-portlet/images/' + action.icon + '.png',
-                        alt: action.title,
-                        title: action.title,
-                        'data-key': row[action.key],
-                        'data-approvalstate': row[action.approvalKey],
-                        'data-usages-count': meta.settings.json[action.usageCountsKey][row.attachmentContentId]
-                    })[0].outerHTML;
+                    var $title = $('<title></title>'),
+                        $action = $('<svg>', {
+                            'class': action['class'] + ' lexicon-icon',
+                            'data-key': row[action.key],
+                            'data-approvalstate': row[action.approvalKey],
+                            'data-usages-count': meta.settings.json[action.usageCountsKey][row.attachmentContentId]
+                        });
+                    $action.append('<use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#' + action.icon + '"/>');
+
+                    $title.text(action.title);
+                    $action.prepend($title);
+
+                    actionsHtml += $action[0].outerHTML;
                 });
-                return actionsHtml;
+                return '<div class="actions">' + actionsHtml + '</div>';
             } else {
                 return '';
             }

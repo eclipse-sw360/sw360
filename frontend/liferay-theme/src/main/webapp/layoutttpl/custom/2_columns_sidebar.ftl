@@ -11,14 +11,26 @@
 
 <div class="columns-2-sidebar" id="main-content" role="main">
 	<div class="portlet-layout row">
-	    <div id="column-1" class="col-5 portlet-column portlet-column-first">
-		${processor.processColumn("column-1", "portlet-column-content portlet-column-content-first")}
-	    </div>
-	    <div id="column-2" class="col-5 portlet-column">
-		${processor.processColumn("column-2", "portlet-column-content")}
-	    </div>
-	    <div id="column-3" class="col-2 portlet-column portlet-column-last">
-	        ${processor.processColumn("column-3", "portlet-column-content portlet-column-content-last")}
+		<div class="col-10">
+			<div class="row">
+				<div id="column-1" class="col-6 portlet-column">
+					${processor.processColumn("column-1", "portlet-column-content")}
+				</div>
+				<div id="column-2" class="col-6 portlet-column">
+					${processor.processColumn("column-2", "portlet-column-content")}
+				</div>
+			</div>
+			<div class="row">
+				<div id="column-3" class="col-6 portlet-column">
+					${processor.processColumn("column-3", "portlet-column-content")}
+				</div>
+				<div id="column-4" class="col-6 portlet-column">
+					${processor.processColumn("column-4", "portlet-column-content")}
+				</div>
+			</div>
+		</div>
+	    <div id="column-5" class="col-2 portlet-column">
+	        ${processor.processColumn("column-5", "portlet-column-content")}
 	    </div>
 	</div>
 </div>

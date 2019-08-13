@@ -120,9 +120,6 @@
 		<div class="powered-by">
 			<@liferay.language key="powered-by" />
 			<a href="http://www.github.com/eclipse/sw360" rel="external" target="_blank">SW360</a> |
-			&copy; Siemens AG 2013-2019, Bosch Software Innovations GmbH 2015-2019
-		</div>
-		<div class="links">
 			<a href="/resource/docs/api-guide.html" rel="external" target="_blank">REST API Docs</a> |
 			<a href="https://github.com/eclipse/sw360/issues" rel="external" target="_blank"> Report an issue.</a>
 		</div>

@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -24,34 +24,44 @@
     <jsp:useBean id="documentID" class="java.lang.String" scope="request" />
 </core_rt:catch>
 
+<%--for javascript library loading --%>
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
+
 <core_rt:if test="${empty attributeNotFoundException}">
 
     <core_rt:if test="${empty attachments}">
         <div class="alert alert-info" role="alert">
             No attachments yet.
         </div>
+
+        <script>
+            require(['jquery'], function($) {
+                $('#downloadAttachmentBundle').hide();
+            });
+        </script>
     </core_rt:if>
 
     <core_rt:if test="${not empty attachments}">
         <table id="attachmentsDetail" class="table table-bordered" title="Attachment Information">
             <colgroup>
-                <col style="width: 4%;" />
-                <col style="width: 20%;" />
+                <col />  <!-- set by class -->
+                <col style="width: 25%;" />
                 <col style="width: 10%;" />
-                <col style="width: 6%;" />
-                <col style="width: 6%;" />
+                <col style="width: 8%;" />
+                <col style="width: 8%;" />
+                <col style="width: 16%;" />
+                <col style="width: 11%;" />
                 <col style="width: 16%;" />
                 <col style="width: 6%;" />
-                <col style="width: 16%;" />
-                <col style="width: 6%;" />
-                <col style="width: 10%;" />
+                <col /> <!-- set by class -->
             </colgroup>
             <thead>
                 <tr>
-                    <th><sw360:DisplayDownloadAttachmentBundle attachments="${attachments}"
-                                name="AttachmentBundle.zip"
-                                contextType="${documentType}"
-                                contextId="${documentID}" />
+                    <th class="one action">
+                        <sw360:DisplayDownloadAttachmentBundle attachments="${attachments}"
+                            name="AttachmentBundle.zip"
+                            contextType="${documentType}"
+                            contextId="${documentID}" />
                     </th>
                     <th>File name</th>
                     <th>Size</th>
@@ -69,7 +79,7 @@
         </table>
 
         <script>
-            require(['jquery', 'bridges/datatables' ], function($, datatables) {
+            require(['jquery', 'bridges/datatables', 'modules/dialog' ], function($, datatables, dialog) {
                 var attachmentJSON = [];
                 var usageLinks;
 
@@ -88,7 +98,7 @@
                         "checkedTeam":  "<sw360:DisplayEllipsisString value="${attachment.checkedTeam}"/>",
                         "checkedBy":  "<sw360:DisplayEllipsisString value="${attachment.checkedBy}"/>",
                         "usage":  {links: usageLinks, restrictedCount: ${attachmentUsagesRestrictedCounts.getOrDefault(attachment.attachmentContentId, 0)}},
-                        "actions":     "<sw360:DisplayDownloadAttachmentFile attachment="${attachment}" contextType="${documentType}" contextId="${documentID}"/>",
+                        "actions":     "<div class=\"actions\"><sw360:DisplayDownloadAttachmentFile attachment="${attachment}" contextType="${documentType}" contextId="${documentID}"/></div>",
                         "sha1": "<sw360:out value="${attachment.sha1}"/>",
                         "uploadedOn": "<sw360:out value="${attachment.createdOn}"/>",
                         "uploadedComment": "<core_rt:if test="${not empty attachment.createdComment}">Comment: <sw360:DisplayEllipsisString value="${attachment.createdComment}"/></core_rt:if>",
@@ -98,12 +108,17 @@
                     });
                 </core_rt:forEach>
 
+                /* register listener to toolbar button */
+                $('#downloadAttachmentBundle').on('click', function() {
+                    window.location = $('#attachmentsDetail th:first a').attr('href');
+                });
 
-                var table = datatable.create('#attachmentsDetail', {
+                /* create table */
+                var table = datatables.create('#attachmentsDetail', {
                     "data": attachmentJSON,
                     "columns": [
                         {
-                            "className":      'details-control',
+                            "className":      'one action details-control',
                             "orderable":      false,
                             "data":           null,
                             "defaultContent": ''
@@ -115,17 +130,17 @@
                         { "data": "uploadedBy" },
                         { "data": "checkedTeam" },
                         { "data": "checkedBy" },
-                        { "data": "usage", "render": renderAttachmentUsages, "orderable": false},
-                        { "data": "actions" }
+                        { "data": "usage", "render": renderAttachmentUsages, orderable: false, className: 'text-center' },
+                        { "data": "actions", className: "one action", orderable: false }
                     ],
                     "columnDefs": [
                         {
                             "targets": [ 6, 7 ],
                             "createdCell": function (td, cellData, rowData, row, col) {
                                 if (rowData.checkStatus === 'REJECTED') {
-                                    $(td).addClass('foregroundAlert');
+                                    $(td).addClass('text-danger');
                                 } else if (rowData.checkStatus === 'ACCEPTED') {
-                                    $(td).addClass('foregroundOK');
+                                    $(td).addClass('text-success');
                                 }
                             }
                         },
@@ -141,10 +156,10 @@
                                         }
                                         dialogContent += rowData.usage.restrictedCount + " restricted project(s)";
                                     }
-                                    $.dialog({
-                                        title: 'Projects using this attachment',
-                                        content: dialogContent
-                                    });
+                                    dialog.info(
+                                        'Projects using this attachment',
+                                        dialogContent
+                                    );
                                 });
                             }
                         }
@@ -195,7 +210,7 @@
                         if (data.links.length === 0 && data.restrictedCount === 0) {
                             usagesHtml += 'n/a';
                         } else {
-                            usagesHtml += '<a href="#" title="visible / restricted">' + data.links.length + ' / ' + data.restrictedCount + '</a>';
+                            usagesHtml += '<a href="javascript:;" title="visible / restricted">' + data.links.length + ' / ' + data.restrictedCount + '</a>';
                         }
                         return usagesHtml;
                     } else if(type === 'type') {

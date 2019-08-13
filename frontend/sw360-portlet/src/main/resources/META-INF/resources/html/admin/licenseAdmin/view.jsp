@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2017.
+  ~ Copyright Siemens AG, 2013-2017, 2019.
   ~ Copyright Bosch Software Innovations GmbH, 2016.
   ~ Part of the SW360 Portal Project.
   ~
@@ -32,136 +32,147 @@
 </portlet:resourceURL>
 
 
-<script src="<%=request.getContextPath()%>/webjars/jquery-ui/jquery-ui.min.js"></script>
-<script src="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.js" type="text/javascript"></script>
+<div class="container">
+	<div class="row">
+		<div class="col">
+            <div class="row portlet-toolbar">
+				<div class="col-auto">
+					<div class="btn-toolbar" role="toolbar">
+						<div class="btn-group" role="group">
+							<button type="button" class="btn btn-primary" onclick="window.location.href='<portlet:resourceURL><portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.DOWNLOAD_LICENSE_BACKUP%>'/></portlet:resourceURL>'">
+                                Download License Archive
+                            </button>
+						</div>
+                        <div class="btn-group" role="group">
+							<button type="button" class="btn btn-primary" data-action="import-spdx">
+                                Import SPDX Information
+                            </button>
+						</div>
+                        <div class="btn-group" role="group">
+							<button type="button" class="btn btn-danger" data-action="delete-licenses">
+                                Delete all License information
+                            </button>
+						</div>
+					</div>
+				</div>
+                <div class="col portlet-title text-truncate" title="License Administration">
+					License Administration
+				</div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <h4>Upload License Archive</h4>
+                    <form id="uploadLicenseArchiveForm" name="uploadLicenseArchiveForm" action="<%=updateLicenseArchiveURL%>" method="post" class="form needs-validation" novalidate>
+                        <div class="form-group">
+                            <input id="<portlet:namespace/>LicenseArchivefileuploadInput" type="file" class="form-control-file" name="<portlet:namespace/>file" required>
+                            <div class="invalid-feedback">
+                                Please select a file!
+                            </div>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" id="overwriteIfExternalIdMatches" class="form-check-input"
+                                name="<portlet:namespace/>overwriteIfExternalIdMatches"
+                                value="true">
+                            <label for="overwriteIfExternalIdMatches" class="form-check-label">
+                                Overwrite if externals IDs match
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" id="overwriteIfIdMatchesEvenWithoutExternalIdMatch" class="form-check-input"
+                                name="<portlet:namespace/>overwriteIfIdMatchesEvenWithoutExternalIdMatch"
+                                value="true">
+                            <label for="overwriteIfIdMatchesEvenWithoutExternalIdMatch" class="form-check-label">
+                                Overwrite if IDs match
+                            </label>
+                        </div>
 
-<div id="header"></div>
-<p class="pageHeader"><span class="pageHeaderBigSpan">License Administration</span></p>
-
-<table class="info_table">
-    <thead>
-    <tr>
-        <th colspan="2"> Actions</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    <tr>
-        <td>Download License Archive</td>
-        <td><a href="<portlet:resourceURL>
-                               <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.DOWNLOAD_LICENSE_BACKUP%>'/>
-                         </portlet:resourceURL>">
-            <img src="<%=request.getContextPath()%>/images/download_enabled.jpg" alt="Download">
-        </a>
-        </td>
-    </tr>
-    <tr>
-        <td colspan="2">
-            <span> Upload License Archive </span>
-            <form id="uploadLicenseArchiveForm" name="uploadLicenseArchiveForm" action="<%=updateLicenseArchiveURL%>" method="POST" enctype="multipart/form-data" style="margin-left: 30px;">
-                <div class="fileupload-buttons">
-                        <input id="<portlet:namespace/>LicenseArchivefileuploadInput" type="file" name="<portlet:namespace/>file">
-                    <label for="overwriteIfExternalIdMatches">
-                        <input type="checkbox" id="overwriteIfExternalIdMatches" name="<portlet:namespace/>overwriteIfExternalIdMatches" value="true" />
-                        overwrite if external IDs match
-                    </label>
-                    <label for="overwriteIfIdMatchesEvenWithoutExternalIdMatch">
-                        <input type="checkbox" id="overwriteIfIdMatchesEvenWithoutExternalIdMatch" name="<portlet:namespace/>overwriteIfIdMatchesEvenWithoutExternalIdMatch" value="true" />
-                        overwrite if IDs match
-                    </label>
-                    <span class="fileinput-button">
-                        <input type="submit" value="Upload License Archive" class="addButton" id="<portlet:namespace/>LicenseArchive-Submit" disabled>
-                    </span>
+                        <button type="submit" class="btn btn-secondary">Upload Licenses</button>
+                    </form>
                 </div>
-            </form>
-        </td>
-    </tr>
-    <tr>
-        <td>Import all SPDX license information</td>
-        <td><a href="#" onclick="importSpdxLicenseInformation(); return false;">Import</a>
-        </td>
-    </tr>
-    <tr>
-        <td>Delete all license information</td>
-        <td><img src="<%=request.getContextPath()%>/images/Trash.png"
-                 alt="Delete all license information"
-                 onclick="deleteAllLicenseInformation()">
-        </td>
-    </tr>
-    </tbody>
-</table>
+            </div>
+		</div>
+	</div>
+</div>
 
+<div class="dialogs auto-dialogs"></div>
+
+<%--for javascript library loading --%>
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-    document.getElementById("<portlet:namespace/>LicenseArchivefileuploadInput").onchange = function () {
-        if (this.value) {
-            document.getElementById("<portlet:namespace/>LicenseArchive-Submit").disabled = false;
-        }
-    };
+require(['jquery', 'modules/dialog', 'modules/validation'], function($, dialog, validation) {
 
-    function deleteAllLicenseInformation() {
+    validation.enableForm('#uploadLicenseArchiveForm');
 
-        function deleteAllLicenseInformationInternal() {
-            $.confirm({
-                title: "Delete",
-                content: function () {
-                    var self = this;
-                    return $.ajax({
-                        type: 'POST',
-                        url: '<%=deleteAllLicenseInformationURL%>',
-                        cache: false,
-                        dataType: 'json'
-                    }).done(function (data) {
-                        if (data.result == 'SUCCESS') {
-                            self.setTitle("Success");
-                            self.setContent("I deleted " + data.totalAffectedObjects + " of " + data.totalObjects + " total documents in the DB.");
-                        }else {
-                            self.setTitle("Failure");
-                            self.setContent("I could not delete the license information!");
-                        }
-                    }).fail(function(){
-                        self.setContent('Something went wrong.');
-                    });
+    $('.portlet-toolbar button[data-action="import-spdx"]').on('click', function() {
+        var $dialog;
+
+        function importSpdxLicenseInformationInternal(callback) {
+            $.ajax({
+                type: 'POST',
+                url: '<%=importSpdxLicenseInformationURL%>',
+                cache: false,
+                dataType: 'json'
+            }).always(function() {
+                callback();
+            }).done(function (data) {
+                if (data.result == 'SUCCESS') {
+                    $dialog.success("I imported " + data.totalAffectedObjects + " out of " + data.totalObjects + " SPDX licenses. " + data.message, true);
+                }else {
+                    $dialog.alert("I could not import all SPDX license information!");
                 }
+            }).fail(function(){
+                $dialog.alert('Something went wrong.');
             });
         }
 
-        var confirmMessage = "Do you really want to delete all licenses, license types, todos, obligations, risks, risk categories and todo custom properties from the db? " +
-            "\nN.B.: other documents might use the licenses." +
-            "\nThis function is meant to be followed by a new license import.";
-        deleteConfirmed(confirmMessage, deleteAllLicenseInformationInternal);
-    }
+        $dialog = dialog.confirm(
+            null,
+            'question-circle',
+            'Import SPDX licenses?',
+            '<p>Do you really want to import all SPDX all licenses?',
+            'Import SPDX licenses',
+            {},
+            function(submit, callback) {
+                importSpdxLicenseInformationInternal(callback);
+            }
+        );
+    });
 
-    function importSpdxLicenseInformation() {
+    $('.portlet-toolbar button[data-action="delete-licenses"]').on('click', function() {
+        var $dialog;
 
-        function importSpdxLicenseInformationInternal() {
-            $.confirm({
-                title: "Import",
-                content: function () {
-                    var self = this;
-                    return $.ajax({
-                        type: 'POST',
-                        url: '<%=importSpdxLicenseInformationURL%>',
-                        cache: false,
-                        dataType: 'json'
-                    }).done(function (data) {
-                        if (data.result == 'SUCCESS') {
-                            self.setTitle("Success");
-                            self.setContent("I imported " + data.totalAffectedObjects + " of " + data.totalObjects + " SPDX licenses. " + data.message);
-                        }else {
-                            self.setTitle("Failure");
-                            self.setContent("I could not import all SPDX license information!");
-                        }
-                    }).fail(function(){
-                        self.setContent('Something went wrong.');
-                    });
+        function deleteAllLicenseInformationInternal(callback) {
+            $.ajax({
+                type: 'POST',
+                url: '<%=deleteAllLicenseInformationURL%>',
+                cache: false,
+                dataType: 'json'
+            }).always(function() {
+               callback();
+            }).done(function (data) {
+                if (data.result == 'SUCCESS') {
+                    $dialog.success("I deleted " + data.totalAffectedObjects + " out of " + data.totalObjects + " documents in the database.", true);
+                }else {
+                    $dialog.alert("I could not delete the license information!");
                 }
+            }).fail(function(){
+                $dialog.alert('Something went wrong.');
             });
         }
 
-        var confirmMessage = "Do you really want to import all SPDX licenses";
-        deleteConfirmed(confirmMessage, importSpdxLicenseInformationInternal);
-    }
+        $dialog = dialog.confirm(
+            'danger',
+            'question-circle',
+            'Delete all Licenses?',
+            '<div class="alert alert-warning">Note: other documents might use the licenses.</div>' +
+            '<p>Do you really want to delete all licenses, license types, todos, obligations, risks, risk categories and todo custom properties from the database?' +
+            '<div class="alert alert-info">This function is meant to be followed by a new license import.</div>',
+            'Delete all License information',
+            {},
+            function(submit, callback) {
+                deleteAllLicenseInformationInternal(callback);
+            }
+        );
+    });
+});
 </script>
-
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.css">

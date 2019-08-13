@@ -22,17 +22,13 @@
 	</p>
 	<hr class="my-4">
 	<core_rt:if test="${themeDisplay.signedIn}">
-		<p>
-			You are signed in, please go ahead using SW360!
-		</p>
+		<h3>You are signed in, please go ahead using SW360!</h3>
 		<div class="buttons">
 			<a class="btn btn-primary btn-lg" href="/group/guest/home" role="button">Start</a>
 		</div>
 	</core_rt:if>
 	<core_rt:if test="${not themeDisplay.signedIn}">
-		<p>
-			In order to go ahead, please sign in or create a new account!
-		</p>
+		<h3>In order to go ahead, please sign in or create a new account!</h3>
 		<div class="buttons">
 			<span class="sign-in"><a class="btn btn-primary btn-lg" href="${ themeDisplay.getURLSignIn() }" role="button">Sign In</a></span>
 			<a class="btn btn-outline-primary btn-lg" href="/web/guest/sign-up" role="button">Create Account</a>

@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2016-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2016-2017, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -21,21 +21,24 @@
 <portlet:defineObjects />
 <liferay-theme:defineObjects />
 
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/themes/base/jquery-ui.min.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.css">
-
-<script src="<%=request.getContextPath()%>/webjars/jquery-validation/dist/jquery.validate.min.js" type="text/javascript"></script>
-<script src="<%=request.getContextPath()%>/webjars/jquery-validation/dist/additional-methods.min.js" type="text/javascript"></script>
-<script src="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.js" type="text/javascript"></script>
-<script src="<%=request.getContextPath()%>/webjars/jquery-ui/jquery-ui.min.js"></script>
-
 <portlet:actionURL var="updateURL" name="update">
     <portlet:param name="<%=PortalConstants.LICENSE_ID%>" value="${licenseDetail.id}" />
 </portlet:actionURL>
+
 <portlet:actionURL var="deleteURL" name="delete">
     <portlet:param name="<%=PortalConstants.LICENSE_ID%>" value="${licenseDetail.id}"/>
 </portlet:actionURL>
+
+<portlet:renderURL var="cancelToDetailURL">
+    <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_DETAIL%>" />
+    <portlet:param name="<%=PortalConstants.LICENSE_ID%>" value="${licenseDetail.id}" />
+</portlet:renderURL>
+
+<portlet:renderURL var="cancelToViewURL">
+    <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_VIEW%>" />
+    <portlet:param name="<%=PortalConstants.LICENSE_ID%>" value="${licenseDetail.id}" />
+</portlet:renderURL>
+
 
 <c:catch var="attributeNotFoundException">
     <jsp:useBean id="isUserAtLeastClearingAdmin" class="java.lang.String" scope="request" />
@@ -43,72 +46,120 @@
     <jsp:useBean id="licenseTypeChoice" class="java.util.ArrayList" scope="request" />
     <core_rt:set  var="addMode"  value="${empty licenseDetail.id}" />
 </c:catch>
+
 <%@include file="/html/utils/includes/logError.jspf" %>
 <core_rt:if test="${empty attributeNotFoundException || exceptionInBackend}">
 
-    <div id="where" class="content1">
-        <p class="pageHeader"><span class="pageHeaderBigSpan"><sw360:out value="${licenseDetail.shortname}"/></span>
-            <core_rt:if test="${not addMode}" >
-                <input type="button" class="addButton" onclick="deleteConfirmed('Do you really want to delete the license <b><sw360:LicenseName license="${licenseDetail}"/></b> ?', deleteLicense)"
-                       value="Delete <sw360:LicenseName license="${licenseDetail}"/>"
-                >
-            </core_rt:if>
-        </p>
-        <core_rt:if test="${not addMode}" >
-            <input type="button" id="formSubmit" value="Update License" class="addButton">
-            <input type="button" value="Cancel" onclick="cancel()" class="cancelButton">
-        </core_rt:if>
-        <core_rt:if test="${addMode}" >
-            <input type="button" id="formSubmit" value="Add License" class="addButton">
-            <input type="button" value="Cancel" onclick="cancel()" class="cancelButton">
-        </core_rt:if>
+    <div class="container" style="display: none;">
+        <div class="row portlet-toolbar">
+            <div class="col-auto">
+                <div class="btn-toolbar" role="toolbar">
+                    <div class="btn-group" role="group">
+                        <core_rt:if test="${addMode}" >
+                            <button type="button" id="formSubmit" class="btn btn-primary">Create License</button>
+                        </core_rt:if>
+
+                        <core_rt:if test="${not addMode}" >
+                            <button type="button" id="formSubmit" class="btn btn-primary">Update License</button>
+                        </core_rt:if>
+                    </div>
+
+                    <core_rt:if test="${not addMode}" >
+                        <div class="btn-group" role="group">
+                            <button id="deleteLicenseButton" type="button" class="btn btn-danger">Delete License</button>
+                        </div>
+                    </core_rt:if>
+
+                    <div class="btn-group" role="group">
+                        <core_rt:if test="${not addMode}" >
+                            <button id="cancelEditButton" type="button" class="btn btn-light" onclick="window.location.href='<%=cancelToDetailURL%>' + window.location.hash">Cancel</button>
+                        </core_rt:if>
+                        <core_rt:if test="${addMode}" >
+                            <button id="cancelEditButton" type="button" class="btn btn-light" onclick="window.location.href='<%=cancelToViewURL%>' + window.location.hash">Cancel</button>
+                        </core_rt:if>
+                    </div>
+                </div>
+            </div>
+            <div class="col portlet-title column text-truncate" title="<sw360:out value="${licenseDetail.fullname}"/> (<sw360:out value="${licenseDetail.shortname}"/>)">
+                <sw360:out value="${licenseDetail.fullname}"/> (<sw360:out value="${licenseDetail.shortname}"/>)
+                <core_rt:if test="${licenseDetail.checked != true}">
+                    <span class="badge badge-danger">UNCHECKED</span>
+                </core_rt:if>
+                <core_rt:if test="${licenseDetail.checked == true}">
+                    <span class="badge badge-success">CHECKED</span>
+                </core_rt:if>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <form  id="licenseEditForm" name="licenseEditForm" action="<%=updateURL%>" class="needs-validation" method="post" novalidate
+                  data-license-name="${licenseDetail.fullname} (${licenseDetail.shortname})"
+                  data-delete-url="<%=deleteURL%>">
+                    <%@include file="/html/licenses/includes/editDetailSummary.jspf"%>
+                    <%@include file="/html/licenses/includes/editDetailText.jspf"%>
+                </form>
+            </div>
+        </div>
+    </div>
+    <%@ include file="/html/utils/includes/pageSpinner.jspf" %>
+
+    <div class="dialogs auto-dialogs">
+        <div id="deleteLicenseDialog" class="modal fade" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg modal-dialog-centered modal-danger" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <clay:icon symbol="question-circle" />
+                            Delete License?
+                        </h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Do you really want to delete the license <b data-name="name"></b>?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger">Delete License</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div id="editField" class="content2">
-
-        <form  id="licenseEditForm" name="licenseEditForm" action="<%=updateURL%>" method="post" >
-            <%@include file="/html/licenses/includes/editDetailSummary.jspf"%>
-            <%@include file="/html/licenses/includes/editDetailText.jspf"%>
-        </form>
-    </div>
-
+    <%--for javascript library loading --%>
+    <%@ include file="/html/utils/includes/requirejs.jspf" %>
     <script>
-        var contextpath;
+        document.title = "${licenseDetail.shortname} - " + document.title;
 
-        Liferay.on('allPortletsReady', function() {
-            contextpath = '<%=request.getContextPath()%>';
-            $('#licenseEditForm').validate({
-                ignore: [],
-                invalidHandler: invalidHandlerShowErrorTab
-            });
+        require(['jquery', 'modules/dialog', 'modules/validation', 'bridges/jquery-ui'], function($, dialog, validation) {
+            $('#licenseEditForm').parents('.container:first').show().siblings('.container-spinner').hide();
 
-            $('#formSubmit').click(
-                function() {
-                    $('#licenseEditForm').submit();
-                }
-            );
+            validation.enableForm('#licenseEditForm');
 
             $('#lic_shortname').autocomplete({
                 source: <%=PortalConstants.LICENSE_IDENTIFIERS%>
             });
+
+            $('#formSubmit').on('click', function() {
+                $('#licenseEditForm').submit();
+            });
+
+            $('#deleteLicenseButton').on('click', deleteLicense);
+
+            function deleteLicense() {
+                var $dialog,
+                    data = $('#licenseEditForm').data(),
+                    name = data.licenseName;
+
+                $dialog = dialog.open('#deleteLicenseDialog', {
+                    name: name
+                }, function(submit, callback) {
+                    window.location.href = "<%=deleteURL%>";
+                });
+            }
         });
-
-        function deleteLicense() {
-            window.location.href = '<%=deleteURL%>';
-        }
-
-        function cancel() {
-            var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
-            var portletURL = Liferay.PortletURL.createURL( baseUrl )
-            <core_rt:if test="${not addMode}" >
-                    .setParameter('<%=PortalConstants.PAGENAME%>','<%=PortalConstants.PAGENAME_DETAIL%>')
-                    </core_rt:if>
-                    <core_rt:if test="${addMode}" >
-                    .setParameter('<%=PortalConstants.PAGENAME%>','<%=PortalConstants.PAGENAME_VIEW%>')
-                    </core_rt:if>
-
-                    .setParameter('<%=PortalConstants.LICENSE_ID%>','${licenseDetail.id}');
-            window.location = portletURL.toString();
-        }
     </script>
 </core_rt:if>
+

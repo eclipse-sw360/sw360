@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
   ~ With contributions by Bosch Software Innovations GmbH, 2016.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
@@ -11,45 +11,44 @@
 --%>
 
 <core_rt:if test="${usingProjects != null && allUsingProjectsCount > 0}">
-    <div id="usingProjectsTableDiv">
-        <table id="usingProjectsTable" class="table info_table">
-                <thead>
-                <tr>
-                    <th colspan="3"><sw360:out value="${documentName}"/> is used by a total of ${allUsingProjectsCount}
-                        (${usingProjects.size()} visible / ${allUsingProjectsCount - usingProjects.size()} restricted) projects</th>
-                </tr>
-                <tr>
-                    <th>Project Name</th><th>Group</th><th>Responsible</th>
-                </tr>
-                </thead>
-        </table>
+    <div class="alert alert-info mt-default mb-0">
+        <sw360:out value="${documentName}"/> is used by a total of ${allUsingProjectsCount}
+                        (${usingProjects.size()} visible / ${allUsingProjectsCount - usingProjects.size()} restricted) projects.
     </div>
 
+    <table id="usingProjectsTable" class="table table-bordered mt-1">
+        <colgroup>
+            <col style="width: 50%;" />
+            <col style="width: 25%;" />
+            <col style="width: 25%;" />
+        </colgroup>
+        <thead>
+            <tr>
+                <th>Project Name</th>
+                <th>Group</th>
+                <th>Responsible</th>
+            </tr>
+        </thead>
+    </table>
+
+    <%--for javascript library loading --%>
+    <%@ include file="/html/utils/includes/requirejs.jspf" %>
     <script>
-        require(['jquery', /* jquery-plugins */ 'datatables.net'], function ($) {
-            var usingProjectsTable;
+        require(['bridges/datatables'], function (datatables) {
+            var result = [];
 
-            Liferay.on('allPortletsReady', function() {
-                var result = [];
-
-                <core_rt:forEach items="${usingProjects}" var="project">
+            <core_rt:forEach items="${usingProjects}" var="project">
                 result.push([
                     "<sw360:DisplayProjectLink project="${project}"/>",
                     '<sw360:out value="${project.businessUnit}"/>',
                     '<sw360:DisplayUserEmail email="${project.projectResponsible}" bare="true"/>'
                 ]);
-                </core_rt:forEach>
+            </core_rt:forEach>
 
-                usingProjectsTable = $('#usingProjectsTable').DataTable({
-                    "pagingType": "simple_numbers",
-                    "data": result,
-                    dom: "lrtip",
-                    "searching": false,
-                    "lengthChange": false,
-                    "autoWidth": false
-                });
+            datatables.create('#usingProjectsTable', {
+                data: result,
+                lengthChange: false
             });
-
         });
     </script>
 </core_rt:if>

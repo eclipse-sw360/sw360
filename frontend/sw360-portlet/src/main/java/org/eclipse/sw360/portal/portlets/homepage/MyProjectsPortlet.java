@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
  * With contributions by Siemens Healthcare Diagnostics Inc, 2018.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -37,9 +37,6 @@ import static org.eclipse.sw360.portal.common.PortalConstants.MY_PROJECTS_PORTLE
         "/org/eclipse/sw360/portal/portlets/user.properties"
     },
     property = {
-        "com.liferay.portlet.header-portlet-javascript=/webjars/jquery-ui/jquery-ui.min.js",
-        "com.liferay.portlet.header-portlet-javascript=/webjars/datatables.net/js/jquery.dataTables.min.js",
-
         "javax.portlet.name=" + MY_PROJECTS_PORTLET_NAME,
 
         "javax.portlet.display-name=My Projects",

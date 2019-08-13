@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2018. Part of the SW360 Portal User.
+  ~ Copyright Siemens AG, 2013-2019. Part of the SW360 Portal User.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -14,8 +14,6 @@
 <portlet:defineObjects/>
 <liferay-theme:defineObjects/>
 
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
-
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 
 <portlet:resourceURL var="userSearchURL">
@@ -25,14 +23,9 @@
 <script>
     require(['jquery', 'utils/includes/searchAndSelectIds'], function($, idSearch) {
 
-        Liferay.on('allPortletsReady', function() {
-                $('.userSearchDialogInteractive').on('click', function() {
-                    showUserDialog( $(this).data('multiUser'), $(this).data('id') );
-                })
-            }
-        );
-
-        firstRun = true;
+        $('.userSearchDialogInteractive').on('click', function() {
+            showUserDialog( $(this).data('multiUser'), $(this).data('id') );
+        });
 
         function searchUserAjax(what, how) {
             return jQuery.ajax({
@@ -83,17 +76,15 @@
             return {'ids': ids, 'displayIds': displayIds};
         }
 
-
         function showUserDialog(multiUser, resultInputId) {
             var htmlElements = {
                 'addButton': $('#search-add-button'),
                 'searchButton': $('#search-button'),
                 'resetButton': $('#reset-button'),
-                'searchInput': $('#search-text'),
+                'searchInput': 'search-text',
                 'resultTableBody': $('#search-result-table-body'),
                 'resultTable': $('#search-result-table'),
-                'searchDiv': 'search-users-div',
-                'emptyRow': "<tr class=\"trbodyClass\"><td></td><td></td><td></td><td></td><td></td></tr>"
+                'searchDiv': 'search-users-div'
             };
             var functions = {
                 'ajaxSearch': searchUserAjax,
@@ -102,8 +93,7 @@
                 'renderInput': renderUserInputToFullData,
             };
 
-            idSearch.openSearchDialog(multiUser, resultInputId, htmlElements, functions, firstRun);
-            firstRun = false;
+            idSearch.openSearchDialog(multiUser, resultInputId, htmlElements, functions);
         }
     });
 </script>

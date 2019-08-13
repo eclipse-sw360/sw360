@@ -92,6 +92,68 @@ define('bridges/datatables', [
 			}
 
 			return $(selector).DataTable(config);
+		},
+		destroy: function(selector) {
+			$(selector).DataTable({
+				destroy: true
+			}).destroy();
+		},
+		enableCheckboxForSelection: function($datatable, selectColumn) {
+
+			// remove old listener
+			$datatable.off('select.sw360.select-table');
+			$datatable.off('deselect.sw360.select-table');
+
+			// initialise selection
+			$datatable.rows().deselect();
+			$datatable.rows(function(idx, data, node) {
+				return $(node).find(':checked').length > 0;
+			}).select();
+
+			$datatable.on('select.sw360.select-table', function(event, dataTable, type, indices) {
+                var $input;
+
+                if(type === 'row') {
+					if(typeof indices.length === 'undefined') {
+						indices = [ indices ];
+					}
+
+					indices.forEach(function(index) {
+						$input = $(dataTable.cell(index, selectColumn).node()).find('input[type="checkbox"], input[type="radio"]');
+						if($input.length > 0) {
+							$input.prop('checked', true).trigger('change');
+						} else {
+							dataTable.row(index).deselect();
+						}
+					});
+                }
+			});
+
+            $datatable.on('deselect.sw360.select-table', function(event, dataTable, type, indices) {
+                var $input;
+
+                if(type === 'row') {
+                    if(typeof indices.length === 'undefined') {
+						indices = [ indices ];
+					}
+
+					indices.forEach(function(index) {
+						$input = $(dataTable.cell(index, selectColumn).node()).find('input[type="checkbox"], input[type="radio"]');
+						if($input.length > 0) {
+							$input.prop('checked', false).trigger('change');
+						}
+					});
+                }
+			});
+		},
+		showPageContainer: function($datatable) {
+			$datatable = $datatable instanceof $ ? $datatable : this;
+
+			if(!($datatable instanceof $)) {
+				console.error('No jquery object found neither as parameter nor as \'this\'. Skipping.');
+				return;
+			}
+			$datatable.parents('.container:first').show().siblings('.container-spinner').hide();
 		}
 	};
 });

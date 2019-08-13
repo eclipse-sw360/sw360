@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
  * With contributions by Bosch Software Innovations GmbH, 2016.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -44,6 +44,7 @@ public class PortalConstants {
     public static final String PORTLET_NAME_PREFIX = "sw360_portlet_";
 
     //! Role names
+    // Keep this in sync with configuration/portal-ext.properties#system.site.roles
     public static final String ROLENAME_ADMIN = "Administrator";
     public static final String ROLENAME_CLEARING_ADMIN = "Clearing Admin";
     public static final String ROLENAME_ECC_ADMIN = "ECC Admin";
@@ -108,7 +109,6 @@ public class PortalConstants {
     public static final String COMPONENT_NAME = "componentname";
     public static final String ACTUAL_COMPONENT = "actual_component";
     public static final String COMPONENT_LIST = "componentList";
-    public static final String TYPE_MASK = "typeMask";
     public static final String COMPONENT_TYPE_LIST = "componentTypeList";
     public static final String COMPONENT_CATEGORIES;
     public static final String COMPONENT_ROLES;
@@ -281,12 +281,14 @@ public class PortalConstants {
     public static final String ECC_PORTLET_NAME = PORTLET_NAME_PREFIX + "ecc";
 
     //! Keys for Search
+    public static final String TYPE_MASK = "typeMask";
     public static final String SEARCH_PORTLET_NAME = PORTLET_NAME_PREFIX + "search";
 
     //! Keys for Preferences
     public static final String PREFERENCES_PORTLET_NAME = PORTLET_NAME_PREFIX + "preferences";
 
     //! Keys for Admin portlets
+    public static final String ADMIN_PORTLET_NAME = PORTLET_NAME_PREFIX + "admin";
     public static final String ATTACHMENT_CLEANUP_PORTLET_NAME = PORTLET_NAME_PREFIX + "attachmentcleanup";
     public static final String BULK_RELEASE_EDIT_PORTLET_NAME = PORTLET_NAME_PREFIX + "bulkreleaseedit";
     public static final String IMPORT_EXPORT_PORTLET_NAME = PORTLET_NAME_PREFIX + "importexport";

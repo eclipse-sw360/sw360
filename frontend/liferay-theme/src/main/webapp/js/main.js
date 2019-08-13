@@ -10,10 +10,9 @@
  */
 
 AUI().ready('liferay-sign-in-modal', function(AUI) {
-		var loginLink = AUI.all('.sign-in > a');
+	var loginLink = AUI.all('.sign-in > a');
 
-		if (loginLink) {
-			loginLink.plug(Liferay.SignInModal);
-		}
+	if (loginLink) {
+		loginLink.plug(Liferay.SignInModal);
 	}
-);
+});

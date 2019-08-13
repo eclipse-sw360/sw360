@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -26,34 +26,46 @@
     <core_rt:set var="uuid" value="${releaseLink.id}"/>
     <tr id="releaseLinkRow${uuid}" >
         <td>
-            <input id="releaseVendor" type="text" placeholder="No vendor"
-                   value="<sw360:out value="${releaseLink.vendor}"/>" readonly/>
+            <div class="form-group">
+                <input id="releaseVendor" type="text" placeholder="No vendor" class="form-control"
+                    value="<sw360:out value="${releaseLink.vendor}"/>" readonly/>
+            </div>
         </td>
         <td>
-            <input type="hidden" value="${releaseLink.id}" name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ReleaseLink._Fields.ID%>">
-            <input id="releaseName" type="text" placeholder="Enter release"
-                   value="<sw360:out value="${releaseLink.name}"/>" readonly/>
+            <div class="form-group">
+                <input type="hidden" value="${releaseLink.id}" name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ReleaseLink._Fields.ID%>">
+                <input id="releaseName" type="text" placeholder="Enter release" class="form-control"
+                    value="<sw360:out value="${releaseLink.name}"/>" readonly/>
+            </div>
         </td>
         <td>
-            <input id="releaseVersion" type="text" placeholder="Enter version"
-                   value="<sw360:out value="${releaseLink.version}"/>" readonly/>
+            <div class="form-group">
+                <input id="releaseVersion" type="text" placeholder="Enter version" class="form-control"
+                    value="<sw360:out value="${releaseLink.version}"/>" readonly/>
+            </div>
         </td>
         <td>
-            <select  id="releaseRelation"
-                    name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.RELEASE_RELATION%>"
-                    style="min-height: 28px;">
-                <sw360:DisplayEnumOptions type="<%=ReleaseRelationship.class%>" selected="${releaseLink.releaseRelationship}"/>
-            </select>
+            <div class="form-group">
+                <select id="releaseRelation"
+                        name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.RELEASE_RELATION%>"
+                        class="form-control">
+                    <sw360:DisplayEnumOptions type="<%=ReleaseRelationship.class%>" selected="${releaseLink.releaseRelationship}"/>
+                </select>
+            </div>
         </td>
         <td>
-            <select class= id="mainlineState"
-                    name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.MAINLINE_STATE%>"
-                    style="min-height: 28px;">
-                <sw360:DisplayEnumOptions type="<%=MainlineState.class%>" selected="${releaseLink.mainlineState}"/>
-            </select>
+            <div class="form-group">
+                <select class="form-control" id="mainlineState"
+                        name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.MAINLINE_STATE%>"
+                >
+                    <sw360:DisplayEnumOptions type="<%=MainlineState.class%>" selected="${releaseLink.mainlineState}"/>
+                </select>
+            </div>
         </td>
-        <td class="deletor">
-            <img src="<%=request.getContextPath()%>/images/Trash.png" onclick="deleteReleaseLink('releaseLinkRow${uuid}','<sw360:out value='${releaseLink.longName}' jsQuoting="true"/>')" alt="Delete">
+        <td class="content-middle">
+            <svg title="Delete" class="action lexicon-icon" data-row-id="releaseLinkRow${uuid}" data-release-name="<sw360:out value='${releaseLink.longName}' jsQuoting="true"/>">
+                <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
+            </svg>
         </td>
     </tr>
 </core_rt:forEach>

@@ -65,180 +65,254 @@
 <c:set var="hasWritePermissions" value="${project.permissions[WRITE]}"/>
 
 <core_rt:if test="${empty attributeNotFoundException}">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-ui/themes/base/jquery-ui.min.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/webjars/jquery-confirm2/dist/jquery-confirm.min.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/dataTable_Siemens.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
 
-<div id="header"></div>
-<p class="pageHeader"><span class="pageHeaderBigSpan"><sw360:out value="${project.name}"/></span>
-    <span class="pull-right">
-        <core_rt:if test="${not addMode}">
-                   <input id="deleteProjectButton" type="button" class="addButton"
-                          value="Delete <sw360:ProjectName project="${project}"/>"
-                   <core_rt:if test="${ usingProjects.size()>0}"> disabled="disabled" title="Deletion is disabled as the project is used." </core_rt:if>
-                   >
-        </core_rt:if></span>
-</p>
+<div class="container" style="display: none;">
+	<div class="row">
+		<div class="col-3 sidebar">
+			<div id="detailTab" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab">Summary</a>
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Administration'}">active</core_rt:if>" href="#tab-Administration" data-toggle="list" role="tab">Administration</a>
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-linkedProjects'}">active</core_rt:if>" href="#tab-linkedProjects" data-toggle="list" role="tab">Linked Releases And Projects</a>
+			<core_rt:if test="${not addMode}" >
+                    <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Attachments'}">active</core_rt:if>" href="#tab-Attachments" data-toggle="list" role="tab">Attachments</a>
+                </core_rt:if>
+		    </div>
+	    </div>
+	    <div class="col">
+            <div class="row portlet-toolbar">
+                <div class="col-auto">
+                    <div class="btn-toolbar" role="toolbar">
+                        <div class="btn-group" role="group">
+                            <core_rt:if test="${addMode}" >
+                                <button type="button" id="formSubmit" class="btn btn-primary">Create Project</button>
+                            </core_rt:if>
 
+                            <core_rt:if test="${not addMode}" >
+                                <button type="button" id="formSubmit" class="btn btn-primary">Update Project</button>
+                            </core_rt:if>
+                        </div>
 
-<div id="content" >
-    <div class="container-fluid">
-        <form  id="projectEditForm" name="projectEditForm" action="<%=updateURL%>" method="post" >
-            <div id="myTab" class="row-fluid" <core_rt:if test="${not empty selectedTab}"> data-initial-tab="${selectedTab}" </core_rt:if>>
-                <ul class="nav nav-tabs span2">
-                    <li class="active"><a href="#tab-Summary">Summary</a></li>
-                    <li><a href="#tab-Administration">Administration</a></li>
-                    <li><a href="#tab-linkedProjects">Linked Releases And Projects</a></li>
-                    <core_rt:if test="${not addMode}" >
-                    <li><a href="#tab-Attachments">Attachments</a></li>
-                    </core_rt:if>
-                </ul>
-                <div class="tab-content span10">
-                    <div id="tab-Summary" class="tab-pane" >
-                        <%@include file="/html/projects/includes/projects/basicInfo.jspf" %>
-                        <core_rt:set var="documentName"><sw360:ProjectName project="${project}"/></core_rt:set>
-                        <%@include file="/html/utils/includes/usingProjectsTable.jspf" %>
-                        <%@include file="/html/utils/includes/usingComponentsTable.jspf"%>
-                        <core_rt:set var="externalIdsSet" value="${project.externalIds.entrySet()}"/>
-                        <core_rt:set var="externalIdKeys" value="<%=PortalConstants.PROJECT_EXTERNAL_ID_KEYS%>"/>
-                        <%@include file="/html/utils/includes/editExternalIds.jsp" %>
-                        <core_rt:set var="additionalDataSet" value="${project.additionalData.entrySet()}"/>
-                        <%@include file="/html/utils/includes/editAdditionalData.jsp" %>
+                        <core_rt:if test="${not addMode}" >
+                            <div class="btn-group" role="group">
+                                <button id="deleteProjectButton" type="button" class="btn btn-danger"
+                                    <core_rt:if test="${ usingProjects.size()>0}"> disabled="disabled" title="Deletion is disabled as the project is used." </core_rt:if>
+                                >Delete Project</button>
+                            </div>
+                        </core_rt:if>
+
+                        <div class="btn-group" role="group">
+                            <button id="cancelEditButton" type="button" class="btn btn-light">Cancel</button>
+                        </div>
                     </div>
-                    <div id="tab-Administration" >
-                        <%@include file="/html/projects/includes/projects/administrationEdit.jspf" %>
-                    </div>
-                    <div id="tab-linkedProjects" >
-                        <%@include file="/html/projects/includes/linkedProjectsEdit.jspf" %>
-                        <%@include file="/html/utils/includes/linkedReleasesEdit.jspf" %>
-                    </div>
-                    <core_rt:if test="${not addMode}" >
-                    <div id="tab-Attachments" >
-                        <%@include file="/html/utils/includes/editAttachments.jspf" %>
-                    </div>
-                    </core_rt:if>
                 </div>
+                <div class="col portlet-title text-truncate" title="${sw360:printProjectName(project)}"">
+					<sw360:ProjectName project="${project}"/>
+				</div>
             </div>
+            <div class="row">
+				<div class="col">
+                    <form  id="projectEditForm" name="projectEditForm" action="<%=updateURL%>" class="needs-validation" method="post" novalidate
+                        data-delete-url="<%=deleteURL%>"
+                        data-comment-parameter-name="<%=PortalConstants.MODERATION_REQUEST_COMMENT%>"
+                        data-linked-projects="${project.linkedProjectsSize}"
+                        data-linked-releases="${project.releaseIdToUsageSize}"
+                        data-attachments="${project.attachmentsSize}"
+                    >
+                        <div class="tab-content">
+                            <div id="tab-Summary" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Summary'}">active show</core_rt:if>" >
+                                <%@include file="/html/projects/includes/projects/basicInfo.jspf" %>
 
-            <core_rt:if test="${not addMode}" >
-                <input type="button" id="formSubmit" value="Update Project" class="addButton">
-            </core_rt:if>
-            <core_rt:if test="${addMode}" >
-                <input type="button" id="formSubmit" value="Add Project" class="addButton">
-            </core_rt:if>
-            <input id="cancelEditButton" type="button" value="Cancel" class="cancelButton">
-            <div id="moderationRequestCommentDialog" style="display: none">
-            <hr>
-            <label class="textlabel stackedLabel">Comment your changes</label>
-            <textarea form=projectEditForm name="<portlet:namespace/><%=PortalConstants.MODERATION_REQUEST_COMMENT%>" id="moderationRequestCommentField" class="moderationCreationComment" placeholder="Leave a comment on your request"></textarea>
-            <input type="button" class="addButton" id="moderationRequestCommentSendButton" value="Send moderation request">
-            </div>
+                                <core_rt:set var="externalIdsSet" value="${project.externalIds.entrySet()}"/>
+                                <core_rt:set var="externalIdKeys" value="<%=PortalConstants.PROJECT_EXTERNAL_ID_KEYS%>"/>
+                                <%@include file="/html/utils/includes/editExternalIds.jsp" %>
 
-        </form>
+                                <core_rt:set var="additionalDataSet" value="${project.additionalData.entrySet()}"/>
+                                <%@include file="/html/utils/includes/editAdditionalData.jsp" %>
+
+                                <core_rt:set var="documentName"><sw360:ProjectName project="${project}"/></core_rt:set>
+                                <%@include file="/html/utils/includes/usingProjectsTable.jspf" %>
+                                <%@include file="/html/utils/includes/usingComponentsTable.jspf"%>
+                            </div>
+                            <div id="tab-Administration" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Administration'}">active show</core_rt:if>">
+                                <%@include file="/html/projects/includes/projects/administrationEdit.jspf" %>
+                            </div>
+                            <div id="tab-linkedProjects" class="tab-pane <core_rt:if test="${selectedTab == 'tab-linkedProjects'}">active show</core_rt:if>">
+                                <%@include file="/html/projects/includes/linkedProjectsEdit.jspf" %>
+                                <%@include file="/html/utils/includes/linkedReleasesEdit.jspf" %>
+                            </div>
+                            <core_rt:if test="${not addMode}" >
+                                <div id="tab-Attachments" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Attachments'}">active show</core_rt:if>">
+                                    <%@include file="/html/utils/includes/editAttachments.jspf" %>
+                                </div>
+                            </core_rt:if>
+                        </div>
+                    </form>
+		        </div>
+		    </div>
+        </div>
     </div>
 </div>
+<%@ include file="/html/utils/includes/pageSpinner.jspf" %>
 
+<div class="dialogs auto-dialogs">
+    <div id="deleteProjectDialog" class="modal fade" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-lg modal-dialog-centered modal-danger" role="document">
+		    <div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">
+					<clay:icon symbol="question-circle" />
+					Delete Project?
+				</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+				<div class="modal-body">
+			        <p>Do you really want to delete the project <b data-name="name"></b>?</p>
+			        <div data-hide="hasNoDependencies">
+				        <p>
+						This project <span data-name="name"></span> contains:
+				        </p>
+					<ul>
+						<li data-hide="hasNoLinkedProjects"><span data-name="linkedProjects"></span> linked projects</li>
+						<li data-hide="hasNoLinkedReleases"><span data-name="linkedReleases"></span> linked releases</li>
+						<li data-hide="hasNoAttachments"><span data-name="attachments"></span> attachments</li>
+					</ul>
+				</div>
+			        <hr/>
+			        <form>
+					<div class="form-group">
+					        <label for="deleteProjectDialogComment">Please comment your changes</label>
+					        <textarea id="deleteProjectDialogComment" class="form-control" data-name="comment" rows="4" placeholder="Comment your request..."></textarea>
+					</div>
+			        </form>
+				</div>
+			    <div class="modal-footer">
+			        <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
+			        <button type="button" class="btn btn-danger">Delete Project</button>
+			    </div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<core_rt:set var="enableSearchForReleasesFromLinkedProjects" value="${true}" scope="request"/>
 
 <jsp:include page="/html/projects/includes/searchProjects.jsp" />
-<core_rt:set var="enableSearchForReleasesFromLinkedProjects" value="${true}" scope="request"/>
 <jsp:include page="/html/utils/includes/searchReleases.jsp" />
 <jsp:include page="/html/utils/includes/searchAndSelectUsers.jsp" />
 <jsp:include page="/html/utils/includes/searchUsers.jsp" />
 
 </core_rt:if>
 
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-require(['jquery', 'modules/sw360Validate', 'modules/confirm', 'modules/tabview' ], function($, sw360Validate, confirm, tabview) {
+require(['jquery', 'modules/dialog', 'modules/listgroup', 'modules/validation', 'bridges/jquery-ui' ], function($, dialog, listgroup, validation) {
     document.title = "${project.name} - " + document.title;
 
-    tabview.create('myTab');
+    listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
 
-    Liferay.on('allPortletsReady', function() {
-        var contextpath = '<%=request.getContextPath()%>',
-            deletionMessage;
+    validation.enableForm('#projectEditForm');
+    validation.jumpToFailedTab('#projectEditForm');
 
-        $('#moderationRequestCommentSendButton').on('click', submitForm);
-        $('#cancelEditButton, #cancelEditButton2').on('click', cancel);
-        $('#deleteProjectButton').on('click', openDeleteDialog);
+    $('#formSubmit').click(
+        function () {
+            <core_rt:choose>
+                <core_rt:when test="${addMode || project.permissions[WRITE]}">
+                    submitForm();
+                </core_rt:when>
+                <core_rt:otherwise>
+                    showCommentDialog();
+                </core_rt:otherwise>
+            </core_rt:choose>
+        }
+    );
+    $('#cancelEditButton').on('click', cancel);
+    $('#deleteProjectButton').on('click', deleteProject);
 
-        sw360Validate.validateWithInvalidHandlerNoIgnore('#projectEditForm');
-
-        $('#formSubmit, #formSubmit2').click(
-            function () {
-                <core_rt:choose>
-                    <core_rt:when test="${addMode || project.permissions[WRITE]}">
-                        submitForm();
-                    </core_rt:when>
-                    <core_rt:otherwise>
-                        showCommentField();
-                    </core_rt:otherwise>
-                </core_rt:choose>
-            }
-        );
-    });
-
-    function cancel() {
-        deleteAttachmentsOnCancel();
-
-        var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>',
-            portletURL = Liferay.PortletURL.createURL(baseUrl)
-        <core_rt:if test="${not addMode}">
-                .setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_DETAIL%>')
-        </core_rt:if>
-        <core_rt:if test="${addMode}">
-                .setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_VIEW%>')
-        </core_rt:if>
-                .setParameter('<%=PortalConstants.PROJECT_ID%>', '${project.id}');
-        window.location = portletURL.toString();
+    function submitForm() {
+        disableLicenseInfoHeaderTextIfNecessary();
+        disableObligationsTextIfNecessary();
+        $('#projectEditForm').submit();
     }
 
-    function deleteAttachmentsOnCancel() {
+    function cancel() {
         $.ajax({
             type: 'POST',
             url: '<%=deleteAttachmentsOnCancelURL%>',
             cache: false,
             data: {
                 "<portlet:namespace/><%=PortalConstants.DOCUMENT_ID%>": "${project.id}"
-            },
+            }
+        }).always(function() {
+            var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>',
+                portletURL = Liferay.PortletURL.createURL(baseUrl)
+            <core_rt:if test="${not addMode}">
+                    .setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_DETAIL%>')
+            </core_rt:if>
+            <core_rt:if test="${addMode}">
+                    .setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_VIEW%>')
+            </core_rt:if>
+                    .setParameter('<%=PortalConstants.PROJECT_ID%>', '${project.id}');
+
+            window.location = portletURL.toString() + window.location.hash;
         });
     }
 
-    function openDeleteDialog() {
-        var htmlDialog  = '' + '<div>' +
-                          'Do you really want to delete the project <b><sw360:ProjectName project="${project}"/></b> ?' +
-                          '<core_rt:if test="${not empty project.linkedProjects or not empty project.releaseIdToUsage or not empty project.attachments}" ><br/><br/>The project <b><sw360:ProjectName project="${project}"/></b> contains<br/><ul></core_rt:if>' +
-                          '<core_rt:if test="${not empty project.linkedProjects}" ><li><sw360:out value="${project.linkedProjectsSize}"/> linked projects</li></core_rt:if>' +
-                          '<core_rt:if test="${not empty project.releaseIdToUsage}" ><li><sw360:out value="${project.releaseIdToUsageSize}"/> linked releases</li></core_rt:if>'  +
-                          '<core_rt:if test="${not empty project.attachments}" ><li><sw360:out value="${project.attachmentsSize}"/> attachments</li></core_rt:if>'  +
-                          '<core_rt:if test="${not empty project.linkedProjects or not empty project.releaseIdToUsage or not empty project.attachments}" ></ul></core_rt:if>' +
-                          '</div>'+
-                          '<div ' + styleAsHiddenIfNeccessary(${project.permissions[DELETE] == true}) + '><hr><label class=\'textlabel stackedLabel\'>Comment your changes</label><textarea id=\'moderationDeleteCommentField\' class=\'moderationCreationComment\' placeholder=\'Comment on request...\'></textarea></div>';
-        deleteConfirmed(htmlDialog, deleteProject);
-    }
-
     function deleteProject() {
-        var commentText_encoded = btoa($("#moderationDeleteCommentField").val());
-        var baseUrl = '<%=deleteURL%>';
-        var deleteURL = Liferay.PortletURL.createURL( baseUrl ).setParameter('<%=PortalConstants.MODERATION_REQUEST_COMMENT%>',commentText_encoded);
-        window.location.href = deleteURL;
+        var $dialog,
+            data = $('#projectEditForm').data(),
+            linkedProjectsSize = data.linkedProjects,
+            linkedReleasesSize = data.linkedReleases,
+            attachmentsSize = data.attachments;
+
+        function deleteProjectInternal() {
+            var baseUrl = data.deleteUrl,
+                deleteURL = Liferay.PortletURL.createURL( baseUrl ).setParameter(data.commentParameterName, btoa($("#moderationDeleteCommentField").val()));
+            window.location.href = deleteURL;
+        }
+
+        $dialog = dialog.open('#deleteProjectDialog', {
+            name: name,
+            linkedProjects: linkedProjectsSize,
+            linkedReleases: linkedReleasesSize,
+            attachments: attachmentsSize,
+            hasNoDependencies: linkedProjectsSize == 0 && linkedReleasesSize == 0 && attachmentsSize == 0,
+            hasNoLinkedProjects: linkedProjectsSize == 0,
+            hasNoLinkedReleases: linkedReleasesSize == 0,
+            hasNoAttachments: attachmentsSize == 0
+        }, function(submit, callback) {
+            deleteProjectInternal();
+        });
     }
 
-    function focusOnCommentField() {
-        $("#moderationRequestCommentField").focus();
-        $("#moderationRequestCommentField").select();
-    }
+    function showCommentDialog() {
+        var $dialog;
 
-    function showCommentField() {
-        $("#moderationRequestCommentDialog").show();
-        $("#formSubmit, #formSubmit2").attr("disabled","disabled");
-        focusOnCommentField();
-    }
+        // validate first to be sure that form can be submitted
+        if(!validation.validate('#projectEditForm')) {
+            return;
+        }
 
-    function submitForm() {
-        disableLicenseInfoHeaderTextIfNecessary();
-        disableObligationsTextIfNecessary();
-        $('#projectEditForm').submit();
+        $dialog = dialog.confirm(
+            null,
+            'pencil',
+            'Create moderation request',
+            '<form>' +
+			    '<div class="form-group">' +
+					'<label for="deleteProjectDialogComment">Please comment your changes</label>' +
+					'<textarea form=projectEditForm name="<portlet:namespace/><%=PortalConstants.MODERATION_REQUEST_COMMENT%>" id="moderationRequestCommentField" class="form-control" placeholder="Leave a comment on your request" data-name="comment"></textarea>' +
+			    '</div>' +
+            '</form>',
+            'Send moderation request',
+            {
+                comment: ''
+            },
+            submitForm
+        );
+        $dialog.$.on('shown.bs.modal', function() {
+            $dialog.$.find('textarea').focus();
+        });
     }
 
     function disableLicenseInfoHeaderTextIfNecessary() {

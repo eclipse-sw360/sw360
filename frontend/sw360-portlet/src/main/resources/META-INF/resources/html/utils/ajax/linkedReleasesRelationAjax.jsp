@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -23,27 +23,37 @@
     <core_rt:set var="uuid" value="${releaseLink.id}"/>
     <tr id="releaseLinkRow${uuid}" >
         <td>
-            <input id="releaseVendor" type="text" placeholder="Enter vendor"
-                   value="<sw360:out value="${releaseLink.vendor}"/>" readonly/>
+            <div class="form-group">
+                <input id="releaseVendor" type="text" placeholder="Enter vendor" class="form-control"
+                    value="<sw360:out value="${releaseLink.vendor}"/>" readonly />
+            </div>
         </td>
         <td>
-            <input type="hidden" value="${releaseLink.id}" name="<portlet:namespace/><%=Release._Fields.RELEASE_ID_TO_RELATIONSHIP%><%=ReleaseLink._Fields.ID%>">
-            <input id="releaseName" type="text" placeholder="Enter release"
-                   value="<sw360:out value="${releaseLink.name}"/>" readonly/>
+            <div class="form-group">
+                <input type="hidden" value="${releaseLink.id}" name="<portlet:namespace/><%=Release._Fields.RELEASE_ID_TO_RELATIONSHIP%><%=ReleaseLink._Fields.ID%>">
+                <input id="releaseName" type="text" placeholder="Enter release" class="form-control"
+                    value="<sw360:out value="${releaseLink.name}"/>" readonly/>
+            </div>
         </td>
         <td>
-            <input id="releaseVersion" type="text" placeholder="Enter version"
-                   value="<sw360:out value="${releaseLink.version}"/>" readonly/>
+            <div class="form-group">
+                <input id="releaseVersion" class="form-control" type="text" placeholder="Enter version"
+                    value="<sw360:out value="${releaseLink.version}"/>" readonly/>
+            </div>
         </td>
         <td>
-            <select id="releaseRelation"
-                    name="<portlet:namespace/><%=Release._Fields.RELEASE_ID_TO_RELATIONSHIP%><%=ReleaseLink._Fields.RELEASE_RELATIONSHIP%>"
-                    style="min-height: 28px;">
-                <sw360:DisplayEnumOptions type="<%=ReleaseRelationship.class%>" selected="${releaseLink.releaseRelationship}"/>
-            </select>
+            <div class="form-group">
+                <select id="releaseRelation"
+                        name="<portlet:namespace/><%=Release._Fields.RELEASE_ID_TO_RELATIONSHIP%><%=ReleaseLink._Fields.RELEASE_RELATIONSHIP%>"
+                        class="form-control">
+                    <sw360:DisplayEnumOptions type="<%=ReleaseRelationship.class%>" selected="${releaseLink.releaseRelationship}"/>
+                </select>
+            </div>
         </td>
-        <td class="deletor">
-            <img src="<%=request.getContextPath()%>/images/Trash.png" onclick="deleteReleaseLink('releaseLinkRow${uuid}')" alt="Delete">
+        <td class="actions">
+            <div class="actions">
+                <svg class="lexicon-icon" data-action="delete-release" data-uuid="${uuid}"><title>Delete</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#delete"/></svg>
+            </div>
         </td>
     </tr>
 </core_rt:forEach>

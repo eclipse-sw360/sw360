@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
   ~ With contributions by Bosch Software Innovations GmbH, 2016.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
@@ -14,50 +14,46 @@
 <portlet:defineObjects/>
 <liferay-theme:defineObjects/>
 
-<%-- Note that the necessary includes are in life-ray-portlet.xml --%>
-
 <jsp:useBean id="components" type="java.util.List<org.eclipse.sw360.datahandler.thrift.components.Component>"
              class="java.util.ArrayList" scope="request"/>
 
-<div class="homepageheading">
-    My Components
+<h4>My Components</h4>
+<div class="row">
+    <div class="col">
+        <table id="myComponentsTable" class="table table-bordered table-lowspace">
+            <colgroup>
+                <col style="width: 60%;"/>
+                <col style="width: 40%;"/>
+            </colgroup>
+        </table>
+    </div>
 </div>
 
-<div id="myComponentsDiv" class="homepageListingTable">
-    <table id="myComponentsTable" cellpadding="0" cellspacing="0" border="0" class="display">
-         <colgroup>
-               <col style="width: 60%;"/>
-               <col style="width: 40%;"/>
-         </colgroup>
-    </table>
-</div>
-
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-
-    Liferay.on('allPortletsReady', function() {
+    require(['jquery', 'bridges/datatables' ], function($, datatables) {
         var result = [];
 
         <core_rt:forEach items="${components}" var="component">
-
-        result.push({
-            "DT_RowId": "${component.id}",
-            "0": "<sw360:DisplayComponentLink component="${component}"/>",
-            "1": '<sw360:out value="${component.description}"/>'
-        });
-
+            result.push({
+                "DT_RowId": "${component.id}",
+                "0": "<sw360:DisplayComponentLink component="${component}"/>",
+                "1": '<sw360:out value="${component.description}"/>'
+            });
         </core_rt:forEach>
 
-        $('#myComponentsTable').dataTable({
-            pagingType: "simple_numbers",
-            dom: "rtip",
+        datatables.create('#myComponentsTable', {
             data: result,
-            pageLength: 10,
+            dom:
+				"<'row'<'col-sm-12'tr>>" +
+				"<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
             columns: [
                 {"title": "Component Name"},
                 {"title": "Description"}
             ],
-            autoWidth: false
+            language: {
+                emptyTable: 'You do not own any components.'
+            }
         });
     });
-
 </script>

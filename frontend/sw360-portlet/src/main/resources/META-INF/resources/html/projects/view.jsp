@@ -15,11 +15,11 @@
 <%@ page import="javax.portlet.PortletRequest" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectType" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectState" %>
+<%@ page import="org.eclipse.sw360.portal.common.FossologyConnectionHelper" %>
 
 <%@ include file="/html/init.jsp" %>
 <%-- the following is needed by liferay to display error messages--%>
 <%@ include file="/html/utils/includes/errorKeyToMessage.jspf"%>
-
 
 <portlet:defineObjects/>
 <liferay-theme:defineObjects/>
@@ -35,6 +35,7 @@
 
 <core_rt:set var="stateAutoC" value='<%=PortalConstants.STATE%>'/>
 <core_rt:set var="projectTypeAutoC" value='<%=PortalConstants.PROJECT_TYPE%>'/>
+<core_rt:set var="FOSSOLOGY_CONNECTION_ENABLED" value="<%=FossologyConnectionHelper.getInstance().isFossologyConnectionEnabled()%>"/>
 
 <portlet:resourceURL var="exportProjectsURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.EXPORT_TO_EXCEL%>"/>
@@ -61,7 +62,6 @@
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.FOSSOLOGY_GET_SENDABLE%>'/>
 </portlet:resourceURL>
 
-
 <portlet:resourceURL var="projectReleasesSendURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.FOSSOLOGY_SEND%>'/>
 </portlet:resourceURL>
@@ -77,7 +77,7 @@
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.LOAD_PROJECT_LIST%>'/>
 </portlet:resourceURL>
 
-<div class="container">
+<div class="container" style="display: none;">
 	<div class="row">
 		<div class="col-3 sidebar">
 			<div class="card-deck">
@@ -140,8 +140,8 @@
 			</div>
 		</div>
 		<div class="col">
-			<div class="row portlet-toolbar">
-				<div class="col">
+            <div class="row portlet-toolbar">
+				<div class="col-auto">
 					<div class="btn-toolbar" role="toolbar">
 						<div class="btn-group" role="group">
 							<button type="button" class="btn btn-primary" onclick="window.location.href='<%=addProjectURL%>'">Add Project</button>
@@ -158,20 +158,25 @@
 						</div>
 					</div>
 				</div>
-				<div class="col portlet-title">
+                <div class="col portlet-title text-truncate" title="Projects">
 					Projects
 				</div>
-			</div>
+            </div>
 
-			<table id="projectsTable" class="table table-bordered"></table>
+            <div class="row">
+                <div class="col">
+			        <table id="projectsTable" class="table table-bordered"></table>
+                </div>
+            </div>
 
 		</div>
 	</div>
 </div>
+<%@ include file="/html/utils/includes/pageSpinner.jspf" %>
 
-<div class="dialogs">
+<div class="dialogs auto-dialogs">
 
-	<div id="fossologyClearingDialog" title="Fossology Clearing" class="modal fade" tabindex="-1" role="dialog">
+	<div id="fossologyClearingDialog" data-title="Fossology Clearing" class="modal fade" tabindex="-1" role="dialog">
 		<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
 		    <div class="modal-content">
 			<div class="modal-body">
@@ -211,7 +216,7 @@
 			        <p>Do you really want to delete the project <b data-name="name"></b>?</p>
 			        <div data-hide="hasNoDependencies">
 				        <p>
-						This project <span data-name="name"></span> contains:
+						This project <b data-name="name"></b> contains:
 				        </p>
 					<ul>
 						<li data-hide="hasNoLinkedProjects"><span data-name="linkedProjects"></span> linked projects</li>
@@ -222,20 +227,19 @@
 			        <hr/>
 			        <form>
 					<div class="form-group">
-					        <label for="deleteProjectDialogComment">Please comment your changes</label>
-					        <textarea id="deleteProjectDialogComment" class="form-control" data-name="comment" rows="4" placeholder="Comment your request..."></textarea>
+					        <label for="moderationDeleteCommentField">Please comment your changes</label>
+					        <textarea id="moderationDeleteCommentField" class="form-control" data-name="comment" rows="4" placeholder="Comment your request..."></textarea>
 					</div>
 			        </form>
 				</div>
 			    <div class="modal-footer">
 			        <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
-			        <button type="button" class="btn btn-danger">Delete project</button>
+			        <button type="button" class="btn btn-danger">Delete Project</button>
 			    </div>
 			</div>
 		</div>
 	</div>
 </div>
-
 
 
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
@@ -269,7 +273,7 @@
                 var data = $(event.currentTarget).data();
                 deleteProject(data.projectId, data.projectName, data.linkedProjectsCount, data.linkedReleasesCount, data.projectAttachmentCount);
             });
-            $('#projectsTable').on('click', 'img.clearing', function(event) {
+            $('#projectsTable').on('click', 'svg.clearing', function(event) {
                 openSelectClearingDialog($(event.currentTarget).data('projectId'));
             });
             $('#btnExportGroup a.dropdown-item').on('click', function(event) {
@@ -315,27 +319,34 @@
                         {title: "<span title=\"Release clearing state\">Clearing Status</span>", data: "clearing" },
                         {title: "Actions", data: "id", render: {display: renderProjectActions}, className: "four actions" }
                     ],
-
                     drawCallback: function (oSettings) {
                         loadClearingStateSummaries();
-                    }
+                    },
+                    initComplete: datatables.showPageContainer
                 }, [0, 1, 2, 3, 4], 5);
 
                 return projectsTable;
             }
 
             function renderProjectActions(id, type, row) {
-                var $editAction,
-                    $actions = $('<div>', {
+                var $actions = $('<div>', {
 				'class': 'actions'
-			}),
-			$clearingAction = $('<img>', {
-				'class': 'clearing',
-				src: '<%=request.getContextPath()%>/images/fossology-logo-24.gif',
-				alt: 'SelectClearing',
-				title: 'Send to Fossology',
-				'data-project-id': id
-	                }),
+                    }),
+                    $editAction,
+                    <core_rt:choose>
+                        <core_rt:when test="${not empty FOSSOLOGY_CONNECTION_ENABLED and not FOSSOLOGY_CONNECTION_ENABLED}">
+                            $clearingAction = $('<svg>', {
+                                'class': 'disabled lexicon-icon',
+                                'data-project-id': id,
+                            }).append('<title>Fossology is not configured</title>'),
+                        </core_rt:when>
+                        <core_rt:otherwise>
+                            $clearingAction = $('<svg>', {
+                                'class': 'clearing lexicon-icon',
+                                'data-project-id': id,
+                            }).append('<title>Send to Fossology</title>'),
+			    </core_rt:otherwise>
+                    </core_rt:choose>
                     $copyAction = render.linkTo(
                         makeProjectUrl(id, '<%=PortalConstants.PAGENAME_DUPLICATE%>'),
                         "",
@@ -350,19 +361,17 @@
 			'data-linked-releases-count': row.lRelsSize,
 			'data-project-attachment-count': row.attsSize,
                     });
+
+                    $clearingAction.append($('<use href="<%=request.getContextPath()%>/images/icons.svg#fossology"/>'));
 			$deleteAction.append($('<use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
 
                 if(row.cState == 'CLOSED' && ${isUserAdmin != 'Yes'}) {
-                    $editAction = render.linkTo(
-                        makeProjectUrl(id, '<%=PortalConstants.PAGENAME_EDIT%>'),
-                        "",
-                        '<svg class="lexicon-icon disabled"><title>Only administrators can edit a closed project.</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>'
-                    );
+                    $editAction = $('<svg class="lexicon-icon disabled"><title>Only administrators can edit a closed project.</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>');
                 } else {
                     $editAction = render.linkTo(
                         makeProjectUrl(id, '<%=PortalConstants.PAGENAME_EDIT%>'),
                         "",
-                        '<svg class="lexicon-icon disabled"><title>Only administrators can edit a closed project.</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>'
+                        '<svg class="lexicon-icon"><title>Edit</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>'
                     );
                 }
 

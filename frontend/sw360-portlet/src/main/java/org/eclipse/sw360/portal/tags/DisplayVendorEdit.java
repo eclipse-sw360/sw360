@@ -63,25 +63,29 @@ public class DisplayVendorEdit extends NameSpaceAwareTag {
     }
 
     private void printEmptyVendor(StringBuilder display) {
+        display.append("<div class=\"form-group\">");
         printLabel(display);
         display.append(String.format("<input type=\"hidden\" readonly=\"\" value=\"\"  id=\"%s\" name=\"%s%s\"/>", id, namespace, id))
                 .append(String.format(
-                        "<input type=\"text\" readonly=\"\" class=\"clickable edit-vendor\" placeholder=\"Click to set vendor\" id=\"%sDisplay\" data-release-id=\"%s\"/>",
+                        "<input type=\"text\" readonly=\"\" class=\"form-control edit-vendor clickable\" placeholder=\"Click to set vendor\" id=\"%sDisplay\" data-release-id=\"%s\"/>",
                         id, releaseId));
+        display.append("</div>");
     }
 
     private void printFullVendor(StringBuilder display, Vendor vendor) {
+        display.append("<div class=\"form-group\">");
         printLabel(display);
         display.append(String.format("<input type=\"hidden\" readonly=\"\" value=\"%s\"  id=\"%s\" name=\"%s%s\"/>", vendor.getId(), id, namespace, id))
                 .append(String.format(
-                        "<input type=\"text\" readonly=\"\" class=\"clickable edit-vendor\" value=\"%s\" id=\"%sDisplay\" data-release-id=\"%s\"/>",
+                        "<input type=\"text\" readonly=\"\" class=\"form-control edit-vendor clickable\" value=\"%s\" id=\"%sDisplay\" data-release-id=\"%s\"/>",
                         vendor.getFullname(), id, releaseId));
+        display.append("</div>");
     }
 
     private void printLabel(StringBuilder display) {
         if (StringUtils.isNotEmpty(label)) {
             display.append(
-                    String.format("<label class=\"textlabel stackedLabel\" for=\"%sDisplay\">%s</label>", id, label));
+                    String.format("<label for=\"%sDisplay\">%s</label>", id, label));
         }
     }
 

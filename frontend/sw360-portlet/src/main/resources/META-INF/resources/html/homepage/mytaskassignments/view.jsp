@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -13,56 +13,47 @@
 <portlet:defineObjects/>
 <liferay-theme:defineObjects/>
 
-
-
-<% assert ("moderationRequests".equals(PortalConstants.MODERATION_REQUESTS)); %>
-
 <jsp:useBean id="moderationRequests"
              type="java.util.List<org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest>"
              class="java.util.ArrayList" scope="request"/>
-<br>
-<br>
 
-<%-- Note that the necessary includes are in life-ray-portlet.xml --%>
-
-<div class="homepageheading">
-    My Task Assignments
+<h4>My Task Assignments</h4>
+<div class="row">
+    <div class="col">
+        <table id="taskassignmentTable" class="table table-bordered table-lowspace">
+            <colgroup>
+                <col style="width: 60%;"/>
+                <col style="width: 40%;"/>
+            </colgroup>
+        </table>
+    </div>
 </div>
 
-<div id="taskassignmentDiv" class="homepageListingTable">
-    <table id="taskassignmentTable" cellpadding="0" cellspacing="0" border="0" class="display">
-         <colgroup>
-               <col style="width: 60%;"/>
-               <col style="width: 40%;"/>
-         </colgroup>
-    </table>
-</div>
-
-
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-
-    Liferay.on('allPortletsReady', function() {
+    require(['jquery', 'bridges/datatables' ], function($, datatables) {
         var result = [];
 
         <core_rt:forEach items="${moderationRequests}" var="moderation">
-        result.push({
-            "DT_RowId": "${moderation.id}",
-            "0": "<sw360:DisplayModerationRequestLink moderationRequest="${moderation}"/>",
-            "1": "<sw360:DisplayEnum value="${moderation.moderationState}"/>"
-        });
+            result.push({
+                "DT_RowId": "${moderation.id}",
+                "0": "<sw360:DisplayModerationRequestLink moderationRequest="${moderation}"/>",
+                "1": "<sw360:DisplayEnum value="${moderation.moderationState}"/>"
+            });
         </core_rt:forEach>
 
-        $('#taskassignmentTable').dataTable({
-            pagingType: "simple_numbers",
-            dom: "rtip",
+        datatables.create('#taskassignmentTable', {
             data: result,
-            pageLength:10,
+            dom:
+				"<'row'<'col-sm-12'tr>>" +
+				"<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
             columns: [
                 {"title": "Document Name"},
                 {"title": "Status"},
             ],
-            autoWidth: false
+            language: {
+                emptyTable: 'There are no tasks assigned to you.'
+            }
         });
     });
-
 </script>

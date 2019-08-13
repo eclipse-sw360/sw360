@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -19,7 +19,11 @@
 <core_rt:if test="${projectSearch.size()>0}" >
     <core_rt:forEach items="${projectSearch}" var="entry">
         <tr>
-            <td><input type="checkbox" name="<portlet:namespace/>projectId" value="${entry.id}"></td>
+            <td>
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" name="<portlet:namespace/>projectId" value="${entry.id}">
+                </div>
+            </td>
             <td><sw360:ProjectName project="${entry}"/></td>
             <td><sw360:out value="${entry.version}"/></td>
             <td><sw360:DisplayStateBoxes project="${entry}"/></td>
@@ -27,10 +31,4 @@
             <td><sw360:out value="${entry.description}"/></td>
         </tr>
     </core_rt:forEach>
-</core_rt:if>
-<core_rt:if test="${projectSearch.size() == 0}">
-    <tr><td colspan="6">
-        No project found with your search.
-    </td></tr>
-
 </core_rt:if>

@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
   ~ With modifications by Bosch Software Innovations GmbH, 2016.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
@@ -12,10 +12,10 @@
 <%@ taglib prefix="tags" tagdir="/WEB-INF/tags" %>
 
 <core_rt:if test="${release != null}">
-    <table class="table info_table" id="ReleaseDetailOverview">
+    <table class="table label-value-table" id="ReleaseDetailOverview">
         <thead>
         <tr>
-            <th colspan="2">Release Summary: <sw360:ReleaseName release="${release}" /></th>
+            <th colspan="2">General</th>
         </tr>
         </thead>
         <tr>
@@ -87,8 +87,9 @@
             <td><sw360:DisplayMap value="${release.additionalData}"/></td>
         </tr>
     </table>
-    <table class="table info_table" id="ReleaseRepository">
-        <core_rt:if test="${release.setRepository}">
+
+    <core_rt:if test="${release.setRepository}">
+        <table class="table label-value-table" id="ReleaseRepository">
             <thead>
             <tr>
                 <th colspan="2">Release Repository</th>
@@ -99,7 +100,7 @@
                 <td>Repository:</td>
                 <td><sw360:DisplayLink target="${release.repository.url}"/> <sw360:out value="(${release.repository.repositorytype})"/></td>
             </tr>
-        </core_rt:if>
-    </table>
+        </table>
+    </core_rt:if>
 
 </core_rt:if>

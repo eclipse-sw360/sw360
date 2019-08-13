@@ -22,7 +22,14 @@ define('modules/datatables-utils', ['jquery', /* jquery-plugins */ 'datatables.n
 	"version-desc": function (a, b) {
 		return versionCmp(b, a);
 	}
-    });
+	});
+
+	function numberCmp(a, b) {
+		var aN = Number(a);
+		var bN = Number(b);
+
+		return (aN > bN) ? 1 : ((aN < bN) ? -1 : 0);
+	}
 
 	function versionCmp(a, b) {
 	    var nameCmp = a.name.localeCompare(b.name);

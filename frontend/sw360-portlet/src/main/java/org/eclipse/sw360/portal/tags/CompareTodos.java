@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2015, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -82,7 +82,7 @@ public class CompareTodos extends NameSpaceAwareTag {
             String renderString = display.toString();
 
             if (Strings.isNullOrEmpty(renderString)) {
-                renderString = "<h4> No changes in TODOs </h4>";
+                renderString = "<div class=\"alert alert-danger\">No changes in ToDos.</div>";
             }
 
             jspWriter.print(renderString);

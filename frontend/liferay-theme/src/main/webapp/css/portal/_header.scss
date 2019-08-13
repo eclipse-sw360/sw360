@@ -13,7 +13,7 @@
 	@import "header/navigation";
 	@import "header/user";
 
-	background-color: #FFF;
+	background-color: $header-bg;
 	border-bottom: 1px solid $light-color;
 
 	&#banner > .container > .row {

@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -26,6 +26,9 @@ import java.util.Collections;
 import java.util.List;
 
 import javax.portlet.*;
+
+import com.google.common.base.Strings;
+import com.liferay.portal.kernel.util.PortalUtil;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
@@ -57,6 +60,7 @@ public class SearchPortlet extends Sw360Portlet {
         final User user = UserCacheHolder.getUserFromRequest(request);
         String searchtext = request.getParameter(KEY_SEARCH_TEXT);
         String[] typeMaskArray = request.getParameterValues(TYPE_MASK);
+        String searchQuery = PortalUtil.getOriginalServletRequest(PortalUtil.getHttpServletRequest(request)).getParameter("q");
 
         List<String> typeMask;
         if (typeMaskArray != null) { // premature optimization would add && typeMaskArray.length<6
@@ -66,19 +70,15 @@ public class SearchPortlet extends Sw360Portlet {
             log.info("typeMask set to emptyList");
         }
 
-        String usedsearchtext;
         if (isNullOrEmpty(searchtext)) {
-            usedsearchtext = "";
-            searchtext = "";
-        } else {
-            usedsearchtext = searchtext;
+            searchtext = searchQuery;
         }
-
+        searchtext = Strings.nullToEmpty(searchtext);
 
         List<SearchResult> searchResults;
         try {
             SearchService.Iface client = thriftClients.makeSearchClient();
-            searchResults = client.searchFiltered(usedsearchtext, user, typeMask);
+            searchResults = client.searchFiltered(searchtext, user, typeMask);
         } catch (TException e) {
             log.error("Search could not be performed!", e);
             searchResults = Collections.emptyList();

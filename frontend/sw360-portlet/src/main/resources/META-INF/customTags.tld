@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
   ~ With contributions by Bosch Software Innovations GmbH, 2016.
   ~ With contributions by Siemens Healthcare Diagnostics Inc, 2018.
   ~
@@ -1183,4 +1183,69 @@
             <rtexprvalue>true</rtexprvalue>
         </attribute>
     </tag>
+    <tag>
+        <name>icon</name>
+        <tag-class>org.eclipse.sw360.portal.tags.Icon</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <name>icon</name>
+            <required>true</required>
+            <type>java.lang.String</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>title</name>
+            <required>false</required>
+            <type>java.lang.String</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>className</name>
+            <required>false</required>
+            <type>java.lang.String</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
+
+    <function>
+        <name>enumToString</name>
+        <function-class>org.eclipse.sw360.datahandler.common.ThriftEnumUtils</function-class>
+        <function-signature>java.lang.String enumToString(org.apache.thrift.TEnum)</function-signature>
+    </function>
+
+    <function>
+        <name>isOpenModerationRequest</name>
+        <function-class>org.eclipse.sw360.portal.portlets.moderation.ModerationPortletUtils</function-class>
+        <function-signature>boolean isOpenModerationRequest(org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest)</function-signature>
+    </function>
+
+    <function>
+        <name>printProjectName</name>
+        <function-class>org.eclipse.sw360.datahandler.common.SW360Utils</function-class>
+        <function-signature>java.lang.String printName(org.eclipse.sw360.datahandler.thrift.projects.Project)</function-signature>
+    </function>
+
+    <function>
+        <name>printComponentName</name>
+        <function-class>org.eclipse.sw360.datahandler.common.SW360Utils</function-class>
+        <function-signature>java.lang.String printName(org.eclipse.sw360.datahandler.thrift.components.Component)</function-signature>
+    </function>
+
+    <function>
+        <name>printReleaseName</name>
+        <function-class>org.eclipse.sw360.datahandler.common.SW360Utils</function-class>
+        <function-signature>java.lang.String printName(org.eclipse.sw360.datahandler.thrift.components.Release)</function-signature>
+    </function>
+
+    <function>
+        <name>printLicenseName</name>
+        <function-class>org.eclipse.sw360.datahandler.common.SW360Utils</function-class>
+        <function-signature>java.lang.String printName(org.eclipse.sw360.datahandler.thrift.licenses.License)</function-signature>
+    </function>
+
+    <function>
+        <name>printUserName</name>
+        <function-class>org.eclipse.sw360.datahandler.common.SW360Utils</function-class>
+        <function-signature>java.lang.String printName(org.eclipse.sw360.datahandler.thrift.users.User)</function-signature>
+    </function>
 </taglib>

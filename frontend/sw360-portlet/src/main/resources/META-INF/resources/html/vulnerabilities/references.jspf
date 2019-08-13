@@ -9,20 +9,10 @@
   ~ http://www.eclipse.org/legal/epl-v10.html
   --%>
 
-<table class="table info_table" id="VulnerabilityOverview">
-    <thead>
-    <tr>
-        <th colspan="1">Vulnerability References: <sw360:out value="${vulnerability.title}"/></th>
-    </tr>
-    </thead>
+<h4>Vulnerability References</h4>
+<ul>
+    <core_rt:forEach items="${vulnerability.references}" var="reference">
+        <li><sw360:DisplayLink target="${reference}"/></li>
+    </core_rt:forEach>
+</ul>
 
-    <tr>
-        <td>
-            <ul>
-                <core_rt:forEach items="${vulnerability.references}" var="reference">
-                    <li><sw360:DisplayLink target="${reference}"/></li>
-                </core_rt:forEach>
-            </ul>
-        </td>
-    </tr>
-</table>

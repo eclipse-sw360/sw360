@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -58,9 +58,9 @@ public class DisplaySubscribeButton extends SimpleTagSupport {
         subscribers= CommonUtils.nullToEmptySet(subscribers);
 
         if (subscribers.contains(email)) {
-            builder.append(String.format("<input type=\"button\" id=\"%s\" value=\"Unsubscribe\" class=\"addButton subscribed\" />", id));
+            builder.append(String.format("<button type=\"button\" id=\"%s\" class=\"btn btn-outline-danger subscribed\">Unsubscribe</button>", id));
         } else {
-            builder.append(String.format("<input type=\"button\" id=\"%s\" value=\"Subscribe\" class=\"addButton\" />", id));
+            builder.append(String.format("<button type=\"button\" id=\"%s\" class=\"btn btn-outline-success\">Subscribe</button>", id));
         }
 
         getJspContext().getOut().print(builder.toString());

@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017.
+ * Copyright Siemens AG, 2017, 2019.
  * Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -16,11 +16,15 @@ define('utils/includes/fossologyClearing', [
     'bridges/datatables'
 ], function($, object, dialog, datatables) {
     var fosstable,
+        config,
+        objectNamespacer,
+        refreshClearing;
+
+    function initialize() {
         config = $('#fossologyClearingDialog').data(),
         objectNamespacer = object.namespacerOf(config.portletNamespace),
         refreshClearing = false;
 
-    function initialize() {
         createFossTable(config.fossologyStatusUrl);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -9,21 +9,22 @@
  * http://www.eclipse.org/legal/epl-v10.html
  */
 
-define('utils/includes/searchAndSelectIds', ['jquery', /* jquery-plugins: */ 'datatables.net'], function($) {
+define('utils/includes/searchAndSelectIds', ['jquery', 'utils/keyboard', 'modules/dialog', 'bridges/datatables' ], function($, keyboard, dialog, datatables) {
 
     var selectedIds = [];
 
     var SearchAndSelectIds = function (options) {
+        var $dialog,
+            $datatable;
 
         var opts = {
             $addButton: options.$addButton,
             $searchButton: options.$searchButton,
             $resetButton: options.$resetButton,
-            $searchInput: options.$searchInput,
             $tableBody: options.$tableBody,
             $table: options.$table,
             $searchDiv: options.$searchDiv,
-            emptyRow: options.emptyRow,
+            searchInput: options.searchInput,
             ajaxSearch: options.ajaxSearch,
             prepareData: options.prepareData,
             extractIds: options.extractIds,
@@ -45,6 +46,9 @@ define('utils/includes/searchAndSelectIds', ['jquery', /* jquery-plugins: */ 'da
                 /* then generate html from updated selection and search result */
                 var tableData = opts.prepareData(data, currentState);
                 pr.setDataToIdSearchTableAndRefresh(tableData);
+
+                /* disable spinner */
+                $('#search-spinner').hide();
             },
 
             enableSearchButton: function() {
@@ -61,21 +65,28 @@ define('utils/includes/searchAndSelectIds', ['jquery', /* jquery-plugins: */ 'da
             },
 
             destroyIdSearchDataTable: function() {
-                opts.$table.DataTable().destroy();
+                $datatable.destroy();
             },
 
             makeIdSearchDataTable: function() {
-                opts.$table.DataTable(
-                    {
-                        "sPaginationType": "full_numbers",
-                        "paging": false,
-                        "scrollY": "220",
-                        "info": false,
-                        "bFilter": false,
-                        "language": {"processing":     "Processing..."},
-                        "processing": true,
-                        "initComplete": pr.enableSearchButton
-                    });
+                $datatable = datatables.create(opts.$table, {
+                    destroy: true,
+                    paging: false,
+                    info: false,
+                    searching: false,
+                    order: [
+                        [1, 'asc']
+                    ],
+                    columnDefs: [
+                        { targets: [0], orderable: false },
+                    ],
+                    initComplete: pr.enableSearchButton,
+                    language: {
+                        emptyTable: 'Please perform a new search.'
+                    },
+                    select: currentState.multi ? 'multi' : 'single'
+                });
+                datatables.enableCheckboxForSelection($datatable, 0);
             },
 
             setDataToIdSearchTableAndRefresh: function(data) {
@@ -121,9 +132,10 @@ define('utils/includes/searchAndSelectIds', ['jquery', /* jquery-plugins: */ 'da
             },
 
             doSearch: function () {
+                $('#search-spinner').show();
                 pr.disableSearchButton();
                 opts.ajaxSearch(
-                    opts.$searchInput.val().replace(","," "),
+                    $('#' + opts.searchInput).val().replace(","," "),
                     currentState.multi
                 ).done(
                     pr.resetSearchTable
@@ -132,22 +144,20 @@ define('utils/includes/searchAndSelectIds', ['jquery', /* jquery-plugins: */ 'da
 
             doAdd: function () {
                 pr.setOutput();
-                closeOpenDialogs();
+                $dialog.close();
             },
 
             doReset: function () {
-                opts.$searchInput.val("");
+                $('#' + opts.searchInput).val("");
                 currentState.resultFullData = [];
                 pr.doSearch();
             }
         };
 
-        bindkeyPressToClick(opts.$searchInput, opts.$searchButton);
-
         return {
-            open: function (multi, resultInputId, firstRun) {
-                closeOpenDialogs();
+            open: function (multi, resultInputId) {
                 pr.cleanUp();
+                datatables.destroy(opts.$table);
 
                 currentState.$resultInput = $('#' + resultInputId);
                 currentState.$resultInputDisplay = $('#' + resultInputId + 'Display');
@@ -171,15 +181,12 @@ define('utils/includes/searchAndSelectIds', ['jquery', /* jquery-plugins: */ 'da
                 opts.$resetButton.off('click');
                 opts.$resetButton.on('click', pr.doReset);
 
-                openDialog(opts.$searchDiv, opts.$searchInput);
-                if(!firstRun) {
-                    pr.destroyIdSearchDataTable();
-                }
+                $dialog = dialog.open('#' + opts.$searchDiv, {}, function(callback) {}, undefined, function() {
+                    keyboard.bindkeyPressToClick(opts.searchInput, opts.$searchButton);
+                });
 
                 var htmlTable = "";
-                if (currentState.resultFullData.length == 0) {
-                    htmlTable = opts.emptyRow;
-                } else {
+                if (currentState.resultFullData.length > 0) {
                     htmlTable = opts.prepareData("", currentState);
                 }
                 opts.$tableBody.html(htmlTable);
@@ -189,22 +196,21 @@ define('utils/includes/searchAndSelectIds', ['jquery', /* jquery-plugins: */ 'da
     };
 
     return {
-        openSearchDialog: function (multi, resultInputId, htmlElements, functions, firstRun) {
+        openSearchDialog: function (multi, resultInputId, htmlElements, functions) {
             var searchIds = SearchAndSelectIds({
                 $addButton: htmlElements['addButton'],
                 $searchButton: htmlElements['searchButton'],
                 $resetButton: htmlElements['resetButton'],
-                $searchInput: htmlElements['searchInput'],
                 $tableBody: htmlElements['resultTableBody'],
                 $table: htmlElements['resultTable'],
                 $searchDiv: htmlElements['searchDiv'],
-                emptyRow: htmlElements['emptyRow'],
+                searchInput: htmlElements['searchInput'],
                 ajaxSearch: functions['ajaxSearch'],
                 prepareData: functions['prepareData'],
                 extractIds: functions['extractIds'],
                 renderInput: functions['renderInput']
             });
-            searchIds.open(multi, resultInputId, firstRun)
+            searchIds.open(multi, resultInputId);
         }
     }
 });

@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
   ~ With contributions by Bosch Software Innovations GmbH, 2016.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
@@ -11,34 +11,41 @@
 --%>
 
 <core_rt:if test="${usingComponents != null  && usingComponents.size()>0}">
-    <table class="table info_table">
+    <h4><sw360:out value="${documentName}"/> is used by the following components</h4>
+
+    <table class="table table-bordered">
+        <colgroup>
+            <col style="width: 20%;" />
+            <col style="width: 40%;" />
+            <col style="width: 20%;" />
+            <col style="width: 20%;" />
+        </colgroup>
         <thead>
-        <tr>
-            <th colspan="4"><sw360:out value="${documentName}"/> is used by the following components</th>
-        </tr>
-        <tr>
-            <th>Vendor</th>
-            <th>Component name</th>
-            <th>Main licenses</th>
-            <th>Component type</th>
-        </tr>
-        </thead>
-        <core_rt:forEach var="component" items="${usingComponents}" varStatus="loop">
             <tr>
-                <td>
-                    <sw360:DisplayCollection value="${component.vendorNames}"/>
-                </td>
-                <td>
-                    <sw360:DisplayComponentLink component="${component}"/>&nbsp;
-                </td>
-                <td>
-                    <sw360:DisplayLicenseCollection licenseIds="${component.mainLicenseIds}"
-                                                   scopeGroupId="${pageContext.getAttribute('scopeGroupId')}"/>
-                </td>
-                <td>
-                    <sw360:DisplayEnum value="${component.componentType}"/>
-                </td>
+                <th>Vendor</th>
+                <th>Name</th>
+                <th>Main Licenses</th>
+                <th>Component Type</th>
             </tr>
-        </core_rt:forEach>
+        </thead>
+        <tbody>
+            <core_rt:forEach var="component" items="${usingComponents}" varStatus="loop">
+                <tr>
+                    <td>
+                        <sw360:DisplayCollection value="${component.vendorNames}"/>
+                    </td>
+                    <td>
+                        <sw360:DisplayComponentLink component="${component}"/>
+                    </td>
+                    <td>
+                        <sw360:DisplayLicenseCollection licenseIds="${component.mainLicenseIds}"
+                                                    scopeGroupId="${pageContext.getAttribute('scopeGroupId')}"/>
+                    </td>
+                    <td>
+                        <sw360:DisplayEnum value="${component.componentType}"/>
+                    </td>
+                </tr>
+            </core_rt:forEach>
+        </tbody>
     </table>
 </core_rt:if>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+  -->
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   version="1.1"
+   id="svg4117"
+   width="20.013996"
+   height="20.013996"
+   viewBox="0 0 20.013995 20.013996"
+   sodipodi:docname="project.svg"
+   inkscape:version="0.92.4 5da689c313, 2019-01-14">
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1916"
+     inkscape:window-height="1034"
+     id="namedview5035"
+     showgrid="false"
+     inkscape:zoom="11.791748"
+     inkscape:cx="-8.2684942"
+     inkscape:cy="10.006998"
+     inkscape:window-x="0"
+     inkscape:window-y="44"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg4117" />
+  <metadata
+     id="metadata4123">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs4121" />
+  <g
+     aria-label="i"
+     transform="matrix(1.6285747,0,0,1.2360114,29.797457,-13.308465)"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:11.875px;line-height:25px;font-family:serif;-inkscape-font-specification:serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.70483083px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+     id="flowRoot993" />
+  <path
+     style="opacity:1;fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+     d="M 2.0996094 0 C 0.9365584 2.9605947e-16 0 0.9365584 0 2.0996094 L 0 17.914062 C 2.9605947e-16 19.077113 0.9365584 20.013672 2.0996094 20.013672 L 17.914062 20.013672 C 19.077113 20.013672 20.013672 19.077113 20.013672 17.914062 L 20.013672 2.0996094 C 20.013672 0.9365584 19.077113 0 17.914062 0 L 2.0996094 0 z M 6.2871094 4.6210938 L 9.7265625 4.6210938 C 11.033126 4.6210938 12.025284 4.9038824 12.703125 5.46875 C 13.385878 6.0287057 13.728516 6.8654691 13.728516 7.9804688 C 13.728516 9.1396753 13.363679 10.026639 12.636719 10.640625 C 11.914671 11.254611 10.886816 11.5625 9.5507812 11.5625 L 8.5703125 11.5625 L 8.5703125 15.392578 L 6.2871094 15.392578 L 6.2871094 4.6210938 z M 8.5703125 6.4921875 L 8.5703125 9.6894531 L 9.3222656 9.6894531 C 10.024666 9.6894531 10.549693 9.5524098 10.898438 9.2773438 C 11.247182 8.9973654 11.421875 8.592984 11.421875 8.0625 C 11.421875 7.5271037 11.275182 7.1304185 10.980469 6.875 C 10.690667 6.6195816 10.233185 6.4921875 9.609375 6.4921875 L 8.5703125 6.4921875 z "
+     id="rect1055" />
+  <g
+     aria-label="P"
+     transform="matrix(1.2706304,0,0,1.2706304,18.535237,-4.6945899)"
+     style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:11.87495899px;line-height:25px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.78701097px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+     id="flowRoot1057" />
+</svg>

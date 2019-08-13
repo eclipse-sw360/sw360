@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -45,29 +45,47 @@
     <portlet:param name="<%=PortalConstants.DOCUMENT_TYPE%>" value="${documentType}"/>
 </portlet:resourceURL>
 
-<div id="fileupload-form" title="Upload Attachment" style="display: none; background-color: #ffffff;"
-  data-portlet-namespace="<portlet:namespace/>"
-  data-link-attachment-url="<%=attachmentLinkToAjaxURL%>"
-  data-cancel-attachment-url="<%=cancelAttachmentAjaxURL%>"
-  data-new-attachment-url="<%=newAttachmentAjaxURL%>"
-  data-upload-attachment-part-url="<%=uploadPartAjaxURL%>">
-    <core_rt:choose>
-        <core_rt:when test="${empty documentID}">
-            <span>Cannot add attachments before saving the document</span>
-        </core_rt:when>
-        <core_rt:otherwise>
-            <div class="lfr-dynamic-uploader">
-                <div class="lfr-upload-container">
-                    <div id="fileupload-drop" class="upload-target">
-                        <span>Drop a File Here</span>
-                        <br/>
-                        Or
-                        <br/>
-                        <button id="fileupload-browse">Browse</button>
-                    </div>
-                    <div id="fileupload-files" class="upload-list"></div>
-                </div>
-            </div>
-        </core_rt:otherwise>
-    </core_rt:choose>
+<div class="dialogs">
+	<div id="fileUploadDialog" data-title="Upload Attachment" class="modal fade" tabindex="-1" role="dialog"
+      data-portlet-namespace="<portlet:namespace/>"
+      data-link-attachment-url="<%=attachmentLinkToAjaxURL%>"
+      data-cancel-attachment-url="<%=cancelAttachmentAjaxURL%>"
+      data-new-attachment-url="<%=newAttachmentAjaxURL%>"
+      data-upload-attachment-part-url="<%=uploadPartAjaxURL%>">
+    >
+		<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+		    <div class="modal-content">
+			<div class="modal-body container">
+
+                    <core_rt:choose>
+                        <core_rt:when test="${empty documentID}">
+                            <div class="alert fade show alert-error" role="alert">
+                                Cannot add attachments before saving the document
+                            </span>
+                        </core_rt:when>
+                        <core_rt:otherwise>
+                            <div class="lfr-dynamic-uploader">
+                                <div class="lfr-upload-container">
+                                    <div id="fileupload-drop" class="upload-target">
+                                        <span>Drop a File Here</span>
+                                        <br/>
+                                        Or
+                                        <br/>
+                                        <button id="fileupload-browse" type="button" class="btn btn-secondary">Browse</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="fileupload-files" class="upload-list"></div>
+                        </core_rt:otherwise>
+                    </core_rt:choose>
+
+				</div>
+			    <div class="modal-footer">
+		        <button type="button" class="btn btn-light" data-dismiss="modal">Close</button>
+                    <button type="button" data-submit="pause" class="btn btn-secondary" title="Pause">Pause</button>
+			        <button type="button" data-submit="upload" class="btn btn-primary" title="Upload">Upload</button>
+			    </div>
+			</div>
+		</div>
+	</div>
 </div>

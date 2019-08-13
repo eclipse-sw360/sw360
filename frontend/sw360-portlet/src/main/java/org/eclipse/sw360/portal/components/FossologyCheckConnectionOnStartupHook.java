@@ -13,6 +13,10 @@ package org.eclipse.sw360.portal.components;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.liferay.portal.kernel.events.Action;
+import com.liferay.portal.kernel.events.ActionException;
+import com.liferay.portal.kernel.events.LifecycleAction;
+
 import org.apache.log4j.Logger;
 import org.eclipse.sw360.portal.common.FossologyConnectionHelper;
 import org.osgi.service.component.annotations.Activate;
@@ -21,34 +25,31 @@ import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Modified;
 
-import com.liferay.portal.kernel.events.Action;
-import com.liferay.portal.kernel.events.ActionException;
-
 /**
  * Class to validate the fossology connectivity at the server startup time.
- *
- * @author smruti.sahoo@siemens.com
- *
  */
 @Component(
     immediate = true,
-    service = Action.class,
+    property = {
+        "key=servlet.service.events.pre"
+    },
+    service = LifecycleAction.class,
     configurationPolicy = ConfigurationPolicy.REQUIRE
 )
 public class FossologyCheckConnectionOnStartupHook extends Action {
-
-	protected final Logger log = Logger.getLogger(getClass());
+    protected final Logger log = Logger.getLogger(getClass());
 
 	private static boolean calledOnServerstartUp;
 
 	@Override
 	public void run(HttpServletRequest request, HttpServletResponse response) throws ActionException {
 		if (!calledOnServerstartUp) {
-            log.info("Check for fossolgy connection now.");
-			FossologyConnectionHelper.getInstance().checkFossologyConnection();
+            FossologyConnectionHelper.getInstance().checkFossologyConnection();
+            log.info("Fossology connection state: " +
+                (FossologyConnectionHelper.getInstance().isFossologyConnectionEnabled() ? "SUCCESS" : "FAILED"));
+
 			calledOnServerstartUp = true;
 		}
-
 	}
 
 	@Activate

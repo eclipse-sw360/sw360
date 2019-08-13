@@ -21,30 +21,50 @@
 
 <portlet:actionURL var="componentMergeWizardStepUrl" name="componentMergeWizardStep"/>
 
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/sw360.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/dataTable_Siemens.css">
-<link rel="stylesheet" href="<%=request.getContextPath()%>/css/mergeComponent.css">
-
-<div id="header"></div>
-<p class="pageHeader"><span class="pageHeaderBigSpan">Merge a component into ${component.name}</span></p>
-<div id="content">
-    <div id="componentMergeWizard" data-step-id="0" data-component-target-id="${component.id}">
-        <div class="wizardHeader">
-            <ul>
-                <li class="active">1. Choose source<br /><small>Choose a component that should be merged into the current one</small></li>
-                <li>2. Merge data<br /><small>Merge data from source into target component</small></li>
-                <li>3. Confirm<br /><small>Check the merged version and confirm</small></li>
-            </ul>
+<div id="componentMergeWizard" class="container" data-step-id="0" data-component-target-id="${component.id}">
+    <div class="row portlet-toolbar">
+        <div class="col portlet-title text-truncate" title="Merge into ${sw360:printComponentName(component)}">
+            Merge into ${sw360:printComponentName(component)}
         </div>
-        <div class="wizardBody">
-            <div class="step active" data-step-id="1">
-                <div class="spinner">Loading data for step 1, please wait...</div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <div class="wizardHeader">
+                <ul>
+                    <li class="active">1. Choose source<br /><small>Choose a component that should be merged into the current one</small></li>
+                    <li>2. Merge data<br /><small>Merge data from source into target component</small></li>
+                    <li>3. Confirm<br /><small>Check the merged version and confirm</small></li>
+                </ul>
             </div>
-            <div class="step" data-step-id="2">
-                <div class="spinner">Loading data for step 2, please wait...</div>
-            </div>
-            <div class="step" data-step-id="3">
-                <div class="spinner">Loading data for step 3, please wait...</div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <div class="wizardBody">
+                <div class="step active" data-step-id="1">
+                    <div class="spinner spinner-with-text">
+                        <div class="spinner-border" role="status">
+                            <span class="sr-only">Loading data for step 1, please wait...</span>
+                        </div>
+                        Loading data for step 1, please wait...
+                    </div>
+                </div>
+                <div class="step" data-step-id="2">
+                    <div class="spinner spinner-with-text">
+                        <div class="spinner-border" role="status">
+                            <span class="sr-only">Loading data for step 2, please wait...</span>
+                        </div>
+                        Loading data for step 2, please wait...
+                    </div>
+                </div>
+                <div class="step" data-step-id="3">
+                    <div class="spinner spinner-with-text">
+                        <div class="spinner-border" role="status">
+                            <span class="sr-only">Loading data for step 3, please wait...</span>
+                        </div>
+                        Loading data for step 3, please wait...
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -53,7 +73,7 @@
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-    require([ 'modules/mergeWizard', 'jquery', /* jquery-plugins */ 'datatables.net' ], function(wizard, $) {
+    require(['jquery', 'bridges/datatables', 'modules/mergeWizard', ], function($, datatables, wizard) {
         var mergeWizardStepUrl = '<%=componentMergeWizardStepUrl%>',
             postParamsPrefix = '<portlet:namespace/>',
             $wizardRoot = $('#componentMergeWizard');
@@ -91,48 +111,46 @@
         function renderChooseComponent($stepElement, data) {
             $stepElement.html('' +
                     '<div class="stepFeedback"></div>' +
-                    '<table id="componentSourcesTable" class="table info_table" title="Source component">' +
-                    '    <colgroup>' +
-                    '        <col style="width: 5%;" />' +
-                    '        <col style="width: 50%;" />' +
-                    '        <col style="width: 30%;" />' +
-                    '        <col style="width: 15%;" />' +
-                    '    </colgroup>' +
-                    '    <thead>' +
-                    '        <tr>' +
-                    '            <th></th>' +
-                    '            <th>Component name</th>' +
-                    '            <th>Created by</th>' +
-                    '            <th>Releases</th>' +
-                    '        </tr>' +
-                    '    </thead>' +
-                    '    <tbody>' +
-                    '    </tbody>' +
-                    '</table>');
+                    '<form>' +
+                    '    <table id="componentSourcesTable" class="table table-bordered" title="Source component">' +
+                    '        <colgroup>' +
+                    '            <col style="width: 1.7rem;" />' +
+                    '            <col style="width: 50%;" />' +
+                    '            <col style="width: 30%;" />' +
+                    '            <col style="width: 15%;" />' +
+                    '        </colgroup>' +
+                    '        <thead>' +
+                    '            <tr>' +
+                    '                <th></th>' +
+                    '                <th>Component name</th>' +
+                    '                <th>Created by</th>' +
+                    '                <th>Releases</th>' +
+                    '            </tr>' +
+                    '        </thead>' +
+                    '        <tbody>' +
+                    '        </tbody>' +
+                    '    </table>' +
+                    '</form>'
+                    );
 
-            var table = $stepElement.find('#componentSourcesTable').DataTable( {
+            var table = datatables.create($stepElement.find('#componentSourcesTable'), {
                 data: data.components,
                 columns: [
-                    { data: "id", render: function(data) {
-                            return '<input type="radio" name="componentChooser" value="' + data + '" />';
-                        }
-                    },
+                    { data: "id", render: $.fn.dataTable.render.inputRadio('componentChooser'), orderable: false },
                     { data: "name" },
                     { data: "createdBy" },
                     { data: "releases" }
                 ],
-                pageLength: 50,
-                pagingType: 'simple_numbers',
                 order: [ [ 1, 'asc' ] ],
-                autoWidth: false,
-                deferRender: true
-            } );
+                select: 'single'
+            });
+            datatables.enableCheckboxForSelection(table, 0);
         }
 
         function submitChosenComponent($stepElement) {
             var checkedList = $stepElement.find('input:checked');
             if (checkedList.length !== 1 || $(checkedList.get(0)).val() ===  $wizardRoot.data('componentTargetId')) {
-                $stepElement.find('.stepFeedback').html('<div class="alert">Please choose exactly one component, which is not the component itself!</div>');
+                $stepElement.find('.stepFeedback').html('<div class="alert alert-danger">Please choose exactly one component, which is not the component itself!</div>');
                 $('html, body').stop().animate({ scrollTop: 0 }, 300, 'swing');
                 setTimeout(function() {
                     $stepElement.find('.stepFeedback').html('');
@@ -229,7 +247,7 @@
             });
 
             if ((componentSelection.releases.length || 0) < $stepElement.data('releaseCount')) {
-                $stepElement.find('.stepFeedback').html('<div class="alert">Please migrate all releases and keep the existing ones!</div>');
+                $stepElement.find('.stepFeedback').html('<div class="alert alert-danger">Please migrate all releases and keep the existing ones!</div>');
                 $('html, body').stop().animate({ scrollTop: 0 }, 300, 'swing');
                 setTimeout(function() {
                     $stepElement.find('.stepFeedback').html('');
@@ -298,18 +316,20 @@
         function submitConfirmedMergedComponent($stepElement) {
             /* componentSourceId still as data at stepElement */
             /* componentSelection still as data at stepElement */
-
-            /* changing html should be no problem as the data to send is attached directly to the stepElement which is kept */
-            $stepElement.html('<div class="spinner">Submitting merge result, please wait...</div>')
         }
 
         function submitErrorHook($stepElement, textStatus, error) {
-            alert('An error happened while communicating with the server: ' + textStatus + error);
+            button.finish('#componentMergeWizard .wizardNext');
+            $stepElement.find('.stepFeedback').html('<div class="alert alert-danger">An error happened while communicating with the server: ' + textStatus + error + '</div>');
+            $('html, body').stop().animate({ scrollTop: 0 }, 300, 'swing');
+            setTimeout(function() {
+                $stepElement.find('.stepFeedback').html('');
+            }, 5000);
         }
 
-        var componentTypeDisplayStrings = {};
-        <core_rt:forEach items="${ComponentType.values()}" var="ct">
-        componentTypeDisplayStrings[${ct.value}] = '${ThriftEnumUtils.enumToString(ct)}';
+        var componentTypeDisplayStrings = { '': '' };
+        <core_rt:forEach items="<%=ComponentType.values()%>" var="ct">
+            componentTypeDisplayStrings[${ct.value}] = '${sw360:enumToString(ct)}';
         </core_rt:forEach>
 
         function getComponentTypeDisplayString(componentType) {

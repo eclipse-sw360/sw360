@@ -28,16 +28,10 @@
 			}
 		}
 
-		.sticker-right {
+		.panel-notifications-count {
 			position: relative;
-			right: auto;
-			top: auto;
-
-			width: 1.1rem;
-			height: 1.1rem;
-
-			border: 1px solid $warning;
-			background-color: $bg-color-light;
+			left: -0.6rem;
+			top: -0.5rem;
 		}
 	}
 }

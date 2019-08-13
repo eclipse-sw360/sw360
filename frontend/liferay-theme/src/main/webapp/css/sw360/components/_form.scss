@@ -12,7 +12,19 @@
 :not(form) {
 	textarea, input, select {
 		&.form-control[readonly] {
-			background-color: #FFF !important;
+			background-color: $input-bg !important;
 		}
+	}
+}
+
+form {
+	svg.action:hover {
+		color: $primary;
+	}
+
+	label.mandatory:after {
+		content: ' *';
+		color: $primary;
+		display: inline;
 	}
 }
