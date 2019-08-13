@@ -394,6 +394,10 @@ public class PortalConstants {
 
     public static final String RELEASES_AND_PROJECTS = "releasesAndProjects";
 
+    // Task actions
+    public static final String LOAD_TASK_ASSIGNMENT_LIST = "load_task_assignment_list";
+    public static final String LOAD_TASK_SUBMISSION_LIST = "load_task_submission_list";
+
     // vendor actions
     public static final String REMOVE_VENDOR = "remove_vendor";
 

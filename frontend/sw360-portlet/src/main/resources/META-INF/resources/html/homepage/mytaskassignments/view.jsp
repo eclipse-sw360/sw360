@@ -13,47 +13,76 @@
 <portlet:defineObjects/>
 <liferay-theme:defineObjects/>
 
-<jsp:useBean id="moderationRequests"
-             type="java.util.List<org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest>"
-             class="java.util.ArrayList" scope="request"/>
+<%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 
-<h4>My Task Assignments</h4>
-<div class="row">
-    <div class="col">
-        <table id="taskassignmentTable" class="table table-bordered table-lowspace">
-            <colgroup>
-                <col style="width: 60%;"/>
-                <col style="width: 40%;"/>
-            </colgroup>
-        </table>
+<portlet:resourceURL var="loadTasksURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.LOAD_TASK_ASSIGNMENT_LIST%>'/>
+</portlet:resourceURL>
+
+<section id="my-task-assignments">
+    <h4 class="actions">My Task Assignments <span title="Reload"><clay:icon symbol="reload"/></span></h4>
+    <div class="row">
+        <div class="col">
+            <table id="taskassignmentTable" class="table table-bordered table-lowspace"  data-load-url="<%=loadTasksURL%>">
+                <colgroup>
+                    <col style="width: 60%;"/>
+                    <col style="width: 40%;"/>
+                </colgroup>
+            </table>
+        </div>
     </div>
-</div>
+</section>
 
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-    require(['jquery', 'bridges/datatables' ], function($, datatables) {
-        var result = [];
+    require(['jquery', 'bridges/datatables', 'utils/link' ], function($, datatables, link) {
+        var table;
 
-        <core_rt:forEach items="${moderationRequests}" var="moderation">
-            result.push({
-                "DT_RowId": "${moderation.id}",
-                "0": "<sw360:DisplayModerationRequestLink moderationRequest="${moderation}"/>",
-                "1": "<sw360:DisplayEnum value="${moderation.moderationState}"/>"
-            });
-        </core_rt:forEach>
+        $('#my-task-assignments h4 svg')
+            .attr('data-action', 'reload-my-task-assignments')
+            .addClass('spinning disabled');
 
-        datatables.create('#taskassignmentTable', {
-            data: result,
+        $('#my-task-assignments').on('click', 'svg[data-action="reload-my-task-assignments"]:not(.disabled)', reloadTable);
+
+        $(document).off('pageshow.my-task-assignments');
+        $(document).on('pageshow.my-task-assignments', function() {
+            reloadTable();
+        });
+
+        table = datatables.create('#taskassignmentTable', {
+            // the following parameter must not be removed, otherwise it won't work anymore (probably due to datatable plugins)
+            bServerSide: false,
+            // the following parameter must not be converted to 'ajax', otherwise it won't work anymore (probably due to datatable plugins)
+            sAjaxSource: $('#taskassignmentTable').data().loadUrl,
+
             dom:
 				"<'row'<'col-sm-12'tr>>" +
 				"<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
             columns: [
-                {"title": "Document Name"},
-                {"title": "Status"},
+                {"title": "Document Name", data: 'name', render: renderModerationRequestLink },
+                {"title": "Status", data: 'state' },
             ],
             language: {
                 emptyTable: 'There are no tasks assigned to you.'
+            },
+            initComplete: function() {
+                $('#my-task-assignments h4 svg').removeClass('spinning disabled');
             }
         });
+
+        function renderModerationRequestLink(name, type, row) {
+            return $('<a/>', {
+                'class': 'text-truncate',
+                title: name,
+                href: link.to('moderationRequest', 'edit', row.id)
+            }).text(name)[0].outerHTML;
+        }
+
+        function reloadTable() {
+            $('#my-task-assignments h4 svg').addClass('spinning disabled');
+            table.ajax.reload(function() {
+                $('#my-task-assignments h4 svg').removeClass('spinning disabled');
+            }, false );
+        }
     });
 </script>

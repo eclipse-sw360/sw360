@@ -11,24 +11,32 @@
  */
 package org.eclipse.sw360.portal.portlets.homepage;
 
-import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.portal.portlets.Sw360Portlet;
-import org.eclipse.sw360.portal.users.UserCacheHolder;
-
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
-import org.osgi.service.component.annotations.ConfigurationPolicy;
+import static org.eclipse.sw360.portal.common.PortalConstants.MY_PROJECTS_PORTLET_NAME;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.portlet.*;
+import javax.portlet.Portlet;
+import javax.portlet.PortletException;
+import javax.portlet.ResourceRequest;
+import javax.portlet.ResourceResponse;
 
-import static org.eclipse.sw360.portal.common.PortalConstants.MY_PROJECTS_PORTLET_NAME;
+import com.google.common.base.Strings;
+import com.liferay.portal.kernel.json.JSONArray;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
+
+import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.portal.common.PortalConstants;
+import org.eclipse.sw360.portal.portlets.Sw360Portlet;
+import org.eclipse.sw360.portal.users.UserCacheHolder;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 
 @org.osgi.service.component.annotations.Component(
     immediate = true,
@@ -49,21 +57,34 @@ import static org.eclipse.sw360.portal.common.PortalConstants.MY_PROJECTS_PORTLE
     configurationPolicy = ConfigurationPolicy.REQUIRE
 )
 public class MyProjectsPortlet extends Sw360Portlet {
+    public void serveResource(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
+        String action = request.getParameter(PortalConstants.ACTION);
 
-    private static final Logger LOGGER = Logger.getLogger(MyProjectsPortlet.class);
+        if (PortalConstants.LOAD_PROJECT_LIST.equals(action)) {
+            serveProjectList(request, response);
+        }
+    }
 
-    @Override
-    public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
+    private void serveProjectList(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
         List<Project> myProjects = new ArrayList<>();
         User user = UserCacheHolder.getUserFromRequest(request);
+
         try {
             myProjects = thriftClients.makeProjectClient().getMyProjects(user.getEmail());
         } catch (TException e) {
-            LOGGER.error("Could not fetch myProjects from backend for user, " + user.getEmail(), e);
+            log.error("Could not fetch myProjects from backend for user, " + user.getEmail(), e);
         }
         myProjects = getWithFilledClearingStateSummary(myProjects, user);
-        request.setAttribute("projects",  CommonUtils.nullToEmptyList(myProjects));
-        super.doView(request, response);
+
+        JSONArray jsonProjects = getProjectData(myProjects);
+        JSONObject jsonResult = JSONFactoryUtil.createJSONObject();
+        jsonResult.put("aaData", jsonProjects);
+
+        try {
+            writeJSON(request, response, jsonResult);
+        } catch (IOException e) {
+            log.error("Problem generating project list", e);
+        }
     }
 
     private List<Project> getWithFilledClearingStateSummary(List<Project> projects, User user) {
@@ -71,8 +92,38 @@ public class MyProjectsPortlet extends Sw360Portlet {
         try {
             return projectClient.fillClearingStateSummary(projects, user);
         } catch (TException e) {
-            LOGGER.error("Could not get summary of release clearing states for projects and their subprojects!", e);
+            log.error("Could not get summary of release clearing states for projects and their subprojects!", e);
             return projects;
         }
+    }
+
+    public JSONArray getProjectData(List<Project> projectList) {
+        JSONArray projectData = JSONFactoryUtil.createJSONArray();
+        for(Project project : projectList) {
+            JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+
+            jsonObject.put("DT_RowId", project.getId());
+            jsonObject.put("id", project.getId());
+            jsonObject.put("name", SW360Utils.printName(project));
+            jsonObject.put("description", Strings.nullToEmpty(project.getDescription()));
+            jsonObject.put("releaseClearingState", acceptedReleases(project.getReleaseClearingStateSummary()));
+
+            projectData.put(jsonObject);
+        }
+
+        return projectData;
+    }
+
+    private String acceptedReleases(ReleaseClearingStateSummary releaseClearingStateSummary) {
+        String releaseCounts;
+
+        if (releaseClearingStateSummary == null) {
+            releaseCounts = "not available";
+        } else {
+            int total = releaseClearingStateSummary.newRelease + releaseClearingStateSummary.underClearing + releaseClearingStateSummary.underClearingByProjectTeam + releaseClearingStateSummary.reportAvailable + releaseClearingStateSummary.approved;
+            releaseCounts = releaseClearingStateSummary.approved + " / " + Integer.toString(total);
+        }
+
+        return releaseCounts;
     }
 }

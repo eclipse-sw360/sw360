@@ -1076,18 +1076,6 @@
     </tag>
 
     <tag>
-        <name>DisplayAcceptedReleases</name>
-        <tag-class>org.eclipse.sw360.portal.tags.DisplayAcceptedReleases</tag-class>
-        <body-content>empty</body-content>
-        <attribute>
-            <name>releaseClearingStateSummary</name>
-            <required>true</required>
-            <type>org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary</type>
-            <rtexprvalue>true</rtexprvalue>
-        </attribute>
-    </tag>
-
-    <tag>
         <name>DisplayCVEReferences</name>
         <tag-class>org.eclipse.sw360.portal.tags.DisplayCVEReferences</tag-class>
         <body-content>empty</body-content>

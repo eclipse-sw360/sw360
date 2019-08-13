@@ -10,7 +10,26 @@
  */
 package org.eclipse.sw360.portal.portlets.homepage;
 
-import org.eclipse.sw360.datahandler.common.CommonUtils;
+import static org.apache.log4j.Logger.getLogger;
+import static org.eclipse.sw360.portal.common.PortalConstants.MY_TASK_SUBMISSIONS_PORTLET_NAME;
+
+import java.io.IOException;
+import java.util.List;
+
+import javax.portlet.Portlet;
+import javax.portlet.PortletException;
+import javax.portlet.ResourceRequest;
+import javax.portlet.ResourceResponse;
+
+import com.google.common.collect.Lists;
+import com.liferay.portal.kernel.json.JSONArray;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
+
+import org.apache.log4j.Logger;
+import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
+import org.eclipse.sw360.datahandler.thrift.ModerationState;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -18,18 +37,7 @@ import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.portlets.moderation.ModerationPortletUtils;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
-
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
-
-import java.io.IOException;
-import java.util.List;
-
-import javax.portlet.*;
-
-import static org.apache.log4j.Logger.getLogger;
-import static org.eclipse.sw360.portal.common.PortalConstants.MY_TASK_SUBMISSIONS_PORTLET_NAME;
 
 @org.osgi.service.component.annotations.Component(
     immediate = true,
@@ -49,23 +57,23 @@ import static org.eclipse.sw360.portal.common.PortalConstants.MY_TASK_SUBMISSION
     configurationPolicy = ConfigurationPolicy.REQUIRE
 )
 public class MyTaskSubmissionsPortlet extends Sw360Portlet {
-
-    private static final Logger log = getLogger(MyTaskSubmissionsPortlet.class);
-
     public void serveResource(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
         String action = request.getParameter(PortalConstants.ACTION);
 
         if (PortalConstants.DELETE_MODERATION_REQUEST.equals(action)) {
             serveDeleteModerationRequest(request, response);
+        } else if (PortalConstants.LOAD_TASK_SUBMISSION_LIST.equals(action)) {
+            serveTaskList(request, response);
         }
     }
+
     private void serveDeleteModerationRequest(ResourceRequest request, ResourceResponse response) throws IOException {
         RequestStatus requestStatus = ModerationPortletUtils.deleteModerationRequest(request, log);
         serveRequestStatus(request, response, requestStatus, "Problem removing moderation request", log);
     }
-    @Override
-    public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
-        List<ModerationRequest> moderations = null;
+
+    private void serveTaskList(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
+        List<ModerationRequest> moderations = Lists.newArrayList();
 
         try {
             final User user = UserCacheHolder.getUserFromRequest(request);
@@ -74,8 +82,36 @@ public class MyTaskSubmissionsPortlet extends Sw360Portlet {
             log.error("Could not fetch your moderations from backend", e);
         }
 
-        request.setAttribute(PortalConstants.MODERATION_REQUESTS, CommonUtils.nullToEmptyList(moderations));
+        JSONArray jsonModerations = getModerationData(moderations);
+        JSONObject jsonResult = JSONFactoryUtil.createJSONObject();
+        jsonResult.put("aaData", jsonModerations);
 
-        super.doView(request, response);
+        try {
+            writeJSON(request, response, jsonResult);
+        } catch (IOException e) {
+            log.error("Problem generating task submission list", e);
+        }
+    }
+
+    public JSONArray getModerationData(List<ModerationRequest> moderationList) {
+        JSONArray projectData = JSONFactoryUtil.createJSONArray();
+        for(ModerationRequest moderationRequest : moderationList) {
+            JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+
+            jsonObject.put("DT_RowId", moderationRequest.getId());
+            jsonObject.put("id", moderationRequest.getId());
+            jsonObject.put("name", moderationRequest.getDocumentName());
+            jsonObject.put("state", moderationState(moderationRequest.getModerationState()));
+
+            projectData.put(jsonObject);
+        }
+
+        return projectData;
+    }
+
+    private String moderationState(ModerationState moderationState) {
+        return "<span class='" + PortalConstants.TOOLTIP_CLASS__CSS + " "
+            + PortalConstants.TOOLTIP_CLASS__CSS + "-" + moderationState.getClass().getSimpleName() + "-" + moderationState.toString() + "'>"
+            + ThriftEnumUtils.enumToString(moderationState) + "</span>";
     }
 }

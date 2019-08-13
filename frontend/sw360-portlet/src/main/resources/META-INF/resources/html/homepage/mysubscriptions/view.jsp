@@ -26,7 +26,7 @@
 <core_rt:if test="${componentList.size() > 0}">
     <div class="row">
         <div class="col">
-            <h5>Components</h5>
+            <h6>Components</h6>
             <core_rt:forEach var="component" items="${componentList}">
                 <li>
                     <sw360:DisplayComponentLink component="${component}"/><br>
@@ -39,7 +39,7 @@
 <core_rt:if test="${releaseList.size() > 0}">
     <div class="row">
         <div class="col">
-            <h4>Releases</h4>
+            <h6>Releases</h6>
             <ul>
                 <core_rt:forEach var="release" items="${releaseList}">
                     <li>

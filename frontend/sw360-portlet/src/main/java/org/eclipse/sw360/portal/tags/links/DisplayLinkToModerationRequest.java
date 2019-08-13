@@ -10,16 +10,14 @@
  */
 package org.eclipse.sw360.portal.tags.links;
 
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
-import org.eclipse.sw360.portal.common.PortalConstants;
-import org.eclipse.sw360.portal.common.page.PortletDefaultPage;
-import org.eclipse.sw360.portal.common.page.PortletReleasePage;
-import org.eclipse.sw360.portal.portlets.LinkToPortletConfiguration;
+import static org.eclipse.sw360.portal.tags.urlutils.UrlWriterImpl.renderUrl;
 
 import javax.servlet.jsp.JspException;
 
-import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
-import static org.eclipse.sw360.portal.tags.urlutils.UrlWriterImpl.renderUrl;
+import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
+import org.eclipse.sw360.portal.common.PortalConstants;
+import org.eclipse.sw360.portal.common.page.PortletDefaultPage;
+import org.eclipse.sw360.portal.portlets.LinkToPortletConfiguration;
 
 /**
  * @author alex.borodin@evosoft.com

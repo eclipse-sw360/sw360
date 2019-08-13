@@ -13,65 +13,106 @@
 <portlet:defineObjects/>
 <liferay-theme:defineObjects/>
 
-<jsp:useBean id="moderationRequests"
-             type="java.util.List<org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest>"
-             class="java.util.ArrayList" scope="request"/>
+<%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
+
+<portlet:resourceURL var="loadTasksURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.LOAD_TASK_SUBMISSION_LIST%>'/>
+</portlet:resourceURL>
 
 <portlet:resourceURL var="deleteAjaxURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.DELETE_MODERATION_REQUEST%>'/>
 </portlet:resourceURL>
 
-
-<h4>My Task Submissions</h4>
-<div class="row">
-    <div class="col">
-        <table id="tasksubmissionTable" class="table table-bordered table-lowspace">
-            <colgroup>
-                <col style="width: 60%;"/>
-                <col style="width: 40%;"/>
-                <col style="width: 1.7rem"/>
-            </colgroup>
-        </table>
+<section id="my-task-submissions">
+    <h4 class="actions">My Task Submissions <span title="Reload"><clay:icon symbol="reload"/></span></h4>
+    <div class="row">
+        <div class="col">
+            <table id="tasksubmissionTable" class="table table-bordered table-lowspace" data-load-url="<%=loadTasksURL%>">
+                <colgroup>
+                    <col style="width: 60%;"/>
+                    <col style="width: 40%;"/>
+                    <col style="width: 1.7rem"/>
+                </colgroup>
+            </table>
+        </div>
     </div>
-</div>
+</section>
+
+<div class="dialogs auto-dialogs"></div>
 
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-    require(['jquery', 'bridges/datatables', 'modules/dialog' ], function($, datatables, dialog) {
+    require(['jquery', 'bridges/datatables', 'modules/dialog', 'utils/link', 'utils/render' ], function($, datatables, dialog, link, render) {
         var $datatable;
 
         $datatable = createTable();
+
         $('#tasksubmissionTable').on('click', 'svg.delete', function(event) {
             var data = $(event.currentTarget).data();
             deleteModerationRequest(data.moderationId, data.documentName);
         });
 
+        $('#my-task-submissions h4 svg')
+            .attr('data-action', 'reload-my-task-submissions')
+            .addClass('spinning disabled');
+
+        $('#my-task-submissions').on('click', 'svg[data-action="reload-my-task-submissions"]:not(.disabled)', reloadTable);
+
+        $(document).off('pageshow.my-task-submissions');
+        $(document).on('pageshow.my-task-submissions', function() {
+            reloadTable();
+        });
+
         function createTable() {
-            var result = [];
-
-            <core_rt:forEach items="${moderationRequests}" var="moderation">
-                result.push({
-                    "DT_RowId": "${moderation.id}",
-                    "0": "<sw360:DisplayModerationRequestLink moderationRequest="${moderation}"/>",
-                    "1": "<sw360:DisplayEnum value="${moderation.moderationState}"/>",
-                    "2": '<div class="actions"><svg class="delete lexicon-icon" data-moderation-id="${moderation.id}" data-document-name="${moderation.documentName}"><title>Delete</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/></svg></div>'
-                });
-            </core_rt:forEach>
-
             return datatables.create('#tasksubmissionTable', {
-                data: result,
+                // the following parameter must not be removed, otherwise it won't work anymore (probably due to datatable plugins)
+                bServerSide: false,
+                // the following parameter must not be converted to 'ajax', otherwise it won't work anymore (probably due to datatable plugins)
+                sAjaxSource: $('#tasksubmissionTable').data().loadUrl,
+
                 dom:
                     "<'row'<'col-sm-12'tr>>" +
                     "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
                 columns: [
-                    {"title": "Document Name"},
-                    {"title": "Status"},
-                    {"title": "Actions", className: "one action", orderable: false}
+                    {"title": "Document Name", data: 'name', render: renderModerationRequestLink },
+                    {"title": "Status", data: 'state' },
+                    {"title": "Actions", data: 'id', className: "one action", orderable: false, render: renderDeleteAction }
                 ],
                 language: {
                     emptyTable: 'You do not have any open moderation requests.'
+                },
+                initComplete: function() {
+                    $('#my-task-submissions h4 svg').removeClass('spinning disabled');
                 }
             });
+        }
+
+        function renderModerationRequestLink(name, type, row) {
+            return $('<a/>', {
+                'class': 'text-truncate',
+                title: name,
+                href: link.to('moderationRequest', 'edit', row.id)
+            }).text(name)[0].outerHTML;
+        }
+
+        function reloadTable() {
+            $('#my-task-submissions h4 svg').addClass('spinning disabled');
+            $datatable.ajax.reload(function() {
+                $('#my-task-submissions h4 svg').removeClass('spinning disabled');
+            }, false );
+        }
+
+        function renderDeleteAction(id, type, row) {
+            var $actions = $('<div/>', {
+                'class': 'actions'
+            });
+            $actions.append(render.trashIcon());
+            $actions.find('.delete').attr({
+                'data-moderation-id': id,
+                'data-document-name': row.name
+            });
+
+            return $actions[0].outerHTML;
         }
 
         function deleteModerationRequest(id, docName) {
@@ -88,7 +129,7 @@
                     success: function (data) {
                         if (data.result == 'SUCCESS') {
                             callback(true);
-                            moderationRequestsTable.row('#' + id).remove().draw(false);
+                            $datatable.row('#' + id).remove().draw(false);
                         }
                         else {
                             callback();

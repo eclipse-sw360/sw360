@@ -243,6 +243,12 @@
 
 	h4 {
 		border-bottom: 1px solid;
+
+		span {
+			font-size: 90%;
+			float: right;
+			cursor: pointer;
+		}
 	}
 
 	ul {
@@ -267,7 +273,7 @@
 		width: 100%;
 	}
 
-	.actions svg.disabled {
+	.actions .disabled {
 		cursor: not-allowed;
 		opacity: 0.5;
 	}
@@ -279,5 +285,13 @@
 
 	.text-truncate {
 		display: block;
+	}
+
+	.spinning {
+		animation: spinning 2s linear infinite;
+	}
+
+	@keyframes spinning {
+		100% { transform:rotate(360deg); }
 	}
 }
