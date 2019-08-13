@@ -30,6 +30,7 @@ target/
 .classpath
 .project
 .settings
+.factorypath
 
 #Ignore VSCode files
 .vscode/
