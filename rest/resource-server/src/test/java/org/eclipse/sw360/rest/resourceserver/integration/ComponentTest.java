@@ -68,6 +68,7 @@ public class ComponentTest extends TestIntegrationBase {
         component.setOwnerGroup("ownerGroup1");
         component.setDescription("Component description");
         component.setId(componentId);
+        component.setCreatedBy("admin@sw360.org");
         componentList.add(component);
 
         given(this.componentServiceMock.getComponentsForUser(anyObject())).willReturn(componentList);
@@ -78,6 +79,7 @@ public class ComponentTest extends TestIntegrationBase {
         user.setFullname("John Doe");
 
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
+        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(user);
     }
 
     @Test

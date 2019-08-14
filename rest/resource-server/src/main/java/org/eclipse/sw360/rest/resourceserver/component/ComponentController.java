@@ -31,6 +31,7 @@ import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.UserController;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.vendor.VendorController;
+import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
@@ -76,6 +77,9 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
 
     @NonNull
     private final Sw360VendorService vendorService;
+
+    @NonNull
+    private final Sw360UserService userService;
 
     @NonNull
     private final Sw360AttachmentService attachmentService;
@@ -284,7 +288,7 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
             restControllerHelper.addEmbeddedAttachments(halComponent, sw360Component.getAttachments());
         }
 
-        restControllerHelper.addEmbeddedUser(halComponent, user, "createdBy");
+        restControllerHelper.addEmbeddedUser(halComponent, userService.getUserByEmail(sw360Component.getCreatedBy()), "createdBy");
 
         return halComponent;
     }

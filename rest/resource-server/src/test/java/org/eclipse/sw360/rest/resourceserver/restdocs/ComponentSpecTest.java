@@ -23,6 +23,7 @@ import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,6 +49,7 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.requestParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -138,6 +140,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                         .setDescription("The Spring Framework provides a comprehensive programming and configuration model for modern Java-based enterprise applications.")
                         .setComponentType(ComponentType.OSS)
                         .setId("1234567890")
+                        .setCreatedBy("admin@sw360.org")
                         .setCreatedOn(new SimpleDateFormat("yyyy-MM-dd").format(new Date())));
 
         given(this.componentServiceMock.getComponentsForUser(anyObject())).willReturn(componentList);
@@ -335,6 +338,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                         .content(this.objectMapper.writeValueAsString(component))
                         .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isCreated())
+                .andExpect(jsonPath("_embedded.createdBy.email", Matchers.is("admin@sw360.org")))
                 .andDo(this.documentationHandler.document(
                         requestFields(
                                 fieldWithPath("name").description("The name of the component"),
