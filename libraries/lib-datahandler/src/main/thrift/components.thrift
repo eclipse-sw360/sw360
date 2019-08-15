@@ -70,64 +70,69 @@ enum ExternalTool {
 }
 
 /**
- * The status of the progress of an ExternalToolRequest in sw360. This status is really only used for the workflow
- * progress. If you want to know anything about the result from the external tool, please have a look at
- * ExternalToolStatus.
- * The values of this enum are close to the HTTP status codes.
+ * The different states a ExternalToolProcessStep can be in.
  **/
-enum ExternalToolWorkflowStatus {
-    NOT_SENT = 0,
-    UPLOADING = 102,
-    SENT = 200,
-    ACCESS_DENIED = 403,
-    NOT_FOUND = 404,
-    CONNECTION_TIMEOUT = 408,
-    CONNECTION_FAILED = 900,
-    SERVER_ERROR = 500
+enum ExternalToolProcessStatus {
+    NEW = 10,
+    IN_WORK = 20,
+    DONE = 30,
+    OUTDATED = 40
 }
 
 /**
- * The result status of an ExternalToolRequest in the external tool. If you want to know anything about the progress of
- * the request, please have a look at ExternalToolWorkflowStatus.
+ * This structure is used to track processes to external tools like FOSSology made for a release. Normally one wants to
+ * send an attachment (like the sources of a release) to an external tool for further analysis and get the results back
+ * at some point. Often these processes do not consist of a single action so there is a list of process steps that need
+ * to be fulfilled until the process can be considered done.
  **/
-enum ExternalToolStatus {
-    OPEN = 20,
-    IN_PROGRESS = 21,
-    CLOSED = 22,
-    REJECTED = 23,
-    RESULT_AVAILABLE = 30
-}
-
-/**
- * This object represents a request to some external tool initiated for a release from sw360. Examples could be
- * clearing tools like Fossology or code analysis tools where the source code bundle is sent to. In the future, also
- * other parameters then attachments might be needed as input for the external tools. In this case it might be an idea
- * to remove the attachmentX fields and replace it by some common map that takes key-value-pairs, that describe the
- * input sent to the tool. Each tool implementation then needs to know its own parameter keys to retrieve them from the
- * map.
- **/
-struct ExternalToolRequest {
+struct ExternalToolProcess {
     1: optional string id,
     2: required ExternalTool externalTool,
-    3: required string createdOn,
-    4: required string createdBy,
-    5: required string createdByGroup,
-    6: optional string toolId,
-    7: optional string toolUserId,
-    8: optional string toolUserGroup,
-    9: optional string attachmentId,
-    10: optional string attachmentHash,
-    11: required ExternalToolWorkflowStatus externalToolWorkflowStatus,
-    12: required ExternalToolStatus externalToolStatus,
-    13: optional string linkToJob
+    3: required ExternalToolProcessStatus processStatus,
+    4: optional string processIdInTool,
+    5: optional string attachmentId,
+    6: optional string attachmentHash,
+    7: required list<ExternalToolProcessStep> processSteps // ordered
+}
+
+/**
+ * This structure represents single steps when working with external tool processes. Please be aware that not all fields
+ * need to be filled for every tool.
+ **/
+struct ExternalToolProcessStep {
+    1: optional string id,
+    2: optional string stepName,
+    3: required ExternalToolProcessStatus stepStatus,
+    4: optional string linkToStep
+    5: required string startedBy,
+    6: required string startedByGroup,
+    7: required string startedOn,
+    8: optional string processStepIdInTool,
+    9: optional string userIdInTool,
+    10: optional string userCredentialsInTool,
+    11: optional string userGroupInTool,
+    12: optional string finishedOn,
+    13: optional string result // value or document
 }
 
 enum ClearingState {
     NEW_CLEARING = 0,
-    SENT_TO_FOSSOLOGY = 1,
+    SENT_TO_CLEARING_TOOL = 1,
     UNDER_CLEARING = 2,
     REPORT_AVAILABLE = 3,
     APPROVED = 4,
+}
+
+/**
+ * Just an aggregation container used to count ClearingStates of more than one Release. Mainly used in Projects (could
+ * be moved to projects.thrift as well)
+ **/
+struct ReleaseClearingStateSummary {
+    1: required i32 newRelease,
+    2: required i32 sentToClearingTool,
+    3: required i32 underClearing,
+    4: required i32 reportAvailable,
+    5: required i32 approved,
 }
 
 enum ECCStatus {
@@ -230,7 +235,8 @@ struct Release {
     // 20: optional string fossologyId,
     // 21: optional map<string, FossologyStatus> clearingTeamToFossologyStatus,
     // 22: optional string attachmentInFossology, // id of the attachment currently in fossology
-    25: optional set<ExternalToolRequest> externalToolRequests,
+    // 25: optional set<ExternalToolRequest> externalToolRequests,
+    26: optional set<ExternalToolProcess> externalToolProcesses,
 
     // string details
     30: optional string createdBy, // person who created the release
@@ -329,14 +335,6 @@ struct Component {
     70: optional DocumentState documentState,
 
     200: optional map<RequestedAction, bool> permissions,
-}
-
-struct ReleaseClearingStateSummary {
-    1: required i32 newRelease,
-    2: required i32 underClearing,
-    3: required i32 underClearingByProjectTeam,
-    4: required i32 reportAvailable,
-    5: required i32 approved,
 }
 
 struct ReleaseLink{

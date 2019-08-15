@@ -69,15 +69,15 @@ import org.apache.thrift.TSerializer;
 import org.apache.thrift.protocol.TSimpleJSONProtocol;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 
-import java.io.*;
-import java.nio.charset.Charset;
-import java.util.*;
-import java.util.stream.Collectors;
-
 import javax.portlet.*;
 import javax.portlet.filter.ResourceRequestWrapper;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import java.io.*;
+import java.nio.charset.Charset;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Strings.nullToEmpty;
@@ -214,10 +214,15 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
     @Override
     protected void dealWithFossologyAction(ResourceRequest request, ResourceResponse response, String action) throws IOException, PortletException {
-        if (PortalConstants.FOSSOLOGY_SEND.equals(action)) {
-            serveSendToFossology(request, response);
-        } else if (PortalConstants.FOSSOLOGY_GET_STATUS.equals(action)) {
+        if (PortalConstants.FOSSOLOGY_ACTION_STATUS.equals(action)) {
             serveFossologyStatus(request, response);
+        } else if (PortalConstants.FOSSOLOGY_ACTION_PROCESS.equals(action)) {
+            serveFossologyProcess(request, response);
+        } else if (PortalConstants.FOSSOLOGY_ACTION_OUTDATED.equals(action)) {
+            serveFossologyOutdated(request, response);
+        } else {
+            log.error("Unknown action parameter <" + action + ">, so no action has been performed!");
+            renderRequestStatus(request, response, RequestStatus.FAILURE);
         }
     }
 

@@ -519,27 +519,42 @@ public class SW360Utils {
         return nullToEmptyMap(map).values().stream().filter(Objects::nonNull).reduce(Sets::union).orElse(Sets.newHashSet());
     }
 
-    public static Set<ExternalToolRequest> getExternalToolRequestsForTool(Release release, ExternalTool et) {
+    public static Set<ExternalToolProcess> getExternalToolProcessesForTool(Release release, ExternalTool et) {
         if (release == null || et == null) {
             return new HashSet<>();
         }
-        //@formatter:off
-        return nullToEmptySet(release.getExternalToolRequests())
-                .stream()
-                .filter(etr -> et.equals(etr.getExternalTool()))
+
+        return nullToEmptySet(release.getExternalToolProcesses()) //
+                .stream() //
+                .filter(etp -> et.equals(etp.getExternalTool())) //
                 .collect(Collectors.toSet());
-        //@formatter:on
     }
 
-    public static Set<ExternalToolRequest> getExternalToolRequestsForToolAndToolId(Release release, ExternalTool et, String toolId) {
-        if (release == null || et == null || StringUtils.isNotEmpty(toolId)) {
-            return new HashSet<>();
-        }
-        //@formatter:off
-        return getExternalToolRequestsForTool(release, et)
-                .stream()
-                .filter(etr -> toolId.equals(etr.getToolId()))
+    public static Set<ExternalToolProcess> getNotOutdatedExternalToolProcessesForTool(Release release,
+            ExternalTool et) {
+        return getExternalToolProcessesForTool(release, et) //
+                .stream() //
+                .filter(etp -> !ExternalToolProcessStatus.OUTDATED.equals(etp.getProcessStatus())) //
                 .collect(Collectors.toSet());
-        //@formatter:on
+    }
+
+    /**
+     * Assumes that the process exists.
+     */
+    public static ExternalToolProcessStep getExternalToolProcessStepOfFirstProcessForTool(Release release,
+            ExternalTool et, String stepName) {
+        if (release == null || et == null || StringUtils.isEmpty(stepName)) {
+            return null;
+        }
+
+        return getNotOutdatedExternalToolProcessesForTool(release, et) //
+                .stream() //
+                .findFirst() //
+                .map(ExternalToolProcess::getProcessSteps) //
+                .get() //
+                .stream() //
+                .filter(etps -> stepName.equals(etps.getStepName())) //
+                .findFirst() //
+                .orElse(null);
     }
 }

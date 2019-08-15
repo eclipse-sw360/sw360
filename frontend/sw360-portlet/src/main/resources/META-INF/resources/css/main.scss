@@ -10,7 +10,6 @@
  */
 
 @import "portlets/admin/buttons";
-@import "portlets/admin/fossology/buttons";
 @import "portlets/admin/importexport/buttons";
 @import "portlets/homepage/signup";
 @import "portlets/homepage/welcome";
@@ -303,4 +302,16 @@
 	@keyframes spinning {
 		100% { transform:rotate(360deg); }
 	}
+
+    #fossologyClearingDialog {
+
+        .progress-bar {
+            padding-left: 1rem;
+
+            color: black;
+            font-size: 175%;
+	        text-align: left;
+	    }
+    }
+
 }

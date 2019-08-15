@@ -111,36 +111,24 @@ public class ThriftEnumUtils {
 
     private static final ImmutableMap<ClearingState, String> MAP_CLEARING_STATUS_STRING = ImmutableMap.of(
             ClearingState.NEW_CLEARING, "New",
-            ClearingState.SENT_TO_FOSSOLOGY, "Sent to Fossology",
+            ClearingState.SENT_TO_CLEARING_TOOL, "Sent to clearing tool",
             ClearingState.UNDER_CLEARING, "Under clearing",
             ClearingState.REPORT_AVAILABLE, "Report available",
-            ClearingState.APPROVED, "Report Approved");
+            ClearingState.APPROVED, "Report approved");
 
     private static final ImmutableMap<ExternalTool, String> MAP_EXTERNAL_TOOL_STRING = ImmutableMap
             .<ExternalTool, String>builder()
             .put(ExternalTool.FOSSOLOGY, "Fossology")
             .build();
 
-    private static final ImmutableMap<ExternalToolWorkflowStatus, String> MAP_EXTERNAL_TOOL_WORKFLOW_STATUS_STRING = ImmutableMap
-            .<ExternalToolWorkflowStatus, String>builder()
-            .put(ExternalToolWorkflowStatus.NOT_SENT, "Not sent")
-            .put(ExternalToolWorkflowStatus.UPLOADING, "Uploading")
-            .put(ExternalToolWorkflowStatus.SENT, "Sent")
-            .put(ExternalToolWorkflowStatus.ACCESS_DENIED, "Access denied")
-            .put(ExternalToolWorkflowStatus.NOT_FOUND, "Not found")
-            .put(ExternalToolWorkflowStatus.CONNECTION_TIMEOUT, "Connection timeout")
-            .put(ExternalToolWorkflowStatus.CONNECTION_FAILED, "Connection failed")
-            .put(ExternalToolWorkflowStatus.SERVER_ERROR, "Server error")
+    private static final ImmutableMap<ExternalToolProcessStatus, String> MAP_EXTERNAL_TOOL_PROCESS_STATUS_STRING = ImmutableMap
+            .<ExternalToolProcessStatus, String>builder()
+            .put(ExternalToolProcessStatus.NEW, "New")
+            .put(ExternalToolProcessStatus.IN_WORK, "In Work")
+            .put(ExternalToolProcessStatus.DONE, "Done")
+            .put(ExternalToolProcessStatus.OUTDATED, "Outdated")
             .build();
 
-    private static final ImmutableMap<ExternalToolStatus, String> MAP_EXTERNAL_TOOL_STATUS_STRING = ImmutableMap
-            .<ExternalToolStatus, String>builder()
-            .put(ExternalToolStatus.OPEN, "Open")
-            .put(ExternalToolStatus.IN_PROGRESS, "In progress")
-            .put(ExternalToolStatus.CLOSED, "Closed")
-            .put(ExternalToolStatus.RESULT_AVAILABLE, "Result available")
-            .put(ExternalToolStatus.REJECTED, "Rejected")
-            .build();
     // @formatter:on
 
     private static final ImmutableMap<ModerationState, String> MAP_MODERATION_STATE_STRING = ImmutableMap.of(
@@ -268,8 +256,7 @@ public class ThriftEnumUtils {
             .put(AttachmentType.class, MAP_ATTACHMENT_TYPE_STRING)
             .put(ClearingState.class, MAP_CLEARING_STATUS_STRING)
             .put(ExternalTool.class, MAP_EXTERNAL_TOOL_STRING)
-            .put(ExternalToolWorkflowStatus.class, MAP_EXTERNAL_TOOL_WORKFLOW_STATUS_STRING)
-            .put(ExternalToolStatus.class, MAP_EXTERNAL_TOOL_STATUS_STRING)
+            .put(ExternalToolProcessStatus.class, MAP_EXTERNAL_TOOL_PROCESS_STATUS_STRING)
             .put(ModerationState.class, MAP_MODERATION_STATE_STRING)
             .put(ProjectRelationship.class, MAP_PROJECT_RELATION_STRING)
             .put(ReleaseRelationship.class, MAP_RELEASE_RELATION_STRING)

@@ -69,7 +69,7 @@ def run():
         #if log['count'] > 500:
         #    break
 
-    resultFile = open('012_migration.log', 'w')
+    resultFile = open('013_migration.log', 'w')
     json.dump(log, resultFile, indent = 4, sort_keys = True)
     resultFile.close()
 
@@ -80,7 +80,7 @@ def run():
     print 'Releases untouched: ' + str(len(log['untouched']))
     print 'Total releases with known reason for outcome: ' + str(len(log['success']) + len(log['exceptions']) + len(log['untouched']))
     print '------------------------------------------'
-    print 'Please check log file "012_migration.log" in this directory for details'
+    print 'Please check log file "013_migration.log" in this directory for details'
     print '------------------------------------------'
 
 def migrateRelease(log, release):

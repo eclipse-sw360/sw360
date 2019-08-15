@@ -80,12 +80,17 @@ import java.util.*;
         @View(name = "byFossologyId",
                 map = "function(doc) {\n" +
                     "  if (doc.type == 'release') {\n" +
-                    "    if (Array.isArray(doc.externalToolRequests)) {\n" +
-                    "      for (var i = 0; i < doc.externalToolRequests.length; i++) {\n" +
-                    "        externalToolRequest = doc.externalToolRequests[i];\n" +
-                    "        if (externalToolRequest.externalTool === 'FOSSOLOGY' && externalToolRequest.toolId) {\n" +
-                    "          emit(externalToolRequest.toolId, doc.componentId);\n" +
-                    "          break;\n" +
+                    "    if (Array.isArray(doc.externalToolProcesses)) {\n" +
+                    "      for (var i = 0; i < doc.externalToolProcesses.length; i++) {\n" +
+                    "        externalToolProcess = doc.externalToolProcesses[i];\n" +
+                    "        if (externalToolProcess.externalTool === 'FOSSOLOGY' && Array.isArray(externalToolProcess.processSteps)) {\n" +
+                    "          for (var j = 0; j < externalToolProcess.processSteps.length; j++) {\n" +
+                    "            processStep = externalToolProcess.processSteps[j];\n" +
+                    "            if (processStep.stepName === '01_upload' && processStep.processStepIdInTool > 0) {\n" +
+                    "              emit(processStep.processStepIdInTool, doc.componentId);\n" +
+                    "              break;\n" +
+                    "            }\n" +
+                    "          }\n" +
                     "        }\n" +
                     "      }\n" +
                     "    }\n" +

@@ -21,7 +21,6 @@ import org.eclipse.sw360.datahandler.couchdb.DocumentWrapper;
 import org.eclipse.sw360.datahandler.couchdb.deserializer.UsageDataDeserializer;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
-import org.eclipse.sw360.datahandler.thrift.fossology.FossologyHostFingerPrint;
 import org.eclipse.sw360.datahandler.thrift.licenses.*;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -48,6 +47,7 @@ public class ThriftUtils {
     private static final Logger log = Logger.getLogger(ThriftUtils.class);
 
     public static final List<Class<?>> THRIFT_CLASSES = ImmutableList.<Class<?>>builder()
+            .add(ConfigContainer.class) // general
             .add(AttachmentContent.class) // Attachment service
             .add(AttachmentUsage.class) // Attachment service
             .add(Component.class).add(Release.class) // Component service
@@ -58,7 +58,7 @@ public class ThriftUtils {
             .add(User.class) // User service
             .add(Vendor.class) // Vendor service
             .add(ModerationRequest.class) // Moderation service‚
-            .add(FossologyHostFingerPrint.class, ExternalToolRequest.class) // Fossology service
+            .add(ExternalToolProcess.class, ExternalToolProcessStep.class) // external tools like Fossology service
             .add(Vulnerability.class, ReleaseVulnerabilityRelation.class, ProjectVulnerabilityRating.class) // Vulnerability Service
             .build();
 
@@ -90,7 +90,7 @@ public class ThriftUtils {
     public static final ImmutableList<Release._Fields> IMMUTABLE_OF_RELEASE = ImmutableList.of(
             Release._Fields.CREATED_BY,
             Release._Fields.CREATED_ON,
-            Release._Fields.EXTERNAL_TOOL_REQUESTS);
+            Release._Fields.EXTERNAL_TOOL_PROCESSES);
 
 
     public static final ImmutableList<Release._Fields> IMMUTABLE_OF_RELEASE_FOR_FOSSOLOGY = ImmutableList.of(

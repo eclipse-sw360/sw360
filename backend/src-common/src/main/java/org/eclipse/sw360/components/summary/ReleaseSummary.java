@@ -100,7 +100,7 @@ public class ReleaseSummary extends DocumentSummary<Release> {
         copyField(document, copy, _Fields.NAME);
         copyField(document, copy, _Fields.VERSION);
         copyField(document, copy, _Fields.COMPONENT_ID);
-        copyField(document, copy, _Fields.EXTERNAL_TOOL_REQUESTS);
+        copyField(document, copy, _Fields.EXTERNAL_TOOL_PROCESSES);
         copyField(document, copy, _Fields.CLEARING_STATE);
         copyField(document, copy, _Fields.MAINLINE_STATE);
         copyField(document, copy, _Fields.CPEID);

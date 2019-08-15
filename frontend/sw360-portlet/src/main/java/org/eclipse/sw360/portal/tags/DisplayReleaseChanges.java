@@ -31,7 +31,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Utils.newDefaultEccInfor
 import static org.eclipse.sw360.portal.tags.TagUtils.*;
 
 /**
- * Display the fields that have changed in the project
+ * Display the fields that have changed in the release
  *
  * @author birgit.heydenreich@tngtech.com
  */
@@ -85,7 +85,7 @@ public class DisplayReleaseChanges extends UserAwareTag {
                     case DOCUMENT_STATE:
                     case COMPONENT_ID:
                     case VENDOR_ID:
-                    case EXTERNAL_TOOL_REQUESTS:
+                case EXTERNAL_TOOL_PROCESSES:
                         //Taken care of externally or in extra tables
                     case ATTACHMENTS:
                     case RELEASE_ID_TO_RELATIONSHIP:

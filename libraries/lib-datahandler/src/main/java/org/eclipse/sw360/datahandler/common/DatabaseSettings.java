@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2014-2018. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2014-2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -30,7 +30,7 @@ public class DatabaseSettings {
     public static final String COUCH_DB_URL;
     public static final String COUCH_DB_DATABASE;
     public static final String COUCH_DB_ATTACHMENTS;
-    public static final String COUCH_DB_FOSSOLOGY;
+    public static final String COUCH_DB_CONFIG;
     public static final String COUCH_DB_USERS;
     public static final String COUCH_DB_VM;
 
@@ -47,9 +47,9 @@ public class DatabaseSettings {
         COUCH_DB_DATABASE = props.getProperty("couchdb.database", "sw360db");
         COUCH_DB_USERNAME = props.getProperty("couchdb.user", "");
         COUCH_DB_PASSWORD = props.getProperty("couchdb.password", "");
-        COUCH_DB_USERS = props.getProperty("couchdb.usersdb", "sw360users");
         COUCH_DB_ATTACHMENTS = props.getProperty("couchdb.attachments", "sw360attachments");
-        COUCH_DB_FOSSOLOGY = props.getProperty("couchdb.fossologyKeys", "sw360fossologyKeys");
+        COUCH_DB_CONFIG = props.getProperty("couchdb.config", "sw360config");
+        COUCH_DB_USERS = props.getProperty("couchdb.usersdb", "sw360users");
         COUCH_DB_VM = props.getProperty("couchdb.vulnerability_management", "sw360vm");
 
         LUCENE_SEARCH_LIMIT = Integer.parseInt(props.getProperty("lucenesearch.limit", "25"));

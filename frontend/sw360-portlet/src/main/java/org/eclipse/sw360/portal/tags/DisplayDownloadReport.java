@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 
@@ -31,14 +32,14 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
  */
 public class DisplayDownloadReport extends LoopTagSupport {
 
-    protected AttachmentType attachmentType;
+    protected Predicate<AttachmentType> attachmentTypePredicate;
     protected Set<Attachment> unfilteredAttachments = Collections.emptySet();
     protected Iterator<Attachment> attachmentIterator = unfilteredAttachments.iterator();
 
     @Override
     protected void prepare() throws JspTagException {
         this.attachmentIterator = unfilteredAttachments.stream().filter((attachment) -> {
-            return attachmentType == null || attachment.getAttachmentType() == attachmentType;
+            return attachmentTypePredicate.test(attachment.getAttachmentType());
         }).iterator();
     }
 
@@ -85,7 +86,7 @@ public class DisplayDownloadReport extends LoopTagSupport {
         this.unfilteredAttachments = Collections.unmodifiableSet(nullToEmptySet(attachments));
     }
 
-    public void setFilterAttachmentType(AttachmentType attachmentType) {
-        this.attachmentType = attachmentType;
+    public void setAttachmentTypePredicate(Predicate<AttachmentType> attachmentTypePredicate) {
+        this.attachmentTypePredicate = attachmentTypePredicate;
     }
 }

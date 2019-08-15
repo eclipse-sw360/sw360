@@ -8,52 +8,86 @@
   ~ which accompanies this distribution, and is available at
   ~ http://www.eclipse.org/legal/epl-v10.html
 --%>
-<core_rt:set var="clearingTeamsStringSet" value='<%=PortalConstants.SET_CLEARING_TEAMS_STRING%>'/>
 
-<portlet:resourceURL var="sendToFossologyURL">
-    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.FOSSOLOGY_SEND%>'/>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStatus" %>
+<%@ page import="org.eclipse.sw360.datahandler.common.FossologyUtils" %>
+
+<portlet:resourceURL var="statusURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.FOSSOLOGY_ACTION_STATUS%>'/>
 </portlet:resourceURL>
-<portlet:resourceURL var="getFossologyStatusURL">
-    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.FOSSOLOGY_GET_STATUS%>'/>
+<portlet:resourceURL var="processURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.FOSSOLOGY_ACTION_PROCESS%>'/>
+</portlet:resourceURL>
+<portlet:resourceURL var="outdatedURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.FOSSOLOGY_ACTION_OUTDATED%>'/>
 </portlet:resourceURL>
 
 
 <div class="dialogs">
-	<div id="fossologyClearingDialog" data-title="Fossology Clearing" class="modal fade" tabindex="-1" role="dialog"
-      data-portlet-namespace="<portlet:namespace/>"
-      data-fossology-send-url="<%=sendToFossologyURL%>"
-      data-fossology-status-url="<%=getFossologyStatusURL%>"
+	<div id="fossologyClearingDialog" data-title="Fossology Process" class="modal fade" tabindex="-1" role="dialog"
+        data-portlet-namespace="<portlet:namespace/>"
+        data-fossology-status-url="<%=statusURL%>"
+        data-fossology-process-url="<%=processURL%>"
+        data-fossology-outdated-url="<%=outdatedURL%>"
+        data-step-name-upload="<%=FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD %>"
+        data-step-name-scan="<%=FossologyUtils.FOSSOLOGY_STEP_NAME_SCAN %>"
+        data-step-name-report="<%=FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT %>"
+        data-step-status-new="<%=ExternalToolProcessStatus.NEW %>"
+        data-step-status-inwork="<%=ExternalToolProcessStatus.IN_WORK %>"
+        data-step-status-done="<%=ExternalToolProcessStatus.DONE %>"
     >
-		<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
-		    <div class="modal-content">
-			<div class="modal-body container">
-                    <form id="fossologyClearingForm">
-                        <input id="releaseId" hidden="" data-name="releaseId"/>
-                        <input id="fieldId" hidden="" data-name="fieldId"/>
-                        <div class="row">
-                            <div class="col form-group">
-                                <label for="clearingTeam">Clearing Team</label>
-                                <select id="clearingTeam" class="form-control" name="clearingTeam">
-                                    <core_rt:forEach items="${clearingTeamsStringSet}" var="entry">
-                                        <option value="<sw360:out value="${entry}"/>">${entry}</option>
-                                    </core_rt:forEach>
-                                </select>
-                            </div>
-                            <div class="col form-group">
-                                <label for="attachmentFossology">Attachment to send for clearing</label>
-                                <input id="attachmentFossology" class="form-control" type="text" value="no attachment" readonly />
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <div class="modal-body container">
+                    <div class="row mt-4">
+                        <div class="col">
+                            <small class="form-text portlet-msg-info"">
+                                <h3>How it works:</h3>
+                                <p>
+                                    If the source of a release is attached to it, a basic FOSSology process can be invoked
+                                    by just opening this dialog. It consists of:
+                                    <ol>
+                                        <li>Upload the sources to FOSSology</li>
+                                        <li>Scan the sources</li>
+                                        <li>Generate a report out of the scan results and attach it to this release</li>
+                                    </ol>
+                                </p>
+                                <p>
+                                    If a FOSSology process got stuck or if the source attachment was not correct, you can
+                                    start all over by setting the current FOSSology process to status OUTDATED. A new one
+                                    will be started automatically, so make sure you corrected all attachments or other
+                                    problems first before changing the state.
+                                </p>
+                            </small>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col">
+                            <div class="source-attachment">
+                                Found source attachment: <span id="name-of-source-attachment" class="ml-2"></span>
                             </div>
                         </div>
-                    </form>
-
-                    <table id="attachmentFossologyStatus" class="table table-bordered"></table>
-
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col">
+                            <div class="progress" style="height: 40px;">
+                                <div class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-4">
+                        <div class="col">
+                            <div class="auto-refresh text-right">
+                                Auto-refresh in <span id="auto-refresh-seconds" class="ml-2">5</span>
+                            </div>
+                        </div>
+                    </div>
 				</div>
-			    <div class="modal-footer">
-		        <button type="button" class="btn btn-light" data-dismiss="modal">Close</button>
-			        <button type="button" class="btn btn-secondary" data-submit="refresh" title="Refresh the status for the selected ClearingTeam">Refresh Status</button>
-                    <button type="button" class="btn btn-primary" data-submit="send" title="Send or make available this release to the selected Clearing Team">Send For Clearing</button>
-			    </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-submit="outdated">Set Outdated</button>
+                    <button type="button" class="btn btn-light" data-dismiss="modal">Close</button>
+                </div>
 			</div>
 		</div>
 	</div>

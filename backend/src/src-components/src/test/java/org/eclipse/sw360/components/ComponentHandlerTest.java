@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -58,10 +58,16 @@ public class ComponentHandlerTest {
         String componentId = componentHandler.addComponent(originalComponent, adminUser).getId();
 
         Release release = new Release("name", "version", componentId);
-        ExternalToolRequest etr = new ExternalToolRequest();
-        etr.setExternalTool(ExternalTool.FOSSOLOGY);
-        etr.setToolId("12345");
-        release.addToExternalToolRequests(etr);
+        ExternalToolProcess etp = new ExternalToolProcess();
+        etp.setExternalTool(ExternalTool.FOSSOLOGY);
+        release.addToExternalToolProcesses(etp);
+        ExternalToolProcessStep etps = new ExternalToolProcessStep();
+        // do not use FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD so that test fails when
+        // it gets refactored and no one thinks of adjusting the view definition in
+        // ComponentRepository
+        etps.setStepName("01_upload");
+        etps.setProcessStepIdInTool("12345");
+        etp.addToProcessSteps(etps);
         String releaseId = componentHandler.addRelease(release, adminUser).getId();
 
         Component component = componentHandler.getComponentForReportFromFossologyUploadId("12345");

@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2014-2018.
+ * Copyright Siemens AG, 2014-2019.
  * With modifications by Bosch Software Innovations GmbH, 2016
  * Part of the SW360 Portal Project.
  *
@@ -14,6 +14,15 @@ package org.eclipse.sw360.datahandler.common;
 
 import com.google.common.base.*;
 import com.google.common.collect.*;
+
+import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.thrift.attachments.*;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.licenses.Todo;
+import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
+import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserService;
+
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.QuoteMode;
 import org.apache.commons.io.FilenameUtils;
@@ -22,19 +31,6 @@ import org.apache.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
 import org.apache.thrift.TFieldIdEnum;
-import org.eclipse.sw360.datahandler.thrift.DocumentState;
-import org.eclipse.sw360.datahandler.thrift.ModerationState;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
-import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.licenses.Todo;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.ektorp.DocumentOperationResult;
 import org.jetbrains.annotations.NotNull;
 
@@ -603,7 +599,8 @@ public class CommonUtils {
     public static Optional<Attachment> getBestClearingReport(Release release) {
         return nullToEmptyCollection(release.getAttachments())
                 .stream()
-                .filter(att -> att.getAttachmentType() == AttachmentType.CLEARING_REPORT)
+                .filter(att -> att.getAttachmentType() == AttachmentType.CLEARING_REPORT
+                        || att.getAttachmentType() == AttachmentType.COMPONENT_LICENSE_INFO_XML)
                 .max(Comparator.comparing(Attachment::getCheckStatus, CHECK_STATUS_COMPARATOR));
     }
 

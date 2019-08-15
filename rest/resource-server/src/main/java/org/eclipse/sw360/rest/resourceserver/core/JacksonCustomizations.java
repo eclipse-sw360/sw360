@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017-2018.
+ * Copyright Siemens AG, 2017-2019.
  * Copyright Bosch Software Innovations GmbH, 2017-2018.
  * Part of the SW360 Portal Project.
  *
@@ -13,10 +13,7 @@
 
 package org.eclipse.sw360.rest.resourceserver.core;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -374,8 +371,8 @@ class JacksonCustomizations {
                 "setComponentId",
                 "setReleaseDate",
                 "setExternalIds",
-                "externalToolRequestsSize",
-                "setExternalToolRequests",
+                "externalToolProcessesSize",
+                "setExternalToolProcesses",
                 "setEccInformation",
                 "languagesIterator",
                 "operatingSystemsIterator",

@@ -41,7 +41,7 @@ public class ReleaseExporter extends ExcelExporter<Release, ReleaseHelper> {
         nameToDisplayName.put(Release._Fields.CREATED_BY.getFieldName(), "created by");
         nameToDisplayName.put(Release._Fields.MAINLINE_STATE.getFieldName(), "mainline state");
         nameToDisplayName.put(Release._Fields.CLEARING_STATE.getFieldName(), "clearing state");
-        nameToDisplayName.put(Release._Fields.EXTERNAL_TOOL_REQUESTS.getFieldName(), "external tool requests");
+        nameToDisplayName.put(Release._Fields.EXTERNAL_TOOL_PROCESSES.getFieldName(), "external tool process");
         nameToDisplayName.put(Release._Fields.CLEARING_INFORMATION.getFieldName(), "clearing information");
         nameToDisplayName.put(Release._Fields.ECC_INFORMATION.getFieldName(), "ECC information");
         nameToDisplayName.put(Release._Fields.COTS_DETAILS.getFieldName(), "COTS details");

@@ -33,6 +33,8 @@ To migrate it is recommended to do this in the following order:
 - `012_migrate_todoid_to_title.py`
 ### 4.0.0 -> 5.0.0
 - `013_migrate_releases_external_tool_requests.py`
+### 5.x.x -> 6.0.0
+- `014_migrate_fossology_rest.py`
 
 ## Optional usage
 - `009_overwrite_release_name_with_component_name.py`
