@@ -11,26 +11,26 @@
 
 package org.eclipse.sw360.rest.resourceserver;
 
-import org.eclipse.sw360.rest.common.Sw360CORSFilter;
+import java.util.Properties;
+import java.util.Set;
+
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.rest.common.PropertyUtils;
+import org.eclipse.sw360.rest.common.Sw360CORSFilter;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.rest.core.config.RepositoryRestConfiguration;
 import org.springframework.data.rest.webmvc.config.RepositoryRestConfigurer;
 import org.springframework.data.rest.webmvc.config.RepositoryRestConfigurerAdapter;
-import org.springframework.context.annotation.Import;
 import org.springframework.hateoas.UriTemplate;
 import org.springframework.hateoas.hal.CurieProvider;
 import org.springframework.hateoas.hal.DefaultCurieProvider;
-
-import java.util.Properties;
-import java.util.Set;
 
 @SpringBootApplication
 @Import(Sw360CORSFilter.class)
@@ -39,8 +39,9 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
     @Value("${spring.data.rest.default-page-size:10}")
     private int defaultPageSize;
 
-    private static final String PROPERTIES_FILE_PATH = "/sw360.properties";
+    private static final String SW360_PROPERTIES_FILE_PATH = "/sw360.properties";
     private static final String CURIE_NAMESPACE = "sw360";
+    private static final String APPLICATION_ID = "rest";
 
     public static final String API_TOKEN_HASH_SALT;
     public static final String API_TOKEN_MAX_VALIDITY_READ_IN_DAYS;
@@ -48,7 +49,7 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
     public static final Set<String> DOMAIN;
 
     static {
-        Properties props = CommonUtils.loadProperties(Sw360ResourceServer.class, PROPERTIES_FILE_PATH);
+        Properties props = CommonUtils.loadProperties(Sw360ResourceServer.class, SW360_PROPERTIES_FILE_PATH);
         API_TOKEN_MAX_VALIDITY_READ_IN_DAYS = props.getProperty("rest.apitoken.read.validity.days", "90");
         API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS = props.getProperty("rest.apitoken.write.validity.days", "30");
         API_TOKEN_HASH_SALT = props.getProperty("rest.apitoken.hash.salt", "$2a$04$Software360RestApiSalt");
@@ -78,10 +79,15 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
 
     @Override
     protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
-        return builder.sources(Sw360ResourceServer.class);
+        return builder
+            .sources(Sw360ResourceServer.class)
+            .properties(PropertyUtils.createDefaultProperties(APPLICATION_ID));
     }
 
     public static void main(String[] args) {
-        SpringApplication.run(Sw360ResourceServer.class, args);
+        new SpringApplicationBuilder(Sw360ResourceServer.class)
+            .properties(PropertyUtils.createDefaultProperties(APPLICATION_ID))
+            .build()
+            .run(args);
     }
 }
