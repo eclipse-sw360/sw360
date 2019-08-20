@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
   ~ With modifications by Bosch Software Innovations GmbH, 2016.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
@@ -21,16 +21,25 @@
         <version>${revision}</version>
     </parent>
 
+	<name>exporters</name>
     <artifactId>exporters</artifactId>
+    <packaging>jar</packaging>
 
-    <name>exporters</name>
+    <properties>
+        <artifact.deploy.dir>${liferay.deploy.dir}</artifact.deploy.dir>
+    </properties>
 
     <build>
+	<finalName>org.eclipse.sw360.exporters-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
                 <version>${maven-source-plugin.version}</version>
+            </plugin>
+            <plugin>
+                <groupId>biz.aQute.bnd</groupId>
+                <artifactId>bnd-maven-plugin</artifactId>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -43,6 +52,11 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+			<archive>
+                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                    </archive>
+                </configuration>
             </plugin>
         </plugins>
     </build>

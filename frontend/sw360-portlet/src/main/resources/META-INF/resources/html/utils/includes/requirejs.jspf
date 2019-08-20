@@ -1,0 +1,39 @@
+<%--
+ ~ Copyright Siemens AG, 2017, 2019. Part of the SW360 Portal Project.
+ ~
+ ~ SPDX-License-Identifier: EPL-1.0
+ ~
+ ~ All rights reserved. This program and the accompanying materials
+ ~ are made available under the terms of the Eclipse Public License v1.0
+ ~ which accompanies this distribution, and is available at
+ ~ http://www.eclipse.org/legal/epl-v10.html
+ --%>
+<script src="<%=request.getContextPath()%>/webjars/requirejs/require.js"></script>
+<script type="text/javascript">
+	// The following global contextPath is required by utils/cssloader!!
+	var contextPath = "<%=request.getContextPath()%>";
+
+    requirejs.config({
+        baseUrl: contextPath + "/js",
+        paths: {
+		"jquery-ui":              				[ contextPath + "/webjars/jquery-ui/jquery-ui.min" ],
+            "jquery-treetable":       				[ contextPath + "/webjars/jquery-treetable/jquery.treetable" ],
+            /* Attention: validate needs .min as the dependency is referenced like that in additional-methods.min.js in webjars... */
+            "jquery.validate.min":					[ contextPath + "/webjars/jquery-validation/dist/jquery.validate.min" ],
+            "jquery.validate-addon":  				[ contextPath + "/webjars/jquery-validation/dist/additional-methods.min" ],
+            "datatables.net":         				[ contextPath + "/webjars/datatables.net/js/jquery.dataTables.min" ],
+            "datatables.net-bs4":         			[ contextPath + "/webjars/datatables.net-bs4/1.10.19/js/dataTables.bootstrap4.min" ],
+            "datatables.net-buttons": 				[ contextPath + "/webjars/datatables.net-buttons/js/dataTables.buttons.min" ],
+            "datatables.net-buttons.print": 		[ contextPath + "/webjars/datatables.net-buttons/js/buttons.print.min" ],
+            "datatables.net-select":  				[ contextPath + "/webjars/datatables.net-select/js/dataTables.select.min" ],
+            "datatables.net-select-bs4":            [ contextPath + "/webjars/datatables.net-select-bs4/js/select.bootstrap4.min" ],
+            "datatables-plugins-sorting.natural":   [ contextPath + "/webjars/datatables-plugins/1.10.19/sorting/natural" ],
+            "resumable":              				[ contextPath + "/webjars/resumable.js/1.1.0/resumable" ]
+        },
+        shim: {
+            // only for libraries that do not support RequireJS out of the box
+            "jquery-treetable": 					[ "jquery" ],
+            "datatables-plugins-sorting.natural": 	[ "jquery", "datatables.net" ]
+        }
+    });
+</script>

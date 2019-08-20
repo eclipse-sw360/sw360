@@ -1,0 +1,85 @@
+/*
+ * Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+ *
+ * SPDX-License-Identifier: EPL-1.0
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
+
+/*
+ * Siemens Coloring
+ */
+$body-bg: #FAFAFA;
+$header-bg: #FFF;
+$bright-color: #90FFFF;
+$complementary-color: #30313F;
+$dark-color: #272833;
+$dropdown-link-hover-bg: rgba(#009999, 0.12);
+$input-bg: #FFF;
+$light-color: #E7E7ED;
+$link-color: #2387AA;
+$link-hover-color: #005578;
+$list-group-action-active-bg: rgba(#009999, 0.12);
+$list-group-active-bg: $list-group-action-active-bg;
+$list-group-hover-bg: rgba(#009999, 0.88);
+$primary: #2387AA;
+
+$datatable-select-fg: $light-color;
+$datatable-select-bg: rgba(#009999, 0.12);
+
+$lead-font-weight: 400;
+$small-font-size: 0.875rem;
+
+$box-header-fg: #FFF;
+$box-header-bg: #009999;
+$bg-color-light: #EBF0F5;
+
+$statebox-bg: #FFF;
+
+$portlet-decorate-bg: #FFF;
+$portlet-decorate-border: 1px solid $light-color;
+
+$highlight-bg-success: #edf9f0;
+$highlight-bg-warning: #fff4ec;
+$highlight-bg-danger: #feefef;
+
+
+/*
+ * SW360 coloring
+ */
+$body-bg: #FAFAFA;
+$header-bg: #FFF;
+$bright-color: #F7941E;
+$complementary-color: #30313F;
+$dark-color: #272833;
+$dropdown-link-hover-bg: rgba(#F7941E, 0.12);
+$input-bg: #FFF;
+$light-color: #E7E7ED;
+$link-color: #F7941E;
+$link-hover-color: #005578;
+$list-group-action-active-bg: rgba(#F7941E, 0.4);
+$list-group-active-bg: $list-group-action-active-bg;
+$list-group-hover-bg: rgba(#F7941E, 0.12);
+$primary: #F7941E;
+
+$datatable-select-fg: $dark-color;
+$datatable-select-bg: rgba(#F7941E, 0.12);
+
+$lead-font-weight: 400;
+$small-font-size: 0.875rem;
+
+$box-header-fg: #FFF;
+$box-header-bg: #5D8EA9;
+$bg-color-light: #EBF0F5;
+
+$statebox-bg: #FFF;
+
+$portlet-decorate-bg: #FFF;
+$portlet-decorate-border: 1px solid $light-color;
+
+$highlight-bg-success: #edf9f0;
+$highlight-bg-warning: #fff4ec;
+$highlight-bg-danger: #feefef;

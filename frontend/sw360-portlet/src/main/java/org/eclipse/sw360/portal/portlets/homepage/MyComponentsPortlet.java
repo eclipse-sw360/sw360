@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
  * With modifications by Bosch Software Innovations GmbH, 2016.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -11,38 +11,61 @@
  */
 package org.eclipse.sw360.portal.portlets.homepage;
 
-import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.portal.portlets.Sw360Portlet;
-import org.eclipse.sw360.portal.users.UserCacheHolder;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
+import static org.apache.log4j.Logger.getLogger;
+import static org.eclipse.sw360.portal.common.PortalConstants.MY_COMPONENTS_PORTLET_NAME;
 
-import javax.portlet.PortletException;
-import javax.portlet.RenderRequest;
-import javax.portlet.RenderResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.apache.log4j.Logger.getLogger;
+import javax.portlet.Portlet;
+import javax.portlet.PortletException;
+import javax.portlet.ResourceRequest;
+import javax.portlet.ResourceResponse;
 
-/**
- * Small homepage portlet
- *
- * @author cedric.bodet@tngtech.com
- * @author gerrit.grenzebach@tngtech.com
- * @author andreas.reichel@tngtech.com
- */
+import com.google.common.base.Strings;
+import com.liferay.portal.kernel.json.JSONArray;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
+
+import org.apache.log4j.Logger;
+import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.thrift.components.Component;
+import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.portal.common.PortalConstants;
+import org.eclipse.sw360.portal.portlets.Sw360Portlet;
+import org.eclipse.sw360.portal.users.UserCacheHolder;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
+
+@org.osgi.service.component.annotations.Component(
+    immediate = true,
+    properties = {
+        "/org/eclipse/sw360/portal/portlets/base.properties",
+        "/org/eclipse/sw360/portal/portlets/user.properties"
+    },
+    property = {
+        "javax.portlet.name=" + MY_COMPONENTS_PORTLET_NAME,
+
+        "javax.portlet.display-name=My Components",
+        "javax.portlet.info.short-title=My Components",
+        "javax.portlet.info.title=My Components",
+
+        "javax.portlet.init-param.view-template=/html/homepage/mycomponents/view.jsp",
+    },
+    service = Portlet.class,
+    configurationPolicy = ConfigurationPolicy.REQUIRE
+)
 public class MyComponentsPortlet extends Sw360Portlet {
+    public void serveResource(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
+        String action = request.getParameter(PortalConstants.ACTION);
 
-    private static final Logger log = getLogger(MyComponentsPortlet.class);
+        if (PortalConstants.LOAD_COMPONENT_LIST.equals(action)) {
+            serveComponentList(request, response);
+        }
+    }
 
-    @Override
-    public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
+    private void serveComponentList(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
         List<Component> components;
         try {
             final User user = UserCacheHolder.getUserFromRequest(request);
@@ -51,7 +74,31 @@ public class MyComponentsPortlet extends Sw360Portlet {
             log.error("Could not fetch your components from backend", e);
             components = new ArrayList<>();
         }
-        request.setAttribute("components",  CommonUtils.nullToEmptyList(components));
-        super.doView(request, response);
+
+        JSONArray jsonComponents = getComponentData(components);
+        JSONObject jsonResult = JSONFactoryUtil.createJSONObject();
+        jsonResult.put("aaData", jsonComponents);
+
+        try {
+            writeJSON(request, response, jsonResult);
+        } catch (IOException e) {
+            log.error("Problem generating component list", e);
+        }
+    }
+
+    public JSONArray getComponentData(List<Component> componentList) {
+        JSONArray projectData = JSONFactoryUtil.createJSONArray();
+        for(Component component : componentList) {
+            JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+
+            jsonObject.put("DT_RowId", component.getId());
+            jsonObject.put("id", component.getId());
+            jsonObject.put("name", SW360Utils.printName(component));
+            jsonObject.put("description", Strings.nullToEmpty(component.getDescription()));
+
+            projectData.put(jsonObject);
+        }
+
+        return projectData;
     }
 }

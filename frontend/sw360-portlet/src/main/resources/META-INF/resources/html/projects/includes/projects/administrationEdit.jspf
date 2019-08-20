@@ -1,0 +1,267 @@
+<%--
+  ~ Copyright Siemens AG, 2017-2019. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+  --%>
+
+<%@page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState"%>
+<%@page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectState"%>
+<%@page import="org.eclipse.sw360.datahandler.thrift.projects.Project" %>
+
+<table class="table edit-table three-columns" id="ProjectClearingInfo" title="Clearing">
+    <thead>
+    <tr>
+        <th colspan="3" class="headlabel">Clearing</th>
+    </tr>
+    </thead>
+    <tr>
+        <td>
+            <div class="form-group">
+                <label for="proj_projectclearingstate">Project clearing state</label>
+                <select class="form-control" id="proj_projectclearingstate"
+                        name="<portlet:namespace/><%=Project._Fields.CLEARING_STATE%>">
+                    <sw360:DisplayEnumOptions type="<%=ProjectClearingState.class%>" selected="${project.clearingState}"/>
+                </select>
+                <small class="form-text">
+                    <sw360:DisplayEnumInfo type="<%=ProjectClearingState.class%>"/>
+                    Learn more about the project clearing state.
+                </small>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="clearingTeam">Clearing team</label>
+                <select class="form-control" id="clearingTeam"
+                        name="<portlet:namespace/><%=Project._Fields.CLEARING_TEAM%>">
+                    <option value="<%=CLEARING_TEAM_UNKNOWN%>"
+                            <core_rt:if test='${empty project.clearingTeam}'>
+                                selected="selected"
+                            </core_rt:if>><%=CLEARING_TEAM_UNKNOWN%></option>
+                    <core_rt:forEach items="${clearingTeamsStringSet}" var="entry">
+                        <option value="${entry}" class="textlabel stackedLabel"
+                            <core_rt:if test='${project.clearingTeam == entry}'>
+                                selected="selected"
+                            </core_rt:if>>
+                            ${entry}
+                        </option>
+                    </core_rt:forEach>
+                </select>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="proj_deadline">Deadline for pre-evaluation</label>
+                <input class="form-control datepicker" id="proj_deadline"
+                    name="<portlet:namespace/><%=Project._Fields.PREEVALUATION_DEADLINE%>" type="text" pattern="\d{4}-\d{2}-\d{2}"
+                    value="<sw360:out value="${project.preevaluationDeadline}"/>" placeholder="Pre-evaluation date YYYY-MM-DD"/>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="3">
+            <div class="form-group">
+                <label for="obligations">Obligations</label>
+                <button id="setToDefaultObligationsTextButton" class="btn btn-link btn-right" type="button">Set To Default Text</button>
+                <textarea name="<portlet:namespace/><%=Project._Fields.OBLIGATIONS_TEXT%>"
+                    class="form-control" rows="5" id="obligationsText"
+                    data-defaulttext="${defaultObligationsText}"><sw360:DisplayObligations project="${project}"
+                    defaultText="${defaultObligationsText}"/></textarea>
+            </div>
+        </td>
+    </tr>
+     <tr>
+        <td colspan="3">
+            <div class="form-group">
+                <label for="clearingSummary">Clearing summary</label>
+                <textarea id="clearingSummaryText" name="<portlet:namespace/><%=Project._Fields.CLEARING_SUMMARY%>"
+                        class="form-control" rows="5" type="text"><sw360:out value="${project.clearingSummary}"/></textarea>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="3">
+            <div class="form-group">
+                <label for="specialRisksOSSText">Special risk Open Source Software</label>
+                <textarea id="specialRisksOSSText" name="<portlet:namespace/><%=Project._Fields.SPECIAL_RISKS_OSS%>"
+                        class="form-control" rows="5" type="text"><sw360:out value="${project.specialRisksOSS}"/></textarea>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="3">
+            <div class="form-group">
+                <label for="generalRisks3rdParty">General risk 3rd party software</label>
+                <textarea id="generalRisks3rdPartyText"
+                        name="<portlet:namespace/><%=Project._Fields.GENERAL_RISKS3RD_PARTY%>" class="form-control" rows="5"
+                        type="text"><sw360:out value="${project.generalRisks3rdParty}"/></textarea>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="3">
+            <div class="form-group">
+                <label for="specialRisks3rdParty">Special risks 3rd party software</label>
+                <textarea id="specialRisks3rdPartyText"
+                        name="<portlet:namespace/><%=Project._Fields.SPECIAL_RISKS3RD_PARTY%>" class="form-control" rows="5"
+                        type="text"><sw360:out value="${project.specialRisks3rdParty}"/></textarea>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="3">
+            <div class="form-group">
+                <label for="deliveryChannels">Sales and delivery channels</label>
+                <textarea id="deliveryChannelsText" name="<portlet:namespace/><%=Project._Fields.DELIVERY_CHANNELS%>"
+                        class="form-control" rows="5" type="text"><sw360:out value="${project.deliveryChannels}"/></textarea>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="3">
+            <div class="form-group">
+                <label for="remarksAdditionalRequirements">Remarks additional requirements</label>
+                <textarea id="remarksAdditionalRequirementsText"
+                        name="<portlet:namespace/><%=Project._Fields.REMARKS_ADDITIONAL_REQUIREMENTS%>" class="form-control"
+                        rows="5" type="text"><sw360:out value="${project.remarksAdditionalRequirements}"/></textarea>
+            </div>
+        </td>
+    </tr>
+</table>
+
+<table class="table edit-table two-columns" id="obligations">
+    <thead>
+        <tr><th>Obligation</th><th>Fulfilled</th></tr>
+    </thead>
+    <tbody>
+        <core_rt:forEach items="${projectObligations}" var="entry">
+            <tr>
+                <td>${entry.getKey().getText()}</td>
+                <td>
+                    <div class="form-group form-check">
+                        <input type="checkbox"
+                            name="<portlet:namespace/><%=Project._Fields.TODOS%>"
+                            value="${entry.getKey().getId()}"
+                            class="form-check-input"
+                            <core_rt:if test="${entry.getValue().fulfilled}">checked="checked"</core_rt:if>/>
+                    </div>
+                </td>
+            </tr>
+        </core_rt:forEach>
+    </tbody>
+</table>
+
+<table class="table edit-table three-columns" id="ProjectLifecycleInfo" title="Lifecycle">
+    <thead>
+    <tr>
+        <th colspan="3" class="headlabel">Lifecycle</th>
+    </tr>
+    </thead>
+    <tr>
+        <td>
+            <div class="form-group">
+                <label class="mandatory" for="projectState">Project state</label>
+                <select class="form-control" id="projectState" name="<portlet:namespace/><%=Project._Fields.STATE%>">
+                    <sw360:DisplayEnumOptions type="<%=ProjectState.class%>" selected="${project.state}"/>
+                </select>
+                <small class="form-text">
+                    <sw360:DisplayEnumInfo type="<%=ProjectState.class%>"/>
+                    Learn more about the project state.
+                </small>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="proj_systemTestStart">System test begin</label>
+                <input class="form-control datepicker" id="proj_systemTestStart"
+                    name="<portlet:namespace/><%=Project._Fields.SYSTEM_TEST_START%>" type="text" pattern="\d{4}-\d{2}-\d{2}"
+                    value="<sw360:out value="${project.systemTestStart}"/>" placeholder="System test begin date YYYY-MM-DD"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="proj_systemTestEnd">System test end</label>
+                <input class="form-control datepicker" id="proj_systemTestEnd"
+                    name="<portlet:namespace/><%=Project._Fields.SYSTEM_TEST_END%>" type="text" pattern="\d{4}-\d{2}-\d{2}"
+                    value="<sw360:out value="${project.systemTestEnd}"/>" placeholder="System test end date YYYY-MM-DD"/>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <div class="form-group">
+                <label for="proj_delivery">Delivery start date</label>
+                <input class="form-control datepicker" id="proj_delivery"
+                    name="<portlet:namespace/><%=Project._Fields.DELIVERY_START%>" type="text" pattern="\d{4}-\d{2}-\d{2}"
+                    value="<sw360:out value="${project.deliveryStart}"/>" placeholder="Delivery start date YYYY-MM-DD"/>
+            <div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="proj_phaseout">Phase-out date</label>
+                <input class="form-control datepicker" id="proj_phaseout"
+                    name="<portlet:namespace/><%=Project._Fields.PHASE_OUT_SINCE%>" type="text" pattern="\d{4}-\d{2}-\d{2}"
+                    value="<sw360:out value="${project.phaseOutSince}"/>" placeholder="Phase out since YYYY-MM-DD"/>
+            </div>
+        </td>
+        <td>
+        </td>
+    </tr>
+</table>
+
+<table class="table edit-table" id="LicenseInfoHeader" title="License Info Header">
+    <thead>
+    <tr>
+        <th class="headlabel">License Info Header</th>
+    </tr>
+    </thead>
+    <tr>
+        <td>
+            <div class="form-group">
+                <label><!-- necessary to style following button --></label>
+                <button id="setToDefaultLicenseInfoHeaderTextButton" type="button" class="btn btn-link btn-right">Set To Default Text</button>
+                <textarea name="<portlet:namespace/><%=Project._Fields.LICENSE_INFO_HEADER_TEXT%>" rows="5"
+                        class="form-control" id="licenseInfoHeaderText"
+                        data-defaulttext="<c:out value='${defaultLicenseInfoHeaderText}'/>"><sw360:DisplayLicenseInfoHeader
+                        project="${project}" defaultText="${defaultLicenseInfoHeaderText}"/></textarea>
+            </div>
+        </td>
+    </tr>
+</table>
+
+<script>
+    require(['jquery', /* jquery-plugins */ 'jquery-ui'], function ($) {
+        $('#detailTab a[href="#tab-Administration"]').on('shown.bs.tab', function (event) {
+		if($('#licenseInfoHeaderText').prop('scrollHeight') > 0) {
+		$('#licenseInfoHeaderText').height($('#licenseInfoHeaderText').prop('scrollHeight'));
+		}
+		if($('#obligationsText').prop('scrollHeight')) {
+		$('#obligationsText').height($('#obligationsText').prop('scrollHeight'));
+		}
+        });
+
+        <core_rt:if test="${addMode}" >
+            setDefaultTextAndResize($('#obligationsText'));
+            setDefaultTextAndResize($('#licenseInfoHeaderText'))
+        </core_rt:if>
+
+        $('#setToDefaultObligationsTextButton').click(function () {
+            setDefaultTextAndResize($('#obligationsText'));
+        });
+
+        $('#setToDefaultLicenseInfoHeaderTextButton').click(function () {
+            setDefaultTextAndResize($('#licenseInfoHeaderText'));
+        });
+
+        $('.datepicker').datepicker({changeMonth:true,changeYear:true,dateFormat: "yy-mm-dd"});
+
+        function setDefaultTextAndResize(textarea) {
+            $(textarea).val($(textarea).data("defaulttext"));
+            $(textarea).height($(textarea)[0].scrollHeight);
+        }
+    });
+</script>

@@ -1,0 +1,72 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+
+<%@ page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship" %>
+
+<h4>Linked Projects</h4>
+<table class="table edit-table three-columns-with-actions" id="LinkedProjectsInfo">
+    <thead>
+        <tr>
+            <th>Project Name</th>
+            <th>Project Version</th>
+            <th>Project Relation <sw360:DisplayEnumInfo type="<%=ProjectRelationship.class%>"/></th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        <jsp:include page="/html/projects/ajax/linkedProjectsAjax.jsp" />
+    </tbody>
+</table>
+
+<button type="button" class="btn btn-secondary" id="addLinkedProjectButton">Add Projects</button>
+
+<div class="dialogs">
+    <div id="deleteLinkedProjectDialog" class="modal fade" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-lg modal-dialog-centered modal-danger" role="document">
+		    <div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">
+					<clay:icon symbol="question-circle" />
+					Delete link to project?
+				</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+				<div class="modal-body">
+			        <p>
+                        Do you really want to remove the link to project <b data-name="project"></b>?
+                    </p>
+				</div>
+			    <div class="modal-footer">
+			        <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
+			        <button type="button" class="btn btn-danger">Delete Link</button>
+			    </div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+    require(['jquery', 'modules/dialog'], function($, dialog) {
+        $('#LinkedProjectsInfo').on('click', 'svg[data-row-id]', function(event) {
+            var rowId = $(event.currentTarget).data().rowId,
+                project = $(event.currentTarget).parents('tr').find('input[data-content="projectName"]').val();
+
+            dialog.open('#deleteLinkedProjectDialog', {
+                project: project
+            }, function(submit, callback) {
+                $('#' + rowId).remove();
+                callback(true);
+            });
+        });
+    });
+</script>

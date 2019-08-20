@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2017, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -10,15 +10,17 @@
  */
 package org.eclipse.sw360.portal.tags;
 
-import org.apache.thrift.TEnum;
-import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.portal.common.PortalConstants;
 
+import org.apache.thrift.TEnum;
+
+import java.io.IOException;
+
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
+import javax.servlet.jsp.PageContext;
 import javax.servlet.jsp.tagext.SimpleTagSupport;
-import java.io.IOException;
-import java.util.Iterator;
 
 import static com.google.common.base.Predicates.instanceOf;
 import static com.google.common.collect.Iterables.all;
@@ -27,10 +29,6 @@ import static com.google.common.collect.Iterables.all;
  * @author thomas.maier@evosoft.com
  */
 public class DisplayEnumInfo extends SimpleTagSupport {
-
-    private static final String SW360_INFO_IMG_PATH = "/sw360-portlet/images/ic_info.png";
-    private static final String SW360_INFO_IMG = "infopic";
-
     private Class type;
 
     private Iterable<? extends TEnum> options;
@@ -59,11 +57,13 @@ public class DisplayEnumInfo extends SimpleTagSupport {
     }
 
     private void printEnumValuesInfo(Class enumClass) throws IOException {
+        PageContext pageContext = (PageContext) getJspContext();
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
         JspWriter jspWriter = getJspContext().getOut();
 
         String result = "<span class='" + PortalConstants.TOOLTIP_CLASS__CSS + " "
                 + PortalConstants.TOOLTIP_CLASS__CSS + "-" + enumClass.getSimpleName() + "'>"
-                + "<img class='" + SW360_INFO_IMG + "' src='" + SW360_INFO_IMG_PATH + "'></span>";
+                + "<svg class='lexicon-icon'><use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle-open' /></svg></span>";
 
         jspWriter.print(result);
 

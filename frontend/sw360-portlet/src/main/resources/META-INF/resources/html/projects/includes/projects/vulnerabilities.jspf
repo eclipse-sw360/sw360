@@ -1,0 +1,299 @@
+<%--
+  ~ Copyright Siemens AG, 2016-2017, 2019. Part of the SW360 Portal Project.
+  ~ With modifications from Bosch Software Innovations GmbH, 2016.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+<%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
+<%@ page import="javax.portlet.PortletRequest" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.RequestStatus" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityRatingForProject" %>
+<%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
+
+<portlet:resourceURL var="updateProjectVulnerabilitiesURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.UPDATE_VULNERABILITIES_PROJECT%>"/>
+</portlet:resourceURL>
+<portlet:resourceURL var="updateVulnerabilityRatings">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.UPDATE_VULNERABILITY_RATINGS%>"/>
+</portlet:resourceURL>
+
+<jsp:useBean id="vulnerabilityList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO>" scope="request"/>
+<jsp:useBean id="vulnerabilityRatings" type="java.util.Map<java.lang.String, org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityRatingForProject>" scope="request"/>
+<jsp:useBean id="writeAccessUser" type="java.lang.Boolean" scope="request"/>
+<jsp:useBean id="vulnerabilityCheckstatusTooltips" type="java.util.Map<java.lang.String, java.lang.String>" scope="request"/>
+<jsp:useBean id="vulnerabilityMatchedByHistogram" type="java.util.Map<java.lang.String, java.lang.Long>" scope="request"/>
+
+<jsp:useBean id="viewSize" type="java.lang.Integer" scope="request"/>
+
+<div class="container">
+    <core_rt:if test="${project.enableVulnerabilitiesDisplay}">
+        <div class="row">
+            <div class="col">
+                <div class="alert alert-info" role="alert">
+                    Total vulnerabilities: <strong>${numberOfVulnerabilities}</strong>
+                </div>
+            </div>
+        </div>
+    </core_rt:if>
+    <div class="row mt-2">
+        <div class="col">
+            <h4>Vulnerability State Information</h4>
+        </div>
+    </div>
+    <div class="row stateinfo">
+        <div class="col-3">
+            Security Vulnerability Monitoring:
+        </div>
+        <div class="col">
+            <core_rt:if test="${project.enableSvm}">
+                <span class="badge badge-success">Enabled</span>
+            </core_rt:if>
+            <core_rt:if test="${not project.enableSvm}">
+                <span class="badge badge-light">Disabled</span>
+            </core_rt:if>
+        </div>
+    </div>
+    <div class="row stateinfo">
+        <div class="col-3">
+            Security Vulnerabilities Display:
+        </div>
+        <div class="col">
+            <core_rt:if test="${project.enableVulnerabilitiesDisplay}">
+                <span class="badge badge-success">Enabled</span>
+            </core_rt:if>
+            <core_rt:if test="${not project.enableVulnerabilitiesDisplay}">
+                <span class="badge badge-light">Disabled</span>
+            </core_rt:if>
+        </div>
+    </div>
+    <core_rt:if test="${project.enableVulnerabilitiesDisplay}">
+        <div class="row mt-4">
+            <div class="col">
+                <h4>Vulnerabilities</h4>
+                <form class="form-inline">
+                    <table id="vulnerabilityTable" class="table table-bordered" data-view-size="${viewSize}" data-write-access="${writeAccessUser}">
+                    </table>
+                    <core_rt:if test="${writeAccessUser}">
+                        <div class="form-group">
+                            <label for="rating-change-for-selected">Change rating of selected vulnerabilities to</label>
+                            <select id="rating-change-for-selected" class="form-control" name="<portlet:namespace/><%=VulnerabilityRatingForProject.class%>">
+                                <sw360:DisplayEnumOptions type="<%=VulnerabilityRatingForProject.class%>" inQuotes="true"/>
+                            </select>
+                            <button id="apply-to-selected" type="button" class="btn btn-primary">Change Rating</button>
+                        </div>
+                    </core_rt:if>
+                </form>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col">
+                <h4>Vulnerability matching statistics</h4>
+                <ul>
+                    <core_rt:forEach items="${vulnerabilityMatchedByHistogram.keySet()}" var="matchedBy">
+                        <li>
+                            <b><sw360:out value='${vulnerabilityMatchedByHistogram.get(matchedBy)}'/></b>
+                            of the vulnerabilities were matched by
+                            <b><sw360:out value='${matchedBy}'/></b>
+                        </li>
+                    </core_rt:forEach>
+                </ul>
+            </div>
+        </div>
+    </core_rt:if>
+</div>
+
+<%@include file="/html/utils/includes/vulnerabilityModal.jspf" %>
+
+<%--for javascript library loading --%>
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
+
+<script type="text/javascript">
+    require(['jquery', 'bridges/datatables', 'modules/dialog', 'bridges/jquery-ui'], function ($, datatable, dialog) {
+        var vulnerabilityTable;
+
+        vulnerabilityTable = createVulnerabilityTable();
+        $('#vulnerabilityTable').on('change', '[data-action="select-all"]', function(event) {
+            if($(event.currentTarget).is(':checked')) {
+                vulnerabilityTable.rows().select();
+            } else {
+                vulnerabilityTable.rows().deselect();
+            }
+        });
+        $('#vulnerabilityTable').on('change', 'td :checkbox', function(event) {
+            $('#vulnerabilityTable th [data-action="select-all"]').prop('checked', !($('#vulnerabilityTable td :checkbox:not(:checked)').length > 0));
+        });
+
+        var viewSize = $('#vulnerabilityTable').data() ? $('#vulnerabilityTable').data().viewSize : 0;
+        $('#btnShowVulnerabilityCount [data-name="count"]').text(viewSize > 0 ? 'latest ' + viewSize : 'all');
+        $('#btnShowVulnerabilityCount + div > a').on('click', function(event) {
+            var viewSize = $(event.currentTarget).data().type;
+
+            var PortletURL = Liferay.PortletURL;
+            var portletURL = PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>');
+            portletURL.setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_DETAIL%>');
+            portletURL.setParameter('<%=PortalConstants.PROJECT_ID%>', '${project.id}');
+            portletURL.setParameter('<%=PortalConstants.VIEW_SIZE%>', viewSize);
+
+            window.location.href = portletURL.toString() + window.location.hash;
+        });
+
+        if($('#vulnerabilityTable').data() && $('#vulnerabilityTable').data().writeAccess) {
+            $('#apply-to-selected').on('click', function () {
+                batchChangeRating();
+            });
+        }
+
+        function createVulnerabilityTable() {
+            var table,
+                tableDefinition,
+                result = [];
+
+            <core_rt:if test="${project.enableVulnerabilitiesDisplay}">
+                <core_rt:forEach items="${vulnerabilityList}" var="vulnerability">
+                    result.push({
+                        releaseName: "<sw360:out value='${vulnerability.intReleaseName}'/>",
+                        externalId: "${vulnerability.externalId}",
+                        externalIdLink: "<sw360:DisplayVulnerabilityLink vulnerabilityId="${vulnerability.externalId}"/>",
+                        intReleaseId: "<sw360:out value="${vulnerability.intReleaseId}"/>",
+                        priority: {
+                            text: "<sw360:out value='${vulnerability.priority}'/>",
+                            tooltip: "<sw360:out value='${vulnerability.priorityToolTip}'/>"
+                        },
+                        title: {
+                            text: "<sw360:out value='${vulnerability.title}'/>",
+                            tooltip: "<sw360:out value='${vulnerability.description}'/>"
+                        },
+                        matchedBy: {
+                            text: "<sw360:out value='${vulnerability.matchedBy}'/>",
+                            tooltip: "Found with needle: <sw360:out value='${vulnerability.usedNeedle}'/>"
+                        },
+                        relevance: {
+                            text: "<sw360:DisplayEnum value="${vulnerabilityRatings.get(vulnerability.externalId).get(vulnerability.intReleaseId)}"/>",
+                            tooltip: "<sw360:out value="${vulnerabilityCheckstatusTooltips.get(vulnerability.externalId).get(vulnerability.intReleaseId)}"/>"
+                        },
+                        action: "<sw360:out value="${vulnerability.action}"/>"
+                    });
+                </core_rt:forEach>
+            </core_rt:if>
+
+            tableDefinition = {
+                data: result,
+                columns: [
+                    { title: '', data: null, className: 'text-center', render: $.fn.dataTable.render.inputCheckbox('vulnerability', '') },
+                    { title: "Release", data: 'releaseName' },
+                    { title: "External id", data: 'externalIdLink' },
+                    { title: "Priority", data: 'priority', render: $.fn.dataTable.render.infoText('/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle-open') },
+                    { title: "Matched by", data: 'matchedBy', render: $.fn.dataTable.render.infoText() },
+                    { title: "Title", data: 'title', render: $.fn.dataTable.render.infoText() },
+                    { title: "Relevance for project", data: 'relevance', render: $.fn.dataTable.render.infoText('/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle-open') },
+                    { title: "Actions", data: 'action', default: '' }
+                ],
+                order: [[3, 'asc'], [4, 'desc']],
+            }
+
+            if($('#vulnerabilityTable').data() && $('#vulnerabilityTable').data().writeAccess) {
+                tableDefinition.select = 'multi+shift';
+                tableDefinition.columns[0].title = '<div class="form-check"><input data-action="select-all" type="checkbox" class="form-check-input" /></div>';
+            }
+
+            table = datatable.create('#vulnerabilityTable', tableDefinition, [1, 2, 3, 4, 5, 6, 7], [0]);
+            if($('#vulnerabilityTable').data() && $('#vulnerabilityTable').data().writeAccess) {
+                datatable.enableCheckboxForSelection(table, 0);
+            }
+
+            $('#vulnerabilityTable .info-text').tooltip({
+                delay: 0,
+                track: true,
+                fade: 250,
+                classes: {
+                     "ui-tooltip": "ui-corner-all ui-widget-shadow info-text"
+                },
+                content: function () {
+                    return $('<textarea/>').html($(this).prop('title')).val();
+                }
+            });
+
+            return table;
+        }
+
+        <core_rt:if test="${writeAccessUser}">
+            function batchChangeRating() {
+                var selectedRows = vulnerabilityTable.rows('.selected');
+                var selectedValue = $("#rating-change-for-selected").children("option:selected");
+
+                var newValue = selectedValue.val();
+                var newValueText = selectedValue.text();
+
+                var $dialog = dialog.open('#vulnerabilityDialog', {
+                    button: 'Change Rating',
+                    vulnerabilityCount: selectedRows.data().length,
+                    verification: newValueText
+                }, function(submit, callback, data) {
+                    executeRatingChange(selectedRows, newValue, newValueText, data.comment).then(function() {
+                        callback(true);
+                    }).catch(function(error) {
+                        $dialog.alert(error);
+                        callback();
+                    });
+                });
+            }
+
+            function executeRatingChange(selectedRows, newValue, newValueText, comment) {
+                var vulnerabilityIds = [];
+                var releaseIds = [];
+
+                selectedRows.data().each(function (item) {
+                    vulnerabilityIds.push(item['externalId']);
+                    releaseIds.push(item['intReleaseId']);
+                });
+
+                var data = {};
+                data["<portlet:namespace/><%=PortalConstants.PROJECT_ID%>"] = "${project.id}";
+                data["<portlet:namespace/><%=PortalConstants.VULNERABILITY_IDS%>"] = vulnerabilityIds;
+                data["<portlet:namespace/><%=PortalConstants.RELEASE_IDS%>"] = releaseIds;
+                data["<portlet:namespace/><%=PortalConstants.VULNERABILITY_RATING_VALUE%>"] = newValue;
+                data["<portlet:namespace/><%=PortalConstants.VULNERABILITY_RATING_COMMENT%>"] = comment;
+
+                return new Promise(function(resolve, reject) {
+                    $.ajax({
+                        url: '<%=updateVulnerabilityRatings%>',
+                        type: 'POST',
+                        dataType: 'json',
+                        data: data,
+                        success: function(response){
+                            switch (response.<%=PortalConstants.REQUEST_STATUS%>) {
+                                case '<%=RequestStatus.FAILURE%>':
+                                    reject("Update failed.");
+                                    break;
+                                case '<%=RequestStatus.SUCCESS%>':
+                                    $('#numberOfVulnerabilities').addClass('bg-warning');
+                                    $('#numberOfVulnerabilities').html('&#8634;');
+
+                                    selectedRows.every(function () {
+                                        this.data().relevance = {
+                                            text: newValueText,
+                                            tooltip: "You just changed this value. Please reload page."
+                                        };
+                                        this.invalidate();
+                                    });
+                                    selectedRows.deselect();
+
+                                    resolve();
+                                    break;
+                                default:
+                            }
+                        },
+                        error: function() {
+                            reject('Unknown request error.');
+                        }
+                    });
+                });
+            }
+        </core_rt:if>
+    });
+</script>

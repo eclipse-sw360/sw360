@@ -1,0 +1,180 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2016, 2019. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+  --%>
+
+<portlet:renderURL var="editComponentURL">
+	<portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="${component.id}"/>
+	<portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_EDIT%>"/>
+</portlet:renderURL>
+
+<portlet:resourceURL var="subscribeComponentURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.SUBSCRIBE%>"/>
+    <portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="${component.id}"/>
+</portlet:resourceURL>
+
+
+<portlet:resourceURL var="unsubscribeComponentURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.UNSUBSCRIBE%>"/>
+    <portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="${component.id}"/>
+</portlet:resourceURL>
+
+<div class="container" style="display: none;">
+	<div class="row">
+		<div class="col-3 sidebar">
+			<div id="detailTab" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab">Summary</a>
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Releases'}">active</core_rt:if>" href="#tab-Releases" data-toggle="list" role="tab">Release Overview</a>
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Attachments'}">active</core_rt:if>" href="#tab-Attachments" data-toggle="list" role="tab">Attachments</a>
+			<core_rt:if test="${inComponentDetailsContext}">
+				<%@include file="/html/utils/includes/vulnerabilityTab.jspf" %>
+			</core_rt:if>
+		    </div>
+	    </div>
+	    <div class="col">
+		<div class="row portlet-toolbar">
+				<div class="col-auto">
+                    <core_rt:if test="${inComponentDetailsContext}">
+                        <div class="btn-toolbar" role="toolbar">
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-primary" onclick="window.location.href='<%=editComponentURL%>' + window.location.hash">Edit Component</button>
+                            </div>
+                            <core_rt:if test="${isUserAllowedToMerge}">
+                                <div class="btn-group" role="group">
+                                    <button type="button" data-component-id="${component.id}" id="mergeButton" class="btn btn-secondary" data-component-id="${component.id}">Merge</button>
+                                </div>
+                            </core_rt:if>
+                            <div class="btn-group" role="group">
+                                <sw360:DisplaySubscribeButton email="<%=themeDisplay.getUser().getEmailAddress()%>" object="${component}"
+                                        id="SubscribeButton" />
+                            </div>
+                            <div class="list-group-companion" data-belong-to="tab-Attachments">
+                            <div class="btn-group" role="group">
+                                    <button id="downloadAttachmentBundle" type="button" class="btn btn-secondary">Download Attachment Bundle</button>
+                                </div>
+                            </div>
+                            <div class="list-group-companion" data-belong-to="tab-Vulnerabilities">
+                                <div class="btn-group" role="group">
+                                    <button id="btnShowVulnerabilityCount" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        Show <span data-name="count"></span>
+                                        <clay:icon symbol="caret-bottom" />
+                                    </button>
+                                    <div class="dropdown-menu" aria-labelledby="btnExport">
+                                        <a class="dropdown-item" data-type="200">200</a>
+                                        <a class="dropdown-item" data-type="500">500</a>
+                                        <a class="dropdown-item" data-type="1000">1000</a>
+                                        <a class="dropdown-item" data-type="-1">All</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </core_rt:if>
+				</div>
+				<div class="col portlet-title text-truncate" title="${sw360:printComponentName(component)}">
+					<sw360:out value="${component.name}"/>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col">
+		            <div class="tab-content">
+		                <div id="tab-Summary" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Summary'}">active show</core_rt:if>" >
+		                    <%@include file="/html/components/includes/components/summary.jspf" %>
+
+                            <core_rt:set var="documentName"><sw360:out value='${component.name}'/></core_rt:set>
+                            <%@include file="/html/utils/includes/usingProjectsTable.jspf" %>
+                            <%@include file="/html/utils/includes/usingComponentsTable.jspf"%>
+		                </div>
+		                <div id="tab-Releases" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Releases'}">active show</core_rt:if>">
+		                    <%@include file="/html/components/includes/components/clearingStatus.jspf" %>
+		                </div>
+		                <div id="tab-Attachments" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Attachments'}">active show</core_rt:if>">
+		                    <jsp:include page="/html/utils/includes/attachmentsDetail.jsp" />
+		                </div>
+                        <core_rt:if test="${inComponentDetailsContext}">
+		                    <div id="tab-Vulnerabilities" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Vulnerabilities'}">active show</core_rt:if>">
+			                    <%@include file="/html/components/includes/components/vulnerabilities.jspf" %>
+			                </div>
+		                </core_rt:if>
+		            </div>
+		        </div>
+		    </div>
+        </div>
+    </div>
+</div>
+<%@ include file="/html/utils/includes/pageSpinner.jspf" %>
+
+<div class="dialogs auto-dialogs"></div>
+
+<%--for javascript library loading --%>
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
+<script>
+    document.title = "${component.name} - " + document.title;
+
+    require(['jquery', 'modules/button', 'modules/listgroup'], function($, button, listgroup) {
+        listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
+
+        $('#mergeButton').on('click', function(event) {
+            var componentId = $(event.currentTarget).data().componentId;
+            var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>',
+                portletURL = Liferay.PortletURL.createURL(baseUrl)
+                                               .setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_MERGE_COMPONENT%>')
+                                               .setParameter('<%=PortalConstants.COMPONENT_ID%>', componentId);
+            window.location = portletURL.toString();
+        });
+
+        $('#SubscribeButton').on('click', function(event) {
+            var $button = $(event.currentTarget),
+                subscribed = $button.hasClass('subscribed'),
+                url = subscribed ? '<%=unsubscribeComponentURL%>' : '<%=subscribeComponentURL%>';
+
+            button.wait($button);
+            doAjax(url, function(data) {
+                if(data.result === "SUCCESS") {
+                    if(subscribed) {
+                        $button.text('Subscribe');
+                        $button.removeClass('btn-outline-danger');
+                        $button.addClass('btn-outline-success');
+                    } else {
+                        $button.text('Unsubscribe');
+                        $button.removeClass('btn-outline-success');
+                        $button.addClass('btn-outline-danger');
+                    }
+                    $button.toggleClass('subscribed');
+                } else {
+                    Liferay.Util.openToast({
+                        title: 'Error',
+                        message: data.result,
+                        type: 'danger'
+                     });
+                }
+                button.finish($button);
+            }, function() {
+                Liferay.Util.openToast({
+                    title: 'Error',
+                    message: 'Could not subscribe to release.',
+                    type: 'danger'
+                });
+                button.finish($button);
+            });
+        });
+
+        function doAjax(url, successCallback, errorCallback) {
+            $.ajax({
+                type: 'POST',
+                url: url,
+                success: function (data) {
+                    successCallback(data);
+                },
+                error: function () {
+                    errorCallback();
+                }
+            });
+        }
+	});
+</script>

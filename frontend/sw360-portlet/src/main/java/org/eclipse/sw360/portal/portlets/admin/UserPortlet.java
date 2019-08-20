@@ -17,17 +17,12 @@ import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.model.*;
 import com.liferay.portal.kernel.portlet.PortletResponseUtil;
+import com.liferay.portal.kernel.service.*;
 import com.liferay.portal.kernel.upload.UploadPortletRequest;
-import com.liferay.portal.model.*;
-import com.liferay.portal.service.*;
-import com.liferay.portal.util.PortalUtil;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVPrinter;
-import org.apache.commons.csv.CSVRecord;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
+import com.liferay.portal.kernel.util.PortalUtil;
+
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
@@ -38,18 +33,40 @@ import org.eclipse.sw360.portal.users.UserCSV;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 import org.eclipse.sw360.portal.users.UserUtils;
 
-import javax.portlet.*;
+import org.apache.commons.csv.*;
+import org.apache.log4j.Logger;
+import org.apache.thrift.TException;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
+
 import java.io.*;
 import java.util.*;
 
+import javax.portlet.*;
+import javax.portlet.Portlet;
+
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static org.eclipse.sw360.portal.common.PortalConstants.USER_ADMIN_PORTLET_NAME;
 import static org.eclipse.sw360.portal.users.UserUtils.getRoleConstantFromUserGroup;
 
-/**
- * Created by jn on 06.03.15.
- *
- * @author johannes.najjar@tngtech.com
- */
+@Component(
+    immediate = true,
+    properties = {
+            "/org/eclipse/sw360/portal/portlets/base.properties",
+            "/org/eclipse/sw360/portal/portlets/admin.properties"
+    },
+    property = {
+        "javax.portlet.name=" + USER_ADMIN_PORTLET_NAME,
+
+        "javax.portlet.display-name=User Administration",
+        "javax.portlet.info.short-title=User",
+        "javax.portlet.info.title=User Administration",
+
+        "javax.portlet.init-param.view-template=/html/admin/user/view.jsp",
+    },
+    service = Portlet.class,
+    configurationPolicy = ConfigurationPolicy.REQUIRE
+)
 public class UserPortlet extends Sw360Portlet {
     private static final Logger log = Logger.getLogger(UserPortlet.class);
 
@@ -290,7 +307,7 @@ public class UserPortlet extends Sw360Portlet {
         return OrganizationServiceUtil.addOrganization(
                 parentId,
                 headDepartment,
-                OrganizationConstants.TYPE_REGULAR_ORGANIZATION,
+                OrganizationConstants.TYPE_ORGANIZATION,
                 RegionConstants.DEFAULT_REGION_ID,
                 CountryConstants.DEFAULT_COUNTRY_ID,
                 ListTypeConstants.ORGANIZATION_STATUS_DEFAULT,

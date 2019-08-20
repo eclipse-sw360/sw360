@@ -1,0 +1,95 @@
+<%--
+  ~ Copyright Siemens AG, 2017, 2019. Part of the SW360 Portal Project.
+  ~ With modifications by Bosch Software Innovations GmbH, 2016.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+  --%>
+
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+
+<jsp:useBean id="submitDateRequest" class="java.util.Date"/>
+<jsp:useBean id="submitDateDecision" class="java.util.Date"/>
+
+<div class="row">
+    <div class="col-6">
+        <table class="table label-value-table mt-2" id="ModerationRequestData">
+            <thead>
+                <tr>
+                    <th colspan="2">Moderation Request</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Requesting User:</td>
+                    <td><sw360:DisplayUserEmail email="${moderationRequest.requestingUser}" bare="true"/></td>
+                </tr>
+                <tr>
+                    <td>Submitted on:</td>
+                    <td>
+                        <core_rt:if test="${moderationRequest.isSetTimestamp()}">
+                            <jsp:setProperty name="submitDateRequest" property="time" value="${moderationRequest.timestamp}"/>
+                            <fmt:formatDate value="${submitDateRequest}" pattern="yyyy-MM-dd"/>
+                        </core_rt:if>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Comment on Moderation Request:</td>
+                    <td>
+                        <core_rt:if test="${moderationRequest.isSetCommentRequestingUser()}">
+                            <textarea id="moderationRequestCommentField" class="form-control" readonly><sw360:out value="${moderationRequest.commentRequestingUser}" stripNewlines="false"/></textarea>
+                        </core_rt:if>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="col-6">
+        <table class="table label-value-table mt-2" id="ModerationDecisionData">
+            <thead>
+                <tr>
+                    <th colspan="2">Moderation Decision</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Status:</td>
+                    <td><sw360:DisplayEnum value="${moderationRequest.moderationState}"/></td>
+                </tr>
+                <tr>
+                    <td>Moderator:</td>
+                    <td>
+                        <core_rt:if test="${moderationRequest.isSetReviewer()}">
+                            <sw360:DisplayUserEmail email="${moderationRequest.reviewer}" bare="true"/>
+
+                        </core_rt:if>
+                    </td>
+                </tr>
+                <core_rt:if test="${moderationRequest.isSetTimestampOfDecision()}">
+                    <tr>
+                        <td>Submitted on:</td>
+                        <td>
+                            <jsp:setProperty name="submitDateDecision" property="time" value="${moderationRequest.timestampOfDecision}"/>
+                            <fmt:formatDate value="${submitDateDecision}" pattern="yyyy-MM-dd"/>
+                        </td>
+                    </tr>
+                </core_rt:if>
+                <core_rt:if test="${moderationRequest.isSetCommentDecisionModerator() || (!moderationRequest.isSetCommentDecisionModerator() && moderationAllowed)}">
+                    <tr>
+                        <td>Comment on Moderation Decision:</td>
+                        <td>
+                            <textarea id="moderationDecisionCommentField" class="form-control"
+                                <core_rt:if test="${not moderationAllowed}">readonly</core_rt:if>
+                            ><sw360:out value="${moderationRequest.commentDecisionModerator}" stripNewlines="false"/></textarea>
+                        </td>
+                    </tr>
+                </core_rt:if>
+            </tbody>
+        </table>
+    </div>
+</div>

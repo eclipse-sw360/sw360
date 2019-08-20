@@ -1,0 +1,180 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+
+<%@ page import="org.eclipse.sw360.datahandler.thrift.components.ComponentType" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.components.Component" %>
+<core_rt:set var="preferredCountryCodes" value='<%=PortalConstants.PREFERRED_COUNTRY_CODES%>'/>
+
+<table class="table edit-table three-columns" id="ComponentGeneralInfo">
+    <thead>
+        <tr>
+            <th colspan="3" class="headlabel">General Information</th>
+        </tr>
+    </thead>
+    <tr>
+        <td>
+            <div class="form-group">
+                <label class="mandatory" for="comp_name">Name</label>
+                <input id="comp_name" name="<portlet:namespace/><%=Component._Fields.NAME%>" type="text" placeholder="Enter Name" required class="form-control"
+                    value="<sw360:out value="${component.name}"/>" />
+                <div class="invalid-feedback">
+                    Please enter a component name!
+                </div>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <sw360:DisplayUserEdit email="${component.createdBy}" id="<%=Component._Fields.CREATED_BY.toString()%>"
+                                    description="Created by" multiUsers="false" readonly="true"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label class="mandatory" for="comp_categories">Categories</label>
+                <input class="form-control" id="comp_categories" name="<portlet:namespace/><%=Component._Fields.CATEGORIES%>" type="text"
+                    placeholder="e.g., Library,cloud,mobile,..." required value="<sw360:DisplayCollection value="${component.categories}" />"/>
+                 <div class="invalid-feedback">
+                    Please enter a category!
+                </div>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <div class="form-group">
+                <label for="comp_componenttype">Component Type</label>
+                <select class="form-control" id="comp_componenttype" name="<portlet:namespace/><%=Component._Fields.COMPONENT_TYPE%>">
+                    <option value=""></option>
+                    <sw360:DisplayEnumOptions type="<%=ComponentType.class%>" selected="${component.componentType}"/>
+                </select>
+                <small class="form-text">
+                    <sw360:DisplayEnumInfo type="<%=ComponentType.class%>"/>
+                    Learn more about component types.
+                </small>
+            </div>
+        </td>
+        <td>
+            <sw360:DisplayVendorEdit id="<%=Component._Fields.DEFAULT_VENDOR_ID.toString()%>" vendorId="${component.defaultVendorId}" vendor="${component.defaultVendor}" label="Default vendor"/>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="comp_homeurl">Homepage URL</label>
+                <input class="form-control" id="comp_homeurl" name="<portlet:namespace/><%=Component._Fields.HOMEPAGE%>" type="URL"
+                    value="<sw360:out value="${component.homepage}"/>" placeholder="Enter Home Url"/>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <div class="form-group">
+                <label for="comp_blogurl">Blog URL</label>
+                <input class="form-control" id="comp_blogurl" name="<portlet:namespace/><%=Component._Fields.BLOG%>" type="URL"
+                    placeholder="Enter Blog Url" value="<sw360:out value="${component.blog}"/>"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="comp_wikiurl">Wiki URL</label>
+                <input class="form-control" id="comp_wikiurl" name="<portlet:namespace/><%=Component._Fields.WIKI%>" type="URL"
+                    placeholder="Enter Wiki Url" value="<sw360:out value="${component.wiki}"/>"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="mailinglist">Mailing List URL</label>
+                <input class="form-control" id="mailinglist" name="<portlet:namespace/><%=Component._Fields.MAILINGLIST%>" type="text"
+                    placeholder="Enter Mailing List Url" value="<sw360:out value="${component.mailinglist}"/>"/>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="3">
+            <div class="form-group">
+                <label for="comp_desc">Short Description</label>
+                <textarea class="form-control" id="comp_desc" name="<portlet:namespace/><%=Component._Fields.DESCRIPTION%>" rows="4"
+                        placeholder="Enter Description"><sw360:out value="${component.description}"/></textarea>
+            </div>
+        </td>
+    </tr>
+</table>
+
+<table class="table edit-table three-columns" id="RolesData">
+    <thead>
+        <tr>
+            <th colspan="3" class="headlabel">Roles</th>
+        </tr>
+    </thead>
+    <tr>
+        <td>
+            <sw360:DisplayUserEdit email="${component.componentOwner}"
+                                   id="<%=Component._Fields.COMPONENT_OWNER.toString()%>"
+                                   description="Component owner" multiUsers="false"/>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="ownerAccountingUnit">Owner Accounting Unit</label>
+                <input class="form-control" id="ownerAccountingUnit" name="<portlet:namespace/><%=Component._Fields.OWNER_ACCOUNTING_UNIT%>" type="text"
+                    placeholder="Enter Owner Accounting Unit" value="<sw360:out value="${component.ownerAccountingUnit}"/>"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="ownerGroup">Owner Billing Group</label>
+                <input class="form-control" id="ownerGroup" name="<portlet:namespace/><%=Component._Fields.OWNER_GROUP%>" type="text"
+                    placeholder="Enter Owner Billing Group" value="<sw360:out value="${component.ownerGroup}"/>"/>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <div class="form-group">
+                <label for="ownerCountry">Owner Country</label>
+                <select class="form-control" id="ownerCountry"
+                        name="<portlet:namespace/><%=Component._Fields.OWNER_COUNTRY%>">
+                        <sw360:DisplayCountryCodeSelection selected='${component.ownerCountry}' preferredCountryCodes='${preferredCountryCodes}'/>
+                </select>
+            </div>
+        </td>
+        <td>
+            <sw360:DisplayUserEdit emails="${component.moderators}" id="<%=Component._Fields.MODERATORS.toString()%>"
+                                   description="Moderators" multiUsers="true" readonly="false"/>
+        </td>
+        <td>
+        </td>
+    </tr>
+</table>
+
+<core_rt:set var="keys" value="<%=PortalConstants.COMPONENT_ROLES%>"/>
+<core_rt:set var="mapTitle" value="Additional Roles"/>
+<core_rt:set var="inputType" value="email"/>
+<core_rt:set var="inputSubtitle" value="Enter mail address"/>
+
+<core_rt:set var="customMap" value="${component.roles}"/>
+<%@include file="/html/utils/includes/mapEdit.jspf" %>
+
+<%--for javascript library loading --%>
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
+<!-- Adding similar component popup for new component case -->
+<script>
+    require([ 'modules/linkListDialog' ], function(linkListDialog) {
+        <portlet:resourceURL var="checkComponentNameUrl">
+            <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.CHECK_COMPONENT_NAME%>"/>
+        </portlet:resourceURL>
+
+        var checkComponentNameUrl = '${checkComponentNameUrl}',
+            checkComponentNameParamKey = '<portlet:namespace/><%=PortalConstants.COMPONENT_NAME%>',
+            openOnBlurOfElementId = '#comp_name';
+
+        <core_rt:if test="${not codescoopActive}">
+            linkListDialog.registerLinkListDialog(openOnBlurOfElementId, checkComponentNameUrl, checkComponentNameParamKey);
+        </core_rt:if>
+    });
+</script>

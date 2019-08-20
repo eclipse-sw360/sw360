@@ -1,0 +1,126 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+<%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
+<%@ page import="org.eclipse.sw360.portal.common.page.PortletReleasePage" %>
+<%@ page import="org.eclipse.sw360.portal.common.FossologyConnectionHelper" %>
+
+<jsp:useBean id="releasesAndProjects" type="java.util.List<org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData>" scope="request"/>
+
+<core_rt:if test="${releasesAndProjects.size() == 0 }">
+    <div class="alert alert-info" role="alert">
+        Please add linked releases or projects with linked releases to view their clearing status here.
+    </div>
+</core_rt:if>
+<core_rt:if test="${releasesAndProjects.size()  > 0 }">
+    <table id="releasesTable" class="table table-bordered" data-details-context="${inProjectDetailsContext}"></table>
+</core_rt:if>
+<core_rt:set var="FOSSOLOGY_CONNECTION_ENABLED" value="<%=FossologyConnectionHelper.getInstance().isFossologyConnectionEnabled()%>"/>
+
+<%@include file="/html/utils/includes/fossologyClearing.jspf"%>
+
+<script type="text/javascript">
+require(['jquery', 'bridges/datatables', 'utils/includes/fossologyClearing', 'utils/render'], function ($, datatables, fossology, render) {
+    var homeUrl = themeDisplay.getURLHome().replace(/\/web\//, '/group/');
+
+    createClearingTable();
+    fossology.initialize();
+
+    $('#exportReleasesSpreadsheetClearingButton').on('click', exportReleasesSpreadsheet);
+
+    $('#releasesTable').on('click', '.actions .clearing', function(event) {
+        var data = $(event.currentTarget).data();
+        fossology.openSelectClearingDialog('releaseClearingState', data.releaseId);
+    });
+
+    function createClearingTable() {
+        var table,
+            result = [],
+            sendToFossology,
+            editRelease;
+
+        <core_rt:forEach items="${releasesAndProjects}" var="releasesClearingStatusData">
+            result.push({
+                "DT_RowId": "${releasesClearingStatusData.release.id}",
+                "0": "<sw360:DisplayReleaseLink release="${releasesClearingStatusData.release}" showFullname="true"/>",
+                "1": "<sw360:out value="${releasesClearingStatusData.projectNames}"/>",
+                "2": "<span id='releaseClearingState${releasesClearingStatusData.release.id}'><sw360:DisplayEnum value="${releasesClearingStatusData.release.clearingState}"/></span>",
+                "3": "<sw360:DisplayEnum value="${releasesClearingStatusData.release.mainlineState}"/>",
+                "4": "<sw360:out value="${releasesClearingStatusData.mainlineStates}"/>",
+                "5": "<sw360:DisplayEnum value="${releasesClearingStatusData.componentType}"/>",
+                "6": "${releasesClearingStatusData.release.id}"
+            });
+        </core_rt:forEach>
+
+        table = datatables.create('#releasesTable', {
+            data: result,
+            columns: [
+                {title: "Name"},
+                {title: "Project Origin"},
+                {title: "Clearing State"},
+                {title: "Release Mainline State"},
+                {title: "Project Mainline State"},
+                {title: "Type"},
+                {title: "Actions", render: {display: renderActions}, className: "two actions" }
+            ],
+            columnDefs: [
+                {
+                    targets: [ 6 ],
+                    visible: $('#releasesTable').data() ? $('#releasesTable').data().detailsContext : false
+                }
+            ]
+        }, [0, 1, 2, 3, 4, 5], 6);
+
+        function renderActions(id, type, row) {
+            var $actions = $('<div>', {
+                    'class': 'actions'
+                }),
+                <core_rt:choose>
+                    <core_rt:when test="${not empty FOSSOLOGY_CONNECTION_ENABLED and not FOSSOLOGY_CONNECTION_ENABLED}">
+                        $clearingAction = $('<svg>', {
+                            'class': 'disabled lexicon-icon',
+                            'data-project-id': id,
+                        }).append('<title>Fossology is not configured</title>'),
+                    </core_rt:when>
+                    <core_rt:otherwise>
+                        $clearingAction = $('<svg>', {
+                            'class': 'clearing lexicon-icon',
+                            'data-project-id': id,
+                        }).append('<title>Send to Fossology</title>'),
+                    </core_rt:otherwise>
+                </core_rt:choose>
+                $editAction = render.linkTo(
+                    makeReleaseUrl(row[6]),
+                    "",
+                    '<svg class="lexicon-icon" title="Edit"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>'
+                );
+
+            $clearingAction.append($('<use href="<%=request.getContextPath()%>/images/icons.svg#fossology"/>'));
+
+            $actions.append($clearingAction, $editAction);
+            return $actions[0].outerHTML;
+        }
+    }
+
+    function exportReleasesSpreadsheet() {
+        var portletURL = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>');
+
+        portletURL.setParameter('<%=PortalConstants.ACTION%>', '<%=PortalConstants.EXPORT_CLEARING_TO_EXCEL%>');
+        portletURL.setParameter('<%=PortalConstants.PROJECT_ID%>', '${project.id}');
+
+        window.location.href = portletURL.toString() + window.location.hash;
+    }
+
+    // helper functions
+    function makeReleaseUrl(releaseId) {
+        return homeUrl + '/components/-/component/release/editRelease/' + releaseId;
+    }
+});
+</script>

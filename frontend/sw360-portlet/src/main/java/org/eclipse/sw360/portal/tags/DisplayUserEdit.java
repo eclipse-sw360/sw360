@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -113,17 +113,19 @@ public class DisplayUserEdit extends NameSpaceAwareTag {
             String mails = getString(commaJoiner.join(emailList));
             String userNames = getString(commaJoiner.join(userList));
 
-            display.append(String.format("<label class=\"textlabel stackedLabel\" for=\"%sDisplay\">%s</label>", id, description))
+            display.append("<div class=\"form-group\">");
+            display.append(String.format("<label for=\"%sDisplay\">%s</label>", id, description))
                     .append(String.format("<input type=\"hidden\" readonly=\"\" value=\"%s\"  id=\"%s\" name=\"%s%s\"/>", mails, id, namespace, id))
-                    .append(String.format("<input type=\"text\" readonly=\"\" value=\"%s\" id=\"%sDisplay\" ", userNames, id));
+                    .append(String.format("<input type=\"text\" readonly value=\"%s\" id=\"%sDisplay\" ", userNames, id));
 
             if (!readonly) {
-                display.append(String.format(" placeholder=\"Click to edit\" class=\"clickable userSearchDialogInteractive\" data-id=\"%s\" data-multi-user=\"%s\"", id,  multiUsers ? "true" : "false"));
+                display.append(String.format(" placeholder=\"Click to edit\" class=\"form-control clickable userSearchDialogInteractive\" data-id=\"%s\" data-multi-user=\"%s\"", id,  multiUsers ? "true" : "false"));
             } else {
-                display.append(" placeholder=\"Will be set automatically\" ");
+                display.append(" placeholder=\"Will be set automatically\" class=\"form-control\"");
             }
 
             display.append("/>");
+            display.append("</div>");
 
             jspWriter.print(display.toString());
         } catch (Exception e) {

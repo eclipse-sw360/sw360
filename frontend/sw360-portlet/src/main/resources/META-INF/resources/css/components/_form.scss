@@ -1,0 +1,125 @@
+/*
+ * Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+ *
+ * SPDX-License-Identifier: EPL-1.0
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
+
+form {
+	small img {
+		vertical-align: text-top;
+	}
+
+	.form-control + .form-control, .btn:not(.btn-right) + .form-control, .form-control + .btn:not(.btn-right), .btn:not(.btn-right) + .btn:not(.btn-right) {
+		margin-left: 0.75rem;
+	}
+
+	&.form-inline {
+		label + .form-control {
+			margin-left: 0.75rem;
+		}
+
+		& > .alert {
+			flex-grow: 1;
+		}
+
+		.dt-bootstrap4 + .form-group, .treetable + .form-group, .dt-bootstrap4 + script + .form-group, .treetable + script + .form-group {
+			margin-top: 0.75rem;
+		}
+	}
+
+	.btn-right {
+		float: right;
+	}
+
+	.btn-toolbar {
+		margin: 1.75rem 0;
+
+		.col {
+			padding: 0;
+		}
+	}
+
+	& > .tab-content {
+		flex-grow: 1;
+	}
+
+	& > .alert {
+		margin-bottom: 0;
+	}
+
+	& > button, & > select, & > input {
+		margin-top: 1.25rem;
+	}
+
+	svg.action {
+		cursor: pointer;
+	}
+
+	input[type="checkbox"] + label {
+		top: -0.15rem;
+		margin-left: 0.25rem;
+	}
+
+	textarea {
+		height: auto;
+	}
+
+	table {
+		.form-check-input {
+			margin-left: 0;
+		}
+
+		td {
+			vertical-align: top;
+		}
+
+		td.content-middle {
+			vertical-align: middle;
+		}
+
+		td svg.action {
+			width: 1.2rem;
+			height: 1.2rem;
+		}
+
+		& + button {
+			margin-top: 0.75rem;
+		}
+	}
+
+	.form-group {
+		&.content-left {
+			text-align: left;
+		}
+
+		&.content-center {
+			text-align: center;
+		}
+
+		&.content-right {
+			text-align: right;
+		}
+
+		label + button.btn-link {
+			padding: 0;
+			margin-bottom: 0.25rem;
+
+			font-size: 0.875rem;
+		}
+	}
+}
+
+.form-group {
+	input[readonly] {
+		cursor: not-allowed;
+
+		&.clickable {
+			cursor: pointer;
+		}
+	}
+}

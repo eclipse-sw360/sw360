@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2016. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2016, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -106,7 +106,7 @@ public class DisplayComponentChanges extends NameSpaceAwareTag {
             String renderString = display.toString();
 
             if (Strings.isNullOrEmpty(renderString)) {
-                renderString = "<h4> No changes in basic fields </h4>";
+                renderString = "<div class=\"alert alert-info\">No changes in basic fields.</div>";
             } else {
                 renderString = String.format("<table class=\"%s\" id=\"%schanges\" >", tableClasses, idPrefix)
                         + "<thead><tr><th colspan=\"4\"> Changes for Basic fields</th></tr>"

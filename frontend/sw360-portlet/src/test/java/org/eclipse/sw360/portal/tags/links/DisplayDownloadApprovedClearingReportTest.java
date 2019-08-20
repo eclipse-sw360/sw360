@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -17,13 +17,6 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 public class DisplayDownloadApprovedClearingReportTest {
-
-    @Test
-    public void testThatTextsAreEscaped() throws Exception {
-        DisplayDownloadApprovedClearingReport displayDownloadAttachment = new DisplayDownloadApprovedClearingReport();
-        displayDownloadAttachment.setAttachment(createAttachment("Html <>&' entities"));
-        assertEquals("Html &lt;&gt;&amp;&#39; entities", displayDownloadAttachment.getAlternativeText());
-    }
     
     @Test
     public void testThatImageDependsOnStatus() {

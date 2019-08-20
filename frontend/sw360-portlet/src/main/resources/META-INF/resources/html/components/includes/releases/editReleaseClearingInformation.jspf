@@ -1,0 +1,317 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+
+
+<%@ page import="org.eclipse.sw360.datahandler.thrift.components.ClearingInformation" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.components.Release" %>
+
+<table class="table edit-table three-columns" id="ReleaseClearingInformation">
+    <thead>
+        <tr>
+            <th colspan="3">Clearing Details</th>
+        </tr>
+    </thead>
+
+    <tr>
+        <td>
+            <div class="form-check">
+                <input id="binaries_original" type="checkbox" class="form-check-input"
+                    name="<portlet:namespace/><%=Release._Fields.CLEARING_INFORMATION%><%=ClearingInformation._Fields.BINARIES_ORIGINAL_FROM_COMMUNITY%>"
+                    value="<sw360:out value="${release.clearingInformation.binariesOriginalFromCommunity}"/>"
+                        <core_rt:if test="${release.clearingInformation.binariesOriginalFromCommunity == 'true'}"> checked="checked" </core_rt:if>
+                />
+                <label class="form-check-label" for="binaries_original">Binaries Original from Community</label>
+            </div>
+        </td>
+        <td>
+            <div class="form-check">
+                <input id="binaries_self_made" type="checkbox" class="form-check-input"
+                    name="<portlet:namespace/><%=Release._Fields.CLEARING_INFORMATION%><%=ClearingInformation._Fields.BINARIES_SELF_MADE%>"
+                    value="<sw360:out value="${release.clearingInformation.binariesSelfMade}"/>"
+                        <core_rt:if test="${release.clearingInformation.binariesSelfMade == 'true'}"> checked="checked" </core_rt:if>
+                />
+                <label class="form-check-label" for="binaries_self_made">Binaries Self Made</label>
+        </td>
+        <td>
+            <div class="form-check">
+                <input id="component_license" type="checkbox" class="form-check-input"
+                    name="<portlet:namespace/><%=Release._Fields.CLEARING_INFORMATION%><%=ClearingInformation._Fields.COMPONENT_LICENSE_INFORMATION%>"
+                    value="<sw360:out value="${release.clearingInformation.componentLicenseInformation}"/>"
+                        <core_rt:if test="${release.clearingInformation.componentLicenseInformation == 'true'}"> checked="checked" </core_rt:if>
+                />
+                <label class="form-check-label" for="component_license">Component License Information</label>
+            </div>
+        </td>
+    </tr>
+
+    <tr>
+        <td>
+            <div class="form-check">
+                <input id="source_code" type="checkbox" class="form-check-input"
+                   name="<portlet:namespace/><%=Release._Fields.CLEARING_INFORMATION%><%=ClearingInformation._Fields.SOURCE_CODE_DELIVERY%>"
+                   value="<sw360:out value="${release.clearingInformation.sourceCodeDelivery}"/>"
+                    <core_rt:if test="${release.clearingInformation.sourceCodeDelivery == 'true'}"> checked="checked" </core_rt:if>
+                />
+                <label class="form-check-label" for="source_code">Source Code Delivery</label>
+            </div>
+        </td>
+        <td>
+            <div class="form-check">
+                <input id="source_code_original" type="checkbox" class="form-check-input"
+                    name="<portlet:namespace/><%=Release._Fields.CLEARING_INFORMATION%><%=ClearingInformation._Fields.SOURCE_CODE_ORIGINAL_FROM_COMMUNITY%>"
+                    value="<sw360:out value="${release.clearingInformation.sourceCodeOriginalFromCommunity}"/>"
+                        <core_rt:if test="${release.clearingInformation.sourceCodeOriginalFromCommunity == 'true'}"> checked="checked" </core_rt:if>
+                />
+                <label class="form-check-label" for="source_code_original">Source Code Original from Community</label>
+            </div>
+        </td>
+        <td>
+            <div class="form-check">
+                <input id="source_code_toolmade" type="checkbox" class="form-check-input"
+                    name="<portlet:namespace/><%=Release._Fields.CLEARING_INFORMATION%><%=ClearingInformation._Fields.SOURCE_CODE_TOOL_MADE%>"
+                    value="<sw360:out value="${release.clearingInformation.sourceCodeToolMade}"/>"
+                        <core_rt:if test="${release.clearingInformation.sourceCodeToolMade == 'true'}"> checked="checked" </core_rt:if>
+                />
+                <label class="checkboxlabel" for="source_code_toolmade">Source Code Tool Made</label>
+            </div>
+        </td>
+    </tr>
+
+    <tr>
+        <td>
+            <div class="form-check">
+                <input id="source_code_selfmade" type="checkbox" class="form-check-input"
+                    name="<portlet:namespace/><%=Release._Fields.CLEARING_INFORMATION%><%=ClearingInformation._Fields.SOURCE_CODE_SELF_MADE%>"
+                    value="<sw360:out value="${release.clearingInformation.sourceCodeSelfMade}"/>"
+                        <core_rt:if test="${release.clearingInformation.sourceCodeSelfMade == 'true'}"> checked="checked" </core_rt:if>
+                        />
+                <label class="form-check-label" for="source_code_selfmade">Source Code Selfmade</label>
+            </div>
+        </td>
+        <td>
+            <div class="form-check">
+                <input id="screenshot" type="checkbox" class="form-check-input"
+                    name="<portlet:namespace/><%=Release._Fields.CLEARING_INFORMATION%><%=ClearingInformation._Fields.SCREENSHOT_OF_WEB_SITE%>"
+                    value="<sw360:out value="${release.clearingInformation.screenshotOfWebSite}"/>"
+                        <core_rt:if test="${release.clearingInformation.screenshotOfWebSite == 'true'}"> checked="checked" </core_rt:if>
+                />
+                <label class="form-check-label" for="screenshot">Screenshot of Website</label>
+            </div>
+        </td>
+        <td>
+            <div class="form-check">
+                <input id="finalizedlcr" type="checkbox" class="form-check-input"
+                    name="<portlet:namespace/><%=Release._Fields.CLEARING_INFORMATION%><%=ClearingInformation._Fields.FINALIZED_LICENSE_SCAN_REPORT%>"
+                    value="<sw360:out value="${release.clearingInformation.finalizedLicenseScanReport}"/>"
+                        <core_rt:if test="${release.clearingInformation.finalizedLicenseScanReport == 'true'}"> checked="checked" </core_rt:if>
+                />
+                <label class="form-check-label" for="finalizedlcr">Finalized License Scan Report</label>
+            </div>
+        </td>
+    </tr>
+
+    <tr>
+        <td>
+            <div class="form-check">
+                <input id="lcr_scan_result" type="checkbox" class="form-check-input"
+                    name="<portlet:namespace/><%=Release._Fields.CLEARING_INFORMATION%><%=ClearingInformation._Fields.LICENSE_SCAN_REPORT_RESULT%>"
+                    value="<sw360:out value="${release.clearingInformation.licenseScanReportResult}"/>"
+                        <core_rt:if test="${release.clearingInformation.licenseScanReportResult == 'true'}"> checked="checked" </core_rt:if>
+                />
+                <label class="form-check-label" for="lcr_scan_result">License Scan Report Result</label>
+            </div>
+        </td>
+        <td>
+            <div class="form-check">
+                <input id="legal_evaluation" type="checkbox" class="form-check-input"
+                   name="<portlet:namespace/><%=Release._Fields.CLEARING_INFORMATION%><%=ClearingInformation._Fields.LEGAL_EVALUATION%>"
+                   value="<sw360:out value="${release.clearingInformation.legalEvaluation}"/>"
+                    <core_rt:if test="${release.clearingInformation.legalEvaluation == 'true'}"> checked="checked" </core_rt:if>
+                />
+                <label class="form-check-label" for="legal_evaluation">Legal Evaluation</label>
+            </div>
+        </td>
+        <td>
+            <div class="form-check">
+                <input id="license_agreement" type="checkbox" class="form-check-input"
+                   name="<portlet:namespace/><%=Release._Fields.CLEARING_INFORMATION%><%=ClearingInformation._Fields.LICENSE_AGREEMENT%>"
+                   value="<sw360:out value="${release.clearingInformation.licenseAgreement}"/>"
+                    <core_rt:if test="${release.clearingInformation.licenseAgreement == 'true'}"> checked="checked" </core_rt:if>
+                />
+                <label class="form-check-label" for="license_agreement">License Agreement</label>
+            </div>
+        </td>
+    </tr>
+
+    <tr>
+        <td>
+            <div class="form-group">
+                <label for="scanned">Scanned</label>
+                <input id="scanned"
+                    name="<portlet:namespace/><%=Release._Fields.CLEARING_INFORMATION%><%=ClearingInformation._Fields.SCANNED%>"
+                    class="form-control"
+                    type="text"
+                    placeholder="Enter scanned"
+                    value="<sw360:out value="${release.clearingInformation.scanned}"/>"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-check">
+                <input id="component_clearing_report" type="checkbox" class="form-check-input"
+                    name="<portlet:namespace/><%=Release._Fields.CLEARING_INFORMATION%><%=ClearingInformation._Fields.COMPONENT_CLEARING_REPORT%>"
+                    value="<sw360:out value="${release.clearingInformation.componentClearingReport}"/>"
+                        <core_rt:if test="${release.clearingInformation.componentClearingReport == 'true'}"> checked="checked" </core_rt:if>
+                />
+                <label class="form-check-label" for="component_clearing_report">Component Clearing Report</label>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="clearing_standard">Clearing Standard</label>
+                <input id="clearing_standard"
+                    name="<portlet:namespace/><%=Release._Fields.CLEARING_INFORMATION%><%=ClearingInformation._Fields.CLEARING_STANDARD%>"
+                    type="text"
+                    class="form-control"
+                    placeholder="Enter clearing standard"
+                    value="<sw360:out value="${release.clearingInformation.clearingStandard}"/>"/>
+            </div>
+        </td>
+    </tr>
+
+    <tr>
+        <td>
+            <div class="form-group">
+                <label for="externalUrl">External URL</label>
+                <input id="externalUrl"
+                    name="<portlet:namespace/><%=Release._Fields.CLEARING_INFORMATION%><%=ClearingInformation._Fields.EXTERNAL_URL%>"
+                    type="URL"
+                    class="form-control"
+                    placeholder="Enter URL"
+                    value="<sw360:out value="${release.clearingInformation.externalUrl}"/>"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="comment">Comment</label>
+                <input id="comment"
+                    name="<portlet:namespace/><%=Release._Fields.CLEARING_INFORMATION%><%=ClearingInformation._Fields.COMMENT%>"
+                    type="text"
+                    class="form-control"
+                    placeholder="Enter your comments"
+                    value="<sw360:out value="${release.clearingInformation.comment}"/>"/>
+            </div>
+        </td>
+        <td></td>
+    </tr>
+</table>
+
+<table class="table edit-table three-columns" id="RequestInformation">
+    <thead>
+        <tr>
+            <th colspan="3">Request Information</th>
+        </tr>
+    </thead>
+
+    <tr>
+        <td>
+            <div class="form-group">
+                <label for="requestID">Request ID</label>
+                <input id="requestID"
+                    name="<portlet:namespace/><%=Release._Fields.CLEARING_INFORMATION%><%=ClearingInformation._Fields.REQUEST_ID%>"
+                    type="text"
+                    class="form-control"
+                    placeholder="Enter request ID"
+                    value="<sw360:out value="${release.clearingInformation.requestID}"/>"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="additionalRequestInfo">Additional request Info</label>
+                <input id="additionalRequestInfo"
+                    name="<portlet:namespace/><%=Release._Fields.CLEARING_INFORMATION%><%=ClearingInformation._Fields.ADDITIONAL_REQUEST_INFO%>"
+                    type="text"
+                    class="form-control"
+                    placeholder="Enter additional request Info"
+                    value="<sw360:out value="${release.clearingInformation.additionalRequestInfo}"/>"/>
+            </div>
+        </td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>
+            <div class="form-group">
+                <label for="evaluationStart">Evaluation Start</label>
+                <input id="evaluationStart"
+                    class="datepicker form-control"
+                    name="<portlet:namespace/><%=Release._Fields.CLEARING_INFORMATION%><%=ClearingInformation._Fields.PROC_START%>"
+                    type="text"
+                    placeholder="Process Start YYYY-MM-DD"
+                    pattern="\d{4}-\d{2}-\d{2}"
+                    value="<sw360:out value="${release.clearingInformation.procStart}"/>"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="evaluationEnd">Evaluation End</label>
+                <input id="evaluationEnd"
+                    class="datepicker form-control"
+                    name="<portlet:namespace/><%=Release._Fields.CLEARING_INFORMATION%><%=ClearingInformation._Fields.EVALUATED%>"
+                    type="text"
+                    placeholder="Evaluation Date YYYY-MM-DD"
+                    pattern="\d{4}-\d{2}-\d{2}"
+                    value="<sw360:out value="${release.clearingInformation.evaluated}"/>"/>
+            </div>
+        </td>
+        <td></td>
+    </tr>
+</table>
+
+<table class="table edit-table three-columns" id="SupplementalInformation">
+    <thead>
+    <tr>
+        <th colspan="3">Supplemental Information</th>
+    </tr>
+    </thead>
+
+    <tr>
+        <td>
+            <div class="form-group">
+                <label for="externalSupplierId">ExternalSupplierId</label>
+                <input id="externalSupplierId"
+                    name="<portlet:namespace/><%=Release._Fields.CLEARING_INFORMATION%><%=ClearingInformation._Fields.EXTERNAL_SUPPLIER_ID%>"
+                    type="text"
+                    class="form-control"
+                    placeholder="Enter ExternalSupplierID"
+                    value="<sw360:out value="${release.clearingInformation.externalSupplierID}"/>"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="count_of_security">Count of Security Vulnerabilities</label>
+                <input id="count_of_security"
+                    name="<portlet:namespace/><%=Release._Fields.CLEARING_INFORMATION%><%=ClearingInformation._Fields.COUNT_OF_SECURITY_VN%>"
+                    type="text"
+                    class="form-control"
+                    placeholder="Enter Count of Security Vulnerabilities"
+                    value="<sw360:out value="${release.clearingInformation.countOfSecurityVn}"/>"/>
+            </div>
+        </td>
+        <td></td>
+    </tr>
+</table>
+
+<%--for javascript library loading --%>
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
+<script>
+    require(['jquery', /* jquery-plugins */ 'jquery-ui'], function($) {
+        $(".datepicker").datepicker({changeMonth:true,changeYear:true,dateFormat: "yy-mm-dd"});
+    });
+</script>

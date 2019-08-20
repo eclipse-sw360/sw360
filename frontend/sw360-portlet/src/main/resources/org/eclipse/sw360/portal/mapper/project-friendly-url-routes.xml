@@ -9,19 +9,19 @@
   ~ which accompanies this distribution, and is available at
   ~ http://www.eclipse.org/legal/epl-v10.html
   -->
-<!DOCTYPE routes PUBLIC "-//Liferay//DTD Friendly URL Routes 6.2.0//EN"
-        "http://www.liferay.com/dtd/liferay-friendly-url-routes_6_2_0.dtd">
+<!DOCTYPE routes PUBLIC "-//Liferay//DTD Friendly URL Routes 7.1.0//EN"
+        "http://www.liferay.com/dtd/liferay-friendly-url-routes_7_1_0.dtd">
 
 <routes>
     <route>
         <pattern>/{page}/{id}</pattern>
         <generated-parameter name="pagename">{page}</generated-parameter>
         <generated-parameter name="projectid">{id}</generated-parameter>
-        <implicit-parameter name="p_p_id">projects_WAR_sw360portlet</implicit-parameter>
+        <implicit-parameter name="p_p_id">sw360_portlet_projects</implicit-parameter>
     </route>
     <route>
         <pattern>/add</pattern>
-        <implicit-parameter name="p_p_id">projects_WAR_sw360portlet</implicit-parameter>
+        <implicit-parameter name="p_p_id">sw360_portlet_projects</implicit-parameter>
         <implicit-parameter name="pagename">edit</implicit-parameter>
     </route>
     <route>
@@ -32,7 +32,7 @@
         <implicit-parameter name="pagename">detail</implicit-parameter>
         <implicit-parameter name="context_type">project</implicit-parameter>
         <implicit-parameter name="action">AttachmentDownload</implicit-parameter>
-        <implicit-parameter name="p_p_id">projects_WAR_sw360portlet</implicit-parameter>
+        <implicit-parameter name="p_p_id">sw360_portlet_projects</implicit-parameter>
         <implicit-parameter name="p_p_lifecycle">2</implicit-parameter>
         <implicit-parameter name="p_p_state">normal</implicit-parameter>
         <implicit-parameter name="p_p_mode">view</implicit-parameter>

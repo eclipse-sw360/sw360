@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -27,16 +27,10 @@ import static org.eclipse.sw360.portal.tags.urlutils.UrlWriterImpl.resourceUrl;
  * link.
  */
 abstract class DisplayDownloadAbstract extends ContextAwareTag {
-    protected final static String DOWNLOAD_IMAGE_ENABLED = "download_enabled.jpg";
+    protected final static String DOWNLOAD_IMAGE_ENABLED = "download";
 
     protected String contextType;
     protected String contextId;
-
-    /**
-     * @return the alternative text for the image of the download link. MUST be html
-     *         escaped.
-     */
-    protected abstract String getAlternativeText();
 
     /**
      * @return the title text for the image of the download link. Displayed in a
@@ -79,10 +73,9 @@ abstract class DisplayDownloadAbstract extends ContextAwareTag {
             configureUrlWriter(urlWriter);
             urlWriter.writeUrlToJspWriter();
             jspWriter.write(format(
-                    "'><img src='%s/images/%s' alt='%s' title='%s'/>",
-                    ((HttpServletRequest) pageContext.getRequest()).getContextPath(), getImage(),
-                    getAlternativeText(),
-                    getTitleText()));
+                    "'><svg class='lexicon-icon'><title>%s</title><use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#%s'/></svg>",
+                    getTitleText(),
+                    getImage()));
             jspWriter.write("</a>");
         } catch (Exception e) {
             throw new JspException(e);

@@ -1,0 +1,125 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+<core_rt:if test="${not empty project.description}">
+	<div>
+		<p id="up_Summary">
+			<sw360:out value="${project.description}"/>
+		</p>
+	</div>
+</core_rt:if>
+
+<table class="table label-value-table" id="general">
+    <thead>
+    <tr>
+        <th colspan="2">General Information</th>
+    </tr>
+    </thead>
+    <tr>
+        <td>Name:</td>
+        <td><sw360:out value="${project.name}"/></td>
+    </tr>
+    <tr>
+        <td>Version:</td>
+        <td><sw360:out value="${project.version}"/></td>
+    </tr>
+    <tr>
+        <td>Visibility:</td>
+        <td><sw360:DisplayEnum value="${project.visbility}"/></td>
+    </tr>
+    <tr>
+        <td>Created on:</td>
+        <td><sw360:out value="${project.createdOn}"/></td>
+    </tr>
+    <tr>
+        <td>Created by:</td>
+        <td><sw360:DisplayUserEmail email="${project.createdBy}"/></td>
+    </tr>
+    <tr>
+        <td>Homepage:</td>
+        <td><sw360:DisplayLink target="${project.homepage}"/></td>
+    </tr>
+    <tr>
+        <td>Wiki:</td>
+        <td><sw360:DisplayLink target="${project.wiki}"/></td>
+    </tr>
+    <tr>
+        <td>Project type:</td>
+        <td><sw360:DisplayEnum value="${project.projectType}"/></td>
+    </tr>
+    <tr>
+        <td>Domain:</td>
+        <td><sw360:out value="${project.domain}"/></td>
+    </tr>
+    <tr>
+        <td>Tag:</td>
+        <td><sw360:out value="${project.tag}"/></td>
+    </tr>
+    <tr>
+        <td>External ids:</td>
+        <td><sw360:DisplayMap value="${project.externalIds}"/></td>
+    </tr>
+    <tr>
+        <td>Additional Data:</td>
+        <td><sw360:DisplayMap value="${project.additionalData}"/></td>
+    </tr>
+</table>
+
+<table class="table label-value-table" id="roles">
+    <thead>
+    <tr>
+        <th colspan="2">Roles</th>
+    </tr>
+    </thead>
+    <tr>
+        <td>Group:</td>
+        <td><sw360:out value="${project.businessUnit}"/></td>
+    </tr>
+    <tr>
+        <td>Project responsible:</td>
+        <td><sw360:DisplayUserEmail email="${project.projectResponsible}"/></td>
+    </tr>
+    <tr>
+        <td>Project owner:</td>
+        <td><sw360:DisplayUserEmail email="${project.projectOwner}"/></td>
+    </tr>
+    <tr>
+        <td>Owner accounting unit:</td>
+        <td><sw360:out value="${project.ownerAccountingUnit}"/></td>
+    </tr>
+    <tr>
+        <td>Owner billing group:</td>
+        <td><sw360:out value="${project.ownerGroup}"/></td>
+    </tr>
+    <tr>
+        <td>Owner country:</td>
+        <td><sw360:DisplayCountryCodeName value="${project.ownerCountry}"/></td>
+    </tr>
+    <tr>
+        <td>Lead architect:</td>
+        <td><sw360:DisplayUserEmail email="${project.leadArchitect}"/></td>
+    </tr>
+    <tr>
+        <td>Moderators:</td>
+        <td><sw360:DisplayUserEmailCollection value="${project.moderators}"/></td>
+    </tr>
+    <tr>
+        <td>Contributors:</td>
+        <td><sw360:DisplayUserEmailCollection value="${project.contributors}"/></td>
+    </tr>
+    <tr>
+        <td>Security Responsibles:</td>
+        <td><sw360:DisplayUserEmailCollection value="${project.securityResponsibles}"/></td>
+    </tr>
+    <tr>
+        <td>Additional Roles:</td>
+        <td><sw360:DisplayMapOfEmailSets value="${project.roles}"/></td>
+    </tr>
+</table>

@@ -10,10 +10,12 @@
  */
 package org.eclipse.sw360.portal.users;
 
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.portal.theme.ThemeDisplay;
-import org.apache.log4j.Logger;
+
 import org.eclipse.sw360.datahandler.thrift.users.User;
+
+import org.apache.log4j.Logger;
 
 import javax.portlet.PortletRequest;
 import javax.servlet.ServletRequest;
@@ -55,8 +57,8 @@ public class UserCacheHolder {
     protected Optional<String> getCurrentUserEmail(ServletRequest request) {
         ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(WebKeys.THEME_DISPLAY);
 
-        com.liferay.portal.model.User liferayUser = themeDisplay.getUser();
-        return Optional.ofNullable(liferayUser).map(com.liferay.portal.model.User::getEmailAddress);
+        com.liferay.portal.kernel.model.User liferayUser = themeDisplay.getUser();
+        return Optional.ofNullable(liferayUser).map(com.liferay.portal.kernel.model.User::getEmailAddress);
     }
 
     protected User loadUserFromEmail(String email, boolean refresh) {

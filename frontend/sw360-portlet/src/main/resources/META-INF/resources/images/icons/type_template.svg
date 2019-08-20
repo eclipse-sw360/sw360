@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+  -->
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   version="1.1"
+   id="svg4117"
+   width="20.013996"
+   height="20.013996"
+   viewBox="0 0 20.013995 20.013996">
+  <metadata
+     id="metadata4123">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs4121" />
+  <g
+     aria-label="i"
+     transform="matrix(1.6285747,0,0,1.2360114,29.797457,-13.308465)"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:11.875px;line-height:25px;font-family:serif;-inkscape-font-specification:serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.70483083px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+     id="flowRoot993" />
+  <path
+     id="rect1055"
+     d="M 2.0993705,5e-7 H 17.914625 c 1.163051,0 2.09937,0.93631902 2.09937,2.09937 V 17.914625 c 0,1.163051 -0.936319,2.09937 -2.09937,2.09937 H 2.0993705 C 0.93631952,20.013995 5e-7,19.077676 5e-7,17.914625 V 2.0993705 C 5e-7,0.93631952 0.93631952,5e-7 2.0993705,5e-7 Z"
+     style="opacity:1;fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+  <flowRoot
+     xml:space="preserve"
+     id="flowRoot1057"
+     style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:11.87495899px;line-height:25px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.78701097px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+     transform="matrix(1.2706304,0,0,1.2706304,18.181814,-4.5684577)"><flowRegion
+       id="flowRegion1059"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:11.87495899px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;stroke-width:0.78701097px"><rect
+         id="rect1061"
+         width="24.772566"
+         height="24.212734"
+         x="-10.706787"
+         y="0.20993958"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:11.87495899px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;stroke-width:0.78701097px" /></flowRegion><flowPara
+       id="flowPara1063"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:11.87547051px;font-family:'Open Sans';-inkscape-font-specification:'Open Sans, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr;text-anchor:start;stroke-width:0.78701097px">C</flowPara></flowRoot></svg>

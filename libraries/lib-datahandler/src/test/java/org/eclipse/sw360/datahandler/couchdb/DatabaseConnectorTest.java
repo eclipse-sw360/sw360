@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -27,7 +27,6 @@ import org.junit.Test;
 import java.util.Collections;
 
 import static org.eclipse.sw360.datahandler.couchdb.DatabaseTestProperties.COUCH_DB_DATABASE;
-import static org.eclipse.sw360.datahandler.couchdb.DatabaseTestProperties.COUCH_DB_URL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -52,7 +51,7 @@ public class DatabaseConnectorTest {
         // Initialize the mapper factory
         factory = new MapperFactory(ImmutableList.<Class<?>>of(TestObject.class), Collections.<Class<?>>emptyList(), Maps.newHashMap());
         // Default connector for testing
-        HttpClient httpClient = new StdHttpClient.Builder().url(COUCH_DB_URL).build();
+        HttpClient httpClient = DatabaseTestProperties.getConfiguredHttpClient();
         CouchDbInstance dbInstance = new StdCouchDbInstance(httpClient);
 
         // Create database if it does not exists
@@ -73,7 +72,7 @@ public class DatabaseConnectorTest {
     @After
     public void tearDown() throws Exception {
         // Default connector for testing
-        HttpClient httpClient = new StdHttpClient.Builder().url(COUCH_DB_URL).build();
+        HttpClient httpClient = DatabaseTestProperties.getConfiguredHttpClient();
         CouchDbInstance dbInstance = new StdCouchDbInstance(httpClient);
         if (dbInstance.checkIfDbExists(COUCH_DB_DATABASE)) {
             dbInstance.deleteDatabase(COUCH_DB_DATABASE);
@@ -83,7 +82,7 @@ public class DatabaseConnectorTest {
     @Test
     public void testSetUp() throws Exception {
         // Default connector for testing
-        HttpClient httpClient = new StdHttpClient.Builder().url(COUCH_DB_URL).build();
+        HttpClient httpClient = DatabaseTestProperties.getConfiguredHttpClient();
         CouchDbInstance dbInstance = new StdCouchDbInstance(httpClient);
         CouchDbConnector db = new StdCouchDbConnector(COUCH_DB_DATABASE, dbInstance, factory);
         // Check that the document was inserted

@@ -1,0 +1,25 @@
+/*
+ * Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+ *
+ * SPDX-License-Identifier: EPL-1.0
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
+
+$portlet-header-margin-bottom: map-get($spacers, 5);
+
+$portlet-topper-bg: $box-header-bg;
+$portlet-topper-border: $box-header-bg;
+$portlet-topper-color: $box-header-fg;
+$portlet-topper-link-color: $box-header-fg;
+$portlet-topper-link-hover-color: $box-header-fg;
+
+$portlet-content-border-radius: 0;
+$portlet-topper-border-radius: 0;
+
+$widget-resume-line-clamp-image: 3;
+$widget-resume-line-clamp: 10;
+$widget-resume-line-height: 1.35rem;

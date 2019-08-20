@@ -10,10 +10,9 @@
  */
 package org.eclipse.sw360.portal.portlets.moderation;
 
+import com.liferay.portal.kernel.model.Organization;
 import com.liferay.portal.kernel.servlet.SessionMessages;
-import com.liferay.portal.model.Organization;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
+
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -42,24 +41,39 @@ import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.portlets.FossologyAwarePortlet;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 import org.eclipse.sw360.portal.users.UserUtils;
-import org.jetbrains.annotations.NotNull;
 
-import javax.portlet.*;
+import org.apache.log4j.Logger;
+import org.apache.thrift.TException;
+import org.jetbrains.annotations.NotNull;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import javax.portlet.*;
+
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
 
-/**
- * Moderation portlet implementation
- *
- * @author daniele.fognini@tngtech.com
- * @author johannes.najjar@tngtech.com
- * @author alex.borodin@evosoft.com
- */
+@org.osgi.service.component.annotations.Component(
+    immediate = true,
+    properties = {
+        "/org/eclipse/sw360/portal/portlets/base.properties",
+        "/org/eclipse/sw360/portal/portlets/default.properties"
+    },
+    property = {
+        "javax.portlet.name=" + MODERATION_PORTLET_NAME,
+
+        "javax.portlet.display-name=Moderations",
+        "javax.portlet.info.short-title=Moderations",
+        "javax.portlet.info.title=Moderations",
+
+        "javax.portlet.init-param.view-template=/html/moderation/view.jsp",
+    },
+    service = Portlet.class,
+    configurationPolicy = ConfigurationPolicy.REQUIRE
+)
 public class ModerationPortlet extends FossologyAwarePortlet {
 
     private static final Logger log = Logger.getLogger(ModerationPortlet.class);

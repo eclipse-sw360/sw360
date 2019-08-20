@@ -1,0 +1,43 @@
+#
+# Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+#
+# SPDX-License-Identifier: EPL-1.0
+#
+# All rights reserved. This configuration file is provided to you under the
+# terms and conditions of the Eclipse Distribution License v1.0 which
+# accompanies this distribution, and is available at
+# http://www.eclipse.org/org/documents/edl-v10.php
+#
+
+Bundle-Name: SW360 Datahandler
+Bundle-SymbolicName: sw360-datahandler
+Bundle-Version: 1.0.0
+
+-check: all
+-sources: false
+
+Export-Package: \
+	com.github.ldriscoll.ektorplucene.*, \
+	org.apache.thrift.*, \
+	org.eclipse.sw360.datahandler.*, \
+	org.ektorp.*
+
+Import-Package: \
+	com.fasterxml.jackson.*, \
+	com.google.common.*, \
+	javax.net.ssl.*, \
+    org.apache.commons.io.*, \
+	org.apache.commons.codec.binary.*, \
+	org.apache.commons.csv.*, \
+	org.apache.commons.logging.*, \
+	org.apache.log4j, \
+	org.slf4j.*
+
+Conditional-Package: \
+	com.github.ldriscoll.ektorplucene.*, \
+	org.apache.http.*, \
+	org.apache.thrift.*, \
+	org.ektorp.*
+
+Bundle-Classpath: \
+	.

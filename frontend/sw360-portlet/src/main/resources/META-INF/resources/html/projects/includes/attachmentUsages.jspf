@@ -1,0 +1,123 @@
+<%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.projects.Project" %>
+<%@ page import="javax.portlet.PortletRequest" %>
+<%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
+<%--
+  ~ Copyright Siemens AG, 2018-2019. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+
+<%@include file="/html/init.jsp" %>
+
+<portlet:defineObjects/>
+<liferay-theme:defineObjects/>
+
+<portlet:resourceURL var="loadAttachmentUsagesRowsURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.LOAD_ATTACHMENT_USAGES_ROWS%>'/>
+</portlet:resourceURL>
+<portlet:resourceURL var="saveAttachmentUsagesURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.SAVE_ATTACHMENT_USAGES%>'/>
+    <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${requestScope.project.id}"/>
+</portlet:resourceURL>
+
+<form id="attachmentUsagesForm" name="attachmentUsagesForm" action="<%=saveAttachmentUsagesURL%>" method="post">
+    <table class="table table-bordered" id="AttachmentUsagesInfo" style="table-layout: auto"
+    data-load-node-url="<%=loadAttachmentUsagesRowsURL%>"
+    data-portlet-namespace="<portlet:namespace/>"
+    data-parent-branch-key="<%=PortalConstants.PARENT_BRANCH_ID%>"
+    data-scope-group-id="${httpServletRequest.getAttribute('scopeGroupId')}"
+        >
+        <thead>
+        <tr>
+            <th colspan="7" class="headlabel">Linked Releases And Projects</th>
+        </tr>
+        <tr>
+            <th rowspan="2">Name</th>
+            <th rowspan="2">Relation</th>
+            <th rowspan="2">Uploaded By</th>
+            <th rowspan="2">Type</th>
+            <th colspan="3">Used in</th>
+        </tr>
+        <tr>
+            <th>License Info</th>
+            <th>Source Code Bundle</th>
+            <th>Other</th>
+        </tr>
+        </thead>
+        <tbody>
+            <%@include file="/html/projects/includes/attachmentUsagesRows.jspf"%>
+            <core_rt:if test="${projectList.size() == 1 and empty projectList.get(0).linkedReleases}">
+                <tr>
+                    <td colspan="7">No linked releases or projects</td>
+                </tr>
+                </thead>
+                <tbody>
+                    <%@include file="/html/projects/includes/attachmentUsagesRows.jspf"%>
+                    <core_rt:if test="${projectList.size() == 1 and empty projectList.get(0).linkedReleases}">
+                        <tr>
+                            <td colspan="7">No linked releases or projects</td>
+                        </tr>
+                    </core_rt:if>
+            </core_rt:if>
+        </tbody>
+    </table>
+</form>
+
+<script>
+    require(['jquery', 'modules/ajax-treetable', 'modules/alert', 'modules/button'], function($, ajaxTreeTable, alert, button) {
+
+        Liferay.on('allPortletsReady', function() {
+            var config = $('#AttachmentUsagesInfo').data();
+
+            ajaxTreeTable.setup('AttachmentUsagesInfo', config.loadNodeUrl, function(table, node) {
+                var data = {};
+                data[config.portletNamespace + config.parentBranchKey] = node.id;
+                data[config.portletNamespace + 'parentScopeGroupId'] = config.scopeGroupId;
+                return data;
+            }, function(table, node, result) {
+                var rows = $(result).filter("tr");
+                table.treetable("loadBranch", node, rows);
+                // next two lines are a workaround for treetable displaying the node as collapsed,
+                // yet also displaying its children, because it expects that all rows in the loadBranch call above
+                // belong to the node, but in our case we load couple levels at a time
+                table.treetable("collapseNode", node.id);
+                table.treetable("expandNode", node.id);
+                attachCheckboxEventHandlers();
+            });
+            attachCheckboxEventHandlers();
+
+            $('#saveAttachmentUsagesButton').click(saveAttachmentUsages);
+        });
+
+        function attachCheckboxEventHandlers(){
+            $("#attachmentUsagesForm .trackChange").change(function() {
+                var $shadow = $("#" + this.id + "_shadow");
+                $shadow.prop('checked', true);
+            });
+        }
+
+        function saveAttachmentUsages() {
+            var $form = $("#attachmentUsagesForm");
+
+            button.wait('#saveAttachmentUsagesButton');
+            alert.close($form);
+            $.ajax({
+                method: 'POST',
+                url: $form.prop("action"),
+                data: $form.serialize()
+            }).done(function(){
+                alert.success($form, 'Saved attachment usages.', 4);
+                button.finish('#saveAttachmentUsagesButton');
+            }).fail(function(xhr, status, error){
+                alert.danger($form, '<b>Couldn\'t save attachment usages:</b> ' + xhr.responseText, 6);
+                button.finish('#saveAttachmentUsagesButton');
+            });
+        }
+    });
+</script>

@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -37,13 +37,16 @@ public class DisplayBoolean extends SimpleTagSupport {
     public void doTag() throws JspException, IOException {
         JspWriter out = getJspContext().getOut();
 
-        if (defined) {
-            if (value)
-                out.print("Yes");
-            else
-                out.print("No");
+        if (defined && value) {
+            out.print("<span class=\"text-success\">");
+            out.print("<svg class=\"lexicon-icon\"><use href=\"/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#check-circle\"/></svg>");
+            out.print("&nbsp;Yes");
+            out.print("</span>");
         } else {
-            out.print("No");
+            out.print("<span class=\"text-danger\">");
+            out.print("<svg class=\"lexicon-icon\"><use href=\"/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#times-circle\"/></svg>");
+            out.print("&nbsp;No");
+            out.print("</span>");
         }
     }
 }

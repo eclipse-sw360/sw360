@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -29,11 +29,6 @@ public class DisplayDownloadApprovedClearingReport extends DisplayDownloadAbstra
     private static final Logger LOGGER = Logger.getLogger(DisplayDownloadApprovedClearingReport.class);
 
     private Attachment attachment;
-    
-    @Override
-    protected String getAlternativeText() {
-        return escapeAttributeValue(attachment.filename);
-    }
 
     @Override
     protected String getTitleText() {

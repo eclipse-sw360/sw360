@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -27,9 +27,9 @@ import java.util.Properties;
  */
 public class DatabaseTestProperties {
 
-    public static final String PROPERTIES_FILE_PATH = "/databasetest.properties";
+    private static final String PROPERTIES_FILE_PATH = "/databasetest.properties";
 
-    public static final String COUCH_DB_URL;
+    private static final String COUCH_DB_URL;
     public static final String COUCH_DB_DATABASE;
 
     private static final Optional<String> COUCH_DB_USERNAME;
@@ -51,5 +51,9 @@ public class DatabaseTestProperties {
             httpClientBuilder.password(COUCH_DB_PASSWORD.get());
         }
         return httpClientBuilder.build();
+    }
+
+    public static String getCouchDbUrl() {
+        return COUCH_DB_URL;
     }
 }

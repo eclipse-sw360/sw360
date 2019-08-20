@@ -1,0 +1,60 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+<core_rt:set var="clearingTeamsStringSet" value='<%=PortalConstants.SET_CLEARING_TEAMS_STRING%>'/>
+
+<portlet:resourceURL var="sendToFossologyURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.FOSSOLOGY_SEND%>'/>
+</portlet:resourceURL>
+<portlet:resourceURL var="getFossologyStatusURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.FOSSOLOGY_GET_STATUS%>'/>
+</portlet:resourceURL>
+
+
+<div class="dialogs">
+	<div id="fossologyClearingDialog" data-title="Fossology Clearing" class="modal fade" tabindex="-1" role="dialog"
+      data-portlet-namespace="<portlet:namespace/>"
+      data-fossology-send-url="<%=sendToFossologyURL%>"
+      data-fossology-status-url="<%=getFossologyStatusURL%>"
+    >
+		<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+		    <div class="modal-content">
+			<div class="modal-body container">
+                    <form id="fossologyClearingForm">
+                        <input id="releaseId" hidden="" data-name="releaseId"/>
+                        <input id="fieldId" hidden="" data-name="fieldId"/>
+                        <div class="row">
+                            <div class="col form-group">
+                                <label for="clearingTeam">Clearing Team</label>
+                                <select id="clearingTeam" class="form-control" name="clearingTeam">
+                                    <core_rt:forEach items="${clearingTeamsStringSet}" var="entry">
+                                        <option value="<sw360:out value="${entry}"/>">${entry}</option>
+                                    </core_rt:forEach>
+                                </select>
+                            </div>
+                            <div class="col form-group">
+                                <label for="attachmentFossology">Attachment to send for clearing</label>
+                                <input id="attachmentFossology" class="form-control" type="text" value="no attachment" readonly />
+                            </div>
+                        </div>
+                    </form>
+
+                    <table id="attachmentFossologyStatus" class="table table-bordered"></table>
+
+				</div>
+			    <div class="modal-footer">
+		        <button type="button" class="btn btn-light" data-dismiss="modal">Close</button>
+			        <button type="button" class="btn btn-secondary" data-submit="refresh" title="Refresh the status for the selected ClearingTeam">Refresh Status</button>
+                    <button type="button" class="btn btn-primary" data-submit="send" title="Send or make available this release to the selected Clearing Team">Send For Clearing</button>
+			    </div>
+			</div>
+		</div>
+	</div>
+</div>

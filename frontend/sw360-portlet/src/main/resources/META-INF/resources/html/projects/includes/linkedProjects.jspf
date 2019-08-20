@@ -1,0 +1,99 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+<%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.projects.Project" %>
+<%@ page import="javax.portlet.PortletRequest" %>
+
+<%@include file="/html/init.jsp" %>
+
+<portlet:defineObjects/>
+<liferay-theme:defineObjects/>
+
+<portlet:resourceURL var="loadLinkedProjectsRowsURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.LOAD_LINKED_PROJECTS_ROWS%>'/>
+</portlet:resourceURL>
+
+<jsp:useBean id="projectList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.projects.ProjectLink>"
+             scope="request"/>
+
+<table class="table table-bordered" id="LinkedProjectsInfo"
+  data-load-node-url="<%=loadLinkedProjectsRowsURL%>"
+  data-portlet-namespace="<portlet:namespace/>"
+  data-parent-branch-key="<%=PortalConstants.PARENT_BRANCH_ID%>"
+  data-scope-group-id="${httpServletRequest.getAttribute('scopeGroupId')}"
+    >
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Project state</th>
+        <th>Relation</th>
+        <th>Type</th>
+        <th>Clearing State</th>
+        <th>Main Licenses</th>
+    </tr>
+    </thead>
+    <tbody>
+        <%@include file="/html/utils/ajax/linkedProjectsRows.jspf"%>
+        <core_rt:if test="${projectList.size() == 1 and empty projectList.get(0).linkedReleases}">
+            <tr>
+                <td colspan="5">No linked releases or projects</td>
+            </tr>
+        </core_rt:if>
+    </tbody>
+</table>
+
+<%--for javascript library loading --%>
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
+<script>
+    require(['jquery', 'modules/ajax-treetable'], function($, ajaxTreeTable) {
+        var config = $('#LinkedProjectsInfo').data();
+
+        ajaxTreeTable.setup('LinkedProjectsInfo', config.loadNodeUrl, function(table, node) {
+            var data = {};
+            data[config.portletNamespace + config.parentBranchKey] = node.id;
+            data[config.portletNamespace + 'parentScopeGroupId'] =  config.scopeGroupId;
+            return data;
+        }, function(table, node, result) {
+            var rows = $(result).filter("tr");
+            table.treetable("loadBranch", node, rows);
+        });
+
+        $('#downloadLicenseInfoButton').click(downloadLicenseInfo);
+        $('#downloadSourceCodeBundleButton').click(downloadSourceCodeBundleButton);
+
+        $('#btnExportGroup a.dropdown-item').on('click', function(event) {
+            exportSpreadsheet($(event.currentTarget).data('type'));
+        });
+
+        function downloadLicenseInfo() {
+            window.location.href = '<portlet:renderURL> \
+              <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${project.id}"/> \
+              <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_LICENSE_INFO%>"/> \
+            </portlet:renderURL>';
+        }
+
+        function downloadSourceCodeBundleButton() {
+            window.location.href = '<portlet:renderURL> \
+              <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${project.id}"/> \
+              <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_SOURCE_CODE_BUNDLE%>"/> \
+            </portlet:renderURL>';
+        }
+
+        function exportSpreadsheet(type) {
+            var portletURL = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>')
+                    .setParameter('<%=PortalConstants.ACTION%>', '<%=PortalConstants.EXPORT_TO_EXCEL%>');
+            portletURL.setParameter('<%=Project._Fields.ID%>','${project.id}');
+            portletURL.setParameter('<%=PortalConstants.EXTENDED_EXCEL_EXPORT%>', type === 'projectWithReleases' ? 'true' : 'false');
+
+            window.location.href = portletURL.toString() + window.location.hash;
+        }
+    });
+</script>

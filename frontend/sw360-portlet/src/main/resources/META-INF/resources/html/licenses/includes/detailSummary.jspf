@@ -1,0 +1,115 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
+  ~ With modifications by Bosch Software Innovations GmbH, 2016.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+
+<portlet:actionURL var="editExternalLinkURL" name="editExternalLink">
+    <portlet:param name="<%=PortalConstants.LICENSE_ID%>" value="${licenseDetail.id}" />
+</portlet:actionURL>
+
+<core_rt:if test="${licenseDetail.checked != true}">
+    <div class="alert alert-danger">This license is <b>UNCHECKED</b>.</div>
+</core_rt:if>
+
+<table class="table label-value-table" id="licenseDetailOverview">
+    <thead>
+        <tr>
+            <th colspan="2">License Details</th>
+        </tr>
+    </thead>
+    <tr>
+        <td>Fullname:</td>
+        <td><sw360:out value="${licenseDetail.fullname}"/></td>
+    </tr>
+    <tr>
+        <td>Shortname:</td>
+        <td><sw360:out value="${licenseDetail.shortname}"/></td>
+    </tr>
+    <tr>
+        <td>Is checked:</td>
+        <td>
+            <core_rt:if test="${licenseDetail.checked == true}">
+                <span class="text-success">
+                    <clay:icon symbol="check-circle" />
+                </span>
+            </core_rt:if>
+            <core_rt:if test="${licenseDetail.checked != true}">
+                <span class="text-danger">
+                    <clay:icon symbol="times-circle" />
+                </span>
+            </core_rt:if>
+        </td>
+    </tr>
+    <tr>
+        <td>Type:</td>
+        <td><sw360:out value="${licenseDetail.licenseType.licenseType}"/></td>
+    </tr>
+    <%--need nested ifs for the yes no because the values can be undefined--%>
+    <tr>
+        <td>GPL-2.0 compatibility:</td>
+        <td>
+            <core_rt:choose>
+                <core_rt:when test="${licenseDetail.GPLv2Compat == 'UNDEFINED'}">
+                    <span class="text-info">
+                        <clay:icon symbol="question-circle" />
+                        Unknown
+                    </span>
+                </core_rt:when>
+                <core_rt:when test="${licenseDetail.GPLv2Compat == 'YES'}">
+                    <sw360:DisplayBoolean value="true" />
+                </core_rt:when>
+                <core_rt:when test="${licenseDetail.GPLv2Compat == 'NO'}">
+                    <sw360:DisplayBoolean value="false" />
+                </core_rt:when>
+            </core_rt:choose>
+        </td>
+    </tr>
+    <tr>
+        <td>GPL-3.0 compatibility:</td>
+        <td>
+            <core_rt:choose>
+                <core_rt:when test="${licenseDetail.GPLv3Compat == 'UNDEFINED'}">
+                    <span class="text-info">
+                        <clay:icon symbol="question-circle" />
+                        Unknown
+                    </span>
+                </core_rt:when>
+                <core_rt:when test="${licenseDetail.GPLv3Compat == 'YES'}">
+                    <sw360:DisplayBoolean value="true" />
+                </core_rt:when>
+                <core_rt:when test="${licenseDetail.GPLv3Compat == 'NO'}">
+                    <sw360:DisplayBoolean value="false" />
+                </core_rt:when>
+            </core_rt:choose>
+        </td>
+    </tr>
+    <tr>
+        <td>External link for more information:</td>
+        <td>
+            <core_rt:choose>
+                <core_rt:when test="${isUserAtLeastClearingAdmin == 'Yes'}" >
+                    <form class="form form-inline justify-content-start" action="<%=editExternalLinkURL%>" method="post" id="ExternalLink">
+                        <div class="form-group">
+                            <input id="<portlet:namespace/><%=License._Fields.EXTERNAL_LICENSE_LINK%>"
+                                name="<portlet:namespace/><%=License._Fields.EXTERNAL_LICENSE_LINK%>"
+                                type="text"
+                                class="form-control"
+                                value="${licenseDetail.externalLicenseLink}">
+                            <button type="submit" id="RemoteLinkSubmit" class="btn btn-secondary">Save</button>
+                        </div>
+                    </form>
+                </core_rt:when>
+                <core_rt:otherwise>
+                    <a href="${licenseDetail.externalLicenseLink}">${licenseDetail.externalLicenseLink}</a>
+                </core_rt:otherwise>
+            </core_rt:choose>
+        </td>
+    </tr>
+</table>

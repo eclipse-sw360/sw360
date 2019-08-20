@@ -1,0 +1,130 @@
+<%--
+  ~ Copyright Siemens AG, 2015-2019. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+
+
+<%@ page import="org.eclipse.sw360.datahandler.thrift.components.Release" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.components.COTSDetails" %>
+<table class="table edit-table three-columns" id="COTSDetailsAdmin">
+    <thead>
+    <tr>
+        <th colspan="3">Commercial Details Administration</th>
+    </tr>
+    </thead>
+    <tr>
+        <td>
+            <div class="form-check">
+                <input id="usageRightAvailable" type="checkbox" class="form-check-input"
+                        name="<portlet:namespace/><%=Release._Fields.COTS_DETAILS%><%=COTSDetails._Fields.USAGE_RIGHT_AVAILABLE%>"
+                        value="<sw360:out value="${release.cotsDetails.usageRightAvailable == true}"/>"
+                            <core_rt:if test="${release.cotsDetails.usageRightAvailable}"> checked="checked" </core_rt:if>
+                />
+                <label class="form-check-label" for="usageRightAvailable">Usage Right Available</label>
+            </div>
+        </td>
+        <td>
+            <sw360:DisplayUserEdit email="${release.cotsDetails.cotsResponsible}"
+                                   id="<%=Release._Fields.COTS_DETAILS.toString() + COTSDetails._Fields.COTS_RESPONSIBLE.toString()%>"
+                                   description="COTS Responsible" multiUsers="false" readonly="false"/>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="cotsClearingDeadline">COTS Clearing Deadline</label>
+                <input id="cotsClearingDeadline"
+                    class="datepicker form-control"
+                    name="<portlet:namespace/><%=Release._Fields.COTS_DETAILS%><%=COTSDetails._Fields.CLEARING_DEADLINE%>"
+                    type="text"
+                    placeholder="Clearing Deadline YYYY-MM-DD"
+                    pattern="\d{4}-\d{2}-\d{2}"
+                    value="<sw360:out value="${release.cotsDetails.clearingDeadline}"/>"/>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <div class="form-group">
+                <label for="LC_Url">COTS Clearing Report URL</label>
+                <input id="LC_Url"
+                    name="<portlet:namespace/><%=Release._Fields.COTS_DETAILS%><%=COTSDetails._Fields.LICENSE_CLEARING_REPORT_URL%>"
+                    type="text"
+                    class="form-control"
+                    placeholder="Enter URL"
+                    value="<sw360:out value="${release.cotsDetails.licenseClearingReportURL}"/>"/>
+            </div>
+        </td>
+        <td/>
+        <td/>
+    </tr>
+</table>
+
+<table class="table edit-table three-columns" id="COTSDetailsOSS">
+    <thead>
+    <tr>
+        <th colspan="3" class="headlabel">COTS OSS Information</th>
+    </tr>
+    </thead>
+    <tr>
+        <td>
+            <div class="form-group">
+                <label for="used_license">Used License</label>
+                <input id="used_license"
+                    name="<portlet:namespace/><%=Release._Fields.COTS_DETAILS%><%=COTSDetails._Fields.USED_LICENSE%>"
+                    type="text"
+                    class="form-control"
+                    placeholder="Enter used license"
+                    value="<sw360:out value="${release.cotsDetails.usedLicense}"/>"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-check">
+                <input id="containsOSS" type="checkbox" class="form-check-input"
+                       name="<portlet:namespace/><%=Release._Fields.COTS_DETAILS%><%=COTSDetails._Fields.CONTAINS_OSS%>"
+                       value="<sw360:out value="${release.cotsDetails.containsOSS == true}"/>"
+                        <core_rt:if test="${release.cotsDetails.containsOSS}"> checked="checked" </core_rt:if>
+                />
+                <label class="form-check-label" for="containsOSS">Contains OSS</label>
+            </div>
+        </td>
+        <td>
+            <div class="form-check">
+                <input id="OSSContractSigned" type="checkbox" class="form-check-input"
+                       name="<portlet:namespace/><%=Release._Fields.COTS_DETAILS%><%=COTSDetails._Fields.OSS_CONTRACT_SIGNED%>"
+                       value="<sw360:out value="${release.cotsDetails.ossContractSigned == true}"/>"
+                        <core_rt:if test="${release.cotsDetails.ossContractSigned}"> checked="checked" </core_rt:if>
+                />
+                <label class="form-check-label" for="OSSContractSigned">OSS contract signed</label>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <div class="form-group">
+                <label for="OSSInfoUrl">OSS Information URL</label>
+                <input id="OSSInfoUrl"
+                    name="<portlet:namespace/><%=Release._Fields.COTS_DETAILS%><%=COTSDetails._Fields.OSS_INFORMATION_URL%>"
+                    type="text"
+                    class="form-control"
+                    placeholder="Enter URL"
+                    value="<sw360:out value="${release.cotsDetails.ossInformationURL}"/>"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-check">
+                <input id="sourceCodeAvailable" type="checkbox" class="form-check-input"
+                       name="<portlet:namespace/><%=Release._Fields.COTS_DETAILS%><%=COTSDetails._Fields.SOURCE_CODE_AVAILABLE%>"
+                       value="<sw360:out value="${release.cotsDetails.sourceCodeAvailable == true}"/>"
+                        <core_rt:if test="${release.cotsDetails.sourceCodeAvailable}"> checked="checked" </core_rt:if>
+                />
+                <label class="form-check-label" for="sourceCodeAvailable">Source Code Available</label>
+            </div>
+        </td>
+        <td/>
+    </tr>
+</table>

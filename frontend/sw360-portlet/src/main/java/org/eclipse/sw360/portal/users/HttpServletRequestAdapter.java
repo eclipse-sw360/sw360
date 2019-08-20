@@ -11,14 +11,14 @@
 package org.eclipse.sw360.portal.users;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
-import com.liferay.portal.kernel.servlet.SessionMessages;
-import com.liferay.portal.service.ServiceContext;
-import com.liferay.portal.service.ServiceContextFactory;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.ServiceContextFactory;
+import com.liferay.portal.kernel.servlet.SessionErrors;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Optional;
 import java.util.function.Consumer;
+
+import javax.servlet.http.HttpServletRequest;
 
 class HttpServletRequestAdapter implements RequestAdapter {
     // this constant is supposed to be defined in WebKeys according to docs found online, but it's not
@@ -37,14 +37,14 @@ class HttpServletRequestAdapter implements RequestAdapter {
 
     @Override
     public Consumer<String> getErrorMessagesConsumer() {
-        return msg -> SessionMessages.add(request, "request_processed", msg);
+        return msg -> SessionErrors.add(request, msg);
     }
 
     @Override
     public Optional<ServiceContext> getServiceContext() {
         try {
             return Optional.of(ServiceContextFactory.getInstance(request));
-        } catch (PortalException | SystemException e ) {
+        } catch (PortalException e ) {
             return Optional.empty();
         }
     }

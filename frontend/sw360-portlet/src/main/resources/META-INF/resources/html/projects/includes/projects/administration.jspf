@@ -1,0 +1,171 @@
+<%--
+  ~ Copyright Siemens AG, 2017, 2019. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+
+<table class="table label-value-table" id="clearing">
+    <thead>
+    <tr>
+        <th colspan="2">Clearing</th>
+    </tr>
+    </thead>
+    <tr>
+        <td>Project clearing state:</td>
+        <td><sw360:DisplayEnum value="${project.clearingState}"/></td>
+    </tr>
+    <tr>
+        <td>Clearing details:</td>
+        <td>
+            New releases:
+            <span>
+                <sw360:out value="${project.releaseClearingStateSummary.newRelease}" default="--"/>
+            </span>,
+
+            Under clearing:
+            <span>
+                <sw360:out value="${project.releaseClearingStateSummary.underClearingByProjectTeam}" default="--"/>
+            </span>
+            (and <sw360:out value="${project.releaseClearingStateSummary.underClearing}" default="--"/> by other teams),
+
+            Report available:
+            <span>
+                <sw360:out value="${project.releaseClearingStateSummary.reportAvailable}" default="--"/>
+            </span>,
+
+            Approved:
+            <span>
+                <sw360:out value="${project.releaseClearingStateSummary.approved}" default="--"/>
+            </span>
+        </td>
+    </tr>
+    <tr>
+        <td>Clearing team:</td>
+        <td><sw360:out value="${project.clearingTeam}"/></td>
+    </tr>
+    <tr>
+        <td>Deadline for pre-evaluation:</td>
+        <td><sw360:out value="${project.preevaluationDeadline}"/></td>
+    </tr>
+    <tr>
+        <td>Obligations:</td>
+        <td>
+            <textarea class="form-control" rows="5" id="obligationsText" readonly><sw360:DisplayObligations project="${project}" defaultText="${defaultObligationsText}"/></textarea>
+        </td>
+    </tr>
+     <tr>
+        <td>Clearing summary:</td>
+        <td>
+            <textarea class="form-control" rows="5" id="clearingSummaryText" name="<portlet:namespace/><%=Project._Fields.CLEARING_SUMMARY%>" type="text" readonly><sw360:out value="${project.clearingSummary}" /></textarea>
+        </td>
+    </tr>
+    <tr>
+        <td>Special risk Open Source Software:</td>
+        <td>
+            <textarea class="form-control" rows="5" id="specialRisksOSSText" name="<portlet:namespace/><%=Project._Fields.SPECIAL_RISKS_OSS%>" type="text" readonly><sw360:out value="${project.specialRisksOSS}" /></textarea>
+        </td>
+    </tr>
+    <tr>
+        <td>General risks 3rd party software:</td>
+        <td>
+            <textarea class="form-control" rows="5" id="generalRisks3rdPartyText" name="<portlet:namespace/><%=Project._Fields.GENERAL_RISKS3RD_PARTY%>" type="text" readonly><sw360:out value="${project.generalRisks3rdParty}" /></textarea>
+        </td>
+    </tr>
+    <tr>
+        <td>Special risks 3rd party software:</td>
+        <td>
+            <textarea class="form-control" rows="5" id="specialRisks3rdPartyText" name="<portlet:namespace/><%=Project._Fields.SPECIAL_RISKS3RD_PARTY%>" type="text" readonly><sw360:out value="${project.specialRisks3rdParty}" /></textarea>
+        </td>
+    </tr>
+    <tr>
+        <td>Sales and delivery channels:</td>
+        <td>
+            <textarea class="form-control" rows="5" id="deliveryChannelsText" name="<portlet:namespace/><%=Project._Fields.DELIVERY_CHANNELS%>"  type="text" readonly><sw360:out value="${project.deliveryChannels}" /></textarea>
+        </td>
+    </tr>
+        <tr>
+        <td>Remarks additional requirements:</td>
+        <td>
+            <textarea class="form-control" rows="5" id="remarksAdditionalRequirementsText" name="<portlet:namespace/><%=Project._Fields.REMARKS_ADDITIONAL_REQUIREMENTS%>" readonly><sw360:out value="${project.remarksAdditionalRequirements}" /></textarea>
+        </td>
+    </tr>
+</table>
+
+<table class="table label-value-table" id="obligations">
+    <thead>
+        <tr><th>Obligation</th><th>Fulfilled</th><th>Modified</th></tr>
+    </thead>
+    <tbody>
+        <core_rt:forEach items="${projectObligations}" var="entry">
+            <tr>
+                <td>${entry.getKey().getText()}</td>
+                <td><input type="checkbox" value="${entry.getKey().getId()}"
+                    disabled="disabled"
+                    <core_rt:if test="${entry.getValue().isFulfilled()}">checked="checked"</core_rt:if>
+                /></td>
+                <td>${entry.getValue().getModificationHint()}</td>
+            </tr>
+        </core_rt:forEach>
+    </tbody>
+</table>
+
+<table class="table label-value-table" id="lifecycle">
+    <thead>
+    <tr>
+        <th colspan="2">Lifecycle</th>
+    </tr>
+    </thead>
+    <tr>
+        <td>Project state:</td>
+        <td><sw360:DisplayEnum value="${project.state}"/></td>
+    </tr>
+    <tr>
+        <td>System test begin:</td>
+        <td><sw360:out value="${project.systemTestStart}"/></td>
+    </tr>
+    <tr>
+        <td>System test end:</td>
+        <td><sw360:out value="${project.systemTestEnd}"/></td>
+    </tr>
+    <tr>
+        <td>Delivery start:</td>
+        <td><sw360:out value="${project.deliveryStart}"/></td>
+    </tr>
+    <tr>
+        <td>Phase-out since:</td>
+        <td><sw360:out value="${project.phaseOutSince}"/></td>
+    </tr>
+</table>
+
+<table class="table label-value-table" id="LicenseInfoHeader" title="License Info Header">
+    <thead>
+    <tr>
+        <th>License Info Header</th>
+    </tr>
+    </thead>
+    <tr>
+        <td>
+            <textarea class="form-control" rows="5" id="licenseInfoHeaderText" readonly><sw360:DisplayLicenseInfoHeader project="${project}" defaultText="${defaultLicenseInfoHeaderText}"/></textarea>
+        </td>
+    </tr>
+</table>
+
+<%--for javascript library loading --%>
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
+<script>
+    require(['jquery'], function($) {
+        $('#detailTab a[href="#tab-Administration"]').on('shown.bs.tab', function (event) {
+		if($('#licenseInfoHeaderText').prop('scrollHeight') > 0) {
+		$('#licenseInfoHeaderText').height($('#licenseInfoHeaderText').prop('scrollHeight'));
+		}
+		if($('#obligationsText').prop('scrollHeight')) {
+		$('#obligationsText').height($('#obligationsText').prop('scrollHeight'));
+		}
+        });
+    });
+</script>

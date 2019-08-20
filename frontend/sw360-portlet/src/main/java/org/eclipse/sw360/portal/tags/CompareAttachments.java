@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2015, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -88,7 +88,7 @@ public class CompareAttachments extends ContextAwareTag {
             String renderString = display.toString();
 
             if (Strings.isNullOrEmpty(renderString)) {
-                renderString = "<h4> No changes in attachments </h4>";
+                renderString = "<div class=\"alert alert-info\">No changes in attachments</div>";
             }
 
             jspWriter.print(renderString);

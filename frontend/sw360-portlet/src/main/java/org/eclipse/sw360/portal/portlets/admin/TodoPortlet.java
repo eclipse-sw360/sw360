@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -22,6 +22,7 @@ import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.portlets.components.ComponentPortletUtils;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 
 import javax.portlet.*;
 import java.io.IOException;
@@ -30,11 +31,24 @@ import java.util.List;
 
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
 
-/**
- * Todo portlet implementation
- *
- * @author nikolas@endocode.com
- */
+@org.osgi.service.component.annotations.Component(
+    immediate = true,
+    properties = {
+        "/org/eclipse/sw360/portal/portlets/base.properties",
+        "/org/eclipse/sw360/portal/portlets/admin.properties"
+    },
+    property = {
+        "javax.portlet.name=" + TODOS_PORTLET_NAME,
+
+        "javax.portlet.display-name=ToDos",
+        "javax.portlet.info.short-title=ToDos",
+        "javax.portlet.info.title=ToDos",
+
+        "javax.portlet.init-param.view-template=/html/admin/todos/view.jsp",
+    },
+    service = Portlet.class,
+    configurationPolicy = ConfigurationPolicy.REQUIRE
+)
 public class TodoPortlet extends Sw360Portlet {
 
     private static final Logger log = Logger.getLogger(TodoPortlet.class);

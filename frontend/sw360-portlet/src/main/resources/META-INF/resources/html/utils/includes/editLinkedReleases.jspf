@@ -1,0 +1,36 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+
+<%@ page import="org.eclipse.sw360.datahandler.thrift.ReleaseRelationship" %>
+
+<table class="table edit-table" id="LinkedReleasesInfo">
+       <colgroup>
+           <col style="width: 25%;" />
+           <col style="width: 25%;" />
+           <col style="width: 25%;" />
+           <col style="width: 25%;" />
+           <col style="width: 1.7rem" />
+       </colgroup>
+    <thead>
+        <tr>
+            <th>Vendor Name</th>
+            <th>Release Name</th>
+            <th>Release Version</th>
+            <th>Release Relation <sw360:DisplayEnumInfo type="<%=ReleaseRelationship.class%>"/></th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        <jsp:include page="/html/utils/ajax/linkedReleasesRelationAjax.jsp" />
+    </tbody>
+</table>
+
+<button type="button" class="btn btn-secondary" id="addLinkedReleasesToReleaseButton">Click to add Releases</button>

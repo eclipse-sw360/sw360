@@ -1,0 +1,143 @@
+<%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
+<%@ page import="org.eclipse.sw360.datahandler.common.SW360Constants" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.attachments.UsageData" %>
+<%--
+  ~ Copyright Siemens AG, 2018-2019. Part of the SW360 Portal Project.
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+
+<%@include file="/html/init.jsp" %>
+
+<%--<jsp:useBean id="parent_branch_id" class="java.lang.String" scope="request"/>--%>
+<%--These variables are used as a trick to allow referencing constant values in EL expressions below--%>
+<core_rt:set var="licenseInfoAttachmentTypes" value="<%=SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES%>"/>
+<core_rt:set var="sourceCodeAttachmentTypes" value="<%=SW360Constants.SOURCE_CODE_ATTACHMENT_TYPES%>"/>
+
+<core_rt:if test="${empty parentScopeGroupId}">
+    <core_rt:set var="concludedScopeGroupId" value="${pageContext.getAttribute('scopeGroupId')}"/>
+</core_rt:if>
+<core_rt:if test="${not empty parentScopeGroupId}">
+    <core_rt:set var="concludedScopeGroupId" value="${parentScopeGroupId}"/>
+</core_rt:if>
+
+<%--linked projects and their linked projects--%>
+<core_rt:forEach items="${projectList}" var="projectLink" varStatus="loop">
+    <%--first element in the list is the root linked project --%>
+    <core_rt:if test="${loop.index==0}"><core_rt:set var="new_root_id" value="${projectLink.nodeId}"/></core_rt:if>
+    <core_rt:if test="${loop.index!=0}">
+        <tr data-tt-id="${projectLink.nodeId}" data-tt-branch="true"
+            <%--attach children of the new root node to the existing node being expanded--%>
+            <core_rt:if test="${projectLink.parentNodeId == new_root_id}">data-tt-parent-id="${parent_branch_id}"</core_rt:if>
+            <core_rt:if test="${projectLink.parentNodeId != new_root_id}">data-tt-parent-id="${projectLink.parentNodeId}"</core_rt:if>
+        >
+            <td>
+                <a href="<sw360:DisplayProjectLink projectId="${projectLink.id}" bare="true" scopeGroupId="${concludedScopeGroupId}"/>"><sw360:out
+                        value="${projectLink.name} ${projectLink.version}" maxChar="60"
+                /></a>
+            </td>
+            <td>
+		<sw360:DisplayEnum value="${projectLink.relation}"/>
+            </td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+    </core_rt:if>
+    <%--linked releases of linked projects--%>
+    <core_rt:forEach items="${projectLink.linkedReleases}" var="releaseLink" varStatus="releaseloop">
+        <tr data-tt-id="${releaseLink.nodeId}"
+            <core_rt:if test="${loop.index==0 and not empty parent_branch_id}">data-tt-parent-id="${parent_branch_id}"</core_rt:if>
+            <core_rt:if test="${loop.index!=0}">data-tt-parent-id="${projectLink.nodeId}"</core_rt:if>
+        >
+            <td>
+                <a href="<sw360:DisplayReleaseLink releaseId="${releaseLink.id}" bare="true" scopeGroupId="${concludedScopeGroupId}" />">
+                    <sw360:out value="${releaseLink.longName}" maxChar="60"/>
+                </a>
+            </td>
+            <td>
+		<sw360:DisplayEnum value="${releaseLink.releaseRelationship}"/>
+            </td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+        <%--attachments of linked releases--%>
+        <core_rt:forEach items="${releaseLink.attachments}" var="attachment" varStatus="attachmentloop">
+            <tr data-tt-id="${releaseLink.nodeId}_${attachment.attachmentContentId}" data-tt-branch="false"
+                data-tt-parent-id="${releaseLink.nodeId}"
+                title="Created On: ${attachment.createdOn} &#10; Status: ${attachment.checkStatus}
+                <core_rt:if test="${attachment.checkStatus != 'NOTCHECKED'}">
+			&#10; Checked By: ${attachment.checkedBy} &#10; Checked On: ${attachment.checkedOn}
+                </core_rt:if>"
+            >
+                <td>
+                    <sw360:out value="${attachment.filename}" maxChar="60"/>
+                    <%--<sw360:DisplayDownloadAttachmentFile attachment="${attachment}" contextType="release" contextId="${releaseLink.id}"/>--%>
+                </td>
+                <td></td>
+                <td>
+                    <sw360:out value="${attachment.createdBy}"/>
+                </td>
+                <td>
+                    <sw360:DisplayEnumShort value="${attachment.attachmentType}"/>
+                </td>
+                <td>
+                    <input type="checkbox"
+                           name="<portlet:namespace/><%=PortalConstants.PROJECT_SELECTED_ATTACHMENT_USAGES%>"
+                           value="${releaseLink.id}_<%=UsageData._Fields.LICENSE_INFO.getFieldName()%>_${attachment.attachmentContentId}"
+                           id="${releaseLink.id}_<%=UsageData._Fields.LICENSE_INFO.getFieldName()%>_${attachment.attachmentContentId}"
+                           <core_rt:if test="${!licenseInfoAttachmentTypes.contains(attachment.attachmentType) or !writeAccessUser}">disabled</core_rt:if>
+                           <core_rt:if test="${licInfoAttUsages.containsKey(attachment.attachmentContentId)}">checked="checked"</core_rt:if>
+                           class="form-check-input trackChange<core_rt:if test="${licInfoAttUsages.containsKey(attachment.attachmentContentId)}"> defaultChecked</core_rt:if>"
+                    />
+                    <input type="checkbox"
+                           name="<portlet:namespace/><%=PortalConstants.PROJECT_SELECTED_ATTACHMENT_USAGES_SHADOWS%>"
+                           value="${releaseLink.id}_<%=UsageData._Fields.LICENSE_INFO.getFieldName()%>_${attachment.attachmentContentId}"
+                           id="${releaseLink.id}_<%=UsageData._Fields.LICENSE_INFO.getFieldName()%>_${attachment.attachmentContentId}_shadow"
+                           style="display:none"
+                    />
+                </td>
+                <td>
+                    <input type="checkbox"
+                           name="<portlet:namespace/><%=PortalConstants.PROJECT_SELECTED_ATTACHMENT_USAGES%>"
+                           value="${releaseLink.id}_<%=UsageData._Fields.SOURCE_PACKAGE.getFieldName()%>_${attachment.attachmentContentId}"
+                           id="${releaseLink.id}_<%=UsageData._Fields.SOURCE_PACKAGE.getFieldName()%>_${attachment.attachmentContentId}"
+                           <core_rt:if test="${!sourceCodeAttachmentTypes.contains(attachment.attachmentType) or !writeAccessUser}">disabled</core_rt:if>
+                           <core_rt:if test="${sourceAttUsages.containsKey(attachment.attachmentContentId)}">checked="checked"</core_rt:if>
+                           class="form-check-input trackChange<core_rt:if test="${sourceAttUsages.containsKey(attachment.attachmentContentId)}"> defaultChecked</core_rt:if>"
+                    />
+                    <input type="checkbox"
+                           name="<portlet:namespace/><%=PortalConstants.PROJECT_SELECTED_ATTACHMENT_USAGES_SHADOWS%>"
+                           value="${releaseLink.id}_<%=UsageData._Fields.SOURCE_PACKAGE.getFieldName()%>_${attachment.attachmentContentId}"
+                           id="${releaseLink.id}_<%=UsageData._Fields.SOURCE_PACKAGE.getFieldName()%>_${attachment.attachmentContentId}_shadow"
+                           style="display:none"
+                    />
+                </td>
+                <td>
+                    <input type="checkbox"
+                           name="<portlet:namespace/><%=PortalConstants.PROJECT_SELECTED_ATTACHMENT_USAGES%>"
+                           value="${releaseLink.id}_<%=UsageData._Fields.MANUALLY_SET.getFieldName()%>_${attachment.attachmentContentId}"
+                           id="${releaseLink.id}_<%=UsageData._Fields.MANUALLY_SET.getFieldName()%>_${attachment.attachmentContentId}"
+                           <core_rt:if test="${manualAttUsages.containsKey(attachment.attachmentContentId)}">checked="checked"</core_rt:if>
+                           class="form-check-input trackChange<core_rt:if test="${manualAttUsages.containsKey(attachment.attachmentContentId)}"> defaultChecked</core_rt:if>" <core_rt:if test="${manualAttUsages.containsKey(attachment.attachmentContentId)}">checked="checked" class="defaultChecked"</core_rt:if>
+                           <core_rt:if test="${!writeAccessUser}">disabled</core_rt:if>
+                    />
+                    <input type="checkbox"
+                           name="<portlet:namespace/><%=PortalConstants.PROJECT_SELECTED_ATTACHMENT_USAGES_SHADOWS%>"
+                           value="${releaseLink.id}_<%=UsageData._Fields.MANUALLY_SET.getFieldName()%>_${attachment.attachmentContentId}"
+                           id="${releaseLink.id}_<%=UsageData._Fields.MANUALLY_SET.getFieldName()%>_${attachment.attachmentContentId}_shadow"
+                           style="display:none"
+                    />
+                </td>
+            </tr>
+        </core_rt:forEach>
+    </core_rt:forEach>
+</core_rt:forEach>

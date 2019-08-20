@@ -15,6 +15,9 @@ hs_err_pid*
 target/
 .flattened-pom.xml
 
+# sass cache directory
+.sass-cache/
+
 # Ignore private and public keys
 *id_rsa*
 *key_vagrant
@@ -27,6 +30,10 @@ target/
 .classpath
 .project
 .settings
+.factorypath
+
+#Ignore VSCode files
+.vscode/
 
 #ignore backup files
 *.bak

@@ -10,55 +10,70 @@
  */
 package org.eclipse.sw360.portal.users;
 
-import com.liferay.portal.NoSuchUserException;
+import com.liferay.portal.kernel.exception.NoSuchUserException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
-import com.liferay.portal.model.Organization;
-import com.liferay.portal.model.RoleConstants;
-import com.liferay.portal.model.User;
-import com.liferay.portal.security.auth.AutoLogin;
-import com.liferay.portal.security.auth.AutoLoginException;
-import com.liferay.portal.service.UserLocalServiceUtil;
-import com.liferay.portal.util.PortalUtil;
-import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.liferay.portal.kernel.model.Organization;
+import com.liferay.portal.kernel.model.RoleConstants;
+import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.security.auto.login.AutoLogin;
+import com.liferay.portal.kernel.security.auto.login.AutoLoginException;
+import com.liferay.portal.kernel.service.UserLocalServiceUtil;
+import com.liferay.portal.kernel.util.PortalUtil;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.portal.components.LoggingComponent;
+
+import org.jetbrains.annotations.NotNull;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
+
 import java.util.Enumeration;
 import java.util.Properties;
 import java.util.UUID;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 
 /**
- * Basic single-sign-on implementation, just parses email and external id from 
+ * Basic single-sign-on implementation, just parses email and external id from
  * incoming request
  *
  * @author cedric.bodet@tngtech.com, michael.c.jaeger@siemens.com
  */
-public class SSOAutoLogin implements AutoLogin {
-
-    private static final Logger log = LoggerFactory.getLogger(SSOAutoLogin.class);
-    
+@Component(
+    immediate = true,
+    service = AutoLogin.class,
+    configurationPolicy = ConfigurationPolicy.REQUIRE
+)
+public class SSOAutoLogin extends LoggingComponent implements AutoLogin {
     public static final String PROPERTIES_FILE_PATH = "/sw360.properties";
 
-    public static final String AUTH_EMAIL_KEY = "key.auth.email";
-    public static final String AUTH_EMAIL_HEADER;
-    public static final String AUTH_EXTID_KEY = "key.auth.extid";
-    public static final String AUTH_EXTID_HEADER;
-    public static final String AUTH_GIVEN_NAME_KEY = "key.auth.givenname";
-    public static final String AUTH_GIVEN_NAME_HEADER;
-    public static final String AUTH_SURNAME_KEY = "key.auth.surname";
-    public static final String AUTH_SURNAME_HEADER;
-    public static final String AUTH_DEPARTMENT_KEY = "key.auth.department";
-    public static final String AUTH_DEPARTMENT_HEADER;
+    public String AUTH_EMAIL_KEY = "key.auth.email";
+    public String AUTH_EMAIL_HEADER;
+    public String AUTH_EXTID_KEY = "key.auth.extid";
+    public String AUTH_EXTID_HEADER;
+    public String AUTH_GIVEN_NAME_KEY = "key.auth.givenname";
+    public String AUTH_GIVEN_NAME_HEADER;
+    public String AUTH_SURNAME_KEY = "key.auth.surname";
+    public String AUTH_SURNAME_HEADER;
+    public String AUTH_DEPARTMENT_KEY = "key.auth.department";
+    public String AUTH_DEPARTMENT_HEADER;
 
     private static final OrganizationHelper orgHelper = new OrganizationHelper();
 
     static {
+
+    }
+
+    @Override
+    @Activate
+    protected void activate() {
+        super.activate();
+
         Properties props = CommonUtils.loadProperties(SSOAutoLogin.class, PROPERTIES_FILE_PATH);
         AUTH_EMAIL_HEADER = props.getProperty(AUTH_EMAIL_KEY, "EMAIL");
         AUTH_EXTID_HEADER = props.getProperty(AUTH_EXTID_KEY, "EXTID");
@@ -145,7 +160,7 @@ public class SSOAutoLogin implements AutoLogin {
     }
 
     private void dumpHeadersToLog(HttpServletRequest request) {
-        Enumeration headerNames = request.getHeaderNames();
+        Enumeration<?> headerNames = request.getHeaderNames();
         while (headerNames.hasMoreElements()) {
             String key = (String) headerNames.nextElement();
             String value = request.getHeader(key);

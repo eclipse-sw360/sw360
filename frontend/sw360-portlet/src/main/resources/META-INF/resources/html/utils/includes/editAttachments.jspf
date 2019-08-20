@@ -1,0 +1,222 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+  --%>
+
+<%--
+    Description:            Table of attachments to be edited for a document
+
+    Required Imports:       - org.eclipse.sw360.portal.common.PortalConstants
+                            - org.eclipse.sw360.datahandler.thrift.attachments.Attachment
+                            - org.eclipse.sw360.datahandler.thrift.components.Release
+                            - org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus
+
+    Required Beans:         - documentID
+                            - documentType
+
+    Required variables:     - hasWritePermissions
+
+    Required Stylesheets:   - jquery-ui
+
+    Included JSPFs:         - utils/includes/attachmentsUpload
+--%>
+<portlet:resourceURL var="attachmentListAjaxURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.ATTACHMENT_LIST%>'/>
+    <portlet:param name="<%=PortalConstants.DOCUMENT_ID%>" value="${documentID}"/>
+    <portlet:param name="<%=PortalConstants.DOCUMENT_TYPE%>" value="${documentType}"/>
+</portlet:resourceURL>
+
+<table id="attachmentInfo" class="table edit-table attachments" title="Attachment Information ${documentType}"
+  data-ajax-url="<%=attachmentListAjaxURL%>"
+  data-input-filename-name="<portlet:namespace/><%=Release._Fields.ATTACHMENTS%><%=Attachment._Fields.FILENAME%>"
+  data-input-content-id-name="<portlet:namespace/><%=Release._Fields.ATTACHMENTS%><%=Attachment._Fields.ATTACHMENT_CONTENT_ID%>"
+  data-input-type-name="<portlet:namespace/><%=Release._Fields.ATTACHMENTS%><%=Attachment._Fields.ATTACHMENT_TYPE%>"
+  data-input-created-comment-name="<portlet:namespace/><%=Release._Fields.ATTACHMENTS%><%=Attachment._Fields.CREATED_COMMENT%>"
+  data-input-check-status-name="<portlet:namespace/><%=Release._Fields.ATTACHMENTS%><%=Attachment._Fields.CHECK_STATUS%>"
+  data-input-checked-comment-name="<portlet:namespace/><%=Release._Fields.ATTACHMENTS%><%=Attachment._Fields.CHECKED_COMMENT%>">
+    <colgroup>
+        <col style="width: 16%;" />
+        <col style="width: 12%;" />
+        <col style="width: 12%;" />
+        <col style="width:  6%;" />
+        <col style="width:  6%;" />
+        <col style="width:  6%;" />
+        <col style="width: 12%;" />
+        <col style="width: 12%;" />
+        <col style="width:  6%;" />
+        <col style="width:  6%;" />
+        <col style="width:  6%;" />
+        <col/> <!-- width set by css rules -->
+    </colgroup>
+    <thead>
+        <tr>
+            <th class="headLabel" colspan="12">Attachments</th>
+        </tr>
+        <tr>
+            <th class="headlabel" rowspan="2">Filename</th>
+            <th class="headlabel" rowspan="2">Type</th>
+            <th class="headlabel" colspan="4">Upload</th>
+            <th class="headlabel" colspan="5">Approval</th>
+            <th class="headlabel" rowspan="2"></th>
+        </tr>
+        <tr>
+            <!-- Uploader -->
+            <th class="headlabel">Comment</th>
+            <th class="headlabel">Group</th>
+            <th class="headlabel">Name</th>
+            <th class="headlabel">Date</th>
+            <!-- Approver -->
+            <th class="headlabel">Status</th>
+            <th class="headlabel">Comment</th>
+            <th class="headlabel">Group</th>
+            <th class="headlabel">Name</th>
+            <th class="headlabel">Date</th>
+        </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
+
+<button id="upload-attachment-button" type="button" class="btn btn-secondary mt-3">Add Attachment</button>
+
+<%@include file="/html/utils/includes/attachmentsUpload.jspf" %>
+
+<script>
+    require(['jquery', 'utils/includes/attachmentsUpload', 'modules/dialog', 'bridges/datatables'], function($, attachmentUploader, dialog, datatables) {
+        var attachmentTable,
+            config = $('#attachmentInfo').data();
+
+        attachmentUploader.initialize();
+
+        // initialization
+        attachmentTable = datatables.create('#attachmentInfo', {
+            ajax: {
+                url: config.ajaxUrl,
+                dataSrc: "data"
+            },
+            rowId: 'attachmentContentId',
+            dom: "rti",
+            paging: false,
+            autoWidth: false,
+            columns: [
+              /*  0 */ { data: "filename", render: renderFilename, className: 'content-middle' },
+              /*  1 */ { data: "attachmentType", render: $.fn.dataTable.render.inputSelect('attachmentTypes', config.inputTypeName, 'attachmentType toplabelledInput', 'textlabel stackedLabel') },
+              /*  2 */ { data: "createdComment", defaultContent: "", render: $.fn.dataTable.render.inputText(config.inputCreatedCommentName, 'toplabelledInput', 'Enter comments') },
+              /*  3 */ { data: "createdTeam", defaultContent: "", render: $.fn.dataTable.render.ellipsis, className: 'content-middle' },
+              /*  4 */ { data: "createdBy", defaultContent: "", render: $.fn.dataTable.render.ellipsis, className: 'content-middle'  },
+              /*  5 */ { data: "createdOn", defaultContent: "", className: 'content-middle' },
+              /*  6 */ { data: "checkStatus", render: $.fn.dataTable.render.inputSelect('checkStatuses', config.inputCheckStatusName, 'toplabelledInput', 'textlabel stackedLabel') },
+              /*  7 */ { data: "checkedComment", defaultContent: "", render: $.fn.dataTable.render.inputText(config.inputCheckedCommentName, 'toplabelledInput check-comment', 'Enter comments',
+                                                      function(value, type, row, meta) {
+                                                          if(row.checkStatus == 0) {
+                                                              this.attr('readonly', 'readonly');
+                                                          }
+                                                      })
+                         },
+              /*  8 */ { data: "checkedTeam", defaultContent: "", render: $.fn.dataTable.render.ellipsis, className: 'content-middle' },
+              /*  9 */ { data: "checkedBy", defaultContent: "", render: $.fn.dataTable.render.ellipsis, className: 'content-middle' },
+              /* 10 */ { data: "checkedOn", defaultContent: "", className: 'content-middle' },
+              /* 11 */ { data: "actions", orderable: false, render: $.fn.dataTable.render.actions( [{ key: 'attachmentContentId', 'class': 'delete-attachment', icon: 'trash', title: 'Delete Attachment', approvalKey: 'checkStatus', usageCountsKey: 'usageCounts'}] ), className: "content-middle one action" }
+            ],
+            columnDefs: [{
+                  targets: 1,
+                  createdCell: function(td, cellData, rowData, row, col) {
+                      $.fn.dataTable.render.inputSelect.updateTitle(td);
+                  }
+            }, {
+                targets: 6,
+                createdCell: function(td, cellData, rowData, row, col) {
+                    $.fn.dataTable.render.inputSelect.updateTitle(td);
+                    $(td).find('select').on('change', function(event) {
+                        var value = $(event.target).val();
+                        if(value == 0) {
+                            $(td).parents('tr').find('input.check-comment').attr('readonly', 'readonly');
+                            $(td).parents('tr').find('input.check-comment').addClass('foregroundAlert');
+                        } else {
+                            $(td).parents('tr').find('input.check-comment').removeAttr('readonly');
+                            $(td).parents('tr').find('input.check-comment').removeClass('foregroundAlert');
+                        }
+                    });
+                }
+              }, {
+                  targets: 2,
+                  createdCell: function(td, cellData, rowData, row, col) {
+                      $.fn.dataTable.render.inputText.updateTitle(td);
+                      $.fn.dataTable.render.inputText.useInputDialog(td, "Update create comment");
+                  }
+            }, {
+                  targets: 7,
+                  createdCell: function(td, cellData, rowData, row, col) {
+                      $.fn.dataTable.render.inputText.updateTitle(td);
+                      $.fn.dataTable.render.inputText.useInputDialog(td, "Update approval comment");
+                  }
+            }],
+            order: [[0, 'asc']],
+            deferRender: true,
+            language: {
+                emptyTable: "No attachments yet."
+            }
+        });
+
+
+        // register event handlers
+        $('#upload-attachment-button').on('click', function() {
+            attachmentUploader.showUploadDialog(function(addedAttachment) {
+                attachmentTable.row.add(addedAttachment).draw(false);
+                $(attachmentTable.row('#' + addedAttachment.attachmentContentId).node()).find('td').addClass('added');
+            });
+        });
+
+        $('#attachmentInfo').on('click', 'svg.delete-attachment', function(event) {
+            var data = $(event.currentTarget).data();
+            var warningMessage;
+            var usagesCount = data.usagesCount;
+            if(data.approvalstate == <%=CheckStatus.ACCEPTED.getValue()%>) {
+                warningMessage = "<p>An attachment cannot be deleted while it is approved. You have to reject the approval first.</p>";
+                <core_rt:if test="${hasWritePermissions == false}">
+                warningMessage += "<p>For this, you have to create a moderation request.</p>";
+                </core_rt:if>
+                displayDeleteNotAllowedWarning(warningMessage);
+            } else if (typeof usagesCount === 'number' && usagesCount !== 0){
+                warningMessage = "<p>An attachment cannot be deleted while it is used by some projects. You have to delete the usages first.</p>";
+                displayDeleteNotAllowedWarning(warningMessage);
+            } else {
+                deleteAttachment(data.key);
+            }
+        });
+
+        // helper methods
+        function renderFilename(filename, type, row) {
+            if(type === 'display') {
+                return filename +
+                    $('<input>', { name: config.inputFilenameName, type: 'hidden', value: filename })[0].outerHTML +
+                    $('<input>', { name: config.inputContentIdName, type: 'hidden', value: row.attachmentContentId })[0].outerHTML;
+            } else {
+                return filename;
+            }
+        }
+
+        function deleteAttachment(attachmentId) {
+            var row = attachmentTable.row('#' + attachmentId),
+                attachmentName = row.data().filename;
+
+            dialog.confirm('danger', 'question-circle', 'Delete Attachment?', '<p>Do you really want to delete attachment <b data-name="name"></b> (<b data-name="id"></b>)?</p>', 'Delete Attachment', {
+                name: attachmentName,
+                id: attachmentId
+            }, function(submit, callback) {
+                row.remove().draw(false);
+                callback(true);
+            });
+        }
+
+        function displayDeleteNotAllowedWarning(warningMessage) {
+            dialog.warn(warningMessage);
+        }
+    });
+</script>

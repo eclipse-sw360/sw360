@@ -1,0 +1,258 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+  --%>
+<%@ page import="org.eclipse.sw360.portal.common.page.PortletReleasePage,org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType" %>
+<%@ page import="org.eclipse.sw360.portal.common.FossologyConnectionHelper" %>
+<portlet:resourceURL var="deleteReleaseAjaxURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.DELETE_RELEASE%>'/>
+</portlet:resourceURL>
+<portlet:resourceURL var="sw360ComponentUrl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CODESCOOP_ACTION_COMPONENT%>'/>
+</portlet:resourceURL>
+<portlet:resourceURL var="sw360ReleasesUrl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CODESCOOP_ACTION_RELEASES%>'/>
+</portlet:resourceURL>
+<portlet:resourceURL var="sw360PurlUrl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CODESCOOP_ACTION_PURL%>'/>
+</portlet:resourceURL>
+<portlet:renderURL var="addReleaseURL">
+    <portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="${component.id}"/>
+    <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_EDIT_RELEASE%>"/>
+</portlet:renderURL>
+
+<core_rt:set var="FOSSOLOGY_CONNECTION_ENABLED" value="<%=FossologyConnectionHelper.getInstance().isFossologyConnectionEnabled()%>"/>
+<core_rt:if test="${component.releasesSize == 0 }">
+    <div class="alert alert-info">
+        Please add release to view their clearing status here.
+    </div>
+</core_rt:if>
+<core_rt:if test="${component.releasesSize > 0 }">
+    <table id="releasesTable" class="table table-bordered" data-details-context="${inComponentDetailsContext}"></table>
+</core_rt:if>
+
+<%@include file="/html/utils/includes/fossologyClearing.jspf"%>
+<%@include file="/html/components/includes/releases/linkProject.jspf"%>
+
+<%--for javascript library loading --%>
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
+<script>
+require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProject', 'modules/dialog', 'utils/includes/fossologyClearing', 'utils/render'], function ($, datatables, linkProject, dialog, fossology, render) {
+    var releaseTable,
+        homeUrl = themeDisplay.getURLHome().replace(/\/web\//, '/group/');
+
+    releaseTable = createClearingTable();
+    fossology.initialize();
+    linkProject.initialize();
+
+    $('#releasesTable').delegate('.actions .clearing', 'click', function(event) {
+        var data = $(event.currentTarget).data();
+        fossology.openSelectClearingDialog('clearingState', data.releaseId);
+    });
+    $('#releasesTable').delegate('.actions .link', 'click', function(event) {
+        var data = $(event.currentTarget).data();
+        linkProject.openLinkDialog(data.releaseId, data.releaseName);
+    });
+    $('#releasesTable').delegate('.actions .delete', 'click', function(event) {
+        var data = $(event.currentTarget).data();
+        deleteRelease(data.releaseId, data.releaseName, data.linkedReleases, data.attachments);
+    });
+
+    function createClearingTable() {
+        var table,
+            result = [];
+
+        <core_rt:forEach items="${component.releases}" var="release">
+            result.push({
+                "DT_RowId": "${release.id}",
+                "0": "<sw360:out value="${release.name}"/>",
+                "1": "<a href='<portlet:renderURL ><portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="${component.id}"/><portlet:param name="<%=PortalConstants.RELEASE_ID%>" value="${release.id}"/><portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_RELEASE_DETAIL%>"/></portlet:renderURL>' target='_self'><sw360:out value="${release.version}"/></a>",
+                "2": "<span id='clearingState${release.id}'><sw360:DisplayEnum value="${release.clearingState}"/></span>",
+                "3": "<sw360:DisplayDownloadReport attachments="${release.attachments}" filterAttachmentType="<%=AttachmentType.CLEARING_REPORT%>" var="attachment"><sw360:DisplayDownloadApprovedClearingReport attachment="${attachment}" contextType="${release.type}" contextId="${release.id}" /></sw360:DisplayDownloadReport>",
+                "4": "<span id='mainlineState${release.id}'><sw360:DisplayEnum value="${release.mainlineState}"/></span>",
+                "5": {
+                    name: '<sw360:ReleaseName release="${release}" />',
+                    linkedReleases: ${release.releaseIdToRelationshipSize},
+                    attachments: ${release.attachmentsSize}
+                }
+            });
+        </core_rt:forEach>
+
+        table = datatables.create('#releasesTable', {
+            data: result,
+            columns: [
+                {title: "Name"},
+                {title: "Version"},
+                {title: "Clearing State"},
+                {title: "Clearing Report"},
+                {title: "Release Mainline State"},
+                {title: "Actions", render: {display: renderActions}, className: "five actions", orderable: false }
+            ],
+            columnDefs: [
+                {
+                    targets: [1],
+                    type: 'natural-nohtml'
+                },
+                {
+                    targets: [5],
+                    visible: $('#releasesTable').data() ? $('#releasesTable').data().detailsContext : false
+                }
+            ],
+            order: [1, 'desc']
+        });
+
+        function renderActions(id, type, row) {
+            if(!row[5]) {
+                return '';
+            }
+
+            var $actions = $('<div>', {
+                    'class': 'actions'
+                }),
+                <core_rt:choose>
+                    <core_rt:when test="${not empty FOSSOLOGY_CONNECTION_ENABLED and not FOSSOLOGY_CONNECTION_ENABLED}">
+                        $clearingAction = $('<svg>', {
+                            'class': 'disabled lexicon-icon',
+                            'data-project-id': id,
+                        }).append('<title>Fossology is not configured</title>'),
+                    </core_rt:when>
+                    <core_rt:otherwise>
+                        $clearingAction = $('<svg>', {
+                            'class': 'clearing lexicon-icon',
+                            'data-project-id': id,
+                        }).append('<title>Send to Fossology</title>'),
+                    </core_rt:otherwise>
+                </core_rt:choose>
+                $editAction = render.linkTo(
+                    makeReleaseUrl(row.DT_RowId, 'edit'),
+                    "",
+                    '<svg class="lexicon-icon"><title>Edit</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>'
+                ),
+                $copyAction = render.linkTo(
+                    makeReleaseUrl(row.DT_RowId, 'duplicate'),
+                    "",
+                    '<svg class="lexicon-icon"><title>Duplicate</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#paste"/></svg>'
+                ),
+                $linkAction = $('<svg>', {
+                    'class': 'link lexicon-icon',
+                    'data-release-id': row.DT_RowId,
+                    'data-release-name': row[5].name
+                }),
+                $deleteAction = $('<svg>', {
+                    'class': 'delete lexicon-icon',
+                    'data-release-id': row.DT_RowId,
+                    'data-release-name': row[5].name,
+                    'data-linked-releases': row[5].linkedReleases,
+                    'data-attachments': row[5].attachments
+                });
+
+            $clearingAction.append($('<use href="<%=request.getContextPath()%>/images/icons.svg#fossology"/>'));
+            $linkAction.append($('<title>Link Project</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#link"/>'));
+            $deleteAction.append($('<title>Delete</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
+
+            $actions.append($clearingAction, $editAction, $copyAction, $linkAction, $deleteAction);
+            return $actions[0].outerHTML;
+        }
+
+        return table;
+    }
+
+    function deleteRelease(id, name, linkedReleasesSize, attachmentsSize) {
+        var $dialog;
+
+        function deleteReleaseInternal(callback) {
+            $.ajax({
+                type: 'POST',
+                url: '<%=deleteReleaseAjaxURL%>',
+                cache: false,
+                data: {
+                    <portlet:namespace/>releaseId: id,
+                    <portlet:namespace/><%=PortalConstants.MODERATION_REQUEST_COMMENT%>: btoa($("#moderationDeleteCommentField").val())
+                },
+                success: function(data) {
+                    callback();
+                    if (data.result == 'SUCCESS') {
+                        releaseTable.row('#' + id).remove().draw(false);
+                        $dialog.close();
+                    }
+                    else if (data.result == 'SENT_TO_MODERATOR') {
+                        $dialog.info("You may not delete the release, but a request was sent to a moderator!");
+                    } else if (data.result == 'IN_USE') {
+                        $dialog.warning("I could not delete the release, since it is used by another component (release) or project");
+                    } else {
+                        $dialog.alert("I could not delete the release!");
+                    }
+                },
+                error: function() {
+                    callback();
+                    $dialog.alert("I could not delete the release!");
+                }
+            });
+        }
+
+        $dialog = dialog.confirm(
+            'danger',
+            'question-circle',
+            'Delete Release?',
+                '<p>Do you really want to delete the release <b data-name="name"></b>?</p>' +
+                '<div data-hide="hasNoDependencies">' +
+                    '<p>' +
+                        'This release <b data-name="name"></b> contains:' +
+                    '</p>' +
+                    '<ul>' +
+                        '<li data-hide="hasNoReleases"><span data-name="releases"></span> releases</li>' +
+                        '<li data-hide="hasNoAttachments"><span data-name="attachments"></span> attachments</li>' +
+                    '</ul>' +
+                '</div>' +
+                '<hr/>' +
+                '<form>' +
+                    '<div class="form-group">' +
+                        '<label for="moderationDeleteCommentField">Please comment your changes</label>' +
+                        '<textarea id="moderationDeleteCommentField" class="form-control" data-name="comment" rows="4" placeholder="Comment your request..."></textarea>' +
+                    '</div>' +
+                '</form>',
+            'Delete Release',
+            {
+                name: name,
+                releases: linkedReleasesSize,
+                hasNoReleases: linkedReleasesSize == 0,
+                attachments: attachmentsSize,
+                hasNoAttachments: attachmentsSize == 0,
+                hasNoDependencies: linkedReleasesSize == 0 && attachmentsSize == 0
+            }, function(submit, callback) {
+                deleteReleaseInternal(callback);
+            }
+        );
+    }
+
+    // helper functions
+    function makeReleaseUrl(releaseId, action) {
+        return homeUrl + '/components/-/component/release/' + action + 'Release/' + releaseId;
+    }
+});
+</script>
+
+
+<core_rt:if test="${codescoopActive}">
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            require(['modules/codeScoop' ], function(codeScoop) {
+                var api = new codeScoop();
+                api.activateMissedReleases(
+                    releaseData,
+                    "componentOverview",
+                    "releaseAggregateTable",
+                    '<portlet:renderURL ><portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="${component.id}"/><portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_EDIT_RELEASE%>"/></portlet:renderURL>',
+                    "<%=sw360ComponentUrl%>",
+                    "<%=sw360ReleasesUrl%>",
+                    "<%=sw360PurlUrl%>");
+            });
+        });
+    </script>
+</core_rt:if>

@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -54,7 +54,7 @@ public class AttachmentContentDownloaderTest {
     public void testTheCouchDbUrl() throws Exception {
         AttachmentContent attachmentContent = mock(AttachmentContent.class);
 
-        when(attachmentContent.getRemoteUrl()).thenReturn(DatabaseTestProperties.COUCH_DB_URL);
+        when(attachmentContent.getRemoteUrl()).thenReturn(DatabaseTestProperties.getCouchDbUrl());
 
         try (InputStream download = attachmentContentDownloader.download(attachmentContent, downloadTimeout)) {
             String read = CharStreams.toString(new InputStreamReader(download));

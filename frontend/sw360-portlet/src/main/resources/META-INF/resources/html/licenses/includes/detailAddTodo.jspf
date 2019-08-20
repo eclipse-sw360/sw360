@@ -1,0 +1,141 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
+  ~ With modifications by Bosch Software Innovations GmbH, 2016.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.users.RequestedAction" %>
+
+<%--This variable is used as a trick to allow referencing enum value in EL expression below--%>
+<c:set var="WRITE" value="<%=RequestedAction.WRITE%>"/>
+
+<portlet:actionURL var="addLicenseTodoURL" name="addTodo">
+    <portlet:param name="<%=PortalConstants.LICENSE_ID%>" value="${licenseDetail.id}"/>
+</portlet:actionURL>
+
+<form action="<%=addLicenseTodoURL%>" method="post" id="AddTodoModal" name="AddTodoModal" class="needs-validation" novalidate>
+    <div>
+        <div class="row">
+            <div class="col">
+                <h5>Todo Details</h5>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-8">
+                <div class="form-group">
+                    <textarea name="<portlet:namespace/>todoText" rows="5" class="form-control"
+                                required placeholder="Enter the Todo-Text here..."></textarea>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" name="<portlet:namespace/>bools" id="developmentCheckbox" value="development"/>
+                    <label class="form-check-label" for="developmentCheckbox">Applies to development</label>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" name="<portlet:namespace/>bools" id="distributionCheckbox" value="distribution" />
+                    <label class="form-check-label" for="distributionCheckbox">Applies to distribution</label>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <table id="licenseTodoTable" class="table table-bordered">
+                    <colgroup>
+                        <col style="width: 4rem;" />
+                        <col />
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>Obligations</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <core_rt:forEach var="ob" varStatus="status" items="${obligationList}">
+                            <tr>
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="<portlet:namespace/>obligations" value="${ob.id}" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <sw360:out value="${ob.name}"/>
+                                </td>
+                            </tr>
+                        </core_rt:forEach>
+                    </tbody>
+                </table>
+                <button type="button" class="btn btn-primary mt-3" id="submitTodo">Add Todo</button>
+            </div>
+        </div>
+    </div>
+</form>
+
+
+<%--for javascript library loading --%>
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
+<script>
+    require(['jquery', 'bridges/datatables', 'modules/validation'], function($, datatables, validation) {
+
+        var datatable = datatables.create('#licenseTodoTable', {
+            paging: false,
+            order: [
+                [1, 'asc']
+            ],
+            language: {
+                emptyTable: 'No obligations found.'
+            },
+            select: 'shift + multi',
+        }, undefined, [0]);
+        datatables.enableCheckboxForSelection(datatable, 0);
+
+        validation.enableForm('#AddTodoModal');
+
+        $('#submitTodo').on('click', function() {
+            <core_rt:choose>
+                <core_rt:when test="${moderationLicenseDetail.permissions[WRITE]}">
+                    submitForm();
+                </core_rt:when>
+                <core_rt:otherwise>
+                    openModerationDialog();
+                </core_rt:otherwise>
+            </core_rt:choose>
+        });
+
+        function openModerationDialog() {
+            var $dialog;
+
+            // validate first to be sure that form can be submitted
+            if(!validation.validate('#AddTodoModal')) {
+                return;
+            }
+
+            $dialog = dialog.confirm(
+                null,
+                'pencil',
+                'Create moderation request',
+                '<form>' +
+                    '<div class="form-group">' +
+                        '<label for="moderationRequestCommentField">Please comment your changes</label>' +
+                        '<textarea form="AddTodoModal" name="<portlet:namespace/><%=PortalConstants.MODERATION_REQUEST_COMMENT%>" id="moderationRequestCommentField" class="form-control" placeholder="Leave a comment on your request" data-name="comment" autofocus></textarea>' +
+                    '</div>' +
+                '</form>',
+                'Send moderation request',
+                {
+                    comment: ''
+                },
+                submitForm
+            );
+        }
+
+        function submitForm() {
+            $('#AddTodoModal').submit();
+        }
+    });
+</script>

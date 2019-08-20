@@ -1,0 +1,22 @@
+<%--
+  ~ Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+
+<div class="container container-spinner">
+    <div class="row">
+        <div class="col-4 offset-4">
+            <div class="spinner text-center">
+                <div class="spinner-border" role="status">
+                    <span class="sr-only">Loading spinner...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

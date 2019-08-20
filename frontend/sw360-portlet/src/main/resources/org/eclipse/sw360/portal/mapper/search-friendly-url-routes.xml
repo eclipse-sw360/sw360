@@ -15,6 +15,6 @@
 <routes>
     <route>
         <pattern>/result</pattern>
-        <implicit-parameter name="p_p_id">search_WAR_sw360portlet</implicit-parameter>
+        <implicit-parameter name="p_p_id">sw360_portlet_search</implicit-parameter>
     </route>
 </routes>

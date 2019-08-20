@@ -1,0 +1,92 @@
+#
+# Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+#
+# SPDX-License-Identifier: EPL-1.0
+#
+# All rights reserved. This configuration file is provided to you under the
+# terms and conditions of the Eclipse Distribution License v1.0 which
+# accompanies this distribution, and is available at
+# http://www.eclipse.org/org/documents/edl-v10.php
+#
+
+Bundle-Name: SW360 Portlet
+Bundle-SymbolicName: sw360-portlet
+Bundle-Description: Part of the SW360 Portal Project. http://sw360.github.io/
+Bundle-Version: 1.0.0
+Bundle-Copyright: Siemens AG 2019, Bosch Software Innovations GmbH 2019
+Bundle-License: EPL-1.0
+
+-check: all
+-contract: JavaPortlet
+-jsp: *.jsp,*.jspf
+-plugin.bundle: com.liferay.ant.bnd.resource.bundle.ResourceBundleLoaderAnalyzerPlugin
+-plugin.jsp: com.liferay.ant.bnd.jsp.JspAnalyzerPlugin
+-plugin.sass: com.liferay.ant.bnd.sass.SassAnalyzerPlugin
+-sass: *
+-sources: false
+
+Web-ContextPath: /sw360
+
+Import-Package: \
+	com.github.ldriscoll.ektorplucene.*, \
+	com.google.common.*, \
+	com.fasterxml.jackson.core, \
+	com.fasterxml.jackson.databind, \
+	com.fasterxml.jackson.databind.deser.std, \
+	com.fasterxml.jackson.databind.ser.std, \
+	com.fasterxml.jackson.databind.module, \
+	com.fasterxml.jackson.databind.node, \
+	com.liferay.expando.kernel.model, \
+	com.liferay.expando.kernel.service, \
+	com.liferay.portal.kernel.bean, \
+	com.liferay.portal.kernel.exception, \
+	com.liferay.portal.kernel.events, \
+	com.liferay.portal.kernel.json, \
+	com.liferay.portal.kernel.model, \
+	com.liferay.portal.kernel.portlet.*, \
+	com.liferay.portal.kernel.search, \
+	com.liferay.portal.kernel.security.*, \
+	com.liferay.portal.kernel.service, \
+	com.liferay.portal.kernel.service.persistence, \
+	com.liferay.portal.kernel.servlet, \
+	com.liferay.portal.kernel.template, \
+	com.liferay.portal.kernel.theme, \
+	com.liferay.portal.kernel.util, \
+	com.liferay.portal.kernel.upload, \
+	com.liferay.taglib.*, \
+	javax.portlet, \
+	javax.servlet, \
+	javax.servlet.http, \
+	javax.servlet.jsp.*, \
+	org.apache.commons.csv.*, \
+	org.apache.commons.lang.*, \
+	org.apache.log4j, \
+	org.apache.thrift.*, \
+	org.eclipse.sw360.commonIO.*, \
+	org.eclipse.sw360.datahandler.*, \
+	org.eclipse.sw360.exporter.*, \
+	org.eclipse.sw360.importer.*, \
+	org.ektorp.*, \
+	org.osgi.service.cm, \
+	org.slf4j
+
+Conditional-Package: \
+	org.apache.http.*, \
+	org.apache.taglibs.*, \
+	org.springframework.security.crypto.bcrypt
+
+Include-Resource: \
+	@requirejs-bower-[0-9]*.jar, \
+	@jqueryui-[0-9]*.jar, \
+	@jquery-treetable-[0-9]*.jar, \
+	@jquery-validation-[0-9]*.jar, \
+	@dist-datatables-[0-9]*.jar, \
+	@datatables.net-bs4-[0-9]*.jar, \
+	@dist-datatables-buttons-[0-9]*.jar, \
+	@dist-datatables-select-[0-9]*.jar, \
+	@dist-datatables-select-bootstrap4-[0-9]*.jar, \
+	@datatables-plugins-[0-9]*.jar, \
+	@resumable.js-[0-9]*.jar
+
+Bundle-Classpath: \
+	.

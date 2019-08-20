@@ -1,0 +1,70 @@
+/*
+ * Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+ *
+ * SPDX-License-Identifier: EPL-1.0
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
+
+table.table.label-value-table {
+	border: 1px solid;
+
+	th:first-child, td:first-child {
+		width: 30%;
+	}
+
+	th:nth-child(2), td:nth-child(2) {
+		width: 70%;
+	}
+
+	td > ul {
+		padding-left: 1.15rem;
+	}
+}
+
+table.edit-table {
+
+	&.two-columns td {
+		width: 50%;
+	}
+
+	&.three-columns td {
+		width: 33%;
+	}
+
+	&.two-columns-with-actions td:nth-child(1), &.two-columns-with-actions td:nth-child(2) {
+		width: 46%;
+	}
+
+	&.three-columns-with-actions td:nth-child(1), &.three-columns-with-actions td:nth-child(2), &.three-columns-with-actions td:nth-child(3) {
+		width: 31%;
+	}
+
+	&.four-columns-with-actions td:nth-child(1), &.four-columns-with-actions td:nth-child(2), &.four-columns-with-actions td:nth-child(3), &.four-columns-with-actions td:nth-child(4) {
+		width: 23%;
+	}
+
+	&.five-columns-with-actions td:nth-child(1), &.five-columns-with-actions td:nth-child(2), &.five-columns-with-actions td:nth-child(3), &.five-columns-with-actions td:nth-child(4), &.five-columns-with-actions td:nth-child(5) {
+		width: 18.5%;
+	}
+}
+
+table.table-lowspace {
+	td {
+		padding: 0.35rem;
+		max-width: 0;
+	}
+}
+
+table  {
+	td .form-group {
+		margin-bottom: 0;
+	}
+
+	&.aligned-top td {
+		vertical-align: top;
+	}
+}

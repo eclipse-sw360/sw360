@@ -1,0 +1,18 @@
+<%--
+  ~ Copyright (c) Bosch Software Innovations GmbH 2016.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+  --%>
+
+<h4>Vulnerability References</h4>
+<ul>
+    <core_rt:forEach items="${vulnerability.references}" var="reference">
+        <li><sw360:DisplayLink target="${reference}"/></li>
+    </core_rt:forEach>
+</ul>
+

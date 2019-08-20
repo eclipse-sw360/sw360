@@ -14,29 +14,48 @@ package org.eclipse.sw360.portal.portlets.projectimport;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
+
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.importstatus.ImportStatus;
 import org.eclipse.sw360.datahandler.thrift.projectimport.ProjectImportService;
 import org.eclipse.sw360.datahandler.thrift.projectimport.TokenCredentials;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 
-import javax.portlet.*;
+import org.apache.log4j.Logger;
+import org.apache.thrift.TException;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.List;
 
+import javax.portlet.*;
+
 import static com.google.common.base.Strings.nullToEmpty;
 
-/**
- * @author ksoranko@verifa.io
- */
+@org.osgi.service.component.annotations.Component(
+    immediate = true,
+    properties = {
+        "/org/eclipse/sw360/portal/portlets/base.properties",
+        "/org/eclipse/sw360/portal/portlets/default.properties"
+    },
+    property = {
+        "javax.portlet.name=" + PortalConstants.PROJECT_WSIMPORT_PORTLET_NAME,
 
+        "javax.portlet.display-name=WhiteSource Import",
+        "javax.portlet.info.short-title=WhiteSource Import",
+        "javax.portlet.info.title=WhiteSource Import",
+
+        "javax.portlet.init-param.view-template=/html/projects/wsimport.jsp",
+    },
+    service = Portlet.class,
+    configurationPolicy = ConfigurationPolicy.REQUIRE
+)
 public class WsImportPortlet extends Sw360Portlet {
     private static final Logger LOGGER = Logger.getLogger(WsImportPortlet.class);
     private static ProjectImportService.Iface projectImportClient = new ThriftClients().makeWsImportClient();

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2017-2019. Part of the SW360 Portal Project.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -23,6 +23,10 @@
 
     <artifactId>resource-server</artifactId>
     <packaging>war</packaging>
+
+    <properties>
+        <artifact.deploy.dir>${rest.deploy.dir}</artifact.deploy.dir>
+    </properties>
 
     <dependencies>
         <dependency>

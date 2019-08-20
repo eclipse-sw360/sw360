@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -32,11 +32,6 @@ public class DisplayDownloadAttachmentBundle extends DisplayDownloadAbstract {
 
     protected String name;
     protected Set<Attachment> attachments;
-
-    @Override
-    protected String getAlternativeText() {
-        return escapeAttributeValue(name);
-    }
 
     @Override
     protected String getTitleText() {

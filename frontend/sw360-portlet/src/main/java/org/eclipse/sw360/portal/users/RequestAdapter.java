@@ -10,7 +10,7 @@
  */
 package org.eclipse.sw360.portal.users;
 
-import com.liferay.portal.service.ServiceContext;
+import com.liferay.portal.kernel.service.ServiceContext;
 
 import java.util.Optional;
 import java.util.function.Consumer;

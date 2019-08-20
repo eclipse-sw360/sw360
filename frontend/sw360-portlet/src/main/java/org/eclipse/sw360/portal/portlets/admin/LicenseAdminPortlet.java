@@ -14,29 +14,51 @@ package org.eclipse.sw360.portal.portlets.admin;
 
 import com.liferay.portal.kernel.portlet.PortletResponseUtil;
 import com.liferay.portal.kernel.upload.UploadPortletRequest;
-import com.liferay.portal.util.PortalUtil;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
+import com.liferay.portal.kernel.util.PortalUtil;
+
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.exporter.LicsExporter;
-import org.eclipse.sw360.importer.LicsImporter;
 import org.eclipse.sw360.exporter.utils.ZipTools;
+import org.eclipse.sw360.importer.LicsImporter;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 
-import javax.portlet.*;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import org.apache.log4j.Logger;
+import org.apache.thrift.TException;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
+
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.ZipOutputStream;
 
+import javax.portlet.*;
+
+import static org.eclipse.sw360.portal.common.PortalConstants.LICENSE_ADMIN_PORTLET_NAME;
+
+@Component(
+    immediate = true,
+    properties = {
+            "/org/eclipse/sw360/portal/portlets/base.properties",
+            "/org/eclipse/sw360/portal/portlets/admin.properties"
+    },
+    property = {
+        "javax.portlet.name=" + LICENSE_ADMIN_PORTLET_NAME,
+
+        "javax.portlet.display-name=License Administration",
+        "javax.portlet.info.short-title=License",
+        "javax.portlet.info.title=License Administration",
+
+        "javax.portlet.init-param.view-template=/html/admin/licenseAdmin/view.jsp",
+    },
+    service = Portlet.class,
+    configurationPolicy = ConfigurationPolicy.REQUIRE
+)
 public class LicenseAdminPortlet extends Sw360Portlet {
     private static final Logger log = Logger.getLogger(LicenseAdminPortlet.class);
 

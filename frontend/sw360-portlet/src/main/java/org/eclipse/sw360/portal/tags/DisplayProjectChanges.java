@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2016-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2016-2017, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -117,10 +117,10 @@ public class DisplayProjectChanges extends UserAwareTag {
             String renderString = display.toString();
 
             if (Strings.isNullOrEmpty(renderString)) {
-                renderString = "<h4> No changes in basic fields </h4>";
+                renderString = "<div class=\"alert alert-info\">No changes in basic fields.</div>";
             } else {
                 renderString = String.format("<table class=\"%s\" id=\"%schanges\" >", tableClasses, idPrefix)
-                        + "<thead><tr><th colspan=\"4\"> Changes for Basic fields</th></tr>"
+                        + "<thead>"
                         + String.format("<tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr></thead><tbody>",
                         FIELD_NAME, CURRENT_VAL, DELETED_VAL, SUGGESTED_VAL)
                         + renderString + "</tbody></table>";

@@ -1,0 +1,266 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
+  ~ With modifications by Bosch Software Innovations GmbH, 2016.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+
+<%--This variable is used as a trick to allow referencing enum value in EL expression below--%>
+<c:set var="WRITE" value="<%=RequestedAction.WRITE%>"/>
+
+<portlet:actionURL var="editLicenseTodosURL" name="updateWhiteList">
+    <portlet:param name="<%=PortalConstants.LICENSE_ID%>" value="${licenseDetail.id}"/>
+</portlet:actionURL>
+
+<core_rt:if test="${editMode}">
+    <form action="${editLicenseTodosURL}" method="post" id="FormTodosWhitelist" name="FormTodosWhitelist" class="form-inline">
+</core_rt:if>
+
+<section name="todos">
+    <table class="table table-bordered" id="licenseObligations">
+        <colgroup>
+            <col style="width: 40%;" />
+            <col style="width: 10%;" />
+            <col style="width: 10%;" />
+            <col style="width: 10%;" />
+            <col style="width: 30%;" />
+        </colgroup>
+        <thead>
+            <tr>
+                <th>Todo</th>
+                <th>Applies to development</th>
+                <th>Applies to distribution</th>
+                <th>Further properties</th>
+                <th>Obligations</th>
+            </tr>
+        </thead>
+        <tbody>
+            <core_rt:forEach var="todo" varStatus="status" items="${licenseDetail.todos}">
+                <core_rt:if test="${not empty todo.whitelist}">
+                    <tr class="dependentOnWhiteList">
+                        <td><sw360:out value="${todo.text}"/></td>
+                        <td><sw360:DisplayBoolean value="${todo.development}" defined="${todo.setDevelopment}"/></td>
+                        <td><sw360:DisplayBoolean value="${todo.distribution}" defined="${todo.setDistribution}"/></td>
+                        <td><sw360:DisplayMap value="${todo.customPropertyToValue}"/></td>
+                        <core_rt:if test="${todo.obligationsSize > 0}">
+                            <td>
+                                <ul>
+                                    <core_rt:forEach var="ob" varStatus="status" items="${todo.obligations}">
+                                        <li><sw360:out value="${ob.name}"/></li>
+                                    </core_rt:forEach>
+                                </ul>
+                            </td>
+                        </core_rt:if>
+                    </tr>
+                </core_rt:if>
+            </core_rt:forEach>
+        </tbody>
+    </table>
+</section>
+
+<section name="whitelist" style="display: none;">
+    <table class="table table-bordered" id="moderationLicenseObligations">
+        <colgroup>
+            <col style="width: 4rem;" />
+            <col style="width: 40%;" />
+            <col style="width: 10%;" />
+            <col style="width: 10%;" />
+            <col style="width: 10%;" />
+            <col style="width: 30%;" />
+        </colgroup>
+        <thead>
+            <tr>
+                <th>Whitelist</th>
+                <th>Todo</th>
+                <th>Applies to development</th>
+                <th>Applies to distribution</th>
+                <th>Further properties</th>
+                <th>Obligations</th>
+            </tr>
+        </thead>
+        <tbody>
+            <core_rt:forEach var="todo" varStatus="status" items="${db_todos_from_moderation_request}">
+                <tr class="dependentOnWhiteList">
+                    <td>
+                        <div class="form-check">
+                            <input type="checkbox" name="<portlet:namespace/>whiteList" value="${todo.id}" class="form-check-input"
+                                    <core_rt:if test="${not empty todo.whitelist}">checked</core_rt:if> />
+                        </div>
+                    </td>
+                    <td><sw360:out value="${todo.text}"/></td>
+                    <td><sw360:DisplayBoolean value="${todo.development}" defined="${todo.setDevelopment}"/></td>
+                    <td><sw360:DisplayBoolean value="${todo.distribution}" defined="${todo.setDistribution}"/></td>
+                    <td><sw360:DisplayMap value="${todo.customPropertyToValue}"/></td>
+                    <core_rt:if test="${todo.obligationsSize > 0}">
+                        <td>
+                            <ul>
+                                <core_rt:forEach var="ob" varStatus="status" items="${todo.obligations}">
+                                    <li><sw360:out value="${ob.name}"/></li>
+                                </core_rt:forEach>
+                            </ul>
+                        </td>
+                    </core_rt:if>
+                </tr>
+            </core_rt:forEach>
+        </tbody>
+    </table>
+    <core_rt:if test="${not empty added_todos_from_moderation_request}">
+        <h4>Todos to be added according to Moderation Request</h4>
+        <table class="table table-bordered" id="licenseObligationsFromModeration"
+            title="Todos to be added according to Moderation Request">
+            <colgroup>
+                <col style="width: 4rem;" />
+                <col style="width: 40%;" />
+                <col style="width: 10%;" />
+                <col style="width: 10%;" />
+                <col style="width: 10%;" />
+                <col style="width: 30%;" />
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>Whitelist</th>
+                    <th>Todo</th>
+                    <th>Applies to development</th>
+                    <th>Applies to distribution</th>
+                    <th>Further properties</th>
+                    <th>Obligations</th>
+                </tr>
+            </thead>
+            <tbody>
+                <core_rt:forEach var="todo" varStatus="status" items="${added_todos_from_moderation_request}">
+                    <tr>
+                        <td>
+                            <div class="form-check">
+                                <input type="checkbox" name="<portlet:namespace/>whiteList" value="${todo.id}" class="form-check-input"
+                                        <core_rt:if test="${not empty todo.whitelist}">checked</core_rt:if> />
+                            </div>
+                        </td>
+                        <td><sw360:out value="${todo.text}"/></td>
+                        <td><sw360:DisplayBoolean value="${todo.development}" defined="${todo.setDevelopment}"/></td>
+                        <td><sw360:DisplayBoolean value="${todo.distribution}" defined="${todo.setDistribution}"/></td>
+                        <td><sw360:DisplayMap value="${todo.customPropertyToValue}"/></td>
+                        <core_rt:if test="${todo.obligationsSize > 0}">
+                            <td colspan="1">
+                                <ul>
+                                    <core_rt:forEach var="ob" varStatus="status" items="${todo.obligations}">
+                                        <li><sw360:out value="${ob.name}"/></li>
+                                    </core_rt:forEach>
+                                </ul>
+                            </td>
+                        </core_rt:if>
+                    </tr>
+                </core_rt:forEach>
+            </tbody>
+        </table>
+    </core_rt:if>
+</section>
+
+<core_rt:if test="${editMode}">
+    </form>
+</core_rt:if>
+
+
+<%--for javascript library loading --%>
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
+<script>
+    require(['jquery', 'bridges/datatables'], function($, datatables) {
+        datatables.create('#licenseObligations', {
+            info: false,
+            order: [
+                [0, 'asc']
+            ],
+            paging: false,
+            language: {
+                emptyTable: 'No obligations.'
+            }
+        });
+
+        var whitelistTable = datatables.create('#moderationLicenseObligations', {
+            info: false,
+            order: [
+                [1, 'asc']
+            ],
+            paging: false,
+            select: 'shift+multi',
+            language: {
+                emptyTable: 'No obligations.'
+            }
+        }, undefined, [0]);
+        datatables.enableCheckboxForSelection(whitelistTable, 0);
+
+        var moderationListTable = datatables.create('#licenseObligationsFromModeration', {
+            info: false,
+            order: [
+                [1, 'asc']
+            ],
+            paging: false,
+            select: 'shift+multi',
+            language: {
+                emptyTable: 'No obligations.'
+            }
+        }, undefined, [0]);
+        datatables.enableCheckboxForSelection(moderationListTable, 0);
+
+
+        $('#EditWhitelist').on('click', function(event) {
+            $('section[name="whitelist"]').show();
+            $('section[name="todos"]').hide();
+        });
+
+        $('#SubmitWhitelist').on('click', function() {
+            <core_rt:choose>
+                <core_rt:when test="${moderationLicenseDetail.permissions[WRITE]}">
+                    submitWhitelist();
+                </core_rt:when>
+                <core_rt:otherwise>
+                    showCommentDialog();
+                </core_rt:otherwise>
+            </core_rt:choose>
+        });
+
+        $('#cancelEditWhitelistButton').on('click', function(event) {
+            $('section[name="todos"]').show();
+            $('section[name="whitelist"]').hide();
+
+            $('#FormTodosWhitelist')[0].reset();
+
+            datatables.enableCheckboxForSelection(whitelistTable, 0);
+            datatables.enableCheckboxForSelection(moderationListTable, 0);
+        });
+
+        function submitWhitelist() {
+            $('#FormTodosWhitelist').submit();
+        }
+
+        function showCommentDialog() {
+            var $dialog;
+
+            // validate first to be sure that form can be submitted
+            if(!validation.validate('#componentEditForm')) {
+                return;
+            }
+
+            $dialog = dialog.confirm(
+                null,
+                'pencil',
+                'Create moderation request',
+                '<form>' +
+                    '<div class="form-group">' +
+                        '<label for="moderationRequestCommentField">Please comment your changes</label>' +
+                        '<textarea form="componentEditForm" name="<portlet:namespace/><%=PortalConstants.MODERATION_REQUEST_COMMENT%>" id="moderationRequestCommentField" class="form-control" placeholder="Leave a comment on your request" data-name="comment" autofocus></textarea>' +
+                    '</div>' +
+                '</form>',
+                'Send moderation request',
+                {
+                    comment: ''
+                },
+                submitWhitelist
+            );
+        }
+    });
+</script>

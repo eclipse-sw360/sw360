@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<!DOCTYPE look-and-feel PUBLIC "-//Liferay//DTD Look and Feel 7.0.0//EN" "http://www.liferay.com/dtd/liferay-look-and-feel_7_0_0.dtd">
+
+<!--
+  ~ Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+  -->
+
+<look-and-feel>
+	<compatibility>
+		<version>7.2.0+</version>
+	</compatibility>
+	<theme id="sw360" name="SW360">
+		<template-extension>ftl</template-extension>
+		<settings>
+			<setting configurable="true" key="hide-portlet-edit-decorators" type="checkbox" value="false" />
+			<setting configurable="true" key="show-breadcrumbs" type="checkbox" value="true" />
+		</settings>
+		<roles>
+			<role-name>User</role-name>
+		</roles>
+		<layout-templates>
+			<custom>
+				<layout-template id="2_columns_sidebar" name="2 Columns w/ sidebar">
+					<template-path>/layoutttpl/custom/2_columns_sidebar.ftl</template-path>
+					<thumbnail-path>/layoutttpl/custom/2_columns_sidebar.png</thumbnail-path>
+				</layout-template>
+			</custom>
+		</layout-templates>
+		<portlet-decorator id="sw360" name="SW360">
+			<default-portlet-decorator>true</default-portlet-decorator>
+			<portlet-decorator-css-class>sw360-portlet-decorator</portlet-decorator-css-class>
+		</portlet-decorator>
+	</theme>
+</look-and-feel>

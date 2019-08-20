@@ -1,0 +1,51 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+<table class="table table-bordered" id="licenseRisks">
+    <colgroup>
+        <col style="width: 20%;" />
+        <col style="width: 60%;" />
+        <col style="width: 20%;" />
+    </colgroup>
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Text</th>
+            <th>Category</th>
+        </tr>
+    </thead>
+    <tbody>
+        <core_rt:if test="${not empty licenseDetail.risks}">
+            <core_rt:forEach var="risk" varStatus="status" items="${licenseDetail.risks}">
+                <tr>
+                  <td><sw360:out value="${risk.id}"/></td>
+                  <td><sw360:out value="${risk.text}"/></td>
+                  <td><sw360:out value="${risk.category.text}"/></td>
+                </tr>
+            </core_rt:forEach>
+        </core_rt:if>
+    </tbody>
+</table>
+
+
+<%--for javascript library loading --%>
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
+<script>
+    require(['jquery', 'bridges/datatables'], function($, datatables) {
+        datatables.create('#licenseRisks', {
+            order: [
+                [0, 'asc']
+            ],
+            language: {
+                emptyTable: 'No license risks analysis available.'
+            }
+        }, [0, 1, 2]);
+    });
+</script>

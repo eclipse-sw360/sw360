@@ -12,7 +12,8 @@ package org.eclipse.sw360.portal.users;
 
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
-import com.liferay.portal.model.User;
+import com.liferay.portal.kernel.model.User;
+
 import org.apache.commons.csv.CSVRecord;
 
 import javax.portlet.PortletRequest;

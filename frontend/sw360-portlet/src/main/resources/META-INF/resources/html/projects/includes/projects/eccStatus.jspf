@@ -1,0 +1,69 @@
+<%--
+  ~ Copyright Siemens AG, 2017, 2019. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+
+<core_rt:if test="${releasesAndProjects.size() == 0 }">
+    <div class="alert alert-info" role="alert">
+        Please add linked releases or projects with linked releases to view their ECC status here.
+    </div>
+</core_rt:if>
+
+<core_rt:if test="${releasesAndProjects.size() > 0 }">
+    <div id="releasesECCTableDiv">
+        <table id="releasesECCTable" class="table table-bordered"></table>
+    </div>
+</core_rt:if>
+
+<script type="text/javascript">
+    require(['jquery', 'bridges/datatables'], function ($, datatables) {
+
+        $('#exportReleasesSpreadsheetECCButton').on('click', exportReleasesSpreadsheet);
+        createECCTable();
+
+        function createECCTable() {
+            var result = [];
+
+            <core_rt:forEach items="${releasesAndProjects}" var="linkedItem">
+                result.push({
+                    "0": "<sw360:DisplayEnum value="${linkedItem.release.eccInformation.eccStatus}"/>",
+                    "1": "<sw360:DisplayReleaseLink showName="true" release="${linkedItem.release}"/>",
+                    "2": "<sw360:out value="${linkedItem.release.version}"/>",
+                    "3": "<sw360:out value="${linkedItem.release.creatorDepartment}"/>",
+                    "4": '<sw360:DisplayUserEmail email="${linkedItem.release.eccInformation.assessorContactPerson}" bare="true"/>',
+                    "5": "<sw360:out value="${linkedItem.release.eccInformation.assessorDepartment}"/>",
+                    "6": "<sw360:out value="${linkedItem.release.eccInformation.assessmentDate}"/>"
+                });
+            </core_rt:forEach>
+
+            datatables.create('#releasesECCTable', {
+                data: result,
+                columns: [
+                    {title: "Status"},
+                    {title: "Release Name"},
+                    {title: "Release Version", className: 'text-right'},
+                    {title: "Creator Group"},
+                    {title: "ECC Assessor"},
+                    {title: "ECC Assessor Group"},
+                    {title: "ECC Assessment Date"}
+                ]
+            }, [0, 1, 2, 3, 4, 5, 6]);
+        }
+
+        function exportReleasesSpreadsheet() {
+            var portletURL = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>');
+
+            portletURL.setParameter('<%=PortalConstants.ACTION%>', '<%=PortalConstants.EXPORT_CLEARING_TO_EXCEL%>');
+            portletURL.setParameter('<%=PortalConstants.PROJECT_ID%>', '${project.id}');
+
+            window.location.href = portletURL.toString() + window.location.hash;
+        }
+    });
+
+</script>

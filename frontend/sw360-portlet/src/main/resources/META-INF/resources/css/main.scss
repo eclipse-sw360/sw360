@@ -1,0 +1,297 @@
+/*
+ * Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+ *
+ * SPDX-License-Identifier: EPL-1.0
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
+
+@import "portlets/admin/buttons";
+@import "portlets/admin/fossolgy/buttons";
+@import "portlets/admin/importexport/buttons";
+@import "portlets/components/merge";
+@import "portlets/homepage/signup";
+@import "portlets/homepage/welcome";
+@import "portlets/search/sidebar";
+
+// Must be outside the portlet class because jquery-ui attaches
+// tooltips directly under the body
+@import "components/tooltips";
+
+.sw360-portlet {
+
+	@import "bootstrap43/spinner";
+
+	@import "components/accordion";
+	@import "components/attachments";
+	@import "components/card";
+	@import "components/dialog";
+	@import "components/form";
+	@import "components/listgroup";
+	@import "components/table";
+	@import "components/toolbar";
+	@import "components/treetable";
+	@import "components/wizard";
+
+	@import "utils/align";
+	@import "utils/badges";
+	@import "utils/upload";
+
+	.form-group {
+		margin-bottom: 0.75rem;
+	}
+
+	.portlet-toolbar {
+		margin-bottom: 1rem;
+
+		.btn-toolbar {
+			margin: 0.5rem 0;
+		}
+	}
+
+	.col > form {
+		margin-top: 0.5rem;
+	}
+
+	.portlet-title {
+		display: flex;
+		justify-content: flex-end;
+		align-items: center;
+		margin-top: -0.5rem;
+
+		font-size: 1.5rem;
+
+		text-align: right;
+		text-transform: uppercase;
+		white-space: nowrap;
+
+		&.left {
+			justify-content: flex-start;
+		}
+
+		&.column {
+			justify-content: space-around;
+			align-items: flex-end;
+			flex-direction: column;
+		}
+	}
+
+	.modal-footer > :not(:first-child) {
+		margin-left: 0.75rem;
+	}
+
+	.sidebar {
+		max-width: 16rem;
+
+		.card {
+			.card-header {
+				user-select: none;
+			}
+
+			.card-body {
+				button {
+					margin-top: 1.75rem;
+				}
+			}
+		}
+	}
+
+	.alert + table {
+		margin-top: 0.5rem;
+	}
+
+	button .spinner-border {
+		margin-left: 0.5rem;
+	}
+
+	form.form-inline {
+		.dt-bootstrap4 {
+			width: 100%;
+		}
+	}
+
+	.stateinfo {
+		font-size: 0.875rem;
+		margin-bottom: 1rem;
+
+		.badge {
+			font-size: 100%;
+		}
+	}
+
+	.dataTables_processing {
+		z-index: 10000;
+	}
+
+	.dt-bootstrap4 {
+		th {
+			height: auto;
+		}
+
+		.dt-buttons {
+			display: flex;
+			justify-content: flex-end;
+		}
+
+		td.content-center {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+
+		td.content-right {
+			display: flex;
+			justify-content: flex-end;
+			align-items: center;
+		}
+
+		th.one-action, td.one.action {
+			max-width: 1.7rem;
+			width: 1.7rem !important;
+		}
+
+		th.two.actions, td.two.actions {
+			max-width: 3.4rem;
+			width: 3.4rem !important;
+		}
+
+		th.three.actions, td.three.actions {
+			max-width: 5.1rem;
+			width: 5.1rem !important;
+		}
+
+		th.four.actions, td.four.actions {
+			max-width: 6.8rem;
+			width: 6.8rem !important;
+		}
+
+		th.five.actions, td.five.actions {
+			max-width: 8.5rem;
+			width: 8.5rem !important;
+		}
+
+		div.dataTables_info {
+			padding-top: 0.5rem;
+			font-size: 0.875rem;
+		}
+
+		div.dataTables_length {
+			font-size: 0.875rem;
+
+			select {
+				font-size: 0.875rem;
+			}
+		}
+	}
+
+	table {
+		div.actions {
+			display: flex;
+			justify-content: space-evenly;
+			align-items: center;
+
+			flex-wrap: nowrap;
+			white-space: nowrap;
+
+			a, img, svg {
+				margin: 0 0.1rem;
+				width: 1.2rem;
+				height: 1.2rem;
+
+				cursor: pointer;
+			}
+
+			img {
+				margin-top: 0.2rem;
+			}
+
+			a:first-child, img:first-child, svg:first-child {
+				margin-left: 0;
+			}
+
+			a:last-child, img:last-child, svg:last-child {
+				margin-right: 0;
+			}
+		}
+	}
+
+	.stateBox {
+	    height: 25px;
+	    padding: 0 4px;
+	    font-weight: bold;
+	    line-height: 25px;
+	    text-align: center;
+	    float: left;
+
+	    &.capsuleLeft {
+		border-bottom-left-radius: 5px;
+		border-top-left-radius: 5px;
+		}
+
+		&.capsuleRight {
+		    border-bottom-right-radius: 5px;
+		    border-top-right-radius: 5px;
+		}
+	}
+
+	.dialogs > div[role=dialog] {
+		display: none;
+	}
+
+	h4 {
+		border-bottom: 1px solid;
+
+		span {
+			font-size: 90%;
+			float: right;
+			cursor: pointer;
+		}
+	}
+
+	ul {
+		font-size: 0.875rem;
+	}
+
+	a img {
+		height: 1em;
+	}
+
+	.mt-default {
+		margin-top: 2rem;
+	}
+
+	.btn-toolbar {
+		section {
+			display: flex;
+		}
+	}
+
+	section {
+		width: 100%;
+	}
+
+	.actions .disabled {
+		cursor: not-allowed;
+		opacity: 0.5;
+	}
+
+	.type-icon {
+		width: 1.2rem;
+		height: 1.2rem;
+	}
+
+	.text-truncate {
+		display: block;
+	}
+
+	.spinning {
+		animation: spinning 2s linear infinite;
+	}
+
+	@keyframes spinning {
+		100% { transform:rotate(360deg); }
+	}
+}

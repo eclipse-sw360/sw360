@@ -12,10 +12,11 @@
 package org.eclipse.sw360.portal.portlets;
 
 import com.liferay.portal.kernel.exception.SystemException;
-import com.liferay.portal.model.Layout;
-import com.liferay.portal.model.Portlet;
-import com.liferay.portal.service.LayoutLocalServiceUtil;
-import com.liferay.portal.service.PortletLocalServiceUtil;
+import com.liferay.portal.kernel.model.Layout;
+import com.liferay.portal.kernel.model.Portlet;
+import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
+import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
+
 import org.eclipse.sw360.portal.portlets.components.ComponentPortlet;
 import org.eclipse.sw360.portal.portlets.licenses.LicensesPortlet;
 import org.eclipse.sw360.portal.portlets.moderation.ModerationPortlet;

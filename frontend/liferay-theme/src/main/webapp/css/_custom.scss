@@ -1,0 +1,44 @@
+/*
+ * Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+ *
+ * SPDX-License-Identifier: EPL-1.0
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
+
+@import "bootstrap43/modal";
+@import "portal/alert";
+@import "portal/breadcrumbs";
+@import "portal/footer";
+@import "portal/header";
+@import "portal/loadingbar";
+@import "portlet/login";
+@import "portlet/components";
+@import "portlet/portlet_decorators";
+@import "sw360/sw360";
+
+
+// We want to use as most space as possible due to the large tables
+// Also change the control menu on the top, otherwise the navigation menu button is misplaced. Unfortunately
+// we cannot modify the markup for the control menu that easy therefore use css for setting the width.
+.container, #ControlMenu > div.container-fluid {
+	max-width: 94vw;
+}
+
+// Do not pad main container on left and right, to make content area and header the same. Portlets use also
+// often container therefore an additional padding is applied there.
+#content {
+	padding: 0.5rem 1rem 0 1rem;
+}
+
+#wrapper {
+	padding-top: 0;
+}
+
+// Disable focus border for some elements, e.g. menu does highlight its entries, therefore no focus border needed
+.dropdown-menu *:focus {
+	outline: none;
+}

@@ -1,0 +1,106 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
+  ~ With modifications by Bosch Software Innovations GmbH, 2016.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+<%@ taglib prefix="tags" tagdir="/WEB-INF/tags" %>
+
+<core_rt:if test="${release != null}">
+    <table class="table label-value-table" id="ReleaseDetailOverview">
+        <thead>
+        <tr>
+            <th colspan="2">General</th>
+        </tr>
+        </thead>
+        <tr>
+            <td>CPE ID:</td>
+            <td><sw360:out value="${release.cpeid}"/></td>
+        </tr>
+        <tr>
+            <td>Release Date of this Release:</td>
+            <td><sw360:out value="${release.releaseDate}"/></td>
+        </tr>
+        <tr>
+            <td>Created on:</td>
+            <td><sw360:out value="${release.createdOn}"/></td>
+        </tr>
+        <tr>
+            <td>Created by:</td>
+            <td><sw360:DisplayUserEmail email="${release.createdBy}"/></td>
+        </tr>
+        <tr>
+            <td>Contributors:</td>
+            <td><sw360:DisplayUserEmailCollection value="${release.contributors}"/></td>
+        </tr>
+        <tr>
+            <td>Moderators:</td>
+            <td><sw360:DisplayUserEmailCollection value="${release.moderators}"/></td>
+        </tr>
+        <tr>
+            <td>Subscribers:</td>
+            <td><sw360:DisplayUserEmailCollection value="${release.subscribers}"/></td>
+        </tr>
+        <tr>
+            <td>Additional Roles:</td>
+            <td><sw360:DisplayMapOfEmailSets value="${release.roles}"/></td>
+        </tr>
+        <tr>
+            <td>Download URL:</td>
+            <td><sw360:DisplayLink target="${release.downloadurl}"/></td>
+        </tr>
+
+        <tr>
+            <td>Clearing State:</td>
+            <td><sw360:DisplayEnum value="${release.clearingState}"/></td>
+        </tr>
+        <tr>
+            <td>Release Mainline State:</td>
+            <td><sw360:DisplayEnum value="${release.mainlineState}"/></td>
+        </tr>
+
+        <tr>
+            <td>Main Licenses:</td>
+            <td>
+                <sw360:DisplayLicenseCollection licenseIds="${release.mainLicenseIds}" scopeGroupId="${pageContext.getAttribute('scopeGroupId')}"/>
+            </td>
+        </tr>
+        <tr>
+            <td>Programming Languages:</td>
+            <td><sw360:DisplayCollection value="${release.languages}"/></td>
+        </tr>
+        <tr>
+            <td>Operating Systems:</td>
+            <td><sw360:DisplayCollection value="${release.operatingSystems}"/></td>
+        </tr>
+        <tr>
+            <td>External ids:</td>
+            <td><sw360:DisplayMap value="${release.externalIds}"/></td>
+        </tr>
+        <tr>
+            <td>Additional Data:</td>
+            <td><sw360:DisplayMap value="${release.additionalData}"/></td>
+        </tr>
+    </table>
+
+    <core_rt:if test="${release.setRepository}">
+        <table class="table label-value-table" id="ReleaseRepository">
+            <thead>
+            <tr>
+                <th colspan="2">Release Repository</th>
+            </tr>
+            </thead>
+
+            <tr>
+                <td>Repository:</td>
+                <td><sw360:DisplayLink target="${release.repository.url}"/> <sw360:out value="(${release.repository.repositorytype})"/></td>
+            </tr>
+        </table>
+    </core_rt:if>
+
+</core_rt:if>

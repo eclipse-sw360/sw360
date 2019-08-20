@@ -1,0 +1,70 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+
+<portlet:resourceURL var="viewVendorURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.VIEW_VENDOR%>"/>
+</portlet:resourceURL>
+
+<div class="dialogs">
+    <div id="searchVendorDialog" data-title="Search Vendor" class="modal fade" tabindex="-1" role="dialog" data-view-vendor-url="<%=viewVendorURL%>">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <div class="modal-body container">
+                    <form class="form">
+                        <div class="row form-group">
+                            <div class="col-6">
+                                <input type="text" name="searchvendor" id="searchvendor" placeholder="Enter search text..." class="form-control" autofocus />
+                            </div>
+                            <div class="col">
+                                <button type="button" class="btn btn-secondary" id="searchbuttonvendor" disabled>Search</button>
+                            </div>
+                        </div>
+
+                        <div id="vendorsearchresults">
+                            <div id="search-spinner" class="spinner text-center" style="display: none;">
+                                <div class="spinner-border" role="status">
+                                    <span class="sr-only">Searching...</span>
+                                </div>
+                            </div>
+
+                            <table id="searchresultstable" class="table table-bordered">
+                                <colgroup>
+                                    <col width="1.7rem">
+                                    <col width="40%">
+                                    <col width="40%">
+                                    <col width="20%">
+                                    <col>
+                                </colgroup>
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th>Full Name</th>
+                                        <th>Short Name</th>
+                                        <th>URL</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </form>
+				</div>
+			    <div class="modal-footer">
+		        <button type="button" class="btn btn-light" data-dismiss="modal">Close</button>
+			        <button name="add-vendor" data-submit="add" type="button" class="btn btn-secondary">Add Vendor</button>
+                    <button name="select-vendor" data-submit="select" type="button" class="btn btn-primary">Select Vendor</button>
+			    </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%@include file="/html/components/includes/vendors/addVendor.jspf" %>

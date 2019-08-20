@@ -10,8 +10,9 @@
  */
 package org.eclipse.sw360.portal.users;
 
+import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.portal.theme.ThemeDisplay;
 
 import javax.portlet.PortletRequest;
 
@@ -32,7 +33,7 @@ public class LifeRayUserSession {
         // Logged-in user can be fetched from Liferay's ThemeDisplay
         ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
         if (themeDisplay.isSignedIn()) {
-            com.liferay.portal.model.User user = themeDisplay.getUser();
+            User user = themeDisplay.getUser();
 
             // Get email address from user
             if (user != null) {

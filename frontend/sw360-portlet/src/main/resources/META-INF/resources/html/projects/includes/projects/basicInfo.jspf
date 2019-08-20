@@ -1,0 +1,289 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+
+<%@ page import="org.eclipse.sw360.datahandler.thrift.projects.Project" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectType" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectState" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.Visibility" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState" %>
+<%@ page import="static org.eclipse.sw360.datahandler.thrift.projects.projectsConstants.CLEARING_TEAM_UNKNOWN" %>
+
+<core_rt:set var="clearingTeamsStringSet" value='<%=PortalConstants.SET_CLEARING_TEAMS_STRING%>'/>
+<core_rt:set var="preferredCountryCodes" value='<%=PortalConstants.PREFERRED_COUNTRY_CODES%>'/>
+<core_rt:set var="domain" value='<%=PortalConstants.DOMAIN%>'/>
+
+<table class="table edit-table three-columns" id="ProjectBasicInfo">
+    <thead>
+        <tr>
+            <th colspan="3">General Information</th>
+        </tr>
+    </thead>
+    <tr>
+        <td>
+            <div class="form-group">
+                <label class="mandatory" for="proj_name">Name</label>
+                <input id="proj_name" name="<portlet:namespace/><%=Project._Fields.NAME%>" type="text"
+                    placeholder="Enter Name" class="form-control" minlength="2"
+                    value="<sw360:out value="${project.name}"/>" required/>
+                 <div class="invalid-feedback">
+                    Please enter a project name!
+                </div>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="proj_version">Version</label>
+                <input id="proj_version" class="form-control" name="<portlet:namespace/><%=Project._Fields.VERSION%>" type="text"
+                    placeholder="Enter Version" value="<sw360:out value="${project.version}"/>" />
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label class="mandatory" for="proj_projectvisibility">Project visibility</label>
+                <select class="form-control" id="proj_projectvisibility"
+                        name="<portlet:namespace/><%=Project._Fields.VISBILITY%>"
+                        required
+                >
+                    <sw360:DisplayEnumOptions type="<%=Visibility.class%>" selected="${project.visbility}"/>
+                </select>
+                <div class="invalid-feedback">
+                    Please select the project visibility!
+                </div>
+                <small class="form-text">
+                    <sw360:DisplayEnumInfo type="<%=Visibility.class%>"/>
+                    Learn more about project visibilities.
+                </small>
+            </div>
+        </td>
+    </tr>
+
+    <tr>
+        <td>
+            <sw360:DisplayUserEdit email="${project.createdBy}" id="<%=Project._Fields.CREATED_BY.toString()%>"
+                description="Created by" multiUsers="false" readonly="true"/>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="proj_url">HomePage URL</label>
+                <input class="form-control" id="proj_url" name="<portlet:namespace/><%=Project._Fields.HOMEPAGE%>"
+                    type="URL"
+                    value="<sw360:out value="${project.homepage}"/>" placeholder="Enter Home Url"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="proj_wiki">Wiki URL</label>
+                <input class="form-control" id="proj_wiki" name="<portlet:namespace/><%=Project._Fields.WIKI%>"
+                    type="URL"
+                    value="<sw360:out value="${project.wiki}"/>" placeholder="Enter Wiki Url"/>
+            </div>
+        </td>
+    </tr>
+
+    <tr>
+        <td>
+            <div class="form-group">
+                <label class="mandatory" for="proj_projecttype">Project type</label>
+                <select class="form-control" id="proj_projecttype"
+                        name="<portlet:namespace/><%=Project._Fields.PROJECT_TYPE%>"
+                        required>
+
+                    <sw360:DisplayEnumOptions type="<%=ProjectType.class%>" selected="${project.projectType}"/>
+                </select>
+                <div class="invalid-feedback">
+                    Please select the project type!
+                </div>
+                <small class="form-text">
+                    <sw360:DisplayEnumInfo type="<%=ProjectType.class%>"/>
+                    Learn more about project types.
+                </small>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="proj_tag">Tag</label>
+                <input class="form-control" id="proj_tag" name="<portlet:namespace/><%=Project._Fields.TAG%>"
+                    type="text"
+                    value="<sw360:out value="${project.tag}"/>" placeholder="Enter one word tag"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="proj_desc">Description</label>
+                <textarea class="form-control" id="proj_desc"
+                        name="<portlet:namespace/><%=Project._Fields.DESCRIPTION%>" rows="3"
+                        placeholder="Enter Description"><sw360:out value="${project.description}" stripNewlines="false"/></textarea>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <div class="form-group">
+                <label for="proj_domain">Domain</label>
+                <select class="form-control" id="domain" name="<portlet:namespace/><%=Project._Fields.DOMAIN%>" data-selected="${project.domain}">
+                    <option value>-- Select Domain --</option>
+                    <core_rt:forEach items="${domain}" var="entry">
+                        <c:choose>
+                            <c:when test="${entry eq project.domain}">
+                                <option selected="selected" value="<sw360:out value="${entry}"/>" class="textlabel stackedLabel"> ${entry} </option>
+                            </c:when>
+                            <c:otherwise>
+                                <option value="<sw360:out value="${entry}"/>" class="textlabel stackedLabel"> ${entry} </option>
+                            </c:otherwise>
+                        </c:choose>
+                    </core_rt:forEach>
+                </select>
+            </div>
+        </td>
+        <td>
+        </td>
+        <td>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <div class="form-group">
+                <input id="enable_svm" type="checkbox" class="form-check-input"
+                    name="<portlet:namespace/><%=Project._Fields.ENABLE_SVM%>"
+                    value="<sw360:out value="${project.enableSvm}"/>"
+                        <core_rt:if test="${project.enableSvm}"> checked="checked" </core_rt:if>
+                        <core_rt:if test="${empty project.securityResponsibles}"> disabled="disabled" </core_rt:if>
+                />
+                <label class="form-check-label" for="enable_svm">
+                    Enable Security Vulnerability Monitoring
+                </label>
+                <small class="form-text">
+                    You need a security responsible to activate monitoring.
+                </small>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <input id="enable_vulnerabilities_display" type="checkbox" class="form-check-input"
+                        name="<portlet:namespace/><%=Project._Fields.ENABLE_VULNERABILITIES_DISPLAY%>"
+                        value="<sw360:out value="${project.enableVulnerabilitiesDisplay}"/>"
+                            <core_rt:if test="${project.enableVulnerabilitiesDisplay}"> checked="checked" </core_rt:if>
+                />
+                <label class="form-check-label" for="enable_vulnerabilities_display">
+                    Enable Displaying Vulnerabilities
+                </label>
+            </div>
+        </td>
+        <td></td>
+    </tr>
+</table>
+
+<table class="table edit-table three-columns" id="ProjectRolesInfo">
+    <thead>
+    <tr>
+        <th colspan="3" class="headlabel">Roles</th>
+    </tr>
+    </thead>
+
+    <tr>
+        <td>
+            <div class="form-group">
+                <label class="mandatory" for="group">Group</label>
+                <input id="group" class="form-control" name="<portlet:namespace/><%=Project._Fields.BUSINESS_UNIT%>" type="text"
+                    placeholder="Enter Group" required
+                    value="<sw360:out value="${project.businessUnit}"/>"/>
+                <div class="invalid-feedback">
+                        Please enter a group!
+                </div>
+            </div>
+        </td>
+        <td>
+            <sw360:DisplayUserEdit email="${project.projectResponsible}"
+                                id="<%=Project._Fields.PROJECT_RESPONSIBLE.toString()%>"
+                                description="Project manager" multiUsers="false"/>
+        </td>
+        <td>
+            <sw360:DisplayUserEdit email="${project.projectOwner}"
+                    id="<%=Project._Fields.PROJECT_OWNER.toString()%>"
+                    description="Project owner" multiUsers="false"/>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <div class="form-group">
+                <label for="proj_accounting_unit">Owner accounting unit</label>
+                <input class="form-control" id="proj_accounting_unit" name="<portlet:namespace/><%=Project._Fields.OWNER_ACCOUNTING_UNIT%>"
+                    type="text"
+                    value="<sw360:out value="${project.ownerAccountingUnit}"/>" placeholder="Enter owner's accounting unit"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="proj_billing_group">Owner billing group</label>
+                <input class="form-control" id="proj_billing_group" name="<portlet:namespace/><%=Project._Fields.OWNER_GROUP%>"
+                    type="text"
+                    value="<sw360:out value="${project.ownerGroup}"/>" placeholder="Enter owner's billing group"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="proj_owner_country">Owner country</label>
+                <select class="form-control" id="proj_owner_country"
+                        name="<portlet:namespace/><%=Project._Fields.OWNER_COUNTRY%>">
+                    <sw360:DisplayCountryCodeSelection selected='${project.ownerCountry}' preferredCountryCodes='${preferredCountryCodes}'/>
+                </select>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <sw360:DisplayUserEdit email="${project.leadArchitect}" id="<%=Project._Fields.LEAD_ARCHITECT.toString()%>"
+                                description="Lead architect" multiUsers="false"/>
+        </td>
+        <td>
+            <sw360:DisplayUserEdit emails="${project.moderators}" id="<%=Project._Fields.MODERATORS.toString()%>"
+                                description="Moderators" multiUsers="true"/>
+        </td>
+        <td>
+            <sw360:DisplayUserEdit emails="${project.contributors}" id="<%=Project._Fields.CONTRIBUTORS.toString()%>"
+                                description="Contributors" multiUsers="true"/>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <sw360:DisplayUserEdit emails="${project.securityResponsibles}" id="<%=Project._Fields.SECURITY_RESPONSIBLES.toString()%>"
+                                description="Security Responsibles" multiUsers="true"/>
+        </td>
+        <td></td>
+        <td></td>
+    </tr>
+</table>
+
+
+<core_rt:set var="keys" value="<%=PortalConstants.PROJECT_ROLES%>"/>
+<core_rt:set var="mapTitle" value="Additional Roles"/>
+<core_rt:set var="inputType" value="email"/>
+<core_rt:set var="inputSubtitle" value="Enter mail address"/>
+
+<core_rt:set var="customMap" value="${project.roles}"/>
+<%@include file="/html/utils/includes/mapEdit.jspf" %>
+
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
+<script>
+    require(['jquery'], function ($) {
+
+        $('#<%=Project._Fields.SECURITY_RESPONSIBLES.toString()%>Display').on('change', function () {
+            var checkboxEnableSvm = $('#enable_svm');
+            if ($(this).val() == null || $(this).val() == '') {
+                checkboxEnableSvm.attr("disabled", true);
+                checkboxEnableSvm.prop('checked', false);
+            } else {
+                checkboxEnableSvm.removeAttr("disabled");
+            }
+        });
+
+    });
+</script>

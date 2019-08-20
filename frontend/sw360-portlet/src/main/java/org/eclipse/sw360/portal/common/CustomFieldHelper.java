@@ -11,22 +11,21 @@
  */
 package org.eclipse.sw360.portal.common;
 
+import com.liferay.expando.kernel.model.*;
+import com.liferay.expando.kernel.service.ExpandoColumnLocalServiceUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
-import com.liferay.portal.model.ResourceConstants;
-import com.liferay.portal.model.Role;
-import com.liferay.portal.model.RoleConstants;
-import com.liferay.portal.security.permission.ActionKeys;
-import com.liferay.portal.service.ResourcePermissionLocalServiceUtil;
-import com.liferay.portal.service.RoleLocalServiceUtil;
-import com.liferay.portlet.expando.model.ExpandoBridge;
-import com.liferay.portlet.expando.model.ExpandoColumn;
-import com.liferay.portlet.expando.model.ExpandoColumnConstants;
-import com.liferay.portlet.expando.model.ExpandoTableConstants;
-import com.liferay.portlet.expando.service.ExpandoColumnLocalServiceUtil;
-import org.apache.log4j.Logger;
+import com.liferay.portal.kernel.model.ResourceConstants;
+import com.liferay.portal.kernel.model.Role;
+import com.liferay.portal.kernel.model.RoleConstants;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
+import com.liferay.portal.kernel.service.ResourcePermissionLocalServiceUtil;
+import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
+
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.portal.users.UserUtils;
+
+import org.apache.log4j.Logger;
 
 import javax.portlet.PortletRequest;
 
@@ -34,7 +33,9 @@ import java.io.Serializable;
 import java.util.Optional;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
-import static org.eclipse.sw360.portal.common.PortalConstants.*;
+import static org.eclipse.sw360.portal.common.PortalConstants.CUSTOM_FIELD_COMPONENTS_VIEW_SIZE;
+import static org.eclipse.sw360.portal.common.PortalConstants.CUSTOM_FIELD_PROJECT_GROUP_FILTER;
+import static org.eclipse.sw360.portal.common.PortalConstants.CUSTOM_FIELD_VULNERABILITIES_VIEW_SIZE;
 
 public class CustomFieldHelper {
 
@@ -81,14 +82,14 @@ public class CustomFieldHelper {
     }
 
     private static ExpandoBridge getUserExpandoBridge(PortletRequest request, User user) throws PortalException, SystemException {
-        com.liferay.portal.model.User liferayUser = UserUtils.findLiferayUser(request, user);
+        com.liferay.portal.kernel.model.User liferayUser = UserUtils.findLiferayUser(request, user);
         ensureUserCustomFieldExists(liferayUser, CUSTOM_FIELD_PROJECT_GROUP_FILTER, ExpandoColumnConstants.STRING);
         ensureUserCustomFieldExists(liferayUser, CUSTOM_FIELD_COMPONENTS_VIEW_SIZE, ExpandoColumnConstants.INTEGER);
         ensureUserCustomFieldExists(liferayUser, CUSTOM_FIELD_VULNERABILITIES_VIEW_SIZE, ExpandoColumnConstants.INTEGER);
         return liferayUser.getExpandoBridge();
     }
 
-    private static void ensureUserCustomFieldExists(com.liferay.portal.model.User liferayUser, String customFieldName, int customFieldType) throws PortalException, SystemException {
+    private static void ensureUserCustomFieldExists(com.liferay.portal.kernel.model.User liferayUser, String customFieldName, int customFieldType) throws PortalException, SystemException {
         ExpandoBridge exp = liferayUser.getExpandoBridge();
         if (!exp.hasAttribute(customFieldName)) {
             exp.addAttribute(customFieldName, customFieldType, false);

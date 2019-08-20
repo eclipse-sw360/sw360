@@ -17,11 +17,11 @@
         <pattern>/{page}/{id}</pattern>
         <generated-parameter name="pagename">{page}</generated-parameter>
         <generated-parameter name="licenseid">{id}</generated-parameter>
-        <implicit-parameter name="p_p_id">licenses_WAR_sw360portlet</implicit-parameter>
+        <implicit-parameter name="p_p_id">sw360_portlet_licenses</implicit-parameter>
     </route>
     <route>
         <pattern>/add</pattern>
-        <implicit-parameter name="p_p_id">licenses_WAR_sw360portlet</implicit-parameter>
+        <implicit-parameter name="p_p_id">sw360_portlet_licenses</implicit-parameter>
         <implicit-parameter name="pagename">edit</implicit-parameter>
     </route>
 </routes>

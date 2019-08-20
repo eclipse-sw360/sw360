@@ -1,0 +1,140 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
+  ~ With contributions by Bosch Software Innovations GmbH, 2016.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+<%@ taglib prefix="tags" tagdir="/WEB-INF/tags" %>
+
+<core_rt:if test="${not empty component.description}">
+    <div>
+        <p id="up_Summary"><sw360:out value="${component.description}" maxChar="500"/></p>
+    </div>
+</core_rt:if>
+
+<table class="table label-value-table" id="componentOverview">
+    <thead>
+        <tr>
+            <th colspan="2">General</th>
+        </tr>
+    </thead>
+    <tr>
+        <td>Name:</td>
+        <td><sw360:out value="${component.name}"/></td>
+    </tr>
+    <tr>
+        <td>Created on:</td>
+        <td><sw360:out value="${component.createdOn}"/></td>
+    </tr>
+    <tr>
+        <td>Created by:</td>
+        <td><sw360:DisplayUserEmail email="${component.createdBy}"/></td>
+    </tr>
+    <tr>
+        <td>Categories:</td>
+        <td><sw360:DisplayCollection value="${component.categories}"/></td>
+    </tr>
+    <tr>
+        <td>Component Type:</td>
+        <td><sw360:DisplayEnum value="${component.componentType}"/></td>
+    </tr>
+    <tr>
+        <td>Default vendor:</td>
+        <td><sw360:out value="${component.defaultVendor.fullname}"/></td>
+    </tr>
+    <tr>
+        <td>Homepage:</td>
+        <td><sw360:DisplayLink target="${component.homepage}"/></td>
+    </tr>
+    <tr>
+        <td>Blog:</td>
+        <td><sw360:DisplayLink target="${component.blog}"/></td>
+    </tr>
+    <tr>
+        <td>Wiki:</td>
+        <td><sw360:DisplayLink target="${component.wiki}"/></td>
+    </tr>
+    <tr>
+        <td>Mailing list:</td>
+        <td><sw360:DisplayLink target="mailto:${component.mailinglist}" text="${component.mailinglist}"/></td>
+    </tr>
+    <tr>
+        <td>External ids:</td>
+        <td><sw360:DisplayMap value="${component.externalIds}"/></td>
+    </tr>
+    <tr>
+        <td>Additional Data:</td>
+        <td><sw360:DisplayMap value="${component.additionalData}"/></td>
+    </tr>
+</table>
+
+<table class="table label-value-table" id="releaseAggregateTable">
+    <thead>
+        <tr>
+            <th colspan="2">Release Aggregate Data</th>
+        </tr>
+    </thead>
+    <tr>
+        <td>Vendors:</td>
+        <td><sw360:DisplayCollection value="${component.vendorNames}"/></td>
+    </tr>
+    <tr>
+        <td>Languages:</td>
+        <td><sw360:DisplayCollection value="${component.languages}"/></td>
+    </tr>
+    <tr>
+        <td>Platforms:</td>
+        <td><sw360:DisplayCollection value="${component.softwarePlatforms}"/></td>
+    </tr>
+    <tr>
+        <td>Operating systems:</td>
+        <td><sw360:DisplayCollection value="${component.operatingSystems}"/></td>
+    </tr>
+    <tr>
+        <td>Main licenses: </td>
+        <td>
+            <sw360:DisplayLicenseCollection licenseIds="${component.mainLicenseIds}" scopeGroupId="${pageContext.getAttribute('scopeGroupId')}"/>
+        </td>
+    </tr>
+</table>
+
+<table class="table label-value-table" id="componentRolesTable">
+    <thead>
+        <tr>
+            <th colspan="2">Roles</th>
+        </tr>
+    </thead>
+    <tr>
+        <td>Component owner:</td>
+        <td><sw360:DisplayUserEmail email="${component.componentOwner}"/></td>
+    </tr>
+    <tr>
+        <td>Owner accounting unit:</td>
+        <td><sw360:out value="${component.ownerAccountingUnit}"/></td>
+    </tr>
+    <tr>
+        <td>Owner billing group:</td>
+        <td><sw360:out value="${component.ownerGroup}"/></td>
+    </tr>
+    <tr>
+        <td>Owner country:</td>
+        <td><sw360:DisplayCountryCodeName value="${component.ownerCountry}"/></td>
+    </tr>
+    <tr>
+        <td>Moderators:</td>
+        <td><sw360:DisplayUserEmailCollection value="${component.moderators}"/></td>
+    </tr>
+    <tr>
+        <td>Subscribers:</td>
+        <td><sw360:DisplayUserEmailCollection value="${component.subscribers}"/></td>
+    </tr>
+    <tr>
+        <td>Additional Roles:</td>
+        <td><sw360:DisplayMapOfEmailSets value="${component.roles}"/></td>
+    </tr>
+</table>

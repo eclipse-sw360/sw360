@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <artifactId>frontend</artifactId>
+        <groupId>org.eclipse.sw360</groupId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>liferay-theme</artifactId>
+    <packaging>war</packaging>
+
+	<properties>
+		<com.liferay.css.builder.outputDir>${project.build.directory}/build-css</com.liferay.css.builder.outputDir>
+		<com.liferay.portal.tools.theme.builder.outputDir>target/build-theme</com.liferay.portal.tools.theme.builder.outputDir>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<com.liferay.frontend.css.common.version>3.0.1</com.liferay.frontend.css.common.version>
+		<!-- The 4.x branch will fail -->
+		<com.liferay.frontend.theme.unstyled.version>3.0.22</com.liferay.frontend.theme.unstyled.version>
+		<!-- The 4.x branch will fail -->
+		<com.liferay.frontend.theme.styled.version>3.0.16</com.liferay.frontend.theme.styled.version>
+
+		<artifact.deploy.dir>${liferay.deploy.dir}</artifact.deploy.dir>
+	</properties>
+
+	<build>
+        <finalName>org.eclipse.sw360.liferay-theme-${project.version}</finalName>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.1</version>
+				<configuration>
+					<source>1.8</source>
+					<target>1.8</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-war-plugin</artifactId>
+				<version>3.0.0</version>
+				<configuration>
+					<packagingExcludes>**/*.scss</packagingExcludes>
+					<webResources>
+						<resource>
+							<directory>${com.liferay.portal.tools.theme.builder.outputDir}</directory>
+							<excludes>
+								<exclude>**/*.scss</exclude>
+								<exclude>**/*.sass-cache/</exclude>
+							</excludes>
+						</resource>
+						<resource>
+							<directory>${com.liferay.css.builder.outputDir}</directory>
+						</resource>
+					</webResources>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>com.liferay</groupId>
+				<artifactId>com.liferay.css.builder</artifactId>
+				<version>2.1.3</version>
+				<executions>
+					<execution>
+						<id>default-build-css</id>
+						<phase>compile</phase>
+						<goals>
+							<goal>build</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<baseDir>${com.liferay.portal.tools.theme.builder.outputDir}</baseDir>
+					<outputDirName>${com.liferay.css.builder.outputDir}</outputDirName>
+					<precision>9</precision>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>com.liferay</groupId>
+				<artifactId>com.liferay.portal.tools.theme.builder</artifactId>
+				<version>1.1.7</version>
+				<executions>
+					<execution>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>build</goal>
+						</goals>
+						<configuration>
+							<diffsDir>src/main/webapp/</diffsDir>
+							<name>${project.artifactId}</name>
+							<outputDir>${com.liferay.portal.tools.theme.builder.outputDir}</outputDir>
+							<parentName>_styled</parentName>
+							<templateExtension>ftl</templateExtension>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+	<dependencies>
+		<dependency>
+			<groupId>com.liferay</groupId>
+			<artifactId>com.liferay.frontend.css.common</artifactId>
+			<version>${com.liferay.frontend.css.common.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.liferay</groupId>
+			<artifactId>com.liferay.frontend.theme.styled</artifactId>
+			<version>${com.liferay.frontend.theme.styled.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.liferay</groupId>
+			<artifactId>com.liferay.frontend.theme.unstyled</artifactId>
+			<version>${com.liferay.frontend.theme.unstyled.version}</version>
+			<scope>provided</scope>
+		</dependency>
+	</dependencies>
+</project>

@@ -1,0 +1,642 @@
+<%--
+  ~ Copyright Siemens AG, 2016-2019. Part of the SW360 Portal Project.
+  ~ Copyright Bosch Software Innovations GmbH, 2017.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+
+<%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
+<portlet:resourceURL var="downloadLicenseInfoURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.GET_LICENCES_FROM_ATTACHMENT%>'/>
+</portlet:resourceURL>
+
+<portlet:resourceURL var="downloadLicenseInfoStateURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.LOAD_LICENSE_INFO_ATTACHMENT_USAGE%>'/>
+</portlet:resourceURL>
+<portlet:resourceURL var="downloadSourcePackageStateURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.LOAD_SOURCE_PACKAGE_ATTACHMENT_USAGE%>'/>
+</portlet:resourceURL>
+
+<%--These variables are used as a trick to allow referencing constant values in EL expressions below--%>
+<c:set var="tableModeLicenseInfo" value="<%=PortalConstants.PROJECT_LINK_TABLE_MODE_LICENSE_INFO%>"/>
+<c:set var="tableModeSourceBundle" value="<%=PortalConstants.PROJECT_LINK_TABLE_MODE_SOURCE_BUNDLE%>"/>
+
+<div id="infobar" class="alert alert-info">
+    <div class="spinner">Loading previously stored selection...</div>
+</div>
+
+<table class="table" id="LinkedProjectsInfo" style="width: 100%; max-width: 100%;"
+    data-project-id="${project.id}"
+    data-table-mode="${projectLinkTableMode}"
+    data-table-mode-license-info="${tableModeLicenseInfo}"
+    data-table-mode-source-bundle="${tableModeSourceBundle}"
+    data-portlet-namespace="<portlet:namespace/>"
+    data-license-info-base-url="<%=downloadLicenseInfoURL%>"
+    data-license-info-state-url="<%=downloadLicenseInfoStateURL%>"
+    data-source-package-state-url="<%=downloadSourcePackageStateURL%>"
+    data-project-id-parameter-name="<%=PortalConstants.PROJECT_ID%>"
+    data-attachment-id-parameter-name="<%=PortalConstants.ATTACHMENT_ID%>"
+    data-release-id-parameter-name="<%=PortalConstants.RELEASE_ID%>"
+    data-project-path-parameter-name="<%=PortalConstants.PROJECT_PATH%>"
+>
+    <colgroup>
+        <col style="width: 40px;" />
+        <col />
+        <col style="width: 35%" />
+        <col />
+        <col />
+        <col />
+        <col />
+    </colgroup>
+    <thead>
+        <tr>
+            <th><input type="checkbox" class="form-check-input" checked="checked" id="selectAllCheckbox"/></th>
+            <th>Lvl</th>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Clearing State</th>
+            <th>Uploaded by</th>
+            <th>Clearing Team</th>
+        </tr>
+    </thead>
+    <tbody>
+    <%--linked projects and their linked projects--%>
+    <core_rt:forEach items="${projectList}" var="projectLink" varStatus="loop">
+        <c:set var="projectPath">${projectLink.id}</c:set>
+        <core_rt:if test="${loop.index!=0}">
+            <c:set var="projectPath">${projectPaths[projectLink.nodeId]}</c:set>
+            <tr id="projectLinkRow${loop.count}" data-tt-id="${projectLink.nodeId}"
+                <core_rt:if test="${not empty projectLink.parentNodeId}">data-tt-parent-id="${projectLink.parentNodeId}"</core_rt:if>
+            >
+                <td></td>
+                <td>
+                    <sw360:out value="${projectLink.treeLevel}"/>
+                </td>
+                <td>
+                    <a href="<sw360:DisplayProjectLink projectId="${projectLink.id}" bare="true" />"><sw360:out
+                      value="${projectLink.name}" maxChar="50"/>
+                        <sw360:out value="${projectLink.version}"/>
+                    </a>
+                    <core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo}">
+                        <div class="form-group">
+                            <button type="button" id="${projectPath}_use-sel" class="mt-1 mb-1 btn btn-sm btn-secondary use-subproject-selection" data-tt-parent-id="${projectLink.nodeId}">
+                                Use selection of this subproject
+                            </button>
+                            <span class="text-danger"><clay:icon symbol="warning"/> Current selection will be overwritten!</span>
+                        </div>
+                    </core_rt:if>
+                </td>
+                <td>
+                    <sw360:DisplayEnum value="${projectLink.projectType}"/>
+                </td>
+                <td>
+                    <sw360:DisplayEnum value="${projectLink.clearingState}"/>
+                </td>
+                <td></td>
+            </tr>
+        </core_rt:if>
+        <%--linked releases of linked projects--%>
+        <core_rt:forEach items="${projectLink.linkedReleases}" var="releaseLink" varStatus="releaseloop">
+            <tr id="releaseLinkRow${loop.count}_${releaseloop.count}" data-tt-id="${releaseLink.nodeId}"
+                data-release-id="${releaseLink.id}"
+                <core_rt:if test="${loop.index!=0}">data-tt-parent-id="${projectLink.nodeId}"</core_rt:if>
+                <core_rt:if test="${empty releaseLink.attachments}">class="highlightDanger"</core_rt:if>
+                <core_rt:if test="${fn:length(releaseLink.attachments) == 1}">class="highlightSuccess"</core_rt:if>
+                <core_rt:if test="${fn:length(releaseLink.attachments) gt 1}">class="highlightWarning"</core_rt:if>
+            >
+                <td></td>
+                <td>
+                    <sw360:out value="${projectLink.treeLevel + 1}"/>
+                </td>
+                <td class="release-name">
+                    <a href="<sw360:DisplayReleaseLink releaseId="${releaseLink.id}" bare="true" />"><sw360:out
+                            value="${releaseLink.vendor} ${releaseLink.name}" maxChar="50"/> <sw360:out
+                            value="${releaseLink.version}"/></a>
+                </td>
+                <td>
+                    <sw360:DisplayEnum value="${releaseLink.componentType}"/>
+                </td>
+                <td>
+                    <sw360:DisplayEnum value="${releaseLink.clearingState}"/>
+                </td>
+                <td>
+                </td>
+                <td>
+                </td>
+            </tr>
+            <%-- TODO what is the logic that is controlled by this variable?! --%>
+            <core_rt:set var="attachmentSelected" value="false" scope="request"/>
+            <core_rt:forEach items="${releaseLink.attachments}" var="attachment" varStatus="attachmentloop">
+                <tr id="attachmentRow${loop.count}_${releaseloop.count}_${attachmentloop.count}"
+                    data-tt-id="${releaseLink.nodeId}_${attachment.attachmentContentId}"
+                    data-tt-parent-id="${releaseLink.nodeId}"
+                    data-project-path="${projectPath}"
+                    <core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo}">data-tt-branch="true"</core_rt:if>
+                    data-row-type="attachment"
+                    data-tree-level="${projectLink.treeLevel + 1}"
+                    data-release-id="${releaseLink.id}"
+                    data-attachment-id="${attachment.attachmentContentId}"
+                    <core_rt:if test="${empty releaseLink.attachments}">class="selectable"</core_rt:if>
+                    <core_rt:if test="${fn:length(releaseLink.attachments) == 1}">class="selectable highlightSuccess"</core_rt:if>
+                    <core_rt:if test="${fn:length(releaseLink.attachments) gt 1}">class="selectable highlightWarning"</core_rt:if>
+                >
+                    <td>
+                        <input type="checkbox" class="form-check-input"
+                                name="<portlet:namespace/><%=PortalConstants.LICENSE_INFO_RELEASE_TO_ATTACHMENT%>"
+                                <core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo}">value='${projectPath.concat(":").concat(releaseLink.id).concat(":").concat(attachment.attachmentContentId)}'</core_rt:if>
+                                <core_rt:if test="${projectLinkTableMode != tableModeLicenseInfo}">value='${releaseLink.id.concat(":").concat(attachment.attachmentContentId)}'</core_rt:if>
+                                <core_rt:if test="${!attachmentSelected && (releaseLink.attachments.size() == 1 || attachment.createdTeam == sw360User.department)}">checked="checked" class="defaultChecked"
+                                    <core_rt:set var="attachmentSelected" value="true" scope="request"/>
+                                </core_rt:if>
+                        />
+                    </td>
+                    <td>
+                        <sw360:out value="${projectLink.treeLevel + 1}"/>
+                    </td>
+                    <td class="filename">
+                        <sw360:out value="${attachment.filename}"/>
+                    </td>
+                    <td colspan="2">
+                            <c:set var="mapKey">${releaseLink.id.concat("_").concat(attachment.attachmentContentId)}</c:set>
+                            <core_rt:choose>
+                                <core_rt:when test="${attachmenUsageCountMap[mapKey] != null}">
+                                  used in <b>${attachmenUsageCountMap[mapKey]}</b> projects
+                                </core_rt:when>
+                                <core_rt:otherwise>
+                                  <i>not used in any project yet</i>
+                                </core_rt:otherwise>
+                            </core_rt:choose>
+                    </td>
+                    <td>
+                        <sw360:DisplayUserEmail email="${attachment.createdBy}" bare="true"/>
+                    </td>
+                    <td>
+                        <sw360:out value="${attachment.createdTeam}"/>
+                    </td>
+                </tr>
+                <core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo}">
+                    <tr data-tt-id="${releaseLink.nodeId}_${attachment.attachmentContentId}_loader" data-tt-parent-id="${releaseLink.nodeId}_${attachment.attachmentContentId}">
+                        <td colspan="7">
+                            <div class="spinner"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading license information. Please wait...</div>
+                        </td>
+                    </tr>
+                </core_rt:if>
+            </core_rt:forEach>
+        </core_rt:forEach>
+    </core_rt:forEach>
+    <core_rt:if test="${projectList.size() < 1 and $releaseList.size() < 1}">
+        <tr>
+            <td colspan="7">No linked releases or projects</td>
+        </tr>
+    </core_rt:if>
+    </tbody>
+</table>
+
+<script>
+    AUI().use('liferay-portlet-url', function () {
+        require(['jquery', 'modules/button', 'modules/ajax-treetable', 'bridges/jquery-ui'], function($, button, treetable) {
+
+            var $linkedProjectsInfoTable = $("#LinkedProjectsInfo"),
+                data = $linkedProjectsInfoTable.data();
+
+            if(data.tableMode === data.tableModeLicenseInfo) {
+                initializeTableForLicenseInfo($linkedProjectsInfoTable);
+                loadSavedSelectionState($linkedProjectsInfoTable, data.projectId);
+            } else if(data.tableMode === data.tableModeSourceBundle) {
+                initializeTableForSourceBundle($linkedProjectsInfoTable);
+                loadSavedSelectionState($linkedProjectsInfoTable, data.projectId);
+            } else {
+                $linkedProjectsInfoTable.before($('<div/>', {
+                    'class': 'alert alert-danger',
+                    text: 'Invalid table mode [' + data.tableMode + ']. Must be one of [' + data.tableModeLicenseInfo + ', ' + data.tableModeSourceBundle + '].'
+                }));
+                $linkedProjectsInfoTable.remove();
+            }
+
+            $("#selectAllCheckbox").on("change", function() {
+                // first uncheck all in any case because on check only the default ones should be checked...
+                $linkedProjectsInfoTable.find(":checkbox:not(#selectAllCheckbox)").prop('checked', false).trigger('change');
+                // ...and check them if selected
+                if (this.checked){
+                    $linkedProjectsInfoTable.find(":checkbox.defaultChecked").prop('checked', true).trigger('change');
+                }
+            });
+
+            $(".use-subproject-selection").on("click", function(event) {
+                var node = event.target,
+                    prefix = node.id.indexOf(':') > 0 ? node.id.substr(0, node.id.lastIndexOf(':') + 1) : '',
+                    subprojectId = node.id.substr(node.id.lastIndexOf(':') + 1, 32),
+                    ttParentId = $(node).data().ttParentId;
+
+                button.wait(node);
+                loadSavedSelectionState($linkedProjectsInfoTable, subprojectId, ttParentId, prefix);
+            });
+
+            $('#LinkedProjectsInfo').on('click', 'tr.selectable', function(event) {
+                var $row = $(event.target).parents('tr:first'),
+                    checked = $row.find(':checkbox').is(':checked');
+
+                if(!$(event.target).is(':checkbox') && !$(event.target).is('a')) {
+                    $row.find(':checkbox').prop('checked', !checked).trigger('change');
+                }
+            });
+
+            function removeProjectLoader(ttParentId) {
+                button.finish($linkedProjectsInfoTable.find('tr[data-tt-id=' + ttParentId + '] button.use-subproject-selection'));
+            }
+
+            // helper functions
+            function initializeTableForSourceBundle($linkedProjectsInfoTable) {
+                $linkedProjectsInfoTable.treetable({
+                    expandable: true,
+                    column: 1,
+                    initialState: "expanded",
+                    onInitialized: treetable.showPageContainer
+                });
+            }
+
+            function initializeTableForLicenseInfo($linkedProjectsInfoTable) {
+                // we can not use expanded as initial state because we have branches that are dynamically loaded...
+                $linkedProjectsInfoTable.treetable({
+                    expandable: true,
+                    column: 1,
+                    initialState: "collapsed",
+                    onInitialized: treetable.showPageContainer,
+                    onNodeExpand: function() { expandLicenseFile($linkedProjectsInfoTable, this); }
+                });
+                // ... therefore expand manually the loaded branches (projects and releases)
+                $linkedProjectsInfoTable.find('tr.branch').each(function(index, element) {
+                    var data = $(element).data();
+
+                    if(data.rowType !== 'attachment') {
+                        $linkedProjectsInfoTable.treetable("expandNode", data.ttId);
+                    }
+                });
+            }
+
+            function expandLicenseFile($linkedProjectsInfoTable, node, loadedCallback) {
+                var url,
+                    urlData = $linkedProjectsInfoTable.data(),
+                    data;
+
+                loadedCallback = loadedCallback || function() {};
+                if (!node || !node.row.data()) {
+                    loadedCallback('No node given to expand.');
+                    return;
+                }
+
+                data = node.row.data();
+                if(data.rowType !== 'attachment' || data.loaded) {
+                    loadedCallback();
+                    return;
+                }
+
+                // we set it to loaded here to prevent double requests by collapsing and expanding again
+                // on the other hand we have to unset it on errors
+                data.loaded = true;
+
+                $linkedProjectsInfoTable.find('tr[data-tt-id=' + data.ttId + '_loader] td .spinner').show();
+                $linkedProjectsInfoTable.find('tr[data-tt-id=' + data.ttId + '_loader] td .error').remove();
+
+                url = Liferay.PortletURL.createURL(urlData.licenseInfoBaseUrl);
+                url.setParameter(urlData.attachmentIdParameterName, data.attachmentId);
+                url.setParameter(urlData.releaseIdParameterName, data.releaseId);
+                url.setParameter(urlData.projectPathParameterName, data.projectPath);
+
+                $.ajax({
+                    url: url.toString(),
+                    dataType: 'json'
+                }).done(function(licenses) {
+                    var $rows;
+
+                    if(licenses.length == 0 || licenses[0].error) {
+                        var errorText = licenses.length > 0 ? ' Error: ' + licenses[0].error + ' Parsed file: ' + licenses[0].file : '';
+                        $linkedProjectsInfoTable.find('tr[data-tt-id=' + data.ttId + '_loader] td').append($('<div/>', {
+                            'class': 'error foregroundAlert',
+                            text: 'No license found.' + errorText
+                        }));
+                        $linkedProjectsInfoTable.find('tr[data-tt-id=' + data.ttId + '_loader] td .spinner').hide();
+                        loadedCallback();
+                        return;
+                    }
+
+                    $rows = convertDataToRows(urlData.portletNamespace, data.ttId, data.treeLevel, data.projectPath,
+                                    data.releaseId, data.attachmentId, node.row.find('input[type=checkbox]:first').is(':checked'), licenses);
+                    $rows.find('.license-text').tooltip({
+                        delay: 0,
+                        content: function () {
+                            return $(this).prop('title');
+                        }
+                    });
+
+                    $linkedProjectsInfoTable.treetable('loadBranch', node, $rows);
+                    $linkedProjectsInfoTable.treetable('removeNode', data.ttId + '_loader');
+
+                    // synchronize checkbox of each license with checkbox of attachment
+                    node.row.find('input[type=checkbox]:first').on('change', function() {
+                        $linkedProjectsInfoTable.find('tr input[name="' + urlData.portletNamespace + data.projectPath + ':' + data.releaseId + ':' + data.attachmentId + '"]').
+                            prop('checked', this.checked).trigger('change');
+                    });
+                    // be sure that attachment is checked if at least one license is checked and that attachment is not checked
+                    // if no license is checked
+                    $linkedProjectsInfoTable.find('tr input[name="' + urlData.portletNamespace + data.projectPath + ':' + data.releaseId + ':' + data.attachmentId + '"]').on('change', function() {
+                        if(this.checked) {
+                            // do not trigger change here, otherwise all license would be selected.
+                            node.row.find('input[type=checkbox]:first').prop('checked', true);
+                        } else {
+                            if($linkedProjectsInfoTable.find('tr input[name="' + urlData.portletNamespace + data.projectPath + ':' + data.releaseId + ':' + data.attachmentId + '"]:checked').length == 0) {
+                                // do not trigger change here, otherwise all license would be selected.
+                                node.row.find('input[type=checkbox]:first').prop('checked', false);
+                            }
+                        }
+                    });
+
+                    loadedCallback();
+                }).fail(function(xhr, type, error) {
+                    data.loaded = false;
+                    renderErrorMessage($linkedProjectsInfoTable, node, data.ttId, error);
+                    loadedCallback(error);
+                });
+            }
+
+            function convertDataToRows(portletNamespace, parentNodeId, treeLevel, projectPath, releaseId, attachmentContentId, initialCheck, licenses) {
+                var index = 0,
+                    $rows = $();
+
+                licenses.forEach(function(license) {
+                    var $checkbox,
+                        $row = $('<tr/>', {
+                            'class': 'selectable'
+                        });
+
+                    $row.attr('data-tt-id', parentNodeId + '_' + license.key);
+                    $row.attr('data-tt-parent-id', parentNodeId);
+                    $row.attr('data-license-name', license.name); // used for restoring saved selection
+
+                    $checkbox = $('<input/>', {
+                        type:         'checkbox',
+                        'class': 'form-check-input',
+                        name:         portletNamespace + projectPath + ':' + releaseId + ":" + attachmentContentId,
+                        value:        index++,
+                    });
+                    if(initialCheck) {
+                        $checkbox.attr('checked', 'checked');
+                    }
+                    $('<td>/').append(
+                        $checkbox,
+                        $('<input/>', {
+                            type:     'hidden',
+                            name:     portletNamespace + projectPath + ':' + releaseId + ":" + attachmentContentId + '_key',
+                            value:    license.key
+                        })
+                    ).appendTo($row);
+
+                    $('<td>', { text: treeLevel }).appendTo($row);
+
+                    $('<td>', { text: license.name }).appendTo($row);
+
+                    $('<td>', {
+                        colspan: 4,
+                        style: 'max-width: 0'
+                    }).append(
+                        $('<span/>', {
+                            'class': 'license-text text-truncate',
+                            title: license.text ? license.text : '',
+                            text: license.text ? license.text : ''
+                        })
+                    ).appendTo($row);
+
+                    $rows = $rows.add($row);
+                });
+
+                return $rows;
+            }
+
+            function renderErrorMessage($linkedProjectsInfoTable, node, ttId, error) {
+                var $reloadLink,
+                    $errorMessage;
+
+                $errorMessage = $('<div/>', {
+                    'class': 'alert alert-danger',
+                    text: 'Cannot load license information: ' + error
+                });
+
+                $reloadLink = $('<a/>', {
+                    href: 'javascript:;',
+                    'class': 'text-danger',
+                    text: 'Reload'
+                });
+                $reloadLink.on('click', function() {
+                    onNodeExpand.call(node);
+                });
+
+                $linkedProjectsInfoTable.find('tr[data-tt-id=' + ttId + '_loader] td').
+                    append($errorMessage).
+                    append($reloadLink);
+                $linkedProjectsInfoTable.find('tr[data-tt-id=' + ttId + '_loader] td .spinner').hide();
+            }
+
+            function loadSavedSelectionState($linkedProjectsInfoTable, projectId, ttId, prefix) {
+                var config = $linkedProjectsInfoTable.data(),
+                    prefix = prefix || '',
+                    url;
+                if(config.tableMode === config.tableModeLicenseInfo) {
+                    url = config.licenseInfoStateUrl;
+                } else {
+                    url = config.sourcePackageStateUrl;
+                }
+                url = Liferay.PortletURL.createURL(url);
+                url.setParameter(config.projectIdParameterName, projectId);
+
+                $.ajax({
+                    type: 'GET',
+                    url: url,
+                }).done(function(result) {
+                    if(!result || result.length == 0) {
+                        if(prefix) {
+                            // this means a subproject selection has been loaded
+                            removeProjectLoader(ttId);
+                        }
+                        $('#infobar').removeClass('alert-info').addClass('alert-secondary').html($('<span>', {
+                            text: "No previous selection found. If you have writing permissions to this project, your selection will be stored automatically when downloading."
+                        }));
+                    } else {
+                        restoreSelection($linkedProjectsInfoTable, result, ttId, prefix, function(error, warnings) {
+                            if(prefix) {
+                                // this means a subproject selection has been loaded
+                                removeProjectLoader(ttId);
+                            }
+                            if(error) {
+                                $('#infobar').removeClass('alert-info').addClass('alert-danger').html($('<span>', {
+                                    text: "Cannot restore previous selection: " + error
+                                }));
+                            } else if(warnings && warnings.length > 0) {
+                                $('#infobar').removeClass('alert-info').addClass('alert-warning').html($('<div>').append(
+                                        $('<span>', { text: "Some of the stored selection could not be restored. Please check carefully!" })).append(
+                                        createWarningList(warnings)
+                                ));
+                            } else {
+                                $('#infobar').removeClass('alert-info').addClass('alert-success').html($('<span>', {
+                                    text: "Your selection has been restored. However, please check before downloading. You may also restore the default selection" +
+                                        " by clicking on the checkbox in the header row."
+                                }));
+                            }
+                        });
+                    }
+                }).fail(function(error) {
+                    $('#infobar').removeClass('alert-info').addClass('alert-danger').html($('<span>', {
+                        text: "Cannot load previous selection: " + error.statusText + ' (' + error.status + ')'
+                    }));
+                });
+            }
+
+            function createWarningList(warnings) {
+                var byRelease = {},
+                    $list = $('<ul>');
+
+                warnings.forEach(function(warning) {
+                    if(!byRelease[warning.release]) {
+                        byRelease[warning.release] = {};
+                    }
+                    if(!byRelease[warning.release][warning.attachment]) {
+                        byRelease[warning.release][warning.attachment] = [];
+                    }
+                    byRelease[warning.release][warning.attachment].push(warning.text);
+                });
+
+                Object.keys(byRelease).forEach(function(release) {
+                    var $rlist = $('<ul>');
+                    $list.append($('<li>', { text: release }).append($rlist));
+
+                    Object.keys(byRelease[release]).forEach(function(attachment) {
+                        var $alist = $('<ul>');
+                        $rlist.append($('<li>', { text: attachment }).append($alist));
+
+                        byRelease[release][attachment].forEach(function(warning) {
+                            $alist.append($('<li>', { text: warning }));
+                        });
+                    });
+                });
+
+                return $list;
+            }
+
+            function restoreSelection($linkedProjectsInfoTable, attachmentUsages, ttId, prefix, readyCallback) {
+                var warnings = [],
+                    loadCountdown = countdown(attachmentUsages.length, function() { readyCallback(null, warnings); }),
+                    config = $linkedProjectsInfoTable.data();
+
+                if (!prefix) {
+                    // on first load (=prefix is empty) reset all default selected checkboxes if we have a stored selection
+                    $("#selectAllCheckbox").prop('checked', false).trigger('change');
+                } else {
+                    // on subproject loads (=prefix is set) reset only subtree checkboxes
+                    $ttNode = $linkedProjectsInfoTable.treetable('node', ttId);
+                    uncheckAttachmentInSubtree($ttNode);
+                }
+                attachmentUsages.forEach(function(usage) {
+                    var inputPrefix = config.tableMode === config.tableModeLicenseInfo ? prefix + usage.usageData.licenseInfo.projectPath + ':' : '',
+                        node;
+                    // check all checkboxes by checking the parent one because we are storing exclusions and only
+                    // excluded ones will be unchecked
+                    $linkedProjectsInfoTable.find('tr input[value="' + inputPrefix + usage.owner.releaseId + ':' + usage.attachmentContentId + '"]:first').prop('checked', true).trigger('change');
+
+                    if(usage.usageData.licenseInfo && usage.usageData.licenseInfo.excludedLicenseIds.length > 0) {
+                        if (!usage.usageData.licenseInfo.projectPath) {
+                            // if an export happened in older storage format, just try naive fix and pretend release
+                            // has been in main project. if that does not work, just print warning that restore
+                            // might have failed
+                            usage.usageData.licenseInfo.projectPath = config.projectId;
+                        }
+                        node = findNode($linkedProjectsInfoTable, usage, prefix);
+                        if (!node) {
+                            var releaseName = findReleaseName($linkedProjectsInfoTable, usage, prefix),
+                                attachmentName = findAttachmentName($linkedProjectsInfoTable, usage, prefix);
+                            warnings.push({
+                                release: releaseName || 'unknown release',
+                                attachment: attachmentName || 'unknown attachment',
+                                text: 'Last export happened with old storage format, so restored data might not be correct for attachments of releases in subprojects.'
+                            });
+                            loadCountdown.decrement();
+                        } else {
+                            expandLicenseFile($linkedProjectsInfoTable, node, function(error) {
+                                if(error) {
+                                    readyCallback(error);
+                                    return;
+                                }
+                                usage.usageData.licenseInfo.excludedLicenseIds.forEach(function(licenseId) {
+                                    var $parentRow = $linkedProjectsInfoTable.find('tr[data-project-path="' + prefix + usage.usageData.licenseInfo.projectPath + '"][data-release-id=' + usage.owner.releaseId + '][data-attachment-id=' + usage.attachmentContentId + ']:first'),
+                                        $row = $linkedProjectsInfoTable.find('tr[data-tt-parent-id="' + $parentRow.data().ttId + '"][data-license-name="' + licenseId + '"]');
+
+                                    if($row.length == 0) {
+                                        warnings.push({
+                                            release: findReleaseName($linkedProjectsInfoTable, usage, prefix),
+                                            attachment: findAttachmentName($linkedProjectsInfoTable, usage, prefix),
+                                            text: 'License "' + licenseId + '" not found. License is not excluded.'
+                                        });
+                                    } else if($row.length > 1) {
+                                        warnings.push({
+                                            release: findReleaseName($linkedProjectsInfoTable, usage, prefix),
+                                            attachment: findAttachmentName($linkedProjectsInfoTable, usage, prefix),
+                                            text: 'License "' + licenseId + '" is not unique. License is not excluded.'
+                                        });
+                                    } else {
+                                        $row.find('input[name="' + config.portletNamespace + prefix + usage.usageData.licenseInfo.projectPath + ':' + usage.owner.releaseId + ':' + usage.attachmentContentId + '"]').prop('checked', false).trigger('change');
+                                    }
+                                });
+                                loadCountdown.decrement();
+                            });
+                        }
+                    } else {
+                        loadCountdown.decrement();
+                    }
+                });
+            }
+
+            function uncheckAttachmentInSubtree($ttNode) {
+                if ($ttNode.row.data().rowType !== 'attachment') {
+                    $ttNode.children.forEach(function(childNode) {
+                        uncheckAttachmentInSubtree(childNode);
+                    });
+                } else {
+                    $ttNode.row.find('input[type="checkbox"]:first').prop('checked', false).trigger('change');
+                }
+            }
+
+            function findNode($linkedProjectsInfoTable, usage, prefix) {
+                var $row = $linkedProjectsInfoTable.find('tr[data-project-path="' + prefix + usage.usageData.licenseInfo.projectPath + '"][data-release-id=' + usage.owner.releaseId + '][data-attachment-id=' + usage.attachmentContentId + ']:first');
+                if ($row.length > 0) {
+                    return $linkedProjectsInfoTable.treetable("node", $row.data().ttId);
+                } else {
+                    return null;
+                }
+            }
+
+            function findAttachmentName($linkedProjectsInfoTable, usage, prefix) {
+                var $row = $linkedProjectsInfoTable.find('tr[data-project-path="' + prefix + usage.usageData.licenseInfo.projectPath + '"][data-release-id=' + usage.owner.releaseId + '][data-attachment-id=' + usage.attachmentContentId + ']:first');
+                return $row.find('td.filename').text();
+            }
+
+            function findReleaseName($linkedProjectsInfoTable, usage, prefix) {
+                var $row = $linkedProjectsInfoTable.find('tr[data-project-path="' + prefix + usage.usageData.licenseInfo.projectPath + '"][data-release-id=' + usage.owner.releaseId + ']:first');
+                return $row.find('td.release-name a').text();
+            }
+
+            function countdown(value, callback) {
+                return {
+                    decrement: function() {
+                        value --;
+                        if(value == 0) {
+                            callback();
+                        }
+                    }
+                };
+            }
+        });
+    });
+</script>

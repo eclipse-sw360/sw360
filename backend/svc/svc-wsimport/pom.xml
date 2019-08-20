@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) Verifa Oy, 2018.
-  ~ Part of the SW360 Portal Project.
+  ~ Copyright (c) Verifa Oy, 2018. Part of the SW360 Portal Project.
+  ~ With contributions by Siemens AG, 2019.
   ~
   ~ SPDX-License-Identifier: EPL-1.0
   ~
@@ -23,6 +23,10 @@
     <artifactId>svc-wsimport</artifactId>
     <packaging>war</packaging>
     <name>svc-wsimport</name>
+
+    <properties>
+        <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+    </properties>
 
     <build>
         <finalName>wsimport</finalName>
