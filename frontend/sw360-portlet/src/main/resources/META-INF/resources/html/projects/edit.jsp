@@ -67,18 +67,18 @@
 <core_rt:if test="${empty attributeNotFoundException}">
 
 <div class="container" style="display: none;">
-	<div class="row">
-		<div class="col-3 sidebar">
-			<div id="detailTab" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
-			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab">Summary</a>
-			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Administration'}">active</core_rt:if>" href="#tab-Administration" data-toggle="list" role="tab">Administration</a>
-			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-linkedProjects'}">active</core_rt:if>" href="#tab-linkedProjects" data-toggle="list" role="tab">Linked Releases And Projects</a>
-			<core_rt:if test="${not addMode}" >
+    <div class="row">
+        <div class="col-3 sidebar">
+            <div id="detailTab" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
+                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab">Summary</a>
+                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Administration'}">active</core_rt:if>" href="#tab-Administration" data-toggle="list" role="tab">Administration</a>
+                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-linkedProjects'}">active</core_rt:if>" href="#tab-linkedProjects" data-toggle="list" role="tab">Linked Releases And Projects</a>
+                <core_rt:if test="${not addMode}" >
                     <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Attachments'}">active</core_rt:if>" href="#tab-Attachments" data-toggle="list" role="tab">Attachments</a>
                 </core_rt:if>
-		    </div>
-	    </div>
-	    <div class="col">
+            </div>
+        </div>
+        <div class="col">
             <div class="row portlet-toolbar">
                 <div class="col-auto">
                     <div class="btn-toolbar" role="toolbar">
@@ -106,11 +106,11 @@
                     </div>
                 </div>
                 <div class="col portlet-title text-truncate" title="${sw360:printProjectName(project)}"">
-					<sw360:ProjectName project="${project}"/>
-				</div>
+                    <sw360:ProjectName project="${project}"/>
+                </div>
             </div>
             <div class="row">
-				<div class="col">
+                <div class="col">
                     <form  id="projectEditForm" name="projectEditForm" action="<%=updateURL%>" class="needs-validation" method="post" novalidate
                         data-delete-url="<%=deleteURL%>"
                         data-comment-parameter-name="<%=PortalConstants.MODERATION_REQUEST_COMMENT%>"
@@ -147,8 +147,8 @@
                             </core_rt:if>
                         </div>
                     </form>
-		        </div>
-		    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -156,44 +156,44 @@
 
 <div class="dialogs auto-dialogs">
     <div id="deleteProjectDialog" class="modal fade" tabindex="-1" role="dialog">
-		<div class="modal-dialog modal-lg modal-dialog-centered modal-danger" role="document">
-		    <div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title">
-					<clay:icon symbol="question-circle" />
-					Delete Project?
-				</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button>
-			</div>
-				<div class="modal-body">
-			        <p>Do you really want to delete the project <b data-name="name"></b>?</p>
-			        <div data-hide="hasNoDependencies">
-				        <p>
-						This project <span data-name="name"></span> contains:
-				        </p>
-					<ul>
-						<li data-hide="hasNoLinkedProjects"><span data-name="linkedProjects"></span> linked projects</li>
-						<li data-hide="hasNoLinkedReleases"><span data-name="linkedReleases"></span> linked releases</li>
-						<li data-hide="hasNoAttachments"><span data-name="attachments"></span> attachments</li>
-					</ul>
-				</div>
-			        <hr/>
-			        <form>
-					<div class="form-group">
-					        <label for="deleteProjectDialogComment">Please comment your changes</label>
-					        <textarea id="deleteProjectDialogComment" class="form-control" data-name="comment" rows="4" placeholder="Comment your request..."></textarea>
-					</div>
-			        </form>
-				</div>
-			    <div class="modal-footer">
-			        <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
-			        <button type="button" class="btn btn-danger">Delete Project</button>
-			    </div>
-			</div>
-		</div>
-	</div>
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-danger" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <clay:icon symbol="question-circle" />
+                    Delete Project?
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+                <div class="modal-body">
+                    <p>Do you really want to delete the project <b data-name="name"></b>?</p>
+                    <div data-hide="hasNoDependencies">
+                        <p>
+                        This project <span data-name="name"></span> contains:
+                        </p>
+                    <ul>
+                        <li data-hide="hasNoLinkedProjects"><span data-name="linkedProjects"></span> linked projects</li>
+                        <li data-hide="hasNoLinkedReleases"><span data-name="linkedReleases"></span> linked releases</li>
+                        <li data-hide="hasNoAttachments"><span data-name="attachments"></span> attachments</li>
+                    </ul>
+                </div>
+                    <hr/>
+                    <form>
+                    <div class="form-group">
+                            <label for="deleteProjectDialogComment">Please comment your changes</label>
+                            <textarea id="deleteProjectDialogComment" class="form-control" data-name="comment" rows="4" placeholder="Comment your request..."></textarea>
+                    </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger">Delete Project</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <core_rt:set var="enableSearchForReleasesFromLinkedProjects" value="${true}" scope="request"/>
@@ -299,10 +299,10 @@ require(['jquery', 'modules/dialog', 'modules/listgroup', 'modules/validation', 
             'pencil',
             'Create moderation request',
             '<form>' +
-			    '<div class="form-group">' +
-					'<label for="deleteProjectDialogComment">Please comment your changes</label>' +
-					'<textarea form=projectEditForm name="<portlet:namespace/><%=PortalConstants.MODERATION_REQUEST_COMMENT%>" id="moderationRequestCommentField" class="form-control" placeholder="Leave a comment on your request" data-name="comment"></textarea>' +
-			    '</div>' +
+                '<div class="form-group">' +
+                    '<label for="deleteProjectDialogComment">Please comment your changes</label>' +
+                    '<textarea form=projectEditForm name="<portlet:namespace/><%=PortalConstants.MODERATION_REQUEST_COMMENT%>" id="moderationRequestCommentField" class="form-control" placeholder="Leave a comment on your request" data-name="comment"></textarea>' +
+                '</div>' +
             '</form>',
             'Send moderation request',
             {
