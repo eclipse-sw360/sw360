@@ -37,43 +37,42 @@
 <portlet:resourceURL var="ajaxURL" id="import.jsp"></portlet:resourceURL>
 
 <div class="container">
-	<div class="row">
-		<div class="col-3 sidebar">
-			<div class="card-deck card-deck-vertical">
-				<div class="card">
-					<div class="card-header">
-						Server
-					</div>
+    <div class="row">
+        <div class="col-3 sidebar">
+            <div class="card-deck card-deck-vertical">
+                <div class="card">
+                    <div class="card-header">
+                        Server
+                    </div>
                     <div class="card-body">
-					<form id="remoteLoginForm" class="form needs-validation" novalidate>
+                        <form id="remoteLoginForm" class="form needs-validation" novalidate>
                             <div class="alert alert-danger mb-3" style="display: none;"></div>
                             <div class="alert alert-success mb-3" <core_rt:if test="${not loggedIn}">style="display: none;"</core_rt:if>>
                                 You are logged in <clay:icon symbol="check"/>
                             </div>
-						<div class="form-group">
-							<label for="project_name">Server URL</label>
+                            <div class="form-group">
+                                <label for="project_name">Server URL</label>
                                 <core_rt:if test="${empty hosts}">
                                     <input type="text" class="form-control form-control-sm" name="<portlet:namespace/><%=RemoteCredentials._Fields.SERVER_URL%>"
-                                            value="<sw360:out value="${name}"/>" id="input-dataserver-url" autofocus required>
+                                        value="<sw360:out value="${name}"/>" id="input-dataserver-url" autofocus required>
                                     <div class="invalid-feedback">
                                         Please enter the server url!
                                     </div>
                                 </core_rt:if>
                                 <core_rt:if test="${not empty hosts}">
                                     <select class="form-control form-control-sm" id="input-dataserver-url"
-                                            name="<portlet:namespace/><%=RemoteCredentials._Fields.SERVER_URL%>" required>
+                                        name="<portlet:namespace/><%=RemoteCredentials._Fields.SERVER_URL%>" required>
                                         <core_rt:forEach items="${hosts}" var="host">
                                             <option value="${host}" <core_rt:if
-                                                    test='${loggedInServer == host}'>selected="selected"</core_rt:if>> ${host} </option>
+                                                test='${loggedInServer == host}'>selected="selected"</core_rt:if>> ${host} </option>
                                         </core_rt:forEach>
                                     </select>
                                     <div class="invalid-feedback">
                                         Please select the server!
                                     </div>
                                 </core_rt:if>
-
-				            </div>
-				            <div id="remoteLoginFormHidingPart">
+                            </div>
+                            <div id="remoteLoginFormHidingPart">
                                 <div class="form-group">
                                     <label for="input-dataserver-user">Server User</label>
                                     <input class="form-control form-control-sm" id="input-dataserver-user"
@@ -92,43 +91,43 @@
                                 </div>
                             </div>
                             <div>
-						    <button id="buttonConnect" type="button" class="btn btn-primary btn-sm btn-block" <core_rt:if test="${loggedIn}">disabled</core_rt:if>>Connect</button>
+                                <button id="buttonConnect" type="button" class="btn btn-primary btn-sm btn-block" <core_rt:if test="${loggedIn}">disabled</core_rt:if>>Connect</button>
                             </div>
                             <div>
                                 <button id="buttonDisconnect" type="button" class="btn btn-secondary btn-sm btn-block mt-2" <core_rt:if test="${not loggedIn}">disabled</core_rt:if>>Disconnect</button>
                             </div>
-				        </form>
-					</div>
-				</div>
+                        </form>
+                    </div>
+                </div>
                 <div class="card">
-					<div class="card-header">
-						Filter
-					</div>
+                    <div class="card-header">
+                        Filter
+                    </div>
                     <div class="card-body">
-					<form class="form" id="remoteFilterForm">
-						<div class="form-group">
-							<label for="project_name">Project Name (first letters)</label>
+                        <form class="form" id="remoteFilterForm">
+                            <div class="form-group">
+                                <label for="project_name">Project Name (first letters)</label>
                                 <input type="text" class="form-control form-control-sm" name="<portlet:namespace/><%=Project._Fields.NAME%>"
-                                            value="<sw360:out value="${name}"/>" <core_rt:if test="${not loggedIn}">disabled</core_rt:if> id="input-project-name">
+                                    value="<sw360:out value="${name}"/>" <core_rt:if test="${not loggedIn}">disabled</core_rt:if> id="input-project-name">
                             </div>
-						<button id="buttonRefresh" type="button" class="btn btn-primary btn-sm btn-block" <core_rt:if test="${not loggedIn}">disabled</core_rt:if>>Refresh</button>
-				        </form>
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="col">
+                            <button id="buttonRefresh" type="button" class="btn btn-primary btn-sm btn-block" <core_rt:if test="${not loggedIn}">disabled</core_rt:if>>Refresh</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
             <div class="row portlet-toolbar">
-				<div class="col-auto">
-					<div class="btn-toolbar" role="toolbar">
-						<div class="btn-group" role="group">
-							<button type="button" class="btn btn-primary" data-action="import-projects" disabled>Import Projects</button>
-						</div>
-					</div>
-				</div>
+                <div class="col-auto">
+                    <div class="btn-toolbar" role="toolbar">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-primary" data-action="import-projects" disabled>Import Projects</button>
+                        </div>
+                    </div>
+                </div>
                 <div class="col portlet-title text-truncate" title="Project Import (BDP)">
-					Project Import (BDP)
-				</div>
+                    Project Import (BDP)
+                </div>
             </div>
 
             <div class="row">
@@ -137,7 +136,7 @@
                         <p>For performance reasons, only the first 50 results will be shown. Please enter the prefix of the project name to narrow the search.</p>
                         <p class="mb-0">You may use the Shift-Key to select more rows.</p>
                     </div>
-			        <table id="dataSourceTable" class="table table-bordered">
+                    <table id="dataSourceTable" class="table table-bordered">
                         <colgroup>
                             <col style="width: 3.4rem;"/>
                             <col style="width: 30%;"/>
@@ -147,8 +146,8 @@
                 </div>
             </div>
 
-		</div>
-	</div>
+        </div>
+    </div>
 </div>
 
 <div class="dialogs auto-dialogs"></div>

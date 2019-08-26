@@ -78,167 +78,167 @@
 </portlet:resourceURL>
 
 <div class="container" style="display: none;">
-	<div class="row">
-		<div class="col-3 sidebar">
-			<div class="card-deck">
-				<div id="searchInput" class="card">
-					<div class="card-header">
-						Advanced Search
-					</div>
-					<div class="card-body">
-					<form action="<%=applyFiltersURL%>" method="post">
-						<div class="form-group">
-							<label for="project_name">Project Name</label>
-				                <input type="text" class="form-control form-control-sm" name="<portlet:namespace/><%=Project._Fields.NAME%>"
-				                           value="<sw360:out value="${name}"/>" id="project_name">
-				            </div>
-				            <div class="form-group">
-			                    <label for="project_version">Project Version</label>
-			                    <input type="text" class="form-control form-control-sm" name="<portlet:namespace/><%=Project._Fields.VERSION%>"
-			                           value="<sw360:out value="${version}"/>" id="project_version">
-				            </div>
-				            <div class="form-group">
-			                    <label for="project_type">Project Type</label>
-			                    <select class="form-control form-control-sm" id="project_type" name="<portlet:namespace/><%=Project._Fields.PROJECT_TYPE%>">
-			                        <option value="<%=PortalConstants.NO_FILTER%>"></option>
-			                        <sw360:DisplayEnumOptions type="<%=ProjectType.class%>" selectedName="${projectType}" useStringValues="true"/>
-			                    </select>
-				            </div>
-				            <div class="form-group">
-			                    <label for="project_responsible">Project Responsible (Email)</label>
-			                    <input type="text" class="form-control form-control-sm" name="<portlet:namespace/><%=Project._Fields.PROJECT_RESPONSIBLE%>"
-			                           value="<sw360:out value="${projectResponsible}"/>" id="project_responsible">
-				            </div>
-				            <div class="form-group">
-			                    <label for="group">Group</label>
-			                    <select class="form-control form-control-sm" id="group" name="<portlet:namespace/><%=Project._Fields.BUSINESS_UNIT%>">
-			                        <option value=""
-			                                <core_rt:if test="${empty businessUnit}"> selected="selected"</core_rt:if>></option>
-			                        <core_rt:forEach items="${organizations}" var="org">
-			                            <option value="<sw360:out value="${org.name}"/>"
-			                                    <core_rt:if test="${org.name == businessUnit}"> selected="selected"</core_rt:if>
-			                            ><sw360:out value="${org.name}"/></option>
-			                        </core_rt:forEach>
-			                    </select>
-				            </div>
-				            <div class="form-group">
-						<label for="project_state">State</label>
-			                    <select class="form-control form-control-sm" id="project_state" name="<portlet:namespace/><%=Project._Fields.STATE%>">
-			                        <option value="<%=PortalConstants.NO_FILTER%>"></option>
-			                        <sw360:DisplayEnumOptions type="<%=ProjectState.class%>" selectedName="${state}" useStringValues="true"/>
-			                    </select>
-				            </div>
-				            <div class="form-group">
-				                    <label for="tag">Tag</label>
-				                    <input type="text" class="form-control form-control-sm" name="<portlet:namespace/><%=Project._Fields.TAG%>"
-				                           value="<sw360:out value="${tag}"/>" id="tag">
-				            </div>
-						<button type="submit" class="btn btn-primary btn-sm btn-block">Search</button>
-				        </form>
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="col">
+    <div class="row">
+        <div class="col-3 sidebar">
+            <div class="card-deck">
+                <div id="searchInput" class="card">
+                    <div class="card-header">
+                        Advanced Search
+                    </div>
+                    <div class="card-body">
+                    <form action="<%=applyFiltersURL%>" method="post">
+                        <div class="form-group">
+                            <label for="project_name">Project Name</label>
+                                <input type="text" class="form-control form-control-sm" name="<portlet:namespace/><%=Project._Fields.NAME%>"
+                                           value="<sw360:out value="${name}"/>" id="project_name">
+                            </div>
+                            <div class="form-group">
+                                <label for="project_version">Project Version</label>
+                                <input type="text" class="form-control form-control-sm" name="<portlet:namespace/><%=Project._Fields.VERSION%>"
+                                       value="<sw360:out value="${version}"/>" id="project_version">
+                            </div>
+                            <div class="form-group">
+                                <label for="project_type">Project Type</label>
+                                <select class="form-control form-control-sm" id="project_type" name="<portlet:namespace/><%=Project._Fields.PROJECT_TYPE%>">
+                                    <option value="<%=PortalConstants.NO_FILTER%>"></option>
+                                    <sw360:DisplayEnumOptions type="<%=ProjectType.class%>" selectedName="${projectType}" useStringValues="true"/>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="project_responsible">Project Responsible (Email)</label>
+                                <input type="text" class="form-control form-control-sm" name="<portlet:namespace/><%=Project._Fields.PROJECT_RESPONSIBLE%>"
+                                       value="<sw360:out value="${projectResponsible}"/>" id="project_responsible">
+                            </div>
+                            <div class="form-group">
+                                <label for="group">Group</label>
+                                <select class="form-control form-control-sm" id="group" name="<portlet:namespace/><%=Project._Fields.BUSINESS_UNIT%>">
+                                    <option value=""
+                                            <core_rt:if test="${empty businessUnit}"> selected="selected"</core_rt:if>></option>
+                                    <core_rt:forEach items="${organizations}" var="org">
+                                        <option value="<sw360:out value="${org.name}"/>"
+                                                <core_rt:if test="${org.name == businessUnit}"> selected="selected"</core_rt:if>
+                                        ><sw360:out value="${org.name}"/></option>
+                                    </core_rt:forEach>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                               <label for="project_state">State</label>
+                                <select class="form-control form-control-sm" id="project_state" name="<portlet:namespace/><%=Project._Fields.STATE%>">
+                                    <option value="<%=PortalConstants.NO_FILTER%>"></option>
+                                    <sw360:DisplayEnumOptions type="<%=ProjectState.class%>" selectedName="${state}" useStringValues="true"/>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="tag">Tag</label>
+                                <input type="text" class="form-control form-control-sm" name="<portlet:namespace/><%=Project._Fields.TAG%>"
+                                        value="<sw360:out value="${tag}"/>" id="tag">
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm btn-block">Search</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
             <div class="row portlet-toolbar">
-				<div class="col-auto">
-					<div class="btn-toolbar" role="toolbar">
-						<div class="btn-group" role="group">
-							<button type="button" class="btn btn-primary" onclick="window.location.href='<%=addProjectURL%>'">Add Project</button>
-						</div>
-						<div id="btnExportGroup" class="btn-group" role="group">
-							<button id="btnExport" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-						        Export Spreadsheet
-						        <clay:icon symbol="caret-bottom" />
-						    </button>
-						    <div class="dropdown-menu" aria-labelledby="btnExport">
-						      <a class="dropdown-item" href="#" data-type="projectOnly">Projects only</a>
-						      <a class="dropdown-item" href="#" data-type="projectWithReleases">Projects with linked releases</a>
-						    </div>
-						</div>
-					</div>
-				</div>
+                <div class="col-auto">
+                    <div class="btn-toolbar" role="toolbar">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-primary" onclick="window.location.href='<%=addProjectURL%>'">Add Project</button>
+                        </div>
+                        <div id="btnExportGroup" class="btn-group" role="group">
+                            <button id="btnExport" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Export Spreadsheet
+                                <clay:icon symbol="caret-bottom" />
+                            </button>
+                            <div class="dropdown-menu" aria-labelledby="btnExport">
+                                <a class="dropdown-item" href="#" data-type="projectOnly">Projects only</a>
+                                <a class="dropdown-item" href="#" data-type="projectWithReleases">Projects with linked releases</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="col portlet-title text-truncate" title="Projects">
-					Projects
-				</div>
+                    Projects
+                </div>
             </div>
 
             <div class="row">
                 <div class="col">
-			        <table id="projectsTable" class="table table-bordered"></table>
+                    <table id="projectsTable" class="table table-bordered"></table>
                 </div>
             </div>
 
-		</div>
-	</div>
+        </div>
+    </div>
 </div>
 <%@ include file="/html/utils/includes/pageSpinner.jspf" %>
 
 <div class="dialogs auto-dialogs">
 
-	<div id="fossologyClearingDialog" data-title="Fossology Clearing" class="modal fade" tabindex="-1" role="dialog">
-		<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
-		    <div class="modal-content">
-			<div class="modal-body">
-			        <form id="fossologyClearingForm">
-				        <input name="<portlet:namespace/><%=PortalConstants.PROJECT_ID%>" hidden="" value="" data-name="projectId"/>
+    <div id="fossologyClearingDialog" data-title="Fossology Clearing" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+            <div class="modal-body">
+                    <form id="fossologyClearingForm">
+                        <input name="<portlet:namespace/><%=PortalConstants.PROJECT_ID%>" hidden="" value="" data-name="projectId"/>
 
-						<div class="spinner text-center">
-							<div class="spinner-border" role="status">
-							<span class="sr-only">Loading...</span>
-							</div>
-						</div>
+                        <div class="spinner text-center">
+                            <div class="spinner-border" role="status">
+                            <span class="sr-only">Loading...</span>
+                            </div>
+                        </div>
 
-						<!-- content will be inserted here -->
-				    </form>
-				</div>
-			    <div class="modal-footer">
-			        <button type="button" class="btn btn-light" data-dismiss="modal">Close</button>
-			        <button type="button" class="btn btn-primary">Send</button>
-			    </div>
-			</div>
-		</div>
-	</div>
+                        <!-- content will be inserted here -->
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-	<div id="deleteProjectDialog" class="modal fade" tabindex="-1" role="dialog">
-		<div class="modal-dialog modal-lg modal-dialog-centered modal-danger" role="document">
-		    <div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title">
-					<clay:icon symbol="question-circle" />
-					Delete Project?
-				</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button>
-			</div>
-				<div class="modal-body">
-			        <p>Do you really want to delete the project <b data-name="name"></b>?</p>
-			        <div data-hide="hasNoDependencies">
-				        <p>
-						This project <b data-name="name"></b> contains:
-				        </p>
-					<ul>
-						<li data-hide="hasNoLinkedProjects"><span data-name="linkedProjects"></span> linked projects</li>
-						<li data-hide="hasNoLinkedReleases"><span data-name="linkedReleases"></span> linked releases</li>
-						<li data-hide="hasNoAttachments"><span data-name="attachments"></span> attachments</li>
-					</ul>
-				</div>
-			        <hr/>
-			        <form>
-					<div class="form-group">
-					        <label for="moderationDeleteCommentField">Please comment your changes</label>
-					        <textarea id="moderationDeleteCommentField" class="form-control" data-name="comment" rows="4" placeholder="Comment your request..."></textarea>
-					</div>
-			        </form>
-				</div>
-			    <div class="modal-footer">
-			        <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
-			        <button type="button" class="btn btn-danger">Delete Project</button>
-			    </div>
-			</div>
-		</div>
-	</div>
+    <div id="deleteProjectDialog" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-danger" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <clay:icon symbol="question-circle" />
+                        Delete Project?
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Do you really want to delete the project <b data-name="name"></b>?</p>
+                    <div data-hide="hasNoDependencies">
+                        <p>
+                        This project <b data-name="name"></b> contains:
+                        </p>
+                        <ul>
+                            <li data-hide="hasNoLinkedProjects"><span data-name="linkedProjects"></span> linked projects</li>
+                            <li data-hide="hasNoLinkedReleases"><span data-name="linkedReleases"></span> linked releases</li>
+                            <li data-hide="hasNoAttachments"><span data-name="attachments"></span> attachments</li>
+                        </ul>
+                    </div>
+                    <hr/>
+                    <form>
+                        <div class="form-group">
+                            <label for="moderationDeleteCommentField">Please comment your changes</label>
+                            <textarea id="moderationDeleteCommentField" class="form-control" data-name="comment" rows="4" placeholder="Comment your request..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger">Delete Project</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 
@@ -281,10 +281,10 @@
             });
 
             $('#fossologyClearingDialog form').on('change', 'table [data-action="select"]', function(event) {
-		$(event.currentTarget).parents('form').find('td :checkbox').prop("checked", $(event.currentTarget).is(':checked'));
+                $(event.currentTarget).parents('form').find('td :checkbox').prop("checked", $(event.currentTarget).is(':checked'));
             });
             $('#fossologyClearingDialog form').on('change', 'table td :checkbox', function(event) {
-		$(event.currentTarget).parents('form').find('[data-action="select"]').prop("checked", $(event.currentTarget).parents('form').find('td :checkbox:not(:checked)').length == 0);
+                $(event.currentTarget).parents('form').find('[data-action="select"]').prop("checked", $(event.currentTarget).parents('form').find('td :checkbox:not(:checked)').length == 0);
             });
 
              // helper functions
@@ -307,9 +307,9 @@
                 var projectsTable;
 
                 projectsTable = datatables.create('#projectsTable', {
-			// the following parameter must not be removed, otherwise it won't work anymore (probably due to datatable plugins)
-			bServerSide: true,
-                    sAjaxSource: '<%=loadProjectsURL%>', // this parameter must not be converted to 'ajax', otherwise it won't work anymore (probably due to datatable plugins)
+                    // the following two parameters must not be removed, otherwise it won't work anymore (probably due to datatable plugins)
+                    bServerSide: true,
+                    sAjaxSource: '<%=loadProjectsURL%>',
 
                     columns: [
                         {title: "Project Name", data: "name", render: {display: renderProjectNameLink}},
@@ -330,7 +330,7 @@
 
             function renderProjectActions(id, type, row) {
                 var $actions = $('<div>', {
-				'class': 'actions'
+                        'class': 'actions'
                     }),
                     $editAction,
                     <core_rt:choose>
@@ -345,7 +345,7 @@
                                 'class': 'clearing lexicon-icon',
                                 'data-project-id': id,
                             }).append('<title>Send to Fossology</title>'),
-			    </core_rt:otherwise>
+                        </core_rt:otherwise>
                     </core_rt:choose>
                     $copyAction = render.linkTo(
                         makeProjectUrl(id, '<%=PortalConstants.PAGENAME_DUPLICATE%>'),
@@ -353,17 +353,17 @@
                         '<svg class="lexicon-icon" title="Duplicate"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#paste"/></svg>'
                     ),
                     $deleteAction = $('<svg>', {
-			'class': 'delete lexicon-icon',
-			title: 'Delete',
-			'data-project-id': id,
-			'data-project-name': row.name,
-			'data-linked-projects-count': row.lProjSize,
-			'data-linked-releases-count': row.lRelsSize,
-			'data-project-attachment-count': row.attsSize,
+                        'class': 'delete lexicon-icon',
+                        title: 'Delete',
+                        'data-project-id': id,
+                        'data-project-name': row.name,
+                        'data-linked-projects-count': row.lProjSize,
+                        'data-linked-releases-count': row.lRelsSize,
+                        'data-project-attachment-count': row.attsSize,
                     });
 
                     $clearingAction.append($('<use href="<%=request.getContextPath()%>/images/icons.svg#fossology"/>'));
-			$deleteAction.append($('<use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
+            $deleteAction.append($('<use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
 
                 if(row.cState == 'CLOSED' && ${isUserAdmin != 'Yes'}) {
                     $editAction = $('<svg class="lexicon-icon disabled"><title>Only administrators can edit a closed project.</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>');
@@ -379,22 +379,22 @@
                 return $actions[0].outerHTML;
             }
 
-		    function renderProjectNameLink(name, type, row) {
+            function renderProjectNameLink(name, type, row) {
                 return render.linkTo(replaceFriendlyUrlParameter(row.id, '<%=PortalConstants.PAGENAME_DETAIL%>'), name);
-		    }
+            }
 
             function renderStateBoxes(state, type, row) {
                 var projectStateBackgroundColour = getProjectStateBackgroundColour(state);
                 var clearingStateBackgroundColour = getClearingStateBackgroundColour(row);
 
                 var $state = $('<div>', {
-			'class': 'content-center'
+                    'class': 'content-center'
                 });
                 var $psBox = $('<div>', {
-			'class': 'stateBox capsuleLeft ' + projectStateBackgroundColour
+                    'class': 'stateBox capsuleLeft ' + projectStateBackgroundColour
                 }).text('PS');
                 var $csBox = $('<div>', {
-			'class': 'stateBox capsuleRight ' + clearingStateBackgroundColour
+                    'class': 'stateBox capsuleRight ' + clearingStateBackgroundColour
                 }).text('CS');
 
                 $state.append($psBox, $csBox);
@@ -532,34 +532,33 @@
             // fossology acion
             function openSelectClearingDialog(projectId) {
                 var $dialog = dialog.open('#fossologyClearingDialog', {
-			projectId: projectId
-                }, function(submit, callback) {
-			jQuery.ajax({
-                        type: 'POST',
-                        url: '<%=projectReleasesSendURL%>',
-                        cache: false,
-                        data: $('form#fossologyClearingForm').serialize(),
-                        success: function (data) {
-				if (data.result) {
-                                if (data.result == "FAILURE") {
-					$dialog.alert('Files could not be send to fossolgy.');
+                        projectId: projectId
+                    }, function(submit, callback) {
+                        jQuery.ajax({
+                            type: 'POST',
+                            url: '<%=projectReleasesSendURL%>',
+                            cache: false,
+                            data: $('form#fossologyClearingForm').serialize(),
+                            success: function (data) {
+                                if (data.result) {
+                                    if (data.result == "FAILURE") {
+                                        $dialog.alert('Files could not be send to fossolgy.');
+                                    }
+                                    else {
+                                        $dialog.success('Data has been sent.', true);
+                                    }
+                                } else {
+                                    $dialog.alert('Unknown result from request.');
                                 }
-                                else {
-                                    $dialog.success('Data has been sent.', true);
-                                }
-                            } else {
-				$dialog.alert('Unknown result from request.');
+
+                                callback();
+                            },
+                            error: function () {
+                                callback();
+                                $dialog.alert('Files could not be send to fossolgy.');
                             }
-
-                            callback();
-
-                        },
-                        error: function () {
-				callback();
-				$dialog.alert('Files could not be send to fossolgy.');
-                        }
+                        });
                     });
-                });
 
                 $dialog.$.find('.modal-content form table').remove();
                 $dialog.$.find('.modal-content form .alert').remove();
@@ -573,66 +572,66 @@
                         "<portlet:namespace/><%=PortalConstants.PROJECT_ID%>": projectId
                     },
                     success: function (data) {
-			$dialog.$.find('.modal-content form').append(data);
-			$dialog.$.find('.spinner').hide();
-			$dialog.enableButtons(true);
+                        $dialog.$.find('.modal-content form').append(data);
+                        $dialog.$.find('.spinner').hide();
+                        $dialog.enableButtons(true);
                     },
                     error: function () {
-			$dialog.$.find('.spinner').hide();
-			$dialog.alert('I could not get any releases!', true);
-			$dialog.enableButtons(true);
+                        $dialog.$.find('.spinner').hide();
+                        $dialog.alert('I could not get any releases!', true);
+                        $dialog.enableButtons(true);
                     }
                 });
             }
 
             // delete action
             function deleteProject(projectId, name, linkedProjectsSize, linkedReleasesSize, attachmentsSize) {
-				var $dialog;
+                var $dialog;
 
-		        function deleteProjectInternal(callback) {
-		            jQuery.ajax({
-		                type: 'POST',
-		                url: '<%=deleteAjaxURL%>',
-		                cache: false,
-		                data: {
-		                    "<portlet:namespace/><%=PortalConstants.PROJECT_ID%>": projectId,
+                function deleteProjectInternal(callback) {
+                    jQuery.ajax({
+                        type: 'POST',
+                        url: '<%=deleteAjaxURL%>',
+                        cache: false,
+                        data: {
+                            "<portlet:namespace/><%=PortalConstants.PROJECT_ID%>": projectId,
                             "<portlet:namespace/><%=PortalConstants.MODERATION_REQUEST_COMMENT%>": btoa($("#moderationDeleteCommentField").val())
                         },
-		                success: function (data) {
-					callback();
+                        success: function (data) {
+                            callback();
 
-		                    if (data.result == 'SUCCESS') {
-		                        projectsTable.row('#' + projectId).remove().draw(false);
-		                        $dialog.close();
-		                    }
-		                    else if (data.result == 'SENT_TO_MODERATOR') {
-		                        $dialog.info("You may not delete the project, but a request was sent to a moderator!", true);
-		                    } else if (data.result == 'IN_USE') {
-					$dialog.warning("The project cannot be deleted, since it is used by another project!");
-		                    }
-		                    else {
-					$dialog.alert("I could not delete the project!");
-		                    }
-		                },
-		                error: function () {
-					callback();
-					$dialog.alert("I could not delete the project!");
-		                }
-		            });
+                            if (data.result == 'SUCCESS') {
+                                projectsTable.row('#' + projectId).remove().draw(false);
+                                $dialog.close();
+                            }
+                            else if (data.result == 'SENT_TO_MODERATOR') {
+                                $dialog.info("You may not delete the project, but a request was sent to a moderator!", true);
+                            } else if (data.result == 'IN_USE') {
+                                $dialog.warning("The project cannot be deleted, since it is used by another project!");
+                            }
+                            else {
+                                $dialog.alert("I could not delete the project!");
+                            }
+                        },
+                        error: function () {
+                            callback();
+                            $dialog.alert("I could not delete the project!");
+                        }
+                    });
 
                 }
 
                 $dialog = dialog.open('#deleteProjectDialog', {
-			name: name,
-			linkedProjects: linkedProjectsSize,
-			linkedReleases: linkedReleasesSize,
-			attachments: attachmentsSize,
-			hasNoDependencies: linkedProjectsSize == 0 && linkedReleasesSize == 0 && attachmentsSize == 0,
-			hasNoLinkedProjects: linkedProjectsSize == 0,
-			hasNoLinkedReleases: linkedReleasesSize == 0,
-			hasNoAttachments: attachmentsSize == 0
+                    name: name,
+                    linkedProjects: linkedProjectsSize,
+                    linkedReleases: linkedReleasesSize,
+                    attachments: attachmentsSize,
+                    hasNoDependencies: linkedProjectsSize == 0 && linkedReleasesSize == 0 && attachmentsSize == 0,
+                    hasNoLinkedProjects: linkedProjectsSize == 0,
+                    hasNoLinkedReleases: linkedReleasesSize == 0,
+                    hasNoAttachments: attachmentsSize == 0
                 }, function(submit, callback) {
-			deleteProjectInternal(callback);
+                    deleteProjectInternal(callback);
                 });
             }
         });

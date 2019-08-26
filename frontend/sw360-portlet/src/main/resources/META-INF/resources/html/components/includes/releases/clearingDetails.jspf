@@ -68,7 +68,6 @@
         <td class="actions">
             <div class="actions justify-content-start">
                 <sw360:DisplayEnum value="${release.clearingState}"/>
-                &nbsp;
                 <core_rt:if test="${inReleaseDetailsContext}">
                     <core_rt:choose>
                         <core_rt:when test="${not empty FOSSOLOGY_CONNECTION_ENABLED and not FOSSOLOGY_CONNECTION_ENABLED}">

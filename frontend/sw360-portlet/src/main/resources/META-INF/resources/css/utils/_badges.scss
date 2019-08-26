@@ -18,6 +18,8 @@
 }
 
 .badge.badge-circle {
+    display: inline-block;
+
     width: 1rem;
     height: 1rem;
     border-radius: 0.5rem;
@@ -26,7 +28,7 @@
  .btn {
      .badge.badge-circle {
          position: relative;
-         top: -0.15rem;
+         top: 0.2rem;
      }
  }
 
