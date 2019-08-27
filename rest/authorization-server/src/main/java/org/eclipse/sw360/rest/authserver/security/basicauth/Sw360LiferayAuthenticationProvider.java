@@ -35,6 +35,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * This {@link AuthenticationProvider} is able to verify the given credentials
@@ -118,7 +119,9 @@ public class Sw360LiferayAuthenticationProvider implements AuthenticationProvide
         ResponseEntity<String> response = restTemplate.postForEntity(url, null, String.class);
 
         try {
-            Integer.parseInt(response.getBody());
+            Integer.parseInt(Optional.ofNullable(response.getBody())
+                    .map(s -> s.replace("\"",""))
+                    .orElse(""));
         } catch (NumberFormatException e) {
             return false;
         }
