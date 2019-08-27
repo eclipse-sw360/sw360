@@ -75,7 +75,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     public RequestStatus updateProject(Project project, User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         RequestStatus requestStatus = sw360ProjectClient.updateProject(project, sw360User);
-        if (requestStatus != RequestStatus.CLOSED_UPDATE_NOT_ALLOWED) {
+        if (requestStatus == RequestStatus.CLOSED_UPDATE_NOT_ALLOWED) {
             throw new RuntimeException("User cannot modify a closed project");
         } else if (requestStatus != RequestStatus.SUCCESS) {
             throw new RuntimeException("sw360 project with name '" + project.getName() + " cannot be updated.");
