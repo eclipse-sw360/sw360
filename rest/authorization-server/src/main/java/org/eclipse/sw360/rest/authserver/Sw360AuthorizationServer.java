@@ -11,23 +11,17 @@
 
 package org.eclipse.sw360.rest.authserver;
 
-import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
-import org.eclipse.sw360.rest.common.Sw360CORSFilter;
+import java.util.Properties;
 
 import org.apache.log4j.Logger;
-import org.springframework.boot.SpringApplication;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.rest.common.PropertyUtils;
+import org.eclipse.sw360.rest.common.Sw360CORSFilter;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.Import;
-
-import javax.crypto.SealedObject;
-
-import java.io.IOException;
-import java.util.Properties;
-
-import static org.eclipse.sw360.rest.authserver.security.Sw360SecurityEncryptor.encrypt;
 
 @SpringBootApplication
 @Import(Sw360CORSFilter.class)
@@ -35,36 +29,33 @@ public class Sw360AuthorizationServer extends SpringBootServletInitializer {
 
     private static final Logger log = Logger.getLogger(Sw360AuthorizationServer.class);
 
-    private static final String PROPERTIES_FILE_PATH = "/sw360.properties";
+    private static final String SW360_PROPERTIES_FILE_PATH = "/sw360.properties";
     private static final String DEFAULT_WRITE_ACCESS_USERGROUP = UserGroup.SW360_ADMIN.name();
     private static final String DEFAULT_ADMIN_ACCESS_USERGROUP = UserGroup.SW360_ADMIN.name();
+    private static final String APPLICATION_ID = "authorization";
 
     public static final String CONFIG_ACCESS_TOKEN_VALIDITY_SECONDS;
     public static final UserGroup CONFIG_WRITE_ACCESS_USERGROUP;
     public static final UserGroup CONFIG_ADMIN_ACCESS_USERGROUP;
 
     static {
-        Properties props = CommonUtils.loadProperties(Sw360AuthorizationServer.class, PROPERTIES_FILE_PATH);
+        Properties props = CommonUtils.loadProperties(Sw360AuthorizationServer.class, SW360_PROPERTIES_FILE_PATH);
         CONFIG_WRITE_ACCESS_USERGROUP = UserGroup.valueOf(props.getProperty("rest.write.access.usergroup", DEFAULT_WRITE_ACCESS_USERGROUP));
         CONFIG_ADMIN_ACCESS_USERGROUP = UserGroup.valueOf(props.getProperty("rest.admin.access.usergroup", DEFAULT_ADMIN_ACCESS_USERGROUP));
         CONFIG_ACCESS_TOKEN_VALIDITY_SECONDS = props.getProperty("rest.access.token.validity.seconds", null);
     }
 
-    private static SealedObject getConfigClientSecret(Properties props) {
-        try {
-            return encrypt(props.getProperty("rest.security.client.secret", null));
-        } catch (IOException e) {
-            log.error("Error occured while encrypting client password", e);
-            return null;
-        }
-    }
-
     @Override
     protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
-        return builder.sources(Sw360AuthorizationServer.class);
+        return builder
+            .sources(Sw360AuthorizationServer.class)
+            .properties(PropertyUtils.createDefaultProperties(APPLICATION_ID));
     }
 
     public static void main(String[] args) {
-        SpringApplication.run(Sw360AuthorizationServer.class, args);
+        new SpringApplicationBuilder(Sw360AuthorizationServer.class)
+            .properties(PropertyUtils.createDefaultProperties(APPLICATION_ID))
+            .build()
+            .run(args);
     }
 }

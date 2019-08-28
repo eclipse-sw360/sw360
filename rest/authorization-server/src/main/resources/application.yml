@@ -7,9 +7,11 @@
 # http://www.eclipse.org/org/documents/edl-v10.php
 #
 
+# Port to open in standalone mode
 server:
   port: 8090
 
+# Connection to the couch databases. Will be used to store client credentials
 couchdb:
   url: http://localhost:5984
   database: sw360oauthclients
@@ -22,13 +24,19 @@ spring:
     serialization:
       indent_output: true
 
+# Common SW360 properties
 sw360:
+  # The url of the Liferay instance
   sw360-portal-server-url: ${SW360_PORTAL_SERVER_URL:http://127.0.0.1:8080}
+  # The id of the company in Liferay that sw360 is run for
   sw360-liferay-company-id: ${SW360_LIFERAY_COMPANY_ID:20155}
+  # Allowed origins that should be set in the header
   cors:
     allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:#{null}}
 
 security:
+  # Configuration for enabling authorization via headers, e.g. when using SSO
+  # in combination with a reverse proxy server
   customheader:
     headername:
       # You have to enable authorization by headers explicitly here
