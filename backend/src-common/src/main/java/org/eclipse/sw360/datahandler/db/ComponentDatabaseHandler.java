@@ -408,19 +408,32 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return RequestStatus.DUPLICATE_ATTACHMENT;
         } else if (makePermission(actual, user).isActionAllowed(RequestedAction.WRITE)) {
             // Nested releases and attachments should not be updated by this method
+            boolean isComponentNameChanged = false;
             if (actual.isSetReleaseIds()) {
                 component.setReleaseIds(actual.getReleaseIds());
+                isComponentNameChanged = !component.getName().equals(actual.getName());
             }
 
             copyFields(actual, component, ThriftUtils.IMMUTABLE_OF_COMPONENT);
             component.setAttachments(getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), component.getAttachments()));
             updateComponentInternal(component, actual, user);
 
+            if (isComponentNameChanged) {
+                updateComponentDependentFieldsForRelease(component);
+            }
         } else {
             return moderator.updateComponent(component, user);
         }
         return RequestStatus.SUCCESS;
 
+    }
+
+    private void updateComponentDependentFieldsForRelease(Component component) {
+        String name = component.getName();
+        for (Release release : releaseRepository.getReleasesFromComponentId(component.getId())) {
+            release.setName(name);
+            releaseRepository.update(release);
+        }
     }
 
     private boolean changeWouldResultInDuplicate(Component before, Component after) {
