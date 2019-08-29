@@ -382,62 +382,66 @@
         <profile>
             <id>deploy</id>
             <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-dependency-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>copy-jar</id>
+                                    <phase>package</phase>
+                                    <goals>
+                                        <goal>copy</goal>
+                                    </goals>
+                                    <configuration>
+                                        <artifactItems>
+                                            <artifactItem>
+                                                <groupId>${project.groupId}</groupId>
+                                                <artifactId>${project.artifactId}</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>${project.packaging}</type>
+                                                <destFileName>${project.build.finalName}.${project.packaging}</destFileName>
+                                            </artifactItem>
+                                        </artifactItems>
+                                        <!--
+                                            This property is set by the submodules themself, depending wether they are backend, frontend or library
+                                            modules.
+                                            All other submodule leave this property blank causing the dependency plugin to copy the artifact inside
+                                            the target folder.
+                                        -->
+                                        <outputDirectory>${artifact.deploy.dir}</outputDirectory>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
                 <plugins>
                     <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-dependency-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>copy-jar</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>copy</goal>
-                                </goals>
-                                <configuration>
-                                    <artifactItems>
-                                        <artifactItem>
-                                            <groupId>${project.groupId}</groupId>
-                                            <artifactId>${project.artifactId}</artifactId>
-                                            <version>${project.version}</version>
-                                            <type>${project.packaging}</type>
-                                            <destFileName>${project.build.finalName}.${project.packaging}</destFileName>
-                                        </artifactItem>
-                                    </artifactItems>
-                                    <!--
-                                        This property is set by the submodules themself, depending wether they are backend, frontend or library
-                                        modules.
-                                        All other submodule leave this property blank causing the dependency plugin to copy the artifact inside
-                                        the target folder.
-                                    -->
-                                    <outputDirectory>${artifact.deploy.dir}</outputDirectory>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-enforcer-plugin</artifactId>
-                        <version>3.0.0-M2</version>
-                        <executions>
-                            <execution>
-                                <id>enforce</id>
-                                <goals>
-                                    <goal>enforce</goal>
-                                </goals>
-                                <configuration>
-                                    <rules>
-                                        <requireProperty>
-                                            <property>base.deploy.dir</property>
-                                            <message>You must set at least the property 'base.deploy.dir'!</message>
-                                            <regex>^.+$</regex>
-                                            <regexMessage>You must set at least the property 'base.deploy.dir'!</regexMessage>
-                                        </requireProperty>
-                                    </rules>
-                                    <fail>true</fail>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-enforcer-plugin</artifactId>
+                            <version>3.0.0-M2</version>
+                            <executions>
+                                <execution>
+                                    <id>enforce</id>
+                                    <goals>
+                                        <goal>enforce</goal>
+                                    </goals>
+                                    <configuration>
+                                        <rules>
+                                            <requireProperty>
+                                                <property>base.deploy.dir</property>
+                                                <message>You must set at least the property 'base.deploy.dir'!</message>
+                                                <regex>^.+$</regex>
+                                                <regexMessage>You must set at least the property 'base.deploy.dir'!</regexMessage>
+                                            </requireProperty>
+                                        </rules>
+                                        <fail>true</fail>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
                 </plugins>
             </build>
         </profile>

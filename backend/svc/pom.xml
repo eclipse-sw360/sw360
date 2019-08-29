@@ -73,21 +73,6 @@
     </build>
     <profiles>
       <profile>
-        <id>deploy</id>
-        <build>
-          <plugins>
-            <plugin>
-              <groupId>org.apache.maven.plugins</groupId>
-              <artifactId>maven-war-plugin</artifactId>
-              <version>2.2</version>
-              <configuration>
-                <outputDirectory>${webapps.dir}</outputDirectory>
-              </configuration>
-            </plugin>
-          </plugins>
-        </build>
-      </profile>
-      <profile>
           <id>codescoop</id>
           <modules>
               <module>svc-codescoop</module>
