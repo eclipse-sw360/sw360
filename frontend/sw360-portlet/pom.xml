@@ -354,16 +354,4 @@
             <artifactId>com.liferay.petra.lang</artifactId>
         </dependency>
     </dependencies>
-
-    <!-- For deployment right to your local liferay folder -->
-    <profiles>
-        <profile>
-            <id>deploy</id>
-            <build>
-                <plugins>
-                    <!--  FIXME: deploy profile has lost plugin since liferay-maven-plugin no longer available since liferay 7.0 CE -->
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>
