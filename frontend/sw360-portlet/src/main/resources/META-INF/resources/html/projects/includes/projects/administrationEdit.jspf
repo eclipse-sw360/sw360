@@ -244,7 +244,7 @@
 		}
         });
 
-        <core_rt:if test="${addMode}" >
+        <core_rt:if test="${addMode and pageName ne 'duplicate' }" >
             setDefaultTextAndResize($('#obligationsText'));
             setDefaultTextAndResize($('#licenseInfoHeaderText'))
         </core_rt:if>
