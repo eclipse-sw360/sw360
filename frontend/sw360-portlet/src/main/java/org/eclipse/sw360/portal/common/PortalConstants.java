@@ -91,6 +91,7 @@ public class PortalConstants {
     public static final String DB_TODOS_FROM_MODERATION_REQUEST = "db_todos_from_moderation_request";
     public static final String MODERATION_LICENSE_DETAIL = "moderationLicenseDetail";
     public static final String LICENSE_TYPE_CHOICE = "licenseTypeChoice";
+    public static final String LICENSE_TYPE_GLOBAL = "global";
 
     //! Specialized keys for moderation
     public static final String MODERATION_PORTLET_NAME = PORTLET_NAME_PREFIX + "moderations";
@@ -144,6 +145,7 @@ public class PortalConstants {
 
     //! Specialized keys for attachments
     public static final String ATTACHMENTS = "attachments";
+    public static final String ATTACHMENT_NAME = "attachmentName";
     public static final String SPDX_ATTACHMENTS = "spdxAttachments";
     public static final String ADDED_ATTACHMENTS = "added_attachments";
     public static final String REMOVED_ATTACHMENTS = "removed_attachments";
@@ -155,6 +157,8 @@ public class PortalConstants {
     public static final String ATTACHMENT_USAGES = "attachmentUsages";
     public static final String ATTACHMENT_USAGES_RESTRICTED_COUNTS = "attachmentUsagesRestrictedCounts";
     public static final String SPDX_LICENSE_INFO = "spdxLicenseInfo";
+    public static final String SPDX_IDENTIFIER_UNKNOWN = "SPDX identifier unknown";
+    public static final String SPDX_IDENTIFIER_NA = "n/a";
 
     //! Specialized keys for projects
     public static final String PROJECT_PORTLET_NAME = PORTLET_NAME_PREFIX + "projects";
