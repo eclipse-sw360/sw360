@@ -220,7 +220,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                         .filter(usage -> allUsagesByProject.stream()
                                 .noneMatch(isUsageEquivalent(usage)))
                         .collect(Collectors.toList());
-
+                setProjectPathToAttachmentUsages(usagesToCreate,project);
                 if (!usagesToDelete.isEmpty()) {
                     attachmentClient.deleteAttachmentUsages(usagesToDelete);
                 }
@@ -237,6 +237,14 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             response.setProperty(ResourceResponse.HTTP_STATUS_CODE, Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
         }
 
+    }
+
+    private void setProjectPathToAttachmentUsages(List<AttachmentUsage> usagesToCreate, Project project) {
+        usagesToCreate.forEach(usage -> {
+            LicenseInfoUsage licenseInfo= usage.getUsageData().getLicenseInfo();
+            if (licenseInfo != null && !licenseInfo.isSetProjectPath())
+                licenseInfo.setProjectPath(project.getId());
+        });
     }
 
     private void serveAttachmentUsagesRows(ResourceRequest request, ResourceResponse response) throws PortletException, IOException {
