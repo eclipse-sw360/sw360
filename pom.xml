@@ -47,7 +47,7 @@
 
     <properties>
         <!-- This is the single place for changing the version of SW360 -->
-        <revision>4.0.1-SNAPSHOT</revision>
+        <revision>5.0.0</revision>
 
         <java.version>1.8</java.version>
         <ektorp.version>1.5.0</ektorp.version>
