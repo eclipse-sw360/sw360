@@ -119,6 +119,10 @@ abstract public class Sw360Portlet extends MVCPortlet {
 
     protected void renderRequestSummary(PortletRequest request, MimeResponse response, RequestSummary requestSummary) {
         JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+        renderRequestSummary(request, response, requestSummary, jsonObject);
+    }
+
+    protected void renderRequestSummary(PortletRequest request, MimeResponse response, RequestSummary requestSummary, JSONObject jsonObject) {
         jsonObject.put("result", requestSummary.requestStatus.toString());
         if (requestSummary.isSetTotalAffectedElements())
             jsonObject.put("totalAffectedObjects", requestSummary.totalAffectedElements);

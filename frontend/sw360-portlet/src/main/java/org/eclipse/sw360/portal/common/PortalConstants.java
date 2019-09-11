@@ -173,6 +173,7 @@ public class PortalConstants {
     public static final String ADDED_ATTACHMENTS = "added_attachments";
     public static final String REMOVED_ATTACHMENTS = "removed_attachments";
     public static final String ATTACHMENT_ID = "attachmentId";
+    public static final String ATTACHMENT_CONTENT_ID = "attachmentContentId";
     public static final String ALL_ATTACHMENTS = "all_attachments";
     public static final String CONTEXT_TYPE = "context_type";
     public static final String CONTEXT_ID = "context_id";
@@ -388,6 +389,9 @@ public class PortalConstants {
     public static final String SAVE_ATTACHMENT_USAGES = "save_attachment_usages";
     public static final String PARENT_BRANCH_ID = "parent_branch_id";
     public static final String PARENT_SCOPE_GROUP_ID = "parentScopeGroupId";
+
+    // bom import
+    public static final String IMPORT_BOM = "importBom";
 
     // project actions
     public static final String VIEW_LINKED_PROJECTS = "view_linked_projects";

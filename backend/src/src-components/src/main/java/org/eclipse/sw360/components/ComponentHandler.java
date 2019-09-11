@@ -497,4 +497,11 @@ public class ComponentHandler implements ComponentService.Iface {
 
         return handler.getCyclicLinkedReleasePath(release, user);
     }
+
+    @Override
+    public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws TException {
+        assertNotNull(attachmentContentId);
+        assertUser(user);
+        return handler.importBomFromAttachmentContent(user, attachmentContentId);
+    }
 }

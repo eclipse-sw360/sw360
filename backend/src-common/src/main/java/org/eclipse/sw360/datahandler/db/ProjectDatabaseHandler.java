@@ -19,11 +19,13 @@ import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.businessrules.ReleaseClearingStateSummaryComputer;
 import org.eclipse.sw360.datahandler.common.*;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
+import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
 import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
@@ -35,8 +37,13 @@ import org.eclipse.sw360.mail.MailConstants;
 import org.eclipse.sw360.mail.MailUtil;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.spdx.SpdxBOMImporter;
+import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
 import org.ektorp.http.HttpClient;
+import org.spdx.rdfparser.InvalidSPDXAnalysisException;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.time.Instant;
 import java.util.*;
@@ -951,5 +958,20 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public void updateReleaseRelationsUsage(UsedReleaseRelations usedReleaseRelations) throws TException {
         relUsageRepository.update(usedReleaseRelations);
+    }
+
+    public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws SW360Exception {
+        final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
+        final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
+        try {
+            final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
+            try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
+                final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, this, componentDatabaseHandler);
+                final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
+                return spdxBOMImporter.importSpdxBOMAsProject(inputStream, attachmentContent);
+            }
+        } catch (InvalidSPDXAnalysisException | IOException e) {
+            throw new SW360Exception(e.getMessage());
+        }
     }
 }

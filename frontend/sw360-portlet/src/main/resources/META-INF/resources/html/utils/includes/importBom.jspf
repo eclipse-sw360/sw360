@@ -1,0 +1,177 @@
+<%--
+  ~ Copyright Siemens AG, 2019.
+  ~ Part of the SW360 Portal Project.
+  ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+  --%>
+
+<%--
+    Description:             Import SPDX BOM to SW360
+
+    Required Buttons:        - <button type="button" class="btn btn-primary" data-action="import-spdx-bom">Import SPDX BOM</button>
+
+    Required Imports:        - org.eclipse.sw360.portal.common.PortalConstants
+
+    Required Beans:          - documentType
+
+    Required Stylesheets:    - jquery-ui
+
+    Included JSPFs:            (none)
+--%>
+
+<portlet:resourceURL var="newAttachmentAjaxURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.ATTACHMENT_RESERVE_ID%>'/>
+    <portlet:param name="<%=PortalConstants.DOCUMENT_TYPE%>" value="${documentType}"/>
+</portlet:resourceURL>
+
+<portlet:resourceURL var="uploadPartAjaxURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.ATTACHMENT_UPLOAD%>'/>
+    <portlet:param name="<%=PortalConstants.DOCUMENT_TYPE%>" value="${documentType}"/>
+</portlet:resourceURL>
+
+<portlet:resourceURL var="importBomAjaxURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.IMPORT_BOM%>'/>
+    <portlet:param name="<%=PortalConstants.DOCUMENT_TYPE%>" value="${documentType}"/>
+</portlet:resourceURL>
+
+<div class="dialogs">
+    <div id="spdxBomUpload" data-title="Upload SPDX BOM" class="modal fade" tabindex="-1" role="dialog"
+         data-portlet-namespace="<portlet:namespace/>"
+         data-new-attachment-url="<%=newAttachmentAjaxURL%>"
+         data-upload-attachment-part-url="<%=uploadPartAjaxURL%>"
+         data-import-bom-url="<%=importBomAjaxURL%>" >
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <div class="modal-body container" id="spdxBomUploadUpload">
+                    <h2>Upload BOM document as ${documentType}</h2>
+                    <p>This currently only supports SPDX RDF/XML files with a uniq described top level node.</p>
+                    <div class="lfr-dynamic-uploader">
+                        <div class="lfr-upload-container">
+                            <div id="fileupload-drop" class="upload-target">
+                                <span>Drop a File Here</span>
+                                <br/>
+                                Or
+                                <br/>
+                                <button id="fileupload-browse" type="button" class="btn btn-secondary">Browse</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="spdxBomUploadStatus"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    require(['jquery', 'resumable', 'modules/dialog', 'modules/validation'], function($, Resumable, dialog, validation) {
+        $('.portlet-toolbar button[data-action="import-spdx-bom"]').on('click', function() {
+            var dialogDivId = '#spdxBomUpload';
+
+            //function open(selector, data, submitCallback, beforeShowFn, afterShowFn) {
+            $dialog = dialog.open(dialogDivId,
+                {}, // data
+                function(submit, callback) {
+                    // submitCallback
+                },
+                function() {
+                    // beforeShowFn
+
+                    var dialogDiv = $(dialogDivId);
+                    var contentDiv = dialogDiv.find("#spdxBomUploadUpload");
+                    var statusDiv = dialogDiv.find("#spdxBomUploadStatus");
+                    var data = dialogDiv.data();
+                    var portletNamespace = data.portletNamespace;
+
+                    var urls = {};
+                    urls.newAttachment = data.newAttachmentUrl;
+                    urls.uploadAttachmentPart = data.uploadAttachmentPartUrl;
+                    urls.importBom = data.importBomUrl;
+
+                    function getAttachmentIdPromise(file) {
+                        var data = {};
+                        data[portletNamespace + "fileName"] = file.fileName || file.name;
+
+                        return $.ajax({
+                            url: urls.newAttachment,
+                            cache: false,
+                            dataType: 'text',
+                            data: data
+                        });
+                    }
+
+                    function importBomFromAttachment(attachmentContentId) {
+                        var data = {};
+                        data[portletNamespace + "<%=PortalConstants.ATTACHMENT_CONTENT_ID%>"] = attachmentContentId;
+
+                        return $.ajax({
+                            url: urls.importBom,
+                            cache: false,
+                            dataType: "json",
+                            data: data
+                        });
+                    }
+
+                    var r = new Resumable({
+                        target: urls.uploadAttachmentPart,
+                        parameterNamespace: portletNamespace,
+                        simultaneousUploads: 1,
+                        generateUniqueIdentifier: getAttachmentIdPromise,
+                        chunkRetryInterval: 2000,
+                        maxChunkRetries: 3
+                    });
+
+                    r.assignBrowse($('#fileupload-browse')[0]);
+                    r.assignDrop($('#fileupload-drop')[0]);
+
+                    r.on('fileAdded', function (file) {
+                        console.log("fileAdded...");
+                        contentDiv.hide();
+                        statusDiv.show();
+                        r.upload();
+                        statusDiv.html("<h2>Uploading ...</h2>");
+                    });
+                    r.on('fileProgress', function (file) {
+                        console.log("fileProgress...");
+                    });
+                    r.on('fileSuccess', function (file) {
+                        console.log("fileSuccess...");
+                        statusDiv.html("<h2>Importing ...</h2>");
+                        var attachmentContentId = file.uniqueIdentifier;
+                        importBomFromAttachment(attachmentContentId).then(function (data) {
+                            console.log("importSuccess...");
+                            statusDiv.html("<h2>Imported</h2>");
+                            if ('redirectUrl' in data) {
+                                statusDiv.append("<div>Created as <a href=\"" + data.redirectUrl + "\">" + data.message + "</a>, redirecting ...</div>");
+                                window.location.href = data.redirectUrl;
+                            } else {
+                                statusDiv.append("<div>" + JSON.stringify(data) + "</div>");
+                                contentDiv.show();
+                            }
+                        }).catch(function (err) {
+                            statusDiv.html("<h2>Failed :(</h2>");
+                            statusDiv.append("<div>" + JSON.stringify(err) + "</div>");
+                            contentDiv.show();
+                        });
+                    });
+                    r.on('fileError', function (file) {
+                        console.log("fileError...");
+                        statusDiv.html("<h2>Failed</h2>");
+                        statusDiv.append("<div>with fileError</div>");
+                    });
+                },
+                function() {
+                    // afterShowFn
+                }
+            );
+        });
+    });
+</script>
+

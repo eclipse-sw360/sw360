@@ -708,4 +708,9 @@ service ComponentService {
      * get the cyclic hierarchy of linkedReleases
      */
     string getCyclicLinkedReleasePath(1: Release release, 2: User user);
+
+    /**
+     * parse a bom file and write the information to SW360
+     **/
+    RequestSummary importBomFromAttachmentContent(1: User user, 2:string attachmentContentId);
 }
