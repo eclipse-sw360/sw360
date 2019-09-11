@@ -1551,7 +1551,9 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             if (comp.isSetDefaultVendorId()) {
                 Vendor defaultVendor = null;
                 try {
-                    defaultVendor = vendorClient.getByID(comp.getDefaultVendorId());
+                    if(!isNullOrEmpty(comp.getDefaultVendorId())) {
+                        defaultVendor = vendorClient.getByID(comp.getDefaultVendorId());
+                    }
                 } catch (TException e) {
                     log.error("Could not get vendor for id [" + comp.getDefaultVendorId() + "] in component with id ["
                             + comp.getId() + "] because of: ", e);
