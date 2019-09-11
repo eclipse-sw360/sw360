@@ -33,7 +33,7 @@ while read file ; do
     failure=true
 done <<< "$(git ls-files \
     | grep -Ev '\.(csv|rdf|ent|dtd|lar|png|gif|psd|ico|jpg|docx|gitignore|cert|jks)' \
-    | grep -Ev '(LICENSE|NOTICE|README)' \
+    | grep -Ev '(LICENSE|NOTICE|README|CHANGELOG)' \
     | grep -v 'id_rsa')"
 
 if [ "$failure" = true ]; then
