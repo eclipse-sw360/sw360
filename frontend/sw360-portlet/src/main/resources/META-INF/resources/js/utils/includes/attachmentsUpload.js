@@ -123,7 +123,7 @@ define('utils/includes/attachmentsUpload', ['jquery', 'resumable', 'modules/dial
 
             var fileToId = function(file) {
                 return file.uniqueIdentifier;
-            }
+            };
 
             var doCallback = function(name, file) {
                 if (callbacks.hasOwnProperty(name)) {
@@ -139,7 +139,7 @@ define('utils/includes/attachmentsUpload', ['jquery', 'resumable', 'modules/dial
                 delete fileControllers[fileToId(file)];
                 resumable.removeFile(file);
 
-                if(Object.keys(fileControllers).length == 0) {
+                if(Object.keys(fileControllers).length === 0) {
                     // disable upload button, no files left
                     $dialog.$.find('button[data-submit="upload"]').prop('disabled', true);
                 }
@@ -199,7 +199,7 @@ define('utils/includes/attachmentsUpload', ['jquery', 'resumable', 'modules/dial
                 addFile: addFile,
                 removeFile: removeFile,
                 isEmpty: function () {
-                    return Object.keys(fileControllers).length == 0;
+                    return Object.keys(fileControllers).length === 0;
                 },
                 on: function (eventName, callback) {
                     callbacks[eventName] = callback;
