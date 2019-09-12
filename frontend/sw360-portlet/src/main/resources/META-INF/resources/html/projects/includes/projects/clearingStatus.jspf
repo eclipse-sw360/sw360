@@ -60,7 +60,12 @@ require(['jquery', 'bridges/datatables', 'utils/includes/fossologyClearing', 'ut
         </core_rt:forEach>
 
         table = datatables.create('#releasesTable', {
+            searching: true,
             data: result,
+            dom:
+                "<'row'<'col-sm-12 col-md-9'l><'col-sm-12 col-md-2'f><'col-sm-12 col-md-1'B>>" +
+                "<'row'<'col-sm-12'tr>>" +
+                "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
             columns: [
                 {title: "Name"},
                 {title: "Project Origin"},
