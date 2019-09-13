@@ -123,7 +123,7 @@ abstract public class Sw360Portlet extends MVCPortlet {
     }
 
     protected void renderRequestSummary(PortletRequest request, MimeResponse response, RequestSummary requestSummary, JSONObject jsonObject) {
-        jsonObject.put("result", requestSummary.requestStatus.toString());
+        jsonObject.put(PortalConstants.RESULT, requestSummary.requestStatus.toString());
         if (requestSummary.isSetTotalAffectedElements())
             jsonObject.put("totalAffectedObjects", requestSummary.totalAffectedElements);
         if (requestSummary.isSetTotalElements())
@@ -140,7 +140,7 @@ abstract public class Sw360Portlet extends MVCPortlet {
 
     protected void renderRequestStatus(PortletRequest request, MimeResponse response, RequestStatus requestStatus) {
         JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
-        jsonObject.put("result", requestStatus.toString());
+        jsonObject.put(PortalConstants.RESULT, requestStatus.toString());
         try {
             writeJSON(request, response, jsonObject);
         } catch (IOException e) {
@@ -150,7 +150,7 @@ abstract public class Sw360Portlet extends MVCPortlet {
 
     protected void renderRemoveModerationRequestStatus(PortletRequest request, MimeResponse response, RemoveModeratorRequestStatus status) {
         JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
-        jsonObject.put("result", status.toString());
+        jsonObject.put(PortalConstants.RESULT, status.toString());
         try {
             writeJSON(request, response, jsonObject);
         } catch (IOException e) {

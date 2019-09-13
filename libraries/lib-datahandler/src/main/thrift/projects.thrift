@@ -13,7 +13,6 @@ include "attachments.thrift"
 include "vendors.thrift"
 include "components.thrift"
 include "sw360.thrift"
-include "commonobligations.thrift"
 include "licenses.thrift"
 
 namespace java org.eclipse.sw360.datahandler.thrift.projects
@@ -28,6 +27,8 @@ typedef sw360.MainlineState MainlineState
 typedef sw360.ProjectReleaseRelationship ProjectReleaseRelationship
 typedef sw360.ObligationStatus ObligationStatus
 typedef sw360.SW360Exception SW360Exception
+typedef sw360.ClearingRequestState ClearingState
+typedef sw360.Comment Comment
 typedef components.Release Release
 typedef components.ReleaseClearingStateSummary ReleaseClearingStateSummary
 typedef users.User User
@@ -135,6 +136,7 @@ struct Project {
 
     // Information for ModerationRequests
     70: optional DocumentState documentState,
+    80: optional string clearingRequestId,
 
     // Optional fields for summaries!
 //    100: optional set<string> releaseIds, //deleted
@@ -199,6 +201,27 @@ struct UsedReleaseRelations {
     3: optional string type = "usedReleaseRelation",
     4: required string projectId,
     5: optional set<ReleaseRelationship> usedReleaseRelations = [],
+}
+
+struct ClearingRequest {
+    // Basic information
+    1: optional string id,
+    2: optional string revision,
+    3: optional string type = "clearingRequest",
+
+    // Clearing Request
+    5: required string requestedClearingDate, // date YYYY-MM-dd
+    6: optional string projectId,
+    7: required ClearingState clearingState,
+    8: required string requestingUser,
+    9: optional string projectBU,
+    10: optional string requestingUserComment,
+    11: required string clearingTeam,
+    12: optional string clearingTeamComment,
+    13: optional string agreedClearingDate,
+    14: required i64 timestamp,
+    15: optional i64 timestampOfDecision,
+    16: optional list<Comment> comments
 }
 
 service ProjectService {
@@ -413,4 +436,9 @@ service ProjectService {
      * parse a bom file and write the information to SW360
      **/
     RequestSummary importBomFromAttachmentContent(1: User user, 2:string attachmentContentId);
+
+    /**
+     * create clearing request for project
+     */
+    AddDocumentRequestSummary createClearingRequest(1: ClearingRequest clearingRequest, 2: User user, 3: string projectUrl);
 }

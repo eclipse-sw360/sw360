@@ -13,8 +13,9 @@ import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.common.utils.BackendUtils;
-import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.thrift.ClearingRequestEmailTemplate;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
@@ -43,6 +44,12 @@ public class MailUtil extends BackendUtils {
     // Asynchronous mail service executor options
     private static final int MAIL_ASYNC_SEND_THREAD_LIMIT = 1;
     private static final int MAIL_ASYNC_SEND_QUEUE_LIMIT = 1000;
+    private static final String NEW_CLEARING_REQUEST_EMAIL_TEMPLATE_FILE = "/NewClearingRequestEmailTemplate.html";
+    private static final String UPDATE_CLEARING_REQUEST_EMAIL_TEMPLATE_FILE = "/UpdateClearingRequestEmailTemplate.html";
+    private static final String UPDATE_PROJECT_WITH_CR_EMAIL_TEMPLATE_FILE = "/UpdateProjectWithCREmailTemplate.html";
+    private static final String NEW_CR_EMAIL_HTML_TEMPLATE = SW360Utils.dropCommentedLine(MailUtil.class, NEW_CLEARING_REQUEST_EMAIL_TEMPLATE_FILE);
+    private static final String UPDATE_CR_EMAIL_HTML_TEMPLATE = SW360Utils.dropCommentedLine(MailUtil.class, UPDATE_CLEARING_REQUEST_EMAIL_TEMPLATE_FILE);
+    private static final String UPDATE_PROJECT_WITH_CR_EMAIL_HTML_TEMPLATE = SW360Utils.dropCommentedLine(MailUtil.class, UPDATE_PROJECT_WITH_CR_EMAIL_TEMPLATE_FILE);
 
     private static ExecutorService mailExecutor;
     private Session session;
@@ -105,6 +112,11 @@ public class MailUtil extends BackendUtils {
         }
     }
 
+    public void sendClearingMail(ClearingRequestEmailTemplate template, String recipient, String subjectNameInPropertiesFile, String... textParameters) {
+        MimeMessage messageWithSubjectAndText = makeHtmlMessageWithSubjectAndText(template, subjectNameInPropertiesFile, textParameters);
+        sendMailWithSubjectAndText(recipient, messageWithSubjectAndText);
+    }
+
     public void sendMail(String recipient, String subjectNameInPropertiesFile, String textNameInPropertiesFile, String notificationClass, String roleName, String ... textParameters) {
         sendMail(recipient, subjectNameInPropertiesFile, textNameInPropertiesFile, notificationClass, roleName, true, textParameters);
     }
@@ -151,6 +163,45 @@ public class MailUtil extends BackendUtils {
             return false;
         }
         return true;
+    }
+
+    private MimeMessage makeHtmlMessageWithSubjectAndText(ClearingRequestEmailTemplate template, String subjectKeyInPropertiesFile, String ... textParameters) {
+        MimeMessage message = new MimeMessage(session);
+        String mainContentFormat = "";
+        switch (template) {
+        case NEW:
+            mainContentFormat = NEW_CR_EMAIL_HTML_TEMPLATE;
+            break;
+
+        case UPDATED:
+            mainContentFormat = UPDATE_CR_EMAIL_HTML_TEMPLATE;
+            break;
+
+        case PROJECT_UPDATED:
+            mainContentFormat = UPDATE_PROJECT_WITH_CR_EMAIL_HTML_TEMPLATE;
+            break;
+
+        default:
+            break;
+        }
+        String subject = loadedProperties.getProperty(subjectKeyInPropertiesFile, "");
+
+        StringBuilder text = new StringBuilder();
+        try {
+            String formattedContent = String.format(mainContentFormat, (Object[]) textParameters);
+            text.append(formattedContent);
+        } catch (IllegalFormatException e) {
+            log.error(String.format("Could not format notification email content for key %s ", subjectKeyInPropertiesFile), e);
+            text.append(mainContentFormat);
+        }
+        try {
+            message.setSubject(subject);
+            message.setContent(text.toString(), "text/html");
+        } catch (MessagingException mex) {
+            log.error(mex.getMessage());
+        }
+
+        return message;
     }
 
     private MimeMessage makeMessageWithSubjectAndText(String subjectKeyInPropertiesFile, String textKeyInPropertiesFile, String ... textParameters) {
@@ -214,6 +265,23 @@ public class MailUtil extends BackendUtils {
         } catch (MessagingException | IOException e) {
             log.error("Cannot dump E-mail message to log", e);
         }
+    }
+
+    /*
+     * use this method only for clearing email,
+     * as wee need to display the email sending status in UI
+     */
+    private synchronized RequestStatus sendMailInSync(MimeMessage message) {
+        try {
+            String recipient = Arrays.toString(message.getRecipients(Message.RecipientType.TO));
+            log.info("Sending synchronous E-Mail to recipient " + recipient);
+            Transport.send(message);
+            log.info("Successfully sent synchronous message to " + recipient);
+            return RequestStatus.SUCCESS;
+        } catch (MessagingException e) {
+            log.error("Could not sent E-Mail notification via SMTP " + host, e);
+        }
+        return RequestStatus.FAILURE;
     }
 
     private void sendMailAsync(MimeMessage message) {

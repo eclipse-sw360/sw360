@@ -18,7 +18,8 @@ import org.eclipse.sw360.portal.common.PortalConstants;
 public enum PortletDefaultPage implements PortletPage {
     DETAIL(PortalConstants.PAGENAME_DETAIL),
     RELEASE_DETAIL(PortalConstants.PAGENAME_RELEASE_DETAIL),
-    EDIT(PortalConstants.PAGENAME_EDIT);
+    EDIT(PortalConstants.PAGENAME_EDIT),
+    CLEARING_REQUEST_DETAIL(PortalConstants.PAGENAME_DETAIL_CLEARING_REQUEST);
 
     private final String pagename;
 

@@ -115,6 +115,24 @@ define('modules/validation', [ 'jquery' ], function($) {
 
 			$field.on('change', matchFields);
 			$confirm.on('keyup', matchFields);
+		},
+
+		isValidDate: function isValidDate(dateString, greaterThanDays) {
+		    let pattern = /^\d{4}-\d{2}-\d{2}$/, currentDate = new Date();
+		    if (!dateString.match(pattern)) {
+		        return false; // Invalid format
+		    }
+		    let selectedDate = new Date(dateString), time = selectedDate.getTime();
+		    if (!time && time !== 0) {
+		        return false; // NaN value, Invalid date
+		    }
+		    if (greaterThanDays) {
+		        currentDate.setHours(0, 0, 0, 0);
+		        let currentTime = currentDate.getTime() + (greaterThanDays * 24 * 60 * 60 * 1000);
+		        if (currentTime > time)
+		            return false; // not greater then mentioned days
+		    }
+		    return selectedDate.toISOString().slice(0, 10) === dateString;
 		}
 	};
 });

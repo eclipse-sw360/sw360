@@ -10,6 +10,8 @@
  */
 package org.eclipse.sw360.portal.portlets.projects;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Predicate;
@@ -23,8 +25,8 @@ import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
 import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.PortalUtil;
-
 import com.liferay.portal.kernel.util.WebKeys;
+
 import org.eclipse.sw360.datahandler.common.*;
 import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
@@ -35,6 +37,7 @@ import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.cvesearch.CveSearchService;
 import org.eclipse.sw360.datahandler.thrift.cvesearch.VulnerabilityUpdateStatus;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
+import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -76,7 +79,6 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.liferay.portal.kernel.json.JSONFactoryUtil.createJSONArray;
 import static com.liferay.portal.kernel.json.JSONFactoryUtil.createJSONObject;
-import static java.lang.Math.min;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.CONTENT_TYPE_OPENXML_SPREADSHEET;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
@@ -132,6 +134,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             Project._Fields.STATE,
             Project._Fields.TAG);
 
+    private static final JsonFactory JSON_FACTORY = new JsonFactory();
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final TSerializer THRIFT_JSON_SERIALIZER = new TSerializer(new TSimpleJSONProtocol.Factory());
 
@@ -206,6 +209,10 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             removeOrphanObligation(request, response);
         } else if (PortalConstants.IMPORT_BOM.equals(action)) {
             importBom(request, response);
+        } else if (PortalConstants.CREATE_CLEARING_REQUEST.equals(action)) {
+            createClearingRequest(request, response);
+        } else if (PortalConstants.VIEW_CLEARING_REQUEST.equals(action)) {
+            showClearingRequest(request, response);
         } else if (isGenericAction(action)) {
             dealWithGenericAction(request, response, action);
         }
@@ -260,6 +267,76 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             log.error("Failed to import BOM.", e);
             response.setProperty(ResourceResponse.HTTP_STATUS_CODE, Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
         }
+    }
+
+    private void createClearingRequest(ResourceRequest request, ResourceResponse response) throws PortletException {
+        User user = UserCacheHolder.getUserFromRequest(request);
+        ClearingRequest clearingRequest = null;
+        AddDocumentRequestSummary requestSummary = null;
+        try {
+            JsonNode crNode = OBJECT_MAPPER.readValue(request.getParameter(CLEARING_REQUEST), JsonNode.class);
+            clearingRequest = OBJECT_MAPPER.convertValue(crNode, ClearingRequest.class);
+            clearingRequest.setRequestingUser(user.getEmail());
+            clearingRequest.setClearingState(ClearingRequestState.NEW);
+            LiferayPortletURL projectUrl = createDetailLinkTemplate(request);
+            projectUrl.setParameter(PROJECT_ID, clearingRequest.getProjectId());
+            projectUrl.setParameter(PAGENAME, PAGENAME_DETAIL);
+            ProjectService.Iface client = thriftClients.makeProjectClient();
+            requestSummary = client.createClearingRequest(clearingRequest, user, projectUrl.toString());
+        } catch (IOException | TException e) {
+            log.error("Error creating clearing request for project: " + clearingRequest.getProjectId(), e);
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "500");
+        }
+
+        try {
+            JsonGenerator jsonGenerator = JSON_FACTORY.createGenerator(response.getWriter());
+            jsonGenerator.writeStartObject();
+            jsonGenerator.writeStringField(RESULT, requestSummary.getRequestStatus().toString());
+            if (AddDocumentRequestStatus.FAILURE.equals(requestSummary.getRequestStatus())) {
+                jsonGenerator.writeStringField("message", requestSummary.getMessage());
+            } else {
+                jsonGenerator.writeStringField(CLEARING_REQUEST_ID, requestSummary.getId());
+            }
+            jsonGenerator.writeEndObject();
+            jsonGenerator.close();
+        } catch (IOException e) {
+            log.error("Cannot write JSON response for clearing request id " + requestSummary.getId() + " in project "
+                    + clearingRequest.getProjectId() + ".", e);
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "500");
+        }
+    }
+
+    private void showClearingRequest(ResourceRequest request, ResourceResponse response) throws PortletException, IOException {
+        final String clearingId = request.getParameter(CLEARING_REQUEST_ID);
+        User user = UserCacheHolder.getUserFromRequest(request);
+        ClearingRequest clearingRequest = new ClearingRequest();
+        try {
+            if (CommonUtils.isNotNullEmptyOrWhitespace(clearingId)) {
+                ModerationService.Iface modClient = thriftClients.makeModerationClient();
+                clearingRequest = modClient.getClearingRequestById(clearingId, user);
+                if (null != clearingRequest) {
+                    String clearingReqStr = OBJECT_MAPPER.writeValueAsString(clearingRequest);
+                    JsonGenerator jsonGenerator = JSON_FACTORY.createGenerator(response.getWriter());
+                    jsonGenerator.writeStartObject();
+                    jsonGenerator.writeStringField(CLEARING_REQUEST, clearingReqStr);
+                    jsonGenerator.writeEndObject();
+                    jsonGenerator.close();
+                }
+            }
+        } catch (TException e) {
+            log.error("Error fetching clearing request "+ clearingId +" for project: " + clearingRequest.getProjectId(), e);
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "500");
+        }
+    }
+
+    private LiferayPortletURL createDetailLinkTemplate(PortletRequest request) {
+        String portletId = (String) request.getAttribute(WebKeys.PORTLET_ID);
+        ThemeDisplay tD = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
+        long plid = tD.getPlid();
+
+        LiferayPortletURL projectUrl = PortletURLFactoryUtil.create(request, portletId, plid,
+                PortletRequest.RENDER_PHASE);
+        return projectUrl;
     }
 
     private void saveAttachmentUsages(ResourceRequest request, ResourceResponse response) throws IOException {
@@ -563,11 +640,15 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
             JSONArray jsonResponse = createJSONArray();
             ThriftJsonSerializer thriftJsonSerializer = new ThriftJsonSerializer();
+            final boolean isNotClearingAdmin = !PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user);
             for (Project project : projects) {
                 try {
                     JSONObject row = createJSONObject();
                     row.put("id", project.getId());
                     row.put("clearing", JsonHelpers.toJson(project.getReleaseClearingStateSummary(), thriftJsonSerializer));
+                    if (isNotClearingAdmin) {
+                        row.put(WRITE_ACCESS_USER, PermissionUtils.makePermission(project, user).isActionAllowed(RequestedAction.WRITE));
+                    }
                     ProjectClearingState clearingState = project.getClearingState();
                     if (clearingState == null) {
                         row.put("clearingstate", "Unknown");
@@ -930,6 +1011,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         List<Organization> organizations = UserUtils.getOrganizations(request);
         request.setAttribute(PortalConstants.ORGANIZATIONS, organizations);
         request.setAttribute(IS_USER_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user) ? "Yes" : "No");
+        request.setAttribute(IS_USER_AT_LEAST_CLEARING_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user));
         for (Project._Fields filteredField : projectFilteredFields) {
             String parameter = request.getParameter(filteredField.toString());
             request.setAttribute(filteredField.getFieldName(), nullToEmpty(parameter));
@@ -1402,7 +1484,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         String id = request.getParameter(PROJECT_ID);
         request.setAttribute(IS_USER_AT_LEAST_CLEARING_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user));
         setDefaultRequestAttributes(request);
-        request.setAttribute(IS_USER_AT_LEAST_CLEARING_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user));
 
         try {
             if (id != null) {
@@ -1860,6 +1941,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             jsonObject.put("state", nullToEmptyString(project.getState()));
             jsonObject.put("cState", nullToEmptyString(project.getClearingState()));
             jsonObject.put("clearing", "Not loaded yet");
+            jsonObject.put("crId", nullToEmptyString(project.getClearingRequestId()));
+            jsonObject.put("visbility", nullToEmptyString(project.getVisbility()));
             jsonObject.put("resp", nullToEmptyString(project.getProjectResponsible()));
             jsonObject.put("lProjSize", String.valueOf(project.getLinkedProjectsSize()));
             jsonObject.put("lRelsSize", String.valueOf(project.getReleaseIdToUsageSize()));

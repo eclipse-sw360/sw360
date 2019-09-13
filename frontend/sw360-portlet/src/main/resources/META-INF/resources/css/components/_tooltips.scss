@@ -348,6 +348,35 @@
     content: "A person who has received the moderation request (which could be creator of the document, a clearing admin, a moderator, etc.) has opened / viewed the moderation request, but did not decide.";
 }
 
+/** ClearingRequestState **/
+.sw360-tt-ClearingRequestState:hover:after {
+    content: "New: CR is pending to be Accepted by the Clearing Team.\A A sanity check for the artifacts required for Clearing will be done prior to Accepting a CR. \A Accepted: CR has passed SanityCheck and is accepted into the clearing queue. \A Rejected: CR has failed SanityCheck. Contact Clearing Team. \A In Queue: CR is next in queue for clearing. \A In Progress: CR is being worked on by the clearing team. \A Closed: Clearings requested in the CR is complete.";
+}
+
+.sw360-tt-ClearingRequestState-NEW:hover:after {
+    content: "CR is pending to be Accepted by the Clearing Team.\A A sanity check for the artifacts required for Clearing will be done prior to Accepting a CR.";
+}
+
+.sw360-tt-ClearingRequestState-ACCEPTED:hover:after {
+    content: "CR has passed SanityCheck and is accepted into the clearing queue.";
+}
+
+.sw360-tt-ClearingRequestState-REJECTED:hover:after {
+    content: "CR has failed SanityCheck. Contact Clearing Team.";
+}
+
+.sw360-tt-ClearingRequestState-INQUEUE:hover:after {
+    content: "CR is next in queue for clearing.";
+}
+
+.sw360-tt-ClearingRequestState-INPROGRESS:hover:after {
+    content: "CR is being worked on by the clearing team.";
+}
+
+.sw360-tt-ClearingRequestState-CLOSED:hover:after {
+    content: "Clearings requested in the CR is complete.";
+}
+
 /** ProjectRelationShip **/
 .sw360-tt-ProjectRelationship:hover:after {
     content: "Unknown: \A Duplicate: \A Contained: \A Refered: ";

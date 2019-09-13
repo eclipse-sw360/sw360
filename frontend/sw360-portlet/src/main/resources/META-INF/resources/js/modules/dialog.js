@@ -84,7 +84,7 @@ define('modules/dialog', [
 		$(this).find('.modal-title').html(title);
 	}
 
-	function open(selector, data, submitCallback, beforeShowFn, afterShowFn) {
+	function open(selector, data, submitCallback, beforeShowFn, afterShowFn, isHtml) {
 		var $dialog = $(selector);
 
 		if($dialog.length === 0) {
@@ -114,10 +114,17 @@ define('modules/dialog', [
 			var $dialog = $(this);
 
 			$dialog.find('[data-name]').text('');
+			if (isHtml) {
+					Object.keys(data).forEach(function(key) {
+					$dialog.find('[data-name="' + key + '"]').filter(':not(input)').html(data[key]);
+					$dialog.find('input[data-name="' + key + '"]').val(data[key]);
+				});
+			} else  {
 			Object.keys(data).forEach(function(key) {
 				$dialog.find('[data-name="' + key + '"]').filter(':not(input)').text(data[key]);
 				$dialog.find('input[data-name="' + key + '"]').val(data[key]);
 			});
+		}
 
 			$dialog.find('[data-hide]').show();
 			$dialog.find('[data-hide]').each(function(index, element) {
@@ -344,7 +351,7 @@ define('modules/dialog', [
 	return {
 		open: open,
 		confirm: confirm,
-		warn, warn,
+		warn: warn,
 		info: info
 	};
 });

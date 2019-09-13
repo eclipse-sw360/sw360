@@ -8,6 +8,8 @@
   ~ SPDX-License-Identifier: EPL-2.0
   --%>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
+<%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
+<%@ page import="javax.portlet.PortletRequest" %>
 
 
 <%@ include file="/html/init.jsp" %>
@@ -21,13 +23,21 @@
 <portlet:resourceURL var="deleteModerationRequestAjaxURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.DELETE_MODERATION_REQUEST%>'/>
 </portlet:resourceURL>
+<liferay-portlet:renderURL var="friendlyClearingURL" portletName="sw360_portlet_moderations">
+    <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>"/>
+    <portlet:param name="<%=PortalConstants.CLEARING_REQUEST_ID%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>"/>
+</liferay-portlet:renderURL>
 
 <jsp:useBean id="moderationRequests" type="java.util.List<org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest>"
              scope="request"/>
 <jsp:useBean id="closedModerationRequests" type="java.util.List<org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest>"
              scope="request"/>
 <jsp:useBean id="isUserAtLeastClearingAdmin" class="java.lang.String" scope="request" />
-
+<jsp:useBean id="clearingRequests" type="java.util.List<org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest>"
+             scope="request"/>
+<jsp:useBean id="closedClearingRequests" type="java.util.List<org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest>"
+             scope="request"/>
+<core_rt:set var="user" value="<%=themeDisplay.getUser()%>"/>
 
 <div class="container" style="display: none;">
 	<div class="row">
@@ -35,9 +45,11 @@
 			<div class="card-deck">
                 <%@ include file="/html/utils/includes/quickfilter.jspf" %>
             </div>
-            <div id="moderationTabs" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
-                <a class="list-group-item list-group-item-action active" href="#tab-Open" data-toggle="list" role="tab">Open</a>
-                <a class="list-group-item list-group-item-action" href="#tab-Closed" data-toggle="list" role="tab">Closed</a>
+            <div id="requestTabs" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
+                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-OpenMR'}">active</core_rt:if>" href="#tab-OpenMR" data-toggle="list" role="tab">Open Moderation Requests</a>
+                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ClosedMR'}">active</core_rt:if>" href="#tab-ClosedMR" data-toggle="list" role="tab">Closed Moderation Requests</a>
+                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-OpenCR'}">active</core_rt:if>" href="#tab-OpenCR" data-toggle="list" role="tab">Open Clearing Requests</a>
+                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ClosedCR'}">active</core_rt:if>" href="#tab-ClosedCR" data-toggle="list" role="tab">Closed Clearing Requests</a>
             </div>
 		</div>
 		<div class="col">
@@ -53,7 +65,7 @@
             <div class="row">
                 <div class="col">
                     <div class="tab-content">
-                        <div id="tab-Open" class="tab-pane active show">
+                        <div id="tab-OpenMR" class="tab-pane active show">
                             <table id="moderationsTable" class="table table-bordered aligned-top">
                             <colgroup>
                                 <col />
@@ -67,8 +79,38 @@
                             </colgroup>
                             </table>
                         </div>
-                        <div id="tab-Closed" class="tab-pane">
+                        <div id="tab-ClosedMR" class="tab-pane">
                             <table id="closedModerationsTable" class="table table-bordered"></table>
+                        </div>
+                        <div id="tab-OpenCR" class="tab-pane">
+                            <table id="clearingRequestsTable" class="table table-bordered">
+                            <colgroup>
+                                <col style="width: 2%;" />
+                                <col style="width: 10%;" /> <!-- Project BU -->
+                                <col style="width: 18%;" /> <!-- Clearing Request ID -->
+                                <col style="width: 10%;" /> <!-- Requested Date -->
+                                <col style="width: 15%;" /> <!-- Requesting User -->
+                                <col style="width: 20%;" /> <!-- Clearing Team -->
+                                <col style="width: 10%;" /> <!-- Agreed Date -->
+                                <col style="width: 10%;" /> <!-- Status -->
+                                <col style="width: 5%;" /> <!-- Action -->
+                            </colgroup>
+                            </table>
+                        </div>
+                        <div id="tab-ClosedCR" class="tab-pane">
+                            <table id="closedClearingRequestsTable" class="table table-bordered">
+                            <colgroup>
+                                <col style="width: 2%;" />
+                                <col style="width: 10%;" /> <!-- Project BU -->
+                                <col style="width: 18%;" /> <!-- Clearing Request ID -->
+                                <col style="width: 10%;" /> <!-- Requested Date -->
+                                <col style="width: 15%;" /> <!-- Requesting User -->
+                                <col style="width: 20%;" /> <!-- Clearing Team -->
+                                <col style="width: 10%;" /> <!-- Agreed Date -->
+                                <col style="width: 10%;" /> <!-- Status -->
+                                <col style="width: 5%;" /> <!-- Action -->
+                            </colgroup>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -84,14 +126,20 @@
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-    require(['jquery', 'bridges/datatables', 'modules/dialog', 'modules/listgroup', 'utils/includes/quickfilter'], function($, datatables, dialog, listgroup, quickfilter) {
+AUI().use('liferay-portlet-url', function () {
+    var PortletURL = Liferay.PortletURL;
+    require(['jquery', 'bridges/datatables', 'modules/dialog', 'modules/validation', 'modules/listgroup', 'utils/includes/quickfilter', 'utils/render', 'bridges/jquery-ui'], function($, datatables, dialog, validation, listgroup, quickfilter, render) {
         var moderationsDataTable,
-            closedModerationsDataTable;
+            closedModerationsDataTable,
+            clearingRequestsDataTable,
+            closedClearingRequestsDataTable;
 
-        listgroup.initialize('moderationTabs', 'tab-Open');
+        listgroup.initialize('requestTabs', $('#requestTabs').data('initial-tab') || 'tab-Open');
 
         moderationsDataTable = createModerationsTable("#moderationsTable", prepareModerationsData());
         closedModerationsDataTable = createModerationsTable("#closedModerationsTable", prepareClosedModerationsData());
+        clearingRequestsDataTable = createClearingRequestsTable("#clearingRequestsTable", prepareClearingRequestsData());
+        closedClearingRequestsDataTable = createClearingRequestsTable("#closedClearingRequestsTable", prepareClosedClearingRequestsData());
 
         quickfilter.addTable(moderationsDataTable);
         quickfilter.addTable(closedModerationsDataTable);
@@ -173,6 +221,152 @@
             }, [0,1,2,3,4,5,6], [7]);
         }
 
+
+        function prepareClearingRequestsData() {
+            var result = [];
+            <core_rt:forEach items="${clearingRequests}" var="request">
+                result.push({
+                    "DT_RowId": "${request.id}",
+                    "0": '',
+                    "1": '<sw360:out value="${request.projectBU}"/>',
+                    "2": "<sw360:DisplayClearingRequestLink clearingRequestId="${request.id}"/>",
+                    "3": '<sw360:out value="${request.requestedClearingDate}"/>',
+                    "4": '<sw360:DisplayUserEmail email="${request.requestingUser}" />',
+                    "5": '<sw360:DisplayUserEmail email="${request.clearingTeam}" />',
+                    "6": '<sw360:out value="${request.agreedClearingDate}"/>',
+                    "7": "<sw360:DisplayEnum value="${request.clearingState}"/>",
+                    "8": '<sw360:out value="${request.requestingUserComment}" maxChar="150" jsQuoting="true" />',
+                    "9": '<sw360:out value="${request.clearingTeamComment}" maxChar="150" jsQuoting="true" />',
+                    "10": '${request.projectId}'
+                });
+            </core_rt:forEach>
+            return result;
+        }
+
+        function prepareClosedClearingRequestsData() {
+            var result = [];
+            <core_rt:forEach items="${closedClearingRequests}" var="request">
+                result.push({
+                    "DT_RowId": "${request.id}",
+                    "0": '',
+                    "1": '<sw360:out value="${request.projectBU}"/>',
+                    "2": "<sw360:DisplayClearingRequestLink clearingRequestId="${request.id}"/>",
+                    "3": '<sw360:out value="${request.requestedClearingDate}"/>',
+                    "4": '<sw360:DisplayUserEmail email="${request.requestingUser}" />',
+                    "5": '<sw360:DisplayUserEmail email="${request.clearingTeam}" />',
+                    "6": '<sw360:out value="${request.agreedClearingDate}"/>',
+                    "7": "<sw360:DisplayEnum value="${request.clearingState}"/>",
+                    "8": '<sw360:out value="${request.requestingUserComment}" maxChar="150" jsQuoting="true" />',
+                    "9": '<sw360:out value="${request.clearingTeamComment}" maxChar="150" jsQuoting="true" />',
+                    "10": '${request.projectId}'
+                });
+            </core_rt:forEach>
+            return result;
+        }
+
+        function createClearingRequestsTable(tableId, tableData) {
+            return datatables.create(tableId, {
+                searching: true,
+                data: tableData,
+                columns: [
+                    {title: '<svg class="lexicon-icon"><title>Expand to see comments</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle-open"/></svg>', className: 'details-control', /* 'orderable': false, */ data: null, defaultContent: '&#x25BA'},
+                    {title: "Project BU", className: 'text-nowrap'},
+                    {title: "Request ID", className: 'text-nowrap' },
+                    {title: "Requested Date", className: 'text-nowrap'},
+                    {title: "Requesting User"},
+                    {title: "Clearing Team"},
+                    {title: "Agreed Date"},
+                    {title: "Status", className: 'text-nowrap'},
+                    {title: "Actions", render: {display: renderClearingRequestAction}, className: 'one action'}
+                ],
+                language: {
+                    emptyTable: "No clearing requests are found."
+                },
+                "order": [[2, 'asc']],
+                initComplete: datatables.showPageContainer
+            }, [1,2,3,4,5,6,7], [0]);
+        }
+
+        function renderClearingRequestAction(tableData, type, row) {
+            if ($(row[7]).text() === 'Closed' || !row[10] || $(row[5]).attr('href').replace('mailto:', '') !== '${user.emailAddress}') {
+                return '';
+            }
+            return render.linkTo(
+                    makeClearingRequestUrl(row.DT_RowId, '<%=PortalConstants.PAGENAME_EDIT_CLEARING_REQUEST%>'),
+                    "",
+                    '<div class="actions"><svg class="edit lexicon-icon"><title>Edit</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg></div>'
+                    );
+        }
+
+        // helper functions
+        function makeClearingRequestUrl(crId, page) {
+            var portletURL = PortletURL.createURL('<%=PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE)%>')
+                .setParameter('<%=PortalConstants.PAGENAME%>', page)
+                .setParameter('<%=PortalConstants.CLEARING_REQUEST_ID%>', crId);
+            return portletURL.toString();
+        }
+
+        /* Add event listener for opening and closing details as child row */
+        $('#clearingRequestsTable tbody').on('click', 'td.details-control', function () {
+            var tr = $(this).closest('tr');
+            displayMoreInformation(tr, 'openCR');
+        });
+
+        $('#closedClearingRequestsTable tbody').on('click', 'td.details-control', function () {
+            var tr = $(this).closest('tr');
+            displayMoreInformation(tr, 'closedCR');
+        });
+
+        function displayMoreInformation(tr, table) {
+            var row;
+            if (table === 'closedCR') {
+                row = closedClearingRequestsDataTable.row(tr)
+            } else if (table === 'openCR') {
+                row = clearingRequestsDataTable.row(tr)
+            }
+
+            if (row.child.isShown()) {
+                tr.find("td:first").html('&#x25BA')
+                row.child.hide();
+                tr.removeClass('shown');
+                row.child().removeClass('active')
+            } else {
+                tr.find("td:first").html('&#x25BC')
+                row.child(createChildRow(row.data())).show();
+                tr.addClass('shown');
+                row.child().addClass('active')
+            }
+        }
+
+        /*
+         * Define function for child row creation, which will contain comments for a clicked table row
+         */
+        function createChildRow(rowData) {
+            let requesterComment = rowData[8],
+                approverComment = rowData[9];
+
+            if (!requesterComment) {
+                requesterComment = 'N/A';
+            }
+
+            if (!approverComment) {
+                approverComment = 'N/A';
+            } else if (approverComment.length > 150) {
+                approverComment = stringToHtml(approverComment, 150);
+            }
+
+            return '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:10px;">'+
+			            '<tr>'+
+			                '<td>Requesting User Comment:</td>'+
+			                '<td>'+requesterComment+'</td>'+
+			            '</tr>'+
+			            '<tr>'+
+			                '<td>Clearing Team Comment:</td>'+
+			                '<td>'+approverComment+'</td>'+
+			            '</tr>'+
+			        '</table>';
+        }
+
         function deleteModerationRequest(id, docName) {
             var $dialog;
 
@@ -217,6 +411,19 @@
                 }
             );
         }
+
+        function stringToHtml(htmlText, trim) {
+            if (typeof trim === 'number') {
+                return htmlText = '<span title="'+htmlText+'">'+htmlText.substring(0, trim)+'...</span>';
+            }
+        }
+
+            $('.datepicker').datepicker({
+                minDate: new Date(),
+                changeMonth: true,
+                changeYear: true,
+                dateFormat: "yy-mm-dd"
+            });
     });
 
     function extractEmailFromHTMLElement(link) {
@@ -275,4 +482,5 @@
         ModeratorsListHidden.toggle();
         ModeratorsListShown.toggle();
     }
+});
 </script>

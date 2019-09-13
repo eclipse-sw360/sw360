@@ -54,7 +54,16 @@ enum ModerationState {
     PENDING = 0,
     APPROVED = 1,
     REJECTED = 2,
-    INPROGRESS =3,
+    INPROGRESS = 3,
+}
+
+enum ClearingRequestState {
+    NEW = 0,
+    ACCEPTED = 1,
+    REJECTED = 2,
+    IN_QUEUE = 3,
+    IN_PROGRESS = 4,
+    CLOSED = 5
 }
 
 enum Visibility {
@@ -102,6 +111,12 @@ enum ObligationStatus {
     IN_PROGRESS = 2,
 }
 
+enum ClearingRequestEmailTemplate {
+    NEW = 0,
+    UPDATED = 1,
+    PROJECT_UPDATED = 2,
+}
+
 struct ConfigContainer {
     1: optional string id,
     2: optional string revision,
@@ -136,6 +151,7 @@ struct RequestSummary {
 struct AddDocumentRequestSummary {
     1: optional AddDocumentRequestStatus requestStatus;
     2: optional string id;
+    3: optional string message;
 }
 
 struct CustomProperties {
@@ -149,6 +165,12 @@ struct CustomProperties {
 struct RequestStatusWithBoolean {
   1: required RequestStatus requestStatus;
   2: optional bool answerPositive;
+}
+
+struct Comment {
+    1: required string text,
+    2: required string commentedBy,
+    3: optional i64 commentedOn // timestamp of comment
 }
 
 /**

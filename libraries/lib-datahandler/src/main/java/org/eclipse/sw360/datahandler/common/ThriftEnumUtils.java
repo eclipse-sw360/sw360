@@ -255,6 +255,15 @@ public class ThriftEnumUtils {
             ObligationStatus.IN_PROGRESS, "In Progress"
     );
 
+    private static final ImmutableMap<ClearingRequestState, String> MAP_CLEARING_REQUEST_STATE_STRING = ImmutableMap.<ClearingRequestState, String>builder()
+            .put(ClearingRequestState.NEW, "New")
+            .put(ClearingRequestState.ACCEPTED, "Accepted")
+            .put(ClearingRequestState.REJECTED, "Rejected")
+            .put(ClearingRequestState.IN_QUEUE, "In Queue")
+            .put(ClearingRequestState.IN_PROGRESS, "In Progress")
+            .put(ClearingRequestState.CLOSED, "Closed")
+            .build();
+
     public static final ImmutableMap<Class<? extends TEnum>, Map<? extends TEnum, String>>
             MAP_ENUMTYPE_MAP = ImmutableMap.<Class<? extends TEnum>, Map<? extends TEnum, String>>builder()
             .put(ComponentType.class, MAP_COMPONENT_TYPE_STRING)
@@ -279,6 +288,7 @@ public class ThriftEnumUtils {
             .put(ECCStatus.class, MAP_ECC_STATUS_STRING)
             .put(DocumentType.class, MAP_DOCUMENT_TYPE_STRING)
             .put(ObligationStatus.class, MAP_OBLIGATION_STATUS_STRING)
+            .put(ClearingRequestState.class, MAP_CLEARING_REQUEST_STATE_STRING)
             .build();
 
     public static String enumToString(TEnum value) {

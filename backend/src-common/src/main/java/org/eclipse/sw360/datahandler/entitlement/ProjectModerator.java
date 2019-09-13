@@ -10,9 +10,11 @@
 package org.eclipse.sw360.datahandler.entitlement;
 
 import org.eclipse.sw360.datahandler.common.Moderator;
+import org.eclipse.sw360.datahandler.thrift.Comment;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
+import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -59,6 +61,46 @@ public class ProjectModerator extends Moderator<Project._Fields, Project> {
         } catch (TException e) {
             log.error("Could not moderate delete project " + project.getId() + " for User " + user.getEmail(), e);
             return  RequestStatus.FAILURE;
+        }
+    }
+
+    public String createClearingRequest(ClearingRequest clearingRequest, User user) {
+        ModerationService.Iface client = thriftClients.makeModerationClient();
+        try {
+            return client.createClearingRequest(clearingRequest, user);
+        } catch (TException e) {
+            log.error("Could not create CR for Project: " + clearingRequest.getProjectId() + " by User " + user.getEmail(), e);
+            return null;
+        }
+    }
+
+    public RequestStatus addCommentToClearingRequest(String id, Comment comment, User user) {
+        ModerationService.Iface client = thriftClients.makeModerationClient();
+        try {
+            return client.addCommentToClearingRequest(id, comment, user);
+        } catch (TException e) {
+            log.error("Failed to add comment in clearing request: " + id, e);
+            return RequestStatus.FAILURE;
+        }
+    }
+
+    public ClearingRequest getClearingRequestByProjectId(String projectId, User user) {
+        ModerationService.Iface client = thriftClients.makeModerationClient();
+        try {
+            return client.getClearingRequestByProjectId(projectId);
+        } catch (TException e) {
+            log.error("Could not find CR for Project: " + projectId + " by User " + user.getEmail(), e);
+            return null;
+        }
+    }
+
+
+    public void unlinkClearingRequestForProjectDeletion(Project project, User user) {
+        try {
+            ModerationService.Iface client = thriftClients.makeModerationClient();
+            client.updateClearingRequestForProjectDeletion(project, user);
+        } catch (TException e) {
+            log.error("Failed to unlink CR : " + project.getClearingRequestId() + " for project: " + project.getId() + ", by User " + user.getEmail(), e);
         }
     }
 

@@ -35,7 +35,6 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TEnum;
@@ -45,6 +44,10 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -68,6 +71,7 @@ public class SW360Utils {
     public static final String FORMAT_DATE_TIME = "yyyy-MM-dd HH:mm:ss";
     public static final Comparator<ReleaseLink> RELEASE_LINK_COMPARATOR = Comparator.comparing(rl -> getReleaseFullname(rl.getVendor(), rl.getName(), rl.getVersion()).toLowerCase());
     private static final ObjectMapper objectMapper;
+    private static final String DIGIT_AND_DECIMAL_REGEX = "[^\\d.]";
 
     private static Joiner spaceJoiner = Joiner.on(" ");
 
@@ -242,6 +246,22 @@ public class SW360Utils {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldValue, newValue) -> oldValue));
     }
 
+    public static String dropCommentedLine(Class<?> clazz, String TEMPLATE_FILE) {
+        String text = new String(CommonUtils.loadResource(clazz, TEMPLATE_FILE).orElse(new byte[0]));
+        return text.replaceAll("(?m)^#.*(?:\r?\n)?", ""); // ignore comments in template file
+    }
+
+    public static boolean isValidDate(String date, DateTimeFormatter format, long greaterThanDays) {
+        try {
+            LocalDate selectedDate = LocalDate.parse(date, format);
+            LocalDate currentDate = LocalDate.now();
+            long difference = ChronoUnit.DAYS.between(currentDate, selectedDate);
+            return difference >= greaterThanDays ? true : false;
+        } catch (DateTimeParseException e) {
+            return false;
+        }
+    }
+
     public static String printFullname(Release release) {
         if (release == null || isNullOrEmpty(release.getName())) {
             return "New Release";
@@ -309,6 +329,15 @@ public class SW360Utils {
             return "New User";
         }
         return user.getEmail();
+    }
+
+    public static String printFullname(User user) {
+        if (user == null || isNullOrEmpty(user.getEmail())) {
+            return "New User";
+        }
+        StringBuilder sb = new StringBuilder(CommonUtils.nullToEmptyString(user.getFullname())).append(" (")
+                .append(user.getEmail()).append(")");
+        return sb.toString();
     }
 
     public static Collection<ProjectLink> getLinkedProjects(Project project, boolean deep, ThriftClients thriftClients, Logger log, User user) {
@@ -569,5 +598,18 @@ public class SW360Utils {
                 .filter(etps -> stepName.equals(etps.getStepName())) //
                 .findFirst() //
                 .orElse(null);
+    }
+
+    public static Integer parseStringToNumber(String input) {
+        final String digitsOnly = input.replaceAll(DIGIT_AND_DECIMAL_REGEX, "");
+
+        if ("".equals(digitsOnly))
+            return 0;
+        try {
+            return Integer.parseInt(digitsOnly);
+        } catch (NumberFormatException nfe) {
+            log.error("Number Format Exception while parsing clearing request Id: "+digitsOnly);
+            return 0;
+        }
     }
 }

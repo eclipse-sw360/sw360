@@ -61,9 +61,9 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
     private static final int CACHE_TIMEOUT_MINUTES = 15;
     private static final int CACHE_MAX_ITEMS = 100;
     private static final String DEFAULT_LICENSE_INFO_HEADER_FILE = "/DefaultLicenseInfoHeader.txt";
-    private static final String DEFAULT_LICENSE_INFO_TEXT = dropCommentedLine(DEFAULT_LICENSE_INFO_HEADER_FILE);
+    private static final String DEFAULT_LICENSE_INFO_TEXT = SW360Utils.dropCommentedLine(LicenseInfoHandler.class, DEFAULT_LICENSE_INFO_HEADER_FILE);
     private static final String DEFAULT_OBLIGATIONS_FILE = "/DefaultObligations.txt";
-    private static final String DEFAULT_OBLIGATIONS_TEXT = dropCommentedLine(DEFAULT_OBLIGATIONS_FILE);
+    private static final String DEFAULT_OBLIGATIONS_TEXT = SW360Utils.dropCommentedLine(LicenseInfoHandler.class, DEFAULT_OBLIGATIONS_FILE);
     private static final String MSG_NO_RELEASE_GIVEN = "No release given";
 
     protected List<LicenseInfoParser> parsers;
@@ -609,10 +609,5 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
                 .filter(outputGenerator -> generatorClassname.equals(outputGenerator.getClass().getSimpleName()))
                 .filter(outputGenerator -> generatorVariant.equals(outputGenerator.getOutputVariant()))
                 .findFirst().orElseThrow(() -> new TException("Unknown output generator: " + generatorClassname));
-    }
-
-    private static String dropCommentedLine(String TEMPLATE_FILE) {
-        String text = new String( CommonUtils.loadResource(LicenseInfoHandler.class, TEMPLATE_FILE).orElse(new byte[0]) );
-        return text.replaceAll("(?m)^#.*(?:\r?\n)?", ""); // ignore comments in template file
     }
 }
