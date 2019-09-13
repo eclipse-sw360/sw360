@@ -177,12 +177,6 @@
                                    description="Moderators" multiUsers="true" readonly="false"/>
         </td>
     </tr>
-    <tr>
-        <td width="33%">
-            <sw360:DisplayMainLicensesEdit id="<%=Release._Fields.MAIN_LICENSE_IDS.toString()%>"
-                                           licenseIds="${release.mainLicenseIds}"/>
-        </td>
-    </tr>
 </table>
 
 <script>
