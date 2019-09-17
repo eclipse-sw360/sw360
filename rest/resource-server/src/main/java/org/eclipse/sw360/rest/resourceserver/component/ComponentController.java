@@ -47,6 +47,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import static com.google.common.base.Strings.isNullOrEmpty;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -259,7 +260,7 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
             restControllerHelper.addEmbeddedModerators(halComponent, moderators);
         }
 
-        if (sw360Component.getDefaultVendorId() != null) {
+        if (!isNullOrEmpty(sw360Component.getDefaultVendorId())) {
             Vendor defaultVendor;
             if (sw360Component.getDefaultVendor() == null
                     || sw360Component.getDefaultVendor().getId() != sw360Component.getDefaultVendorId()) {
