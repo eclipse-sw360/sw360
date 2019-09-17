@@ -9,6 +9,16 @@ Open Source Software
 ====================
 $licenseInfoHeader
 
+#if($externalIds.keySet().size() > 0)
+External Identifiers for this Product:
+=====================================
+Identifier Name & Identifier Value
+---------------------------------
+#foreach ($externalId in $externalIds.keySet())
+* $externalId  - $externalIds[$externalId]
+#end
+
+#end
 Open Source Software Contained in this Product/Device:
 ======================================================
 #foreach($releaseName in $licenseInfoResults.keySet()) #set($errorResults=[])

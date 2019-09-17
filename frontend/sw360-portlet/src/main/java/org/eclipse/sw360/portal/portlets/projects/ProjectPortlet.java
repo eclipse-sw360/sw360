@@ -272,7 +272,10 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
     private void downloadLicenseInfo(ResourceRequest request, ResourceResponse response) throws IOException {
         final String projectId = request.getParameter(PROJECT_ID);
-        final String outputGenerator = request.getParameter(PortalConstants.LICENSE_INFO_SELECTED_OUTPUT_FORMAT);
+        String outputGenerator = request.getParameter(PortalConstants.LICENSE_INFO_SELECTED_OUTPUT_FORMAT);
+        String extIdsFromRequest = request.getParameter(PortalConstants.EXTERNAL_ID_SELECTED_KEYS);
+
+        String externalIds = Optional.of(extIdsFromRequest).orElse(StringUtils.EMPTY);
 
         Set<String> selectedAttachmentIdsWithPath = Sets
                 .newHashSet(request.getParameterValues(PortalConstants.LICENSE_INFO_RELEASE_TO_ATTACHMENT));
@@ -312,7 +315,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             final User user = UserCacheHolder.getUserFromRequest(request);
             Project project = thriftClients.makeProjectClient().getProjectById(projectId, user);
             LicenseInfoFile licenseInfoFile = licenseInfoClient.getLicenseInfoFile(project, user, outputGenerator,
-                    releaseIdsToSelectedAttachmentIds, excludedLicensesPerAttachmentId);
+                    releaseIdsToSelectedAttachmentIds, excludedLicensesPerAttachmentId, externalIds);
             saveLicenseInfoAttachmentUsages(project, user, selectedAttachmentIdsWithPath,
                     excludedLicensesPerAttachmentIdWithPath);
             sendLicenseInfoResponse(request, response, project, licenseInfoFile);
@@ -937,6 +940,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 Project project = client.getProjectById(id, user);
                 request.setAttribute(PROJECT, project);
                 request.setAttribute(DOCUMENT_ID, id);
+
+                Map<String,String> extIdMap = project.getExternalIds();
+                request.setAttribute("externalIds", extIdMap.keySet());
 
                 LicenseInfoService.Iface licenseInfoClient = thriftClients.makeLicenseInfoClient();
                 List<OutputFormatInfo> outputFormats = licenseInfoClient.getPossibleOutputFormats();

@@ -48,6 +48,7 @@ public abstract class OutputGenerator<T> {
     protected static final String LICENSE_INFO_HEADER_TEXT = "licenseInfoHeader";
     protected static final String OBLIGATIONS_TEXT = "obligations";
     protected static final String LICENSE_INFO_PROJECT_TITLE = "projectTitle";
+    protected static final String EXTERNAL_IDS = "externalIds";
 
     private final String outputType;
     private final String outputDescription;
@@ -63,7 +64,7 @@ public abstract class OutputGenerator<T> {
         this.outputVariant = variant;
     }
 
-    public abstract T generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project, Collection<ObligationParsingResult> obligationResults, User user) throws SW360Exception;
+    public abstract T generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project, Collection<ObligationParsingResult> obligationResults, User user, Map<String,String> externalIds) throws SW360Exception;
 
     public String getOutputType() {
         return outputType;
@@ -222,10 +223,11 @@ public abstract class OutputGenerator<T> {
      *            parsing results to be rendered
      * @param file
      *            name of template file
+     * @param externalIds
      * @return rendered template
      */
     protected String renderTemplateWithDefaultValues(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, String file,
-                                                     String projectTitle, String licenseInfoHeaderText, String obligationsText) {
+                                                     String projectTitle, String licenseInfoHeaderText, String obligationsText, Map<String, String> externalIds) {
         VelocityContext vc = getConfiguredVelocityContext();
         // set header
         vc.put(LICENSE_INFO_PROJECT_TITLE, projectTitle);
@@ -235,7 +237,6 @@ public abstract class OutputGenerator<T> {
         // sorted lists of all license to be displayed at the end of the file at once
         List<LicenseNameWithText> licenseNamesWithTexts = getSortedLicenseNameWithTexts(projectLicenseInfoResults);
         vc.put(ALL_LICENSE_NAMES_WITH_TEXTS, licenseNamesWithTexts);
-
         // assign a reference id to each license in order to only display references for
         // each release. The references will point to
         // the list with all details at the and of the file (see above)
@@ -263,6 +264,8 @@ public abstract class OutputGenerator<T> {
         // also display acknowledgments
         SortedMap<String, Set<String>> acknowledgements = getSortedAcknowledgements(sortedLicenseInfos);
         vc.put(ACKNOWLEDGEMENTS_CONTEXT_PROPERTY, acknowledgements);
+
+        vc.put(EXTERNAL_IDS, externalIds);
 
         StringWriter sw = new StringWriter();
         Velocity.mergeTemplate(file, "utf-8", vc, sw);

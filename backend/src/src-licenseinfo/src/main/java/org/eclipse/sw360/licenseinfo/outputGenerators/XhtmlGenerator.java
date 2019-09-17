@@ -23,6 +23,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import java.util.Collection;
+import java.util.Map;
 
 public class XhtmlGenerator extends OutputGenerator<String> {
     private static final Logger LOGGER = Logger.getLogger(XhtmlGenerator.class);
@@ -36,7 +37,7 @@ public class XhtmlGenerator extends OutputGenerator<String> {
     }
 
     @Override
-    public String generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project, Collection<ObligationParsingResult> obligationResults, User user) throws SW360Exception {
+    public String generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project, Collection<ObligationParsingResult> obligationResults, User user, Map<String,String> externalIds) throws SW360Exception {
         String projectName = project.getName();
         String projectVersion = project.getVersion();
         String licenseInfoHeaderText = project.getLicenseInfoHeaderText();
@@ -44,15 +45,15 @@ public class XhtmlGenerator extends OutputGenerator<String> {
 
         switch (getOutputVariant()) {
             case DISCLOSURE:
-                return generateDisclosure(projectLicenseInfoResults, projectName + " " + projectVersion, licenseInfoHeaderText, obligationsText);
+                return generateDisclosure(projectLicenseInfoResults, projectName + " " + projectVersion, licenseInfoHeaderText, obligationsText, externalIds);
             default:
                 throw new IllegalArgumentException("Unknown generator variant type: " + getOutputVariant());
         }
     }
 
-    private String generateDisclosure(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, String projectTitle, String licenseInfoHeaderText, String obligationsText) {
+    private String generateDisclosure(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, String projectTitle, String licenseInfoHeaderText, String obligationsText, Map<String, String> externalIds) {
         try {
-            return renderTemplateWithDefaultValues(projectLicenseInfoResults, XHTML_TEMPLATE_FILE, projectTitle, convertHeaderTextToHTML(licenseInfoHeaderText), convertHeaderTextToHTML(obligationsText));
+            return renderTemplateWithDefaultValues(projectLicenseInfoResults, XHTML_TEMPLATE_FILE, projectTitle, convertHeaderTextToHTML(licenseInfoHeaderText), convertHeaderTextToHTML(obligationsText), externalIds);
         } catch (Exception e) {
             LOGGER.error("Could not generate xhtml license info file for project " + projectTitle, e);
             return "License information could not be generated.\nAn exception occured: " + e.toString();

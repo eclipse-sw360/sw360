@@ -275,7 +275,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         LicenseInfoFile licenseInfoFile = new LicenseInfoFile();
         licenseInfoFile.setGeneratedOutput(new byte[0]);
         given(this.licenseInfoMockService.getLicenseInfoFile(anyObject(), anyObject(), anyObject(), anyObject(),
-                anyObject())).willReturn(licenseInfoFile);
+                anyObject(),anyObject())).willReturn(licenseInfoFile);
     }
 
     @Test
@@ -638,7 +638,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_get_download_license_info() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        this.mockMvc.perform(get("/api/projects/" + project.getId()+ "/licenseinfo?generatorClassName=XhtmlGenerator&variant=DISCLOSURE")
+        this.mockMvc.perform(get("/api/projects/" + project.getId()+ "/licenseinfo?generatorClassName=XhtmlGenerator&variant=DISCLOSURE&externalIds=portal-id,main-project-id")
                 .header("Authorization", "Bearer " + accessToken)
                 .accept("application/xhtml+xml"))
                 .andExpect(status().isOk())
@@ -648,6 +648,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                         .description("All possible values for output generator class names are "
                                                 + Arrays.asList("DocxGenerator", "XhtmlGenerator", "TextGenerator")),
                                 parameterWithName("variant").description("All the possible values for variants are "
-                                        + Arrays.asList(OutputFormatVariant.values())))));
+                                        + Arrays.asList(OutputFormatVariant.values())),
+                                parameterWithName("externalIds").description("The external Ids of the project"))));
     }
 }

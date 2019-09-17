@@ -477,6 +477,8 @@ public class PortalConstants {
 
     public static final String WRITE_ACCESS_USER = "writeAccessUser";
 
+    public static final String EXTERNAL_ID_SELECTED_KEYS = "externalIds";
+
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);
 

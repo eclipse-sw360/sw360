@@ -13,6 +13,7 @@
 
 package org.eclipse.sw360.licenseinfo.outputGenerators;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.poi.xwpf.usermodel.*;
 import org.apache.xmlbeans.XmlException;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.*;
@@ -198,5 +199,14 @@ public class DocxUtils {
         byteBuffer.putLong(uuid.getMostSignificantBits());
         byteBuffer.putLong(uuid.getLeastSignificantBits());
         return new BigInteger(byteBuffer.array()).abs();
+    }
+
+    public static void removeParagraph(XWPFDocument document, String paragraphText) {
+        XWPFParagraph paragraphToDelete = document.getParagraphs().stream()
+                .filter(p -> StringUtils.equalsIgnoreCase(paragraphText, p.getParagraphText()))
+                .findFirst().orElse(null);
+        if (paragraphToDelete != null) {
+            document.removeBodyElement(document.getPosOfParagraph(paragraphToDelete));
+        }
     }
 }

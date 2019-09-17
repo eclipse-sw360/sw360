@@ -133,11 +133,12 @@ public class XhtmlGeneratorTest {
         p.setVersion("1.0");
         p.setLicenseInfoHeaderText("Lorem");
         p.setObligationsText("Ipsum");
+        Map<String, String> externalIds = Collections.emptyMap();
 
-        xmlString = xhtmlGenerator.generateOutputFile(lipresults, p, obligationResults, null);
-        xmlString2 = xhtmlGenerator.generateOutputFile(lipresults2, p, obligationResults, null);
-        xmlString3 = xhtmlGenerator.generateOutputFile(lipresults3, p, obligationResults, null);
-        xmlStringEmpty = xhtmlGenerator.generateOutputFile(lipresultsEmpty, p, obligationResults, null);
+        xmlString = xhtmlGenerator.generateOutputFile(lipresults, p, obligationResults, null, externalIds);
+        xmlString2 = xhtmlGenerator.generateOutputFile(lipresults2, p, obligationResults, null, externalIds);
+        xmlString3 = xhtmlGenerator.generateOutputFile(lipresults3, p, obligationResults, null, externalIds);
+        xmlStringEmpty = xhtmlGenerator.generateOutputFile(lipresultsEmpty, p, obligationResults, null, externalIds);
 
         generateDocumentsFromXml();
     }

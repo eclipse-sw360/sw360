@@ -42,14 +42,15 @@ public class DisplayOutputFormats extends SimpleTagSupport {
 
     private void writeOptions(Collection<OutputFormatInfo> options) throws IOException {
         JspWriter jspWriter = getJspContext().getOut();
+        boolean isChecked=true;
         for (OutputFormatInfo option : options) {
             String optionDescription = option.getDescription();
             String optionValue = option.getGeneratorClassName() + "::" + option.getVariant();
+            String checked=isChecked?"checked":"";
             jspWriter.write(String.format(
-                    "<option value=\"%s\" class=\"textlabel stackedLabel\" \" +\n" +
-                            "                            (selected ? \"selected=\\\"selected\\\" \" : \"\") +\n" +
-                            "                            \">%s</option>",
+                    ("<div class=\"radio form-check\"><label><input type=\"radio\" name=\"outputFormat\" value=\"%s\" "+checked+">%s</label></div>"),
                     optionValue, optionDescription));
+            isChecked=false;
         }
     }
 }
