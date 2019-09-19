@@ -30,7 +30,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.WELCOME_PORTLET_NA
         "javax.portlet.display-name=Welcome",
         "javax.portlet.info.short-title=Welcome",
         "javax.portlet.info.title=Welcome",
-
+        "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.view-template=/html/homepage/welcome/view.jsp",
     },
     service = Portlet.class,
