@@ -57,6 +57,7 @@
     <jsp:useBean id="defaultObligationsText" class="java.lang.String" scope="request" />
 
     <core_rt:set  var="addMode"  value="${empty project.id}" />
+    <core_rt:set  var="pageName"  value="<%= request.getParameter("pagename") %>" />
 </c:catch>
 
 <%--These variables are used as a trick to allow referencing enum values in EL expressions below--%>

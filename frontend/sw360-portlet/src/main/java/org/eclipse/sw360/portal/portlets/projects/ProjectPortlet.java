@@ -889,11 +889,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     private void prepareDetailView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
         User user = UserCacheHolder.getUserFromRequest(request);
         String id = request.getParameter(PROJECT_ID);
-        request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_PROJECT);
+        setDefaultRequestAttributes(request);
         request.setAttribute(DOCUMENT_ID, id);
-        request.setAttribute(DEFAULT_LICENSE_INFO_HEADER_TEXT, getProjectDefaultLicenseInfoHeaderText());
-
-        request.setAttribute(DEFAULT_OBLIGATIONS_TEXT, getProjectDefaultObligationsText());
         if (id != null) {
             try {
                 ProjectService.Iface client = thriftClients.makeProjectClient();
@@ -1156,12 +1153,10 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     private void prepareProjectEdit(RenderRequest request) {
         User user = UserCacheHolder.getUserFromRequest(request);
         String id = request.getParameter(PROJECT_ID);
-        request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_PROJECT);
+        setDefaultRequestAttributes(request);
         Project project;
         Set<Project> usingProjects;
         int allUsingProjectCount = 0;
-        request.setAttribute(DEFAULT_LICENSE_INFO_HEADER_TEXT, getProjectDefaultLicenseInfoHeaderText());
-        request.setAttribute(DEFAULT_OBLIGATIONS_TEXT, getProjectDefaultObligationsText());
 
         if (id != null) {
 
@@ -1220,7 +1215,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     private void prepareProjectDuplicate(RenderRequest request) {
         User user = UserCacheHolder.getUserFromRequest(request);
         String id = request.getParameter(PROJECT_ID);
-        request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_PROJECT);
+        setDefaultRequestAttributes(request);
 
         try {
             if (id != null) {
@@ -1485,6 +1480,12 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         } else {
             return min(projectParameters.getDisplayStart() + projectParameters.getDisplayLength(), maxSize);
         }
+    }
+
+    private void setDefaultRequestAttributes(RenderRequest request) {
+        request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_PROJECT);
+        request.setAttribute(DEFAULT_LICENSE_INFO_HEADER_TEXT, getProjectDefaultLicenseInfoHeaderText());
+        request.setAttribute(DEFAULT_OBLIGATIONS_TEXT, getProjectDefaultObligationsText());
     }
 
     private List<Project> sortProjectList(List<Project> projectList, PaginationParameters projectParameters) {
