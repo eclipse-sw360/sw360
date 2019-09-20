@@ -156,7 +156,6 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
             fillExternalIds(document, externalIds);
             fillReleaseBulletList(document, projectLicenseInfoResults);
             fillReleaseDetailList(document, projectLicenseInfoResults, includeObligations);
-            fillLicenseList(document, projectLicenseInfoResults);
     }
 
     private void fillExternalIds(XWPFDocument document, Map<String, String> externalIdMap) {
@@ -506,27 +505,16 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         addPageBreak(document);
     }
 
-    private void fillReleaseDetailList(XWPFDocument document, Collection<LicenseInfoParsingResult> projectLicenseInfoResults, boolean includeObligations) throws TException {
+    private void fillReleaseDetailList(XWPFDocument document, Collection<LicenseInfoParsingResult> projectLicenseInfoResults, boolean includeObligations) throws TException, XmlException {
         addFormattedText(document.createParagraph().createRun(), "Detailed Releases Information", FONT_SIZE + 2, true);
         setText(document.createParagraph().createRun(), "Please note the following license conditions and copyright " +
                 "notices applicable to Open Source Software and/or other components (or parts thereof):");
         addNewLines(document, 0);
-
-        for (LicenseInfoParsingResult parsingResult : projectLicenseInfoResults) {
-            addReleaseTitle(document, parsingResult);
-            if (parsingResult.getStatus() == LicenseInfoRequestStatus.SUCCESS) {
-                addCopyrights(document, parsingResult);
-                addLicenses(document, parsingResult, includeObligations);
-            } else {
-                XWPFRun errorRun = document.createParagraph().createRun();
-                String errorText = nullToEmptyString(parsingResult.getMessage());
-                String filename = getFilename(parsingResult);
-                addFormattedText(errorRun, String.format("Error reading license information: %s", errorText), FONT_SIZE, false, ALERT_COLOR);
-                addFormattedText(errorRun, String.format("Source file: %s", filename), FONT_SIZE, false, ALERT_COLOR);
-            }
-            addNewLines(document, 1);
-        }
+        addLicenses(document, projectLicenseInfoResults, includeObligations);
+        fillLicenseList(document, projectLicenseInfoResults);
+        addCopyrights(document, projectLicenseInfoResults);
         addPageBreak(document);
+        fillReleaseBulletList(document, projectLicenseInfoResults);
     }
 
     private void addReleaseTitle(XWPFDocument document, LicenseInfoParsingResult parsingResult) {
@@ -537,28 +525,52 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         addNewLines(document, 0);
     }
 
-    private void addCopyrights(XWPFDocument document, LicenseInfoParsingResult parsingResult) {
-        XWPFRun copyrightTitleRun = document.createParagraph().createRun();
-        addFormattedText(copyrightTitleRun, "Copyrights", FONT_SIZE, true);
-        for (String copyright : getReleaseCopyrights(parsingResult)) {
-            XWPFParagraph copyPara = document.createParagraph();
-            copyPara.setSpacingAfter(0);
-            setText(copyPara.createRun(), copyright);
-        }
-    }
-
-    private void addLicenses(XWPFDocument document, LicenseInfoParsingResult parsingResult, boolean includeObligations) throws TException {
-        XWPFRun licensesTitleRun = document.createParagraph().createRun();
-        addNewLines(licensesTitleRun, 1);
-        addFormattedText(licensesTitleRun, "Licenses", FONT_SIZE, true);
-        for (String licenseName : getReleasesLicenses(parsingResult)) {
-            XWPFParagraph licensePara = document.createParagraph();
-            licensePara.setSpacingAfter(0);
-            addBookmarkHyperLink(licensePara, licenseName, licenseName);
-            if (includeObligations) {
-                addLicenseObligations(document, licenseName);
+    private void addCopyrights(XWPFDocument document, Collection<LicenseInfoParsingResult> projectLicenseInfoResults) {
+        for (LicenseInfoParsingResult parsingResult : projectLicenseInfoResults) {
+            if (parsingResult.getStatus() == LicenseInfoRequestStatus.SUCCESS) {
+                XWPFRun copyrightTitleRun = document.createParagraph().createRun();
+                addFormattedText(copyrightTitleRun, "Copyrights", FONT_SIZE, true);
+                for (String copyright : getReleaseCopyrights(parsingResult)) {
+                    XWPFParagraph copyPara = document.createParagraph();
+                    copyPara.setSpacingAfter(0);
+                    setText(copyPara.createRun(), copyright);
+                }
             }
         }
+
+    }
+
+    private void addLicenses(XWPFDocument document, Collection<LicenseInfoParsingResult> projectLicenseInfoResults, boolean includeObligations) throws TException {
+        for (LicenseInfoParsingResult parsingResult : projectLicenseInfoResults) {
+            addReleaseTitle(document, parsingResult);
+            if (parsingResult.getStatus() == LicenseInfoRequestStatus.SUCCESS) {
+                XWPFRun licensesTitleRun = document.createParagraph().createRun();
+                addNewLines(licensesTitleRun, 1);
+                addFormattedText(licensesTitleRun, "Licenses", FONT_SIZE, true);
+                Set<String> licenseNames = getReleasesLicenses(parsingResult).stream().collect(Collectors.toCollection(TreeSet::new));
+                int licenseCount = 1;
+                StringBuilder licenseNameWithCount = new StringBuilder();
+                for (String licenseName : licenseNames) {
+                    XWPFParagraph licensePara = document.createParagraph();
+                    licensePara.setSpacingAfter(0);
+                    licenseNameWithCount.append("(").append(licenseCount).append(") ").append(licenseName);
+                    licenseCount++;
+                    addBookmarkHyperLink(licensePara, licenseName, licenseNameWithCount.toString());
+                    licenseNameWithCount.setLength(0);
+                    if (includeObligations) {
+                        addLicenseObligations(document, licenseName);
+                    }
+                }
+            } else {
+                XWPFRun errorRun = document.createParagraph().createRun();
+                String errorText = nullToEmptyString(parsingResult.getMessage());
+                String filename = getFilename(parsingResult);
+                addFormattedText(errorRun, String.format("Error reading license information: %s", errorText), FONT_SIZE, false, ALERT_COLOR);
+                addFormattedText(errorRun, String.format("Source file: %s", filename), FONT_SIZE, false, ALERT_COLOR);
+            }
+            addNewLines(document, 1);
+        }
+        addPageBreak(document);
     }
 
     private void addLicenseObligations(XWPFDocument document, String spdxLicense) throws TException {
@@ -636,12 +648,16 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         XWPFRun licenseHeaderRun = document.createParagraph().createRun();
         addFormattedText(licenseHeaderRun, "License texts", FONT_SIZE + 2, true);
         addNewLines(document, 0);
-
+        int licenseCount = 1;
+        StringBuilder licenseNameWithCount = new StringBuilder();
         for (LicenseNameWithText licenseNameWithText : licenseNameWithTexts) {
             XWPFParagraph licenseParagraph = document.createParagraph();
             licenseParagraph.setStyle(STYLE_HEADING);
             String licenseName = licenseNameWithText.isSetLicenseName() ? licenseNameWithText.getLicenseName() : UNKNOWN_LICENSE_NAME;
-            addBookmark(licenseParagraph, licenseName, licenseName);
+            licenseNameWithCount.append(licenseCount).append(": ").append(licenseName);
+            licenseCount++;
+            addBookmark(licenseParagraph, licenseName, licenseNameWithCount.toString());
+            licenseNameWithCount.setLength(0);
             addNewLines(document, 0);
             setText(document.createParagraph().createRun(), nullToEmptyString(licenseNameWithText.getLicenseText()));
             addNewLines(document, 1);

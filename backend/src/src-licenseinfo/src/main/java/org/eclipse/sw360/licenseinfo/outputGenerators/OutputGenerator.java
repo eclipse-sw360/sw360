@@ -41,6 +41,7 @@ import java.util.stream.Stream;
 public abstract class OutputGenerator<T> {
     protected static final String VELOCITY_TOOLS_FILE = "velocity-tools.xml";
     protected static final String LICENSE_REFERENCE_ID_MAP_CONTEXT_PROPERTY = "licenseNameWithTextToReferenceId";
+    protected static final String LICENSENAMES = "licenseNames";
     protected static final String ACKNOWLEDGEMENTS_CONTEXT_PROPERTY = "acknowledgements";
     protected static final String ALL_LICENSE_NAMES_WITH_TEXTS = "allLicenseNamesWithTexts";
     protected static final String LICENSE_INFO_RESULTS_CONTEXT_PROPERTY = "licenseInfoResults";
@@ -237,6 +238,7 @@ public abstract class OutputGenerator<T> {
         // sorted lists of all license to be displayed at the end of the file at once
         List<LicenseNameWithText> licenseNamesWithTexts = getSortedLicenseNameWithTexts(projectLicenseInfoResults);
         vc.put(ALL_LICENSE_NAMES_WITH_TEXTS, licenseNamesWithTexts);
+        Set<String> licenseNames = new TreeSet<String>();
         // assign a reference id to each license in order to only display references for
         // each release. The references will point to
         // the list with all details at the and of the file (see above)
@@ -244,8 +246,10 @@ public abstract class OutputGenerator<T> {
         Map<LicenseNameWithText, Integer> licenseToReferenceId = Maps.newHashMap();
         for (LicenseNameWithText licenseNamesWithText : licenseNamesWithTexts) {
             licenseToReferenceId.put(licenseNamesWithText, referenceId++);
+            licenseNames.add(licenseNamesWithText.getLicenseName());
         }
         vc.put(LICENSE_REFERENCE_ID_MAP_CONTEXT_PROPERTY, licenseToReferenceId);
+        vc.put(LICENSENAMES, licenseNames);
 
         Map<Boolean, List<LicenseInfoParsingResult>> partitionedResults =
                 projectLicenseInfoResults.stream().collect(Collectors.partitioningBy(r -> r.getStatus() == LicenseInfoRequestStatus.SUCCESS));

@@ -30,29 +30,7 @@ Open Source Software Contained in this Product/Device:
 
 
 #if($licenseInfoResults.keySet().size() > 0)
-Details
-========
-
-##
-##
-## Copyrights
-##
 #foreach($releaseName in $licenseInfoResults.keySet())
-#set($copyrights = [])
-#if(${licenseInfoResults.get($releaseName).licenseInfo})
-#set($copyrights = $licenseInfoResults.get($releaseName).licenseInfo.copyrights)
-#if($copyrights.size() > 0)
-Copyright Notices for $releaseName
------------------
-#foreach($copyright in ${copyrights})
-$copyright
-#end## foreach($copyright in ${copyrights})
-
-
-#end## if($copyrights.size() > 0)
-#end## if(${licenseInfoResults.get($releaseName).licenseInfo})
-##
-##
 ## Acknowledgments
 ##
 #set($acks = [])
@@ -73,6 +51,7 @@ $ack
 ## Licenses
 ##
 #set($licenses = [])
+#set($licenseId = 1)
 #if(${licenseInfoResults.get($releaseName).licenseInfo})
 #set($licenses = $licenseInfoResults.get($releaseName).licenseInfo.licenseNamesWithTexts)
 Licenses for $releaseName
@@ -80,14 +59,14 @@ Licenses for $releaseName
 #if($licenses.size() == 0)
 <No licenses found>
 #else## if($licenses.size() > 0)
-#foreach($license in ${licenses})
+#foreach($license in ${licenseNames})
 #set($licenseName = "<no license name available>")
-#if($license.licenseName)
-#set($licenseName = $license.licenseName)
-#end## if($license.licenseName)
-#set($licenseId = $licenseNameWithTextToReferenceId.get($license))
-* $licenseName ($licenseId)
-#end## foreach($license in ${licenses})
+#if($license)
+#set($licenseName = $license)
+#end## if($license)
+($licenseId) $licenseName
+#set($licenseId = $licenseId + 1)
+#end## foreach($license in ${licenseNames})
 #end## if($licenses.size() > 0)
 
 
@@ -124,3 +103,30 @@ $licenseText.trim()
 Definition of Open Source Software
 ==================================
 As used herein, the term “Open Source Software” means any software that is licensed royalty-free (i.e., fees for exercising the licensed rights are prohibited, whereas fees for reimbursement of costs incurred by licensor are generally permitted) under any license terms which allow all users to modify such software. “Open Source Software” as used here may require, as a condition of modification and/or distribution that the source code of such software be made available to all users of the software for purposes of information and modification.
+
+#if($licenseInfoResults.keySet().size() > 0)
+Details
+========
+
+##
+##
+## Copyrights
+##
+#foreach($releaseName in $licenseInfoResults.keySet())
+#set($copyrights = [])
+#if(${licenseInfoResults.get($releaseName).licenseInfo})
+#set($copyrights = $licenseInfoResults.get($releaseName).licenseInfo.copyrights)
+#if($copyrights.size() > 0)
+Copyright Notices for $releaseName
+-----------------
+#foreach($copyright in ${copyrights})
+$copyright
+#end## foreach($copyright in ${copyrights})
+
+
+#end## if($copyrights.size() > 0)
+#end## if(${licenseInfoResults.get($releaseName).licenseInfo})
+#end## foreach($releaseName in $licenseInfoResults.keySet())
+#end## if($licenseInfoResults.keySet().size() > 0)
+##
+##
