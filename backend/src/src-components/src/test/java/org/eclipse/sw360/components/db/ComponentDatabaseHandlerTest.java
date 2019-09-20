@@ -1001,11 +1001,11 @@ public class ComponentDatabaseHandlerTest {
         final Release tmp = handler.getRelease(originalReleaseId, user1);
         tmp.unsetId();
         tmp.unsetRevision();
-        String newReleaseId = handler.addRelease(tmp, user1).getId();
+        AddDocumentRequestSummary summary = handler.addRelease(tmp, user1);
 
         final Map<String, List<String>> duplicateReleases = handler.getDuplicateReleases();
 
-        assertThat(newReleaseId, isEmptyOrNullString());
+        assertThat(summary.getRequestStatus(), is(AddDocumentRequestStatus.DUPLICATE));
         assertThat(duplicateReleases.size(), is(0));
     }
 

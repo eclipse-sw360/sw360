@@ -206,8 +206,15 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         // Prepare project for database
         prepareProject(project);
         if(isDuplicate(project)) {
-            return new AddDocumentRequestSummary()
+            final AddDocumentRequestSummary addDocumentRequestSummary = new AddDocumentRequestSummary()
                     .setRequestStatus(AddDocumentRequestStatus.DUPLICATE);
+            List<Project> duplicates = repository.searchByNameAndVersion(project.getName(), project.getVersion());
+            if (duplicates.size() == 1) {
+                duplicates.stream()
+                        .map(Project::getId)
+                        .forEach(addDocumentRequestSummary::setId);
+            }
+            return addDocumentRequestSummary;
         }
 
         // Save creating user

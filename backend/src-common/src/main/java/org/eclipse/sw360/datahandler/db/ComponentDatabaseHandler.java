@@ -283,8 +283,13 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
      */
     public AddDocumentRequestSummary addComponent(Component component, String user) throws SW360Exception {
         if(isDuplicate(component)) {
-            return new AddDocumentRequestSummary()
+            final AddDocumentRequestSummary addDocumentRequestSummary = new AddDocumentRequestSummary()
                     .setRequestStatus(AddDocumentRequestStatus.DUPLICATE);
+            Set<String> duplicates = componentRepository.getComponentIdsByName(component.getName());
+            if (duplicates.size() == 1) {
+                duplicates.forEach(addDocumentRequestSummary::setId);
+            }
+            return addDocumentRequestSummary;
         }
         if(component.getName().trim().length() == 0) {
             return new AddDocumentRequestSummary()
@@ -312,8 +317,15 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         // Prepare the release and get underlying component ID
         prepareRelease(release);
         if(isDuplicate(release)) {
-            return new AddDocumentRequestSummary()
+            final AddDocumentRequestSummary addDocumentRequestSummary = new AddDocumentRequestSummary()
                     .setRequestStatus(AddDocumentRequestStatus.DUPLICATE);
+            List<Release> duplicates = releaseRepository.searchByNameAndVersion(release.getName(), release.getVersion());
+            if (duplicates.size() == 1) {
+                duplicates.stream()
+                        .map(Release::getId)
+                        .forEach(addDocumentRequestSummary::setId);
+            }
+            return addDocumentRequestSummary;
         }
 
         String componentId = release.getComponentId();
