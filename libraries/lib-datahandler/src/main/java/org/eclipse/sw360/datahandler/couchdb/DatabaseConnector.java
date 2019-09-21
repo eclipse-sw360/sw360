@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2014-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2014-2017, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -10,18 +10,32 @@
  */
 package org.eclipse.sw360.datahandler.couchdb;
 
+import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
 import com.google.common.collect.ImmutableSet;
-import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
+
 import org.apache.log4j.Logger;
-import org.ektorp.*;
+import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
+import org.ektorp.BulkDeleteDocument;
+import org.ektorp.DbAccessException;
+import org.ektorp.DocumentNotFoundException;
+import org.ektorp.DocumentOperationResult;
+import org.ektorp.Security;
+import org.ektorp.SecurityGroup;
+import org.ektorp.Status;
+import org.ektorp.UpdateConflictException;
+import org.ektorp.ViewQuery;
 import org.ektorp.http.HttpClient;
 import org.ektorp.impl.StdCouchDbConnector;
 import org.ektorp.util.Documents;
-
-import java.net.MalformedURLException;
-import java.util.*;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * Database Connector to a CouchDB database
@@ -166,7 +180,6 @@ public class DatabaseConnector extends StdCouchDbConnector {
     @Override
     public void update(Object document) {
         if (document != null) {
-            try {
                 final Class documentClass = document.getClass();
                 if (ThriftUtils.isMapped(documentClass)) {
                     DocumentWrapper wrapper = getDocumentWrapper(document, documentClass);
@@ -176,9 +189,8 @@ public class DatabaseConnector extends StdCouchDbConnector {
                 } else {
                     super.update(document);
                 }
-            } catch (UpdateConflictException | IllegalArgumentException e) {
-                log.error("Document cannot be updated " + document, e);
-            }
+        } else {
+            log.warn("Ignore updating a null document.");
         }
     }
 

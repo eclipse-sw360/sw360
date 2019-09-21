@@ -12,7 +12,6 @@
 @import "portlets/admin/buttons";
 @import "portlets/admin/fossology/buttons";
 @import "portlets/admin/importexport/buttons";
-@import "portlets/components/merge";
 @import "portlets/homepage/signup";
 @import "portlets/homepage/welcome";
 @import "portlets/search/sidebar";
@@ -31,6 +30,7 @@
 	@import "components/dialog";
 	@import "components/form";
 	@import "components/listgroup";
+	@import "components/merge";
 	@import "components/table";
 	@import "components/toolbar";
 	@import "components/treetable";

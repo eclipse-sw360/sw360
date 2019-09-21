@@ -9,15 +9,17 @@
  * http://www.eclipse.org/legal/epl-v10.html
  */
 
- #portlet_sw360_portlet_components {
-
-    #componentMergeWizard .wizardBody {
-        .merge.line, .display.line {
-            border-color: $box-header-bg;
-        }
-
-        .modified, .modified + small {
-            background-color: $highlight-bg-warning;
-        }
+.merge.wizardBody {
+    .merge.line, .display.line {
+        border-color: $box-header-bg;
     }
- }
+
+    .modified, .modified + small {
+        background-color: $highlight-bg-warning;
+    }
+
+    h5 {
+        color: $box-header-bg;
+        background-color: transparent;
+    }
+}
