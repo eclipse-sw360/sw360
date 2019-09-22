@@ -11,7 +11,8 @@
 
 table.table {
 	&.label-value-table {
-		border-color: $light-color;
+		// for some reason, the color is not applied when switching pages without the '!important' modifier.
+		border-color: $light-color !important;
 	}
 
 	th {

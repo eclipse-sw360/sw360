@@ -92,7 +92,7 @@ require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProje
                 {title: "Clearing State"},
                 {title: "Clearing Report"},
                 {title: "Release Mainline State"},
-                {title: "Actions", render: {display: renderActions}, className: "five actions", orderable: false }
+                {title: "Actions", render: {display: renderActions}, className: "five actions" }
             ],
             columnDefs: [
                 {
@@ -105,7 +105,7 @@ require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProje
                 }
             ],
             order: [1, 'desc']
-        });
+        }, [0, 1, 2, 3, 4], [5], true);
 
         function renderActions(id, type, row) {
             if(!row[5]) {

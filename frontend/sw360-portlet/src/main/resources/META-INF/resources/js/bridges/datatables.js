@@ -46,9 +46,9 @@ define('bridges/datatables', [
 
 			autoWidth: false,
 			dom:
-				"<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'B>>" +
-				"<'row'<'col-sm-12'tr>>" +
-				"<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+				"<'row'<'col-auto'l><'col'B>>" + 	// line above table
+				"<'row'<'col-12'tr>>" +				// table
+				"<'row'<'col-auto'i><'col'p>>",		// line below table
 			buttons: [],
 			info: true,
 			lengthMenu: [ [10, 25, 50, 100, -1], [10, 25, 50, 100, "All"] ],
@@ -63,7 +63,16 @@ define('bridges/datatables', [
 	}
 
 	return {
-		create: function(selector, config, printColumns, noSortColumns) {
+		/**
+		 * Creates a new datatable on the given selector.
+		 * 
+		 * @param {string} selector a jquery selector of the table to transform 
+		 * @param {object} config configuration object for the datatable. See its documentation for details. 
+		 * @param {array} printColumns array of column indexes of columns that should not be printed. Setting to undefined will not show the print button. 
+		 * @param {array} noSortColumns array of column indexes of columns that shoud not be sortable
+		 * @param {boolean} quickFilter flag if there should be an autosearch field on the top right corner of the table 
+		 */
+		create: function(selector, config, printColumns, noSortColumns, quickFilter) {
 			if(typeof printColumns !== 'undefined') {
 				if(!config.buttons) {
 					config.buttons = [];
@@ -75,7 +84,8 @@ define('bridges/datatables', [
 					autoPrint: true,
 					className: 'btn btn-sm btn-secondary btn-print',
 					exportOptions: {
-						columns: printColumns
+						columns: printColumns,
+						orthogonal: "print"
 					}
 				});
 			}
@@ -89,6 +99,20 @@ define('bridges/datatables', [
 					targets: noSortColumns,
 					orderable: false
 				});
+			}
+
+			if(quickFilter) {
+				config.searching = true;
+
+				if(typeof printColumns !== 'undefined' && printColumns.length > 0) {
+					config.dom = "<'row'<'col-auto'l><'col'f><'col-auto'B>>"; 	// line above table
+				} else {
+					config.dom = "<'row'<'col-auto'l><'col'f>>"; 	// line above table
+				}
+
+				config.dom += '' +
+					"<'row'<'col-12'tr>>" +			// table
+					"<'row'<'col-auto'i><'col'p>>"; // line below table
 			}
 
 			return $(selector).DataTable(config);

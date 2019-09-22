@@ -262,7 +262,7 @@
                             }},
                         {"title": "Vendor", data: "vndrs"},
                         {"title": "Component Name", data: "name", render: {display: renderComponentNameLink}},
-                        {"title": "Main Licenses", data: "lics"},
+                        {"title": "Main Licenses", data: "lics", render: {display: renderLicenseLink}},
                         {"title": "Rate", data: function(row, type, val, meta){
                                 return dataGetter(row.DT_RowId, 'rate');
                             }},
@@ -299,23 +299,24 @@
             }
 
             function renderComponentActions(id, type, row) {
-                 var $actions = $('<div>', {
-				'class': 'actions'
-			}),
-			$editAction = render.linkTo(
-			makeComponentUrl(id, '<%=PortalConstants.PAGENAME_EDIT%>'),
+                var $actions = $('<div>', {
+				    'class': 'actions'
+                    }),
+                    $editAction = render.linkTo(
+                        makeComponentUrl(id, '<%=PortalConstants.PAGENAME_EDIT%>'),
                         "",
                         '<svg class="lexicon-icon" title="Edit"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>'
                     ),
                     $deleteAction = $('<svg>', {
-			'class': 'delete lexicon-icon',
-			title: 'Delete',
-			'data-component-id': id,
-			'data-component-name': row.name,
-			'data-component-release-count': row.lRelsSize,
-			'data-component-attachment-count': row.attsSize,
+                        'class': 'delete lexicon-icon',
+                        title: 'Delete',
+                        'data-component-id': id,
+                        'data-component-name': row.name,
+                        'data-component-release-count': row.lRelsSize,
+                        'data-component-attachment-count': row.attsSize,
                     });
-			$deleteAction.append($('<use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
+            
+                $deleteAction.append($('<use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
 
                 $actions.append($editAction, $deleteAction);
                 return $actions[0].outerHTML;
@@ -326,14 +327,23 @@
             }
 
             function renderLicenseLink(lics, type, row) {
-                var licensePortletURL = '<%=friendlyLicenseURL%>'
+                var links = [],
+                    licensePortletURL = '<%=friendlyLicenseURL%>'
                     .replace(/components/g, "licenses");// DIRTY WORKAROUND
 
                 for (var i = 0; i < lics.length; i++) {
-                    lics[i] = render.linkTo(replaceFriendlyUrlParameter(licensePortletURL.toString(), lics[i], '<%=PortalConstants.PAGENAME_DETAIL%>'), lics[i]);
+                    links[i] = render.linkTo(replaceFriendlyUrlParameter(licensePortletURL.toString(), lics[i], '<%=PortalConstants.PAGENAME_DETAIL%>'), lics[i]);
                 }
 
-                return lics;
+                if(type == 'display') {
+                    return links.join(', ');
+                } else if(type == 'print') {
+                    return lics.join(', ');
+                } else if(type == 'type') {
+                    return 'string';
+                } else {
+                    return lics.join(', ');
+                }
             }
 
             // Export Spreadsheet action

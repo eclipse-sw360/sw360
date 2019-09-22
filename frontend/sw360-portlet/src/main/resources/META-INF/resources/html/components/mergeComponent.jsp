@@ -136,14 +136,14 @@
             var table = datatables.create($stepElement.find('#componentSourcesTable'), {
                 data: data.components,
                 columns: [
-                    { data: "id", render: $.fn.dataTable.render.inputRadio('componentChooser'), orderable: false },
+                    { data: "id", render: $.fn.dataTable.render.inputRadio('componentChooser') },
                     { data: "name" },
                     { data: "createdBy" },
                     { data: "releases" }
                 ],
                 order: [ [ 1, 'asc' ] ],
                 select: 'single'
-            });
+            }, undefined, [0], true);
             datatables.enableCheckboxForSelection(table, 0);
         }
 

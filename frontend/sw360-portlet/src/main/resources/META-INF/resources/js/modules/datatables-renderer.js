@@ -212,7 +212,7 @@ define('modules/datatables-renderer', ['jquery', 'modules/dialog', /* jquery-plu
         return function(key, type, row, meta) {
             var select;
 
-            if(type === 'filter' || type === 'sort') {
+            if(type === 'filter' || type === 'sort' || type === 'print') {
                 return meta.settings.json[selectDataKey][key];
             } else if(type === 'display') {
                 select = createSelectInput(selectDataKey, meta.settings.json[selectDataKey], name, clazz, optionClazz, key);

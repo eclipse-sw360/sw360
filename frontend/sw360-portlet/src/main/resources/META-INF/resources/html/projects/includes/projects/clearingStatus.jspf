@@ -60,12 +60,7 @@ require(['jquery', 'bridges/datatables', 'utils/includes/fossologyClearing', 'ut
         </core_rt:forEach>
 
         table = datatables.create('#releasesTable', {
-            searching: true,
             data: result,
-            dom:
-                "<'row'<'col-sm-12 col-md-9'l><'col-sm-12 col-md-2'f><'col-sm-12 col-md-1'B>>" +
-                "<'row'<'col-sm-12'tr>>" +
-                "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
             columns: [
                 {title: "Name"},
                 {title: "Project Origin"},
@@ -81,7 +76,7 @@ require(['jquery', 'bridges/datatables', 'utils/includes/fossologyClearing', 'ut
                     visible: $('#releasesTable').data() ? $('#releasesTable').data().detailsContext : false
                 }
             ]
-        }, [0, 1, 2, 3, 4, 5], 6);
+        }, [0, 1, 2, 3, 4, 5], 6, true);
 
         function renderActions(id, type, row) {
             var $actions = $('<div>', {

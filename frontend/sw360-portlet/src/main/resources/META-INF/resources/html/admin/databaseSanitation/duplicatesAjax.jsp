@@ -26,7 +26,6 @@
 <jsp:useBean id="duplicateProjects" type="java.util.Map<java.lang.String,  java.util.List<java.lang.String>>"
              scope="request"/>
 
-<h4>Releases with the same identifier [name(version)]</h4>
 <core_rt:if test="${duplicateReleases.size()>0}">
     <h4>Releases with the same identifier [name(version)]</h4>
     <table id="duplicateReleasesTable" class="table table-bordered">
