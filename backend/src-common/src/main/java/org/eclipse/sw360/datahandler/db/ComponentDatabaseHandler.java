@@ -549,6 +549,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 .add(Component._Fields.MODERATORS)
                 .add(Component._Fields.SUBSCRIBERS)
                 .add(Component._Fields.ROLES)
+                .add(Component._Fields.OWNER_COUNTRY)
                 .build());
     }
 
