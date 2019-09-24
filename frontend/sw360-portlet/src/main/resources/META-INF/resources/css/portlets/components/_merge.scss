@@ -17,9 +17,12 @@
             width: auto;
             border: 1px solid;
             margin-bottom: 0.875rem;
+
+            > .row {
+                margin-left: 0;
+                margin-right: 0;
+            }
         }
-
-
 
         .merge.single.left {
             display: flex;

@@ -16,7 +16,7 @@
             border-color: $box-header-bg;
         }
 
-        .modified {
+        .modified, .modified + small {
             background-color: $highlight-bg-warning;
         }
     }

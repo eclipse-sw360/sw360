@@ -261,37 +261,56 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
 
     // public
 
-    mergeWizard.registerClickHandlers = function registerClickHandlers() {
+    /**
+     * Register a click handler to all merge lines. This method must be called in any case otherwise 
+     * values cannot be copied from source to target. In addition this method allows to listen for 
+     * distinct properties and a callback will be called if these properties are changed.
+     * 
+     * @param {Object|Boolean} map of properties to listen for changes, e.g. <code>{ 'Homepage': true }</code>.
+     *  Keys must be normalized (no spaces). Set it to true to listen for all properties.
+     * @param {Function} callback function to call if one of the properties changes. The callback will receive the following
+     *  parameters:
+     *      - property name (normalized = no spaces)
+     *      - copied
+     *      - target value
+     *      - source value
+     */
+    mergeWizard.registerClickHandlers = function registerClickHandlers(propNameMap, callback) {
+        propNameMap = propNameMap || {};
+
         wizardRoot.find('fieldset div.mid input').each(function(index, element) {
-            registerCopyClickHandler($(element));
+            var propName = $(element).parents('fieldset').attr('id');
+            if(propNameMap === true || propNameMap[propName]) {
+                registerCopyClickHandler($(element), callback);
+            } else {
+                registerCopyClickHandler($(element));
+            }
         });
     };
 
     // private
 
-    function registerCopyClickHandler(element) {
-        element.off('click');
-        setTimeout(
-                function() {
-                    element.on('click', function(event) {
-                        copySourceToTarget(element.parent().parent().parent().attr('id'), element.parent().data('rowIndex'));
-                    });
-                },
-                10
-        );
-    }
+    function registerCopyClickHandler(element, callback) {
+        element.off('click.merge');
+        element.on('click.merge', function(event) {
+            var propName = element.parent().parent().parent().attr('id'),
+                rowIndex = element.parent().data('rowIndex'),
+                $fieldset = $('#' + propName),
+                sourceNode = $('.right[data-row-index="' + rowIndex + '"]', $fieldset),
+                targetNode = $('.left[data-row-index="' + rowIndex + '"]', $fieldset);
 
-    function registerUndoClickHandler(element) {
-        element.off('click');
-        /* if the handler is registered directly, it receives the same click event in which it was registered */
-        setTimeout(
-                function() {
-                    element.on('click', function(event) {
-                        undoCopySourceToTarget(element.parent().parent().parent().attr('id'), element.parent().data('rowIndex'));
-                    });
-                },
-                10
-        );
+            if($(event.currentTarget).hasClass('undo')) {
+                undoCopySourceToTarget(propName, rowIndex);
+                if(callback) {
+                    callback(propName, false, targetNode.data('origVal'), sourceNode.data('origVal'));
+                }
+            } else {
+                copySourceToTarget(propName, rowIndex);
+                if(callback) {
+                    callback(propName, true, targetNode.data('origVal'), sourceNode.data('origVal'));
+                }
+            }
+        });
     }
 
     function copySourceToTarget(propName, rowIndex) {
@@ -306,7 +325,7 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
 
         /* https://stackoverflow.com/questions/11591174/escaping-of-attribute-values-using-jquery-attr ... */
         buttonNode.val($('<div/>').html('&#8631;').text());
-        registerUndoClickHandler(buttonNode, rowIndex);
+        buttonNode.addClass('undo');
 
         targetNode.parent().data('newVal', sourceNode.parent().data('origVal'));
         targetNode.parent().attr('title', target);
@@ -324,7 +343,7 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
 
         /* https://stackoverflow.com/questions/11591174/escaping-of-attribute-values-using-jquery-attr ... */
         buttonNode.val($('<div/>').html('&#8656;').text());
-        registerCopyClickHandler(buttonNode, rowIndex);
+        buttonNode.removeClass('undo');
 
         targetNode.parent().removeData('newVal');
         targetNode.parent().removeAttr('title');
