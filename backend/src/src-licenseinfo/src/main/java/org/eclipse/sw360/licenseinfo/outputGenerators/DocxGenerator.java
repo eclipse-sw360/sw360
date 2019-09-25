@@ -12,6 +12,7 @@
  */
 package org.eclipse.sw360.licenseinfo.outputGenerators;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.apache.poi.xwpf.usermodel.*;
 import org.apache.thrift.TException;
@@ -517,6 +518,28 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         fillReleaseBulletList(document, projectLicenseInfoResults);
     }
 
+    private void addAcknowledgement(XWPFDocument document, Set<String> acknowledgements) {
+        if(CollectionUtils.isNotEmpty(acknowledgements)) {
+            XWPFRun ackRun = document.createParagraph().createRun();
+            addFormattedText(ackRun, "Acknowledgement", FONT_SIZE, true);
+            for (String acknowledgement : acknowledgements) {
+                setText(document.createParagraph().createRun(), nullToEmptyString(acknowledgement));
+            }
+            addNewLines(document, 1);
+        }
+    }
+
+    private SortedMap<String, Set<String>> getAcknowledgement(
+            Collection<LicenseInfoParsingResult> projectLicenseInfoResults) {
+
+        Map<Boolean, List<LicenseInfoParsingResult>> partitionedResults = projectLicenseInfoResults.stream()
+                .collect(Collectors.partitioningBy(r -> r.getStatus() == LicenseInfoRequestStatus.SUCCESS));
+        List<LicenseInfoParsingResult> goodResults = partitionedResults.get(true);
+
+        return getSortedAcknowledgements(getSortedLicenseInfos(goodResults));
+
+    }
+
     private void addReleaseTitle(XWPFDocument document, LicenseInfoParsingResult parsingResult) {
         String releaseTitle = getComponentLongName(parsingResult);
         XWPFParagraph releaseTitleParagraph = document.createParagraph();
@@ -541,9 +564,11 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
     }
 
     private void addLicenses(XWPFDocument document, Collection<LicenseInfoParsingResult> projectLicenseInfoResults, boolean includeObligations) throws TException {
+        Map<String, Set<String>> sortedAcknowledgement = getAcknowledgement(projectLicenseInfoResults);
         for (LicenseInfoParsingResult parsingResult : projectLicenseInfoResults) {
             addReleaseTitle(document, parsingResult);
             if (parsingResult.getStatus() == LicenseInfoRequestStatus.SUCCESS) {
+                addAcknowledgement(document, sortedAcknowledgement.get(getComponentLongName(parsingResult)));
                 XWPFRun licensesTitleRun = document.createParagraph().createRun();
                 addNewLines(licensesTitleRun, 1);
                 addFormattedText(licensesTitleRun, "Licenses", FONT_SIZE, true);
