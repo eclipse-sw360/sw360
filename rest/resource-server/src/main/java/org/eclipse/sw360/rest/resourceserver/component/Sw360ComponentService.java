@@ -72,6 +72,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
         AddDocumentRequestSummary documentRequestSummary = sw360ComponentClient.addComponent(component, sw360User);
         if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.SUCCESS) {
             component.setId(documentRequestSummary.getId());
+            component.setCreatedBy(sw360User.getEmail());
             return component;
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
             throw new DataIntegrityViolationException("sw360 component with name '" + component.getName() + "' already exists.");
