@@ -65,6 +65,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         AddDocumentRequestSummary documentRequestSummary = sw360ProjectClient.addProject(project, sw360User);
         if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.SUCCESS) {
             project.setId(documentRequestSummary.getId());
+            project.setCreatedBy(sw360User.getEmail());
             return project;
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
             throw new DataIntegrityViolationException("sw360 project with name '" + project.getName() + "' already exists.");
