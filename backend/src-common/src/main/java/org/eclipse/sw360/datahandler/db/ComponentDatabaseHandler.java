@@ -51,6 +51,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.Sets.newHashSet;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.common.Duration.durationOf;
@@ -511,7 +512,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return RequestStatus.IN_USE;
         }
 
-        mergePlainFields(mergeSelection, mergeTarget);
+        mergePlainFields(mergeSelection, mergeTarget, mergeSource);
         mergeReleases(mergeSource, mergeTarget, mergeSelection, sessionUser);
         mergeAttachments(mergeSelection, mergeTarget, mergeSource);
 
@@ -530,7 +531,31 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return sourceModerationRequests.stream().anyMatch(CommonUtils::isInProgressOrPending);
     }
 
-    private void mergePlainFields(Component mergeSelection, Component mergeTarget) {
+    private void mergePlainFields(Component mergeSelection, Component mergeTarget, Component mergeSource) {
+        // First handle the creator of the component in a way, that the discarded creator will be on the 
+        // moderator list afterwards. There is nothing to do, if source and target author are the same
+        if(!nullToEmpty(mergeTarget.getCreatedBy()).equals(mergeSource.getCreatedBy())) {
+            if(nullToEmpty(mergeSelection.getCreatedBy()).equals(nullToEmpty(mergeTarget.getCreatedBy()))) {
+                // creator of the target component should be retained. Add creator of source component to list of moderators.
+                mergeTarget.setModerators(mergeSelection.getModerators());
+                if(!isNullOrEmpty(mergeSource.getCreatedBy())) {
+                    mergeTarget.addToModerators(mergeSource.getCreatedBy());
+                }
+            } else {
+                // creator of the source component has been selected. Add creator of target component to list of moderators.
+
+                // remember creator otherwise it is overwritten
+                String creator = mergeTarget.getCreatedBy();
+
+                // merge
+                mergeTarget.setModerators(mergeSelection.getModerators());
+                if(!isNullOrEmpty(mergeTarget.getCreatedBy())) {
+                    mergeTarget.addToModerators(mergeTarget.getCreatedBy());
+                }
+            }
+        }
+
+        // Handle other fields
         copyFields(mergeSelection, mergeTarget, ImmutableSet.<Component._Fields>builder()
                 .add(Component._Fields.NAME)
                 .add(Component._Fields.CREATED_ON)
@@ -546,7 +571,6 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 .add(Component._Fields.COMPONENT_OWNER)
                 .add(Component._Fields.OWNER_ACCOUNTING_UNIT)
                 .add(Component._Fields.OWNER_GROUP)
-                .add(Component._Fields.MODERATORS)
                 .add(Component._Fields.SUBSCRIBERS)
                 .add(Component._Fields.ROLES)
                 .add(Component._Fields.OWNER_COUNTRY)

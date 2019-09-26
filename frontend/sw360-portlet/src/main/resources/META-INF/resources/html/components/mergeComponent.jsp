@@ -169,7 +169,14 @@
             $stepElement.append(wizard.createCategoryLine('General'));
             $stepElement.append(wizard.createSingleMergeLine('Name', data.componentTarget.name, data.componentSource.name));
             $stepElement.append(wizard.createSingleMergeLine('Created on', data.componentTarget.createdOn, data.componentSource.createdOn));
-            $stepElement.append(wizard.createSingleMergeLine('Created by', data.componentTarget.createdBy, data.componentSource.createdBy));
+            $stepElement.append(
+                renderCreatedBy(
+                    wizard.createSingleMergeLine('Created by', data.componentTarget.createdBy, data.componentSource.createdBy),
+                    data.componentSource.createdBy != data.componentTarget.createdBy,
+                    data.componentSource.createdBy,
+                    'text-center'
+                )
+            );
             $stepElement.append(wizard.createMultiMergeLine('Categories', data.componentTarget.categories, data.componentSource.categories));
             $stepElement.append(wizard.createSingleMergeLine('Component Type', data.componentTarget.componentType, data.componentSource.componentType, getComponentTypeDisplayString));
             $stepElement.append(wizard.createSingleMergeLine('Default Vendor', data.componentTarget.defaultVendor, data.componentSource.defaultVendor, getDefaultVendorDisplayString));
@@ -206,7 +213,14 @@
                 return (attachment.filename || '-no-filename-') + ' (' + (attachment.attachementType || '-no-type-') + ')';
             }));
 
-            wizard.registerClickHandlers();
+            wizard.registerClickHandlers({
+                'Createdby': true
+            }, function(propName, copied, targetValue, sourceValue) {
+                $stepElement.find('.merge-info-createdby .user').text(copied ? targetValue : sourceValue);
+            });
+
+            $wizardRoot.data('componentSource', data.componentSource);
+            $wizardRoot.data('componentTarget', data.componentTarget);
         }
 
         function submitMergedComponent($stepElement) {
@@ -267,6 +281,9 @@
         }
 
         function renderConfirmMergedComponent($stepElement, data) {
+            var componentSource = $wizardRoot.data('componentSource'),
+                componentTarget = $wizardRoot.data('componentTarget');
+
             $stepElement.data('componentSourceId', data.componentSourceId);
             $stepElement.data('componentSelection', data.componentSelection);
 
@@ -275,7 +292,14 @@
             $stepElement.append(wizard.createCategoryLine('General'));
             $stepElement.append(wizard.createSingleDisplayLine('Name', data.componentSelection.name));
             $stepElement.append(wizard.createSingleDisplayLine('Created on', data.componentSelection.createdOn));
-            $stepElement.append(wizard.createSingleDisplayLine('Created by', data.componentSelection.createdBy));
+            $stepElement.append(
+                renderCreatedBy(
+                    wizard.createSingleDisplayLine('Created by', data.componentSelection.createdBy),
+                    componentSource.createdBy != componentTarget.createdBy,
+                    data.componentSelection.createdBy === componentSource.createdBy ? componentTarget.createdBy : componentSource.createdBy,
+                    'pl-3'
+                )
+            );
             $stepElement.append(wizard.createMultiDisplayLine('Categories', data.componentSelection.categories));
             $stepElement.append(wizard.createSingleDisplayLine('Component Type', data.componentSelection.componentType, getComponentTypeDisplayString));
             $stepElement.append(wizard.createSingleDisplayLine('Default Vendor', data.componentSelection.defaultVendor, getDefaultVendorDisplayString));
@@ -313,12 +337,27 @@
             }));
         }
 
+        function renderCreatedBy($line, renderInfo, user, alignment) {
+            var $info = "<small class='merge-info-createdby form-text mt-0 pb-2 " + alignment + "'>" + 
+                "<svg class='lexicon-icon'><use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle-open' /></svg> " + 
+                "The user <b class='user'>" + user + "</b> will be added to the list of moderators." +
+                "</small>";
+
+            if(renderInfo) {
+                $line.append($info);
+            }
+
+            return $line;
+        }
+
         function submitConfirmedMergedComponent($stepElement) {
             /* componentSourceId still as data at stepElement */
             /* componentSelection still as data at stepElement */
         }
 
         function submitErrorHook($stepElement, textStatus, error) {
+            console.error(error);
+
             button.finish('#componentMergeWizard .wizardNext');
             $stepElement.find('.stepFeedback').html('<div class="alert alert-danger">An error happened while communicating with the server: ' + textStatus + error + '</div>');
             $('html, body').stop().animate({ scrollTop: 0 }, 300, 'swing');

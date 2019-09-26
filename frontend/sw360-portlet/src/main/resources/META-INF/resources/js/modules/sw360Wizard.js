@@ -178,10 +178,10 @@ define('modules/sw360Wizard', [ 'jquery', 'modules/button' ], function($, button
                             config.steps[nextIndex].renderHook(nextElement, dataJson);
                         }
                     } catch(error) {
-                        config.steps[activeIndex].submitErrorHook(activeElement, '', error);
+                        config.steps[activeIndex].submitErrorHook(activeElement.next(), '', error);
                     }
                 }).fail(function(xhr, textStatus, error){
-                    config.steps[activeIndex].submitErrorHook(activeElement, textStatus, error);
+                    config.steps[activeIndex].submitErrorHook(activeElement.next(), textStatus, error);
                     return false;
                 }).always(function() {
                     button.finish($('.wizardNext', $wizardRoot));
