@@ -54,7 +54,7 @@ public class ComponentHandlerTest {
     @Test
     public void testGetByUploadId() throws Exception {
 
-        Component originalComponent = new Component("name").setDescription("a desc");
+        Component originalComponent = new Component("name").setDescription("a desc").setComponentType(ComponentType.OSS);
         String componentId = componentHandler.addComponent(originalComponent, adminUser).getId();
 
         Release release = new Release("name", "version", componentId);
