@@ -84,7 +84,7 @@ define('utils/includes/fossologyClearing', [
                 sendToFossology(config.fossologySendUrl, $('#fieldId').val(), $('#releaseId').val(), $('#clearingTeam').val()).then(function() {
                     $dialog.success('Data has been sent', true);
                 }).catch(function() {
-                    $dialog.alert('Files could not be send to fossolgy.', true);
+                    $dialog.alert('Files could not be sent to FOSSology.', true);
                 }).finally(function() {
                     callback();
                 });
