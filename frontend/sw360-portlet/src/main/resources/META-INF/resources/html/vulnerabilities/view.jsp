@@ -192,7 +192,6 @@
                                 $cvss.append(" (as of: ").append($('<span/>').text(data.time)).append(")");
                             }
                         }
-                    }
                     } else if(type === 'type') {
                         return 'number';
                     } else {
