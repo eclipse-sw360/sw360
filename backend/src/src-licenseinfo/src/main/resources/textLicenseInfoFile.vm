@@ -35,10 +35,10 @@ Open Source Software Contained in this Product/Device:
 ##
 #set($acks = [])
 #if(${acknowledgements.get($releaseName)})
+#set($acks = $acknowledgements.get($releaseName))
 #if($acks.size() > 0)
 Acknowledgements for $releaseName
 ----------------
-#set($acks = $acknowledgements.get($releaseName))
 #foreach($ack in ${acks})
 $ack
 #end## foreach($ack in ${acks})
