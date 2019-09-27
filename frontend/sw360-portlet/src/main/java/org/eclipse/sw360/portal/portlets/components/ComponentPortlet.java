@@ -42,6 +42,7 @@ import org.eclipse.sw360.datahandler.thrift.cvesearch.CveSearchService;
 import org.eclipse.sw360.datahandler.thrift.cvesearch.VulnerabilityUpdateStatus;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
@@ -518,17 +519,29 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         User user = UserCacheHolder.getUserFromRequest(request);
         String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
         String attachmentContentId = request.getParameter(PortalConstants.ATTACHMENT_ID);
+        String attachmentName = request.getParameter(PortalConstants.ATTACHMENT_NAME);
         ComponentService.Iface componentClient = thriftClients.makeComponentClient();
         LicenseInfoService.Iface licenseInfoClient = thriftClients.makeLicenseInfoClient();
 
         Set<String> concludedLicenseIds = new HashSet<>();
+        LicenseNameWithText licenseWithText = null;
         try {
             Release release = componentClient.getReleaseById(releaseId, user);
             List<LicenseInfoParsingResult> licenseInfoResult = licenseInfoClient.getLicenseInfoForAttachment(release,
                     attachmentContentId, user);
-            concludedLicenseIds = licenseInfoResult.stream()
-                    .flatMap(singleResult -> singleResult.getLicenseInfo().getConcludedLicenseIds().stream())
-                    .collect(Collectors.toSet());
+            if (attachmentName.endsWith(".rdf")) {
+                concludedLicenseIds = licenseInfoResult.stream()
+                        .flatMap(singleResult -> singleResult.getLicenseInfo().getConcludedLicenseIds().stream())
+                        .collect(Collectors.toSet());
+            } else if (attachmentName.endsWith(".xml")) {
+                licenseWithText = licenseInfoResult.stream()
+                        .flatMap(result -> result.getLicenseInfo().getLicenseNamesWithTexts().stream())
+                        .filter(license -> license.getType().equals(LICENSE_TYPE_GLOBAL)
+                                && !license.getLicenseSpdxId().equals(SPDX_IDENTIFIER_UNKNOWN)
+                                && !license.getLicenseSpdxId().equals(SPDX_IDENTIFIER_NA)) // exclude unknown and n/a
+                        .findFirst().orElse(null);
+            }
+
         } catch (TException e) {
             log.error("Cannot retrieve license information for attachment id " + attachmentContentId + " in release "
                     + releaseId + ".", e);
@@ -539,7 +552,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             JsonGenerator jsonGenerator = JSON_FACTORY.createGenerator(response.getWriter());
             jsonGenerator.writeStartObject();
             if (concludedLicenseIds.size() > 0) {
-                jsonGenerator.writeArrayFieldStart("concludedLicenseIds");
+                jsonGenerator.writeStringField(LICENSE_PREFIX, "Concluded License Ids:");
+                jsonGenerator.writeArrayFieldStart("licenseIds");
                 concludedLicenseIds.forEach(licenseId -> {
                     try {
                         jsonGenerator.writeString(licenseId);
@@ -547,6 +561,11 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                         throw new RuntimeException(e);
                     }
                 });
+                jsonGenerator.writeEndArray();
+            } else if (licenseWithText != null) {
+                jsonGenerator.writeStringField(LICENSE_PREFIX, "Main License Id:");
+                jsonGenerator.writeArrayFieldStart("licenseIds");
+                jsonGenerator.writeString(licenseWithText.getLicenseSpdxId());
                 jsonGenerator.writeEndArray();
             }
             jsonGenerator.writeEndObject();
@@ -568,13 +587,13 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         try {
             Release release = componentClient.getReleaseById(releaseId, user);
             JsonNode input = OBJECT_MAPPER.readValue(request.getParameter(SPDX_LICENSE_INFO), JsonNode.class);
-            JsonNode concludedLicenesIdsNode = input.get("concludedLicenseIds");
-            if (concludedLicenesIdsNode.isArray()) {
-                for (JsonNode objNode : concludedLicenesIdsNode) {
+            JsonNode licenesIdsNode = input.get("licenseIds");
+            if (licenesIdsNode.isArray()) {
+                for (JsonNode objNode : licenesIdsNode) {
                     release.addToMainLicenseIds(objNode.asText());
                 }
             } else {
-                release.addToMainLicenseIds(concludedLicenesIdsNode.asText());
+                release.addToMainLicenseIds(licenesIdsNode.asText());
             }
             result = componentClient.updateRelease(release, user);
         } catch (TException | IOException e) {
