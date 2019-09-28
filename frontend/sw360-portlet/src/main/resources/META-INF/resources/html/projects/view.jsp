@@ -542,7 +542,7 @@
                             success: function (data) {
                                 if (data.result) {
                                     if (data.result == "FAILURE") {
-                                        $dialog.alert('Files could not be send to fossolgy.');
+                                        $dialog.alert('Files could not be sent to FOSSology.');
                                     }
                                     else {
                                         $dialog.success('Data has been sent.', true);
@@ -555,7 +555,7 @@
                             },
                             error: function () {
                                 callback();
-                                $dialog.alert('Files could not be send to fossolgy.');
+                                $dialog.alert('Files could not be sent to FOSSology.');
                             }
                         });
                     });

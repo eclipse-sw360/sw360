@@ -4,10 +4,10 @@ SVG files should be used wherever possible since they can be colored via CSS.
 This also allows disabling icons by just setting an opacity.
 
 All icons are packed together inside `icons.svg`. This way, they can be included
-as follows, e.g. for the `fossolgy` icon.
+as follows, e.g. for the `fossology` icon.
 ```
 <svg>
-    <title>Fossology</title>
+    <title>FOSSology</title>
     <use href="<%=request.getContextPath()%>/images/icons.svg#fossology"/>
 </svg>
 ```
@@ -15,7 +15,7 @@ as follows, e.g. for the `fossolgy` icon.
 
 You may also use a custom tag when inside an JSP-file:
 ```
-<sw360:icon title="Fossology" icon="fossolgy" className="<custom class names>" />
+<sw360:icon title="FOSSology" icon="fossology" className="<custom class names>" />
 ```
 
 
