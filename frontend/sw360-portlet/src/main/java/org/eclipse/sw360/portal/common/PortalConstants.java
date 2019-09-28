@@ -138,6 +138,10 @@ public class PortalConstants {
     public static final String VENDOR = "vendor";
     public static final String VENDOR_ID = "vendorId";
     public static final String VENDOR_LIST = "vendorList";
+    public static final String VENDOR_SELECTION = "vendorSelection";
+    public static final String VENDOR_SOURCE_ID = "vendorSourceId";
+    public static final String VENDOR_TARGET_ID = "vendorTargetId";
+    public static final String PAGENAME_MERGE_VENDOR = "mergeVendor";
 
     //! Specialized keys for todos
     public static final String TODO_LIST = "todoList";

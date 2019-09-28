@@ -91,6 +91,12 @@ import java.util.*;
                         "       emit( [externalId, doc.externalIds[externalId]] , doc._id);" +
                         "    }" +
                         "  }" +
+                        "}"),
+        @View(name = "byDefaultVendorId",
+                map = "function(doc) {" +
+                        "  if (doc.type == 'component') {" +
+                        "       emit( doc.defaultVendorId , doc._id);" +
+                        "  }" +
                         "}")
 })
 public class ComponentRepository extends SummaryAwareRepository<Component> {
@@ -163,6 +169,11 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
     public Set<Component> getUsingComponents(Set<String> releaseIds) {
         final Set<String> componentIdsByLinkingRelease = queryForIdsAsValue("byLinkingRelease", releaseIds);
         return new HashSet<>(get(componentIdsByLinkingRelease));
+    }
+
+    public Set<Component> getComponentsByDefaultVendorId(String defaultVendorId) {
+        final Set<String> componentIds = queryForIdsAsValue("byDefaultVendorId", defaultVendorId);
+        return new HashSet<>(get(componentIds));
     }
 
     public Set<Component> searchByExternalIds(Map<String, Set<String>> externalIds) {
