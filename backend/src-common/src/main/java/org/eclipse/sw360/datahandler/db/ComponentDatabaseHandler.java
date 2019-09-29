@@ -371,6 +371,11 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }
             component.operatingSystems.addAll(nullToEmptySet(release.operatingSystems));
 
+            if(!component.isSetSoftwarePlatforms()) {
+                component.setSoftwarePlatforms(new HashSet<String>());
+            }
+            component.softwarePlatforms.addAll(nullToEmptySet(release.softwarePlatforms));
+
             if (!component.isSetVendorNames()) {
                 component.setVendorNames(new HashSet<String>());
             }
@@ -417,6 +422,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
             copyFields(actual, component, ThriftUtils.IMMUTABLE_OF_COMPONENT);
             component.setAttachments(getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), component.getAttachments()));
+            recomputeReleaseDependentFields(component, null);
             updateComponentInternal(component, actual, user);
 
             if (isComponentNameChanged) {
@@ -515,6 +521,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         mergePlainFields(mergeSelection, mergeTarget, mergeSource);
         mergeReleases(mergeSource, mergeTarget, mergeSelection, sessionUser);
         mergeAttachments(mergeSelection, mergeTarget, mergeSource);
+        recomputeReleaseDependentFields(mergeTarget, null);
 
         // first, update source before deletion so that attachments and releases and
         // stuff that has been migrated will not be deleted by component deletion!
