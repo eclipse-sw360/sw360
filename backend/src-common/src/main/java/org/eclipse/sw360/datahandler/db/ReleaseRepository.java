@@ -129,7 +129,7 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
 
     public List<Release> getReleasesFromVendorIds(Set<String> ids) {
 
-        return makeSummaryFromFullDocs(SummaryType.SHORT, queryByIds("releaseIdByVendorId", ids));
+        return makeSummaryFromFullDocs(SummaryType.SHORT, queryByIds("releaseByVendorId", ids));
     }
 
     public List<Release> searchReleasesByUsingLicenseId(String licenseId) {
