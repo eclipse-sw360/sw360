@@ -162,17 +162,30 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         buttonNode.prop('disabled', lock);
     }
 
+    mergeWizard.createCustomMergeLines = function createCustomMergeLine(propName, createLines) {
+        var result;
+
+        result = $($.parseHTML('<fieldset id="' + normalizePropName(propName) + '" class="merge line">' +
+                               '    <h5>' + propName + '</h5>' +
+                               '</fieldset>'));
+
+        createLines(result, createSingleMergeContent);
+        return result;
+    }
+
     // private
 
     function normalizePropName(propName) {
         return propName.replace(/[\s\.]/g, '_');
     }
 
-    function createSingleMergeContent(target, source, rowIndex, detailFormatter) {
+    function createSingleMergeContent(target, source, rowIndex, detailFormatter, locked) {
         var row,
             left,
             mid,
             right;
+
+        detailFormatter = detailFormatter || function(element) { return element; };
 
         row =   $.parseHTML('        <div class="row"></div>');
 
@@ -186,8 +199,13 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
                             '            <span>' + detailFormatter(source) + '</span>' +
                             '        </div>');
 
+        $(row).data('detailFormatter', detailFormatter);
         $(left).data('origVal', target);
         $(right).data('origVal', source);
+
+        if(locked) {
+            $(mid).find('input.btn').prop('disabled', true);
+        }
 
         return $(row).append(left).append(mid).append(right);
     }
@@ -330,38 +348,36 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
 
     function copySourceToTarget(propName, rowIndex) {
         var $fieldset = $('#' + propName),
-            sourceNode = $('.right[data-row-index="' + rowIndex + '"] span', $fieldset),
-            source = sourceNode.text(),
+            sourceNode = $('.right[data-row-index="' + rowIndex + '"]', $fieldset),
             buttonNode = $('.mid[data-row-index="' + rowIndex + '"] input', $fieldset),
-            targetNode = $('.left[data-row-index="' + rowIndex + '"] span', $fieldset),
-            target = targetNode.text();
+            targetNode = $('.left[data-row-index="' + rowIndex + '"]', $fieldset),
+            $row = sourceNode.parent();
 
-        targetNode.parent().parent().addClass('modified');
+        $row.addClass('modified');
 
         /* https://stackoverflow.com/questions/11591174/escaping-of-attribute-values-using-jquery-attr ... */
         buttonNode.val($('<div/>').html('&#8631;').text());
         buttonNode.addClass('undo');
 
-        targetNode.parent().data('newVal', sourceNode.parent().data('origVal'));
-        targetNode.parent().attr('title', target);
-        targetNode.text(source);
+        targetNode.data('newVal', sourceNode.data('origVal'));
+        targetNode.find('span:first').html($row.data('detailFormatter')(sourceNode.data('origVal')));
     }
 
     function undoCopySourceToTarget(propName, rowIndex) {
         var $fieldset = $('#' + propName),
+            sourceNode = $('.right[data-row-index="' + rowIndex + '"]', $fieldset),
             buttonNode = $('.mid[data-row-index="' + rowIndex + '"] input', $fieldset),
-            targetNode = $('.left[data-row-index="' + rowIndex + '"] span', $fieldset),
-            target = targetNode.parent().attr('title');
+            targetNode = $('.left[data-row-index="' + rowIndex + '"]', $fieldset),
+            $row = sourceNode.parent();
 
-            targetNode.parent().parent().removeClass('modified');
+        $row.removeClass('modified');
 
         /* https://stackoverflow.com/questions/11591174/escaping-of-attribute-values-using-jquery-attr ... */
         buttonNode.val($('<div/>').html('&#8656;').text());
         buttonNode.removeClass('undo');
 
-        targetNode.parent().removeData('newVal');
-        targetNode.parent().removeAttr('title');
-        targetNode.text(target);
+        targetNode.removeData('newVal');
+        targetNode.find('span:first').html($row.data('detailFormatter')(targetNode.data('origVal')));
     }
 
     /* ******************** *********************
@@ -377,6 +393,13 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         return getFinalValue(targetNode);
     };
 
+    mergeWizard.getEnhancedFinalSingleValue = function getEnhancedFinalSingleValue(propName) {
+        var $fieldset = $('#' + normalizePropName(propName)),
+            targetNode = $('.left[data-row-index="0"]', $fieldset);
+
+        return getEnhancedFinalValue(targetNode);
+    };
+
     mergeWizard.getFinalMultiValue = function getFinalMultiValue(propName) {
         var $fieldset = $('#' + normalizePropName(propName)),
             targetNodes = $('.left', $fieldset),
@@ -385,6 +408,22 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
 
         targetNodes.each(function(index, value) {
             finalVal = getFinalValue($(value));
+            if (finalVal !== undefined) {
+                result.push(finalVal);
+            }
+        });
+
+        return result;
+    };
+
+    mergeWizard.getEnhancedFinalMultiValue = function getEnhancedFinalMultiValue(propName) {
+        var $fieldset = $('#' + normalizePropName(propName)),
+            targetNodes = $('.left', $fieldset),
+            result = [],
+            finalVal;
+
+        targetNodes.each(function(index, value) {
+            finalVal = getEnhancedFinalValue($(value));
             if (finalVal !== undefined) {
                 result.push(finalVal);
             }
@@ -434,7 +473,7 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         if (newVal === '') {
             /* origVal should be deleted */
             return undefined;
-        } else if (newVal) {
+        } else if (typeof newVal !== 'undefined' && newVal != null) {
             /* origVal should be overridden */
             return newVal;
         } else if (origVal === '') {
@@ -443,6 +482,37 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         } else {
             /* origVal should be kept */
             return origVal;
+        }
+    }
+
+    function getEnhancedFinalValue(element) {
+        var origVal = element.data('origVal'),
+            newVal = element.data('newVal');
+
+        if (newVal === '') {
+            /* origVal should be deleted */
+            return {
+                target: false,
+                value: undefined
+            };
+        } else if (typeof newVal !== 'undefined' && newVal != null) {
+            /* origVal should be overridden */
+            return {
+                target: false,
+                value: newVal
+            }
+        } else if (origVal === '') {
+            /* origVal should be kept but has been empty*/
+            return {
+                target: true,
+                value: undefined
+            }
+        } else {
+            /* origVal should be kept */
+            return {
+                target: true,
+                value: origVal
+            }
         }
     }
 

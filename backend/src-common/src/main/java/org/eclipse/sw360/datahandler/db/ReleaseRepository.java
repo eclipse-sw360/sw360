@@ -49,6 +49,14 @@ import static com.google.common.base.Strings.isNullOrEmpty;
                     "    }" +
                     "  }" +
                     "}"),
+        @View(name = "usedInReleaseRelation",
+                map = "function(doc) {" +
+                    " if(doc.type == 'release') {" +
+                    "   for(var id in doc.releaseIdToRelationship) {" +
+                    "     emit(id, doc);" + 
+                    "   }" + 
+                    " }" +
+                    "}"),
         @View(name = "releaseByVendorId",
                 map = "function(doc) {" +
                     " if (doc.type == 'release'){" +
@@ -141,5 +149,9 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
         RepositoryUtils repositoryUtils = new RepositoryUtils();
         Set<String> searchIds = repositoryUtils.searchByExternalIds(this, "byExternalIds", externalIds);
         return new HashSet<>(get(searchIds));
+    }
+
+    public List<Release> getReferencingReleases(String releaseId) {
+        return queryView("usedInReleaseRelation", releaseId);
     }
 }

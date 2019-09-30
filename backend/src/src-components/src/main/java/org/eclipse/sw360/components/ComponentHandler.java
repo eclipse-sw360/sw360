@@ -302,6 +302,17 @@ public class ComponentHandler implements ComponentService.Iface {
         return handler.updateReleaseFromAdditionsAndDeletions(releaseAdditions, releaseDeletions, user);
     }
 
+    @Override
+    public RequestStatus mergeReleases(String releaseTargetId, String releaseSourceId, Release releaseSelection,
+            User user) throws TException {
+        return handler.mergeReleases(releaseTargetId, releaseSourceId, releaseSelection, user);
+    }
+
+    @Override
+    public List<Release> getReferencingReleases(String releaseId) throws TException {
+        return handler.getReferencingReleases(releaseId);
+    }
+
     ///////////////////////////////
     // DELETE INDIVIDUAL OBJECTS //
     ///////////////////////////////

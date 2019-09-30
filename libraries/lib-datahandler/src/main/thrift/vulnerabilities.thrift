@@ -246,4 +246,14 @@ service VulnerabilityService {
       * returns null otherwise
       **/
     VulnerabilityWithReleaseRelations getVulnerabilityWithReleaseRelationsByExternalId(1: string externalId, 2: User user);
+
+    /**
+     * returns a list of relations where the given release id is involved.
+     */
+    list<ReleaseVulnerabilityRelation> getReleaseVulnerabilityRelationsByReleaseId(1: string releaseId, 2: User user);
+
+    /**
+     * returns a list of all ratings involving the given release id
+     */
+    list<ProjectVulnerabilityRating> getProjectVulnerabilityRatingsByReleaseId(1: string releaseId, 2: User user);
 }

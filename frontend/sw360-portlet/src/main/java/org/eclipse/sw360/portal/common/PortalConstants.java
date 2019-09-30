@@ -132,6 +132,11 @@ public class PortalConstants {
     public static final String RELEASE_EXTERNAL_IDS;
     public static final Set<String> RELEASE_EXTERNAL_ID_KEYS;
     public static final String RELEASE_LINK_TO_PROJECT = "releaseLinkToProject";
+    public static final String PAGENAME_MERGE_RELEASE = "mergeRelease";
+    public static final String RELEASE_SELECTION = "releaseSelection";
+    public static final String RELEASE_SOURCE_ID = "releaseSourceId";
+    public static final String RELEASE_TARGET_ID = "releaseTargetId";
+    
 
     //! Specialized keys for vendors
     public static final String VENDOR_PORTLET_NAME = PORTLET_NAME_PREFIX + "vendors";

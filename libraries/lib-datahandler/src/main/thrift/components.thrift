@@ -505,6 +505,14 @@ service ComponentService {
      **/
     RequestSummary updateReleases(1: set<Release> releases, 2: User user);
 
+     /**
+     * merge release identified by releaseSourceId into release identified by releaseTargetId.
+     * the releaseSelection shows which data has to be set on the target. the source will be deleted afterwards.
+     * if user does not have permissions, RequestStatus.ACCESS_DENIED is returned
+     * if any of the releases has an active moderation request, it's a noop and RequestStatus.IN_USE is returned
+     **/
+    RequestStatus mergeReleases(1: string releaseTargetId, 2: string releaseSourceId, 3: Release releaseSelection, 4: User user);
+
     /**
      * delete release from database if user has permissions
      * otherwise create moderation request
@@ -632,4 +640,9 @@ service ComponentService {
      * get a set of releases based on the external id external ids can have multiple values to one key
      */
     set<Release> searchReleasesByExternalIds(1: map<string, set<string>> externalIds);
+
+    /**
+     * Gets releases referencing the given release id
+     */ 
+    list<Release> getReferencingReleases(1: string releaseId);
 }

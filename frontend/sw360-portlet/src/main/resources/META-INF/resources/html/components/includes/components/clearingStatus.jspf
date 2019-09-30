@@ -92,7 +92,7 @@ require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProje
                 {title: "Clearing State"},
                 {title: "Clearing Report"},
                 {title: "Release Mainline State"},
-                {title: "Actions", render: {display: renderActions}, className: "five actions" }
+                {title: "Actions", render: {display: renderActions}, className: "six actions" }
             ],
             columnDefs: [
                 {
@@ -144,6 +144,11 @@ require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProje
                     'data-release-id': row.DT_RowId,
                     'data-release-name': row[5].name
                 }),
+                $mergeAction = render.linkTo(
+                    makeReleaseUrl(row.DT_RowId, 'merge'),
+                    "",
+                    '<svg class="lexicon-icon"><title>Merge</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#merge"/></svg>'
+                ),
                 $deleteAction = $('<svg>', {
                     'class': 'delete lexicon-icon',
                     'data-release-id': row.DT_RowId,
@@ -156,7 +161,7 @@ require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProje
             $linkAction.append($('<title>Link Project</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#link"/>'));
             $deleteAction.append($('<title>Delete</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
 
-            $actions.append($clearingAction, $editAction, $copyAction, $linkAction, $deleteAction);
+            $actions.append($clearingAction, $editAction, $copyAction, $linkAction, $mergeAction, $deleteAction);
             return $actions[0].outerHTML;
         }
 

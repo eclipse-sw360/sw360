@@ -258,4 +258,8 @@ public class AttachmentDatabaseHandler {
     public List<Source> getAttachmentOwnersByIds(Set<String> ids) {
         return attachmentOwnerRepository.getOwnersByIds(ids);
     }
+    
+    public List<AttachmentUsage> getAttachmentUsagesByReleaseId(String releaseId) {
+        return attachmentUsageRepository.getUsagesByReleaseId(releaseId);
+    }
 }
