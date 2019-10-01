@@ -28,6 +28,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -56,6 +57,15 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
     public List<Component> getComponentsForUser(User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         return sw360ComponentClient.getComponentSummary(sw360User);
+    }
+
+    public Release getReleaseById(String id, User sw360User) {
+        try {
+            ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+            return sw360ComponentClient.getReleaseById(id, sw360User);
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public Component getComponentForUserById(String componentId, User sw360User) throws TException {
