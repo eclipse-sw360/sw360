@@ -914,8 +914,10 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         jsonGenerator.writeStringField("redirectUrl", componentUrl.toString());
         if (status == RequestStatus.IN_USE){
             jsonGenerator.writeStringField("error", "Cannot merge when one of the components has an active moderation request.");
-        } else if (status == RequestStatus.FAILURE) {
+        } else if (status == RequestStatus.ACCESS_DENIED) {
             jsonGenerator.writeStringField("error", "You do not have sufficient permissions.");
+        } else if (status == RequestStatus.FAILURE) {
+            jsonGenerator.writeStringField("error", "An unknown error occurred during merge.");
         }
         jsonGenerator.writeEndObject();
     }

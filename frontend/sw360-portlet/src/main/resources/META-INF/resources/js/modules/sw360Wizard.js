@@ -41,6 +41,9 @@ define('modules/sw360Wizard', [ 'jquery', 'modules/button' ], function($, button
      *         wizardRoot: $('#myWizard'),
      *         postUrl: your-post-url-goes-here,
      *         postParamsPrefix: your-post-params-prefix-goes-here,
+     *         loadErrorHook: function($stepElement, textStatus, error) {
+     *             alert('An error happened while communicating with the server: ' + textStatus + error);
+     *         },
      *         steps: [
      *             {
      *                 renderHook: function($stepElement, data) {
@@ -49,7 +52,7 @@ define('modules/sw360Wizard', [ 'jquery', 'modules/button' ], function($, button
      *                 submitHook: function($stepElement) {
      *                     $stepElement.data('myAdditionalData', 'foo');
      *                 },
-     *                 submitErrorHook: function($stepElement, textStatus, error) {
+     *                 errorHook: function($stepElement, textStatus, error) {
      *                     alert('An error happened while communicating with the server: ' + textStatus + error);
      *                 }
      *             },
@@ -60,12 +63,12 @@ define('modules/sw360Wizard', [ 'jquery', 'modules/button' ], function($, button
      *                 submitHook: function($stepElement) {
      *                     $stepElement.data('myAdditionalData', 'bar');
      *                 },
-     *                 submitErrorHook: function($stepElement, textStatus, error) {
+     *                 errorHook: function($stepElement, textStatus, error) {
      *                     alert('An error happened while communicating with the server: ' + textStatus + error);
      *                 }
      *             }
      *         ],
-     *         finishCb: function(data) {
+     *         finishCb: function($stepElement, data) {
      *             window.location.href = data.redirectUrl;
      *         }
      *     });
@@ -90,7 +93,7 @@ define('modules/sw360Wizard', [ 'jquery', 'modules/button' ], function($, button
      * so that it will be included in the upcoming backend call to retrieve the data for the next step.
      * If you return false from the submitHook, no request will be send and you are responsible for
      * displaying user feedback before returning.
-     * If the request fails for technical reasons, you can handle that case in the submitErrorHook of the
+     * If the request fails for technical reasons, you can handle that case in the errorHook of the
      * still current step.
      * But if the request succeeded and you just do not receive the expected data from the backend, you have
      * to advise the user what he needs to do in the next renderHook as the step will be switched no matter
@@ -109,6 +112,7 @@ define('modules/sw360Wizard', [ 'jquery', 'modules/button' ], function($, button
             '<div class="wizardFooter btn-group content-right">' +
             '    <button type="button" class="wizardBack btn btn-secondary" disabled>Back</button>' +
             '    <button type="button" class="wizardNext btn btn-primary">Next</button>' +
+            '    <button type="button" class="wizardAbort btn btn-danger hide">Abort</button>' +
             '</div>'
         );
 
@@ -169,26 +173,47 @@ define('modules/sw360Wizard', [ 'jquery', 'modules/button' ], function($, button
                     url: config.postUrl,
                     data: reworkPostData(activeElement.data()),
                     cache: false
+                })
+                .always(function() {
+                    button.finish($('.wizardNext', $wizardRoot));
                 }).done(function(data, textStatus, xhr) {
                     try {
                         var dataJson = JSON.parse(data);
                         if (activeElement[0] === lastStep[0]) {
-                            config.finishCb(dataJson);
+                            if(!config.finishCb(activeElement, dataJson)) {
+                                $('.wizardNext, .wizardBack', $wizardRoot).remove();
+                                $('.wizardAbort', $wizardRoot).removeClass('hide');
+                            }
                         } else {
                             config.steps[nextIndex].renderHook(nextElement, dataJson);
+                            button.finish($('.wizardNext', $wizardRoot));
                         }
                     } catch(error) {
-                        config.steps[activeIndex].submitErrorHook(activeElement.next(), '', error);
+                        stepFailed(activeIndex, activeElement, '', error);
                     }
                 }).fail(function(xhr, textStatus, error){
-                    config.steps[activeIndex].submitErrorHook(activeElement.next(), textStatus, error);
+                    stepFailed(activeIndex, activeElement, textStatus, error);
                     return false;
-                }).always(function() {
-                    button.finish($('.wizardNext', $wizardRoot));
                 });
             } else {
                 return false;
             }
+        }
+
+        function stepFailed(activeIndex, activeElement, textStatus, error) {
+            if(!activeIndex) {
+                config.loadErrorHook($wizardRoot.find('.active.step'), textStatus, error);
+            } else {
+                config.steps[activeIndex].errorHook(activeIndex === config.steps.length - 1 ? activeElement : activeElement.next(), 
+                    textStatus, error);
+            }
+
+            button.finish($('.wizardNext', $wizardRoot));
+            button.disable($('.wizardNext', $wizardRoot));
+            if(activeIndex === config.steps.length - 1) {
+                $('.wizardNext, .wizardBack', $wizardRoot).remove();
+            }
+            $('.wizardAbort', $wizardRoot).removeClass('hide');
         }
 
         $(document).ready(function() {
@@ -229,13 +254,18 @@ define('modules/sw360Wizard', [ 'jquery', 'modules/button' ], function($, button
                         $elem.prev().addClass('active');
 
                         changeHeaderState(index, index-1);
-
+                        button.enable($('.wizardNext', $wizardRoot));
+                        $('.wizardAbort', $wizardRoot).addClass('hide');
                         // break each()
                         return false;
                     }
                 });
 
                 determineAndSetFooterState();
+            });
+
+            $('.wizardAbort', $wizardRoot).on('click', function() {
+                config.finishCb($wizardRoot.find('.step.active'));
             });
         });
 

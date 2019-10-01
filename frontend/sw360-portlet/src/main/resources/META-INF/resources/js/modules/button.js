@@ -40,8 +40,32 @@ define('modules/button', [ 'jquery' ], function($) {
 		$button.removeAttr('disabled');
     }
 
+    function disable(selector) {
+        var $button = $(selector);
+
+        if($button.length === 0) {
+            console.error('Cannot find button: ' + selector);
+            return;
+        }
+
+		$button.attr('disabled', 'disabled');
+    }
+
+    function enable(selector) {
+        var $button = $(selector);
+
+        if($button.length === 0) {
+            console.error('Cannot find button: ' + selector);
+            return;
+        }
+
+		$button.removeAttr('disabled');
+    }
+
     return {
         wait: wait,
-        finish: finish
+        finish: finish,
+        enable: enable,
+        disable: disable
     }
 });
