@@ -108,7 +108,7 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
 
         List<Resource<Component>> componentResources = new ArrayList<>();
         paginationResult.getResources().stream()
-                .filter(component -> componentType == null || componentType.equals(component.componentType.name()))
+                .filter(component -> componentType == null || (component.isSetComponentType() && componentType.equals(component.componentType.name())))
                 .forEach(c -> {
                     Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c, fields);
                     componentResources.add(new Resource<>(embeddedComponent));
