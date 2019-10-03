@@ -539,7 +539,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         } catch(Exception e) {
             log.error("Cannot merge component [" + mergeSource.getId() + "] into [" + mergeTarget.getId() + "]. Releases after merge: " + releaseIds, e);
             return RequestStatus.FAILURE;
-    }
+        }
 
         return RequestStatus.SUCCESS;
     }
@@ -587,12 +587,15 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 .add(Component._Fields.WIKI)
                 .add(Component._Fields.MAILINGLIST)
                 .add(Component._Fields.DESCRIPTION)
+                .add(Component._Fields.EXTERNAL_IDS)
+                .add(Component._Fields.ADDITIONAL_DATA)
                 .add(Component._Fields.COMPONENT_OWNER)
                 .add(Component._Fields.OWNER_ACCOUNTING_UNIT)
                 .add(Component._Fields.OWNER_GROUP)
+                .add(Component._Fields.OWNER_COUNTRY)
+                .add(Component._Fields.MODERATORS)
                 .add(Component._Fields.SUBSCRIBERS)
                 .add(Component._Fields.ROLES)
-                .add(Component._Fields.OWNER_COUNTRY)
                 .build());
     }
 
