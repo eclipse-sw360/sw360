@@ -10,13 +10,19 @@
  */
 package org.eclipse.sw360.rest.authserver.security;
 
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.rest.authserver.client.service.Sw360ClientDetailsService;
 import org.eclipse.sw360.rest.authserver.security.customheaderauth.Sw360CustomHeaderAuthenticationFilter;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
+
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -31,6 +37,8 @@ import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
 import org.springframework.security.oauth2.provider.token.store.KeyStoreKeyFactory;
 
 import static org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority.BASIC;
+
+import java.io.File;
 
 /**
  * This class configures the oauth2 authorization server specialties for the
@@ -48,6 +56,9 @@ public class Sw360AuthorizationServerConfiguration extends AuthorizationServerCo
 
     @Autowired
     private Sw360UserDetailsProvider sw360UserDetailsProvider;
+
+    @Value("${jwt.secretkey:sw360SecretKey}")
+    private String secretKey;
 
     @Override
     public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
@@ -95,8 +106,13 @@ public class Sw360AuthorizationServerConfiguration extends AuthorizationServerCo
 
     @Bean
     protected JwtAccessTokenConverter jwtAccessTokenConverter() {
+        String keystore = "/jwt-keystore.jks";
+        Resource resource = new FileSystemResource(new File(CommonUtils.SYSTEM_CONFIGURATION_PATH + keystore));
+        if (!resource.exists()) {
+            resource = new ClassPathResource(keystore);
+        }
         KeyStoreKeyFactory keyStoreKeyFactory =
-                new KeyStoreKeyFactory(new ClassPathResource("jwt-keystore.jks"), "sw360SecretKey".toCharArray());
+                new KeyStoreKeyFactory(resource, secretKey.toCharArray());
         JwtAccessTokenConverter jwtAccessTokenConverter = new JwtAccessTokenConverter();
         jwtAccessTokenConverter.setKeyPair(keyStoreKeyFactory.getKeyPair("jwt"));
         return jwtAccessTokenConverter;
