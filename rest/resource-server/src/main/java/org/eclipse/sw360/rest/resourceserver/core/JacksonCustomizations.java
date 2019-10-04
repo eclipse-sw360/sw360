@@ -14,6 +14,7 @@
 package org.eclipse.sw360.rest.resourceserver.core;
 
 import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -77,9 +78,6 @@ class JacksonCustomizations {
                 "attachments",
                 "createdBy",
                 "state",
-                "leadArchitect",
-                "moderators",
-                "contributors",
                 "visbility",
                 "clearingTeam",
                 "phaseOutSince",
@@ -182,6 +180,18 @@ class JacksonCustomizations {
             @Override
             @JsonProperty("id")
             abstract public String getId();
+
+            @Override
+            @JsonProperty(access = Access.WRITE_ONLY)
+            abstract public Set<String> getContributors();
+
+            @Override
+            @JsonProperty(access = Access.WRITE_ONLY)
+            abstract public Set<String> getModerators();
+
+            @Override
+            @JsonProperty(access = Access.WRITE_ONLY)
+            abstract public String getLeadArchitect();
         }
 
 	static abstract class EmbeddedProjectMixin extends ProjectMixin {
