@@ -4,13 +4,53 @@ This is the changelog file of the sw360 software. It starts with the first relea
 
 https://github.com/sw360/sw360portal
 
+## sw360-5.1.0-M1
+
+This release contains a number of corrections after the Liferay Portal 7.2 CE GA1 based release has been rolled out. Therefore it contains mostly corrections for the UI. In addition to these, also the REST API endpoints were further improved. The report generation has been improved: Now, external Ids can be added to the generated documents.
+
+Because it contains many corrections, every 5.0.0-M1 installation should be updated to this release.
+
+### New Features
+
+* `c86c97b`	feat(License Disclosure): Change order of listed items in disclosure documents
+* `82a45cf`	feat(license-disclosure): External Ids incorporated in the license disclosure
+* `5b554ae`	feature(table-filter): add filter box, fix print
+
+### Corrections
+
+* `9b02a75`	fix(components): Recompute aggrated fields on save
+* `17d90ee`	fix(DownloadLicenseInfo): Corrected license selection based on attachment selection on attachmentusage
+* `d6d8540`	fix(EditRelease UI): Removed duplicate field 'Licenses' from edit release
+* `b9be0e4`	fix(licenseDisclosure): Added acknowledgements in TEXT and Docx format of License Disclosure
+* `b123c48`	fix(LicenseDisclosureDocument): Ordering and formating license disclosure document.
+* `97008f3`	fix(merge): allow merging of complex fields, style improvements
+* `cd4c788`	fix(merge): fix update conflict on component merge
+* `c6b3838`	fix(merge): Some fields were not merged
+* `1e6f424`	fix(Release-UI): Vertical scrollbar for link release to project popup
+* `20fb3d2`	fix(ui): Added missing search box
+* `dcd681b`	fix(vendor): fix view name used when editing vendors
+* `abc6404`	fix(vulnerability): Vulnerability tab loading issue
+* `dc0b9d6`	fix(fossology): fossology and fossolgy
+* `4fe4d4f`	fix(Rest-API): Corrected 'createdBy' field value for Project and Component
+* `eb15c85`	fix(Rest-API): Small fix around ProjectClearingState during create and update project
+* `fae1c99`	fix(Rest-Component): Corrected all components by type rest end point
+* `f7d204e`	fix(REST: Project) : Fixed error response for create project from rest
+* `a2750bf`	fix(rest): Fixed get component API having default vendor id as empty
+
+### Infrastructure
+
+* `d9ff676`	chore(pom): change snapshot version from 6.0.0-SNAPSHOT to 5.1.0-SNAPSHOT
+* `e59f8b3`	chores(config): Fix friendly URL for license page
+* `81600f4`	chores(merge): Retain owner as moderator
+* `a80b82c`	chores(pom): Update to next development version
+
 ## sw360-5.0.0-M1
 
 This release is the first release using the Liferay Portal 7.2 CE GA1 release. The codebase of the portal project has been updated from the previously used Liferay 6.2 version. As this represents a huge change also to related areas (pom files, etc.), the sw360 5.0.0 is bascially a sw360 4.0.1 with the newer Liferay. The following commits have been applied:
 
 ### New Features
 
-* `35165e6` feat(auth): script to add the unsafe default client directly to DB 
+* `35165e6` feat(auth): script to add the unsafe default client directly to DB
 * `4fd501c` feat(thrift): add timeout for thrift client
 
 ### Test, Documentation and Infrastructure
@@ -20,7 +60,7 @@ This release is the first release using the Liferay Portal 7.2 CE GA1 release. T
 * `7fbd42e` chores(all): Upgrade to Liferay 7.2 (Part II)
 * `52592bf` chores(build): add build plugin
 * `7d9e30e` chores(deploy): add new deploy profile
-* `1d5bff2` chores(liferay): Feedback from Liferay 7 review 
+* `1d5bff2` chores(liferay): Feedback from Liferay 7 review
 * `36ae2c1` chores(build): Fix deploy profile
 * `918d054` chores(configuration): allow external files
 * `` chores(changelog): initial commit
@@ -32,7 +72,7 @@ This release is the first release using the Liferay Portal 7.2 CE GA1 release. T
 * `1d830ee` fix(project): fix compare if no version is set
 * `0c2a341` fix(Components): Fix naming component error (name's component contain...
 * `c7f03c8` fix(rest): fix broken logic in updateProject  
-* `be90070` fix(rest): auth server is broken due to LifeRay api change 
+* `be90070` fix(rest): auth server is broken due to LifeRay api change
 
 ## sw360-4.0.1-M1
 
@@ -40,7 +80,7 @@ This release fixes a small issue at the project creation. It was added to have a
 
 ### Corrections
 
-* `c7f03c8` fix(rest): fix broken logic in updateProject 
+* `c7f03c8` fix(rest): fix broken logic in updateProject
 
 ## sw360-4.0.0-M1
 
@@ -197,7 +237,7 @@ The most important part on the infrastructure part is the change of the thrift c
 * `0632505` refactor(velocity): update to new version
 * `6e8c349` refactor(webjars): update versions of webjars
 
-#### Database Schema Updates 
+#### Database Schema Updates
 
 Because of changes in the couchdb schema you likely need to run a migration script. Please find more information here: `sw360/scripts/migrations/`, in summary, you will need to update in the database:
 
