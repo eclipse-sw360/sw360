@@ -12,6 +12,9 @@
 
 <%@include file="/html/init.jsp" %>
 
+<portlet:defineObjects/>
+<liferay-theme:defineObjects/>
+
 <%--<jsp:useBean id="parent_branch_id" class="java.lang.String" scope="request"/>--%>
 <%--These variables are used as a trick to allow referencing constant values in EL expressions below--%>
 <core_rt:set var="licenseInfoAttachmentTypes" value="<%=SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES%>"/>
