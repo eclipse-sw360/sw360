@@ -392,6 +392,23 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         return restControllerHelper.searchByExternalIds(externalIdsMultiMap, projectService, sw360User);
     }
 
+    @RequestMapping(value = PROJECTS_URL + "/usedBy" + "/{id}", method = RequestMethod.GET)
+    public ResponseEntity<Resources<Resource<Project>>> getUsedByProjectDetails(@PathVariable("id") String id) throws TException{
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        //Project sw360Project = projectService.getProjectForUserById(id, user);
+        Set<Project> sw360Projects = projectService.searchLinkingProjects(id, user);
+
+        List<Resource<Project>> projectResources = new ArrayList<>();
+        sw360Projects.stream()
+                .forEach(p -> {
+                    Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
+                    projectResources.add(new Resource<>(embeddedProject));
+                });
+
+        Resources<Resource<Project>> resources = new Resources<>(projectResources);
+        return new ResponseEntity<>(resources, HttpStatus.OK);
+    }
+
     @Override
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
         resource.add(linkTo(ProjectController.class).slash("api" + PROJECTS_URL).withRel("projects"));

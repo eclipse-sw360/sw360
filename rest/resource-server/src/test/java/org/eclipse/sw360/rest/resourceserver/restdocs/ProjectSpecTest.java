@@ -14,6 +14,7 @@ import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
 import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -118,6 +119,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         additionalData.put("OSPO-Comment", "Some Comment");
 
         List<Project> projectListByName = new ArrayList<>();
+        Set<Project> usedByProjectList = new HashSet<>();
         project = new Project();
         project.setId("376576");
         project.setName("Emerald Web");
@@ -157,6 +159,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
         projectListByName.add(project);
         projectList.add(project);
+        usedByProjectList.add(project);
 
 
         Map<String, String> externalIds2 = new HashMap<>();
@@ -205,6 +208,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
         given(this.projectServiceMock.getProjectsForUser(anyObject())).willReturn(projectList);
         given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), anyObject())).willReturn(project);
+        given(this.projectServiceMock.searchLinkingProjects(eq(project.getId()), anyObject())).willReturn(usedByProjectList);
         given(this.projectServiceMock.searchProjectByName(eq(project.getName()), anyObject())).willReturn(projectListByName);
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), anyObject(), eq("false"))).willReturn(releaseIds);
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), anyObject(), eq("true"))).willReturn(releaseIdsTransitive);
@@ -292,6 +296,23 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         links(
                                 linkWithRel("curies").description("Curies are used for online documentation")
                         ),
+                        responseFields(
+                                fieldWithPath("_embedded.sw360:projects[]name").description("The name of the project"),
+                                fieldWithPath("_embedded.sw360:projects[]version").description("The project version"),
+                                fieldWithPath("_embedded.sw360:projects[]projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
+                                fieldWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_usedbyresource_for_project() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/projects/usedBy/" + project.getId())
+                .header("Authorization", "Bearer " + accessToken)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
                         responseFields(
                                 fieldWithPath("_embedded.sw360:projects[]name").description("The name of the project"),
                                 fieldWithPath("_embedded.sw360:projects[]version").description("The project version"),

@@ -18,6 +18,8 @@ import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
@@ -77,12 +79,14 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
     private Release release;
     private Attachment attachment;
     Component component;
+    private Project project;
 
     private String releaseId = "3765276512";
 
     @Before
     public void before() throws TException, IOException {
         Set<Attachment> attachmentList = new HashSet<>();
+        Set<Component> usedByComponent = new HashSet<>();
         List<Resource<Attachment>> attachmentResources = new ArrayList<>();
         attachment = new Attachment("1231231254", "spring-core-4.3.4.RELEASE.jar");
         attachment.setSha1("da373e491d3863477568896089ee9457bc316783");
@@ -105,6 +109,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         component.setComponentType(ComponentType.OSS);
         component.setVendorNames(new HashSet<>(Collections.singletonList("Google")));
         component.setModerators(new HashSet<>(Arrays.asList("admin@sw360.org", "john@sw360.org")));
+        usedByComponent.add(component);
 
         List<Release> releaseList = new ArrayList<>();
         release = new Release();
@@ -148,8 +153,18 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         release2.setSoftwarePlatforms(new HashSet<>(Arrays.asList("Java SE", ".NET")));
         releaseList.add(release2);
 
+        Set<Project> projectList = new HashSet<>();
+        project = new Project();
+        project.setId("376576");
+        project.setName("Emerald Web");
+        project.setProjectType(ProjectType.PRODUCT);
+        project.setVersion("1.0.2");
+        projectList.add(project);
+
         given(this.releaseServiceMock.getReleasesForUser(anyObject())).willReturn(releaseList);
         given(this.releaseServiceMock.getReleaseForUserById(eq(release.getId()), anyObject())).willReturn(release);
+        given(this.releaseServiceMock.getProjectsByRelease(eq(release.getId()), anyObject())).willReturn(projectList);
+        given(this.releaseServiceMock.getUsingComponentsForRelease(eq(release.getId()), anyObject())).willReturn(usedByComponent);
         given(this.releaseServiceMock.deleteRelease(eq(release.getId()), anyObject())).willReturn(RequestStatus.SUCCESS);
         given(this.releaseServiceMock.searchByExternalIds(eq(externalIds), anyObject())).willReturn((new HashSet<>(releaseList)));
         given(this.releaseServiceMock.convertToEmbeddedWithExternalIds(eq(release))).willReturn(
@@ -269,6 +284,27 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("[].status").description("status of the delete operation")
                         )
                 ));
+    }
+
+    @Test
+    public void should_document_get_usedbyresource_for_release() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/releases/usedBy/" + release.getId())
+                .header("Authorization", "Bearer " + accessToken)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        responseFields(
+                                fieldWithPath("_embedded.sw360:components[]name").description("The name of the component"),
+                                fieldWithPath("_embedded.sw360:components[]componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
+                                fieldWithPath("_embedded.sw360:components").description("An array of <<resources-components, Components resources>>"),
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("_embedded.sw360:projects[]name").description("The name of the project"),
+                                fieldWithPath("_embedded.sw360:projects[]version").description("The project version"),
+                                fieldWithPath("_embedded.sw360:projects[]projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
+                                fieldWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
     }
 
 

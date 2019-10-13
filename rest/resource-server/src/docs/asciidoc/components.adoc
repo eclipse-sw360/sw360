@@ -227,3 +227,17 @@ include::{snippets}/should_document_delete_components/curl-request.adoc[]
 
 ===== Example response
 include::{snippets}/should_document_delete_components/http-response.adoc[]
+
+[[resources-component-usedby-list]]
+==== Resources using the component
+
+A `GET` request will display all the resources where the component is used.
+
+===== Response structure
+include::{snippets}/should_document_get_usedbyresource_for_components/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_usedbyresource_for_components/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_usedbyresource_for_components/http-response.adoc[]
