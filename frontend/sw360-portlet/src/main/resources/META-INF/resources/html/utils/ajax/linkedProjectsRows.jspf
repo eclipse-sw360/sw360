@@ -11,6 +11,9 @@
 
 <jsp:useBean id="parent_branch_id" class="java.lang.String" scope="request"/>
 
+<portlet:defineObjects/>
+<liferay-theme:defineObjects/>
+
 <core_rt:if test="${empty parentScopeGroupId}">
     <core_rt:set var="concludedScopeGroupId" value="${pageContext.getAttribute('scopeGroupId')}"/>
 </core_rt:if>
