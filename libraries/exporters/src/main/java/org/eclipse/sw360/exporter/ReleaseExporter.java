@@ -11,6 +11,7 @@
 package org.eclipse.sw360.exporter;
 
 import com.google.common.collect.ImmutableList;
+
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.components.*;
@@ -40,9 +41,7 @@ public class ReleaseExporter extends ExcelExporter<Release, ReleaseHelper> {
         nameToDisplayName.put(Release._Fields.CREATED_BY.getFieldName(), "created by");
         nameToDisplayName.put(Release._Fields.MAINLINE_STATE.getFieldName(), "mainline state");
         nameToDisplayName.put(Release._Fields.CLEARING_STATE.getFieldName(), "clearing state");
-        nameToDisplayName.put(Release._Fields.FOSSOLOGY_ID.getFieldName(), "fossology id");
-        nameToDisplayName.put(Release._Fields.CLEARING_TEAM_TO_FOSSOLOGY_STATUS.getFieldName(), "clearing team with FOSSology status");
-        nameToDisplayName.put(Release._Fields.ATTACHMENT_IN_FOSSOLOGY.getFieldName(), "attachment in FOSSology");
+        nameToDisplayName.put(Release._Fields.EXTERNAL_TOOL_PROCESSES.getFieldName(), "external tool process");
         nameToDisplayName.put(Release._Fields.CLEARING_INFORMATION.getFieldName(), "clearing information");
         nameToDisplayName.put(Release._Fields.ECC_INFORMATION.getFieldName(), "ECC information");
         nameToDisplayName.put(Release._Fields.COTS_DETAILS.getFieldName(), "COTS details");

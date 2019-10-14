@@ -12,17 +12,17 @@ package org.eclipse.sw360.portal.tags;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
-import org.apache.thrift.meta_data.FieldMetaData;
-import org.apache.thrift.protocol.TType;
-import org.eclipse.sw360.datahandler.thrift.components.COTSDetails;
-import org.eclipse.sw360.datahandler.thrift.components.ClearingInformation;
-import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
+
+import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.portal.tags.urlutils.LinkedReleaseRenderer;
 
+import org.apache.thrift.meta_data.FieldMetaData;
+import org.apache.thrift.protocol.TType;
+
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
+
 import java.util.HashMap;
 import java.util.Set;
 
@@ -31,7 +31,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Utils.newDefaultEccInfor
 import static org.eclipse.sw360.portal.tags.TagUtils.*;
 
 /**
- * Display the fields that have changed in the project
+ * Display the fields that have changed in the release
  *
  * @author birgit.heydenreich@tngtech.com
  */
@@ -67,7 +67,6 @@ public class DisplayReleaseChanges extends UserAwareTag {
         JspWriter jspWriter = pageContext.getOut();
 
         StringBuilder display = new StringBuilder();
-        String namespace = getNamespace();
 
         if (additions == null || deletions == null) {
             return SKIP_BODY;
@@ -86,7 +85,7 @@ public class DisplayReleaseChanges extends UserAwareTag {
                     case DOCUMENT_STATE:
                     case COMPONENT_ID:
                     case VENDOR_ID:
-                    case CLEARING_TEAM_TO_FOSSOLOGY_STATUS:
+                case EXTERNAL_TOOL_PROCESSES:
                         //Taken care of externally or in extra tables
                     case ATTACHMENTS:
                     case RELEASE_ID_TO_RELATIONSHIP:

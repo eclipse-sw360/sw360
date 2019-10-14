@@ -11,6 +11,7 @@
 package org.eclipse.sw360.components.summary;
 
 import com.google.common.base.Strings;
+
 import org.eclipse.sw360.datahandler.db.VendorRepository;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -99,8 +100,7 @@ public class ReleaseSummary extends DocumentSummary<Release> {
         copyField(document, copy, _Fields.NAME);
         copyField(document, copy, _Fields.VERSION);
         copyField(document, copy, _Fields.COMPONENT_ID);
-        copyField(document, copy, _Fields.CLEARING_TEAM_TO_FOSSOLOGY_STATUS);
-        copyField(document, copy, _Fields.FOSSOLOGY_ID);
+        copyField(document, copy, _Fields.EXTERNAL_TOOL_PROCESSES);
         copyField(document, copy, _Fields.CLEARING_STATE);
         copyField(document, copy, _Fields.MAINLINE_STATE);
         copyField(document, copy, _Fields.CPEID);

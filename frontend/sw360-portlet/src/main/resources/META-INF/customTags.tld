@@ -935,9 +935,9 @@
             <rtexprvalue>true</rtexprvalue>
         </attribute>
         <attribute>
-            <name>filterAttachmentType</name>
-            <required>false</required>
-            <type>org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType</type>
+            <name>attachmentTypePredicate</name>
+            <required>true</required>
+            <type>java.util.function.Predicate</type>
             <rtexprvalue>true</rtexprvalue>
         </attribute>
     </tag>

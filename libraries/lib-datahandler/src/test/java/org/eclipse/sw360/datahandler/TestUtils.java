@@ -10,14 +10,16 @@
  */
 package org.eclipse.sw360.datahandler;
 
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
-import com.google.common.base.Optional;
+
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseInstance;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseInstanceTracker;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+
 import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
 import org.ektorp.http.HttpClient;
@@ -27,10 +29,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.net.URL;
+import java.net.*;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -57,7 +56,6 @@ public class TestUtils {
     private static final List<String> dbNames = ImmutableList.of(
             DatabaseSettings.COUCH_DB_DATABASE,
             DatabaseSettings.COUCH_DB_ATTACHMENTS,
-            DatabaseSettings.COUCH_DB_FOSSOLOGY,
             DatabaseSettings.COUCH_DB_USERS);
 
     static {

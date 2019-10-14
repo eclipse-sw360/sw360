@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2015, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -10,20 +10,25 @@
  */
 package org.eclipse.sw360.fossology.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
+import org.eclipse.sw360.datahandler.db.ConfigContainerRepository;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.datahandler.thrift.fossology.FossologyHostFingerPrint;
-import org.eclipse.sw360.fossology.db.FossologyFingerPrintRepository;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestTemplate;
 
 import java.net.MalformedURLException;
 import java.util.concurrent.TimeUnit;
 
-import static org.eclipse.sw360.datahandler.common.DatabaseSettings.*;
+import static org.eclipse.sw360.datahandler.common.DatabaseSettings.COUCH_DB_ATTACHMENTS;
+import static org.eclipse.sw360.datahandler.common.DatabaseSettings.COUCH_DB_CONFIG;
+import static org.eclipse.sw360.datahandler.common.DatabaseSettings.getConfiguredHttpClient;
 import static org.eclipse.sw360.datahandler.common.Duration.durationOf;
 
 @Configuration
@@ -33,9 +38,10 @@ public class FossologyConfig {
     private final Duration downloadTimeout = durationOf(2, TimeUnit.MINUTES);
 
     @Bean
-    public FossologyFingerPrintRepository fossologyFingerPrintRepository() throws MalformedURLException {
-        DatabaseConnector fossologyFingerPrintDatabaseConnector = new DatabaseConnector(getConfiguredHttpClient(), COUCH_DB_FOSSOLOGY);
-        return new FossologyFingerPrintRepository(FossologyHostFingerPrint.class, fossologyFingerPrintDatabaseConnector);
+    public ConfigContainerRepository configContainerRepository() throws MalformedURLException {
+        DatabaseConnector configContainerDatabaseConnector = new DatabaseConnector(getConfiguredHttpClient(),
+                COUCH_DB_CONFIG);
+        return new ConfigContainerRepository(configContainerDatabaseConnector);
     }
 
     @Bean
@@ -46,6 +52,16 @@ public class FossologyConfig {
     @Bean
     public ThriftClients thriftClients() {
         return new ThriftClients();
+    }
+
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
     }
 
 }

@@ -10,20 +10,17 @@
  */
 package org.eclipse.sw360.portal.components;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.liferay.portal.kernel.events.Action;
 import com.liferay.portal.kernel.events.ActionException;
 import com.liferay.portal.kernel.events.LifecycleAction;
 
-import org.apache.log4j.Logger;
 import org.eclipse.sw360.portal.common.FossologyConnectionHelper;
-import org.osgi.service.component.annotations.Activate;
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.ConfigurationPolicy;
-import org.osgi.service.component.annotations.Deactivate;
-import org.osgi.service.component.annotations.Modified;
+
+import org.apache.log4j.Logger;
+import org.osgi.service.component.annotations.*;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Class to validate the fossology connectivity at the server startup time.

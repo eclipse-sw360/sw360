@@ -79,8 +79,8 @@
                         </core_rt:when>
                         <core_rt:otherwise>
                             <span id="releaseAction${release.id}" class="ml-2">
-                                <svg class="lexicon-icon action send-to-fossology" data-release-id="${release.id}">
-                                    <title>Send to Fossology</title>
+                                <svg class="lexicon-icon action fossology" data-release-id="${release.id}">
+                                    <title>Fossology Process</title>
                                     <use href='<%=request.getContextPath()%>/images/icons.svg#fossology' />
                                 </svg>
                             </span>
@@ -223,9 +223,9 @@
 
         fossology.initialize();
 
-        $('#ReleaseClearingOverview').on('click', '.action.send-to-fossology', function(event) {
+        $('#ReleaseClearingOverview').on('click', '.action.fossology', function(event) {
             var data = $(event.currentTarget).data();
-            fossology.openSelectClearingDialog('fossologySending', data.releaseId);
+            fossology.openFossologyDialog(data.releaseId);
         });
 
         $('.showSpdxContentBtn').on('click', function(event) {
