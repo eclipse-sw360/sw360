@@ -210,7 +210,7 @@
         <td><sw360:out value="${clearingInfo.externalSupplierID}"/></td>
     </tr>
     <tr>
-        <td>Number of Security VN:</td>
+        <td>Number of Security Vulnerabilities:</td>
         <td><sw360:out value="${clearingInfo.countOfSecurityVn}"/></td>
     </tr>
 </table>

@@ -16,6 +16,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
@@ -36,6 +37,8 @@ import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.codescoop.CodescoopService;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.cvesearch.CveSearchService;
@@ -60,6 +63,7 @@ import org.eclipse.sw360.portal.users.LifeRayUserSession;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 
 import org.apache.log4j.Logger;
+import org.apache.thrift.TEnum;
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
 import org.apache.thrift.protocol.TSimpleJSONProtocol;
@@ -635,6 +639,9 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         } else if (PAGENAME_MERGE_COMPONENT.equals(pageName)) {
             prepareComponentMerge(request, response);
             include("/html/components/mergeComponent.jsp", request, response);
+        } else if (PAGENAME_MERGE_RELEASE.equals(pageName)) {
+            prepareReleaseMerge(request, response);
+            include("/html/components/mergeRelease.jsp", request, response);
         } else {
             prepareStandardView(request);
             super.doView(request, response);
@@ -799,7 +806,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             mergeUrl.setParameter(PortalConstants.COMPONENT_ID, componentId);
             addBreadcrumbEntry(request, "Merge", mergeUrl);
         } catch (TException e) {
-            log.error("Error fetching release from backend!", e);
+            log.error("Error fetching component from backend!", e);
         }
     }
 
@@ -922,6 +929,240 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         jsonGenerator.writeEndObject();
     }
 
+    private void prepareReleaseMerge(RenderRequest request, RenderResponse response) throws PortletException {
+        final User user = UserCacheHolder.getUserFromRequest(request);
+        String releaseId = request.getParameter(RELEASE_ID);
+
+        if (isNullOrEmpty(releaseId)) {
+            throw new PortletException("Release ID not set!");
+        }
+
+        try {
+            ComponentService.Iface client = thriftClients.makeComponentClient();
+
+            Release release = client.getReleaseById(releaseId, user);
+            request.setAttribute(RELEASE, release);
+
+            addReleaseBreadcrumb(request, response, release);
+
+            PortletURL mergeUrl = response.createRenderURL();
+            mergeUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_MERGE_RELEASE);
+            mergeUrl.setParameter(PortalConstants.RELEASE_ID, releaseId);
+            addBreadcrumbEntry(request, "Merge", mergeUrl);
+        } catch (TException e) {
+            log.error("Error fetching release from backend!", e);
+        }
+    }
+
+    @UsedAsLiferayAction
+    public void releaseMergeWizardStep(ActionRequest request, ActionResponse response) throws IOException, PortletException {
+        int stepId = Integer.parseInt(request.getParameter("stepId"));
+        try {
+            HttpServletResponse httpServletResponse = PortalUtil.getHttpServletResponse(response);
+            httpServletResponse.setContentType(ContentTypes.APPLICATION_JSON);
+            JsonGenerator jsonGenerator = JSON_FACTORY.createGenerator(httpServletResponse.getWriter());
+
+            if (stepId == 0) {
+                generateReleaseMergeWizardStep0Response(request, jsonGenerator);
+            } else if (stepId == 1) {
+                generateReleaseMergeWizardStep1Response(request, jsonGenerator);
+            } else if (stepId == 2) {
+                generateReleaseMergeWizardStep2Response(request, jsonGenerator);
+            } else if (stepId == 3) {
+                generateReleaseMergeWizardStep3Response(request, jsonGenerator);
+            } else {
+                throw new SW360Exception("Step with id <" + stepId + "> not supported!");
+            }
+
+            jsonGenerator.close();
+        } catch (Exception e) {
+            log.error("An error occurred while generating a response to release merge wizard", e);
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE,
+                    Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+        }
+    }
+
+    private void generateReleaseMergeWizardStep0Response(ActionRequest request, JsonGenerator jsonGenerator) throws IOException, TException {
+        User sessionUser = UserCacheHolder.getUserFromRequest(request);
+        String targetId = request.getParameter(RELEASE_TARGET_ID);
+        String componentId = request.getParameter(COMPONENT_ID);
+
+        ComponentService.Iface cClient = thriftClients.makeComponentClient();
+        List<Release> releases = cClient.getReleasesByComponentId(componentId, sessionUser);
+        
+        jsonGenerator.writeStartObject();
+
+        jsonGenerator.writeArrayFieldStart("releases");
+        releases.stream().filter( release -> !release.getId().equals(targetId) ).forEach(release -> {
+            try {
+                jsonGenerator.writeStartObject();
+                jsonGenerator.writeStringField("id", release.getId());
+                jsonGenerator.writeStringField("name", SW360Utils.printName(release));
+                jsonGenerator.writeStringField("version", release.getVersion());
+                jsonGenerator.writeStringField("createdBy", release.getCreatedBy());
+                jsonGenerator.writeEndObject();
+            } catch (IOException e) {
+                log.error("An error occurred while generating wizard response", e);
+            }
+        });
+        jsonGenerator.writeEndArray();
+
+        jsonGenerator.writeEndObject();
+    }
+
+    private void generateReleaseMergeWizardStep1Response(ActionRequest request, JsonGenerator jsonGenerator) throws IOException, TException {
+        User sessionUser = UserCacheHolder.getUserFromRequest(request);
+        String releaseTargetId = request.getParameter(RELEASE_TARGET_ID);
+        String releaseSourceId = request.getParameter(RELEASE_SOURCE_ID);
+
+        ComponentService.Iface cClient = thriftClients.makeComponentClient();
+        Release releaseTarget = cClient.getReleaseById(releaseTargetId, sessionUser);
+        Release releaseSource = cClient.getReleaseById(releaseSourceId, sessionUser);
+
+        // find matching source code attachment pair, otherwise we will not allow the merge
+        boolean matchingPair = false;
+        boolean foundSourceAttachments = false;
+        Set<String> attachmentHashes = new HashSet<>();
+        for(Attachment attachment : nullToEmptySet(releaseTarget.getAttachments())) {
+            if(attachment.getAttachmentType().equals(AttachmentType.SOURCE) || attachment.getAttachmentType().equals(AttachmentType.SOURCE_SELF)) {
+                attachmentHashes.add(attachment.getSha1());
+                foundSourceAttachments = true;
+            }
+        }
+        for(Attachment attachment : nullToEmptySet(releaseSource.getAttachments())) {
+            if(attachment.getAttachmentType().equals(AttachmentType.SOURCE) || attachment.getAttachmentType().equals(AttachmentType.SOURCE_SELF)) {
+                if(attachmentHashes.contains(attachment.getSha1())) {
+                    matchingPair = true;
+                    break;
+                }
+                foundSourceAttachments = true;
+            }
+        }
+
+        if(foundSourceAttachments && !matchingPair) {
+            jsonGenerator.writeStartObject();
+            jsonGenerator.writeStringField("error", "Both releases must have at least one pair of same source attachments or no source attachments at all. Otherwise a merge is not possible.");
+            jsonGenerator.writeEndObject();
+            return;
+        }
+
+        Map<String, Map<String, String>> displayInformation = new HashMap<>();
+        
+        addToMap(displayInformation, "mainlineState", releaseTarget.getMainlineState());
+        addToMap(displayInformation, "mainlineState", releaseSource.getMainlineState());
+        addToMap(displayInformation, "repositorytype", releaseTarget.getRepository() != null ? releaseTarget.getRepository().getRepositorytype() : null);
+        addToMap(displayInformation, "repositorytype", releaseSource.getRepository() != null ? releaseSource.getRepository().getRepositorytype() : null);
+        addToMap(displayInformation, "eccStatus", releaseTarget.getEccInformation().getEccStatus());
+        addToMap(displayInformation, "eccStatus", releaseSource.getEccInformation().getEccStatus());
+        for(Attachment attachment : nullToEmptySet(releaseSource.getAttachments())) {
+            addToMap(displayInformation, "attachmentType", attachment.getAttachmentType());
+        }
+        for(Attachment attachment : nullToEmptySet(releaseTarget.getAttachments())) {
+            addToMap(displayInformation, "attachmentType", attachment.getAttachmentType());
+        }
+
+        Set<String> releaseIds = new HashSet<>();
+        releaseIds.addAll(nullToEmptyMap(releaseSource.getReleaseIdToRelationship()).keySet());
+        releaseIds.addAll(nullToEmptyMap(releaseTarget.getReleaseIdToRelationship()).keySet());
+        List<Release> releases = cClient.getReleasesById(releaseIds, sessionUser);
+        Map<String, String> releaseToNameMap = new HashMap<String, String>();
+        for(Release release : releases) {
+            releaseToNameMap.put(release.getId(), release.getName() + " (" + release.getVersion() + ")");
+        }
+        displayInformation.put("release", releaseToNameMap);
+        
+        jsonGenerator.writeStartObject();
+
+        // adding common title
+        jsonGenerator.writeRaw("\"releaseTarget\":" + JSON_THRIFT_SERIALIZER.toString(releaseTarget) + ",");
+        jsonGenerator.writeRaw("\"releaseSource\":" + JSON_THRIFT_SERIALIZER.toString(releaseSource) + ",");
+        jsonGenerator.writeRaw("\"displayInformation\":" + OBJECT_MAPPER.writeValueAsString(displayInformation) + ",");
+        jsonGenerator.writeRaw("\"usageInformation\":" + OBJECT_MAPPER.writeValueAsString(getUsageInformationForReleaseMerge(releaseSourceId, sessionUser)));
+
+        jsonGenerator.writeEndObject();
+    }
+
+    private <T> void addToMap(Map<String, Map<String, String>> map, String key, TEnum value) {
+        Map<String, String> subMap = map.getOrDefault(key, new HashMap<String, String>());
+        if(value != null) {
+            subMap.put(value.getValue() + "", ThriftEnumUtils.enumToString(value));
+        }
+        map.put(key, subMap);
+    }
+
+    private Map<String, Integer> getUsageInformationForReleaseMerge(String releaseSourceId, User sessionUser) throws TException {
+        Map<String, Integer> usageInformation = new HashMap<>();
+
+        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
+        Set<Project> projects = projectClient.searchByReleaseId(releaseSourceId, sessionUser);
+        usageInformation.put("projects", projects.size());
+
+        AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
+        List<AttachmentUsage> attachmentUsages = attachmentClient.getAttachmentUsagesByReleaseId(releaseSourceId);
+        usageInformation.put("attachmentUsages", attachmentUsages.size());
+
+        ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        List<Release> releases = componentClient.getReferencingReleases(releaseSourceId);
+        usageInformation.put("releases", releases.size());
+
+        VulnerabilityService.Iface vulnerabilityClient = thriftClients.makeVulnerabilityClient();
+        List<ReleaseVulnerabilityRelation> releaseVulnerabilities = vulnerabilityClient.getReleaseVulnerabilityRelationsByReleaseId(releaseSourceId, sessionUser);
+        usageInformation.put("releaseVulnerabilities", releaseVulnerabilities.size());
+        List<ProjectVulnerabilityRating> projectRatings = vulnerabilityClient.getProjectVulnerabilityRatingsByReleaseId(releaseSourceId, sessionUser);
+        usageInformation.put("projectRatings", projectRatings.size());
+        
+        return usageInformation;
+    }
+
+    private void generateReleaseMergeWizardStep2Response(ActionRequest request, JsonGenerator jsonGenerator)
+            throws IOException, TException {
+        Release releaseSelection = OBJECT_MAPPER.readValue(request.getParameter(RELEASE_SELECTION),
+                Release.class);
+        String releaseSourceId = request.getParameter(RELEASE_SOURCE_ID);
+
+        // FIXME: maybe validate the component
+
+        jsonGenerator.writeStartObject();
+
+        // adding common title
+        jsonGenerator.writeRaw("\""+ RELEASE_SELECTION +"\":" + JSON_THRIFT_SERIALIZER.toString(releaseSelection) + ",");
+        jsonGenerator.writeStringField(RELEASE_SOURCE_ID, releaseSourceId);
+
+        jsonGenerator.writeEndObject();
+    }
+
+    private void generateReleaseMergeWizardStep3Response(ActionRequest request, JsonGenerator jsonGenerator)
+            throws IOException, TException {
+        ComponentService.Iface cClient = thriftClients.makeComponentClient();
+
+        // extract request data
+        User sessionUser = UserCacheHolder.getUserFromRequest(request);
+        Release releaseSelection = OBJECT_MAPPER.readValue(request.getParameter(RELEASE_SELECTION),
+                Release.class);
+        String releaseSourceId = request.getParameter(RELEASE_SOURCE_ID);
+
+        // perform the real merge, update merge target and delete merge source
+        RequestStatus status = cClient.mergeReleases(releaseSelection.getId(), releaseSourceId, releaseSelection, sessionUser);
+
+        // generate redirect url
+        LiferayPortletURL releaseUrl = createDetailLinkTemplate(request);
+        releaseUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_RELEASE_DETAIL);
+        releaseUrl.setParameter(PortalConstants.RELEASE_ID, releaseSelection.getId());
+
+        // write response JSON
+        jsonGenerator.writeStartObject();
+        jsonGenerator.writeStringField("redirectUrl", releaseUrl.toString());
+        if (status == RequestStatus.IN_USE){
+            jsonGenerator.writeStringField("error", "Cannot merge when one of the releases has an active moderation request.");
+        } else if (status == RequestStatus.ACCESS_DENIED) {
+            jsonGenerator.writeStringField("error", "You do not have sufficient permissions.");
+        } else if (status == RequestStatus.FAILURE) {
+            jsonGenerator.writeStringField("error", "An unknown error occurred during merge.");
+        }
+
+        jsonGenerator.writeEndObject();
+    }
+
     private void prepareDetailView(RenderRequest request, RenderResponse response) {
         String id = request.getParameter(COMPONENT_ID);
         final User user = UserCacheHolder.getUserFromRequest(request);
@@ -1000,6 +1241,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
                 setUsingDocs(request, releaseId, user, client);
                 putDirectlyLinkedReleaseRelationsInRequest(request, release);
+                request.setAttribute(IS_USER_ALLOWED_TO_MERGE, PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user));
 
                 if (isNullOrEmpty(id)) {
                     id = release.getComponentId();

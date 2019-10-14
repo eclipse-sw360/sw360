@@ -179,7 +179,9 @@ define('modules/sw360Wizard', [ 'jquery', 'modules/button' ], function($, button
                 }).done(function(data, textStatus, xhr) {
                     try {
                         var dataJson = JSON.parse(data);
-                        if (activeElement[0] === lastStep[0]) {
+                        if(dataJson.error) {
+                            stepFailed(activeIndex, activeElement, '', dataJson.error);
+                        } else if (activeElement[0] === lastStep[0]) {
                             if(!config.finishCb(activeElement, dataJson)) {
                                 $('.wizardNext, .wizardBack', $wizardRoot).remove();
                                 $('.wizardAbort', $wizardRoot).removeClass('hide');

@@ -530,6 +530,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return RequestStatus.SUCCESS;
     }
 
+    public List<ProjectVulnerabilityRating> getProjectVulnerabilityRatingsByReleaseId(String releaseId) {
+        return pvrRepository.getProjectVulnerabilityRatingsByReleaseId(releaseId);
+    }
+
     public List<Project> fillClearingStateSummary(List<Project> projects, User user) {
         Function<Project, Set<String>> extractReleaseIds = project -> CommonUtils.nullToEmptyMap(project.getReleaseIdToUsage()).keySet();
 

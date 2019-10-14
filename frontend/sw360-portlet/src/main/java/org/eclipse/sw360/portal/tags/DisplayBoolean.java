@@ -39,12 +39,12 @@ public class DisplayBoolean extends SimpleTagSupport {
 
         if (defined && value) {
             out.print("<span class=\"text-success\">");
-            out.print("<svg class=\"lexicon-icon\"><use href=\"/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#check-circle\"/></svg>");
+            out.print("<svg class=\"lexicon-icon\"><title>Yes</title><use href=\"/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#check-circle\"/></svg>");
             out.print("&nbsp;Yes");
             out.print("</span>");
         } else {
             out.print("<span class=\"text-danger\">");
-            out.print("<svg class=\"lexicon-icon\"><use href=\"/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#times-circle\"/></svg>");
+            out.print("<svg class=\"lexicon-icon\"><title>No</title><use href=\"/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#times-circle\"/></svg>");
             out.print("&nbsp;No");
             out.print("</span>");
         }

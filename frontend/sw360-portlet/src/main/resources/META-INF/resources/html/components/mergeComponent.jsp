@@ -374,7 +374,7 @@
                 if (!attachment) {
                     return '';
                 }
-                return (attachment.filename || '-no-filename-') + ' (' + (attachment.attachementType || '-no-type-') + ')';
+                return (attachment.filename || '-no-filename-') + ' (' + (attachment.attachmentType || '-no-type-') + ')';
             }));
         }
 
