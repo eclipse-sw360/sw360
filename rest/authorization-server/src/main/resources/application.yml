@@ -19,6 +19,9 @@ couchdb:
   #username:
   #password:
 
+jwt:
+  secretkey: sw360SecretKey
+
 spring:
   jackson:
     serialization:
