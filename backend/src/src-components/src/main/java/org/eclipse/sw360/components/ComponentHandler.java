@@ -225,6 +225,7 @@ public class ComponentHandler implements ComponentService.Iface {
         assertNotNull(component);
         assertIdUnset(component.getId());
         assertUser(user);
+        assertNotNull(component.getComponentType(), "ComponentType is not present on the request");
 
         return handler.addComponent(component, user.getEmail());
     }

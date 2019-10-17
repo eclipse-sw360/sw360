@@ -50,8 +50,8 @@
     <tr>
         <td>
             <div class="form-group">
-                <label for="comp_componenttype">Component Type</label>
-                <select class="form-control" id="comp_componenttype" name="<portlet:namespace/><%=Component._Fields.COMPONENT_TYPE%>">
+                <label class="mandatory" for="comp_componenttype">Component Type</label>
+                <select class="form-control" id="comp_componenttype" required name="<portlet:namespace/><%=Component._Fields.COMPONENT_TYPE%>">
                     <option value=""></option>
                     <sw360:DisplayEnumOptions type="<%=ComponentType.class%>" selected="${component.componentType}"/>
                 </select>
@@ -59,6 +59,9 @@
                     <sw360:DisplayEnumInfo type="<%=ComponentType.class%>"/>
                     Learn more about component types.
                 </small>
+                <div class="invalid-feedback">
+                    Please enter component type
+                </div>
             </div>
         </td>
         <td>

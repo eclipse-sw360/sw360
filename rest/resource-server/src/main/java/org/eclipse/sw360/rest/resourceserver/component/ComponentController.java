@@ -43,6 +43,7 @@ import org.springframework.hateoas.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
@@ -174,6 +175,9 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
     public ResponseEntity<Resource<Component>> createComponent(@RequestBody Component component) throws URISyntaxException, TException {
 
         User user = restControllerHelper.getSw360UserFromAuthentication();
+        if(component.getComponentType() == null) {
+            throw new HttpMessageNotReadableException("Required field componentType is not present");
+        }
 
         if (component.getVendorNames() != null) {
             Set<String> vendors = new HashSet<>();
