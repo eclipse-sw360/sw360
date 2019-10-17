@@ -508,6 +508,9 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         Map<String, ProjectRelationship> linkedProjects = new HashMap<String, ProjectRelationship>();
         linkedProjects.put("376576", ProjectRelationship.CONTAINED);
         project.put("linkedProjects", linkedProjects);
+        project.put("leadArchitect", "lead@sw360.org");
+        project.put("moderators", new HashSet<>(Arrays.asList("moderator1@sw360.org", "moderator2@sw360.org")));
+        project.put("contributors", new HashSet<>(Arrays.asList("contributor1@sw360.org", "contributor2@sw360.org")));
 
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         this.mockMvc.perform(post("/api/projects")
@@ -524,7 +527,10 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("visibility").description("The project visibility, possible values are: " + Arrays.asList(Visibility.values())),
                                 fieldWithPath("projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
                                 fieldWithPath("linkedReleases").description("The relationship between linked releases of the project"),
-                                fieldWithPath("linkedProjects").description("The relationship between linked projects of the project")
+                                fieldWithPath("linkedProjects").description("The relationship between linked projects of the project"),
+                                fieldWithPath("leadArchitect").description("The lead architect of the project"),
+                                fieldWithPath("contributors").description("An array of contributors to the project"),
+                                fieldWithPath("moderators").description("An array of moderators")
                         ),
                         responseFields(
                                 fieldWithPath("name").description("The name of the project"),

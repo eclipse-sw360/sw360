@@ -421,6 +421,15 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
             restControllerHelper.addEmbeddedAttachments(halProject, sw360Project.getAttachments());
         }
 
+        if(sw360Project.getLeadArchitect() != null) {
+            restControllerHelper.addEmbeddedLeadArchitect(halProject, sw360Project.getLeadArchitect());
+        }
+
+        if (sw360Project.getContributors() != null) {
+            Set<String> contributors = sw360Project.getContributors();
+            restControllerHelper.addEmbeddedContributors(halProject, contributors);
+        }
+
         return halProject;
     }
 }
