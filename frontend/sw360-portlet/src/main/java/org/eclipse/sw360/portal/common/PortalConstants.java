@@ -165,6 +165,7 @@ public class PortalConstants {
 
     //! Specialized keys for attachments
     public static final String ATTACHMENTS = "attachments";
+    public static final String OTHER_KNOWN_HASHES = "otherKnownHashes";
     public static final String ATTACHMENT_NAME = "attachmentName";
     public static final String SPDX_ATTACHMENTS = "spdxAttachments";
     public static final String ADDED_ATTACHMENTS = "added_attachments";

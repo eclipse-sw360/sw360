@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.KnownHash;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -57,6 +58,7 @@ class JacksonCustomizations {
             setMixInAnnotation(Component.class, Sw360Module.ComponentMixin.class);
             setMixInAnnotation(Release.class, Sw360Module.ReleaseMixin.class);
             setMixInAnnotation(Attachment.class, Sw360Module.AttachmentMixin.class);
+            setMixInAnnotation(KnownHash.class, Sw360Module.KnownHashMixin.class);
             setMixInAnnotation(Vendor.class, Sw360Module.VendorMixin.class);
             setMixInAnnotation(License.class, Sw360Module.LicenseMixin.class);
             setMixInAnnotation(Vulnerability.class, Sw360Module.VulnerabilityMixin.class);
@@ -375,6 +377,9 @@ class JacksonCustomizations {
                 "setReleaseIdToRelationship",
                 "setDocumentState",
                 "permissionsSize",
+                "setOtherKnownHashes",
+                "otherKnownHashesIterator",
+                "otherKnownHashesSize",
                 "setId",
                 "setRevision",
                 "setType",
@@ -434,6 +439,17 @@ class JacksonCustomizations {
                 "setCheckStatus"
         })
         static abstract class AttachmentMixin {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "setFilename",
+                "setHash",
+                "setHashType",
+                "setAttachmentType",
+                "setRemoteUrl"
+        })
+        static abstract class KnownHashMixin {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)

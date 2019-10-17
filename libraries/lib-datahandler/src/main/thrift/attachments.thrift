@@ -81,6 +81,15 @@ struct AttachmentContent {
     22: optional string partsCount,
 }
 
+struct KnownHash {
+    3: required string hash,
+    4: required string hashType = "sha1",
+    5: optional string filename,
+
+    10: optional AttachmentType attachmentType
+    11: optional string remoteUrl,
+}
+
 /**
  * Describe the usage of an attachment. Each usage results in one usage object.
  * The usage can store additional data for more information about the specific usage.

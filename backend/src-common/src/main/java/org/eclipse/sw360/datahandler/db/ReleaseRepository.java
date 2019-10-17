@@ -84,6 +84,17 @@ import static com.google.common.base.Strings.isNullOrEmpty;
                         "       emit( [externalId, doc.externalIds[externalId]] , doc._id);" +
                         "    }" +
                         "  }" +
+                        "}"),
+        @View(name = "byHash",
+                map = "function(doc) {" +
+                        "  if (doc.type == 'release'){" +
+                        "    for(var i in doc.attachments) { " +
+                        "      emit(doc.attachments[i].sha1, doc);" +
+                        "    }" +
+                        "    for(var i in doc.otherKnownHashes) { " +
+                        "      emit(doc.otherKnownHashes[i].hash, doc);" +
+                        "    }" +
+                        "  }" +
                         "}")
 
 })
@@ -155,5 +166,9 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
 
     public List<Release> getReferencingReleases(String releaseId) {
         return queryView("usedInReleaseRelation", releaseId);
+    }
+
+    public List<Release> searchReleasesByFileHashes(Set<String> hashes) {
+        return queryByIds("byHash", hashes);
     }
 }

@@ -72,6 +72,11 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return sw360ComponentClient.searchReleasesByExternalIds(externalIds);
     }
 
+    public List<Release> searchByFileHashes(Set<String> hashes) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        return sw360ComponentClient.searchReleasesByFileHashes(hashes);
+    }
+
     @Override
     public Release convertToEmbeddedWithExternalIds(Release sw360Object) {
         return rch.convertToEmbeddedRelease(sw360Object).setExternalIds(sw360Object.getExternalIds());

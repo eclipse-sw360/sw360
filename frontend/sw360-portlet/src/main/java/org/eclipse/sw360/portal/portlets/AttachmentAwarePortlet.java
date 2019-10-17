@@ -72,7 +72,7 @@ public abstract class AttachmentAwarePortlet extends Sw360Portlet {
 
         @Override
         public void serialize(Attachment attachment, JsonGenerator jsonGenerator, SerializerProvider provider)
-                throws IOException, JsonGenerationException {
+                throws IOException {
             try {
                 jsonGenerator.writeRawValue(JSON_SERIALIZER.toString(attachment));
             } catch (TException exception) {
@@ -115,8 +115,14 @@ public abstract class AttachmentAwarePortlet extends Sw360Portlet {
 
 
     private void setAttachmentsInRequest(PortletRequest request, Set<Attachment> attachments, Source owner) {
+        setAttachmentsInRequest(request, attachments, Collections.emptySet(), owner);
+    }
+
+    private void setAttachmentsInRequest(PortletRequest request, Set<Attachment> attachments, Set<KnownHash> otherKnownHashes, Source owner) {
         Set<Attachment> atts = CommonUtils.nullToEmptySet(attachments);
         request.setAttribute(ATTACHMENTS, atts);
+        Set<KnownHash> okhs = CommonUtils.nullToEmptySet(otherKnownHashes);
+        request.setAttribute(OTHER_KNOWN_HASHES, okhs);
         if (owner == null) {
             setEmptyUsages(request);
             return;
@@ -185,7 +191,7 @@ public abstract class AttachmentAwarePortlet extends Sw360Portlet {
     }
 
     protected void setAttachmentsInRequest(PortletRequest request, Release release) {
-        setAttachmentsInRequest(request, release.getAttachments(), release.getId() == null ? null : Source.releaseId(release.getId()));
+        setAttachmentsInRequest(request, release.getAttachments(), release.getOtherKnownHashes(), release.getId() == null ? null : Source.releaseId(release.getId()));
     }
 
     protected void setAttachmentsInRequest(PortletRequest request, Project project) {
@@ -198,7 +204,7 @@ public abstract class AttachmentAwarePortlet extends Sw360Portlet {
 
     protected abstract Set<Attachment> getAttachments(String documentId, String documentType, User user);
 
-    protected void dealWithAttachments(ResourceRequest request, ResourceResponse response, String action) throws IOException, PortletException {
+    protected void dealWithAttachments(ResourceRequest request, ResourceResponse response, String action) throws IOException {
         if (PortalConstants.ATTACHMENT_DOWNLOAD.equals(action)) {
             attachmentPortletUtils.serveFile(request, response);
         } else if (PortalConstants.ATTACHMENT_LIST.equals(action)) {
@@ -226,7 +232,7 @@ public abstract class AttachmentAwarePortlet extends Sw360Portlet {
         }
     }
 
-    private void doGetAttachmentForDisplay(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
+    private void doGetAttachmentForDisplay(ResourceRequest request, ResourceResponse response) throws IOException {
         final String attachmentId = request.getParameter(PortalConstants.ATTACHMENT_ID);
         final User user = UserCacheHolder.getUserFromRequest(request);
 
@@ -238,7 +244,7 @@ public abstract class AttachmentAwarePortlet extends Sw360Portlet {
         }
     }
 
-    private void serveAttachmentSet(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
+    private void serveAttachmentSet(ResourceRequest request, ResourceResponse response) throws IOException {
         final String documentType = getDocumentType(request);
         final String documentId = request.getParameter(PortalConstants.DOCUMENT_ID);
         final User user = UserCacheHolder.getUserFromRequest(request);

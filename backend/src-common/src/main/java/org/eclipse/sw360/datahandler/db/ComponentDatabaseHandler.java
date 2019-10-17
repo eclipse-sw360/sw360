@@ -1429,6 +1429,10 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return releaseRepository.searchByExternalIds(externalIds);
     }
 
+    public List<Release> searchReleasesByFileHashes(Set<String> hashes) {
+        return releaseRepository.searchReleasesByFileHashes(hashes);
+    }
+
     /**
      * Returns full documents straight from repository. Don't want this to get abused, that's why it's package-private.
      * Used for bulk-computing ReleaseClearingStateSummaries by ProjectDatabaseHandler.

@@ -490,4 +490,10 @@ public class ComponentHandler implements ComponentService.Iface {
         assertNotNull(externalIds);
         return handler.searchReleasesByExternalIds(externalIds);
     }
+
+    @Override
+    public List<Release> searchReleasesByFileHashes(Set<String> hashes) throws TException {
+        assertNotNull(hashes);
+        return handler.searchReleasesByFileHashes(hashes);
+    }
 }

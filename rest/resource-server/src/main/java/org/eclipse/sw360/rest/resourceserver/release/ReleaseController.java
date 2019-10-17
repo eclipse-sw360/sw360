@@ -12,6 +12,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.release;
 
+import com.google.common.collect.Streams;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.log4j.Logger;
@@ -19,12 +20,12 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.KnownHash;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
-import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
@@ -50,12 +51,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
@@ -84,13 +82,13 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
         List<Release> sw360Releases = new ArrayList<>();
 
         if (sha1 != null && !sha1.isEmpty()) {
-            sw360Releases.add(searchReleaseBySha1(sha1, sw360User));
+            sw360Releases.addAll(searchReleaseBySha1(sha1));
         } else {
             sw360Releases.addAll(releaseService.getReleasesForUser(sw360User));
         }
 
         List<Resource> releaseResources = new ArrayList<>();
-        if (fields.contains("all")) {
+        if (fields != null && fields.contains("all")) {
             for (Release sw360Release : sw360Releases) {
                 Resource<Release> releaseResource = new Resource<>(sw360Release);
                 releaseResources.add(releaseResource);
@@ -107,9 +105,8 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
-    private Release searchReleaseBySha1(String sha1, User sw360User) throws TException {
-        AttachmentInfo sw360AttachmentInfo = attachmentService.getAttachmentBySha1(sha1);
-        return releaseService.getReleaseForUserById(sw360AttachmentInfo.getOwner().getReleaseId(), sw360User);
+    private List<Release> searchReleaseBySha1(String sha1) throws TException {
+        return releaseService.searchByFileHashes(Collections.singleton(sha1));
     }
 
     @RequestMapping(value = RELEASES_URL + "/{id}", method = RequestMethod.GET)
@@ -255,6 +252,53 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
 
         final Release release = releaseService.getReleaseForUserById(releaseId, sw360User);
         release.addToAttachments(attachment);
+        releaseService.updateRelease(release, sw360User);
+
+        final HalResource halRelease = createHalReleaseResource(release, true);
+
+        return new ResponseEntity<>(halRelease, HttpStatus.OK);
+    }
+
+    private Set<KnownHash> convertToKnownHashes(Set<Attachment> attachments) {
+        if (attachments == null) {
+            return null;
+        }
+        return attachments.stream()
+                .map(att ->  {
+                    final KnownHash knownHash = new KnownHash(att.getSha1(), "sha1");
+                    knownHash.setFilename(att.getFilename());
+                    knownHash.setAttachmentType(att.getAttachmentType());
+                    return knownHash;
+                })
+                .collect(Collectors.toSet());
+    }
+
+    private Set<KnownHash> getAllKnownHashes(Release sw360Release) {
+        return Stream.concat(convertToKnownHashes(sw360Release.getAttachments()).stream(),
+                sw360Release.getOtherKnownHashes().stream())
+                .collect(Collectors.toSet());
+    }
+
+    @RequestMapping(value = RELEASES_URL + "/{id}/hashes", method = RequestMethod.GET)
+    public ResponseEntity<Resources<Resource<KnownHash>>> getReleaseKnownHashes(
+            @PathVariable("id") String id) throws TException {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        final Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
+
+        final List<Resource<KnownHash>> allHashes = getAllKnownHashes(sw360Release).stream()
+                .map(kh -> new Resource<>(kh))
+                .collect(Collectors.toList());
+        final Resources<Resource<KnownHash>> resources = new Resources<>(allHashes);
+        return new ResponseEntity<>(resources, HttpStatus.OK);
+    }
+
+    @RequestMapping(value = RELEASES_URL + "/{releaseId}/hashes", method = RequestMethod.POST, consumes = {"multipart/mixed", "multipart/form-data"})
+    public ResponseEntity<HalResource> addKnownHashToRelease(@PathVariable("releaseId") String releaseId,
+                                                             @RequestPart("knownHash") KnownHash knownHash) throws TException {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+
+        final Release release = releaseService.getReleaseForUserById(releaseId, sw360User);
+        release.addToOtherKnownHashes(knownHash);
         releaseService.updateRelease(release, sw360User);
 
         final HalResource halRelease = createHalReleaseResource(release, true);

@@ -26,6 +26,8 @@ typedef sw360.ReleaseRelationship ReleaseRelationship
 typedef sw360.MainlineState MainlineState
 typedef sw360.ProjectReleaseRelationship ProjectReleaseRelationship
 typedef attachments.Attachment Attachment
+typedef attachments.KnownHash KnownHash
+typedef attachments.AttachmentType AttachmentType
 typedef attachments.FilledAttachment FilledAttachment
 typedef users.User User
 typedef users.RequestedAction RequestedAction
@@ -230,6 +232,7 @@ struct Release {
     12: optional Repository repository, // Repository where the release is maintained
     16: optional MainlineState mainlineState, // enum: specific, open, mainline, phaseout
     17: optional ClearingState clearingState, // TODO we probably need to map by clearing team?
+    18: optional set<KnownHash> otherKnownHashes,
 
     // FOSSology Information
     // 20: optional string fossologyId,
@@ -704,4 +707,9 @@ service ComponentService {
      * Gets releases referencing the given release id
      */ 
     list<Release> getReferencingReleases(1: string releaseId);
+
+   /**
+     * get a set of releases based on the external id external ids can have multiple values to one key
+     */
+    list<Release> searchReleasesByFileHashes(1: set<string> hashes);
 }
