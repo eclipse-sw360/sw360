@@ -692,6 +692,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         String releaseId = request.getParameter(RELEASE_ID);
         final User user = UserCacheHolder.getUserFromRequest(request);
         request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_RELEASE);
+        request.setAttribute(IS_USER_AT_LEAST_CLEARING_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user));
 
         if (isNullOrEmpty(id) && isNullOrEmpty(releaseId)) {
             throw new PortletException("Component or Release ID not set!");
@@ -763,6 +764,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         String releaseId = request.getParameter(RELEASE_ID);
         request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_RELEASE);
         final User user = UserCacheHolder.getUserFromRequest(request);
+        request.setAttribute(IS_USER_AT_LEAST_CLEARING_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user));
 
         if (isNullOrEmpty(releaseId)) {
             throw new PortletException("Release ID not set!");

@@ -235,7 +235,7 @@ public class ComponentHandler implements ComponentService.Iface {
         assertIdUnset(release.getId());
         assertUser(user);
 
-        return handler.addRelease(release, user.getEmail());
+        return handler.addRelease(release, user);
     }
 
     ///////////////////////////////

@@ -20,8 +20,10 @@
 <%@ page import="org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.ReleaseRelationship" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.MainlineState" %>
+<%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 
 <jsp:useBean id="releaseList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.components.ReleaseLink>"  scope="request"/>
+<core_rt:set var="mainlineStateEnabledForUserRole" value='<%=PortalConstants.MAINLINE_STATE_ENABLED_FOR_USER%>'/>
 <core_rt:forEach items="${releaseList}" var="releaseLink" varStatus="loop">
     <core_rt:set var="uuid" value="${releaseLink.id}"/>
     <tr id="releaseLinkRow${uuid}" >
@@ -57,6 +59,9 @@
             <div class="form-group">
                 <select class="form-control" id="mainlineState"
                         name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.MAINLINE_STATE%>"
+                        <core_rt:if test="${not isUserAtLeastClearingAdmin and not mainlineStateEnabledForUserRole}" >
+                            disabled="disabled"
+                        </core_rt:if>
                 >
                     <sw360:DisplayEnumOptions type="<%=MainlineState.class%>" selected="${releaseLink.mainlineState}"/>
                 </select>

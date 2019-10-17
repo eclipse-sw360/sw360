@@ -136,6 +136,9 @@
                 <label for="mainline_state">Release Mainline State</label>
                 <select class="form-control" id="mainline_state"
                         name="<portlet:namespace/><%=Release._Fields.MAINLINE_STATE%>"
+                    <core_rt:if test="${not isUserAtLeastClearingAdmin and not mainlineStateEnabledForUserRole}" >
+                        disabled="disabled"
+                    </core_rt:if>
                 >
                     <sw360:DisplayEnumOptions type="<%=MainlineState.class%>" selected="${release.mainlineState}"/>
                 </select>

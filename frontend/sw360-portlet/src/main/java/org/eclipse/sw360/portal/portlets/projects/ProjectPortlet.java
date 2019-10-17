@@ -607,6 +607,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     @SuppressWarnings("Duplicates")
     private void serveNewTableRowLinkedRelease(ResourceRequest request, ResourceResponse response, String[] linkedIds) throws IOException, PortletException {
         final User user = UserCacheHolder.getUserFromRequest(request);
+        request.setAttribute(IS_USER_AT_LEAST_CLEARING_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user));
 
         List<ReleaseLink> linkedReleases = new ArrayList<>();
         try {
@@ -1159,6 +1160,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         Project project;
         Set<Project> usingProjects;
         int allUsingProjectCount = 0;
+        request.setAttribute(IS_USER_AT_LEAST_CLEARING_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user));
 
         if (id != null) {
 
@@ -1217,6 +1219,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     private void prepareProjectDuplicate(RenderRequest request) {
         User user = UserCacheHolder.getUserFromRequest(request);
         String id = request.getParameter(PROJECT_ID);
+        request.setAttribute(IS_USER_AT_LEAST_CLEARING_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user));
         setDefaultRequestAttributes(request);
 
         try {
