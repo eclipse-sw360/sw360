@@ -30,7 +30,7 @@
 
 <core_rt:if test="${empty attributeNotFoundException}">
 
-    <core_rt:if test="${empty attachments}">
+    <core_rt:if test="${empty attachments && empty otherKnownHashes}">
         <div class="alert alert-info" role="alert">
             No attachments yet.
         </div>
@@ -42,7 +42,7 @@
         </script>
     </core_rt:if>
 
-    <core_rt:if test="${not empty attachments}">
+    <core_rt:if test="${not (empty attachments && empty otherKnownHashes)}">
         <table id="attachmentsDetail" class="table table-bordered" title="Attachment Information">
             <colgroup>
                 <col />  <!-- set by class -->

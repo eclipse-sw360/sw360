@@ -292,9 +292,9 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
-    @RequestMapping(value = RELEASES_URL + "/{releaseId}/hashes", method = RequestMethod.POST, consumes = {"multipart/mixed", "multipart/form-data"})
+    @RequestMapping(value = RELEASES_URL + "/{releaseId}/hashes", method = RequestMethod.POST)
     public ResponseEntity<HalResource> addKnownHashToRelease(@PathVariable("releaseId") String releaseId,
-                                                             @RequestPart("knownHash") KnownHash knownHash) throws TException {
+                                                             @RequestBody KnownHash knownHash) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
         final Release release = releaseService.getReleaseForUserById(releaseId, sw360User);
