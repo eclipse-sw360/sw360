@@ -25,13 +25,6 @@ import java.util.List;
 import java.util.Set;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
-
-/**
- * Implementation of the Thrift service
- *
- * @author Cedric.Bodet@tngtech.com
- * @author Johannes.Najjar@tngtech.com
- */
 public class VendorHandler implements VendorService.Iface {
 
     private final VendorDatabaseHandler vendorDatabaseHandler;
@@ -105,5 +98,14 @@ public class VendorHandler implements VendorService.Iface {
         assertNotNull(vendor);
 
         return vendorDatabaseHandler.updateVendor(vendor, user);
+    }
+
+    @Override
+    public RequestStatus mergeVendors(String mergeTargetId, String mergeSourceId, Vendor mergeSelection, User user) throws TException {
+        assertNotNull(mergeTargetId);
+        assertNotNull(mergeSourceId);
+        assertNotNull(mergeSelection);
+        
+        return vendorDatabaseHandler.mergeVendors(mergeTargetId, mergeSourceId, mergeSelection, user);
     }
 }

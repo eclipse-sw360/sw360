@@ -527,6 +527,11 @@ service ComponentService {
     list<Release> getReleasesFromVendorIds(1: set<string> ids);
 
     /**
+      * get full release documents with the specifed vendor id
+      */
+    set<Release> getReleasesByVendorId(1: string vendorId);
+
+    /**
      * update release in database if user has permissions
      * otherwise create moderation request
      **/
@@ -551,6 +556,11 @@ service ComponentService {
      * if any of the releases has an active moderation request, it's a noop and RequestStatus.IN_USE is returned
      **/
     RequestStatus mergeReleases(1: string releaseTargetId, 2: string releaseSourceId, 3: Release releaseSelection, 4: User user);
+
+    /**
+     * Update the set of releases. Do only use for updating simple fields.
+     */ 
+    RequestSummary updateReleasesDirectly(1: set<Release> releases, 2: User user);
 
     /**
      * delete release from database if user has permissions
@@ -578,6 +588,16 @@ service ComponentService {
      * get components belonging to linked releases of the releases specified by releaseId
      **/
     set <Component> getUsingComponentsForComponent(1: set <string> releaseId );
+
+    /**
+     * get components using the given vendor id
+     */
+    set <Component> getComponentsByDefaultVendorId(1: string vendorId);
+
+    /**
+     * Recomputes the fields of a component that are aggregated by its releases.
+     */
+    Component recomputeReleaseDependentFields(1: string componentId);
 
     /**
      * check if release is used by other releases, components or projects

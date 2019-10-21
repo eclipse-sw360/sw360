@@ -847,13 +847,14 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
     private void generateComponentMergeWizardStep0Response(ActionRequest request, JsonGenerator jsonGenerator) throws IOException, TException {
         User sessionUser = UserCacheHolder.getUserFromRequest(request);
+        String targetId = request.getParameter(COMPONENT_TARGET_ID);
         ComponentService.Iface cClient = thriftClients.makeComponentClient();
         List<Component> componentSummary = cClient.getComponentSummary(sessionUser);
 
         jsonGenerator.writeStartObject();
 
         jsonGenerator.writeArrayFieldStart("components");
-        componentSummary.stream().forEach(component -> {
+        componentSummary.stream().filter( component -> !component.getId().equals(targetId)).forEach(component -> {
             try {
                 jsonGenerator.writeStartObject();
                 jsonGenerator.writeStringField("id", component.getId());

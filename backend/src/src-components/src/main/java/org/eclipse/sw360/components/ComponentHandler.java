@@ -216,6 +216,11 @@ public class ComponentHandler implements ComponentService.Iface {
         return handler.getReleasesFromVendorIds(ids);
     }
 
+    @Override
+    public Set<Release> getReleasesByVendorId(String vendorId) throws TException {
+        return handler.getReleasesByVendorId(vendorId);
+    }
+    
     ////////////////////////////
     // ADD INDIVIDUAL OBJECTS //
     ////////////////////////////
@@ -299,6 +304,12 @@ public class ComponentHandler implements ComponentService.Iface {
         return handler.updateReleases(releases, user);
     }
 
+    @Override
+    public RequestSummary updateReleasesDirectly(Set<Release> releases, User user) throws TException {
+        assertUser(user);
+        return handler.updateReleasesDirectly(releases, user);
+    }
+
     public RequestStatus updateReleaseFromModerationRequest(Release releaseAdditions, Release releaseDeletions, User user) {
         return handler.updateReleaseFromAdditionsAndDeletions(releaseAdditions, releaseDeletions, user);
     }
@@ -354,6 +365,11 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     @Override
+    public Set<Component> getComponentsByDefaultVendorId(String defaultVendorId) throws TException {
+        return handler.getComponentsByDefaultVendorId(defaultVendorId);
+    }
+
+    @Override
     public boolean releaseIsUsed(String releaseId) throws TException {
         return handler.checkIfInUse(releaseId);
     }
@@ -361,6 +377,11 @@ public class ComponentHandler implements ComponentService.Iface {
     @Override
     public boolean componentIsUsed(String componentId) throws TException {
         return handler.checkIfInUseComponent(componentId);
+    }
+
+    @Override
+    public Component recomputeReleaseDependentFields(String componentId) throws TException {
+        return handler.updateReleaseDependentFieldsForComponentId(componentId);
     }
 
     //////////////////////////////////
