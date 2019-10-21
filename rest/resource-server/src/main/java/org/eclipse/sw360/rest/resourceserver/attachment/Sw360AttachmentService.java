@@ -128,6 +128,11 @@ public class Sw360AttachmentService {
             attachment.setCheckStatus(checkStatus);
         }
 
+        String createdComment = newAttachment.getCreatedComment();
+        if (createdComment != null) {
+            attachment.setCreatedComment(createdComment);
+        }
+
         return attachment;
     }
 
