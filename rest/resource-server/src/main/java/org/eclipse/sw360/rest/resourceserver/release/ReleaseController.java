@@ -90,10 +90,17 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
         }
 
         List<Resource> releaseResources = new ArrayList<>();
-        for (Release sw360Release : sw360Releases) {
-            Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(sw360Release, fields);
-            Resource<Release> releaseResource = new Resource<>(embeddedRelease);
-            releaseResources.add(releaseResource);
+        if (fields.contains("all")) {
+            for (Release sw360Release : sw360Releases) {
+                Resource<Release> releaseResource = new Resource<>(sw360Release);
+                releaseResources.add(releaseResource);
+            }
+        } else {
+            for (Release sw360Release : sw360Releases) {
+                Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(sw360Release, fields);
+                Resource<Release> releaseResource = new Resource<>(embeddedRelease);
+                releaseResources.add(releaseResource);
+            }
         }
         Resources<Resource> resources = new Resources<>(releaseResources);
 
