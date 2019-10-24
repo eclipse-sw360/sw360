@@ -18,6 +18,8 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
@@ -74,6 +76,8 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     private Attachment attachment;
 
+    private Project project;
+
     @Before
     public void before() throws TException, IOException {
         Set<Attachment> attachmentList = new HashSet<>();
@@ -90,6 +94,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         externalIds.put("component-id-key", Collections.singleton(""));
 
         List<Component> componentList = new ArrayList<>();
+        Set<Component> usedByComponent = new HashSet<>();
         List<Component> componentListByName = new ArrayList<>();
         angularComponent = new Component();
         angularComponent.setId("17653524");
@@ -134,6 +139,15 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         springComponent.setExternalIds(Collections.singletonMap("component-id-key", "c77321"));
         springComponent.setMailinglist("test@liferay.com");
         componentList.add(springComponent);
+        usedByComponent.add(springComponent);
+
+        Set<Project> projectList = new HashSet<>();
+        project = new Project();
+        project.setId("376576");
+        project.setName("Emerald Web");
+        project.setProjectType(ProjectType.PRODUCT);
+        project.setVersion("1.0.2");
+        projectList.add(project);
 
         when(this.componentServiceMock.createComponent(anyObject(), anyObject())).then(invocation ->
                 new Component("Spring Framework")
@@ -145,6 +159,8 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
         given(this.componentServiceMock.getComponentsForUser(anyObject())).willReturn(componentList);
         given(this.componentServiceMock.getComponentForUserById(eq("17653524"), anyObject())).willReturn(angularComponent);
+        given(this.componentServiceMock.getProjectsByComponentId(eq("17653524"), anyObject())).willReturn(projectList);
+        given(this.componentServiceMock.getUsingComponentsForComponent(eq("17653524"), anyObject())).willReturn(usedByComponent);
         given(this.componentServiceMock.searchComponentByName(eq(angularComponent.getName()))).willReturn(componentListByName);
         given(this.componentServiceMock.deleteComponent(eq(angularComponent.getId()), anyObject())).willReturn(RequestStatus.SUCCESS);
         given(this.componentServiceMock.searchByExternalIds(eq(externalIds), anyObject())).willReturn((new HashSet<>(componentList)));
@@ -227,6 +243,27 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("page.totalElements").description("Total number of all existing components"),
                                 fieldWithPath("page.totalPages").description("Total number of pages"),
                                 fieldWithPath("page.number").description("Number of the current page")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_usedbyresource_for_components() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/components/usedBy/17653524")
+                .header("Authorization", "Bearer " + accessToken)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        responseFields(
+                                fieldWithPath("_embedded.sw360:components[]name").description("The name of the component"),
+                                fieldWithPath("_embedded.sw360:components[]componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
+                                fieldWithPath("_embedded.sw360:components").description("An array of <<resources-components, Components resources>>"),
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("_embedded.sw360:projects[]name").description("The name of the project"),
+                                fieldWithPath("_embedded.sw360:projects[]version").description("The project version"),
+                                fieldWithPath("_embedded.sw360:projects[]projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
+                                fieldWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
 

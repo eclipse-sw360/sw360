@@ -21,6 +21,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
@@ -122,6 +123,29 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
             resources = restControllerHelper.generatePagesResource(paginationResult, componentResources);
         }
         return new ResponseEntity<>(resources, HttpStatus.OK);
+    }
+
+    @RequestMapping(value = COMPONENTS_URL + "/usedBy" + "/{id}", method = RequestMethod.GET)
+    public ResponseEntity<Resources<Resource>> getUsedByResourceDetails(@PathVariable("id") String id)
+            throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication(); // Project
+        Set<Project> sw360Projects = componentService.getProjectsByComponentId(id, user);
+        Set<Component> sw360Components = componentService.getUsingComponentsForComponent(id, user);
+
+        List<Resource<Object>> resources = new ArrayList<>();
+        sw360Projects.stream().forEach(p -> {
+            Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
+            resources.add(new Resource<>(embeddedProject));
+        });
+
+        sw360Components.stream()
+                .forEach(c -> {
+                    Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c);
+                    resources.add(new Resource<>(embeddedComponent));
+                });
+
+        Resources<Resource> finalResources = new Resources(resources);
+        return new ResponseEntity(finalResources, HttpStatus.OK);
     }
 
     @RequestMapping(value = COMPONENTS_URL + "/{id}", method = RequestMethod.GET)

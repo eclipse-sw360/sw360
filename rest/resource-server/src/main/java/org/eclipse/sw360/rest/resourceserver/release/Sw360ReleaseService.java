@@ -21,14 +21,18 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -48,6 +52,9 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
     @NonNull
     private RestControllerHelper rch;
+
+    @NonNull
+    private final Sw360ProjectService projectService;
 
     public List<Release> getReleasesForUser(User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
@@ -94,6 +101,17 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     public RequestStatus deleteRelease(String releaseId, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         return sw360ComponentClient.deleteRelease(releaseId, sw360User);
+    }
+
+    public Set<Project> getProjectsByRelease(String releaseId, User sw360User) throws TException {
+        Set<Project> usedByProjects = projectService.getProjectsByRelease(releaseId, sw360User);
+        return usedByProjects;
+    }
+
+    public Set<Component> getUsingComponentsForRelease(String releaseId, User sw360User) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        Set<Component> usingComponentsForComponent = sw360ComponentClient.getUsingComponentsForRelease(releaseId);
+        return usingComponentsForComponent;
     }
 
     private ComponentService.Iface getThriftComponentClient() throws TTransportException {
