@@ -182,13 +182,7 @@ public class ModerationDatabaseHandler {
         // Define moderators
         Set<String> moderators = new HashSet<>();
         CommonUtils.add(moderators, dbcomponent.getCreatedBy());
-        try {
-            String department =  getDepartmentByUserEmail(component.getCreatedBy());
-            CommonUtils.addAll(moderators, getUsersAtLeast(UserGroup.CLEARING_ADMIN, department));
-        } catch (TException e){
-            log.error("Could not get user from database. Clearing admins not added as moderators, since department is missing.");
-        }
-        CommonUtils.addAll(moderators, getUsersAtLeast(UserGroup.ADMIN));
+        CommonUtils.addAll(moderators, getUsersAtLeast(UserGroup.CLEARING_ADMIN));
 
         ModerationRequest request = createStubRequest(user, isDeleteRequest, component.getId(), moderators);
 
@@ -247,13 +241,7 @@ public class ModerationDatabaseHandler {
         Set<String> moderators = new HashSet<>();
         CommonUtils.add(moderators, release.getCreatedBy());
         CommonUtils.addAll(moderators, release.getModerators());
-        try{
-            String department =  getDepartmentByUserEmail(release.getCreatedBy());
-            CommonUtils.addAll(moderators, getUsersAtLeast(UserGroup.CLEARING_ADMIN, department));
-        } catch (TException e){
-            log.error("Could not get users from database. Clearing admins not added as moderators, since department is missing.");
-        }
-        CommonUtils.addAll(moderators, getUsersAtLeast(UserGroup.ADMIN));
+        CommonUtils.addAll(moderators, getUsersAtLeast(UserGroup.CLEARING_ADMIN));
         return moderators;
     }
 
@@ -326,8 +314,7 @@ public class ModerationDatabaseHandler {
             CommonUtils.add(moderators, project.getProjectResponsible());
             CommonUtils.addAll(moderators, project.getModerators());
         }
-        CommonUtils.addAll(moderators, getUsersAtLeast(UserGroup.CLEARING_ADMIN, project.getBusinessUnit(), false));
-        CommonUtils.addAll(moderators, getUsersAtLeast(UserGroup.ADMIN));
+        CommonUtils.addAll(moderators, getUsersAtLeast(UserGroup.CLEARING_ADMIN));
         return moderators;
     }
 
