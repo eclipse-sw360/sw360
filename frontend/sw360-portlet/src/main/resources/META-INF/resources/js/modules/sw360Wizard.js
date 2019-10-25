@@ -178,7 +178,12 @@ define('modules/sw360Wizard', [ 'jquery', 'modules/button' ], function($, button
                     button.finish($('.wizardNext', $wizardRoot));
                 }).done(function(data, textStatus, xhr) {
                     try {
-                        var dataJson = JSON.parse(data);
+                        var dataJson = data;
+                        if (typeof data === 'string')
+                        {
+                            dataJson = JSON.parse(data);
+                        }
+
                         if(dataJson.error) {
                             stepFailed(activeIndex, activeElement, '', dataJson.error);
                         } else if (activeElement[0] === lastStep[0]) {
