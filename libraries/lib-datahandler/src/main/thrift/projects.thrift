@@ -336,4 +336,9 @@ service ProjectService {
      * external ids can have multiple values to one key
      */
     set<Project> searchByExternalIds(1: map<string, set<string>> externalIds, 2: User user);
+
+    /**
+     * get the cyclic hierarchy of linkedProjects
+     */
+    string getCyclicLinkedProjectPath(1: Project project, 2: User user);
 }

@@ -40,6 +40,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -79,6 +81,10 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public Project createProject(Project project, User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        String cyclicLinkedProjectPath = sw360ProjectClient.getCyclicLinkedProjectPath(project, sw360User);
+        if (!isNullEmptyOrWhitespace(cyclicLinkedProjectPath)) {
+            throw new RuntimeException("Cyclic linked Project : " + cyclicLinkedProjectPath);
+        }
         AddDocumentRequestSummary documentRequestSummary = sw360ProjectClient.addProject(project, sw360User);
         if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.SUCCESS) {
             project.setId(documentRequestSummary.getId());
@@ -92,6 +98,10 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public RequestStatus updateProject(Project project, User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        String cyclicLinkedProjectPath = sw360ProjectClient.getCyclicLinkedProjectPath(project, sw360User);
+        if (!isNullEmptyOrWhitespace(cyclicLinkedProjectPath)) {
+            throw new RuntimeException("Cyclic linked Project : " + cyclicLinkedProjectPath);
+        }
         RequestStatus requestStatus = sw360ProjectClient.updateProject(project, sw360User);
         if (requestStatus == RequestStatus.CLOSED_UPDATE_NOT_ALLOWED) {
             throw new RuntimeException("User cannot modify a closed project");
