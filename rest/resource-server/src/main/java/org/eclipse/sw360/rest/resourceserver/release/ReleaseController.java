@@ -16,6 +16,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -52,8 +53,11 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
 @BasePathAwareController
@@ -107,6 +111,14 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
         HalResource halRelease = createHalReleaseResource(sw360Release, true);
+        Map<String, ReleaseRelationship> releaseIdToRelationship = sw360Release.getReleaseIdToRelationship();
+        if (releaseIdToRelationship != null) {
+            List<Release> listOfLinkedRelease = releaseIdToRelationship.keySet().stream()
+                    .map(linkedReleaseId -> wrapTException(
+                            () -> releaseService.getReleaseForUserById(linkedReleaseId, sw360User)))
+                    .collect(Collectors.toList());
+            restControllerHelper.addEmbeddedReleases(halRelease, listOfLinkedRelease);
+        }
         return new ResponseEntity<>(halRelease, HttpStatus.OK);
     }
 

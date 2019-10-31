@@ -26,10 +26,12 @@ import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -37,10 +39,14 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
+import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
+import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.hateoas.Link;
 import org.springframework.stereotype.Service;
 
 import static com.google.common.base.Strings.nullToEmpty;
@@ -50,6 +56,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -161,6 +170,23 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         } else {
             final Project project = getProjectForUserById(projectId, sw360User);
             return project.getReleaseIdToUsage().keySet();
+        }
+    }
+
+    public void addEmbeddedlinkedRelease(Release sw360Release, User sw360User, HalResource<Release> releaseResource,
+            Sw360ReleaseService releaseService) throws TException {
+        Map<String, ReleaseRelationship> releaseIdToRelationship = sw360Release.getReleaseIdToRelationship();
+        if (releaseIdToRelationship != null) {
+            releaseIdToRelationship.keySet().stream().forEach(linkedReleaseId -> wrapTException(() -> {
+                Release linkedRelease = releaseService.getReleaseForUserById(linkedReleaseId, sw360User);
+                Release embeddedLinkedRelease = rch.convertToEmbeddedRelease(linkedRelease);
+                HalResource<Release> halLinkedRelease = new HalResource<>(embeddedLinkedRelease);
+                Link releaseLink = linkTo(ReleaseController.class)
+                        .slash("api/releases/" + embeddedLinkedRelease.getId()).withSelfRel();
+                halLinkedRelease.add(releaseLink);
+                addEmbeddedlinkedRelease(linkedRelease, sw360User, halLinkedRelease, releaseService);
+                releaseResource.addEmbeddedResource("sw360:releases", halLinkedRelease);
+            }));
         }
     }
 
