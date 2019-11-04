@@ -16,6 +16,7 @@
 <%@ page import="org.eclipse.sw360.portal.portlets.projects.ProjectPortlet" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.users.RequestedAction" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus" %>
+<%@ page import="org.eclipse.sw360.portal.common.page.PortletReleasePage" %>
 
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
@@ -151,8 +152,8 @@
                                         <tbody>
                                             <core_rt:forEach items="${component.releases}" var="myRelease">
                                                 <tr>
-                                                    <td><a href="${myRelease.id}">${myRelease.name}</a></td>
-                                                    <td>${myRelease.version}</td>
+                                                    <td>${myRelease.name}</td>
+                                                    <td><sw360:DisplayReleaseLink showName="false" page="<%=PortletReleasePage.EDIT%>" release="${myRelease}">${myRelease.version}</sw360:DisplayReleaseLink></td>
                                                 </tr>
                                             </core_rt:forEach>
                                         </tbody>
