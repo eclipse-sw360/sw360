@@ -172,7 +172,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         project.createdBy = user.getEmail();
         project.createdOn = getCreatedOn();
         project.businessUnit = getBUFromOrganisation(user.getDepartment());
-        setReleaseRelatoins(project, user, null);
+        setReleaseRelations(project, user, null);
 
         // Add project to database and return ID
         repository.add(project);
@@ -208,7 +208,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             copyImmutableFields(project,actual);
             project.setAttachments( getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), project.getAttachments()) );
             deleteAttachmentUsagesOfUnlinkedReleases(project, actual);
-            setReleaseRelatoins(project, user, actual);
+            setReleaseRelations(project, user, actual);
             repository.update(project);
 
             //clean up attachments in database
@@ -220,14 +220,14 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
     }
 
-    private void setReleaseRelatoins(Project updated, User user, Project current) {
+    private void setReleaseRelations(Project updated, User user, Project current) {
         boolean isMainlineStateDisabled = !(BackendUtils.MAINLINE_STATE_ENABLED_FOR_USER
                 || PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user))
                 && updated.getReleaseIdToUsageSize() > 0;
 
         Map<String, ProjectReleaseRelationship> updatedReleaseIdToUsage = updated.getReleaseIdToUsage();
 
-        if ((null == current || current.getReleaseIdToUsage().isEmpty()) && isMainlineStateDisabled) {
+        if ((null == current || current.getReleaseIdToUsageSize() == 0) && isMainlineStateDisabled) {
             updatedReleaseIdToUsage.forEach((k, v) -> v.setMainlineState(MainlineState.OPEN));
         } else if (isMainlineStateDisabled) {
             Map<String, ProjectReleaseRelationship> currentReleaseIdToUsage = current.getReleaseIdToUsage();
