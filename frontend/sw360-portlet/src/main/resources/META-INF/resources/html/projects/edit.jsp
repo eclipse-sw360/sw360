@@ -28,6 +28,7 @@
 <%@ include file="/html/utils/includes/errorKeyToMessage.jspf"%>
 
 
+<liferay-ui:error key="custom_error" message="${cyclicError}" embed="false"/>
 <portlet:defineObjects />
 <liferay-theme:defineObjects />
 

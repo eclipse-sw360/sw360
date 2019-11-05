@@ -17,6 +17,7 @@ import com.google.common.collect.*;
 import com.liferay.portal.kernel.json.*;
 import com.liferay.portal.kernel.model.Organization;
 import com.liferay.portal.kernel.portlet.PortletResponseUtil;
+import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.util.PortalUtil;
 
@@ -107,6 +108,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     private static final String LICENSE_NAME_WITH_TEXT_TEXT = "text";
     private static final String LICENSE_NAME_WITH_TEXT_ERROR = "error";
     private static final String LICENSE_NAME_WITH_TEXT_FILE = "file";
+    private static final String CYCLIC_LINKED_PROJECT = "Project cannot be created/updated due to cyclic linked project present. Cyclic Hierarchy : ";
 
     // Project view datatables, index of columns
     private static final int PROJECT_NO_SORT = -1;
@@ -1273,6 +1275,14 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 ProjectPortletUtils.updateProjectFromRequest(request, project);
                 String ModerationRequestCommentMsg = request.getParameter(MODERATION_REQUEST_COMMENT);
                 user.setCommentMadeDuringModerationRequest(ModerationRequestCommentMsg);
+
+                String cyclicLinkedProjectPath = client.getCyclicLinkedProjectPath(project, user);
+                if (!isNullEmptyOrWhitespace(cyclicLinkedProjectPath)) {
+                    addErrorMessages(cyclicLinkedProjectPath, request, response);
+                    response.setRenderParameter(PROJECT_ID, id);
+                    return;
+                }
+
                 requestStatus = client.updateProject(project, user);
                 setSessionMessage(request, requestStatus, "Project", "update", printName(project));
                 if (RequestStatus.DUPLICATE.equals(requestStatus) || RequestStatus.DUPLICATE_ATTACHMENT.equals(requestStatus)) {
@@ -1293,6 +1303,14 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 // Add project
                 Project project = new Project();
                 ProjectPortletUtils.updateProjectFromRequest(request, project);
+
+                String cyclicLinkedProjectPath = client.getCyclicLinkedProjectPath(project, user);
+                if (!isNullEmptyOrWhitespace(cyclicLinkedProjectPath)) {
+                    addErrorMessages(cyclicLinkedProjectPath, request, response);
+                    prepareRequestForEditAfterDuplicateError(request, project, user);
+                    return;
+                }
+
                 AddDocumentRequestSummary summary = client.addProject(project, user);
                 String  newProjectId= summary.getId();
                 String sourceProjectId = request.getParameter(SOURCE_PROJECT_ID);
@@ -1542,5 +1560,15 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         Comparator<Project> comparator = Comparator.comparing(
                 p -> nullToEmptyString(p.getState()));
         return isAscending ? comparator : comparator.reversed();
+    }
+
+    private void addErrorMessages(String cyclicHierarchy, ActionRequest request, ActionResponse response) {
+        SessionErrors.add(request, "custom_error");
+        request.setAttribute("cyclicError", CYCLIC_LINKED_PROJECT + cyclicHierarchy);
+        SessionMessages.add(request,
+                PortalUtil.getPortletId(request) + SessionMessages.KEY_SUFFIX_HIDE_DEFAULT_ERROR_MESSAGE);
+        SessionMessages.add(request,
+                PortalUtil.getPortletId(request) + SessionMessages.KEY_SUFFIX_HIDE_DEFAULT_SUCCESS_MESSAGE);
+        response.setRenderParameter(PAGENAME, PAGENAME_EDIT);
     }
 }
