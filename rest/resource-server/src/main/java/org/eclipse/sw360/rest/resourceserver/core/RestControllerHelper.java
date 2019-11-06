@@ -203,43 +203,35 @@ public class RestControllerHelper<T> {
     }
 
     public void addEmbeddedModerators(HalResource halResource, Set<String> moderators) {
-        User sw360User;
+
         for (String moderatorEmail : moderators) {
-            try {
-                sw360User = userService.getUserByEmail(moderatorEmail);
-            } catch (RuntimeException e) {
-                sw360User = new User();
-                sw360User.setId(moderatorEmail).setEmail(moderatorEmail);
-                LOGGER.debug("Could not get user object from backend with email: " + moderatorEmail);
-            }
+            User sw360User = getUserByEmail(moderatorEmail);
             addEmbeddedUser(halResource, sw360User, "sw360:moderators");
         }
     }
 
-    public void addEmbeddedContributors(HalResource halResource, Set<String> contributors) {
+    public User getUserByEmail(String emailId) {
         User sw360User;
+        try {
+            sw360User = userService.getUserByEmail(emailId);
+        } catch (RuntimeException e) {
+            sw360User = new User();
+            sw360User.setId(emailId).setEmail(emailId);
+            LOGGER.debug("Could not get user object from backend with email: " + emailId);
+        }
+        return sw360User;
+    }
+
+    public void addEmbeddedContributors(HalResource halResource, Set<String> contributors) {
         for (String contributorEmail : contributors) {
-            try {
-                sw360User = userService.getUserByEmail(contributorEmail);
-            } catch (RuntimeException e) {
-                sw360User = new User();
-                sw360User.setId(contributorEmail).setEmail(contributorEmail);
-                LOGGER.debug("Could not get user object from backend with email: " + contributorEmail);
-            }
+            User sw360User = getUserByEmail(contributorEmail);
             addEmbeddedUser(halResource, sw360User, "sw360:contributors");
         }
     }
 
     public void addEmbeddedLeadArchitect(HalResource halResource, String leadArchitect) {
-        User sw360User;
-        try {
-              sw360User = userService.getUserByEmail(leadArchitect);
-            } catch (RuntimeException e) {
-                sw360User = new User();
-                sw360User.setId(leadArchitect).setEmail(leadArchitect);
-                LOGGER.debug("Could not get user object from backend with email: " + leadArchitect);
-            }
-            addEmbeddedUser(halResource, sw360User, "leadArchitect");
+        User sw360User = getUserByEmail(leadArchitect);
+        addEmbeddedUser(halResource, sw360User, "leadArchitect");
     }
 
     public void addEmbeddedReleases(

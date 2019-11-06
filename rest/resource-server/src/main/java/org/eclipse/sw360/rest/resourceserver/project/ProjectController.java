@@ -494,7 +494,8 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
 
     private HalResource<Project> createHalProject(Project sw360Project, User sw360User) throws TException {
         HalResource<Project> halProject = new HalResource<>(sw360Project);
-        restControllerHelper.addEmbeddedUser(halProject, userService.getUserByEmail(sw360Project.getCreatedBy()), "createdBy");
+        User projectCreator = restControllerHelper.getUserByEmail(sw360Project.getCreatedBy());
+        restControllerHelper.addEmbeddedUser(halProject, projectCreator, "createdBy");
 
         Map<String, ProjectReleaseRelationship> releaseIdToUsage = sw360Project.getReleaseIdToUsage();
         if (releaseIdToUsage != null) {
