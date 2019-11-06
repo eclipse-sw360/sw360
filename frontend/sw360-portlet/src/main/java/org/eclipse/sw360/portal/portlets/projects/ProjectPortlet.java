@@ -285,7 +285,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         String outputGenerator = request.getParameter(PortalConstants.LICENSE_INFO_SELECTED_OUTPUT_FORMAT);
         String extIdsFromRequest = request.getParameter(PortalConstants.EXTERNAL_ID_SELECTED_KEYS);
 
-        String externalIds = Optional.of(extIdsFromRequest).orElse(StringUtils.EMPTY);
+        String externalIds = Optional.ofNullable(extIdsFromRequest).orElse(StringUtils.EMPTY);
 
         Set<String> selectedAttachmentIdsWithPath = Sets
                 .newHashSet(request.getParameterValues(PortalConstants.LICENSE_INFO_RELEASE_TO_ATTACHMENT));
@@ -944,7 +944,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 request.setAttribute(DOCUMENT_ID, id);
 
                 Map<String,String> extIdMap = project.getExternalIds();
-                request.setAttribute("externalIds", extIdMap.keySet());
+                if (extIdMap != null) {
+                    request.setAttribute("externalIds", extIdMap.keySet());
+                }
 
                 LicenseInfoService.Iface licenseInfoClient = thriftClients.makeLicenseInfoClient();
                 List<OutputFormatInfo> outputFormats = licenseInfoClient.getPossibleOutputFormats();
