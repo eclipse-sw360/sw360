@@ -16,16 +16,24 @@ package org.eclipse.sw360.rest.resourceserver.project;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
@@ -35,9 +43,18 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
+import static com.google.common.base.Strings.nullToEmpty;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
@@ -46,6 +63,9 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhit
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360ProjectService implements AwareOfRestServices<Project> {
+
+    private static final Logger log = Logger.getLogger(Sw360ProjectService.class);
+
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;
 
@@ -160,4 +180,35 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         TProtocol protocol = new TCompactProtocol(thriftClient);
         return new ProjectService.Client(protocol);
     }
+
+    public Function<ProjectLink, ProjectLink> filterAndSortAttachments(Collection<AttachmentType> attachmentTypes) {
+        Predicate<Attachment> filter = att -> attachmentTypes.contains(att.getAttachmentType());
+        return createProjectLinkMapper(rl -> rl.setAttachments(nullToEmptyList(rl.getAttachments())
+                .stream()
+                .filter(filter)
+                .sorted(Comparator
+                        .comparing((Attachment a) -> nullToEmpty(a.getCreatedTeam()))
+                        .thenComparing(Comparator.comparing((Attachment a) -> nullToEmpty(a.getCreatedOn())).reversed()))
+                .collect(Collectors.toList())));
+    }
+
+    public Function<ProjectLink, ProjectLink> createProjectLinkMapper(Function<ReleaseLink, ReleaseLink> releaseLinkMapper){
+        return (projectLink) -> {
+            List<ReleaseLink> mappedReleaseLinks = nullToEmptyList(projectLink
+                    .getLinkedReleases())
+                    .stream()
+                    .map(releaseLinkMapper)
+                    .collect(Collectors.toList());
+            projectLink.setLinkedReleases(mappedReleaseLinks);
+            return projectLink;
+        };
+    }
+
+    protected List<ProjectLink> createLinkedProjects(Project project,
+            Function<ProjectLink, ProjectLink> projectLinkMapper, boolean deep, User user) {
+        final Collection<ProjectLink> linkedProjects = SW360Utils
+                .flattenProjectLinkTree(SW360Utils.getLinkedProjects(project, deep, new ThriftClients(), log, user));
+        return linkedProjects.stream().map(projectLinkMapper).collect(Collectors.toList());
+    }
+
 }

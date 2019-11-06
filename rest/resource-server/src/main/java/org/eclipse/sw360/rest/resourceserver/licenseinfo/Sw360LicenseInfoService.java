@@ -11,6 +11,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.licenseinfo;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -19,7 +20,9 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
@@ -51,6 +54,15 @@ public class Sw360LicenseInfoService {
         try {
             LicenseInfoService.Iface sw360LicenseInfoClient = getThriftLicenseInfoClient();
             return sw360LicenseInfoClient.getLicenseInfoFile(project, sw360User, generatorClassNameWithVariant, selectedReleaseAndAttachmentIds, excludedLicenses, externalIds);
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public List<LicenseInfoParsingResult> getLicenseInfoForAttachment(Release release, User sw360User, String attachmentContentId) {
+        try {
+            LicenseInfoService.Iface sw360LicenseInfoClient = getThriftLicenseInfoClient();
+            return sw360LicenseInfoClient.getLicenseInfoForAttachment(release, attachmentContentId, sw360User);
         } catch (TException e) {
             throw new RuntimeException(e);
         }
