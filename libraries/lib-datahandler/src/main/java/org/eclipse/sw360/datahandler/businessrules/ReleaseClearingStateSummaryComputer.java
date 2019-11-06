@@ -10,6 +10,7 @@
  */
 package org.eclipse.sw360.datahandler.businessrules;
 
+import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary;
@@ -36,29 +37,32 @@ public class ReleaseClearingStateSummaryComputer {
         }
 
         for (Release release : releases) {
-            switch (release.getClearingState()) {
-            case NEW_CLEARING:
+            if (release.getClearingState() == null) {
                 summary.newRelease++;
-                break;
-            case SENT_TO_CLEARING_TOOL:
-                summary.sentToClearingTool++;
-                break;
-            case UNDER_CLEARING:
-                summary.underClearing++;
-                break;
-            case REPORT_AVAILABLE:
-                summary.reportAvailable++;
-                break;
-            case APPROVED:
-                summary.approved++;
-                break;
-            default:
-                summary.newRelease++;
-                break;
+            } else {
+                switch (release.getClearingState()) {
+                case NEW_CLEARING:
+                    summary.newRelease++;
+                    break;
+                case SENT_TO_CLEARING_TOOL:
+                    summary.sentToClearingTool++;
+                    break;
+                case UNDER_CLEARING:
+                    summary.underClearing++;
+                    break;
+                case REPORT_AVAILABLE:
+                    summary.reportAvailable++;
+                    break;
+                case APPROVED:
+                    summary.approved++;
+                    break;
+                default:
+                    summary.newRelease++;
+                    break;
+                }
             }
-        }
 
+        }
         return summary;
     }
-
 }
