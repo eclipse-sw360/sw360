@@ -156,6 +156,9 @@ class JacksonCustomizations {
                 "setEnableVulnerabilitiesDisplay",
                 "additionalDataSize",
                 "setAdditionalData",
+                "setLinkedObligations",
+                "linkedObligations",
+                "linkedObligationsSize"
         })
         static abstract class ProjectMixin extends Project {
 

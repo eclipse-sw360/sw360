@@ -12,6 +12,7 @@ package org.eclipse.sw360.licenseinfo.parsers;
 
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
@@ -55,12 +56,15 @@ public abstract class AbstractCLIParser extends LicenseInfoParser {
     private static final String SPDX_IDENTIFIER_ATTRIBUTE_NAME = "spdxidentifier";
     private static final String TYPE_ATTRIBUTE_NAME = "type";
     private static final String LICENSE_NAME_UNKNOWN = "License name unknown";
-    private static final String SPDX_IDENTIFIER_UNKNOWN = "SPDX identifier unknown";
     private static final String TYPE_UNKNOWN = "Type unknown";
+    private static final String OBLIGATION_TEXT_UNKNOWN = "Obligation text unknown";
     private static final Logger log = Logger.getLogger(CLIParser.class);
+    private static final String SPDX_IDENTIFIER_UNKNOWN = "SPDX identifier unknown";
+    private static final String OBLIGATION_TOPIC_UNKNOWN = "Obligation topic unknown";
 
-    private static final String OBLIGATION_TOPIC_ELEMENT_NAME = "topic";
-    private static final String OBLIGATION_TEXT_ELEMENT_NAME = "text";
+    private static final String OBLIGATION_TOPIC_ELEMENT_NAME = "Topic";
+    private static final String OBLIGATION_TEXT_ELEMENT_NAME = "Text";
+    private static final String OBLIGATION_LICENSE_ELEMENT_NAME = "Licenses";
 
     public AbstractCLIParser(AttachmentConnector attachmentConnector, AttachmentContentProvider attachmentContentProvider) {
         super(attachmentConnector, attachmentContentProvider);
@@ -73,6 +77,10 @@ public abstract class AbstractCLIParser extends LicenseInfoParser {
 
     protected static String normalizeEscapedXhtml(Node node) {
         return StringEscapeUtils.unescapeHtml(StringEscapeUtils.unescapeXml(node.getTextContent().trim()));
+    }
+
+    protected static String normalizeSpace(Node node) {
+        return StringUtils.normalizeSpace(node.getTextContent());
     }
 
     protected Optional<Node> findNamedAttribute(Node node, String name) {
@@ -149,7 +157,7 @@ public abstract class AbstractCLIParser extends LicenseInfoParser {
                         .map(Node::getNodeValue)
                         .orElse(LICENSE_NAME_UNKNOWN))
                 .setLicenseSpdxId(findNamedAttribute(node, SPDX_IDENTIFIER_ATTRIBUTE_NAME)
-                        .map(Node::getNodeValue)
+                        .map(AbstractCLIParser::normalizeSpace)
                         .orElse(SPDX_IDENTIFIER_UNKNOWN))
                 .setType(findNamedAttribute(node, TYPE_ATTRIBUTE_NAME)
                         .map(Node::getNodeValue)
@@ -161,20 +169,20 @@ public abstract class AbstractCLIParser extends LicenseInfoParser {
         return new Obligation()
                 .setTopic(findNamedSubelement(node, OBLIGATION_TOPIC_ELEMENT_NAME)
                     .map(Node::getFirstChild)
-                    .map(Node::getTextContent)
-                    .orElse("Obligation topic unknown."))
+                    .map(AbstractCLIParser::normalizeSpace)
+                    .orElse(OBLIGATION_TOPIC_UNKNOWN))
                 .setText(findNamedSubelement(node, OBLIGATION_TEXT_ELEMENT_NAME)
                     .map(Node::getFirstChild)
                     .map(Node::getTextContent)
-                    .orElse("Obligation name unknown."))
-                .setLicenseIDs(findNamedSubelement(node, "licenses")
+                    .orElse(OBLIGATION_TEXT_UNKNOWN))
+                .setLicenseIDs(findNamedSubelement(node, OBLIGATION_LICENSE_ELEMENT_NAME)
                     .map((Node n) -> {
                         List<String> strings = new ArrayList<String>();
                         NodeListIterator it = new NodeListIterator(n.getChildNodes());
                         while (it.hasNext()) {
                             Node child = it.next();
                             if(child.getFirstChild() != null) {
-                                strings.add(child.getTextContent());
+                                strings.add(normalizeSpace(child));
                             }
                         }
                         return strings;

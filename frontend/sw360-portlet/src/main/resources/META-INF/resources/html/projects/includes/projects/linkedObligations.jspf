@@ -1,0 +1,60 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+<%@include file="/html/init.jsp"%>
+
+
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
+
+<portlet:defineObjects />
+<liferay-theme:defineObjects />
+
+<%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.projects.Project"%>
+<%@ page import="javax.portlet.PortletRequest"%>
+<%@ page import="org.eclipse.sw360.portal.common.PortalConstants"%>
+
+<core_rt:if test="${not isObligationPresent}">
+    <div class="alert alert-info" role="alert">
+        No Linked Obligations.
+        <br>
+        Only <b>Approved</b> CLI files Obligations will be shown here.
+    </div>
+</core_rt:if>
+
+<core_rt:if test="${isObligationPresent}">
+
+<liferay-portlet:renderURL var="friendlyReleaseURL" portletName="sw360_portlet_components">
+    <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>"/>
+    <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>"/>
+    <portlet:param name="<%=PortalConstants.RELEASE_ID%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>"/>
+</liferay-portlet:renderURL>
+
+<liferay-portlet:renderURL var="friendlyLicenseURL" portletName="sw360_portlet_licenses">
+    <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>"/>
+    <portlet:param name="<%=PortalConstants.LICENSE_ID%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>"/>
+</liferay-portlet:renderURL>
+
+<div class="tab-content" id="pills-tabContent">
+    <div class="tab-pane show active" id="pills-obligationsView" role="tabpanel" aria-labelledby="pills-obligations-tab">
+        <core_rt:choose>
+            <core_rt:when test="${inProjectDetailsContext}">
+                <%@include file="/html/projects/includes/projects/viewByObligations.jspf" %>
+            </core_rt:when>
+            <core_rt:otherwise>
+                <%@include file="/html/projects/includes/projects/editObligations.jspf" %>
+            </core_rt:otherwise>
+        </core_rt:choose>
+    </div>
+    <div class="tab-pane" id="pills-releasesView" role="tabpanel" aria-labelledby="pills-releases-tab">
+        <%@include file="/html/projects/includes/projects/obligationsByReleases.jspf" %>
+    </div>
+</div>
+</core_rt:if>

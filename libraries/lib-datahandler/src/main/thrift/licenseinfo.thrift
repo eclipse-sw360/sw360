@@ -20,6 +20,7 @@ typedef components.Release Release
 typedef components.Attachment Attachment
 typedef users.User User
 typedef projects.Project Project
+typedef projects.ObligationStatusInfo ObligationStatusInfo
 
 enum LicenseInfoRequestStatus{
     SUCCESS = 0,
@@ -48,6 +49,7 @@ struct LicenseNameWithText {
     4: optional string acknowledgements,
     5: optional string licenseSpdxId,
     6: optional string type,
+    7: optional set<Obligation> obligations,
 }
 
 struct LicenseInfo {
@@ -59,6 +61,7 @@ struct LicenseInfo {
     22: optional string sha1Hash,
     23: optional string componentName,
     24: optional set<string> concludedLicenseIds,
+    25: optional i32 totalObligations,
 }
 
 struct LicenseInfoParsingResult {
@@ -72,6 +75,7 @@ struct LicenseInfoParsingResult {
     32: optional string version,
     33: optional string componentType,
     34: optional Release release,
+    35: optional string attachmentContentId,
 }
 
 enum ObligationInfoRequestStatus {
@@ -85,12 +89,14 @@ struct ObligationParsingResult {
     2: optional string message,
     3: optional list<Obligation> obligations,
     4: optional Release release,
+    5: optional string attachmentContentId,
 }
 
 struct Obligation {
     1: required string topic,
     2: required string text,
     3: required list<string> licenseIDs,
+    4: optional ObligationStatusInfo obligationStatusInfo,
 }
 
 struct LicenseInfoFile {
@@ -104,6 +110,21 @@ service LicenseInfoService {
      * parses the attachment of one release for license information and returns the result.
      */
     list<LicenseInfoParsingResult> getLicenseInfoForAttachment(1: Release release, 2: string attachmentContentId, 3: User user);
+
+    /**
+     * parses the attachment of one release for obligations information and returns the result.
+     */
+    list<ObligationParsingResult> getObligationsForAttachment(1: Release release, 2: string attachmentContentId, 3: User user);
+
+    /**
+     * populates the linked obligation status.
+     */
+    map<Project, list<LicenseInfoParsingResult>> setProjectObligationStatus(1: Project project, 2: list<LicenseInfoParsingResult> licenseInfoResults);
+
+    /**
+     * create the mapping between license and obligations
+     */
+    LicenseInfoParsingResult createLicenseToObligationMapping(1: LicenseInfoParsingResult licenseInfoResult, 2: ObligationParsingResult obligationInfoResult);
 
     /**
      * get a copyright and license information file on all linked releases and linked releases of linked projects (recursively)

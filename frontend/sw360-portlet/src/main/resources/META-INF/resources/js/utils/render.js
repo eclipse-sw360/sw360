@@ -50,10 +50,71 @@ define('utils/render', [
 		return (text.length > limit) ? text.substr(0, limit - 1) + '&hellip;' : text;
 	}
 
-	return {
+    /* make the release & license urls expandable */
+    function renderExpandableUrls(urls, urlType, truncate) {
+        if (urls.length == 1 && extractDataFromHTMLElement(urls[0]).length < truncate) {
+            return urls;
+        }
+        var delimiter = ', <br>';
+        urls = urls.join(delimiter)
+
+        var $container = $('<div/>', {
+            style: 'display: flex;'
+        }),
+            $toggler = $('<div/>', {
+                'class': 'Toggler' + urlType + 'List',
+                'style': 'margin-right: 0.25rem; cursor: pointer;'
+            }),
+            $togglerOn = $('<div/>', {
+                'class': 'Toggler_on'
+            }).html('&#x25BC'),
+            $togglerOff = $('<div/>', {
+                'class': 'Toggler_off'
+            }).html('&#x25BA'),
+            $collapsed = $('<div/>', {
+                'class': urlType + 'ListHidden'
+            }).text(cutUrlList(urls, truncate, delimiter)),
+            $expanded = $('<div/>', {
+                'class': urlType + 'ListShown'
+            }).html(urls);
+
+        $togglerOn.hide();
+        $expanded.hide();
+        $toggler.append($togglerOff, $togglerOn);
+        $container.append($toggler, $collapsed, $expanded);
+        return $container[0].outerHTML;
+    }
+
+    function cutUrlList(urls, truncate, delimiter) {
+        var firstUrl = extractDataFromHTMLElement(urls.split(delimiter)[0]);
+        return firstUrl.substring(0, truncate) + "...";
+    }
+
+    function extractDataFromHTMLElement(link) {
+        var dummyHTML = document.createElement('div');
+        dummyHTML.innerHTML = link;
+        return dummyHTML.textContent;
+    }
+
+    function toggleExpandableList(thisObj, type) {
+        var toggler_off = thisObj.find('.Toggler_off'),
+            toggler_on = thisObj.find('.Toggler_on'),
+            parent = thisObj.parent(),
+            listHidden = parent.find('.' + type + 'ListHidden'),
+            listShown = parent.find('.' + type + 'ListShown');
+
+        toggler_off.toggle();
+        toggler_on.toggle();
+        listHidden.toggle();
+        listShown.toggle();
+    }
+
+    return {
 		linkTo: renderLinkTo,
 		userEmail: renderUserEmail,
 		truncate: truncate,
-		trashIcon: renderTrashIcon
+		trashIcon: renderTrashIcon,
+		renderExpandableUrls: renderExpandableUrls,
+		toggleExpandableList: toggleExpandableList
 	};
 });

@@ -248,6 +248,12 @@ public class ThriftEnumUtils {
             DocumentType.USER, "user"
     );
 
+    private static final ImmutableMap<ProjectObligationStatus, String> MAP_OBLIGATION_STATUS_STRING = ImmutableMap.of(
+            ProjectObligationStatus.OPEN, "Open",
+            ProjectObligationStatus.FULFILLED, "Fulfilled",
+            ProjectObligationStatus.IN_PROGRESS, "In Progress"
+    );
+
     public static final ImmutableMap<Class<? extends TEnum>, Map<? extends TEnum, String>>
             MAP_ENUMTYPE_MAP = ImmutableMap.<Class<? extends TEnum>, Map<? extends TEnum, String>>builder()
             .put(ComponentType.class, MAP_COMPONENT_TYPE_STRING)
@@ -271,6 +277,7 @@ public class ThriftEnumUtils {
             .put(VulnerabilityRatingForProject.class, MAP_VULNERABILITY_RATING_FOR_PROJECT_STRING)
             .put(ECCStatus.class, MAP_ECC_STATUS_STRING)
             .put(DocumentType.class, MAP_DOCUMENT_TYPE_STRING)
+            .put(ProjectObligationStatus.class, MAP_OBLIGATION_STATUS_STRING)
             .build();
 
     public static String enumToString(TEnum value) {

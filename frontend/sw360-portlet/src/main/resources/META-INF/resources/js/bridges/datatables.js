@@ -85,7 +85,8 @@ define('bridges/datatables', [
 					className: 'btn btn-sm btn-secondary btn-print',
 					exportOptions: {
 						columns: printColumns,
-						orthogonal: "print"
+						orthogonal: "print",
+						stripHtml: false
 					}
 				});
 			}

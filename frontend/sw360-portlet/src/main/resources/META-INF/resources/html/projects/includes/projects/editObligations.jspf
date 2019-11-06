@@ -1,0 +1,319 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+<%@include file="/html/init.jsp"%>
+
+<%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
+<%@ page import="javax.portlet.PortletRequest"%>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.projects.Project"%>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectObligationStatus" %>
+<%@ page import="org.eclipse.sw360.portal.common.PortalConstants"%>
+
+<portlet:resourceURL var="saveObligationsURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.SAVE_PROJECT_LICENSE_OBLIGATION%>'/>
+    <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${requestScope.project.id}"/>
+</portlet:resourceURL>
+
+<core_rt:set var="obligationsActionSet" value='<%=PortalConstants.PROJECT_OBLIGATIONS_ACTION_SET%>'/>
+
+<!-- Obligation Edit -->
+<div id="obligation-edit">
+    <table id="editObligationTable" class="table table-bordered" >
+        <colgroup>
+            <col />
+            <col style="width: 20%;" />
+            <col style="width: 15%;" />
+            <col style="width: 20%;" />
+            <col style="width: 12%;" />
+            <col style="width: 15%;" />
+            <col style="width: 18%;" />
+            <col />
+        </colgroup>
+        <thead>
+            <tr>
+                <th>
+                    <svg class="lexicon-icon"><title>More Info</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle-open"/></svg>
+                </th>
+                <th>Obligation</th>
+                <th>Licenses</th>
+                <th>Releases</th>
+                <th>Status</th>
+                <th>Action</th>
+                <th>Comment</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</div>
+<script>
+require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button'], function ($, datatables, render, button) {
+    let obligationJSON = [],
+        licenseLinks,
+        releaseLinks,
+        actionOptions = {},
+        dataMap = new Map();
+
+    <core_rt:forEach items="${obligationsActionSet}" var="action">
+        actionOptions['${action}'] = '${action}';
+    </core_rt:forEach>
+
+    /* Print all attachment table data as array into the html page */
+    <core_rt:forEach items="${project.linkedObligations}" var="entry" varStatus="loop">
+        <core_rt:set var="projectObligations" value="${entry.value}" />
+            licenseLinks = [];
+            releaseLinks = [];
+
+        <core_rt:forEach items="${projectObligations.licenseIds}" var="licenseId">
+           licenseLinks.push("${licenseId}");
+        </core_rt:forEach >
+
+        <core_rt:forEach items="${projectObligations.releases}" var="release">
+            var fullName = '${release.name} (${release.version})';
+            releaseLinks.push({
+                id: "${release.id}",
+                name: fullName
+	        });
+        </core_rt:forEach>
+
+        obligationJSON.push({
+            "obligation": "${entry.key}",
+            "licenseLinks": licenseLinks,
+            "releaseLinks": releaseLinks,
+            "status": '<sw360:DisplayEnumOptions type="<%=ProjectObligationStatus.class%>" selected="${projectObligations.status}" />',
+            "action": "${projectObligations.action}",
+            "comment": "${projectObligations.comment}",
+            "text": '<sw360:out value="${projectObligations.text}" maxChar="200" />',
+            "modifiedBy": "${projectObligations.modifiedBy}",
+            "modifiedOn": "${projectObligations.modifiedOn}"
+        });
+    </core_rt:forEach >
+
+    /* create table */
+    var table = datatables.create('#editObligationTable', {
+        "data": obligationJSON,
+        "deferRender": false, // do not change this.
+        "columns": [
+            {
+                "className": 'details-control',
+                "data": null,
+                "defaultContent": '&#x25BA'
+            },
+            { "data": "obligation", render: $.fn.dataTable.render.ellipsis },
+            { "data": "licenseLinks", "render": { display: renderLicenseLink } },
+            { "data": "releaseLinks", "render": { display: renderReleaseLink } },
+            { "data": "status", "render": { display: renderStatus } },
+            { "data": "action", render: $.fn.dataTable.render.inputSelect(actionOptions, '', 'obl_action toplabelledInput', 'textlabel stackedLabel') },
+            { "data": "comment", defaultContent: "", render: $.fn.dataTable.render.inputText('comment', 'obl_comment toplabelledInput', 'Enter comments') },
+        ],
+        "columnDefs": [
+            {
+                "targets": 0,
+                "createdCell": function (td, cellData, rowData, row, col) {
+                    $(td).attr('title', 'Expand the icon to see obligation text');
+                }
+            },
+            {
+                "targets": 6,
+                "createdCell": function (td, cellData, rowData, row, col) {
+                    $.fn.dataTable.render.inputText.updateTitle(td);
+                    $.fn.dataTable.render.inputText.useInputDialog(td, "Enter obligation comment");
+                }
+            }
+        ],
+        "createdRow": function (row, data, dataIndex, cell) {
+            $(row).attr('data-topic', data.obligation);
+            if (data.modifiedBy && data.modifiedOn) {
+                $(row).attr('title', 'Modified by: ' + data.modifiedBy + ' | Modified on: ' + data.modifiedOn);
+            }
+        },
+        "order": [[1, 'asc']],
+        "buttons": [
+            {
+                "className": 'd-none',
+                "attr": {
+                    "id": 'saveObligationsButtonHidden',
+                    "style": "display: none;",
+                    "data-obligation-info-base-url": "<%=saveObligationsURL%>",
+                    "data-obligation-data-parameter-name": "<%=PortalConstants.OBLIGATION_DATA%>"
+                },
+                "action": saveObligations
+            }
+        ],
+        "initComplete": datatables.showPageContainer
+    }, undefined, [0, 2, 3, 4, 5, 6]);
+
+    function renderStatus(status, type, row) {
+        return '<select class="obl_status toplabelledInput form-control">' + status + '</select>';
+    }
+
+    function renderComment(comment, type, row, meta) {
+        return '<textarea class="obl_comment form-control" rows="1" placeholder="Enter Comment">' + comment + '</textarea>';
+    }
+
+    function renderReleaseLink(releaseLinks, type, row, meta) {
+        var releases = [],
+            releasePortletURL = '<%=friendlyReleaseURL%>'.replace(/projects/g, "components");
+        for (var i = 0; i < releaseLinks.length; i++) {
+            releases[i] = render.linkTo(replaceFriendlyUrlParameter(releasePortletURL.toString(), releaseLinks[i].id, '<%=PortalConstants.PAGENAME_RELEASE_DETAIL%>'), releaseLinks[i].name);
+        }
+        return render.renderExpandableUrls(releases, 'Release', 25);
+    }
+
+    function renderLicenseLink(licenseLinks, type, row) {
+        var licenses = [],
+            licensePortletURL = '<%=friendlyLicenseURL%>'.replace(/projects/g, "licenses");
+        for (var i = 0; i < licenseLinks.length; i++) {
+            licenses[i] = render.linkTo(replaceFriendlyUrlParameter(licensePortletURL.toString(), licenseLinks[i], '<%=PortalConstants.PAGENAME_DETAIL%>'), licenseLinks[i]);
+        }
+        return render.renderExpandableUrls(licenses, 'License', 21);
+    }
+
+    function replaceFriendlyUrlParameter(portletUrl, id, page) {
+        return portletUrl
+            .replace('<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>', page)
+            .replace('<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>', id);
+    }
+
+    /* Add event listener for change in any editable fields in table */
+    $("#editObligationTable tbody").on("change", 'td select.obl_status',function () {
+        storeData($(this));
+    });
+
+    $("#editObligationTable tbody").on("change", 'td select.obl_action',function () {
+        storeData($(this));
+    });
+
+    $("#editObligationTable tbody").on("change", 'td input.obl_comment',function () {
+        if ($(this).closest('tr').find("input.obl_comment").val()) {
+            storeData($(this));
+        }
+    });
+
+    function storeData(thisObj) {
+        var $tr = thisObj.closest("tr"),
+        data = $tr.data(),
+        mapKey = data.topic;
+        dataMap.set(mapKey, '');
+        $("#saveObligationsButton").prop("disabled", false).show();
+    }
+
+    /* Add event listener for opening and closing list of licenses */
+    $('#editObligationTable tbody').on('click', 'td .TogglerLicenseList', function () {
+        render.toggleExpandableList($(this), 'License');
+    });
+
+    /* Add event listener for opening and closing list of releases */
+    $('#editObligationTable tbody').on('click', 'td .TogglerReleaseList', function () {
+        render.toggleExpandableList($(this), 'Release');
+    });
+
+    /* Add event listener for opening and closing details as child row */
+    $('#editObligationTable tbody').on('click', 'td.details-control', function () {
+        var tr = $(this).closest('tr');
+        var row = table.row(tr);
+
+        if (row.child.isShown()) {
+            tr.find("td:first").html('&#x25BA');
+            row.child.hide();
+            tr.removeClass('shown');
+            row.child().removeClass('active');
+        } else {
+            tr.find("td:first").html('&#x25BC');
+            row.child(createChildRow(row.data())).show();
+            tr.addClass('shown');
+            row.child().addClass('active');
+        }
+    });
+
+    /*
+     * Define function for child row creation, which will contain additional data for a clicked table row
+     */
+    function createChildRow(rowData) {
+        var childHtmlString = '' +
+            '<div>' +
+            '<span class="dataTableChildRowCell" style="padding-right: 10px; width: 10%;"/>' +
+            '<span class="dataTableChildRowCell" style="padding-right: 50px; width: 90%;">' + rowData.text + '</span>' +
+            '</div>';
+
+        return childHtmlString;
+    }
+
+    /* collect all the obligation status and post it to server */
+    function saveObligations(event, data, node, config) {
+        let btnData = node.data(),
+            date = new Date().toISOString().split('T')[0],
+            obligationMap = new Map();
+
+        button.wait("#saveObligationsButton");
+
+        table.rows().every(function (rowIdx, tableLoop, rowLoop) {
+            var rowData = this.data(),
+                mapKey = rowData.obligation,
+                ids = [];
+            for (release of rowData.releaseLinks) {
+                ids.push(release.id);
+            }
+            var mapValue = {
+                licenseIds: rowData.licenseLinks,
+                releaseIds: ids
+            };
+            if (dataMap.has(mapKey)) {
+                $node = $(this.node()),
+                mapValue.status = $node.find('select.obl_status option:selected').val();
+                mapValue.action = $node.find("select.obl_action option:selected").val();
+                mapValue.comment = $node.find("input.obl_comment").val();
+                mapValue.modifiedOn = date;
+            }
+            obligationMap.set(mapKey, mapValue);
+        });
+
+        url = Liferay.PortletURL.createURL(btnData.obligationInfoBaseUrl),
+            jsonObject = {},
+            dataObj = {};
+        for (const [key, value] of obligationMap.entries()) {
+            jsonObject[key] = value;
+        }
+        obligationMap.clear();
+        dataObj["<portlet:namespace/>" + btnData.obligationDataParameterName] = JSON.stringify(jsonObject);
+        $.ajax({
+            type: "POST",
+            dataType: "json",
+            data: dataObj,
+            url: url.toString()
+        }).done(function (result) {
+            if (!result || result.length == 0 || result.result !== "SUCCESS") {
+                displayStatusMessage("Obligation status could not be saved in db");
+            } else {
+                dataMap.clear();
+                $("#saveObligationsButton").prop("disabled", true).hide();
+                displayStatusMessage("Obligation status is saved successfully, Refresh the page to see the updated status", true);
+            }
+        }).fail(function () {
+            displayStatusMessage("Failed to save obligation status");
+        });
+        button.finish("#saveObligationsButton");
+    }
+
+    /* Add event listener for saving the obligation status */
+    $("#saveObligationsButton").on("click", function () {
+        $('#saveObligationsButtonHidden').trigger('click');
+    });
+
+    function displayStatusMessage(message, isSuccess) {
+        if (isSuccess) {
+            $("#saveObligationMessage").removeClass('alert-danger').addClass('alert-success');
+        } else {
+            $("#saveObligationMessage").removeClass('alert-success').addClass('alert-danger');
+        }
+        $("#saveObligationMessage").html(message).show().delay(5000).fadeOut();
+    }
+});
+</script>

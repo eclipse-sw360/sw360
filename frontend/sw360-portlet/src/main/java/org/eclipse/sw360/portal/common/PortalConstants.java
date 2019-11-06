@@ -39,6 +39,7 @@ public class PortalConstants {
     public static final String PREFERRED_COUNTRY_CODES;
     public static final Boolean MAINLINE_STATE_ENABLED_FOR_USER;
     public static final Boolean IS_CLEARING_TEAM_UNKNOWN_ENABLED;
+    public static final Set<String> PROJECT_OBLIGATIONS_ACTION_SET;
 
     // DO NOT CHANGE THIS UNLESS YOU KNOW WHAT YOU ARE DOING !!!
     // - friendly url mapping files must be changed
@@ -94,6 +95,7 @@ public class PortalConstants {
     public static final String MODERATION_LICENSE_DETAIL = "moderationLicenseDetail";
     public static final String LICENSE_TYPE_CHOICE = "licenseTypeChoice";
     public static final String LICENSE_TYPE_GLOBAL = "global";
+    public static final String LICENSE_TYPE_OTHERS = "Others";
 
     //! Specialized keys for moderation
     public static final String MODERATION_PORTLET_NAME = PORTLET_NAME_PREFIX + "moderations";
@@ -154,6 +156,13 @@ public class PortalConstants {
     public static final String TODO_LIST = "todoList";
     public static final String TODO_ID = "todoId";
 
+    //! Specialized keys for obligations
+    public static final String OBLIGATION_TOPIC = "obligationTopic";
+    public static final String OBLIGATION_ACTION = "obligationAction";
+    public static final String OBLIGATION_STATUS = "obligationStatus";
+    public static final String OBLIGATION_COMMENT = "obligationComment";
+    public static final String OBLIGATION_DATA = "obligationData";
+
     //! Specialized keys for attachments
     public static final String ATTACHMENTS = "attachments";
     public static final String ATTACHMENT_NAME = "attachmentName";
@@ -210,6 +219,8 @@ public class PortalConstants {
     public static final String PROJECT_PATH = "projectPath";
     public static final String PROJECT_PATHS = "projectPaths";
     public static final String SOURCE_PROJECT_ID = "sourceProjectId";
+    public static final String PROJECT_RELEASE_LICENSE_INFO = "projectReleaseLicenseInfo";
+    public static final String APPROVED_OBLIGATIONS_COUNT = "approvedObligationsCount";
 
 
     public static final String FOSSOLOGY_PORTLET_NAME = PORTLET_NAME_PREFIX + "fossology";
@@ -383,6 +394,7 @@ public class PortalConstants {
     public static final String LOAD_LICENSE_INFO_ATTACHMENT_USAGE = "LoadLicenseInfoAttachmentUsage";
     public static final String LOAD_SOURCE_PACKAGE_ATTACHMENT_USAGE = "LoadSourcePackageAttachmentUsage";
     public static final String LOAD_PROJECT_LIST = "load_project_list";
+    public static final String SAVE_PROJECT_LICENSE_OBLIGATION = "save_project_license_obligation";
 
     //component actions
     public static final String ADD_VENDOR = "add_vendor";
@@ -518,6 +530,7 @@ public class PortalConstants {
         PREFERRED_COUNTRY_CODES = props.getProperty("preferred.country.codes", "DE,AT,CH,US");
         MAINLINE_STATE_ENABLED_FOR_USER = Boolean.parseBoolean(props.getProperty("mainline.state.enabled.for.user", "false"));
         IS_CLEARING_TEAM_UNKNOWN_ENABLED = Boolean.parseBoolean(props.getProperty("clearing.team.unknown.enabled", "true"));
+        PROJECT_OBLIGATIONS_ACTION_SET = CommonUtils.splitToSet(props.getProperty("project.obligation.actions", "Action 1,Action 2,Action 3"));
 
         // SW360 REST API Constants
         API_TOKEN_ENABLE_GENERATOR = Boolean.parseBoolean(props.getProperty("rest.apitoken.generator.enable", "false"));

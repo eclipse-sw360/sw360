@@ -40,8 +40,10 @@ import org.ektorp.http.HttpClient;
 import java.net.MalformedURLException;
 import java.time.Instant;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -209,8 +211,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         } else if (makePermission(actual, user).isActionAllowed(RequestedAction.WRITE)) {
             copyImmutableFields(project,actual);
             project.setAttachments( getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), project.getAttachments()) );
-            deleteAttachmentUsagesOfUnlinkedReleases(project, actual);
             setReleaseRelations(project, user, actual);
+            updateProjectDependentLinkedFields(project, actual);
             repository.update(project);
 
             //clean up attachments in database
@@ -275,11 +277,37 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return true;
     }
 
-    private void deleteAttachmentUsagesOfUnlinkedReleases(Project updated, Project actual) throws SW360Exception {
+    private Map<String, ObligationStatusInfo> deleteObligationsOfUnlinkedReleases(Project updated) {
+        Set<String> updatedLinkedReleaseIds = nullToEmptyMap(updated.getReleaseIdToUsage()).keySet();
+        // return null if no linked releases in updated project.
+        if (allAreEmptyOrNull(updatedLinkedReleaseIds)) {
+            return null;
+        }
+        Map<String, ObligationStatusInfo> updatedOsInfoMap = nullToEmptyMap(updated.getLinkedObligations());
+        // using iterator to remove the entries without release
+        for (Iterator<Map.Entry<String, ObligationStatusInfo>> it = updatedOsInfoMap.entrySet().iterator(); it.hasNext();) {
+            Map.Entry<String, ObligationStatusInfo> entry = it.next();
+            // intersection of release present in updated and current project.
+            entry.getValue().setReleaseIds(Sets.intersection(entry.getValue().getReleaseIds(), updatedLinkedReleaseIds));
+            // remove the obligations without releases.
+            if (entry.getValue().getReleaseIdsSize() < 1) {
+                it.remove();
+            }
+        }
+        return updatedOsInfoMap;
+    }
+
+    private void updateProjectDependentLinkedFields(Project updated, Project actual) throws SW360Exception {
         Source usedBy = Source.projectId(updated.getId());
         Set<String> updatedLinkedReleaseIds = nullToEmptyMap(updated.getReleaseIdToUsage()).keySet();
         Set<String> actualLinkedReleaseIds = nullToEmptyMap(actual.getReleaseIdToUsage()).keySet();
         deleteAttachmentUsagesOfUnlinkedReleases(usedBy, updatedLinkedReleaseIds, actualLinkedReleaseIds);
+
+        // update the obligations only if linked obligations were present in current project,
+        // and there is change in linked releases in updated project
+        if (actual.getLinkedObligationsSize() > 0 && !actualLinkedReleaseIds.equals(updatedLinkedReleaseIds)) {
+            updated.setLinkedObligations(deleteObligationsOfUnlinkedReleases(updated));
+        }
     }
 
     private boolean changePassesSanityCheck(Project updated, Project current) {
