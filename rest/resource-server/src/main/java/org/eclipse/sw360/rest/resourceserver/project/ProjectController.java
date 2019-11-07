@@ -17,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
+import org.apache.thrift.TSerializer;
+import org.apache.thrift.protocol.TSimpleJSONProtocol;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
@@ -50,6 +52,7 @@ import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.json.GsonJsonParser;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.Resource;
@@ -86,7 +89,9 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ProjectController implements ResourceProcessor<RepositoryLinksResource> {
     public static final String PROJECTS_URL = "/projects";
+    public static final String SW360_ATTACHMENT_USAGES = "sw360:attachmentUsages";
     private static final Logger log = Logger.getLogger(ProjectController.class);
+    private static final TSerializer THRIFT_JSON_SERIALIZER = new TSerializer(new TSimpleJSONProtocol.Factory());
 
     @NonNull
     private final Sw360ProjectService projectService;
@@ -459,6 +464,26 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
 
         Resources<Resource<Project>> resources = new Resources<>(projectResources);
         return new ResponseEntity<>(resources, HttpStatus.OK);
+    }
+
+    @RequestMapping(value = PROJECTS_URL + "/{id}/attachmentUsage", method = RequestMethod.GET)
+    public @ResponseBody ResponseEntity<Map<String, Object>> getAttachmentUsage(@PathVariable("id") String id)
+            throws TException {
+        List<AttachmentUsage> attachmentUsages = attachmentService.getAllAttachmentUsage(id);
+        String prefix = "{\"" + SW360_ATTACHMENT_USAGES + "\":[";
+        String serializedUsages = attachmentUsages.stream()
+                .map(usage -> wrapTException(() -> THRIFT_JSON_SERIALIZER.toString(usage)))
+                .collect(Collectors.joining(",", prefix, "]}"));
+        GsonJsonParser parser = new GsonJsonParser();
+        Map<String, Object> attachmentUsageMap = parser.parseMap(serializedUsages);
+        List<Map<String, Object>> listOfAttachmentUsages = (List<Map<String, Object>>) attachmentUsageMap
+                .get(SW360_ATTACHMENT_USAGES);
+        for (Map<String, Object> attachmentUsage : listOfAttachmentUsages) {
+            attachmentUsage.remove("revision");
+            attachmentUsage.remove("type");
+        }
+
+        return new ResponseEntity<>(attachmentUsageMap, HttpStatus.OK);
     }
 
     @Override

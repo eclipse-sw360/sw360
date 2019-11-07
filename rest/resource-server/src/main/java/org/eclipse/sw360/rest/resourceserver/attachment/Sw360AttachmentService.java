@@ -200,4 +200,9 @@ public class Sw360AttachmentService {
         }
         return new Resources<>(attachmentResources);
     }
+
+    public List<AttachmentUsage> getAllAttachmentUsage(String projectId) throws TException {
+        AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
+        return attachmentClient.getUsedAttachments(Source.projectId(projectId), null);
+    }
 }

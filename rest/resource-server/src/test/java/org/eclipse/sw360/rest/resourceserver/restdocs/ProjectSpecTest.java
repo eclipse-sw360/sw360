@@ -10,9 +10,13 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
+import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
+import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
@@ -42,6 +46,8 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.Resources;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import com.google.common.collect.Sets;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -283,6 +289,32 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         licenseInfoFile.setGeneratedOutput(new byte[0]);
         given(this.licenseInfoMockService.getLicenseInfoFile(anyObject(), anyObject(), anyObject(), anyObject(),
                 anyObject(),anyObject())).willReturn(licenseInfoFile);
+
+        Source ownerSrc1 = Source.releaseId("9988776655");
+        Source usedBySrc = Source.projectId(project.getId());
+        LicenseInfoUsage licenseInfoUsage1 = new LicenseInfoUsage(new HashSet<String>());
+        licenseInfoUsage1.setProjectPath("11223344:22334455");
+        licenseInfoUsage1.setExcludedLicenseIds(Sets.newHashSet("22334455", "9988776655"));
+        UsageData usageData1 = new UsageData();
+        usageData1.setLicenseInfo(licenseInfoUsage1);
+        AttachmentUsage attachmentUsage1 = new AttachmentUsage(ownerSrc1, "aa1122334455bbcc", usedBySrc);
+        attachmentUsage1.setUsageData(usageData1);
+        attachmentUsage1.setId("11223344889977");
+
+        Source ownerSrc2 = Source.releaseId("5566778899");
+        LicenseInfoUsage licenseInfoUsage2 = new LicenseInfoUsage(new HashSet<String>());
+        licenseInfoUsage2.setProjectPath("11223344:22334455:445566778899");
+        licenseInfoUsage2.setExcludedLicenseIds(Sets.newHashSet("44553322", "5566778899"));
+        UsageData usageData2 = new UsageData();
+        usageData2.setLicenseInfo(licenseInfoUsage2);
+        AttachmentUsage attachmentUsage2 = new AttachmentUsage(ownerSrc2, "aa1122334455ee", usedBySrc);
+        attachmentUsage2.setUsageData(usageData2);
+        attachmentUsage2.setId("8899776655");
+
+        List<AttachmentUsage> attachmentUsageList = new ArrayList<AttachmentUsage>();
+        attachmentUsageList.add(attachmentUsage1);
+        attachmentUsageList.add(attachmentUsage2);
+        given(this.attachmentServiceMock.getAllAttachmentUsage(anyObject())).willReturn(attachmentUsageList);
     }
 
     @Test
@@ -320,6 +352,32 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
+    }
+
+    @Test
+    public void should_document_get_attachment_usage_for_project() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/projects/" + project.getId() + "/attachmentUsage")
+                .header("Authorization", "Bearer " + accessToken).accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(responseFields(
+                        fieldWithPath("sw360:attachmentUsages[]id").description("The Id of the attachment usage"),
+                        fieldWithPath("sw360:attachmentUsages[]owner")
+                                .description("The owner of attachment usage, possible values are:"
+                                        + Arrays.asList("projectId", "componentId", "releaseId")),
+                        fieldWithPath("sw360:attachmentUsages[]attachmentContentId")
+                                .description("The Attachment Content Id associated with the Attachment"),
+                        fieldWithPath("sw360:attachmentUsages[]usedBy")
+                                .description("The Id of project using the attachment"),
+                        fieldWithPath("sw360:attachmentUsages[]usageData")
+                                .description("The usage information of attachment, possible values are:"
+                                        + Arrays.asList("licenseInfo", "sourcePackage", "manuallySet")),
+                        fieldWithPath("sw360:attachmentUsages[]usageData.licenseInfo.excludedLicenseIds")
+                                .description("The list of excluded License Ids."),
+                        fieldWithPath("sw360:attachmentUsages[]usageData.licenseInfo.projectPath").description(
+                                "The hierarchy of project in which attachment is used. Ex: projectId1:subProjectId1:subProjectId2"),
+                        fieldWithPath("sw360:attachmentUsages").description(
+                                "An array of <<resources-project-get-attachmentusage, AttachmentUsages resources>>"))));
     }
 
     @Test

@@ -292,3 +292,17 @@ include::{snippets}/should_document_get_usedbyresource_for_project/curl-request.
 
 ===== Example response
 include::{snippets}/should_document_get_usedbyresource_for_project/http-response.adoc[]
+
+[[resources-project-get-attachmentusage]]
+==== AttachmentUsages of the project
+
+A `GET` request will display all attachmentUsages of the projects.
+
+===== Response structure
+include::{snippets}/should_document_get_attachment_usage_for_project/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_attachment_usage_for_project/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_attachment_usage_for_project/http-response.adoc[]
