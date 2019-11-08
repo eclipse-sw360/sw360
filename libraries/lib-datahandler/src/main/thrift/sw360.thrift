@@ -40,7 +40,8 @@ enum RemoveModeratorRequestStatus {
 enum AddDocumentRequestStatus {
     SUCCESS = 0,
     DUPLICATE = 1,
-    FAILURE = 2
+    FAILURE = 2,
+    NAMINGERROR = 3
 }
 
 exception SW360Exception {

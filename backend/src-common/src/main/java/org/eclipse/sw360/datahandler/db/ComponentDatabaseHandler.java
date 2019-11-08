@@ -287,6 +287,10 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return new AddDocumentRequestSummary()
                     .setRequestStatus(AddDocumentRequestStatus.DUPLICATE);
         }
+        if(component.getName().trim().length() == 0) {
+            return new AddDocumentRequestSummary()
+                    .setRequestStatus(AddDocumentRequestStatus.NAMINGERROR);
+        }
         // Prepare the component
         prepareComponent(component);
 
