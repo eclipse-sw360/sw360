@@ -162,6 +162,8 @@
                             _target: '_self'
                         }).text(data);
                         return $link[0].outerHTML;
+                    } else if(type === 'print') {
+                        return data;
                     } else if(type === 'type') {
                         return 'string';
                     } else {
@@ -183,6 +185,13 @@
                         }
                         $cvss.append($.fn.dataTable.render.infoText('/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle-open'));
                         return $cvss[0].outerHTML;
+                    } else if(type === 'print') {
+                        if(data.weighting) {
+                            $cvss.text(data.weighting);
+                            if(data.time) {
+                                $cvss.append(" (as of: ").append($('<span/>').text(data.time)).append(")");
+                            }
+                        }
                     } else if(type === 'type') {
                         return 'number';
                     } else {

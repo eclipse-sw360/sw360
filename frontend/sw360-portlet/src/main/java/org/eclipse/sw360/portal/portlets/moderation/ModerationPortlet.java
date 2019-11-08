@@ -47,11 +47,11 @@ import org.apache.thrift.TException;
 import org.jetbrains.annotations.NotNull;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 
+import javax.portlet.*;
+
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import javax.portlet.*;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
@@ -594,11 +594,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
 
     @Override
     protected void dealWithFossologyAction(ResourceRequest request, ResourceResponse response, String action) throws IOException, PortletException {
-        if (PortalConstants.FOSSOLOGY_GET_STATUS.equals(action)) {
-            serveFossologyStatus(request, response);
-        } else {
-            throw unsupportedActionException();
-        }
+        throw unsupportedActionException();
     }
 
     @Override

@@ -12,6 +12,7 @@
 <%@page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState"%>
 <%@page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectState"%>
 <%@page import="org.eclipse.sw360.datahandler.thrift.projects.Project" %>
+<core_rt:set var="isUnknownCTeamEnabled" value='<%=PortalConstants.IS_CLEARING_TEAM_UNKNOWN_ENABLED%>'/>
 
 <table class="table edit-table three-columns" id="ProjectClearingInfo" title="Clearing">
     <thead>
@@ -38,10 +39,12 @@
                 <label for="clearingTeam">Clearing team</label>
                 <select class="form-control" id="clearingTeam"
                         name="<portlet:namespace/><%=Project._Fields.CLEARING_TEAM%>">
-                    <option value="<%=CLEARING_TEAM_UNKNOWN%>"
-                            <core_rt:if test='${empty project.clearingTeam}'>
-                                selected="selected"
-                            </core_rt:if>><%=CLEARING_TEAM_UNKNOWN%></option>
+                        <core_rt:if test="${isUnknownCTeamEnabled}">
+                            <option value="<%=CLEARING_TEAM_UNKNOWN%>"
+                                <core_rt:if test='${empty project.clearingTeam}'>
+                                    selected="selected"
+                                </core_rt:if>><%=CLEARING_TEAM_UNKNOWN%></option>
+                        </core_rt:if>
                     <core_rt:forEach items="${clearingTeamsStringSet}" var="entry">
                         <option value="${entry}" class="textlabel stackedLabel"
                             <core_rt:if test='${project.clearingTeam == entry}'>
@@ -69,7 +72,7 @@
                 <button id="setToDefaultObligationsTextButton" class="btn btn-link btn-right" type="button">Set To Default Text</button>
                 <textarea name="<portlet:namespace/><%=Project._Fields.OBLIGATIONS_TEXT%>"
                     class="form-control" rows="5" id="obligationsText"
-                    data-defaulttext="${defaultObligationsText}"><sw360:DisplayObligations project="${project}"
+                    data-defaulttext="<c:out value="${defaultObligationsText}"/>"><sw360:DisplayObligations project="${project}"
                     defaultText="${defaultObligationsText}"/></textarea>
             </div>
         </td>
@@ -244,7 +247,7 @@
 		}
         });
 
-        <core_rt:if test="${addMode}" >
+        <core_rt:if test="${addMode and pageName ne 'duplicate' }" >
             setDefaultTextAndResize($('#obligationsText'));
             setDefaultTextAndResize($('#licenseInfoHeaderText'))
         </core_rt:if>

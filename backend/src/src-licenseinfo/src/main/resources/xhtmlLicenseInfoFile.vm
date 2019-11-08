@@ -124,15 +124,6 @@
                         </h3>
                     </div>
 
-                        #set($copyrights = [])
-                        #if(${licenseInfoResults.get($releaseName).licenseInfo})
-                            #set($copyrights = $licenseInfoResults.get($releaseName).licenseInfo.copyrights)
-    <pre class="copyrights">
-#foreach($copyright in ${copyrights})
-$esc.xml($copyright)
-#end
-    </pre>
-                        #end
 
                     #if(${acknowledgements.get($releaseName)})
                         Acknowledgements:<br/>
@@ -164,6 +155,16 @@ $esc.xml($ack)
                             </ul>
                         #end
                     #end
+                     #set($copyrights = [])
+                        #if(${licenseInfoResults.get($releaseName).licenseInfo})
+                            #set($copyrights = $licenseInfoResults.get($releaseName).licenseInfo.copyrights)
+    <pre class="copyrights">
+#foreach($copyright in ${copyrights})
+$esc.xml($copyright)
+#end
+<h3><a class="top" href="#releaseHeader">&#8679;</a></h3>
+    </pre>
+                        #end
                 </li>
             #end
         </ul>

@@ -12,19 +12,13 @@
  */
 package org.eclipse.sw360.licenseinfo.outputGenerators;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.poi.xwpf.usermodel.*;
+import org.apache.poi.xwpf.usermodel.XWPFTable.XWPFBorderType;
 import org.apache.thrift.TException;
 import org.apache.xmlbeans.XmlCursor;
 import org.apache.xmlbeans.XmlException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
@@ -33,11 +27,14 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.Todo;
+import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
+import org.eclipse.sw360.licenseinfo.util.LicenseNameWithTextUtils;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.STMerge;
+
+import com.google.common.collect.Maps;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -55,7 +52,6 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
     private static final String CAPTION_EXTID_TABLE_VALUE = "External Identifiers for this Product:";
     private static final String CAPTION_EXTID_TABLE = "$caption-extid-table";
     private static final String EXTERNAL_ID_TABLE = "$external-id-table";
-    private static final Logger LOGGER = Logger.getLogger(DocxGenerator.class);
     private static final String UNKNOWN_LICENSE_NAME = "Unknown license name";
     private static final String UNKNOWN_FILE_NAME = "Unknown file name";
     private static final String UNKNOWN_LICENSE = "Unknown";
@@ -74,6 +70,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
     public static final int THIRD_PARTY_COMPONENT_OVERVIEW_TABLE_INDEX = 3;
     private static final int COMMON_RULES_TABLE_INDEX = 4;
     public static final int ADDITIONAL_REQ_TABLE_INDEX = 5;
+    public static final int OBLIGATION_STATUS_TABLE_INDEX = 6;
 
     private static final String EXT_ID_TABLE_HEADER_COL1 = "Identifier Name";
     private static final String EXT_ID_TABLE_HEADER_COL2 = "Identifier Value";
@@ -145,7 +142,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         Project project,
         String licenseInfoHeaderText,
         boolean includeObligations, Map<String, String> externalIds) throws XmlException, TException {
-
+            Map<LicenseNameWithText, Integer> licenseToReferenceId  = populatelicenseToReferenceId(projectLicenseInfoResults, Maps.newHashMap());
             String projectName = project.getName();
             String projectVersion = project.getVersion();
 
@@ -155,8 +152,17 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
             fillExternalIds(document, externalIds);
             fillReleaseBulletList(document, projectLicenseInfoResults);
-            fillReleaseDetailList(document, projectLicenseInfoResults, includeObligations);
-            fillLicenseList(document, projectLicenseInfoResults);
+            fillReleaseDetailList(document, projectLicenseInfoResults, includeObligations, licenseToReferenceId);
+            fillLicenseList(document, projectLicenseInfoResults, licenseToReferenceId);
+    }
+
+    private Map<LicenseNameWithText, Integer> populatelicenseToReferenceId(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Map<LicenseNameWithText, Integer> licenseToReferenceId) {
+        int referenceId = 1;
+        List<LicenseNameWithText> licenseNamesWithTexts = getSortedLicenseNameWithTexts(projectLicenseInfoResults);
+        for (LicenseNameWithText licenseNamesWithText : licenseNamesWithTexts) {
+            licenseToReferenceId.put(licenseNamesWithText, referenceId++);
+        }
+        return licenseToReferenceId;
     }
 
     private void fillExternalIds(XWPFDocument document, Map<String, String> externalIdMap) {
@@ -251,6 +257,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
             fillCommonRulesTable(document, project);
 
+            fillLinkedObligations(document, Maps.newHashMap(), project);
             // because of the impossible API component subsections must be the last thing in the docx file
             // the rest of the sections must be generated after this
             writeComponentSubsections(document, projectLicenseInfoResults, obligationResults);
@@ -333,6 +340,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                             row.addNewTableCell().setText(o.getText());
                         }
                 );
+        setTableBorders(table);
     }
 
     private void fillOverview3rdPartyComponentTable(XWPFDocument document, Collection<LicenseInfoParsingResult> projectLicenseInfoResults) throws XmlException {
@@ -362,6 +370,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
             row.addNewTableCell().setText(result.getComponentType());
             row.addNewTableCell().setText(globalLicense);
         }
+        setTableBorders(table);
     }
 
     private static Optional<ObligationParsingResult> obligationsForRelease(Release release, Collection<ObligationParsingResult> obligationResults) {
@@ -429,6 +438,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                     row.addNewTableCell().setText(licensesString);
                     row.addNewTableCell().setText(o.getText());
                 }
+                setTableBorders(table);
             }
         }
     }
@@ -463,6 +473,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
             String platforms = r.getSoftwarePlatformsSize() == 0 ? "N/A" : String.join(" ", r.getSoftwarePlatforms());
             row.addNewTableCell().setText(platforms);
         }
+        setTableBorders(table);
     }
 
     protected static Set<String> extractMostCommonLicenses(Collection<ObligationParsingResult> obligationResults, long threshold) {
@@ -495,6 +506,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                             row.addNewTableCell().setText(o.getText());
                         }
                         );
+        setTableBorders(table);
     }
 
     private void fillReleaseBulletList(XWPFDocument document, Collection<LicenseInfoParsingResult> projectLicenseInfoResults) throws XmlException {
@@ -506,17 +518,19 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         addPageBreak(document);
     }
 
-    private void fillReleaseDetailList(XWPFDocument document, Collection<LicenseInfoParsingResult> projectLicenseInfoResults, boolean includeObligations) throws TException {
+    private void fillReleaseDetailList(XWPFDocument document, Collection<LicenseInfoParsingResult> projectLicenseInfoResults, boolean includeObligations,  Map<LicenseNameWithText, Integer> licenseToReferenceId) throws TException {
         addFormattedText(document.createParagraph().createRun(), "Detailed Releases Information", FONT_SIZE + 2, true);
         setText(document.createParagraph().createRun(), "Please note the following license conditions and copyright " +
                 "notices applicable to Open Source Software and/or other components (or parts thereof):");
         addNewLines(document, 0);
-
+        Map<String, Set<String>> sortedAcknowledgement = getAcknowledgement(projectLicenseInfoResults);
         for (LicenseInfoParsingResult parsingResult : projectLicenseInfoResults) {
             addReleaseTitle(document, parsingResult);
+            addAcknowledgement(document, sortedAcknowledgement.get(getComponentLongName(parsingResult)));
             if (parsingResult.getStatus() == LicenseInfoRequestStatus.SUCCESS) {
+                addLicenses(document, parsingResult, includeObligations, licenseToReferenceId);
+                addNewLines(document, 1);
                 addCopyrights(document, parsingResult);
-                addLicenses(document, parsingResult, includeObligations);
             } else {
                 XWPFRun errorRun = document.createParagraph().createRun();
                 String errorText = nullToEmptyString(parsingResult.getMessage());
@@ -527,6 +541,28 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
             addNewLines(document, 1);
         }
         addPageBreak(document);
+    }
+
+    private void addAcknowledgement(XWPFDocument document, Set<String> acknowledgements) {
+        if(CollectionUtils.isNotEmpty(acknowledgements)) {
+            XWPFRun ackRun = document.createParagraph().createRun();
+            addFormattedText(ackRun, "Acknowledgement", FONT_SIZE, true);
+            for (String acknowledgement : acknowledgements) {
+                setText(document.createParagraph().createRun(), nullToEmptyString(acknowledgement));
+            }
+            addNewLines(document, 1);
+        }
+    }
+
+    private SortedMap<String, Set<String>> getAcknowledgement(
+            Collection<LicenseInfoParsingResult> projectLicenseInfoResults) {
+
+        Map<Boolean, List<LicenseInfoParsingResult>> partitionedResults = projectLicenseInfoResults.stream()
+                .collect(Collectors.partitioningBy(r -> r.getStatus() == LicenseInfoRequestStatus.SUCCESS));
+        List<LicenseInfoParsingResult> goodResults = partitionedResults.get(true);
+
+        return getSortedAcknowledgements(getSortedLicenseInfos(goodResults));
+
     }
 
     private void addReleaseTitle(XWPFDocument document, LicenseInfoParsingResult parsingResult) {
@@ -547,16 +583,32 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         }
     }
 
-    private void addLicenses(XWPFDocument document, LicenseInfoParsingResult parsingResult, boolean includeObligations) throws TException {
+    private void addLicenses(XWPFDocument document, LicenseInfoParsingResult parsingResult, boolean includeObligations, Map<LicenseNameWithText, Integer> licenseToReferenceId)
+            throws TException {
         XWPFRun licensesTitleRun = document.createParagraph().createRun();
         addNewLines(licensesTitleRun, 1);
         addFormattedText(licensesTitleRun, "Licenses", FONT_SIZE, true);
-        for (String licenseName : getReleasesLicenses(parsingResult)) {
-            XWPFParagraph licensePara = document.createParagraph();
-            licensePara.setSpacingAfter(0);
-            addBookmarkHyperLink(licensePara, licenseName, licenseName);
-            if (includeObligations) {
-                addLicenseObligations(document, licenseName);
+        StringBuilder licenseNameWithCount = new StringBuilder();
+        if (parsingResult.isSetLicenseInfo()) {
+            LicenseInfo licenseInfo = parsingResult.getLicenseInfo();
+            if (licenseInfo.isSetLicenseNamesWithTexts()) {
+                List<LicenseNameWithText> licenseNameWithTexts = licenseInfo.getLicenseNamesWithTexts().stream()
+                        .filter(licenseNameWithText -> !LicenseNameWithTextUtils.isEmpty(licenseNameWithText))
+                        .sorted(Comparator.comparing(LicenseNameWithText::getLicenseName,String.CASE_INSENSITIVE_ORDER))
+                        .collect(Collectors.toList());
+
+                for (LicenseNameWithText licenseNameWithText : licenseNameWithTexts) {
+                    XWPFParagraph licensePara = document.createParagraph();
+                    licensePara.setSpacingAfter(0);
+                    String licenseName = licenseNameWithText.isSetLicenseName() ? licenseNameWithText.getLicenseName()
+                            : UNKNOWN_LICENSE_NAME;
+                    licenseNameWithCount.append(licenseName).append("(").append(licenseToReferenceId.get(licenseNameWithText)).append(")");
+                    addBookmarkHyperLink(licensePara, String.valueOf(licenseToReferenceId.get(licenseNameWithText)),licenseNameWithCount.toString());
+                    licenseNameWithCount.setLength(0);
+                    if (includeObligations) {
+                        addLicenseObligations(document, licenseName);
+                    }
+                }
             }
         }
     }
@@ -585,21 +637,6 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
             }
         }
         return copyrights;
-    }
-
-    private Set<String> getReleasesLicenses(LicenseInfoParsingResult licenseInfoParsingResult) {
-        Set<String> licenses = new HashSet<>();
-        if (licenseInfoParsingResult.isSetLicenseInfo()) {
-            LicenseInfo licenseInfo = licenseInfoParsingResult.getLicenseInfo();
-            if (licenseInfo.isSetLicenseNamesWithTexts()) {
-                for (LicenseNameWithText licenseNameWithText : licenseInfo.getLicenseNamesWithTexts()) {
-                    licenses.add(licenseNameWithText.isSetLicenseName()
-                            ? licenseNameWithText.getLicenseName()
-                            : UNKNOWN_LICENSE_NAME);
-                }
-            }
-        }
-        return licenses;
     }
 
     private String getFilename(LicenseInfoParsingResult licenseInfoParsingResult) {
@@ -631,17 +668,19 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         return licenseClient.getLicenses();
     }
 
-    private void fillLicenseList(XWPFDocument document, Collection<LicenseInfoParsingResult> projectLicenseInfoResults) {
+    private void fillLicenseList(XWPFDocument document, Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Map<LicenseNameWithText, Integer> licenseToReferenceId) {
         List<LicenseNameWithText> licenseNameWithTexts = OutputGenerator.getSortedLicenseNameWithTexts(projectLicenseInfoResults);
         XWPFRun licenseHeaderRun = document.createParagraph().createRun();
         addFormattedText(licenseHeaderRun, "License texts", FONT_SIZE + 2, true);
         addNewLines(document, 0);
-
+        StringBuilder licenseNameWithCount = new StringBuilder();
         for (LicenseNameWithText licenseNameWithText : licenseNameWithTexts) {
             XWPFParagraph licenseParagraph = document.createParagraph();
             licenseParagraph.setStyle(STYLE_HEADING);
             String licenseName = licenseNameWithText.isSetLicenseName() ? licenseNameWithText.getLicenseName() : UNKNOWN_LICENSE_NAME;
-            addBookmark(licenseParagraph, licenseName, licenseName);
+            licenseNameWithCount.append(licenseToReferenceId.get(licenseNameWithText)).append(": ").append(licenseName);
+            addBookmark(licenseParagraph, String.valueOf(licenseToReferenceId.get(licenseNameWithText)), licenseNameWithCount.toString());
+            licenseNameWithCount.setLength(0);
             addNewLines(document, 0);
             setText(document.createParagraph().createRun(), nullToEmptyString(licenseNameWithText.getLicenseText()));
             addNewLines(document, 1);
@@ -659,5 +698,58 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                     row.addNewTableCell().setText(todo.getKey().getText());
                     row.addNewTableCell().setText(todo.getValue().fulfilled ? "yes" : "no");
                 });
+        setTableBorders(table);
+    }
+
+
+    private void fillLinkedObligations(XWPFDocument document, Map<String, String> externalIdMap, Project project) {
+        XWPFTable table = document.getTables().get(OBLIGATION_STATUS_TABLE_INDEX);
+        final int[] currentRow = new int[] { 0 };
+
+        if (project.getLinkedObligationsSize() > 0) {
+            project.getLinkedObligations().entrySet().stream().forEach(o -> {
+                ObligationStatusInfo osi = o.getValue();
+                if (null != osi.getReleases()) {
+                    currentRow[0] = currentRow[0] + 1;
+                    XWPFTableRow row = table.insertNewTableRow(currentRow[0]);
+                    Set<String> releases = osi.getReleases().stream().map(SW360Utils::printName)
+                            .collect(Collectors.toSet());
+                    row.addNewTableCell().setText(o.getKey());
+                    row.addNewTableCell().setText(String.join(", \n", osi.getLicenseIds()));
+                    row.addNewTableCell().setText(String.join(", \n", releases));
+                    row.addNewTableCell().setText(nullToEmptyString(osi.getStatus()));
+                    row.addNewTableCell().setText(nullToEmptyString(osi.getAction()));
+                    row.addNewTableCell().setText(nullToEmptyString(osi.getComment()));
+                    currentRow[0] = currentRow[0] + 1;
+                    XWPFTableRow textRow = table.createRow();
+                    textRow.getCell(0).setText(osi.getText());
+                    mergeColumns(table, currentRow[0], 0, textRow.getCtRow().sizeOfTcArray() - 1);
+                }
+            });
+        } else {
+            currentRow[0] = currentRow[0] + 1;
+            XWPFTableRow textRow = table.createRow();
+            textRow.getCell(0).setText("No Linked Obligations. Only APPROVED CLI files Obligations will be shown here.");
+            mergeColumns(table, currentRow[0], 0, textRow.getCtRow().sizeOfTcArray() - 1);
+        }
+        setTableBorders(table);
+    }
+
+    private static void mergeColumns(XWPFTable table, int row, int fromCol, int toCol) {
+        for (int colIndex = fromCol; colIndex <= toCol; colIndex++) {
+            XWPFTableCell cell = table.getRow(row).getCell(colIndex);
+            if (colIndex == fromCol) {
+                // // The first merged cell is set with RESTART merge value
+                cell.getCTTc().addNewTcPr().addNewHMerge().setVal(STMerge.RESTART);
+            } else {
+                // Cells which join (merge) the first one, are set with CONTINUE
+                cell.getCTTc().addNewTcPr().addNewHMerge().setVal(STMerge.CONTINUE);
+            }
+        }
+    }
+
+    private static void setTableBorders(XWPFTable table) {
+        table.setInsideVBorder(XWPFBorderType.SINGLE, 0, 0, "00");
+        table.setRightBorder(XWPFBorderType.SINGLE, 0, 0, "00");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2014-2018. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2014-2019. Part of the SW360 Portal Project.
  * With modifications by Bosch Software Innovations GmbH, 2016.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -15,24 +15,22 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TBase;
-import org.apache.thrift.TFieldIdEnum;
+
 import org.eclipse.sw360.datahandler.couchdb.AttachmentContentWrapper;
 import org.eclipse.sw360.datahandler.couchdb.DocumentWrapper;
 import org.eclipse.sw360.datahandler.couchdb.deserializer.UsageDataDeserializer;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
-import org.eclipse.sw360.datahandler.thrift.components.ClearingInformation;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.components.Repository;
-import org.eclipse.sw360.datahandler.thrift.fossology.FossologyHostFingerPrint;
+import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.*;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
+
+import org.apache.log4j.Logger;
+import org.apache.thrift.TBase;
+import org.apache.thrift.TFieldIdEnum;
 import org.ektorp.util.Documents;
 
 import java.util.Collection;
@@ -49,6 +47,7 @@ public class ThriftUtils {
     private static final Logger log = Logger.getLogger(ThriftUtils.class);
 
     public static final List<Class<?>> THRIFT_CLASSES = ImmutableList.<Class<?>>builder()
+            .add(ConfigContainer.class) // general
             .add(AttachmentContent.class) // Attachment service
             .add(AttachmentUsage.class) // Attachment service
             .add(Component.class).add(Release.class) // Component service
@@ -59,7 +58,7 @@ public class ThriftUtils {
             .add(User.class) // User service
             .add(Vendor.class) // Vendor service
             .add(ModerationRequest.class) // Moderation service‚
-            .add(FossologyHostFingerPrint.class) // Fossology service
+            .add(ExternalToolProcess.class, ExternalToolProcessStep.class) // external tools like Fossology service
             .add(Vulnerability.class, ReleaseVulnerabilityRelation.class, ProjectVulnerabilityRating.class) // Vulnerability Service
             .build();
 
@@ -91,9 +90,7 @@ public class ThriftUtils {
     public static final ImmutableList<Release._Fields> IMMUTABLE_OF_RELEASE = ImmutableList.of(
             Release._Fields.CREATED_BY,
             Release._Fields.CREATED_ON,
-            Release._Fields.FOSSOLOGY_ID,
-            Release._Fields.ATTACHMENT_IN_FOSSOLOGY,
-            Release._Fields.CLEARING_TEAM_TO_FOSSOLOGY_STATUS);
+            Release._Fields.EXTERNAL_TOOL_PROCESSES);
 
 
     public static final ImmutableList<Release._Fields> IMMUTABLE_OF_RELEASE_FOR_FOSSOLOGY = ImmutableList.of(

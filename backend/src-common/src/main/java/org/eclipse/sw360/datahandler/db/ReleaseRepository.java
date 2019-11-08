@@ -49,6 +49,14 @@ import static com.google.common.base.Strings.isNullOrEmpty;
                     "    }" +
                     "  }" +
                     "}"),
+        @View(name = "usedInReleaseRelation",
+                map = "function(doc) {" +
+                    " if(doc.type == 'release') {" +
+                    "   for(var id in doc.releaseIdToRelationship) {" +
+                    "     emit(id, doc);" + 
+                    "   }" + 
+                    " }" +
+                    "}"),
         @View(name = "releaseByVendorId",
                 map = "function(doc) {" +
                     " if (doc.type == 'release'){" +
@@ -128,12 +136,14 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
     }
 
     public List<Release> getReleasesFromVendorIds(Set<String> ids) {
+        return makeSummaryFromFullDocs(SummaryType.SHORT, queryByIds("releaseByVendorId", ids));
+    }
 
-        return makeSummaryFromFullDocs(SummaryType.SHORT, queryByIds("releaseIdByVendorId", ids));
+    public Set<Release> getReleasesByVendorId(String vendorId) {
+        return new HashSet<>(queryView("releaseByVendorId", vendorId));
     }
 
     public List<Release> searchReleasesByUsingLicenseId(String licenseId) {
-
         return queryView("releaseIdsByLicenseId", licenseId);
     }
 
@@ -141,5 +151,9 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
         RepositoryUtils repositoryUtils = new RepositoryUtils();
         Set<String> searchIds = repositoryUtils.searchByExternalIds(this, "byExternalIds", externalIds);
         return new HashSet<>(get(searchIds));
+    }
+
+    public List<Release> getReferencingReleases(String releaseId) {
+        return queryView("usedInReleaseRelation", releaseId);
     }
 }

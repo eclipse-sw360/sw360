@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -13,15 +13,17 @@ package org.eclipse.sw360.components;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import static org.eclipse.sw360.datahandler.TestUtils.*;
-import static org.eclipse.sw360.datahandler.thrift.components.Component._Fields.*;
+import static org.eclipse.sw360.datahandler.thrift.components.Component._Fields.DESCRIPTION;
+import static org.eclipse.sw360.datahandler.thrift.components.Component._Fields.ID;
+import static org.eclipse.sw360.datahandler.thrift.components.Component._Fields.NAME;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -52,13 +54,23 @@ public class ComponentHandlerTest {
     @Test
     public void testGetByUploadId() throws Exception {
 
-        Component originalComponent = new Component("name").setDescription("a desc");
+        Component originalComponent = new Component("name").setDescription("a desc").setComponentType(ComponentType.OSS);
         String componentId = componentHandler.addComponent(originalComponent, adminUser).getId();
 
-        Release release = new Release("name", "version", componentId).setFossologyId("id");
+        Release release = new Release("name", "version", componentId);
+        ExternalToolProcess etp = new ExternalToolProcess();
+        etp.setExternalTool(ExternalTool.FOSSOLOGY);
+        release.addToExternalToolProcesses(etp);
+        ExternalToolProcessStep etps = new ExternalToolProcessStep();
+        // do not use FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD so that test fails when
+        // it gets refactored and no one thinks of adjusting the view definition in
+        // ComponentRepository
+        etps.setStepName("01_upload");
+        etps.setProcessStepIdInTool("12345");
+        etp.addToProcessSteps(etps);
         String releaseId = componentHandler.addRelease(release, adminUser).getId();
 
-        Component component = componentHandler.getComponentForReportFromFossologyUploadId("id");
+        Component component = componentHandler.getComponentForReportFromFossologyUploadId("12345");
 
         assertThat(component, is(not(nullValue())));
         assertThat(component, is(equalTo(originalComponent, restrictedToFields(ID, NAME, DESCRIPTION))));

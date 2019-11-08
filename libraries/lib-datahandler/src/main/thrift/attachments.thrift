@@ -290,4 +290,9 @@ service AttachmentService {
      * Returns the sources/owners (project, component, release) of the attachment by attachmentContentId
      */
     list<Source> getAttachmentOwnersByIds(1: set<string> ids)
+
+    /**
+     * Returns all attachments usages by release id
+     */
+    list<AttachmentUsage> getAttachmentUsagesByReleaseId(1: string releaseId);
 }

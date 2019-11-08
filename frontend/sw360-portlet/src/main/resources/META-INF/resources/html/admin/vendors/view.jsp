@@ -80,6 +80,7 @@
                 vendorIdInURL = '<%=PortalConstants.VENDOR_ID%>',
                 pageName = '<%=PortalConstants.PAGENAME%>';
                 pageEdit = '<%=PortalConstants.PAGENAME_EDIT%>';
+                pageMerge = '<%=PortalConstants.PAGENAME_MERGE_VENDOR%>';
                 baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
 
             // initializing
@@ -95,10 +96,19 @@
                 var data = $(event.currentTarget).data();
                 window.location.href = createDetailURLfromVendorId(data.vendorId);
             });
+            $('#vendorsTable').on('click', 'svg.merge', function (event) {
+                var data = $(event.currentTarget).data();
+                window.location.href = createMergeURLfromVendorId(data.vendorId);
+            });
 
             // helper functions
             function createDetailURLfromVendorId (paramVal) {
-                var portletURL = PortletURL.createURL( baseUrl ).setParameter(pageName,pageEdit).setParameter(vendorIdInURL, paramVal);
+                var portletURL = PortletURL.createURL( baseUrl ).setParameter(pageName, pageEdit).setParameter(vendorIdInURL, paramVal);
+                return portletURL.toString();
+            }
+
+            function createMergeURLfromVendorId (paramVal) {
+                var portletURL = PortletURL.createURL( baseUrl ).setParameter(pageName, pageMerge).setParameter(vendorIdInURL, paramVal);
                 return portletURL.toString();
             }
 
@@ -122,6 +132,7 @@
                         "2": "<sw360:out value="${vendor.url}"/>",
                         "3":  '<div class="actions">'
                             +   '<svg class="edit lexicon-icon" data-vendor-id="${vendor.id}"><title>Edit</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>'
+                            +   '<svg class="merge lexicon-icon" data-vendor-id="${vendor.id}"><title>Merge</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#merge"/></svg>'
                             +   '<svg class="delete lexicon-icon" data-vendor-id="${vendor.id}" data-vendor-name="<sw360:out value="${vendor.fullname}"/>"><title>Delete</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/></svg>'
                             + '</div>'
 
@@ -134,7 +145,7 @@
                         {"title": "Full Name"},
                         {"title": "Short Name"},
                         {"title": "URL"},
-                        {"title": "Actions", className: "two actions" }
+                        {"title": "Actions", className: "three actions" }
                     ],
                     searching: true,
                     language: {

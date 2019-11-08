@@ -28,6 +28,7 @@
 <%@ include file="/html/utils/includes/errorKeyToMessage.jspf"%>
 
 
+<liferay-ui:error key="custom_error" message="${cyclicError}" embed="false"/>
 <portlet:defineObjects />
 <liferay-theme:defineObjects />
 
@@ -55,8 +56,10 @@
     <jsp:useBean id="attachments" type="java.util.Set<org.eclipse.sw360.datahandler.thrift.attachments.Attachment>" scope="request"/>
     <jsp:useBean id="defaultLicenseInfoHeaderText" class="java.lang.String" scope="request" />
     <jsp:useBean id="defaultObligationsText" class="java.lang.String" scope="request" />
+    <jsp:useBean id="isUserAtLeastClearingAdmin" type="java.lang.Boolean" scope="request" />
 
     <core_rt:set  var="addMode"  value="${empty project.id}" />
+    <core_rt:set  var="pageName"  value="<%= request.getParameter("pagename") %>" />
 </c:catch>
 
 <%--These variables are used as a trick to allow referencing enum values in EL expressions below--%>
@@ -65,6 +68,15 @@
 <c:set var="hasWritePermissions" value="${project.permissions[WRITE]}"/>
 
 <core_rt:if test="${empty attributeNotFoundException}">
+
+<core_rt:set var="isObligationEnabled"  value="${hasWritePermissions and isUserAtLeastClearingAdmin}" />
+<core_rt:if test="${isObligationEnabled}">
+    <core_rt:set var="isObligationPresent"  value="${not empty project.linkedObligations and project.linkedObligations.size() > 0}" />
+    <core_rt:if test="${isObligationPresent}">
+        <jsp:useBean id="projectReleaseLicenseInfo" type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult>" scope="request" />
+    <jsp:useBean id="approvedObligationsCount" type="java.lang.Integer" scope="request"/>
+    </core_rt:if>
+</core_rt:if>
 
 <div class="container" style="display: none;">
     <div class="row">
@@ -75,6 +87,27 @@
                 <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-linkedProjects'}">active</core_rt:if>" href="#tab-linkedProjects" data-toggle="list" role="tab">Linked Releases And Projects</a>
                 <core_rt:if test="${not addMode}" >
                     <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Attachments'}">active</core_rt:if>" href="#tab-Attachments" data-toggle="list" role="tab">Attachments</a>
+                    <core_rt:if test="${isObligationEnabled}">
+                        <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Obligations'}">active</core_rt:if>" href="#tab-Obligations" data-toggle="list" role="tab">Obligations
+                        <core_rt:if test="${isObligationPresent}">
+                            <span id="obligtionsCount"
+                                <core_rt:choose>
+                                    <core_rt:when test="${approvedObligationsCount == 0}">
+                                        class="badge badge-danger"
+                                    </core_rt:when>
+                                    <core_rt:when test="${approvedObligationsCount == project.linkedObligations.size()}">
+                                        class="badge badge-success"
+                                    </core_rt:when>
+                                    <core_rt:otherwise>
+                                        class="badge badge-light"
+                                    </core_rt:otherwise>
+                                </core_rt:choose>
+                            >
+                                ${approvedObligationsCount} / ${project.linkedObligations.size()}
+                            </span>
+                        </core_rt:if>
+                        </a>
+                    </core_rt:if>
                 </core_rt:if>
             </div>
         </div>
@@ -103,9 +136,23 @@
                         <div class="btn-group" role="group">
                             <button id="cancelEditButton" type="button" class="btn btn-light">Cancel</button>
                         </div>
+                        <div class="list-group-companion" data-belong-to="tab-Obligations">
+                            <core_rt:if test="${not addMode and isObligationEnabled and isObligationPresent}">
+                                <div class="nav nav-pills justify-content-center bg-light font-weight-bold" id="pills-tab" role="tablist">
+                                    <a class="nav-item nav-link active" id="pills-obligations-tab" data-toggle="pill" href="#pills-obligationsView" role="tab" aria-controls="pills-obligationsView" aria-selected="true">
+                                    <svg class="lexicon-icon"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg> &nbsp;Edit Obligations</a>
+                                    <a class="nav-item nav-link" id="pills-releases-tab" data-toggle="pill" href="#pills-releasesView" role="tab" aria-controls="pills-releasesView" aria-selected="false">
+                                    <svg class="lexicon-icon"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#view"/></svg> &nbsp;View by Releases</a>
+                                    <span>
+                                        <button id="saveObligationsButton" type="button" class="btn btn-primary" data-btn-type="saveObligations" disabled style="display: none;">Save Obligations</button>
+                                    </span>
+                                    <span id="saveObligationMessage" class="p-2 mb-0 alert" style="display: none;"></span>
+                                </div>
+                            </core_rt:if>
+                        </div>
                     </div>
                 </div>
-                <div class="col portlet-title text-truncate" title="${sw360:printProjectName(project)}"">
+                <div class="col portlet-title text-truncate" title="${sw360:printProjectName(project)}">
                     <sw360:ProjectName project="${project}"/>
                 </div>
             </div>
@@ -144,6 +191,11 @@
                                 <div id="tab-Attachments" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Attachments'}">active show</core_rt:if>">
                                     <%@include file="/html/utils/includes/editAttachments.jspf" %>
                                 </div>
+                                <core_rt:if test="${isObligationEnabled}">
+                                    <div id="tab-Obligations" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Obligations'}">active show</core_rt:if>">
+                                        <%@include file="/html/projects/includes/projects/linkedObligations.jspf" %>
+                                    </div>
+                                </core_rt:if>
                             </core_rt:if>
                         </div>
                     </form>
@@ -230,9 +282,16 @@ require(['jquery', 'modules/dialog', 'modules/listgroup', 'modules/validation', 
     $('#cancelEditButton').on('click', cancel);
     $('#deleteProjectButton').on('click', deleteProject);
 
+    <core_rt:if test="${not addMode and isObligationEnabled and isObligationPresent}">
+        $(document).ready(toggleSubmitAndDeleteButton(window.location.href.indexOf('#/tab-Obligations') != -1));
+        $('#detailTab a').on('click', function(){
+            toggleSubmitAndDeleteButton($(this).attr('href') === '#tab-Obligations');
+        });
+    </core_rt:if>
     function submitForm() {
         disableLicenseInfoHeaderTextIfNecessary();
         disableObligationsTextIfNecessary();
+        $('#LinkedReleasesInfo tbody tr #mainlineState').prop('disabled', false);
         $('#projectEditForm').submit();
     }
 
@@ -325,6 +384,18 @@ require(['jquery', 'modules/dialog', 'modules/listgroup', 'modules/validation', 
         if($('#obligationsText').val() == $('#obligationsText').data("defaulttext")) {
             $('#obligationsText').prop('disabled', true);
         }
+    }
+
+    function toggleSubmitAndDeleteButton(hide) {
+        if (hide) {
+            $("#formSubmit").hide();
+            $("#cancelEditButton").hide();
+            $("#deleteProjectButton").hide();
+        } else {
+            $("#formSubmit").show();
+            $("#cancelEditButton").show();
+            $("#deleteProjectButton").show();
+       }
     }
 });
 </script>

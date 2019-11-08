@@ -87,6 +87,11 @@
                             <div class="btn-group" role="group">
                                 <button type="button" id="linkToProject" class="btn btn-secondary" data-release-id="${releaseId}" data-release-name="<sw360:ReleaseName release="${release}"/>">Link to Project</button>
                             </div>
+                            <core_rt:if test="${isUserAllowedToMerge}">
+                                <div class="btn-group" role="group">
+                                    <button type="button" data-release-id="${release.id}" id="mergeButton" class="btn btn-secondary">Merge</button>
+                                </div>
+                            </core_rt:if>
                             <div class="btn-group" role="group">
                                 <sw360:DisplaySubscribeButton email="<%=themeDisplay.getUser().getEmailAddress()%>" object="${release}"
                                         id="SubscribeButton" />
@@ -177,6 +182,16 @@
         $('#linkToProject').on('click', function() {
             linkProject.openLinkDialog($(event.currentTarget).data().releaseId, $(event.currentTarget).data().releaseName);
         });
+
+        $('#mergeButton').on('click', function(event) {
+            var releaseId = $(event.currentTarget).data().releaseId;
+            var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>',
+                portletURL = Liferay.PortletURL.createURL(baseUrl)
+                                                .setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_MERGE_RELEASE%>')
+                                                .setParameter('<%=PortalConstants.RELEASE_ID%>', releaseId);
+            window.location = portletURL.toString();
+        });
+
 
         $('#SubscribeButton').on('click', function(event) {
             var $button = $(event.currentTarget),

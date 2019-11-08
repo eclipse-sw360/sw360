@@ -16,9 +16,12 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
@@ -50,8 +53,11 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
 @BasePathAwareController
@@ -105,7 +111,38 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
         HalResource halRelease = createHalReleaseResource(sw360Release, true);
+        Map<String, ReleaseRelationship> releaseIdToRelationship = sw360Release.getReleaseIdToRelationship();
+        if (releaseIdToRelationship != null) {
+            List<Release> listOfLinkedRelease = releaseIdToRelationship.keySet().stream()
+                    .map(linkedReleaseId -> wrapTException(
+                            () -> releaseService.getReleaseForUserById(linkedReleaseId, sw360User)))
+                    .collect(Collectors.toList());
+            restControllerHelper.addEmbeddedReleases(halRelease, listOfLinkedRelease);
+        }
         return new ResponseEntity<>(halRelease, HttpStatus.OK);
+    }
+
+    @RequestMapping(value = RELEASES_URL + "/usedBy" + "/{id}", method = RequestMethod.GET)
+    public ResponseEntity<Resources<Resource>> getUsedByResourceDetails(@PathVariable("id") String id)
+            throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication(); // Project
+        Set<org.eclipse.sw360.datahandler.thrift.projects.Project> sw360Projects = releaseService.getProjectsByRelease(id, user);
+        Set<org.eclipse.sw360.datahandler.thrift.components.Component> sw360Components = releaseService.getUsingComponentsForRelease(id, user);
+
+        List<Resource> resources = new ArrayList<>();
+        sw360Projects.stream().forEach(p -> {
+            Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
+            resources.add(new Resource<>(embeddedProject));
+        });
+
+        sw360Components.stream()
+                .forEach(c -> {
+                    Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c);
+                    resources.add(new Resource<>(embeddedComponent));
+                });
+
+        Resources<Resource<Object>> finalResources = new Resources(resources);
+        return new ResponseEntity(finalResources, HttpStatus.OK);
     }
 
     @RequestMapping(value = RELEASES_URL + "/searchByExternalIds", method = RequestMethod.GET)

@@ -216,6 +216,32 @@ public class RestControllerHelper<T> {
         }
     }
 
+    public void addEmbeddedContributors(HalResource halResource, Set<String> contributors) {
+        User sw360User;
+        for (String contributorEmail : contributors) {
+            try {
+                sw360User = userService.getUserByEmail(contributorEmail);
+            } catch (RuntimeException e) {
+                sw360User = new User();
+                sw360User.setId(contributorEmail).setEmail(contributorEmail);
+                LOGGER.debug("Could not get user object from backend with email: " + contributorEmail);
+            }
+            addEmbeddedUser(halResource, sw360User, "sw360:contributors");
+        }
+    }
+
+    public void addEmbeddedLeadArchitect(HalResource halResource, String leadArchitect) {
+        User sw360User;
+        try {
+              sw360User = userService.getUserByEmail(leadArchitect);
+            } catch (RuntimeException e) {
+                sw360User = new User();
+                sw360User.setId(leadArchitect).setEmail(leadArchitect);
+                LOGGER.debug("Could not get user object from backend with email: " + leadArchitect);
+            }
+            addEmbeddedUser(halResource, sw360User, "leadArchitect");
+    }
+
     public void addEmbeddedReleases(
             HalResource halResource,
             Set<String> releases,
@@ -239,7 +265,7 @@ public class RestControllerHelper<T> {
         User embeddedUser = convertToEmbeddedUser(user);
         Resource<User> embeddedUserResource = new Resource<>(embeddedUser);
         try {
-            Link userLink = linkTo(UserController.class).slash("api/users/" + URLEncoder.encode(user.getId(), "UTF-8")).withSelfRel();
+            Link userLink = linkTo(UserController.class).slash("api/users/byid/" + URLEncoder.encode(user.getId(), "UTF-8")).withSelfRel();
             embeddedUserResource.add(userLink);
             halResource.addEmbeddedResource(relation, embeddedUserResource);
         } catch (UnsupportedEncodingException e) {

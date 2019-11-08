@@ -29,7 +29,7 @@
                 <input id="comp_name" name="<portlet:namespace/><%=Release._Fields.NAME%>" type="text" readonly
                     required class="form-control" value="<sw360:out value="${component.name}"/>" />
                 <small class="form-text">
-                    <span title="title="Name of the component"">
+                    <span title="Name of the component">
                         <clay:icon symbol="info-circle-open" />
                         Name of the component.
                     </span>
@@ -136,6 +136,9 @@
                 <label for="mainline_state">Release Mainline State</label>
                 <select class="form-control" id="mainline_state"
                         name="<portlet:namespace/><%=Release._Fields.MAINLINE_STATE%>"
+                    <core_rt:if test="${not isUserAtLeastClearingAdmin and not mainlineStateEnabledForUserRole}" >
+                        disabled="disabled"
+                    </core_rt:if>
                 >
                     <sw360:DisplayEnumOptions type="<%=MainlineState.class%>" selected="${release.mainlineState}"/>
                 </select>

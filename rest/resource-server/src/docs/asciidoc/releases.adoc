@@ -191,3 +191,17 @@ include::{snippets}/should_document_delete_releases/curl-request.adoc[]
 
 ===== Example response
 include::{snippets}/should_document_delete_releases/http-response.adoc[]
+
+[[resources-release-usedby-list]]
+==== Resources using the release
+
+A `GET` request will display all the resources where the release is used.
+
+===== Response structure
+include::{snippets}/should_document_get_usedbyresource_for_release/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_usedbyresource_for_release/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_usedbyresource_for_release/http-response.adoc[]

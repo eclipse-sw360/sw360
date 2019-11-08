@@ -21,6 +21,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
@@ -31,6 +32,7 @@ import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.UserController;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.vendor.VendorController;
+import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
@@ -42,6 +44,7 @@ import org.springframework.hateoas.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
@@ -79,6 +82,9 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
     private final Sw360VendorService vendorService;
 
     @NonNull
+    private final Sw360UserService userService;
+
+    @NonNull
     private final Sw360AttachmentService attachmentService;
 
     @NonNull
@@ -104,7 +110,7 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
 
         List<Resource<Component>> componentResources = new ArrayList<>();
         paginationResult.getResources().stream()
-                .filter(component -> componentType == null || componentType.equals(component.componentType.name()))
+                .filter(component -> componentType == null || (component.isSetComponentType() && componentType.equals(component.componentType.name())))
                 .forEach(c -> {
                     Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c, fields);
                     componentResources.add(new Resource<>(embeddedComponent));
@@ -117,6 +123,29 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
             resources = restControllerHelper.generatePagesResource(paginationResult, componentResources);
         }
         return new ResponseEntity<>(resources, HttpStatus.OK);
+    }
+
+    @RequestMapping(value = COMPONENTS_URL + "/usedBy" + "/{id}", method = RequestMethod.GET)
+    public ResponseEntity<Resources<Resource>> getUsedByResourceDetails(@PathVariable("id") String id)
+            throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication(); // Project
+        Set<Project> sw360Projects = componentService.getProjectsByComponentId(id, user);
+        Set<Component> sw360Components = componentService.getUsingComponentsForComponent(id, user);
+
+        List<Resource<Object>> resources = new ArrayList<>();
+        sw360Projects.stream().forEach(p -> {
+            Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
+            resources.add(new Resource<>(embeddedProject));
+        });
+
+        sw360Components.stream()
+                .forEach(c -> {
+                    Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c);
+                    resources.add(new Resource<>(embeddedComponent));
+                });
+
+        Resources<Resource> finalResources = new Resources(resources);
+        return new ResponseEntity(finalResources, HttpStatus.OK);
     }
 
     @RequestMapping(value = COMPONENTS_URL + "/{id}", method = RequestMethod.GET)
@@ -170,6 +199,9 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
     public ResponseEntity<Resource<Component>> createComponent(@RequestBody Component component) throws URISyntaxException, TException {
 
         User user = restControllerHelper.getSw360UserFromAuthentication();
+        if(component.getComponentType() == null) {
+            throw new HttpMessageNotReadableException("Required field componentType is not present");
+        }
 
         if (component.getVendorNames() != null) {
             Set<String> vendors = new HashSet<>();
@@ -285,7 +317,7 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
             restControllerHelper.addEmbeddedAttachments(halComponent, sw360Component.getAttachments());
         }
 
-        restControllerHelper.addEmbeddedUser(halComponent, user, "createdBy");
+        restControllerHelper.addEmbeddedUser(halComponent, userService.getUserByEmail(sw360Component.getCreatedBy()), "createdBy");
 
         return halComponent;
     }

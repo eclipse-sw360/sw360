@@ -10,9 +10,7 @@
  */
 
 @import "portlets/admin/buttons";
-@import "portlets/admin/fossolgy/buttons";
 @import "portlets/admin/importexport/buttons";
-@import "portlets/components/merge";
 @import "portlets/homepage/signup";
 @import "portlets/homepage/welcome";
 @import "portlets/search/sidebar";
@@ -31,6 +29,7 @@
 	@import "components/dialog";
 	@import "components/form";
 	@import "components/listgroup";
+	@import "components/merge";
 	@import "components/table";
 	@import "components/toolbar";
 	@import "components/treetable";
@@ -173,6 +172,11 @@
 			width: 8.5rem !important;
 		}
 
+		th.six.actions, td.six.actions {
+			max-width: 10.2rem;
+			width: 10.2rem !important;
+		}
+
 		div.dataTables_info {
 			padding-top: 0.5rem;
 			font-size: 0.875rem;
@@ -287,6 +291,10 @@
 		display: block;
 	}
 
+	span.mapDisplayChildItemLeft {
+		font-weight: bold;
+	}
+
 	.spinning {
 		animation: spinning 2s linear infinite;
 	}
@@ -294,4 +302,16 @@
 	@keyframes spinning {
 		100% { transform:rotate(360deg); }
 	}
+
+    #fossologyClearingDialog {
+
+        .progress-bar {
+            padding-left: 1rem;
+
+            color: black;
+            font-size: 175%;
+	        text-align: left;
+	    }
+    }
+
 }

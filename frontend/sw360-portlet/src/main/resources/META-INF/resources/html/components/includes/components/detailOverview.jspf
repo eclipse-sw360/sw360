@@ -47,7 +47,7 @@
                             </div>
                             <core_rt:if test="${isUserAllowedToMerge}">
                                 <div class="btn-group" role="group">
-                                    <button type="button" data-component-id="${component.id}" id="mergeButton" class="btn btn-secondary" data-component-id="${component.id}">Merge</button>
+                                    <button type="button" data-component-id="${component.id}" id="mergeButton" class="btn btn-secondary">Merge</button>
                                 </div>
                             </core_rt:if>
                             <div class="btn-group" role="group">

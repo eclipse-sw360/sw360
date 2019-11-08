@@ -71,4 +71,14 @@ service VendorService {
      * vendor specified by id is updated in database if user has sufficient permissions, otherwise FAILURE is returned
      **/
     RequestStatus updateVendor(1: Vendor vendor, 2: User user);
+
+    /**
+     * merge vendor identified by vendorSourceId into vendor identified by vendorTargetId.
+     * The vendorSelection shows which data has to be set on the target. The source will be deleted afterwards.
+     * If user does not have permissions, RequestStatus.ACCESS_DENIED is returned
+     * If any of the vendor has an active moderation request, it's a noop and RequestStatus.IN_USE is returned.
+     * On any other error, REQUEST_FAILURE is returned.
+     **/
+    RequestStatus mergeVendors(1: string vendorTargetId, 2: string vendorSourceId, 3: Vendor vendorSelection, 4: User user);
+
 }

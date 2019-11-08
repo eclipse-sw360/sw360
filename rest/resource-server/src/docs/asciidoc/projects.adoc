@@ -278,3 +278,17 @@ include::{snippets}/should_document_get_download_license_info/curl-request.adoc[
 
 ===== Example response
 include::{snippets}/should_document_get_download_license_info/http-response.adoc[]
+
+[[resources-project-usedby-list]]
+==== Resources using the project
+
+A `GET` request will display all the projects where the project is used.
+
+===== Response structure
+include::{snippets}/should_document_get_usedbyresource_for_project/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_usedbyresource_for_project/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_usedbyresource_for_project/http-response.adoc[]

@@ -13,6 +13,7 @@ package org.eclipse.sw360.datahandler.db;
 
 import com.google.common.collect.*;
 
+import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
@@ -26,17 +27,24 @@ import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityCheckStatus;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
 import org.eclipse.sw360.mail.MailConstants;
 import org.eclipse.sw360.mail.MailUtil;
-
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.ektorp.DocumentOperationResult;
@@ -48,9 +56,10 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
+import java.util.stream.*;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.Sets.newHashSet;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.common.Duration.durationOf;
@@ -193,6 +202,10 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return releaseRepository.getReleasesFromVendorIds(ids);
     }
 
+    public Set<Release> getReleasesByVendorId(String vendorId) {
+        return releaseRepository.getReleasesByVendorId(vendorId);
+    }
+
     public List<Release> getReleasesFromComponentId(String id, User user) throws TException {
         return releaseRepository.getReleasesFromComponentId(id, user);
     }
@@ -292,7 +305,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     /**
      * Add a single new release to the database
      */
-    public AddDocumentRequestSummary addRelease(Release release, String user) throws SW360Exception {
+    public AddDocumentRequestSummary addRelease(Release release, User user) throws SW360Exception {
         // Prepare the release and get underlying component ID
         prepareRelease(release);
         if(isDuplicate(release)) {
@@ -306,12 +319,14 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         assertNotNull(component);
 
         // Save creating user
-        release.setCreatedBy(user);
+        release.setCreatedBy(user.getEmail());
         release.setCreatedOn(SW360Utils.getCreatedOn());
 
         // Add default ECC options if download url is set
         autosetEccFieldsForReleaseWithDownloadUrl(release);
 
+        // check for MainlineState change
+        setMainlineState(release, user, null);
         // Add release to database
         releaseRepository.add(release);
         final String id = release.getId();
@@ -335,7 +350,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         updateReleaseDependentFieldsForComponent(component, release);
         componentRepository.update(component);
 
-        sendMailNotificationsForNewRelease(release, user);
+        sendMailNotificationsForNewRelease(release, user.getEmail());
         return new AddDocumentRequestSummary()
                 .setRequestStatus(AddDocumentRequestStatus.SUCCESS)
                 .setId(id);
@@ -369,6 +384,11 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 component.setOperatingSystems(new HashSet<String>());
             }
             component.operatingSystems.addAll(nullToEmptySet(release.operatingSystems));
+
+            if(!component.isSetSoftwarePlatforms()) {
+                component.setSoftwarePlatforms(new HashSet<String>());
+            }
+            component.softwarePlatforms.addAll(nullToEmptySet(release.softwarePlatforms));
 
             if (!component.isSetVendorNames()) {
                 component.setVendorNames(new HashSet<String>());
@@ -416,6 +436,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
             copyFields(actual, component, ThriftUtils.IMMUTABLE_OF_COMPONENT);
             component.setAttachments(getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), component.getAttachments()));
+            recomputeReleaseDependentFields(component, null);
             updateComponentInternal(component, actual, user);
 
             if (isComponentNameChanged) {
@@ -494,16 +515,16 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             User sessionUser) throws TException {
         Component mergeTarget = getComponent(mergeTargetId, sessionUser);
         Component mergeSource = getComponent(mergeSourceId, sessionUser);
-        // load releases anew and overwrite them in the component, because getComponent() returns release summaries
-        // without revision, but we need the revision to update releases in mergeReleases(), or else couchdb reports
-        // revision conflict
-        Set<String> sourceReleaseIds = nullToEmptyList(mergeSource.getReleases()).stream().map(Release::getId).collect(Collectors.toSet());
-        mergeSource.setReleases(getReleasesForClearingStateSummary(sourceReleaseIds));
+
+        Set<String> releaseIds = Stream.concat(
+            nullToEmptyList(mergeSource.getReleases()).stream(), 
+            nullToEmptyList(mergeTarget.getReleases()).stream()
+        ).map(Release::getId).collect(Collectors.toSet());
 
         if (!makePermission(mergeTarget, sessionUser).isActionAllowed(RequestedAction.WRITE)
                 || !makePermission(mergeSource, sessionUser).isActionAllowed(RequestedAction.WRITE)
                 || !makePermission(mergeSource, sessionUser).isActionAllowed(RequestedAction.DELETE)) {
-            return RequestStatus.FAILURE;
+            return RequestStatus.ACCESS_DENIED;
         }
 
         if (isComponentUnderModeration(mergeTargetId) ||
@@ -511,15 +532,28 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return RequestStatus.IN_USE;
         }
 
-        mergePlainFields(mergeSelection, mergeTarget);
-        mergeReleases(mergeSource, mergeTarget, mergeSelection, sessionUser);
-        mergeAttachments(mergeSelection, mergeTarget, mergeSource);
+        try {
+            // First merge everything into the new compontent which is mergable in one step (attachments, plain fields)
+            mergePlainFields(mergeSelection, mergeTarget, mergeSource);
+            mergeAttachments(mergeSelection, mergeTarget, mergeSource);
+            transferReleases(releaseIds, mergeTarget, mergeSource);
+            recomputeReleaseDependentFields(mergeTarget, null);
 
-        // first, update source before deletion so that attachments and releases and
-        // stuff that has been migrated will not be deleted by component deletion!
-        updateComponentCompletely(mergeSource, sessionUser);
-        updateComponentCompletely(mergeTarget, sessionUser);
-        deleteComponent(mergeSourceId, sessionUser);
+            // update target first. If updating source fails, no data is lost (but inconsistency might occur)
+            updateComponentCompletely(mergeTarget, sessionUser);
+            // now, update source (before deletion so that attachments and releases and
+            // stuff that has been migrated will not be deleted by component deletion!)
+            updateComponentCompletely(mergeSource, sessionUser);
+
+            // now update some release fields related to the component (e.g. id and name)
+            updateReleasesAfterMerge(releaseIds, mergeSelection, mergeTarget, sessionUser);
+        
+            // Finally we can delete the source component
+            deleteComponent(mergeSourceId, sessionUser);
+        } catch(Exception e) {
+            log.error("Cannot merge component [" + mergeSource.getId() + "] into [" + mergeTarget.getId() + "]. Releases after merge: " + releaseIds, e);
+            return RequestStatus.FAILURE;
+        }
 
         return RequestStatus.SUCCESS;
     }
@@ -530,7 +564,31 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return sourceModerationRequests.stream().anyMatch(CommonUtils::isInProgressOrPending);
     }
 
-    private void mergePlainFields(Component mergeSelection, Component mergeTarget) {
+    private void mergePlainFields(Component mergeSelection, Component mergeTarget, Component mergeSource) {
+        // First handle the creator of the component in a way, that the discarded creator will be on the 
+        // moderator list afterwards. There is nothing to do, if source and target author are the same
+        if(!nullToEmpty(mergeTarget.getCreatedBy()).equals(mergeSource.getCreatedBy())) {
+            if(nullToEmpty(mergeSelection.getCreatedBy()).equals(nullToEmpty(mergeTarget.getCreatedBy()))) {
+                // creator of the target component should be retained. Add creator of source component to list of moderators.
+                mergeTarget.setModerators(mergeSelection.getModerators());
+                if(!isNullOrEmpty(mergeSource.getCreatedBy())) {
+                    mergeTarget.addToModerators(mergeSource.getCreatedBy());
+                }
+            } else {
+                // creator of the source component has been selected. Add creator of target component to list of moderators.
+
+                // remember creator otherwise it is overwritten
+                String creator = mergeTarget.getCreatedBy();
+
+                // merge
+                mergeTarget.setModerators(mergeSelection.getModerators());
+                if(!isNullOrEmpty(mergeTarget.getCreatedBy())) {
+                    mergeTarget.addToModerators(mergeTarget.getCreatedBy());
+                }
+            }
+        }
+
+        // Handle other fields
         copyFields(mergeSelection, mergeTarget, ImmutableSet.<Component._Fields>builder()
                 .add(Component._Fields.NAME)
                 .add(Component._Fields.CREATED_ON)
@@ -543,9 +601,12 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 .add(Component._Fields.WIKI)
                 .add(Component._Fields.MAILINGLIST)
                 .add(Component._Fields.DESCRIPTION)
+                .add(Component._Fields.EXTERNAL_IDS)
+                .add(Component._Fields.ADDITIONAL_DATA)
                 .add(Component._Fields.COMPONENT_OWNER)
                 .add(Component._Fields.OWNER_ACCOUNTING_UNIT)
                 .add(Component._Fields.OWNER_GROUP)
+                .add(Component._Fields.OWNER_COUNTRY)
                 .add(Component._Fields.MODERATORS)
                 .add(Component._Fields.SUBSCRIBERS)
                 .add(Component._Fields.ROLES)
@@ -584,30 +645,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }
         });
         mergeTarget.getAttachments().removeAll(attachmentsToDelete);
-
     }
 
-    private void mergeReleases(Component mergeSource, Component mergeTarget, Component mergeSelection, User sessionUser) throws SW360Exception {
-        // --- handle releases (a bit more complicated)
-
-        Set<String> selectedReleaseIds = nullToEmptyList(mergeSelection.getReleases()).stream().map(Release::getId).collect(Collectors.toSet());
-
-        // Migrate selected releases from source to target
-        List<Release> sourceReleases = nullToEmptyList(mergeSource.getReleases());
-        sourceReleases.stream()
-                .filter(r -> selectedReleaseIds.contains(r.getId()))
-                .forEach(r -> {
-                    r.setComponentId(mergeTarget.getId());
-                    // overwrite the release name with the name of the new target component, but only if it is equal
-                    // to the name of the source component. Example: if we're merging component 'android' into 'Android',
-                    // we don't want to override the release name 'Lollipop' with 'Android'. In contrast, when merging
-                    // e.g. Apache Commons into Commons, we do want to overwrite release name.
-                    if (Objects.equals(r.getName(), mergeSource.getName())) {
-                        r.setName(mergeSelection.getName());
-                    }
-                });
-        updateReleases(sourceReleases, sessionUser);
-
+    private void transferReleases(Set<String> releaseIds, Component mergeTarget, Component mergeSource) throws SW360Exception {
         // remove releaseids from source so that they don't get deleted on deletion of
         // source component later on (releases are not part of the component in couchdb,
         // only the ids)
@@ -615,8 +655,21 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         // only release ids are persisted, the list of release objects are joined so
         // there is no need to update that one
-        mergeTarget.setReleaseIds(new HashSet<>());
-        selectedReleaseIds.forEach(mergeTarget::addToReleaseIds);
+        releaseIds.forEach(mergeTarget::addToReleaseIds);
+    }
+
+    private void updateReleasesAfterMerge(Set<String> releaseIds, Component mergeSelection, Component mergeTarget, User sessionUser) throws SW360Exception {
+        // Change release name if appropriate
+        List<Release> releases = getReleasesForClearingStateSummary(releaseIds);
+        List<Release> releasesToUpdate = releases.stream()
+            .filter( r -> {
+                return !(r.getComponentId().equals(mergeTarget.getId()) && r.getName().equals(mergeSelection.getName()));
+            }).map(r -> {
+                r.setComponentId(mergeTarget.getId());
+                r.setName(mergeSelection.getName());
+                return r;
+            }).collect(Collectors.toList());
+        updateReleases(releasesToUpdate, sessionUser);
     }
 
     /**
@@ -670,6 +723,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 release.setAttachments(
                         getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), release.getAttachments()));
                 deleteAttachmentUsagesOfUnlinkedReleases(release, actual);
+                // check for MainlineState change
+                setMainlineState(release, user, actual);
                 releaseRepository.update(release);
                 updateReleaseDependentFieldsForComponentId(release.getComponentId());
                 // clean up attachments in database
@@ -685,6 +740,17 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }
 
             return RequestStatus.SUCCESS;
+        }
+    }
+
+    private void setMainlineState(Release updated, User user, Release current) {
+        boolean isMainlineStateDisabled = !(BackendUtils.MAINLINE_STATE_ENABLED_FOR_USER
+                || PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user));
+
+        if ((null == current || null == current.getMainlineState()) && isMainlineStateDisabled) {
+            updated.setMainlineState(MainlineState.OPEN);
+        } else if (isMainlineStateDisabled) {
+            updated.setMainlineState(current.getMainlineState());
         }
     }
 
@@ -807,9 +873,13 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
             requestSummary.setRequestStatus(RequestStatus.SUCCESS);
         } else {
-            requestSummary.setRequestStatus(RequestStatus.FAILURE);
+            requestSummary.setRequestStatus(RequestStatus.ACCESS_DENIED);
         }
         return requestSummary;
+    }
+
+    public RequestSummary updateReleasesDirectly(Set<Release> releases, User user) throws SW360Exception {
+        return RepositoryUtils.doBulk(prepareReleases(releases), user, releaseRepository);
     }
 
     public RequestStatus updateReleaseFromAdditionsAndDeletions(Release releaseAdditions, Release releaseDeletions, User user){
@@ -825,7 +895,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     }
 
-    protected Component updateReleaseDependentFieldsForComponentId(String componentId) {
+    public Component updateReleaseDependentFieldsForComponentId(String componentId) {
         Component component = componentRepository.get(componentId);
         recomputeReleaseDependentFields(component, null);
         componentRepository.update(component);
@@ -841,6 +911,304 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             if (containedRelease.getId().equals(skipThisReleaseId)) continue;
             updateReleaseDependentFieldsForComponent(component, containedRelease);
         }
+    }
+
+    public RequestStatus mergeReleases(String mergeTargetId, String mergeSourceId, Release mergeSelection,
+        User sessionUser) throws TException {
+
+        Release mergeTarget = getRelease(mergeTargetId, sessionUser);
+        Release mergeSource = getRelease(mergeSourceId, sessionUser);
+        
+        if (!makePermission(mergeTarget, sessionUser).isActionAllowed(RequestedAction.WRITE)
+                || !makePermission(mergeSource, sessionUser).isActionAllowed(RequestedAction.WRITE)
+                || !makePermission(mergeSource, sessionUser).isActionAllowed(RequestedAction.DELETE)) {
+            return RequestStatus.ACCESS_DENIED;
+        }
+        if (isReleaseUnderModeration(mergeTargetId) ||
+                isReleaseUnderModeration(mergeSourceId)){
+            return RequestStatus.IN_USE;
+        }
+        try {
+            // First merge everything into the new compontent which is mergable in one step (attachments, plain fields)
+            mergeReleasePlainFields(mergeSelection, mergeTarget, mergeSource);
+            mergeReleaseAttachments(mergeSelection, mergeTarget, mergeSource);
+            
+            // update target first. If updating source fails, no data is lost (but inconsistency might occur)
+            updateReleaseCompletely(mergeTarget, sessionUser, true, true, true);
+            // now, update source (before deletion so that attachments and releases and
+            // stuff that has been migrated will not be deleted by component deletion!)
+            updateReleaseCompletely(mergeSource, sessionUser, false, true, false);
+
+            // updating references to source release
+            // it is important to migrate the attachment usages first otherwise they will be delete during project update
+            updateReleaseReferencesInAttachmentUsages(mergeTargetId, mergeSourceId);
+            updateReleaseReferencesInProjects(mergeTargetId, mergeSourceId, sessionUser);
+            updateReleaseReferencesInReleases(mergeTargetId, mergeSourceId, sessionUser);
+            updateReleaseReferencesInVulnerabilities(mergeTargetId, mergeSourceId, sessionUser);
+            updateReleaseReferencesInProjectRatings(mergeTargetId, mergeSourceId, sessionUser);
+
+            // Finally we can delete the source component
+            updateParentComponent(mergeSource, sessionUser);
+            deleteRelease(mergeSourceId, sessionUser);
+        } catch(Exception e) {
+            log.error("Cannot merge release [" + mergeSource.getId() + "] into [" + mergeTarget.getId() + "].", e);
+            return RequestStatus.FAILURE;
+        }
+
+        return RequestStatus.SUCCESS;
+    }
+
+    private boolean isReleaseUnderModeration(String releaseId) throws TException {
+        ModerationService.Iface moderationClient = new ThriftClients().makeModerationClient();
+        List<ModerationRequest> moderationRequests = moderationClient.getModerationRequestByDocumentId(releaseId);
+        return moderationRequests.stream().anyMatch(CommonUtils::isInProgressOrPending);
+    }
+
+    private void mergeReleasePlainFields(Release mergeSelection, Release mergeTarget, Release mergeSource) {
+        // First handle the creator of the release in a way, that the discarded creator will be on the 
+        // moderator list afterwards. There is nothing to do, if source and target author are the same
+        if(!nullToEmpty(mergeTarget.getCreatedBy()).equals(mergeSource.getCreatedBy())) {
+            if(nullToEmpty(mergeSelection.getCreatedBy()).equals(nullToEmpty(mergeTarget.getCreatedBy()))) {
+                // creator of the target component should be retained. Add creator of source component to list of moderators.
+                mergeTarget.setModerators(mergeSelection.getModerators());
+                if(!isNullOrEmpty(mergeSource.getCreatedBy())) {
+                    mergeTarget.addToModerators(mergeSource.getCreatedBy());
+                }
+            } else {
+                // creator of the source component has been selected. Add creator of target component to list of moderators.
+                mergeTarget.setModerators(mergeSelection.getModerators());
+                if(!isNullOrEmpty(mergeTarget.getCreatedBy())) {
+                    mergeTarget.addToModerators(mergeTarget.getCreatedBy());
+                }
+            }
+        }
+
+        // Handle default fields
+        copyFields(mergeSelection, mergeTarget, ImmutableSet.<Release._Fields>builder()
+            .add(Release._Fields.VENDOR_ID)
+            .add(Release._Fields.NAME)
+            .add(Release._Fields.VERSION)
+            .add(Release._Fields.LANGUAGES)
+            .add(Release._Fields.OPERATING_SYSTEMS)
+            .add(Release._Fields.CPEID)
+            .add(Release._Fields.SOFTWARE_PLATFORMS)
+            .add(Release._Fields.RELEASE_DATE)
+            .add(Release._Fields.MAIN_LICENSE_IDS)
+            .add(Release._Fields.DOWNLOADURL)
+            .add(Release._Fields.MAINLINE_STATE)
+            .add(Release._Fields.CREATED_ON)
+            .add(Release._Fields.CREATED_BY)
+            .add(Release._Fields.CONTRIBUTORS)
+            .add(Release._Fields.MODERATORS)
+            .add(Release._Fields.SUBSCRIBERS)
+            .add(Release._Fields.REPOSITORY)
+            .add(Release._Fields.ROLES)
+            .add(Release._Fields.EXTERNAL_IDS)
+            .add(Release._Fields.ADDITIONAL_DATA)
+            .add(Release._Fields.RELEASE_ID_TO_RELATIONSHIP)
+            .build());
+
+        // Remove self links
+        if(mergeTarget.isSetReleaseIdToRelationship()) {
+            mergeTarget.getReleaseIdToRelationship().remove(mergeTarget.getId());
+        }
+
+        // Handle clearing information
+        copyFields(mergeSelection.getClearingInformation(), mergeTarget.getClearingInformation(), ImmutableSet.<ClearingInformation._Fields>builder()
+            .add(ClearingInformation._Fields.BINARIES_ORIGINAL_FROM_COMMUNITY)
+            .add(ClearingInformation._Fields.BINARIES_SELF_MADE)
+            .add(ClearingInformation._Fields.COMPONENT_LICENSE_INFORMATION)
+            .add(ClearingInformation._Fields.SOURCE_CODE_DELIVERY)
+            .add(ClearingInformation._Fields.SOURCE_CODE_ORIGINAL_FROM_COMMUNITY)
+            .add(ClearingInformation._Fields.SOURCE_CODE_TOOL_MADE)
+            .add(ClearingInformation._Fields.SOURCE_CODE_SELF_MADE)
+            .add(ClearingInformation._Fields.SCREENSHOT_OF_WEB_SITE)
+            .add(ClearingInformation._Fields.FINALIZED_LICENSE_SCAN_REPORT)
+            .add(ClearingInformation._Fields.LICENSE_SCAN_REPORT_RESULT)
+            .add(ClearingInformation._Fields.LEGAL_EVALUATION)
+            .add(ClearingInformation._Fields.LICENSE_AGREEMENT)
+            .add(ClearingInformation._Fields.SCANNED)
+            .add(ClearingInformation._Fields.COMPONENT_CLEARING_REPORT)
+            .add(ClearingInformation._Fields.CLEARING_STANDARD)
+            .add(ClearingInformation._Fields.EXTERNAL_URL)
+            .add(ClearingInformation._Fields.COMMENT)
+            .add(ClearingInformation._Fields.REQUEST_ID)
+            .add(ClearingInformation._Fields.ADDITIONAL_REQUEST_INFO)
+            .add(ClearingInformation._Fields.PROC_START)
+            .add(ClearingInformation._Fields.EVALUATED)
+            .add(ClearingInformation._Fields.EXTERNAL_SUPPLIER_ID)
+            .add(ClearingInformation._Fields.COUNT_OF_SECURITY_VN)
+            .build());
+
+        // Handle ECC information
+        copyFields(mergeSelection.getEccInformation(), mergeTarget.getEccInformation(), ImmutableSet.<EccInformation._Fields>builder()
+            .add(EccInformation._Fields.ECC_STATUS)
+            .add(EccInformation._Fields.ECC_COMMENT)
+            .add(EccInformation._Fields.AL)
+            .add(EccInformation._Fields.ECCN)
+            .add(EccInformation._Fields.MATERIAL_INDEX_NUMBER)
+            .add(EccInformation._Fields.ASSESSOR_CONTACT_PERSON)
+            .add(EccInformation._Fields.ASSESSOR_DEPARTMENT)
+            .add(EccInformation._Fields.ASSESSMENT_DATE)
+            .build());
+
+        // Handle COTS information
+        copyFields(mergeSelection.getCotsDetails(), mergeTarget.getCotsDetails(), ImmutableSet.<COTSDetails._Fields>builder()
+            .add(COTSDetails._Fields.USAGE_RIGHT_AVAILABLE)
+            .add(COTSDetails._Fields.COTS_RESPONSIBLE)
+            .add(COTSDetails._Fields.CLEARING_DEADLINE)
+            .add(COTSDetails._Fields.LICENSE_CLEARING_REPORT_URL)
+            .add(COTSDetails._Fields.USED_LICENSE)
+            .add(COTSDetails._Fields.CONTAINS_OSS)
+            .add(COTSDetails._Fields.OSS_CONTRACT_SIGNED)
+            .add(COTSDetails._Fields.OSS_INFORMATION_URL)
+            .add(COTSDetails._Fields.SOURCE_CODE_AVAILABLE)
+            .build());   
+    }
+
+    private void mergeReleaseAttachments(Release mergeSelection, Release mergeTarget, Release mergeSource) {
+        // --- handle attachments (a bit more complicated)
+        // prepare for no NPE
+        if (mergeSource.getAttachments() == null) {
+            mergeSource.setAttachments(new HashSet<>());
+        }
+        if (mergeTarget.getAttachments() == null) {
+            mergeTarget.setAttachments(new HashSet<>());
+        }
+
+        Set<String> attachmentIdsSelected = mergeSelection.getAttachments().stream()
+                .map(Attachment::getAttachmentContentId).collect(Collectors.toSet());
+        // add new attachments from source
+        Set<Attachment> attachmentsToAdd = new HashSet<>();
+        mergeSource.getAttachments().forEach(a -> {
+            if (attachmentIdsSelected.contains(a.getAttachmentContentId())) {
+                attachmentsToAdd.add(a);
+            }
+        });
+        // remove moved attachments in source
+        attachmentsToAdd.forEach(a -> {
+            mergeTarget.addToAttachments(a);
+            mergeSource.getAttachments().remove(a);
+        });
+        // delete unchosen attachments from target
+        Set<Attachment> attachmentsToDelete = new HashSet<>();
+        mergeTarget.getAttachments().forEach(a -> {
+            if (!attachmentIdsSelected.contains(a.getAttachmentContentId())) {
+                attachmentsToDelete.add(a);
+            }
+        });
+        mergeTarget.getAttachments().removeAll(attachmentsToDelete);
+    }
+
+
+    /**
+     * The {{@link #updateRelease(Component, User, Iterable)} does not change the given
+     * release completely according to the user request. As we want to have
+     * exactly the given release as a result, this method is really submitting the
+     * given data to the persistence.
+     */
+    private void updateReleaseCompletely(Release release, User user, boolean updateClearingState, boolean cleanup, boolean sendmail) throws SW360Exception {
+        // Prepare component for database
+        prepareRelease(release);
+
+        Release actual = releaseRepository.get(release.getId());
+        assertNotNull(actual, "Could not find release to update!");
+
+        // Update the database with the release
+        if(updateClearingState) {
+            autosetReleaseClearingState(release, actual);
+        }
+        releaseRepository.update(release);
+
+        //clean up attachments in database
+        if(cleanup) {
+            attachmentConnector.deleteAttachmentDifference(actual.getAttachments(), release.getAttachments());
+        }
+        if(sendmail) {
+            sendMailNotificationsForReleaseUpdate(release, user.getEmail());
+        }
+    }
+
+    private void updateReleaseReferencesInProjects(String mergeTargetId, String mergeSourceId, User sessionUser) throws TException {
+        ProjectService.Iface projectClient = new ThriftClients().makeProjectClient();
+
+        Set<Project> projects = projectClient.searchByReleaseId(mergeSourceId, sessionUser);
+        for(Project project : projects) {
+            // retrieve full document, other method only retrieves summary
+            project = projectClient.getProjectById(project.getId(), sessionUser);
+            ProjectReleaseRelationship relationship = project.getReleaseIdToUsage().remove(mergeSourceId);
+            // if the target release is also linked, keep this one, do not overwrite
+            if(!project.getReleaseIdToUsage().containsKey(mergeTargetId)) {
+                project.putToReleaseIdToUsage(mergeTargetId, relationship);
+            }
+            projectClient.updateProject(project, sessionUser);
+        }
+    }
+    
+    private void updateReleaseReferencesInAttachmentUsages(String mergeTargetId, String mergeSourceId) throws TException {
+        AttachmentService.Iface attachmentClient = new ThriftClients().makeAttachmentClient();
+
+        List<AttachmentUsage> usages = attachmentClient.getAttachmentUsagesByReleaseId(mergeSourceId);
+        for(AttachmentUsage usage : usages) {
+            if(usage.getOwner().isSetReleaseId() && usage.getOwner().getReleaseId().equals(mergeSourceId)) {
+                usage.getOwner().setReleaseId(mergeTargetId);
+            }
+            if(usage.getUsedBy().isSetReleaseId() && usage.getUsedBy().getReleaseId().equals(mergeSourceId)) {
+                usage.getUsedBy().setReleaseId(mergeTargetId);
+            }
+            attachmentClient.updateAttachmentUsage(usage);
+        }
+    }
+    
+    private void updateReleaseReferencesInReleases(String mergeTargetId, String mergeSourceId, User sessionUser) throws SW360Exception {
+        List<Release> releases = getReferencingReleases(mergeSourceId);
+        for(Release release : releases) {
+            ReleaseRelationship relationship = release.getReleaseIdToRelationship().remove(mergeSourceId);
+            // if the target release is also linked, keep this one, do not overwrite
+            if(!release.getReleaseIdToRelationship().containsKey(mergeTargetId)) {
+                release.putToReleaseIdToRelationship(mergeTargetId, relationship);
+            }
+            updateReleaseCompletely(release, sessionUser, false, false, false);
+        }
+    }
+    
+    private void updateReleaseReferencesInVulnerabilities(String mergeTargetId, String mergeSourceId, User sessionUser) throws TException {
+        VulnerabilityService.Iface vulnerabilityService = new ThriftClients().makeVulnerabilityClient();
+
+        List<ReleaseVulnerabilityRelation> relations = vulnerabilityService.getReleaseVulnerabilityRelationsByReleaseId(mergeSourceId, sessionUser);
+        for(ReleaseVulnerabilityRelation relation : relations) {
+            if(relation.isSetReleaseId() && relation.getReleaseId().equals(mergeSourceId)) {
+                relation.setReleaseId(mergeTargetId);
+                vulnerabilityService.updateReleaseVulnerabilityRelation(relation, sessionUser);
+            }
+        }
+    }
+    
+    private void updateReleaseReferencesInProjectRatings(String mergeTargetId, String mergeSourceId, User sessionUser) throws TException {
+        VulnerabilityService.Iface vulnerabilityService = new ThriftClients().makeVulnerabilityClient();
+
+        List<ProjectVulnerabilityRating> ratings = vulnerabilityService.getProjectVulnerabilityRatingsByReleaseId(mergeSourceId, sessionUser);
+        for(ProjectVulnerabilityRating rating : ratings) {
+            for(Map<String, List<VulnerabilityCheckStatus>> map : rating.getVulnerabilityIdToReleaseIdToStatus().values()) {
+                List<VulnerabilityCheckStatus> list = map.remove(mergeSourceId);
+                // if the target release is also linked, keep this one, do not overwrite
+                if(list != null && !map.containsKey(mergeTargetId)) {
+                    map.put(mergeTargetId, list);
+                }
+            }
+            vulnerabilityService.updateProjectVulnerabilityRating(rating, sessionUser);
+        }
+    }
+
+    private void updateParentComponent(Release release, User sessionUser) throws SW360Exception {
+        Component component = getComponent(release.getComponentId(), sessionUser);
+
+        Set<String> releaseIds = nullToEmptyList(component.getReleases()).stream().map(Release::getId).collect(Collectors.toSet());
+        releaseIds.remove(release.getId());
+        component.setReleaseIds(releaseIds);
+
+        recomputeReleaseDependentFields(component, null);
+        updateComponentCompletely(component, sessionUser);
     }
 
     ///////////////////////////////
@@ -1200,6 +1568,10 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return componentRepository.getUsingComponents(releaseIds);
     }
 
+    public Set<Component> getComponentsByDefaultVendorId(String vendorId) {
+        return componentRepository.getComponentsByDefaultVendorId(vendorId);
+    }
+
     public Component getComponentForReportFromFossologyUploadId(String uploadId) {
 
         Component component = componentRepository.getComponentFromFossologyUploadId(uploadId);
@@ -1276,6 +1648,10 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public int getTotalComponentsCount() {
         return componentRepository.getDocumentCount();
+    }
+
+    public List<Release> getReferencingReleases(String releaseId) {
+        return releaseRepository.getReferencingReleases(releaseId);
     }
 
     private void sendMailNotificationsForNewComponent(Component component, String user) {

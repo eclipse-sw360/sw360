@@ -14,6 +14,7 @@ import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
 import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -31,6 +32,7 @@ import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -61,6 +63,7 @@ import static org.springframework.restdocs.request.RequestDocumentation.requestP
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class ProjectSpecTest extends TestRestDocsSpecBase {
@@ -116,6 +119,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         additionalData.put("OSPO-Comment", "Some Comment");
 
         List<Project> projectListByName = new ArrayList<>();
+        Set<Project> usedByProjectList = new HashSet<>();
         project = new Project();
         project.setId("376576");
         project.setName("Emerald Web");
@@ -155,6 +159,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
         projectListByName.add(project);
         projectList.add(project);
+        usedByProjectList.add(project);
 
 
         Map<String, String> externalIds2 = new HashMap<>();
@@ -203,6 +208,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
         given(this.projectServiceMock.getProjectsForUser(anyObject())).willReturn(projectList);
         given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), anyObject())).willReturn(project);
+        given(this.projectServiceMock.searchLinkingProjects(eq(project.getId()), anyObject())).willReturn(usedByProjectList);
         given(this.projectServiceMock.searchProjectByName(eq(project.getName()), anyObject())).willReturn(projectListByName);
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), anyObject(), eq("false"))).willReturn(releaseIds);
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), anyObject(), eq("true"))).willReturn(releaseIdsTransitive);
@@ -226,6 +232,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         .setDescription("This is the description of my Test Project")
                         .setProjectType(ProjectType.PRODUCT)
                         .setVersion("1.0")
+                        .setCreatedBy("admin@sw360.org")
                         .setCreatedOn(new SimpleDateFormat("yyyy-MM-dd").format(new Date())));
 
         Release release = new Release();
@@ -289,6 +296,23 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         links(
                                 linkWithRel("curies").description("Curies are used for online documentation")
                         ),
+                        responseFields(
+                                fieldWithPath("_embedded.sw360:projects[]name").description("The name of the project"),
+                                fieldWithPath("_embedded.sw360:projects[]version").description("The project version"),
+                                fieldWithPath("_embedded.sw360:projects[]projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
+                                fieldWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_usedbyresource_for_project() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/projects/usedBy/" + project.getId())
+                .header("Authorization", "Bearer " + accessToken)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
                         responseFields(
                                 fieldWithPath("_embedded.sw360:projects[]name").description("The name of the project"),
                                 fieldWithPath("_embedded.sw360:projects[]version").description("The project version"),
@@ -505,6 +529,9 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         Map<String, ProjectRelationship> linkedProjects = new HashMap<String, ProjectRelationship>();
         linkedProjects.put("376576", ProjectRelationship.CONTAINED);
         project.put("linkedProjects", linkedProjects);
+        project.put("leadArchitect", "lead@sw360.org");
+        project.put("moderators", new HashSet<>(Arrays.asList("moderator1@sw360.org", "moderator2@sw360.org")));
+        project.put("contributors", new HashSet<>(Arrays.asList("contributor1@sw360.org", "contributor2@sw360.org")));
 
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         this.mockMvc.perform(post("/api/projects")
@@ -512,6 +539,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 .content(this.objectMapper.writeValueAsString(project))
                 .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isCreated())
+                .andExpect(jsonPath("_embedded.createdBy.email", Matchers.is("admin@sw360.org")))
                 .andDo(this.documentationHandler.document(
                         requestFields(
                                 fieldWithPath("name").description("The name of the project"),
@@ -520,7 +548,10 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("visibility").description("The project visibility, possible values are: " + Arrays.asList(Visibility.values())),
                                 fieldWithPath("projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
                                 fieldWithPath("linkedReleases").description("The relationship between linked releases of the project"),
-                                fieldWithPath("linkedProjects").description("The relationship between linked projects of the project")
+                                fieldWithPath("linkedProjects").description("The relationship between linked projects of the project"),
+                                fieldWithPath("leadArchitect").description("The lead architect of the project"),
+                                fieldWithPath("contributors").description("An array of contributors to the project"),
+                                fieldWithPath("moderators").description("An array of moderators")
                         ),
                         responseFields(
                                 fieldWithPath("name").description("The name of the project"),

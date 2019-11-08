@@ -201,7 +201,7 @@
                 tableDefinition.columns[0].title = '<div class="form-check"><input data-action="select-all" type="checkbox" class="form-check-input" /></div>';
             }
 
-            table = datatable.create('#vulnerabilityTable', tableDefinition, [1, 2, 3, 4, 5, 6, 7], [0]);
+            table = datatable.create('#vulnerabilityTable', tableDefinition, [1, 2, 3, 4, 5, 6, 7], [0], true);
             if($('#vulnerabilityTable').data() && $('#vulnerabilityTable').data().writeAccess) {
                 datatable.enableCheckboxForSelection(table, 0);
             }

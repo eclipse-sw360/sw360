@@ -51,9 +51,9 @@ require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProje
     fossology.initialize();
     linkProject.initialize();
 
-    $('#releasesTable').delegate('.actions .clearing', 'click', function(event) {
+    $('#releasesTable').delegate('.actions .fossology', 'click', function(event) {
         var data = $(event.currentTarget).data();
-        fossology.openSelectClearingDialog('clearingState', data.releaseId);
+        fossology.openFossologyDialog(data.releaseId);
     });
     $('#releasesTable').delegate('.actions .link', 'click', function(event) {
         var data = $(event.currentTarget).data();
@@ -74,7 +74,7 @@ require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProje
                 "0": "<sw360:out value="${release.name}"/>",
                 "1": "<a href='<portlet:renderURL ><portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="${component.id}"/><portlet:param name="<%=PortalConstants.RELEASE_ID%>" value="${release.id}"/><portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_RELEASE_DETAIL%>"/></portlet:renderURL>' target='_self'><sw360:out value="${release.version}"/></a>",
                 "2": "<span id='clearingState${release.id}'><sw360:DisplayEnum value="${release.clearingState}"/></span>",
-                "3": "<sw360:DisplayDownloadReport attachments="${release.attachments}" filterAttachmentType="<%=AttachmentType.CLEARING_REPORT%>" var="attachment"><sw360:DisplayDownloadApprovedClearingReport attachment="${attachment}" contextType="${release.type}" contextId="${release.id}" /></sw360:DisplayDownloadReport>",
+                "3": "<sw360:DisplayDownloadReport attachments="${release.attachments}" attachmentTypePredicate="<%=t -> AttachmentType.CLEARING_REPORT.equals(t) || AttachmentType.COMPONENT_LICENSE_INFO_XML.equals(t) %>" var="attachment"><sw360:DisplayDownloadApprovedClearingReport attachment="${attachment}" contextType="${release.type}" contextId="${release.id}" /></sw360:DisplayDownloadReport>",
                 "4": "<span id='mainlineState${release.id}'><sw360:DisplayEnum value="${release.mainlineState}"/></span>",
                 "5": {
                     name: '<sw360:ReleaseName release="${release}" />',
@@ -92,7 +92,7 @@ require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProje
                 {title: "Clearing State"},
                 {title: "Clearing Report"},
                 {title: "Release Mainline State"},
-                {title: "Actions", render: {display: renderActions}, className: "five actions", orderable: false }
+                {title: "Actions", render: {display: renderActions}, className: "six actions" }
             ],
             columnDefs: [
                 {
@@ -105,7 +105,7 @@ require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProje
                 }
             ],
             order: [1, 'desc']
-        });
+        }, [0, 1, 2, 3, 4], [5], true);
 
         function renderActions(id, type, row) {
             if(!row[5]) {
@@ -117,16 +117,16 @@ require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProje
                 }),
                 <core_rt:choose>
                     <core_rt:when test="${not empty FOSSOLOGY_CONNECTION_ENABLED and not FOSSOLOGY_CONNECTION_ENABLED}">
-                        $clearingAction = $('<svg>', {
+                        $fossologyAction = $('<svg>', {
                             'class': 'disabled lexicon-icon',
-                            'data-project-id': id,
+                            'data-release-id': row.DT_RowId
                         }).append('<title>Fossology is not configured</title>'),
                     </core_rt:when>
                     <core_rt:otherwise>
-                        $clearingAction = $('<svg>', {
-                            'class': 'clearing lexicon-icon',
-                            'data-project-id': id,
-                        }).append('<title>Send to Fossology</title>'),
+                        $fossologyAction = $('<svg>', {
+                            'class': 'fossology lexicon-icon',
+                            'data-release-id': row.DT_RowId
+                        }).append('<title>Fossology Process</title>'),
                     </core_rt:otherwise>
                 </core_rt:choose>
                 $editAction = render.linkTo(
@@ -144,6 +144,11 @@ require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProje
                     'data-release-id': row.DT_RowId,
                     'data-release-name': row[5].name
                 }),
+                $mergeAction = render.linkTo(
+                    makeReleaseUrl(row.DT_RowId, 'merge'),
+                    "",
+                    '<svg class="lexicon-icon"><title>Merge</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#merge"/></svg>'
+                ),
                 $deleteAction = $('<svg>', {
                     'class': 'delete lexicon-icon',
                     'data-release-id': row.DT_RowId,
@@ -152,11 +157,11 @@ require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProje
                     'data-attachments': row[5].attachments
                 });
 
-            $clearingAction.append($('<use href="<%=request.getContextPath()%>/images/icons.svg#fossology"/>'));
+            $fossologyAction.append($('<use href="<%=request.getContextPath()%>/images/icons.svg#fossology"/>'));
             $linkAction.append($('<title>Link Project</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#link"/>'));
             $deleteAction.append($('<title>Delete</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
 
-            $actions.append($clearingAction, $editAction, $copyAction, $linkAction, $deleteAction);
+            $actions.append($fossologyAction, $editAction, $copyAction, $linkAction, $mergeAction, $deleteAction);
             return $actions[0].outerHTML;
         }
 

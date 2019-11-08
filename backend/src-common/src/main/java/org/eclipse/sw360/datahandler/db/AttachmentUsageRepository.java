@@ -64,6 +64,20 @@ public class AttachmentUsageRepository extends DatabaseRepository<AttachmentUsag
         return queryView(viewQuery);
     }
 
+    @View(name = "referencesReleaseId", map = "" + 
+        "function(doc) { " +
+        "   if (doc.type == 'attachmentUsage') {" +
+        "       if(doc.owner && doc.owner.setField_ == 'RELEASE_ID') {" +
+        "           emit(doc.owner.value_, doc);" +
+        "       } else if(doc.usedBy && doc.usedBy.setField_ == 'RELEASE_ID') {" +
+        "           emit(doc.usedBy.value_, doc);" +
+        "       }" +
+        "   }" +
+        "}")
+    public List<AttachmentUsage> getUsagesByReleaseId(String releaseId) {
+        return queryView("referencesReleaseId", releaseId);
+    }
+
     public Map<Map<String, String>, Integer> getAttachmentUsageCount(Map<String, Set<String>> attachments, String filter) {
         ViewQuery viewQuery = createUsagesByAttachmentQuery(filter);
         List<ComplexKey> complexKeys = prepareKeys(attachments, filter);

@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2014-2018. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2014-2019. Part of the SW360 Portal Project.
  * With contributions by Bosch Software Innovations GmbH, 2016.
  *
  * SPDX-License-Identifier: EPL-1.0
@@ -62,32 +62,77 @@ struct Repository {
     2: optional RepositoryType repositorytype
 }
 
-enum FossologyStatus {
-    CONNECTION_FAILED = 0,
+/**
+ * A list of all known external tools.
+ **/
+enum ExternalTool {
+    FOSSOLOGY = 0
+}
 
-    ERROR = 1,
+/**
+ * The different states a ExternalToolProcessStep can be in.
+ **/
+enum ExternalToolProcessStatus {
+    NEW = 10,
+    IN_WORK = 20,
+    DONE = 30,
+    OUTDATED = 40
+}
 
-    NON_EXISTENT = 2,
-    NOT_SENT = 3,
-    INACCESSIBLE = 4,
+/**
+ * This structure is used to track processes to external tools like FOSSology made for a release. Normally one wants to
+ * send an attachment (like the sources of a release) to an external tool for further analysis and get the results back
+ * at some point. Often these processes do not consist of a single action so there is a list of process steps that need
+ * to be fulfilled until the process can be considered done.
+ **/
+struct ExternalToolProcess {
+    1: optional string id,
+    2: required ExternalTool externalTool,
+    3: required ExternalToolProcessStatus processStatus,
+    4: optional string processIdInTool,
+    5: optional string attachmentId,
+    6: optional string attachmentHash,
+    7: required list<ExternalToolProcessStep> processSteps // ordered
+}
 
-    SENT = 10,
-    SCANNING = 11,
-
-    OPEN = 20,
-    IN_PROGRESS = 21,
-    CLOSED = 22,
-    REJECTED = 23,
-
-    REPORT_AVAILABLE = 30
+/**
+ * This structure represents single steps when working with external tool processes. Please be aware that not all fields
+ * need to be filled for every tool.
+ **/
+struct ExternalToolProcessStep {
+    1: optional string id,
+    2: optional string stepName,
+    3: required ExternalToolProcessStatus stepStatus,
+    4: optional string linkToStep
+    5: required string startedBy,
+    6: required string startedByGroup,
+    7: required string startedOn,
+    8: optional string processStepIdInTool,
+    9: optional string userIdInTool,
+    10: optional string userCredentialsInTool,
+    11: optional string userGroupInTool,
+    12: optional string finishedOn,
+    13: optional string result // value or document
 }
 
 enum ClearingState {
     NEW_CLEARING = 0,
-    SENT_TO_FOSSOLOGY = 1,
+    SENT_TO_CLEARING_TOOL = 1,
     UNDER_CLEARING = 2,
     REPORT_AVAILABLE = 3,
     APPROVED = 4,
+}
+
+/**
+ * Just an aggregation container used to count ClearingStates of more than one Release. Mainly used in Projects (could
+ * be moved to projects.thrift as well)
+ **/
+struct ReleaseClearingStateSummary {
+    1: required i32 newRelease,
+    2: required i32 sentToClearingTool,
+    3: required i32 underClearing,
+    4: required i32 reportAvailable,
+    5: required i32 approved,
 }
 
 enum ECCStatus {
@@ -187,9 +232,11 @@ struct Release {
     17: optional ClearingState clearingState, // TODO we probably need to map by clearing team?
 
     // FOSSology Information
-    20: optional string fossologyId,
-    21: optional map<string, FossologyStatus> clearingTeamToFossologyStatus,
-    22: optional string attachmentInFossology, // id of the attachment currently in fossology
+    // 20: optional string fossologyId,
+    // 21: optional map<string, FossologyStatus> clearingTeamToFossologyStatus,
+    // 22: optional string attachmentInFossology, // id of the attachment currently in fossology
+    // 25: optional set<ExternalToolRequest> externalToolRequests,
+    26: optional set<ExternalToolProcess> externalToolProcesses,
 
     // string details
     30: optional string createdBy, // person who created the release
@@ -288,14 +335,6 @@ struct Component {
     70: optional DocumentState documentState,
 
     200: optional map<RequestedAction, bool> permissions,
-}
-
-struct ReleaseClearingStateSummary {
-    1: required i32 newRelease,
-    2: required i32 underClearing,
-    3: required i32 underClearingByProjectTeam,
-    4: required i32 reportAvailable,
-    5: required i32 approved,
 }
 
 struct ReleaseLink{
@@ -488,13 +527,18 @@ service ComponentService {
     list<Release> getReleasesFromVendorIds(1: set<string> ids);
 
     /**
+      * get full release documents with the specifed vendor id
+      */
+    set<Release> getReleasesByVendorId(1: string vendorId);
+
+    /**
      * update release in database if user has permissions
      * otherwise create moderation request
      **/
     RequestStatus updateRelease(1: Release release, 2: User user);
 
     /**
-     * update release called by fossology service
+     * update release called only by fossology service - is allowed to manipulate external requests.
      * update release in database if user has permissions
      * otherwise create moderation request
      **/
@@ -504,6 +548,19 @@ service ComponentService {
      * update the bulk of releases in database if user is admin
      **/
     RequestSummary updateReleases(1: set<Release> releases, 2: User user);
+
+     /**
+     * merge release identified by releaseSourceId into release identified by releaseTargetId.
+     * the releaseSelection shows which data has to be set on the target. the source will be deleted afterwards.
+     * if user does not have permissions, RequestStatus.ACCESS_DENIED is returned
+     * if any of the releases has an active moderation request, it's a noop and RequestStatus.IN_USE is returned
+     **/
+    RequestStatus mergeReleases(1: string releaseTargetId, 2: string releaseSourceId, 3: Release releaseSelection, 4: User user);
+
+    /**
+     * Update the set of releases. Do only use for updating simple fields.
+     */ 
+    RequestSummary updateReleasesDirectly(1: set<Release> releases, 2: User user);
 
     /**
      * delete release from database if user has permissions
@@ -531,6 +588,16 @@ service ComponentService {
      * get components belonging to linked releases of the releases specified by releaseId
      **/
     set <Component> getUsingComponentsForComponent(1: set <string> releaseId );
+
+    /**
+     * get components using the given vendor id
+     */
+    set <Component> getComponentsByDefaultVendorId(1: string vendorId);
+
+    /**
+     * Recomputes the fields of a component that are aggregated by its releases.
+     */
+    Component recomputeReleaseDependentFields(1: string componentId);
 
     /**
      * check if release is used by other releases, components or projects
@@ -632,4 +699,9 @@ service ComponentService {
      * get a set of releases based on the external id external ids can have multiple values to one key
      */
     set<Release> searchReleasesByExternalIds(1: map<string, set<string>> externalIds);
+
+    /**
+     * Gets releases referencing the given release id
+     */ 
+    list<Release> getReferencingReleases(1: string releaseId);
 }

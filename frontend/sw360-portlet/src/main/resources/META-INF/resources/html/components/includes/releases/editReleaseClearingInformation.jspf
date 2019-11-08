@@ -38,7 +38,7 @@
                     value="<sw360:out value="${release.clearingInformation.binariesSelfMade}"/>"
                         <core_rt:if test="${release.clearingInformation.binariesSelfMade == 'true'}"> checked="checked" </core_rt:if>
                 />
-                <label class="form-check-label" for="binaries_self_made">Binaries Self Made</label>
+                <label class="form-check-label" for="binaries_self_made">Binaries Self-Made</label>
         </td>
         <td>
             <div class="form-check">
@@ -80,7 +80,7 @@
                     value="<sw360:out value="${release.clearingInformation.sourceCodeToolMade}"/>"
                         <core_rt:if test="${release.clearingInformation.sourceCodeToolMade == 'true'}"> checked="checked" </core_rt:if>
                 />
-                <label class="checkboxlabel" for="source_code_toolmade">Source Code Tool Made</label>
+                <label class="checkboxlabel" for="source_code_toolmade">Source Code Tool-Made</label>
             </div>
         </td>
     </tr>
@@ -93,7 +93,7 @@
                     value="<sw360:out value="${release.clearingInformation.sourceCodeSelfMade}"/>"
                         <core_rt:if test="${release.clearingInformation.sourceCodeSelfMade == 'true'}"> checked="checked" </core_rt:if>
                         />
-                <label class="form-check-label" for="source_code_selfmade">Source Code Selfmade</label>
+                <label class="form-check-label" for="source_code_selfmade">Source Code Self-Made</label>
             </div>
         </td>
         <td>
@@ -284,7 +284,7 @@
     <tr>
         <td>
             <div class="form-group">
-                <label for="externalSupplierId">ExternalSupplierId</label>
+                <label for="externalSupplierId">External Supplier ID</label>
                 <input id="externalSupplierId"
                     name="<portlet:namespace/><%=Release._Fields.CLEARING_INFORMATION%><%=ClearingInformation._Fields.EXTERNAL_SUPPLIER_ID%>"
                     type="text"

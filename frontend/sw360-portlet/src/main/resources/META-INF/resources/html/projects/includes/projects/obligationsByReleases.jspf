@@ -1,0 +1,126 @@
+<%--
+  ~ Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+  ~ With modifications by Bosch Software Innovations GmbH, 2016.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+<%@include file="/html/init.jsp"%>
+
+
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
+
+<portlet:defineObjects />
+<liferay-theme:defineObjects />
+
+<%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.projects.Project"%>
+<%@ page import="javax.portlet.PortletRequest"%>
+<%@ page import="org.eclipse.sw360.portal.common.PortalConstants"%>
+
+<!-- Release View -->
+<div id="release-view">
+    <table class="table info_table" id="poInfoTableByRelease" style="table-layout: auto">
+        <thead>
+            <tr>
+                <th colspan="5" class="headlabel">Project Obligation Status</th>
+            </tr>
+            <tr>
+                <th width="35%">Release &#8883; Attachment &#8883;
+                    License Type &#8883; License &#8883; Obligation</th>
+                <th width="25%">Text</th>
+                <th width="10">Action taken</th>
+                <th width="10%">Status</th>
+                <th width="20%">Comment</th>
+            </tr>
+        </thead>
+        <tbody>
+            <core_rt:forEach items="${projectReleaseLicenseInfo}" var="releaseLicenseInfo" varStatus="loop">
+                <core_rt:set var="release" value="${releaseLicenseInfo.release}" />
+                <core_rt:set var="licenses" value="${releaseLicenseInfo.licenseInfo.licenseNamesWithTexts}" />
+                <core_rt:set var="totalObligations" value="${releaseLicenseInfo.licenseInfo.totalObligations}" />
+                <core_rt:set var="licenseType" value="" />
+                <core_rt:set var="bckgrndClass" value="text-success" />
+
+                <tr id="releaseRow_${loop.count}" data-tt-id="${release.id}" data-row-type="release">
+                    <td colspan="5">
+                        <sw360:DisplayReleaseLink release="${release}" showName="true"/>
+                        <span class="badge badge-light text-dark">
+                            <sw360:out value=" (${totalObligations})" />
+                        </span>
+                    </td>
+                </tr>
+                <core_rt:forEach items="${licenses}" var="license" varStatus="licenseLoop">
+                    <core_rt:set var="obligationSize" value="${fn:length(license.obligations)}" />
+                    <core_rt:if test="${licenseType != license.type}">
+                        <core_rt:set var="licenseType" value="${license.type}" />
+                        <tr id="licenseTypeRow_${licenseType}"
+                            data-tt-id="${release.id}_${licenseType}"
+                            data-tt-parent-id="${release.id}" data-row-type="licenseType"
+                            class="highlightSuccess">
+                            <td colspan="5"><sw360:out value="${licenseType}" /></td>
+                        </tr>
+                    </core_rt:if>
+
+                    <tr id="licenseIdRow_${loop.count}_${licenseLoop.count}"
+                        data-tt-id="${release.id}_${licenseType}_${loop.count}_${licenseLoop.count}"
+                        data-tt-parent-id="${release.id}_${licenseType}"
+                        data-row-type="licenseId"
+                        <core_rt:if test="${obligationSize gt 0}">class="highlightWarning"</core_rt:if>>
+                        <td colspan="5">
+                            <sw360:out value="${license.licenseSpdxId}" />
+                        </td>
+                    </tr>
+
+                    <core_rt:if test="${obligationSize gt 0}">
+                        <core_rt:forEach items="${license.obligations}" var="obligation" varStatus="obligationLoop">
+                            <tr
+                            <core_rt:set var="osi" value="${obligation.obligationStatusInfo}" />
+                            <core_rt:if test="${not empty osi.modifiedBy}">
+                                title="Modified By: ${osi.modifiedBy} &#10;Modified On: ${osi.modifiedOn}"
+                            </core_rt:if>
+                                id="obligationRow_${loop.count}_${licenseLoop.count}_${obligationLoop.count}"
+                                data-tt-id="${release.id}_${licenseType}_${loop.count}_${licenseLoop.count}_${obligationLoop.count}"
+                                data-tt-branch="false"
+                                data-tt-parent-id="${release.id}_${licenseType}_${loop.count}_${licenseLoop.count}"
+                                data-row-type="obligation">
+                                <td>
+                                    <sw360:out value="${obligation.topic}" maxChar="40" />
+                                </td>
+                                <td>
+                                    <sw360:out value="${obligation.text}" maxChar="40" />
+                                </td>
+                                <td>
+                                    <sw360:out value="${osi.action}" />
+                                </td>
+                                <td>
+                                    <sw360:DisplayEnum value="${osi.status}" />
+                                </td>
+                                <td>
+                                    <sw360:out value="${osi.comment}" maxChar="30"/>
+                                </td>
+                            </tr>
+                        </core_rt:forEach>
+                    </core_rt:if>
+                </core_rt:forEach>
+            </core_rt:forEach>
+        </tbody>
+    </table>
+</div>
+<script>
+    require(['jquery', 'modules/ajax-treetable'], function($, ajaxTreeTable) {
+        Liferay.on("allPortletsReady", function () {
+            var config = $("#poInfoTableByRelease").data();
+            ajaxTreeTable.setup("poInfoTableByRelease", config.loadNodeUrl,
+                function (node) {
+                var data = {};
+                data[config.portletNamespace + config.parentBranchKey] = node.id;
+                return data;
+	        });
+        });
+    });
+</script>

@@ -27,6 +27,7 @@
         data-write-spdx-license-info-into-release-url="<%=writeSpdxLicenseInfoIntoReleaseUrl%>"
         data-release-id-parameter-name="<%=PortalConstants.RELEASE_ID%>"
         data-attachment-id-parameter-name="<%=PortalConstants.ATTACHMENT_ID%>"
+        data-attachment-name-parameter-name="<%=PortalConstants.ATTACHMENT_NAME%>"
         data-spdx-license-info-parameter-name="<%=PortalConstants.SPDX_LICENSE_INFO%>">
     <colgroup>
         <col style="width: 60%;"/>
@@ -48,7 +49,8 @@
                     <sw360:out value="${spdxAttachment.filename}"/>
                 </td>
                 <td data-attachment-id="${spdxAttachment.attachmentContentId}">
-                    <button class="btn btn-secondary showSpdxContentBtn" data-release-id="${release.id}" data-attachment-id="${spdxAttachment.attachmentContentId}">Show License Info</button>
+                    <button class="btn btn-secondary showSpdxContentBtn" data-attachment-name="${spdxAttachment.filename}"
+                    data-release-id="${release.id}" data-attachment-id="${spdxAttachment.attachmentContentId}">Show License Info</button>
                 </td>
                 <td class="result">
                 </td>
@@ -77,8 +79,8 @@
                         </core_rt:when>
                         <core_rt:otherwise>
                             <span id="releaseAction${release.id}" class="ml-2">
-                                <svg class="lexicon-icon action send-to-fossology" data-release-id="${release.id}">
-                                    <title>Send to Fossology</title>
+                                <svg class="lexicon-icon action fossology" data-release-id="${release.id}">
+                                    <title>Fossology Process</title>
                                     <use href='<%=request.getContextPath()%>/images/icons.svg#fossology' />
                                 </svg>
                             </span>
@@ -208,7 +210,7 @@
         <td><sw360:out value="${clearingInfo.externalSupplierID}"/></td>
     </tr>
     <tr>
-        <td>Number of Security VN:</td>
+        <td>Number of Security Vulnerabilities:</td>
         <td><sw360:out value="${clearingInfo.countOfSecurityVn}"/></td>
     </tr>
 </table>
@@ -221,9 +223,9 @@
 
         fossology.initialize();
 
-        $('#ReleaseClearingOverview').on('click', '.action.send-to-fossology', function(event) {
+        $('#ReleaseClearingOverview').on('click', '.action.fossology', function(event) {
             var data = $(event.currentTarget).data();
-            fossology.openSelectClearingDialog('fossologySending', data.releaseId);
+            fossology.openFossologyDialog(data.releaseId);
         });
 
         $('.showSpdxContentBtn').on('click', function(event) {
@@ -243,6 +245,7 @@
 
             url.setParameter(tableData.releaseIdParameterName, releaseId);
             url.setParameter(tableData.attachmentIdParameterName, attachmentId);
+            url.setParameter(tableData.attachmentNameParameterName, btnData.attachmentName);
 
             button.wait($btnCell.find('button'));
 
@@ -269,10 +272,10 @@
                 $cell = $row.find('.result');
 
             $cell.html('');
-            $cell.append($('<span>', { text: 'Concluded License Ids:'}));
+            $cell.append($('<span>', { text: data.license}));
             $cell.append($list);
 
-            data.concludedLicenseIds.forEach(function(id) {
+            data.licenseIds.forEach(function(id) {
                 $list.append($('<li>', { text: id }));
             });
         }

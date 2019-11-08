@@ -58,14 +58,6 @@
     <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>"/>
 </portlet:renderURL>
 
-<portlet:resourceURL var="projectReleasesAjaxURL">
-    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.FOSSOLOGY_GET_SENDABLE%>'/>
-</portlet:resourceURL>
-
-<portlet:resourceURL var="projectReleasesSendURL">
-    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.FOSSOLOGY_SEND%>'/>
-</portlet:resourceURL>
-
 <portlet:actionURL var="applyFiltersURL" name="applyFilters">
 </portlet:actionURL>
 
@@ -176,30 +168,6 @@
 
 <div class="dialogs auto-dialogs">
 
-    <div id="fossologyClearingDialog" data-title="Fossology Clearing" class="modal fade" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
-            <div class="modal-content">
-            <div class="modal-body">
-                    <form id="fossologyClearingForm">
-                        <input name="<portlet:namespace/><%=PortalConstants.PROJECT_ID%>" hidden="" value="" data-name="projectId"/>
-
-                        <div class="spinner text-center">
-                            <div class="spinner-border" role="status">
-                            <span class="sr-only">Loading...</span>
-                            </div>
-                        </div>
-
-                        <!-- content will be inserted here -->
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary">Send</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div id="deleteProjectDialog" class="modal fade" tabindex="-1" role="dialog">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-danger" role="document">
             <div class="modal-content">
@@ -273,18 +241,8 @@
                 var data = $(event.currentTarget).data();
                 deleteProject(data.projectId, data.projectName, data.linkedProjectsCount, data.linkedReleasesCount, data.projectAttachmentCount);
             });
-            $('#projectsTable').on('click', 'svg.clearing', function(event) {
-                openSelectClearingDialog($(event.currentTarget).data('projectId'));
-            });
             $('#btnExportGroup a.dropdown-item').on('click', function(event) {
                 exportSpreadsheet($(event.currentTarget).data('type'));
-            });
-
-            $('#fossologyClearingDialog form').on('change', 'table [data-action="select"]', function(event) {
-                $(event.currentTarget).parents('form').find('td :checkbox').prop("checked", $(event.currentTarget).is(':checked'));
-            });
-            $('#fossologyClearingDialog form').on('change', 'table td :checkbox', function(event) {
-                $(event.currentTarget).parents('form').find('[data-action="select"]').prop("checked", $(event.currentTarget).parents('form').find('td :checkbox:not(:checked)').length == 0);
             });
 
              // helper functions
@@ -333,20 +291,6 @@
                         'class': 'actions'
                     }),
                     $editAction,
-                    <core_rt:choose>
-                        <core_rt:when test="${not empty FOSSOLOGY_CONNECTION_ENABLED and not FOSSOLOGY_CONNECTION_ENABLED}">
-                            $clearingAction = $('<svg>', {
-                                'class': 'disabled lexicon-icon',
-                                'data-project-id': id,
-                            }).append('<title>Fossology is not configured</title>'),
-                        </core_rt:when>
-                        <core_rt:otherwise>
-                            $clearingAction = $('<svg>', {
-                                'class': 'clearing lexicon-icon',
-                                'data-project-id': id,
-                            }).append('<title>Send to Fossology</title>'),
-                        </core_rt:otherwise>
-                    </core_rt:choose>
                     $copyAction = render.linkTo(
                         makeProjectUrl(id, '<%=PortalConstants.PAGENAME_DUPLICATE%>'),
                         "",
@@ -362,8 +306,7 @@
                         'data-project-attachment-count': row.attsSize,
                     });
 
-                    $clearingAction.append($('<use href="<%=request.getContextPath()%>/images/icons.svg#fossology"/>'));
-            $deleteAction.append($('<use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
+                $deleteAction.append($('<use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
 
                 if(row.cState == 'CLOSED' && ${isUserAdmin != 'Yes'}) {
                     $editAction = $('<svg class="lexicon-icon disabled"><title>Only administrators can edit a closed project.</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>');
@@ -375,7 +318,7 @@
                     );
                 }
 
-                $actions.append($clearingAction, $editAction, $copyAction, $deleteAction);
+                $actions.append($editAction, $copyAction, $deleteAction);
                 return $actions[0].outerHTML;
             }
 
@@ -527,61 +470,6 @@
                 portletURL.setParameter('<%=PortalConstants.EXTENDED_EXCEL_EXPORT%>', type === 'projectWithReleases' ? 'true' : 'false');
 
                 window.location.href = portletURL.toString();
-            }
-
-            // fossology acion
-            function openSelectClearingDialog(projectId) {
-                var $dialog = dialog.open('#fossologyClearingDialog', {
-                        projectId: projectId
-                    }, function(submit, callback) {
-                        jQuery.ajax({
-                            type: 'POST',
-                            url: '<%=projectReleasesSendURL%>',
-                            cache: false,
-                            data: $('form#fossologyClearingForm').serialize(),
-                            success: function (data) {
-                                if (data.result) {
-                                    if (data.result == "FAILURE") {
-                                        $dialog.alert('Files could not be send to fossolgy.');
-                                    }
-                                    else {
-                                        $dialog.success('Data has been sent.', true);
-                                    }
-                                } else {
-                                    $dialog.alert('Unknown result from request.');
-                                }
-
-                                callback();
-                            },
-                            error: function () {
-                                callback();
-                                $dialog.alert('Files could not be send to fossolgy.');
-                            }
-                        });
-                    });
-
-                $dialog.$.find('.modal-content form table').remove();
-                $dialog.$.find('.modal-content form .alert').remove();
-                $dialog.$.find('.spinner').show();
-                $dialog.enableButtons(false);
-                jQuery.ajax({
-                    type: 'POST',
-                    url: '<%=projectReleasesAjaxURL%>',
-                    cache: false,
-                    data: {
-                        "<portlet:namespace/><%=PortalConstants.PROJECT_ID%>": projectId
-                    },
-                    success: function (data) {
-                        $dialog.$.find('.modal-content form').append(data);
-                        $dialog.$.find('.spinner').hide();
-                        $dialog.enableButtons(true);
-                    },
-                    error: function () {
-                        $dialog.$.find('.spinner').hide();
-                        $dialog.alert('I could not get any releases!', true);
-                        $dialog.enableButtons(true);
-                    }
-                });
             }
 
             // delete action

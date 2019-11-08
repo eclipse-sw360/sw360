@@ -35,7 +35,7 @@
             <id>artifact-repository</id>
             <url>https://github.com/eclipse/sw360</url>
         </repository>
-    </distributionManagement> 
+    </distributionManagement>
 
     <modules>
         <module>build-configuration</module>
@@ -47,7 +47,7 @@
 
     <properties>
         <!-- This is the single place for changing the version of SW360 -->
-        <revision>5.1.0-SNAPSHOT</revision>
+        <revision>6.0.0-SNAPSHOT</revision>
 
         <java.version>1.8</java.version>
         <ektorp.version>1.5.0</ektorp.version>

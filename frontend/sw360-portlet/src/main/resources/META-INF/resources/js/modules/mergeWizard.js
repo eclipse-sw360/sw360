@@ -35,7 +35,7 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
     // public
 
     mergeWizard.createCategoryLine = function createCategoryLine(name) {
-        return '<h4 class="mt-4">' + name + '</h4>';
+        return '<h4>' + name + '</h4>';
     };
 
     mergeWizard.createSingleMergeLine = function createSingleMergeLine(propName, target, source, detailFormatter) {
@@ -45,7 +45,7 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         source = source == null ? '' : source;
         detailFormatter = detailFormatter || function(element) { return element; };
 
-        line = $.parseHTML('<fieldset id="' + propName.replace(/ /g, '') + '" class="merge line">' +
+        line = $.parseHTML('<fieldset id="' + normalizePropName(propName) + '" class="merge line">' +
                            '    <h5>' + propName + '</h5>' +
                            '</fieldset>');
 
@@ -61,7 +61,7 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         source = source == null ? [] : source;
         detailFormatter = detailFormatter || function(element) { return element; };
 
-        result = $($.parseHTML('<fieldset id="' + propName.replace(/ /g, '') + '" class="merge line">' +
+        result = $($.parseHTML('<fieldset id="' + normalizePropName(propName) + '" class="merge line">' +
                                '    <h5>' + propName + '</h5>' +
                                '</fieldset>'));
 
@@ -92,13 +92,13 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         source = source == null ? {} : source;
         detailFormatter = detailFormatter || function(element) { return element; };
 
-        result = $($.parseHTML('<fieldset id="' + propName.replace(/ /g, '') + '" class="merge line">' +
-            '    <div class="merge multi header">' + propName + '</div>' +
-            '</fieldset>'));
+        result = $($.parseHTML('<fieldset id="' + normalizePropName(propName) + '" class="merge block">' +
+                               '    <h4>' + propName + '</h4>' +
+                               '</fieldset>'));
 
         $.each(target, function(key, value) {
             if (!source[key]) {
-                result.append(mergeWizard.createSingleMergeLine(key, value, [], detailFormatter));
+                result.append(mergeWizard.createSingleMergeLine(key, value, '', detailFormatter));
             } else {
                 result.append(mergeWizard.createSingleMergeLine(key, value, source[key], detailFormatter));
                 existInBoth.push(key);
@@ -107,13 +107,12 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         });
         $.each(source, function(key, value) {
             if ($.inArray(key, existInBoth) === -1) {
-                result.append(mergeWizard.createSingleMergeLine(key, [], value, detailFormatter));
+                result.append(mergeWizard.createSingleMergeLine(key, '', value, detailFormatter));
                 keys.push(key);
             }
         });
 
         result.data('mapKeys', keys);
-
         return result;
     };
 
@@ -126,8 +125,8 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         source = source == null ? {} : source;
         detailFormatter = detailFormatter || function(element) { return element; };
 
-        result = $($.parseHTML('<fieldset id="' + propName.replace(/ /g, '') + '" class="merge line">' +
-                               '    <h5>' + propName + '</h5>' +
+        result = $($.parseHTML('<fieldset id="' + normalizePropName(propName) + '" class="merge block">' +
+                               '    <h4>' + propName + '</h4>' +
                                '</fieldset>'));
 
         $.each(target, function(key, value) {
@@ -147,17 +146,46 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         });
 
         result.data('mapKeys', keys);
-
         return result;
     };
+    
+    /**
+     * Merges the given property. The merge can be locked. A locked merge cannot be changed by the user.
+     */
+    mergeWizard.mergeByDefault = function(propName, rowIndex) {
+        copySourceToTarget(propName.replace(/ /g, ''), rowIndex);
+    }
+
+    mergeWizard.lockRow = function(propName, rowIndex, lock) {
+        var $fieldset = $('#' + propName.replace(/ /g, '')),
+            buttonNode = $('.mid[data-row-index="' + rowIndex + '"] input', $fieldset);
+        buttonNode.prop('disabled', lock);
+    }
+
+    mergeWizard.createCustomMergeLines = function createCustomMergeLine(propName, createLines) {
+        var result;
+
+        result = $($.parseHTML('<fieldset id="' + normalizePropName(propName) + '" class="merge line">' +
+                               '    <h5>' + propName + '</h5>' +
+                               '</fieldset>'));
+
+        createLines(result, createSingleMergeContent);
+        return result;
+    }
 
     // private
 
-    function createSingleMergeContent(target, source, rowIndex, detailFormatter) {
+    function normalizePropName(propName) {
+        return propName.replace(/[\s\.]/g, '_');
+    }
+
+    function createSingleMergeContent(target, source, rowIndex, detailFormatter, locked) {
         var row,
             left,
             mid,
             right;
+
+        detailFormatter = detailFormatter || function(element) { return element; };
 
         row =   $.parseHTML('        <div class="row"></div>');
 
@@ -165,14 +193,19 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
                             '            <span>' + detailFormatter(target) + '</span>' +
                             '        </div>');
         mid =   $.parseHTML('        <div class="merge single mid col-2" data-row-index="' + rowIndex + '">' +
-                            (target === source ? '            <span class="text-success">&#10003;</span>' : '            <input class="btn btn-secondary" type="button" value="&#8656;" />') +
+                            (target === source ? '<span class="text-success">&#10003;</span>' : '<input class="btn btn-secondary" type="button" value="&#8656;" />') +
                             '        </div>');
         right = $.parseHTML('        <div class="merge single right col-5" data-row-index="' + rowIndex + '">' +
                             '            <span>' + detailFormatter(source) + '</span>' +
                             '        </div>');
 
+        $(row).data('detailFormatter', detailFormatter);
         $(left).data('origVal', target);
         $(right).data('origVal', source);
+
+        if(locked) {
+            $(mid).find('input.btn').prop('disabled', true);
+        }
 
         return $(row).append(left).append(mid).append(right);
     }
@@ -189,7 +222,7 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         value = value == null ? '' : value;
         detailFormatter = detailFormatter || function(element) { return element; };
 
-        line = $.parseHTML('<fieldset id="' + propName.replace(/ /g, '') + '" class="display line">' +
+        line = $.parseHTML('<fieldset id="' + normalizePropName(propName) + '" class="display line">' +
                            '    <h5>' + propName + '</h5>' +
                            '</fieldset>');
 
@@ -202,7 +235,7 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         values = values == null ? [] : values;
         detailFormatter = detailFormatter || function(element) { return element; };
 
-        result = $($.parseHTML('<fieldset id="' + propName.replace(/ /g, '') + '" class="display line">' +
+        result = $($.parseHTML('<fieldset id="' + normalizePropName(propName) + '" class="display line">' +
                                '    <h5>' + propName + '</h5>' +
                                '</fieldset>'));
 
@@ -219,9 +252,9 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         values = values == null ? {} : values;
         detailFormatter = detailFormatter || function(element) { return element; };
 
-        result = $($.parseHTML('<fieldset id="' + propName.replace(/ /g, '') + '" class="display line">' +
-            '    <div class="display multi header">' + propName + '</div>' +
-            '</fieldset>'));
+        result = $($.parseHTML('<fieldset id="' + normalizePropName(propName) + '" class="display block">' +
+                               '    <h4>' + propName + '</h4>' +
+                               '</fieldset>'));
 
         $.each(values, function(key, value) {
             result.append(mergeWizard.createSingleDisplayLine(key, value, detailFormatter));
@@ -236,8 +269,8 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         values = values == null ? {} : values;
         detailFormatter = detailFormatter || function(element) { return element; };
 
-        result = $($.parseHTML('<fieldset id="' + propName.replace(/ /g, '') + '" class="display line">' +
-                               '    <h5>' + propName + '</h5>' +
+        result = $($.parseHTML('<fieldset id="' + normalizePropName(propName) + '" class="display block">' +
+                               '    <h4>' + propName + '</h4>' +
                                '</fieldset>'));
 
         $.each(values, function(key, value) {
@@ -261,74 +294,90 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
 
     // public
 
-    mergeWizard.registerClickHandlers = function registerClickHandlers() {
+    /**
+     * Register a click handler to all merge lines. This method must be called in any case otherwise 
+     * values cannot be copied from source to target. In addition this method allows to listen for 
+     * distinct properties and a callback will be called if these properties are changed.
+     * 
+     * @param {Object|Boolean} map of properties to listen for changes, e.g. <code>{ 'Homepage': true }</code>.
+     *  Keys must be normalized (no spaces). Set it to true to listen for all properties.
+     * @param {Function} callback function to call if one of the properties changes. The callback will receive the following
+     *  parameters:
+     *      - property name (normalized = no spaces)
+     *      - copied
+     *      - target value
+     *      - source value
+     */
+    mergeWizard.registerClickHandlers = function registerClickHandlers(propNameMap, callback) {
+        propNameMap = propNameMap || {};
+
         wizardRoot.find('fieldset div.mid input').each(function(index, element) {
-            registerCopyClickHandler($(element));
+            var propName = $(element).parents('fieldset').attr('id');
+            if(propNameMap === true || propNameMap[propName]) {
+                registerCopyClickHandler($(element), callback);
+            } else {
+                registerCopyClickHandler($(element));
+            }
         });
     };
 
     // private
 
-    function registerCopyClickHandler(element) {
-        element.off('click');
-        setTimeout(
-                function() {
-                    element.on('click', function(event) {
-                        copySourceToTarget(element.parent().parent().parent().attr('id'), element.parent().data('rowIndex'));
-                    });
-                },
-                10
-        );
-    }
+    function registerCopyClickHandler(element, callback) {
+        element.off('click.merge');
+        element.on('click.merge', function(event) {
+            var propName = element.parent().parent().parent().attr('id'),
+                rowIndex = element.parent().data('rowIndex'),
+                $fieldset = $('#' + propName),
+                sourceNode = $('.right[data-row-index="' + rowIndex + '"]', $fieldset),
+                targetNode = $('.left[data-row-index="' + rowIndex + '"]', $fieldset);
 
-    function registerUndoClickHandler(element) {
-        element.off('click');
-        /* if the handler is registered directly, it receives the same click event in which it was registered */
-        setTimeout(
-                function() {
-                    element.on('click', function(event) {
-                        undoCopySourceToTarget(element.parent().parent().parent().attr('id'), element.parent().data('rowIndex'));
-                    });
-                },
-                10
-        );
+            if($(event.currentTarget).hasClass('undo')) {
+                undoCopySourceToTarget(propName, rowIndex);
+                if(callback) {
+                    callback(propName, false, targetNode.data('origVal'), sourceNode.data('origVal'));
+                }
+            } else {
+                copySourceToTarget(propName, rowIndex);
+                if(callback) {
+                    callback(propName, true, targetNode.data('origVal'), sourceNode.data('origVal'));
+                }
+            }
+        });
     }
 
     function copySourceToTarget(propName, rowIndex) {
         var $fieldset = $('#' + propName),
-            sourceNode = $('.right[data-row-index="' + rowIndex + '"] span', $fieldset),
-            source = sourceNode.text(),
+            sourceNode = $('.right[data-row-index="' + rowIndex + '"]', $fieldset),
             buttonNode = $('.mid[data-row-index="' + rowIndex + '"] input', $fieldset),
-            targetNode = $('.left[data-row-index="' + rowIndex + '"] span', $fieldset),
-            target = targetNode.text();
+            targetNode = $('.left[data-row-index="' + rowIndex + '"]', $fieldset),
+            $row = sourceNode.parent();
 
-        $fieldset.addClass('modified');
+        $row.addClass('modified');
 
         /* https://stackoverflow.com/questions/11591174/escaping-of-attribute-values-using-jquery-attr ... */
         buttonNode.val($('<div/>').html('&#8631;').text());
-        registerUndoClickHandler(buttonNode, rowIndex);
+        buttonNode.addClass('undo');
 
-        targetNode.parent().data('newVal', sourceNode.parent().data('origVal'));
-        targetNode.parent().attr('title', target);
-        targetNode.text(source);
+        targetNode.data('newVal', sourceNode.data('origVal'));
+        targetNode.find('span:first').html($row.data('detailFormatter')(sourceNode.data('origVal')));
     }
 
     function undoCopySourceToTarget(propName, rowIndex) {
         var $fieldset = $('#' + propName),
-            sourceNode = $('.right[data-row-index="' + rowIndex + '"] span', $fieldset),
+            sourceNode = $('.right[data-row-index="' + rowIndex + '"]', $fieldset),
             buttonNode = $('.mid[data-row-index="' + rowIndex + '"] input', $fieldset),
-            targetNode = $('.left[data-row-index="' + rowIndex + '"] span', $fieldset),
-            target = targetNode.parent().attr('title');
+            targetNode = $('.left[data-row-index="' + rowIndex + '"]', $fieldset),
+            $row = sourceNode.parent();
 
-        $fieldset.removeClass('modified');
+        $row.removeClass('modified');
 
         /* https://stackoverflow.com/questions/11591174/escaping-of-attribute-values-using-jquery-attr ... */
         buttonNode.val($('<div/>').html('&#8656;').text());
-        registerCopyClickHandler(buttonNode, rowIndex);
+        buttonNode.removeClass('undo');
 
-        targetNode.parent().removeData('newVal');
-        targetNode.parent().removeAttr('title');
-        targetNode.text(target);
+        targetNode.removeData('newVal');
+        targetNode.find('span:first').html($row.data('detailFormatter')(targetNode.data('origVal')));
     }
 
     /* ******************** *********************
@@ -338,14 +387,21 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
     // public
 
     mergeWizard.getFinalSingleValue = function getFinalSingleValue(propName) {
-        var $fieldset = $('#' + propName.replace(/ /g, '')),
+        var $fieldset = $('#' + normalizePropName(propName)),
             targetNode = $('.left[data-row-index="0"]', $fieldset);
 
         return getFinalValue(targetNode);
     };
 
+    mergeWizard.getEnhancedFinalSingleValue = function getEnhancedFinalSingleValue(propName) {
+        var $fieldset = $('#' + normalizePropName(propName)),
+            targetNode = $('.left[data-row-index="0"]', $fieldset);
+
+        return getEnhancedFinalValue(targetNode);
+    };
+
     mergeWizard.getFinalMultiValue = function getFinalMultiValue(propName) {
-        var $fieldset = $('#' + propName.replace(/ /g, '')),
+        var $fieldset = $('#' + normalizePropName(propName)),
             targetNodes = $('.left', $fieldset),
             result = [],
             finalVal;
@@ -360,8 +416,24 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         return result;
     };
 
+    mergeWizard.getEnhancedFinalMultiValue = function getEnhancedFinalMultiValue(propName) {
+        var $fieldset = $('#' + normalizePropName(propName)),
+            targetNodes = $('.left', $fieldset),
+            result = [],
+            finalVal;
+
+        targetNodes.each(function(index, value) {
+            finalVal = getEnhancedFinalValue($(value));
+            if (finalVal !== undefined) {
+                result.push(finalVal);
+            }
+        });
+
+        return result;
+    };
+
     mergeWizard.getFinalMapValue = function getFinalMapValue(propName) {
-        var $fieldset = $('#' + propName.replace(/ /g, '')),
+        var $fieldset = $('#' + normalizePropName(propName)),
             keys = $fieldset.data('mapKeys'),
             result = {},
             finalVal;
@@ -377,7 +449,7 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
     };
 
     mergeWizard.getFinalMultiMapValue = function getFinalMultiMapValue(propName) {
-        var $fieldset = $('#' + propName.replace(/ /g, '')),
+        var $fieldset = $('#' + normalizePropName(propName)),
             keys = $fieldset.data('mapKeys'),
             result = {},
             finalVal;
@@ -401,7 +473,7 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         if (newVal === '') {
             /* origVal should be deleted */
             return undefined;
-        } else if (newVal) {
+        } else if (typeof newVal !== 'undefined' && newVal != null) {
             /* origVal should be overridden */
             return newVal;
         } else if (origVal === '') {
@@ -410,6 +482,37 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         } else {
             /* origVal should be kept */
             return origVal;
+        }
+    }
+
+    function getEnhancedFinalValue(element) {
+        var origVal = element.data('origVal'),
+            newVal = element.data('newVal');
+
+        if (newVal === '') {
+            /* origVal should be deleted */
+            return {
+                target: false,
+                value: undefined
+            };
+        } else if (typeof newVal !== 'undefined' && newVal != null) {
+            /* origVal should be overridden */
+            return {
+                target: false,
+                value: newVal
+            }
+        } else if (origVal === '') {
+            /* origVal should be kept but has been empty*/
+            return {
+                target: true,
+                value: undefined
+            }
+        } else {
+            /* origVal should be kept */
+            return {
+                target: true,
+                value: origVal
+            }
         }
     }
 

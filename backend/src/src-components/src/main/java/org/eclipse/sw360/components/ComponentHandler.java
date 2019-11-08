@@ -216,6 +216,11 @@ public class ComponentHandler implements ComponentService.Iface {
         return handler.getReleasesFromVendorIds(ids);
     }
 
+    @Override
+    public Set<Release> getReleasesByVendorId(String vendorId) throws TException {
+        return handler.getReleasesByVendorId(vendorId);
+    }
+    
     ////////////////////////////
     // ADD INDIVIDUAL OBJECTS //
     ////////////////////////////
@@ -225,6 +230,7 @@ public class ComponentHandler implements ComponentService.Iface {
         assertNotNull(component);
         assertIdUnset(component.getId());
         assertUser(user);
+        assertNotNull(component.getComponentType(), "ComponentType is not present on the request");
 
         return handler.addComponent(component, user.getEmail());
     }
@@ -235,7 +241,7 @@ public class ComponentHandler implements ComponentService.Iface {
         assertIdUnset(release.getId());
         assertUser(user);
 
-        return handler.addRelease(release, user.getEmail());
+        return handler.addRelease(release, user);
     }
 
     ///////////////////////////////
@@ -298,8 +304,25 @@ public class ComponentHandler implements ComponentService.Iface {
         return handler.updateReleases(releases, user);
     }
 
+    @Override
+    public RequestSummary updateReleasesDirectly(Set<Release> releases, User user) throws TException {
+        assertUser(user);
+        return handler.updateReleasesDirectly(releases, user);
+    }
+
     public RequestStatus updateReleaseFromModerationRequest(Release releaseAdditions, Release releaseDeletions, User user) {
         return handler.updateReleaseFromAdditionsAndDeletions(releaseAdditions, releaseDeletions, user);
+    }
+
+    @Override
+    public RequestStatus mergeReleases(String releaseTargetId, String releaseSourceId, Release releaseSelection,
+            User user) throws TException {
+        return handler.mergeReleases(releaseTargetId, releaseSourceId, releaseSelection, user);
+    }
+
+    @Override
+    public List<Release> getReferencingReleases(String releaseId) throws TException {
+        return handler.getReferencingReleases(releaseId);
     }
 
     ///////////////////////////////
@@ -342,6 +365,11 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     @Override
+    public Set<Component> getComponentsByDefaultVendorId(String defaultVendorId) throws TException {
+        return handler.getComponentsByDefaultVendorId(defaultVendorId);
+    }
+
+    @Override
     public boolean releaseIsUsed(String releaseId) throws TException {
         return handler.checkIfInUse(releaseId);
     }
@@ -349,6 +377,11 @@ public class ComponentHandler implements ComponentService.Iface {
     @Override
     public boolean componentIsUsed(String componentId) throws TException {
         return handler.checkIfInUseComponent(componentId);
+    }
+
+    @Override
+    public Component recomputeReleaseDependentFields(String componentId) throws TException {
+        return handler.updateReleaseDependentFieldsForComponentId(componentId);
     }
 
     //////////////////////////////////

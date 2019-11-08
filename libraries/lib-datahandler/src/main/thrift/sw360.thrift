@@ -88,6 +88,17 @@ enum MainlineState {
     DENIED = 4,
 }
 
+enum ConfigFor {
+    FOSSOLOGY_REST = 0,
+}
+
+struct ConfigContainer {
+    1: optional string id,
+    2: optional string revision,
+    3: required ConfigFor configFor,
+    4: required map<string, set<string>> configKeyToValues,
+}
+
 struct ProjectReleaseRelationship {
     1: required ReleaseRelationship releaseRelation,
     2: required MainlineState mainlineState,

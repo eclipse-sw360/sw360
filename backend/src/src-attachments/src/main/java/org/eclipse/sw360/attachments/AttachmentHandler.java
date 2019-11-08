@@ -227,4 +227,10 @@ public class AttachmentHandler implements AttachmentService.Iface {
         return handler.getAttachmentOwnersByIds(ids);
     }
 
+    @Override
+    public List<AttachmentUsage> getAttachmentUsagesByReleaseId(String releaseId) throws TException {
+        assertNotNull(releaseId);
+        return handler.getAttachmentUsagesByReleaseId(releaseId);
+    }
+
 }

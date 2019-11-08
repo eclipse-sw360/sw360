@@ -40,7 +40,7 @@
     </div>
     <div class="row">
         <div class="col">
-            <div class="wizardBody">
+            <div class="merge wizardBody">
                 <div class="step active" data-step-id="1">
                     <div class="spinner spinner-with-text">
                         <div class="spinner-border" role="status">
@@ -73,7 +73,7 @@
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-    require(['jquery', 'bridges/datatables', 'modules/mergeWizard', ], function($, datatables, wizard) {
+    require(['jquery', 'bridges/datatables', 'modules/mergeWizard' ], function($, datatables, wizard) {
         var mergeWizardStepUrl = '<%=componentMergeWizardStepUrl%>',
             postParamsPrefix = '<portlet:namespace/>',
             $wizardRoot = $('#componentMergeWizard');
@@ -82,29 +82,54 @@
             wizardRoot: $wizardRoot,
             postUrl: mergeWizardStepUrl,
             postParamsPrefix: postParamsPrefix,
+            loadErrorHook: errorHook,
 
             steps: [
                 {
                     renderHook: renderChooseComponent,
                     submitHook: submitChosenComponent,
-                    submitErrorHook: submitErrorHook
+                    errorHook: errorHook
                 },
                 {
                     renderHook: renderMergeComponent,
                     submitHook: submitMergedComponent,
-                    submitErrorHook: submitErrorHook
+                    errorHook: errorHook
                 },
                 {
                     renderHook: renderConfirmMergedComponent,
                     submitHook: submitConfirmedMergedComponent,
-                    submitErrorHook: submitErrorHook
+                    errorHook: errorHook
                 }
             ],
-            finishCb: function(data) {
-                if (data.error) {
-                    alert("Could not merge components:\n" + data.error);
+            finishCb: function($stepElement, data) {
+                if (data && data.error) {
+                    let $error = $('<div/>', {
+                        'class': 'alert alert-danger mt-3'
+                    });
+                    let $idList = $('<ul>');
+
+                    $error.append($('<p/>').append($('<b/>').text('Could not merge components: ' + data.error)));
+                    $error.append($('<p/>').text('This error can lead to inconsistencies in the database. Please inform the administrator with the following information:'));
+                    $error.append($('<p>').append($idList));
+                    
+                    let componentSourceId = $stepElement.data('componentSourceId');
+                    $idList.append($('<li>').text('Source component: ' + componentSourceId));
+                    $idList.append($('<li>').text('Target component: ' + $wizardRoot.data('componentTargetId')));
+                    $stepElement.data('componentSelection').releases.forEach( function(release) {
+                        if(release.componentId == componentSourceId) {
+                            $idList.append($('<li>').text('Release: ' + release.id));
+                        }
+                    });
+
+                    $stepElement.html('').append($error);
+                    return false;
+                } else if(data && data.redirectUrl) {
+                    window.location.href = data.redirectUrl;
+                    return true;
+                } else {
+                    window.history.back();
+                    return true;
                 }
-                window.location.href = data.redirectUrl;
             }
         });
 
@@ -136,14 +161,14 @@
             var table = datatables.create($stepElement.find('#componentSourcesTable'), {
                 data: data.components,
                 columns: [
-                    { data: "id", render: $.fn.dataTable.render.inputRadio('componentChooser'), orderable: false },
+                    { data: "id", render: $.fn.dataTable.render.inputRadio('componentChooser') },
                     { data: "name" },
                     { data: "createdBy" },
                     { data: "releases" }
                 ],
                 order: [ [ 1, 'asc' ] ],
                 select: 'single'
-            });
+            }, undefined, [0], true);
             datatables.enableCheckboxForSelection(table, 0);
         }
 
@@ -162,6 +187,9 @@
         }
 
         function renderMergeComponent($stepElement, data) {
+            var releases,
+                releaseMap;
+
             $stepElement.html('<div class="stepFeedback"></div>');
             $stepElement.data('componentSourceId', data.componentSource.id);
             $stepElement.data('releaseCount', (data.componentTarget.releases.length || 0) + (data.componentSource.releases.length || 0));
@@ -169,7 +197,14 @@
             $stepElement.append(wizard.createCategoryLine('General'));
             $stepElement.append(wizard.createSingleMergeLine('Name', data.componentTarget.name, data.componentSource.name));
             $stepElement.append(wizard.createSingleMergeLine('Created on', data.componentTarget.createdOn, data.componentSource.createdOn));
-            $stepElement.append(wizard.createSingleMergeLine('Created by', data.componentTarget.createdBy, data.componentSource.createdBy));
+            $stepElement.append(
+                renderCreatedBy(
+                    wizard.createSingleMergeLine('Created by', data.componentTarget.createdBy, data.componentSource.createdBy),
+                    data.componentSource.createdBy != data.componentTarget.createdBy,
+                    data.componentSource.createdBy,
+                    'text-center'
+                )
+            );
             $stepElement.append(wizard.createMultiMergeLine('Categories', data.componentTarget.categories, data.componentSource.categories));
             $stepElement.append(wizard.createSingleMergeLine('Component Type', data.componentTarget.componentType, data.componentSource.componentType, getComponentTypeDisplayString));
             $stepElement.append(wizard.createSingleMergeLine('Default Vendor', data.componentTarget.defaultVendor, data.componentSource.defaultVendor, getDefaultVendorDisplayString));
@@ -191,12 +226,25 @@
             $stepElement.append(wizard.createMultiMapMergeLine('Additional Roles', data.componentTarget.roles, data.componentSource.roles));
 
             $stepElement.append(wizard.createCategoryLine('Releases'));
-            $stepElement.append(wizard.createMultiMergeLine('Releases', data.componentTarget.releases, data.componentSource.releases, function(release) {
+            releases = wizard.createMultiMergeLine('Releases', data.componentTarget.releases, data.componentSource.releases, function(release) {
                 if (!release) {
                     return '';
                 }
                 return (release.name || '-no-name-') + ' ' + (release.version || '-no-version-');
-            }));
+            });
+            $stepElement.append(releases);
+
+            releaseMap = {};
+            data.componentSource.releases.forEach(function(release) {
+                releaseMap[release.id] = release;
+            });
+            releases.find('.merge.single.right').each(function(index, element) {
+                var $row = $(element);
+                if(releaseMap[$row.data().origVal.id]) {
+                    wizard.mergeByDefault('Releases', index);
+                }
+                wizard.lockRow('Releases', index, true);
+            });
 
             $stepElement.append(wizard.createCategoryLine('Attachments'));
             $stepElement.append(wizard.createMultiMergeLine('Attachments', data.componentTarget.attachments, data.componentSource.attachments, function(attachment) {
@@ -206,7 +254,14 @@
                 return (attachment.filename || '-no-filename-') + ' (' + (attachment.attachementType || '-no-type-') + ')';
             }));
 
-            wizard.registerClickHandlers();
+            wizard.registerClickHandlers({
+                'Createdby': true
+            }, function(propName, copied, targetValue, sourceValue) {
+                $stepElement.find('.merge-info-createdby .user').text(copied ? targetValue : sourceValue);
+            });
+
+            $wizardRoot.data('componentSource', data.componentSource);
+            $wizardRoot.data('componentTarget', data.componentTarget);
         }
 
         function submitMergedComponent($stepElement) {
@@ -267,6 +322,9 @@
         }
 
         function renderConfirmMergedComponent($stepElement, data) {
+            var componentSource = $wizardRoot.data('componentSource'),
+                componentTarget = $wizardRoot.data('componentTarget');
+
             $stepElement.data('componentSourceId', data.componentSourceId);
             $stepElement.data('componentSelection', data.componentSelection);
 
@@ -275,7 +333,14 @@
             $stepElement.append(wizard.createCategoryLine('General'));
             $stepElement.append(wizard.createSingleDisplayLine('Name', data.componentSelection.name));
             $stepElement.append(wizard.createSingleDisplayLine('Created on', data.componentSelection.createdOn));
-            $stepElement.append(wizard.createSingleDisplayLine('Created by', data.componentSelection.createdBy));
+            $stepElement.append(
+                renderCreatedBy(
+                    wizard.createSingleDisplayLine('Created by', data.componentSelection.createdBy),
+                    componentSource.createdBy != componentTarget.createdBy,
+                    data.componentSelection.createdBy === componentSource.createdBy ? componentTarget.createdBy : componentSource.createdBy,
+                    'pl-3'
+                )
+            );
             $stepElement.append(wizard.createMultiDisplayLine('Categories', data.componentSelection.categories));
             $stepElement.append(wizard.createSingleDisplayLine('Component Type', data.componentSelection.componentType, getComponentTypeDisplayString));
             $stepElement.append(wizard.createSingleDisplayLine('Default Vendor', data.componentSelection.defaultVendor, getDefaultVendorDisplayString));
@@ -309,8 +374,21 @@
                 if (!attachment) {
                     return '';
                 }
-                return (attachment.filename || '-no-filename-') + ' (' + (attachment.attachementType || '-no-type-') + ')';
+                return (attachment.filename || '-no-filename-') + ' (' + (attachment.attachmentType || '-no-type-') + ')';
             }));
+        }
+
+        function renderCreatedBy($line, renderInfo, user, alignment) {
+            var $info = "<small class='merge-info-createdby form-text mt-0 pb-2 " + alignment + "'>" + 
+                "<svg class='lexicon-icon'><use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle-open' /></svg> " + 
+                "The user <b class='user'>" + user + "</b> will be added to the list of moderators." +
+                "</small>";
+
+            if(renderInfo) {
+                $line.append($info);
+            }
+
+            return $line;
         }
 
         function submitConfirmedMergedComponent($stepElement) {
@@ -318,8 +396,12 @@
             /* componentSelection still as data at stepElement */
         }
 
-        function submitErrorHook($stepElement, textStatus, error) {
-            button.finish('#componentMergeWizard .wizardNext');
+        function errorHook($stepElement, textStatus, error) {
+            if($stepElement.find('.stepFeedback').length === 0) {
+                // initial loading
+                $stepElement.html('<div class="stepFeedback"></div>');
+            }
+
             $stepElement.find('.stepFeedback').html('<div class="alert alert-danger">An error happened while communicating with the server: ' + textStatus + error + '</div>');
             $('html, body').stop().animate({ scrollTop: 0 }, 300, 'swing');
             setTimeout(function() {

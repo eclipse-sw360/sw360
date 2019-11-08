@@ -10,7 +10,6 @@
 --%>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 <%@ page import="org.eclipse.sw360.portal.common.page.PortletReleasePage" %>
-<%@ page import="org.eclipse.sw360.portal.common.FossologyConnectionHelper" %>
 
 <jsp:useBean id="releasesAndProjects" type="java.util.List<org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData>" scope="request"/>
 
@@ -22,28 +21,18 @@
 <core_rt:if test="${releasesAndProjects.size()  > 0 }">
     <table id="releasesTable" class="table table-bordered" data-details-context="${inProjectDetailsContext}"></table>
 </core_rt:if>
-<core_rt:set var="FOSSOLOGY_CONNECTION_ENABLED" value="<%=FossologyConnectionHelper.getInstance().isFossologyConnectionEnabled()%>"/>
-
-<%@include file="/html/utils/includes/fossologyClearing.jspf"%>
 
 <script type="text/javascript">
-require(['jquery', 'bridges/datatables', 'utils/includes/fossologyClearing', 'utils/render'], function ($, datatables, fossology, render) {
+require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatables, render) {
     var homeUrl = themeDisplay.getURLHome().replace(/\/web\//, '/group/');
 
     createClearingTable();
-    fossology.initialize();
 
     $('#exportReleasesSpreadsheetClearingButton').on('click', exportReleasesSpreadsheet);
-
-    $('#releasesTable').on('click', '.actions .clearing', function(event) {
-        var data = $(event.currentTarget).data();
-        fossology.openSelectClearingDialog('releaseClearingState', data.releaseId);
-    });
 
     function createClearingTable() {
         var table,
             result = [],
-            sendToFossology,
             editRelease;
 
         <core_rt:forEach items="${releasesAndProjects}" var="releasesClearingStatusData">
@@ -60,12 +49,7 @@ require(['jquery', 'bridges/datatables', 'utils/includes/fossologyClearing', 'ut
         </core_rt:forEach>
 
         table = datatables.create('#releasesTable', {
-            searching: true,
             data: result,
-            dom:
-                "<'row'<'col-sm-12 col-md-9'l><'col-sm-12 col-md-2'f><'col-sm-12 col-md-1'B>>" +
-                "<'row'<'col-sm-12'tr>>" +
-                "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
             columns: [
                 {title: "Name"},
                 {title: "Project Origin"},
@@ -81,35 +65,19 @@ require(['jquery', 'bridges/datatables', 'utils/includes/fossologyClearing', 'ut
                     visible: $('#releasesTable').data() ? $('#releasesTable').data().detailsContext : false
                 }
             ]
-        }, [0, 1, 2, 3, 4, 5], 6);
+        }, [0, 1, 2, 3, 4, 5], 6, true);
 
         function renderActions(id, type, row) {
             var $actions = $('<div>', {
                     'class': 'actions'
                 }),
-                <core_rt:choose>
-                    <core_rt:when test="${not empty FOSSOLOGY_CONNECTION_ENABLED and not FOSSOLOGY_CONNECTION_ENABLED}">
-                        $clearingAction = $('<svg>', {
-                            'class': 'disabled lexicon-icon',
-                            'data-project-id': id,
-                        }).append('<title>Fossology is not configured</title>'),
-                    </core_rt:when>
-                    <core_rt:otherwise>
-                        $clearingAction = $('<svg>', {
-                            'class': 'clearing lexicon-icon',
-                            'data-project-id': id,
-                        }).append('<title>Send to Fossology</title>'),
-                    </core_rt:otherwise>
-                </core_rt:choose>
                 $editAction = render.linkTo(
                     makeReleaseUrl(row[6]),
                     "",
                     '<svg class="lexicon-icon" title="Edit"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>'
                 );
 
-            $clearingAction.append($('<use href="<%=request.getContextPath()%>/images/icons.svg#fossology"/>'));
-
-            $actions.append($clearingAction, $editAction);
+            $actions.append($editAction);
             return $actions[0].outerHTML;
         }
     }

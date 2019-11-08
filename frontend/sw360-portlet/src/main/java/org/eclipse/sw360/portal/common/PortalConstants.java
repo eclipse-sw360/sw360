@@ -37,6 +37,9 @@ public class PortalConstants {
     public static final Set<String> SET_CLEARING_TEAMS_STRING;
     public static final String LICENSE_IDENTIFIERS;
     public static final String PREFERRED_COUNTRY_CODES;
+    public static final Boolean MAINLINE_STATE_ENABLED_FOR_USER;
+    public static final Boolean IS_CLEARING_TEAM_UNKNOWN_ENABLED;
+    public static final Set<String> PROJECT_OBLIGATIONS_ACTION_SET;
 
     // DO NOT CHANGE THIS UNLESS YOU KNOW WHAT YOU ARE DOING !!!
     // - friendly url mapping files must be changed
@@ -91,6 +94,8 @@ public class PortalConstants {
     public static final String DB_TODOS_FROM_MODERATION_REQUEST = "db_todos_from_moderation_request";
     public static final String MODERATION_LICENSE_DETAIL = "moderationLicenseDetail";
     public static final String LICENSE_TYPE_CHOICE = "licenseTypeChoice";
+    public static final String LICENSE_TYPE_GLOBAL = "global";
+    public static final String LICENSE_TYPE_OTHERS = "Others";
 
     //! Specialized keys for moderation
     public static final String MODERATION_PORTLET_NAME = PORTLET_NAME_PREFIX + "moderations";
@@ -131,19 +136,36 @@ public class PortalConstants {
     public static final String RELEASE_EXTERNAL_IDS;
     public static final Set<String> RELEASE_EXTERNAL_ID_KEYS;
     public static final String RELEASE_LINK_TO_PROJECT = "releaseLinkToProject";
+    public static final String PAGENAME_MERGE_RELEASE = "mergeRelease";
+    public static final String RELEASE_SELECTION = "releaseSelection";
+    public static final String RELEASE_SOURCE_ID = "releaseSourceId";
+    public static final String RELEASE_TARGET_ID = "releaseTargetId";
+    
 
     //! Specialized keys for vendors
     public static final String VENDOR_PORTLET_NAME = PORTLET_NAME_PREFIX + "vendors";
     public static final String VENDOR = "vendor";
     public static final String VENDOR_ID = "vendorId";
     public static final String VENDOR_LIST = "vendorList";
+    public static final String VENDOR_SELECTION = "vendorSelection";
+    public static final String VENDOR_SOURCE_ID = "vendorSourceId";
+    public static final String VENDOR_TARGET_ID = "vendorTargetId";
+    public static final String PAGENAME_MERGE_VENDOR = "mergeVendor";
 
     //! Specialized keys for todos
     public static final String TODO_LIST = "todoList";
     public static final String TODO_ID = "todoId";
 
+    //! Specialized keys for obligations
+    public static final String OBLIGATION_TOPIC = "obligationTopic";
+    public static final String OBLIGATION_ACTION = "obligationAction";
+    public static final String OBLIGATION_STATUS = "obligationStatus";
+    public static final String OBLIGATION_COMMENT = "obligationComment";
+    public static final String OBLIGATION_DATA = "obligationData";
+
     //! Specialized keys for attachments
     public static final String ATTACHMENTS = "attachments";
+    public static final String ATTACHMENT_NAME = "attachmentName";
     public static final String SPDX_ATTACHMENTS = "spdxAttachments";
     public static final String ADDED_ATTACHMENTS = "added_attachments";
     public static final String REMOVED_ATTACHMENTS = "removed_attachments";
@@ -155,6 +177,8 @@ public class PortalConstants {
     public static final String ATTACHMENT_USAGES = "attachmentUsages";
     public static final String ATTACHMENT_USAGES_RESTRICTED_COUNTS = "attachmentUsagesRestrictedCounts";
     public static final String SPDX_LICENSE_INFO = "spdxLicenseInfo";
+    public static final String SPDX_IDENTIFIER_UNKNOWN = "SPDX identifier unknown";
+    public static final String SPDX_IDENTIFIER_NA = "n/a";
 
     //! Specialized keys for projects
     public static final String PROJECT_PORTLET_NAME = PORTLET_NAME_PREFIX + "projects";
@@ -195,10 +219,11 @@ public class PortalConstants {
     public static final String PROJECT_PATH = "projectPath";
     public static final String PROJECT_PATHS = "projectPaths";
     public static final String SOURCE_PROJECT_ID = "sourceProjectId";
+    public static final String PROJECT_RELEASE_LICENSE_INFO = "projectReleaseLicenseInfo";
+    public static final String APPROVED_OBLIGATIONS_COUNT = "approvedObligationsCount";
 
 
     public static final String FOSSOLOGY_PORTLET_NAME = PORTLET_NAME_PREFIX + "fossology";
-    public static final String FOSSOLOGY_FINGER_PRINTS = "fingerPrints";
     public static final String USER_LIST = "userList";
     public static final String MISSING_USER_LIST = "missingUserList";
     public static final String GET_CLEARING_STATE_SUMMARY = "getClearingStateSummary";
@@ -369,6 +394,7 @@ public class PortalConstants {
     public static final String LOAD_LICENSE_INFO_ATTACHMENT_USAGE = "LoadLicenseInfoAttachmentUsage";
     public static final String LOAD_SOURCE_PACKAGE_ATTACHMENT_USAGE = "LoadSourcePackageAttachmentUsage";
     public static final String LOAD_PROJECT_LIST = "load_project_list";
+    public static final String SAVE_PROJECT_LICENSE_OBLIGATION = "save_project_license_obligation";
 
     //component actions
     public static final String ADD_VENDOR = "add_vendor";
@@ -384,13 +410,15 @@ public class PortalConstants {
 
     // fossology actions
     public static final String FOSSOLOGY_PREFIX = "fossology";
-    public static final String FINGER_PRINTS = "fingerPrints";
-    public static final String FOSSOLOGY_GET_PUBKEY = FOSSOLOGY_PREFIX + "get_pub";
-    public static final String FOSSOLOGY_DEPLOY_SCRIPTS = FOSSOLOGY_PREFIX + "deploy_scripts";
+    public static final String FOSSOLOGY_CONFIG_BEAN = FOSSOLOGY_PREFIX + "Config";
+    public static final String FOSSOLOGY_CONFIG_KEY_URL = FOSSOLOGY_PREFIX + "config_url";
+    public static final String FOSSOLOGY_CONFIG_KEY_TOKEN = FOSSOLOGY_PREFIX + "config_token";
+    public static final String FOSSOLOGY_CONFIG_KEY_FOLDER_ID = FOSSOLOGY_PREFIX + "config_folder_id";
     public static final String FOSSOLOGY_CHECK_CONNECTION = FOSSOLOGY_PREFIX + "check_connection";
-    public static final String FOSSOLOGY_SEND = FOSSOLOGY_PREFIX + "send";
-    public static final String FOSSOLOGY_GET_SENDABLE = FOSSOLOGY_PREFIX + "get_sendable";
-    public static final String FOSSOLOGY_GET_STATUS = FOSSOLOGY_PREFIX + "get_status";
+
+    public static final String FOSSOLOGY_ACTION_STATUS = FOSSOLOGY_PREFIX + "status";
+    public static final String FOSSOLOGY_ACTION_PROCESS = FOSSOLOGY_PREFIX + "process";
+    public static final String FOSSOLOGY_ACTION_OUTDATED = FOSSOLOGY_PREFIX + "outdated";
 
     public static final String RELEASES_AND_PROJECTS = "releasesAndProjects";
 
@@ -500,6 +528,9 @@ public class PortalConstants {
         RELEASE_EXTERNAL_ID_KEYS = CommonUtils.splitToSet(props.getProperty("release.externalkeys", "org.maven.id,com.github.id,com.gitlab.id,purl.id"));
         PROJECTIMPORT_HOSTS = props.getProperty("projectimport.hosts", "");
         PREFERRED_COUNTRY_CODES = props.getProperty("preferred.country.codes", "DE,AT,CH,US");
+        MAINLINE_STATE_ENABLED_FOR_USER = Boolean.parseBoolean(props.getProperty("mainline.state.enabled.for.user", "false"));
+        IS_CLEARING_TEAM_UNKNOWN_ENABLED = Boolean.parseBoolean(props.getProperty("clearing.team.unknown.enabled", "true"));
+        PROJECT_OBLIGATIONS_ACTION_SET = CommonUtils.splitToSet(props.getProperty("project.obligation.actions", "Action 1,Action 2,Action 3"));
 
         // SW360 REST API Constants
         API_TOKEN_ENABLE_GENERATOR = Boolean.parseBoolean(props.getProperty("rest.apitoken.generator.enable", "false"));

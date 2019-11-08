@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-1.0
  *
@@ -17,6 +17,7 @@ import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+
 import org.ektorp.ViewQuery;
 import org.ektorp.support.View;
 import org.ektorp.support.Views;
@@ -77,12 +78,23 @@ import java.util.*;
                     "  }" +
                     "}"),
         @View(name = "byFossologyId",
-                map = "function(doc) {  " +
-                    "  if (doc.type == 'release') { " +
-                    "     if(doc.fossologyId) {    " +
-                    "         emit(doc.fossologyId, doc.componentId);  " +
-                    "     } " +
-                    "  } " +
+                map = "function(doc) {\n" +
+                    "  if (doc.type == 'release') {\n" +
+                    "    if (Array.isArray(doc.externalToolProcesses)) {\n" +
+                    "      for (var i = 0; i < doc.externalToolProcesses.length; i++) {\n" +
+                    "        externalToolProcess = doc.externalToolProcesses[i];\n" +
+                    "        if (externalToolProcess.externalTool === 'FOSSOLOGY' && Array.isArray(externalToolProcess.processSteps)) {\n" +
+                    "          for (var j = 0; j < externalToolProcess.processSteps.length; j++) {\n" +
+                    "            processStep = externalToolProcess.processSteps[j];\n" +
+                    "            if (processStep.stepName === '01_upload' && processStep.processStepIdInTool > 0) {\n" +
+                    "              emit(processStep.processStepIdInTool, doc.componentId);\n" +
+                    "              break;\n" +
+                    "            }\n" +
+                    "          }\n" +
+                    "        }\n" +
+                    "      }\n" +
+                    "    }\n" +
+                    "  }\n" +
                     "}"),
         @View(name = "byExternalIds",
                 map = "function(doc) {" +
@@ -90,6 +102,12 @@ import java.util.*;
                         "    for (var externalId in doc.externalIds) {" +
                         "       emit( [externalId, doc.externalIds[externalId]] , doc._id);" +
                         "    }" +
+                        "  }" +
+                        "}"),
+        @View(name = "byDefaultVendorId",
+                map = "function(doc) {" +
+                        "  if (doc.type == 'component') {" +
+                        "       emit( doc.defaultVendorId , doc._id);" +
                         "  }" +
                         "}")
 })
@@ -163,6 +181,11 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
     public Set<Component> getUsingComponents(Set<String> releaseIds) {
         final Set<String> componentIdsByLinkingRelease = queryForIdsAsValue("byLinkingRelease", releaseIds);
         return new HashSet<>(get(componentIdsByLinkingRelease));
+    }
+
+    public Set<Component> getComponentsByDefaultVendorId(String defaultVendorId) {
+        final Set<String> componentIds = queryForIdsAsValue("byDefaultVendorId", defaultVendorId);
+        return new HashSet<>(get(componentIds));
     }
 
     public Set<Component> searchByExternalIds(Map<String, Set<String>> externalIds) {

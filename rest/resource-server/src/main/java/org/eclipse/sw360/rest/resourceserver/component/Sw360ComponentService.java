@@ -20,14 +20,19 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -46,14 +51,43 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
     @NonNull
     private final RestControllerHelper<Component> rch;
 
+    @NonNull
+    private final Sw360ProjectService projectService;
+
     public List<Component> getComponentsForUser(User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         return sw360ComponentClient.getComponentSummary(sw360User);
     }
 
+    public Release getReleaseById(String id, User sw360User) {
+        try {
+            ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+            return sw360ComponentClient.getReleaseById(id, sw360User);
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public Component getComponentForUserById(String componentId, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         return sw360ComponentClient.getComponentById(componentId, sw360User);
+    }
+
+    public Set<Project> getProjectsByComponentId(String componentId, User sw360User) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        Component component = sw360ComponentClient.getComponentById(componentId, sw360User);
+        Set<String> releaseIds = SW360Utils.getReleaseIds(component.getReleases());
+        Set<Project> usedByProjects = projectService.getProjectsByReleaseIds(releaseIds, sw360User);
+
+        return usedByProjects;
+    }
+
+    public Set<Component> getUsingComponentsForComponent(String componentId, User sw360User) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        Component component = sw360ComponentClient.getComponentById(componentId, sw360User);
+        Set<String> releaseIds = SW360Utils.getReleaseIds(component.getReleases());
+        Set<Component> usingComponentsForComponent = sw360ComponentClient.getUsingComponentsForComponent(releaseIds);
+        return usingComponentsForComponent;
     }
 
     @Override
@@ -72,6 +106,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
         AddDocumentRequestSummary documentRequestSummary = sw360ComponentClient.addComponent(component, sw360User);
         if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.SUCCESS) {
             component.setId(documentRequestSummary.getId());
+            component.setCreatedBy(sw360User.getEmail());
             return component;
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
             throw new DataIntegrityViolationException("sw360 component with name '" + component.getName() + "' already exists.");
@@ -102,5 +137,11 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
         THttpClient thriftClient = new THttpClient(thriftServerUrl + "/components/thrift");
         TProtocol protocol = new TCompactProtocol(thriftClient);
         return new ComponentService.Client(protocol);
+    }
+
+    private ProjectService.Iface getThriftProjectClient() throws TTransportException {
+        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/projects/thrift");
+        TProtocol protocol = new TCompactProtocol(thriftClient);
+        return new ProjectService.Client(protocol);
     }
 }

@@ -97,17 +97,17 @@ public class AttachmentController implements ResourceProcessor<RepositoryLinksRe
             case PROJECT_ID:
                 Project sw360Project = projectService.getProjectForUserById(owner.getProjectId(), sw360User);
                 restControllerHelper.addEmbeddedProject(halAttachment, sw360Project);
-                downloadLink = linkTo(ProjectController.class).slash(sw360Project.getId() + "/attachment/" + sw360Project.getId() + "/" + attachmendId).withRel("downloadLink");
+                downloadLink = linkTo(ProjectController.class).slash("/api/projects/" + sw360Project.getId() + "/attachments/" + attachmendId).withRel("downloadLink");
                 break;
             case COMPONENT_ID:
                 Component sw360Component = componentService.getComponentForUserById(owner.getComponentId(), sw360User);
                 restControllerHelper.addEmbeddedComponent(halAttachment, sw360Component);
-                downloadLink = linkTo(ComponentController.class).slash(sw360Component.getId() + "/attachment/" + sw360Component.getId() + "/" + attachmendId).withRel("downloadLink");
+                downloadLink = linkTo(ComponentController.class).slash("/api/components/" + sw360Component.getId() + "/attachments/" + attachmendId).withRel("downloadLink");
                 break;
             case RELEASE_ID:
                 Release sw360Release = releaseService.getReleaseForUserById(owner.getReleaseId(), sw360User);
                 restControllerHelper.addEmbeddedRelease(halAttachment, sw360Release);
-                downloadLink = linkTo(ComponentController.class).slash("/release/" + sw360Release.getComponentId() + "/" + sw360Release.getId() + "/attachment/" + sw360Release.getId() + "/" + attachmendId).withRel("downloadLink");
+                downloadLink = linkTo(ComponentController.class).slash("/api/releases/" + sw360Release.getId() + "/attachments/" + attachmendId).withRel("downloadLink");
                 break;
         }
 

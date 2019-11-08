@@ -138,6 +138,8 @@ struct Project {
 //    100: optional set<string> releaseIds, //deleted
     101: optional ReleaseClearingStateSummary releaseClearingStateSummary,
 
+    // obligation status
+    102: optional map<string, ObligationStatusInfo> linkedObligations,
     200: optional map<RequestedAction, bool> permissions,
 }
 
@@ -167,6 +169,24 @@ struct ProjectTodo {
     2: required string userId;
     3: required string updated;
     4: required bool fulfilled;
+}
+
+enum ProjectObligationStatus {
+    OPEN = 0,
+    FULFILLED = 1,
+    IN_PROGRESS = 2,
+}
+
+struct ObligationStatusInfo {
+    1: optional string text, // need not be saved in database
+    2: optional string action,
+    3: optional ProjectObligationStatus status,
+    4: optional string comment,
+    5: optional string modifiedBy,
+    6: optional string modifiedOn,
+    7: optional set<Release> releases, // used to display in UI, no need to save this in database
+    8: required set<string> licenseIds,
+    9: optional set<string> releaseIds,
 }
 
 service ProjectService {
@@ -336,4 +356,9 @@ service ProjectService {
      * external ids can have multiple values to one key
      */
     set<Project> searchByExternalIds(1: map<string, set<string>> externalIds, 2: User user);
+
+    /**
+     * get the cyclic hierarchy of linkedProjects
+     */
+    string getCyclicLinkedProjectPath(1: Project project, 2: User user);
 }

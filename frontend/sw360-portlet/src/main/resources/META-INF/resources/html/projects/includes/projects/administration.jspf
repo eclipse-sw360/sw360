@@ -29,9 +29,9 @@
 
             Under clearing:
             <span>
-                <sw360:out value="${project.releaseClearingStateSummary.underClearingByProjectTeam}" default="--"/>
+                <sw360:out value="${project.releaseClearingStateSummary.underClearing}" default="--"/>
             </span>
-            (and <sw360:out value="${project.releaseClearingStateSummary.underClearing}" default="--"/> by other teams),
+            (and <sw360:out value="${project.releaseClearingStateSummary.sentToClearingTool}" default="--"/> already uploaded),
 
             Report available:
             <span>
