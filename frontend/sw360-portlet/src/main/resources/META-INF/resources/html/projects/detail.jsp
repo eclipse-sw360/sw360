@@ -36,7 +36,7 @@
 
 <core_rt:if test="${empty attributeNotFoundException}">
     <core_rt:set var="inProjectDetailsContext" value="true" scope="request"/>
-    <core_rt:set var="isObligationPresent"  value="${not empty project.linkedObligations and project.linkedObligations.size() > 0}" />
+    <core_rt:set var="isObligationPresent"  value="${not empty project.linkedObligations}" />
     <core_rt:if test="${isObligationPresent}">
         <jsp:useBean id="projectReleaseLicenseInfo" type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult>" scope="request" />
         <jsp:useBean id="approvedObligationsCount" type="java.lang.Integer" scope="request"/>

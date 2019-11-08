@@ -326,6 +326,12 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
                 .collect(Collectors.toList()).stream()
                 .collect(Collectors.toMap(ObligationParsingResult::getAttachmentContentId, Function.identity()));
 
+        Set<Release> releases = releaseToSelectedAttachmentIds.keySet().stream().filter(rel -> rel.getAttachmentsSize() > 0).collect(Collectors.toSet());
+        if (releases.isEmpty()) {
+            return null;
+        }
+        releaseToSelectedAttachmentIds.keySet().retainAll(releases);
+
         List<LicenseInfoParsingResult> licenseParsingResults = new ArrayList<LicenseInfoParsingResult>();
         for (Entry<Release, Set<String>> entry : releaseToSelectedAttachmentIds.entrySet()) {
             Attachment attachment = SW360Utils.getApprovedClxAttachmentForRelease(entry.getKey());

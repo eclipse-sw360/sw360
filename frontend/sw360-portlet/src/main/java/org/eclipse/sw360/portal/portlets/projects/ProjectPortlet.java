@@ -1486,10 +1486,15 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         List<Release> releases;
         try {
             final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
-            releases = componentClient.getFullReleasesById(project.getReleaseIdToUsage().keySet(), user);
-            final List<LicenseInfoParsingResult> licenseInfos = addLicenseInfos(request, project, releases);
-            sortLicenseInfo(licenseInfos);
-            request.setAttribute(PROJECT_RELEASE_LICENSE_INFO, licenseInfos);
+            releases = componentClient.getFullReleasesById(project.getReleaseIdToUsage().keySet(), user)
+                    .stream().filter(rel -> rel.getAttachmentsSize() > 0).collect(Collectors.toList());
+            if (CommonUtils.isNotEmpty(releases)) {
+                final List<LicenseInfoParsingResult> licenseInfos = addLicenseInfos(request, project, releases);
+                sortLicenseInfo(licenseInfos);
+                request.setAttribute(PROJECT_RELEASE_LICENSE_INFO, licenseInfos);
+            } else {
+                project.unsetLinkedObligations();
+            }
         } catch (TException exception) {
             log.error("Could not fetch Release Information: ", exception);
         }

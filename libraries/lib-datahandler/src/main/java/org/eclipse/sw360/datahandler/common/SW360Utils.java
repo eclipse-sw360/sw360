@@ -233,19 +233,19 @@ public class SW360Utils {
     }
 
     public static Attachment getApprovedClxAttachmentForRelease(Release release) {
-        // retaining attachments only with type as CLX and status as Accepted.
         Predicate<Attachment> isApprovedCLI = attachment -> attachment.getCheckStatus().equals(CheckStatus.ACCEPTED)
                 && AttachmentType.COMPONENT_LICENSE_INFO_XML.equals(attachment.getAttachmentType());
 
-        // Ideally there should be only one Accepted CLI attachment in each release.
-        // But, there are releases with multiple Accepted CLI files,
-        // that's why sorting the attachments by createdOn and file Name,
-        // and returning the first attachment.
-        // in order to avoid returning inconsistent attachment for different request.
-        return release
-                .getAttachments().stream().filter(isApprovedCLI).sorted(Comparator.comparing(Attachment::getCreatedOn)
-                        .thenComparing(Attachment::getFilename, String.CASE_INSENSITIVE_ORDER))
-                .findFirst().orElse(new Attachment());
+        List<Attachment> attachmentList = release.getAttachments().stream().filter(isApprovedCLI).collect(Collectors.toList());
+
+        if (CommonUtils.isNotEmpty(attachmentList)) {
+            if (attachmentList.size() == 1) {
+                return attachmentList.get(0);
+            } else {
+                log.warn("More then 1 Accepted CLI file for Release: " + release.getId() + " - " + printName(release));
+            }
+        }
+        return new Attachment();
     }
 
     public static String printFullname(Release release) {

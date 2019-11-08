@@ -23,9 +23,17 @@
 
 <core_rt:if test="${not isObligationPresent}">
     <div class="alert alert-info" role="alert">
-        No Linked Obligations.
-        <br>
-        Only <b>Approved</b> CLI files Obligations will be shown here.
+    <core_rt:choose>
+        <core_rt:when test="${empty project.releaseIdToUsage}">
+            No linked obligations.
+        </core_rt:when>
+        <core_rt:otherwise>
+            The possible reasons for not loading linked obligations:
+            <li>No <b>Accepted</b> CLI file in linked release. (Obligations from accepted CLI file will be loaded here)</li>
+            <li>More than <b>ONE</b> Accepted CLI file in linked release. (Each release should have only one accepted CLI file)</li>
+            <li>No obligations are present in CLI file.</li>
+        </core_rt:otherwise>
+    </core_rt:choose>
     </div>
 </core_rt:if>
 

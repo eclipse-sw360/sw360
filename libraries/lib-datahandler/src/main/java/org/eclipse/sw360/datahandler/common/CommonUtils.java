@@ -208,6 +208,14 @@ public class CommonUtils {
         return false;
     }
 
+    public static boolean isNullOrEmptyCollection(Collection collection) {
+        return collection == null || collection.isEmpty();
+    }
+
+    public static boolean isNotEmpty(Collection collection) {
+        return !isNullOrEmptyCollection(collection);
+    }
+
     public static boolean allAreEmptyOrNull(Collection... collections) {
         return !atLeastOneIsNotEmpty(collections);
     }
