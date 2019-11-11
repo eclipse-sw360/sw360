@@ -12,7 +12,6 @@
  */
 package org.eclipse.sw360.rest.resourceserver.release;
 
-import com.google.common.collect.Streams;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.log4j.Logger;
@@ -259,6 +258,16 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
         return new ResponseEntity<>(halRelease, HttpStatus.OK);
     }
 
+    @RequestMapping(value = RELEASES_URL + "/{releaseId}/attachments/{attachmentId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public void downloadAttachmentFromRelease(
+            @PathVariable("releaseId") String releaseId,
+            @PathVariable("attachmentId") String attachmentId,
+            HttpServletResponse response) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Release release = releaseService.getReleaseForUserById(releaseId, sw360User);
+        attachmentService.downloadAttachmentWithContext(release, attachmentId, response, sw360User);
+    }
+
     private Set<KnownHash> convertToKnownHashes(Set<Attachment> attachments) {
         if (attachments == null) {
             return null;
@@ -275,7 +284,7 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
 
     private Set<KnownHash> getAllKnownHashes(Release sw360Release) {
         return Stream.concat(convertToKnownHashes(sw360Release.getAttachments()).stream(),
-                sw360Release.getOtherKnownHashes().stream())
+                Optional.ofNullable(sw360Release.getOtherKnownHashes()).map(Collection::stream).orElse(Stream.empty()))
                 .collect(Collectors.toSet());
     }
 
@@ -304,16 +313,6 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
         final HalResource halRelease = createHalReleaseResource(release, true);
 
         return new ResponseEntity<>(halRelease, HttpStatus.OK);
-    }
-
-    @RequestMapping(value = RELEASES_URL + "/{releaseId}/attachments/{attachmentId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public void downloadAttachmentFromRelease(
-            @PathVariable("releaseId") String releaseId,
-            @PathVariable("attachmentId") String attachmentId,
-            HttpServletResponse response) throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        Release release = releaseService.getReleaseForUserById(releaseId, sw360User);
-        attachmentService.downloadAttachmentWithContext(release, attachmentId, response, sw360User);
     }
 
     @Override

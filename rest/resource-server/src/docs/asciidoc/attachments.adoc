@@ -29,3 +29,8 @@ include::{snippets}/should_document_get_attachment/http-response.adoc[]
 
 ===== Links
 include::{snippets}/should_document_get_attachment/links.adoc[]
+
+[[resources-hashes]]
+=== KnownHashes
+
+The KnownHashes or Hashes resource is used to list hashes from attachments and also other known hashes.

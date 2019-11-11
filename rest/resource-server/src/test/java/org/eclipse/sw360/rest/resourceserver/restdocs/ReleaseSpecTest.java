@@ -13,6 +13,7 @@ import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.thrift.attachments.KnownHash;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
@@ -43,6 +44,7 @@ import com.google.common.collect.ImmutableSet;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.anyObject;
@@ -132,6 +134,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         release.setMainLicenseIds(new HashSet<>(Arrays.asList("GPL-2.0-or-later", "Apache-2.0")));
         release.setOperatingSystems(ImmutableSet.of("Windows", "Linux"));
         release.setSoftwarePlatforms(new HashSet<>(Arrays.asList("Java SE", ".NET")));
+        release.setOtherKnownHashes(new HashSet<>(Arrays.asList(new KnownHash("ecf6475cfcffd6eca2d2d9669e1f6c93e622e6b7","sha-1"))));
         releaseList.add(release);
 
         Release release2 = new Release();
@@ -267,6 +270,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("softwarePlatforms").description("The software platforms of the component"),
                                 fieldWithPath("_embedded.sw360:moderators").description("An array of all release moderators with email and link to their <<resources-user-get,User resource>>"),
                                 fieldWithPath("_embedded.sw360:attachments").description("An array of all release attachments and link to their <<resources-attachment-get,Attachment resource>>"),
+                                fieldWithPath("otherKnownHashes").description("An array of <<resources-hashes, KnownHash resources>>"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
@@ -345,6 +349,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("softwarePlatforms").description("The software platforms of the component"),
                                 fieldWithPath("_embedded.sw360:moderators").description("An array of all release moderators with email and link to their <<resources-user-get,User resource>>"),
                                 fieldWithPath("_embedded.sw360:attachments").description("An array of all release attachments and link to their <<resources-attachment-get,Attachment resource>>"),
+                                fieldWithPath("otherKnownHashes").description("An array of <<resources-hashes, KnownHash resources>>"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )
                 ));
@@ -374,6 +379,60 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                 .accept("application/*"))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document());
+    }
+
+    @Test
+    public void should_document_get_releases_hashes_info() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/releases/" + release.getId() + "/hashes")
+                .header("Authorization", "Bearer" + accessToken)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        responseFields(
+                                fieldWithPath("_embedded.sw360:knownHashes").description("An array of <<resources-hashes, KnownHash resources>>"),
+                                fieldWithPath("_embedded.sw360:knownHashes[]filename").description("The corresponding filename"),
+                                fieldWithPath("_embedded.sw360:knownHashes[]hash").description("The hash value"),
+                                fieldWithPath("_embedded.sw360:knownHashes[]hashType").description("The type of hash"),
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
+
+    @Test
+    public void should_document_add_hash_to_release() throws Exception {
+        KnownHash knownHash = new KnownHash("400a6a6bf917063cb11a6085a5d78473b6bb4613","sha-1");
+
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(
+                post("/api/releases/" + release.getId() + "/hashes")
+                        .contentType(MediaTypes.HAL_JSON)
+                        .content(this.objectMapper.writeValueAsBytes(knownHash))
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        responseFields(
+                                fieldWithPath("name").description("The name of the release, optional"),
+                                fieldWithPath("version").description("The version of the release"),
+                                fieldWithPath("createdBy").description("Email of the release creator"),
+                                fieldWithPath("cpeId").description("CpeId of the release"),
+                                fieldWithPath("clearingState").description("The clearing of the release, possible values are " + Arrays.asList(ClearingState.values())),
+                                fieldWithPath("cpeId").description("The CPE id"),
+                                fieldWithPath("releaseDate").description("The date of this release"),
+                                fieldWithPath("createdOn").description("The creation date of the internal sw360 release"),
+                                fieldWithPath("mainlineState").description("the mainline state of the release, possible values are: " + Arrays.asList(MainlineState.values())),
+                                fieldWithPath("downloadurl").description("the download url of the release"),
+                                fieldWithPath("externalIds").description("When releases are imported from other tools, the external ids can be stored here"),
+                                fieldWithPath("additionalData").description("A place to store additional data used by external tools"),
+                                fieldWithPath("languages").description("The language of the component"),
+                                fieldWithPath("_embedded.sw360:licenses").description("An array of all main licenses with their fullName and link to their <<resources-license-get,License resource>>"),
+                                fieldWithPath("operatingSystems").description("The OS on which the release operates"),
+                                fieldWithPath("softwarePlatforms").description("The software platforms of the component"),
+                                fieldWithPath("_embedded.sw360:moderators").description("An array of all release moderators with email and link to their <<resources-user-get,User resource>>"),
+                                fieldWithPath("_embedded.sw360:attachments").description("An array of all release attachments and link to their <<resources-attachment-get,Attachment resource>>"),
+                                fieldWithPath("otherKnownHashes").description("An array of <<resources-hashes, KnownHash resources>>"),
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )
+                ));
     }
 
     @Test

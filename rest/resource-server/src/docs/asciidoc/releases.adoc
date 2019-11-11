@@ -127,6 +127,21 @@ include::{snippets}/should_document_get_release_attachment/curl-request.adoc[]
 include::{snippets}/should_document_get_release_attachment/http-response.adoc[]
 
 
+[[resources-releases-get-hashes-info]]
+==== Listing all known hashes
+
+A `GET` request will get all known hashes, including the one implied from attachments, and also the other known hashes, of a release
+
+==== Response structure
+include::{snippets}/should_document_get_release_hashes_info/response-fields.adoc[]
+
+==== Example request
+include::{snippets}/should_document_get_release_hashes_info/curl-request.adoc[]
+
+==== Example response
+include::{snippets}/should_document_get_release_hashes_info/http-response.adoc[]
+
+
 [[resources-release-get]]
 ==== Get a single release
 
