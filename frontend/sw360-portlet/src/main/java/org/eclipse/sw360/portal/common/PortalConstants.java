@@ -225,7 +225,10 @@ public class PortalConstants {
     public static final String LINKED_OBLIGATIONS = "linkedObligations";
     public static final String APPROVED_OBLIGATIONS_COUNT = "approvedObligationsCount";
     public static final String EXCLUDED_RELEASES = "excludedReleases";
-
+    public static final String RELATIONSHIPS = "relations";
+    public static final String PROJECT_RELEASE_TO_RELATION = "projectReleaseToRelation";
+    public static final String PROJECT_USED_RELEASE_RELATIONS = "usedProjectReleaseRelations";
+    public static final String SELECTED_PROJECT_RELEASE_RELATIONS = "selectedProjectReleaseRelations";
 
     public static final String FOSSOLOGY_PORTLET_NAME = PORTLET_NAME_PREFIX + "fossology";
     public static final String USER_LIST = "userList";

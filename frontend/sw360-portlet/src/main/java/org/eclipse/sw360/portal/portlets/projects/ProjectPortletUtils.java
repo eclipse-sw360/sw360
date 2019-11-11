@@ -292,12 +292,18 @@ public class ProjectPortletUtils {
                 continue;
             }
 
+            List<String> pathParts = new ArrayList<String>(Arrays.asList(attachmentContentIdWithPath.split(":")));
+            if (pathParts.size() > 2) {
+                pathParts.remove(pathParts.size() - 2);
+            }
+            String attachmentContentIdWithPathWithoutRel = pathParts.stream().collect(Collectors.joining(":"));
+
             @SuppressWarnings("unchecked")
             Map<String, LicenseNameWithText> licenseStore = (Map<String, LicenseNameWithText>) request.getPortletSession()
-                    .getAttribute(ProjectPortlet.LICENSE_STORE_KEY_PREFIX + attachmentContentIdWithPath);
+                    .getAttribute(ProjectPortlet.LICENSE_STORE_KEY_PREFIX + attachmentContentIdWithPathWithoutRel);
             if (licenseStore == null) {
                 throw new IllegalStateException(
-                        "No license store found for attachment content id with path " + attachmentContentIdWithPath);
+                        "No license store found for attachment content id with path " + attachmentContentIdWithPathWithoutRel);
             }
 
             Set<Integer> includedIds = Arrays.stream(checkboxes).map(s -> Integer.valueOf(s)).collect(Collectors.toSet());
@@ -332,7 +338,7 @@ public class ProjectPortletUtils {
             AttachmentUsage usage = new AttachmentUsage();
             String[] pathParts = attachmentIdWithPath.split(":");
             usage.setUsedBy(Source.projectId(pathParts[0]));
-            usage.setOwner(Source.releaseId(pathParts[pathParts.length - 2]));
+            usage.setOwner(Source.releaseId(pathParts[pathParts.length - 3]));
             usage.setAttachmentContentId(pathParts[pathParts.length - 1]);
 
             UsageData usageData = usageDataGenerator.apply(attachmentIdWithPath);

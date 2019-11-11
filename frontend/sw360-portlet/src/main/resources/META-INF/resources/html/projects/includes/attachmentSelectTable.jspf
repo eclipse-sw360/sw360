@@ -141,6 +141,7 @@
                     data-tree-level="${projectLink.treeLevel + 1}"
                     data-release-id="${releaseLink.id}"
                     data-attachment-id="${attachment.attachmentContentId}"
+                    <core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo}">data-release-relationship="${releaseLink.releaseRelationship}"</core_rt:if>
                     <core_rt:if test="${empty releaseLink.attachments}">class="selectable"</core_rt:if>
                     <core_rt:if test="${fn:length(releaseLink.attachments) == 1}">class="selectable highlightSuccess"</core_rt:if>
                     <core_rt:if test="${fn:length(releaseLink.attachments) gt 1}">class="selectable highlightWarning"</core_rt:if>
@@ -148,7 +149,7 @@
                     <td>
                         <input type="checkbox" class="form-check-input"
                                 name="<portlet:namespace/><%=PortalConstants.LICENSE_INFO_RELEASE_TO_ATTACHMENT%>"
-                                <core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo}">value='${projectPath.concat(":").concat(releaseLink.id).concat(":").concat(attachment.attachmentContentId)}'</core_rt:if>
+                                <core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo}">value='${projectPath.concat(":").concat(releaseLink.id).concat(":").concat(releaseLink.releaseRelationship).concat(":").concat(attachment.attachmentContentId)}'</core_rt:if>
                                 <core_rt:if test="${projectLinkTableMode != tableModeLicenseInfo}">value='${releaseLink.id.concat(":").concat(attachment.attachmentContentId)}'</core_rt:if>
                                 <core_rt:if test="${!attachmentSelected && (releaseLink.attachments.size() == 1 || attachment.createdTeam == sw360User.department)}">checked="checked" class="defaultChecked"
                                     <core_rt:set var="attachmentSelected" value="true" scope="request"/>
@@ -202,7 +203,9 @@
         require(['jquery', 'modules/button', 'modules/ajax-treetable', 'bridges/jquery-ui'], function($, button, treetable) {
 
             var $linkedProjectsInfoTable = $("#LinkedProjectsInfo"),
-                data = $linkedProjectsInfoTable.data();
+                data = $linkedProjectsInfoTable.data(),
+                releaseRelationDataAttr,
+                licenseinfoTableMode = ${projectLinkTableMode == tableModeLicenseInfo};
 
             if(data.tableMode === data.tableModeLicenseInfo) {
                 initializeTableForLicenseInfo($linkedProjectsInfoTable);
@@ -326,7 +329,7 @@
                     }
 
                     $rows = convertDataToRows(urlData.portletNamespace, data.ttId, data.treeLevel, data.projectPath,
-                                    data.releaseId, data.attachmentId, node.row.find('input[type=checkbox]:first').is(':checked'), licenses);
+                                    data.releaseId, data.releaseRelationship, data.attachmentId, node.row.find('input[type=checkbox]:first').is(':checked'), licenses);
                     $rows.find('.license-text').tooltip({
                         delay: 0,
                         content: function () {
@@ -339,17 +342,17 @@
 
                     // synchronize checkbox of each license with checkbox of attachment
                     node.row.find('input[type=checkbox]:first').on('change', function() {
-                        $linkedProjectsInfoTable.find('tr input[name="' + urlData.portletNamespace + data.projectPath + ':' + data.releaseId + ':' + data.attachmentId + '"]').
+                        $linkedProjectsInfoTable.find('tr input[name="' + urlData.portletNamespace + data.projectPath + ':' + data.releaseId + ':' + data.releaseRelationship + ':' + data.attachmentId + '"]').
                             prop('checked', this.checked).trigger('change');
                     });
                     // be sure that attachment is checked if at least one license is checked and that attachment is not checked
                     // if no license is checked
-                    $linkedProjectsInfoTable.find('tr input[name="' + urlData.portletNamespace + data.projectPath + ':' + data.releaseId + ':' + data.attachmentId + '"]').on('change', function() {
+                    $linkedProjectsInfoTable.find('tr input[name="' + urlData.portletNamespace + data.projectPath + ':' + data.releaseId + ':' + data.releaseRelationship + ':' + data.attachmentId + '"]').on('change', function() {
                         if(this.checked) {
                             // do not trigger change here, otherwise all license would be selected.
                             node.row.find('input[type=checkbox]:first').prop('checked', true);
                         } else {
-                            if($linkedProjectsInfoTable.find('tr input[name="' + urlData.portletNamespace + data.projectPath + ':' + data.releaseId + ':' + data.attachmentId + '"]:checked').length == 0) {
+                            if($linkedProjectsInfoTable.find('tr input[name="' + urlData.portletNamespace + data.projectPath + ':' + data.releaseId + ':' + data.releaseRelationship + ':' + data.attachmentId + '"]:checked').length == 0) {
                                 // do not trigger change here, otherwise all license would be selected.
                                 node.row.find('input[type=checkbox]:first').prop('checked', false);
                             }
@@ -364,7 +367,7 @@
                 });
             }
 
-            function convertDataToRows(portletNamespace, parentNodeId, treeLevel, projectPath, releaseId, attachmentContentId, initialCheck, licenses) {
+            function convertDataToRows(portletNamespace, parentNodeId, treeLevel, projectPath, releaseId, releaseRelationship, attachmentContentId, initialCheck, licenses) {
                 var index = 0,
                     $rows = $();
 
@@ -381,7 +384,7 @@
                     $checkbox = $('<input/>', {
                         type:         'checkbox',
                         'class': 'form-check-input',
-                        name:         portletNamespace + projectPath + ':' + releaseId + ":" + attachmentContentId,
+                        name:         portletNamespace + projectPath + ':' + releaseId + ':' + releaseRelationship + ':' + attachmentContentId,
                         value:        index++,
                     });
                     if(initialCheck) {
@@ -391,7 +394,7 @@
                         $checkbox,
                         $('<input/>', {
                             type:     'hidden',
-                            name:     portletNamespace + projectPath + ':' + releaseId + ":" + attachmentContentId + '_key',
+                            name:     portletNamespace + projectPath + ':' + releaseId + ':' + releaseRelationship + ':' +attachmentContentId + '_key',
                             value:    license.key
                         })
                     ).appendTo($row);
@@ -544,7 +547,19 @@
                         node;
                     // check all checkboxes by checking the parent one because we are storing exclusions and only
                     // excluded ones will be unchecked
-                    $linkedProjectsInfoTable.find('tr input[value="' + inputPrefix + usage.owner.releaseId + ':' + usage.attachmentContentId + '"]:first').prop('checked', true).trigger('change');
+                    var releaseRelationFromMap = '';
+                    if (licenseinfoTableMode) {
+                        var inputPrefixSplitted = inputPrefix.split(":");
+                        var projOrSubProjId = inputPrefixSplitted[inputPrefixSplitted.length-2];
+                        var projToRel = projOrSubProjId + ":" + usage.owner.releaseId;
+                        var projRelToReln = JSON.parse(JSON.stringify(${projectReleaseToRelation}));
+                        releaseRelationFromMap = projRelToReln.projectReleaseToRel[projToRel];
+                    }
+                    releaseRelationDataAttr = licenseinfoTableMode?'[data-release-relationship=' + releaseRelationFromMap + ']':'';
+                    var relationPlusColon = releaseRelationFromMap + ':';
+                    var releaseRelation = licenseinfoTableMode ? relationPlusColon : '';
+
+                    $linkedProjectsInfoTable.find('tr input[value="' + inputPrefix + usage.owner.releaseId + ':' + releaseRelation + usage.attachmentContentId + '"]:first').prop('checked', true).trigger('change');
 
                     if(usage.usageData.licenseInfo && usage.usageData.licenseInfo.excludedLicenseIds.length > 0) {
                         if (!usage.usageData.licenseInfo.projectPath) {
@@ -586,7 +601,7 @@
                                             text: 'License "' + licenseId + '" is not unique. License is not excluded.'
                                         });
                                     } else {
-                                        $row.find('input[name="' + config.portletNamespace + prefix + usage.usageData.licenseInfo.projectPath + ':' + usage.owner.releaseId + ':' + usage.attachmentContentId + '"]').prop('checked', false).trigger('change');
+                                        $row.find('input[name="' + config.portletNamespace + prefix + usage.usageData.licenseInfo.projectPath + ':' + usage.owner.releaseId + ':' + releaseRelation + usage.attachmentContentId + '"]').prop('checked', false).trigger('change');
                                     }
                                 });
                                 loadCountdown.decrement();
@@ -609,7 +624,7 @@
             }
 
             function findNode($linkedProjectsInfoTable, usage, prefix) {
-                var $row = $linkedProjectsInfoTable.find('tr[data-project-path="' + prefix + usage.usageData.licenseInfo.projectPath + '"][data-release-id=' + usage.owner.releaseId + '][data-attachment-id=' + usage.attachmentContentId + ']:first');
+                var $row = $linkedProjectsInfoTable.find('tr[data-project-path="' + prefix + usage.usageData.licenseInfo.projectPath + '"][data-release-id=' + usage.owner.releaseId + ']' + releaseRelationDataAttr + '[data-attachment-id=' + usage.attachmentContentId + ']:first');
                 if ($row.length > 0) {
                     return $linkedProjectsInfoTable.treetable("node", $row.data().ttId);
                 } else {
@@ -618,7 +633,7 @@
             }
 
             function findAttachmentName($linkedProjectsInfoTable, usage, prefix) {
-                var $row = $linkedProjectsInfoTable.find('tr[data-project-path="' + prefix + usage.usageData.licenseInfo.projectPath + '"][data-release-id=' + usage.owner.releaseId + '][data-attachment-id=' + usage.attachmentContentId + ']:first');
+                var $row = $linkedProjectsInfoTable.find('tr[data-project-path="' + prefix + usage.usageData.licenseInfo.projectPath + '"][data-release-id=' + usage.owner.releaseId + ']' + releaseRelationDataAttr + '[data-attachment-id=' + usage.attachmentContentId + ']:first');
                 return $row.find('td.filename').text();
             }
 

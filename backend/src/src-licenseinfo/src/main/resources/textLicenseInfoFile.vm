@@ -28,6 +28,10 @@ Open Source Software Contained in this Product/Device:
 
 #end
 
+#if($licenseInfoResults.keySet().size() == 0)
+Either there is no releases based on your selection or the selected project does not contain any release
+#end
+
 
 #if($licenseInfoResults.keySet().size() > 0)
 Details

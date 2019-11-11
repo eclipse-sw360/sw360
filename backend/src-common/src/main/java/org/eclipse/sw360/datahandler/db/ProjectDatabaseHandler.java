@@ -76,6 +76,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private final ProjectModerator moderator;
     private final AttachmentConnector attachmentConnector;
     private final ComponentDatabaseHandler componentDatabaseHandler;
+    private final ReleaseRelationsUsageRepository relUsageRepository;
     private final MailUtil mailUtil = new MailUtil();
 
     // this caching structure is only used for filling clearing state summaries and
@@ -112,6 +113,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         repository = new ProjectRepository(db);
         pvrRepository = new ProjectVulnerabilityRatingRepository(db);
         obligationRepository = new ProjectObligationRepository(db);
+        relUsageRepository = new ReleaseRelationsUsageRepository(db);
 
         // Create the moderator
         this.moderator = moderator;
@@ -405,6 +407,21 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             obligationRepository.remove(project.getLinkedObligationId());
         }
         moderator.notifyModeratorOnDelete(project.getId());
+        deleteUsedReleaseRelations(project.getId());
+    }
+
+    private void deleteUsedReleaseRelations(String projectId) throws SW360Exception {
+        List<UsedReleaseRelations> usedReleaseRelations;
+        try {
+            usedReleaseRelations = nullToEmptyList(getUsedReleaseRelationsByProjectId(projectId));
+            if (CommonUtils.isNotEmpty(usedReleaseRelations)) {
+                for (UsedReleaseRelations usedReleaseRelation : usedReleaseRelations) {
+                    deleteReleaseRelationsUsage(usedReleaseRelation);
+                }
+            }
+        } catch (TException e) {
+            throw new SW360Exception(e.getMessage());
+        }
     }
 
     //////////////////////
@@ -918,4 +935,21 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
         return new Object[] { Boolean.FALSE, null };
    }
+
+    public List<UsedReleaseRelations> getUsedReleaseRelationsByProjectId(String projectId) throws TException {
+        return relUsageRepository.getUsedRelationsByProjectId(projectId);
+    }
+
+    public void deleteReleaseRelationsUsage(UsedReleaseRelations usedReleaseRelations) throws TException {
+        String usedReleaseRelationsId = usedReleaseRelations.getId();
+        relUsageRepository.remove(usedReleaseRelationsId);
+    }
+
+    public void addReleaseRelationsUsage(UsedReleaseRelations usedReleaseRelations) throws TException {
+        relUsageRepository.add(usedReleaseRelations);
+    }
+
+    public void updateReleaseRelationsUsage(UsedReleaseRelations usedReleaseRelations) throws TException {
+        relUsageRepository.update(usedReleaseRelations);
+    }
 }

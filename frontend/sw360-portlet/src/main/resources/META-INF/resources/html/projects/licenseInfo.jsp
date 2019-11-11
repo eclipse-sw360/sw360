@@ -72,7 +72,25 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <div class="modal-body">
+      <div class="modal-body"
+                    style="position: relative; overflow-y: auto; max-height: 400px;">
+                    <c:if test="${not empty relations}">
+                        <div class="form-group form-check">
+                            <label for="projectRelation"
+                                class="font-weight-bold h3">Uncheck project
+                                release relationships to be excluded:</label>
+                            <c:forEach var="projectReleaseRelation" items="${relations}">
+                                <div class="checkbox form-check">
+                                    <label> <input name="releaseRelationSelection" type="checkbox"
+                                        <c:if test = "${empty usedProjectReleaseRelations}">checked="checked"</c:if>
+                                        <c:if test = "${not empty usedProjectReleaseRelations and (fn:contains(usedProjectReleaseRelations, projectReleaseRelation))}">checked="checked"</c:if>
+                                        value="${projectReleaseRelation}">
+                                        <sw360:DisplayEnum value='${projectReleaseRelation}' bare="true" /> </input>
+                                    </label>
+                                </div>
+                            </c:forEach>
+                        </div>
+                    </c:if>
 						<c:if test="${not empty externalIds}">
 								<div class="form-group form-check">
 									<label for="externalIdLabel" class="font-weight-bold h3">Select the external Ids:</label>
@@ -110,16 +128,24 @@ require(['jquery', 'modules/dialog'], function($, dialog) {
     function downloadFile(){
         var licenseInfoSelectedOutputFormat = $('input[name="outputFormat"]:checked').val();
         var externalIds = [];
+        var releaseRelations = [];
         $.each($("input[name='externalIdsSelection']:checked"), function(){
             externalIds.push($(this).val());
         });
         var extIdsHidden = externalIds.join(',');
 
+        $.each($("input[name='releaseRelationSelection']:checked"), function(){
+            releaseRelations.push($(this).val());
+        });
+        var releaseRelationsHidden = releaseRelations.join();
+
         $('#downloadLicenseInfoForm').append('<input id="extIdHidden" type="hidden" name="<portlet:namespace/><%=PortalConstants.EXTERNAL_ID_SELECTED_KEYS%>"/>');
         $('#downloadLicenseInfoForm').append('<input id="licensInfoFileFormat" type="hidden" name="<portlet:namespace/><%=PortalConstants.LICENSE_INFO_SELECTED_OUTPUT_FORMAT%>"/>');
+        $('#downloadLicenseInfoForm').append('<input id="releaseRelationship" type="hidden" name="<portlet:namespace/><%=PortalConstants.SELECTED_PROJECT_RELEASE_RELATIONS%>"/>');
 
         $("#extIdHidden").val(extIdsHidden);
         $("#licensInfoFileFormat").val(licenseInfoSelectedOutputFormat);
+        $("#releaseRelationship").val(releaseRelationsHidden);
 
         $('#downloadLicenseInfoForm').submit();
     }
