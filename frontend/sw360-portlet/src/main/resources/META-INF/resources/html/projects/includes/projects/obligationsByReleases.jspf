@@ -114,13 +114,7 @@
 <script>
     require(['jquery', 'modules/ajax-treetable'], function($, ajaxTreeTable) {
         Liferay.on("allPortletsReady", function () {
-            var config = $("#poInfoTableByRelease").data();
-            ajaxTreeTable.setup("poInfoTableByRelease", config.loadNodeUrl,
-                function (node) {
-                var data = {};
-                data[config.portletNamespace + config.parentBranchKey] = node.id;
-                return data;
-	        });
+            $("#poInfoTableByRelease").treetable({ expandable: true });
         });
     });
 </script>
