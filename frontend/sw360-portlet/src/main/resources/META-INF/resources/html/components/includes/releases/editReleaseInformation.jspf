@@ -39,7 +39,7 @@
             <div class="form-group">
                 <label class="mandatory" for="comp_version">Version</label>
                 <input id="comp_version" class="form-control" name="<portlet:namespace/><%=Release._Fields.VERSION%>" type="text"
-                    placeholder="Enter Version" required
+                    placeholder="Enter Version" required pattern=".*\S.*"
                     value="<sw360:out value="${release.version}"/>" />
             </div>
         </td>

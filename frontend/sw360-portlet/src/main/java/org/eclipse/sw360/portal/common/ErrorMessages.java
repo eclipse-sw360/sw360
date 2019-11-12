@@ -18,12 +18,14 @@ public class ErrorMessages {
 
     public static final String PROJECT_NOT_ADDED = "Project could not be added.";
     public static final String PROJECT_DUPLICATE = "A project with the same name and version already exists.";
+    public static final String PROJECT_NAMING_ERROR = "Name of project cannot contain only space characters.";
     public static final String CLOSED_UPDATE_NOT_ALLOWED = "User cannot edit a closed project";
     public static final String COMPONENT_NOT_ADDED = "Component could not be added.";
     public static final String COMPONENT_DUPLICATE = "A component with the same name already exists.";
-    public static final String COMPONENT_NAMING_ERROR = "Name of component cannot contain only space characters.";
+    public static final String COMPONENT_NAMING_ERROR = "Name and Categories of component cannot contain only space characters.";
     public static final String RELEASE_NOT_ADDED = "Release could not be added.";
     public static final String RELEASE_DUPLICATE = "A release with the same name and version already exists.";
+    public static final String RELEASE_NAME_VERSION_ERROR = "Name and version of release cannot contain only space characters.";
     public static final String DUPLICATE_ATTACHMENT = "Multiple attachments with same name or content cannot be present in attachment list.";
     public static final String ERROR_GETTING_PROJECT = "Error fetching project from backend.";
     public static final String ERROR_GETTING_COMPONENT = "Error fetching component from backend.";
@@ -57,12 +59,14 @@ public class ErrorMessages {
     public static final ImmutableList<String> allErrorMessages = ImmutableList.<String>builder()
             .add(PROJECT_NOT_ADDED)
             .add(PROJECT_DUPLICATE)
+            .add(PROJECT_NAMING_ERROR)
             .add(CLOSED_UPDATE_NOT_ALLOWED)
             .add(COMPONENT_NOT_ADDED)
             .add(COMPONENT_DUPLICATE)
             .add(COMPONENT_NAMING_ERROR)
             .add(RELEASE_NOT_ADDED)
             .add(RELEASE_DUPLICATE)
+            .add(RELEASE_NAME_VERSION_ERROR)
             .add(DUPLICATE_ATTACHMENT)
             .add(LICENSE_USED_BY_RELEASE)
             .add(DOCUMENT_USED_BY_PROJECT_OR_RELEASE)

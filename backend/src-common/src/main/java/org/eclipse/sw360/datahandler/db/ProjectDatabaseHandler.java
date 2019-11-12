@@ -102,6 +102,16 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     // cleared project that is displayed as not yet cleared - but it won't be okay
     // to see a uncleared project that is displayed as cleared but isn't anymore)
     private static final java.time.Duration ALL_PROJECTS_ID_MAP_CACHE_LIFETIME = java.time.Duration.ofMinutes(2);
+    private static final ImmutableList<Project._Fields> listOfStringFieldsInProjToTrim = ImmutableList.of(
+            Project._Fields.NAME, Project._Fields.DESCRIPTION, Project._Fields.VERSION, Project._Fields.DOMAIN,
+            Project._Fields.BUSINESS_UNIT, Project._Fields.TAG, Project._Fields.PROJECT_RESPONSIBLE,
+            Project._Fields.LEAD_ARCHITECT, Project._Fields.PROJECT_OWNER, Project._Fields.OWNER_ACCOUNTING_UNIT,
+            Project._Fields.OWNER_GROUP, Project._Fields.OWNER_COUNTRY, Project._Fields.PREEVALUATION_DEADLINE,
+            Project._Fields.SYSTEM_TEST_START, Project._Fields.SYSTEM_TEST_END, Project._Fields.DELIVERY_START,
+            Project._Fields.CLEARING_SUMMARY, Project._Fields.SPECIAL_RISKS_OSS, Project._Fields.GENERAL_RISKS3RD_PARTY,
+            Project._Fields.SPECIAL_RISKS3RD_PARTY, Project._Fields.DELIVERY_CHANNELS,
+            Project._Fields.REMARKS_ADDITIONAL_REQUIREMENTS, Project._Fields.OBLIGATIONS_TEXT,
+            Project._Fields.LICENSE_INFO_HEADER_TEXT, Project._Fields.WIKI, Project._Fields.HOMEPAGE);
     private Map<String, Project> cachedAllProjectsIdMap;
     private Instant cachedAllProjectsIdMapLoadingInstant;
 
@@ -295,6 +305,12 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public AddDocumentRequestSummary addProject(Project project, User user) throws SW360Exception {
+        removeLeadingTrailingWhitespace(project);
+        String name = project.getName();
+        if (name == null || name.isEmpty()) {
+            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.NAMINGERROR);
+        }
+
         // Prepare project for database
         prepareProject(project);
         if(isDuplicate(project)) {
@@ -334,6 +350,12 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     ///////////////////////////////
 
     public RequestStatus updateProject(Project project, User user) throws SW360Exception {
+        removeLeadingTrailingWhitespace(project);
+        String name = project.getName();
+        if (name == null || name.isEmpty()) {
+            return RequestStatus.NAMINGERROR;
+        }
+
         // Prepare project for database
         prepareProject(project);
 
@@ -1198,5 +1220,23 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         } catch (InvalidSPDXAnalysisException | IOException e) {
             throw new SW360Exception(e.getMessage());
         }
+    }
+
+    private void removeLeadingTrailingWhitespace(Project project) {
+        DatabaseHandlerUtil.trimStringFields(project, listOfStringFieldsInProjToTrim);
+
+        project.setAttachments(DatabaseHandlerUtil.trimSetOfAttachement(project.getAttachments()));
+
+        project.setContributors(DatabaseHandlerUtil.trimSetOfString(project.getContributors()));
+
+        project.setSecurityResponsibles(DatabaseHandlerUtil.trimSetOfString(project.getSecurityResponsibles()));
+
+        project.setModerators(DatabaseHandlerUtil.trimSetOfString(project.getModerators()));
+
+        project.setExternalIds(DatabaseHandlerUtil.trimMapOfStringKeyStringValue(project.getExternalIds()));
+
+        project.setAdditionalData(DatabaseHandlerUtil.trimMapOfStringKeyStringValue(project.getAdditionalData()));
+
+        project.setRoles(DatabaseHandlerUtil.trimMapOfStringKeySetValue(project.getRoles()));
     }
 }

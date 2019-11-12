@@ -30,6 +30,7 @@ enum RequestStatus {
     CLOSED_UPDATE_NOT_ALLOWED = 8,
     INVALID_INPUT = 9,
     PROCESSING = 10,
+    NAMINGERROR = 11
 }
 
 enum RemoveModeratorRequestStatus {

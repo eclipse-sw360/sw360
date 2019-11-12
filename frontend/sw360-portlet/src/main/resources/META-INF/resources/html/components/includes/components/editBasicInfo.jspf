@@ -22,7 +22,7 @@
         <td>
             <div class="form-group">
                 <label class="mandatory" for="comp_name">Name</label>
-                <input id="comp_name" name="<portlet:namespace/><%=Component._Fields.NAME%>" type="text" placeholder="Enter Name" required class="form-control"
+                <input id="comp_name" name="<portlet:namespace/><%=Component._Fields.NAME%>" type="text" placeholder="Enter Name" required pattern=".*\S.*" class="form-control"
                     value="<sw360:out value="${component.name}"/>" />
                 <div class="invalid-feedback">
                     Please enter a component name!

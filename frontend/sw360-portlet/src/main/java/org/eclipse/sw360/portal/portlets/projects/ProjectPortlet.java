@@ -1549,9 +1549,12 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 if (RequestStatus.SUCCESS.equals(requestStatus) && CommonUtils.isNotNullEmptyOrWhitespace(request.getParameter(OBLIGATION_DATA))) {
                     updateLinkedObligations(request, project, user, client);
                 }
-                if (RequestStatus.DUPLICATE.equals(requestStatus) || RequestStatus.DUPLICATE_ATTACHMENT.equals(requestStatus)) {
+                if (RequestStatus.DUPLICATE.equals(requestStatus) || RequestStatus.DUPLICATE_ATTACHMENT.equals(requestStatus) ||
+                        RequestStatus.NAMINGERROR.equals(requestStatus)) {
                     if(RequestStatus.DUPLICATE.equals(requestStatus))
                         setSW360SessionError(request, ErrorMessages.PROJECT_DUPLICATE);
+                    else if (RequestStatus.NAMINGERROR.equals(requestStatus))
+                        setSW360SessionError(request, ErrorMessages.PROJECT_NAMING_ERROR);
                     else
                         setSW360SessionError(request, ErrorMessages.DUPLICATE_ATTACHMENT);
                     response.setRenderParameter(PAGENAME, PAGENAME_EDIT);
@@ -1567,7 +1570,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 // Add project
                 Project project = new Project();
                 ProjectPortletUtils.updateProjectFromRequest(request, project);
-
                 String cyclicLinkedProjectPath = client.getCyclicLinkedProjectPath(project, user);
                 if (!isNullEmptyOrWhitespace(cyclicLinkedProjectPath)) {
                     FossologyAwarePortlet.addCustomErrorMessage(CYCLIC_LINKED_PROJECT + cyclicLinkedProjectPath,
@@ -1605,6 +1607,11 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                         if (CommonUtils.isNotNullEmptyOrWhitespace(sourceProjectId)) {
                             request.setAttribute(SOURCE_PROJECT_ID, sourceProjectId);
                         }
+                        prepareRequestForEditAfterDuplicateError(request, project, user);
+                        break;
+                    case NAMINGERROR:
+                        setSW360SessionError(request, ErrorMessages.PROJECT_NAMING_ERROR);
+                        response.setRenderParameter(PAGENAME, PAGENAME_EDIT);
                         prepareRequestForEditAfterDuplicateError(request, project, user);
                         break;
                     default:

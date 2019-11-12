@@ -1522,9 +1522,12 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 user.setCommentMadeDuringModerationRequest(ModerationRequestCommentMsg);
                 RequestStatus requestStatus = client.updateComponent(component, user);
                 setSessionMessage(request, requestStatus, "Component", "update", component.getName());
-                if (RequestStatus.DUPLICATE.equals(requestStatus) || RequestStatus.DUPLICATE_ATTACHMENT.equals(requestStatus)) {
+                if (RequestStatus.DUPLICATE.equals(requestStatus) || RequestStatus.DUPLICATE_ATTACHMENT.equals(requestStatus) ||
+                        RequestStatus.NAMINGERROR.equals(requestStatus)) {
                     if(RequestStatus.DUPLICATE.equals(requestStatus))
                         setSW360SessionError(request, ErrorMessages.COMPONENT_DUPLICATE);
+                    else if (RequestStatus.NAMINGERROR.equals(requestStatus))
+                        setSW360SessionError(request, ErrorMessages.COMPONENT_NAMING_ERROR);
                     else
                         setSW360SessionError(request, ErrorMessages.DUPLICATE_ATTACHMENT);
                     response.setRenderParameter(PAGENAME, PAGENAME_EDIT);
@@ -1609,9 +1612,12 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
                     RequestStatus requestStatus = client.updateRelease(release, user);
                     setSessionMessage(request, requestStatus, "Release", "update", printName(release));
-                    if (RequestStatus.DUPLICATE.equals(requestStatus) || RequestStatus.DUPLICATE_ATTACHMENT.equals(requestStatus)) {
+                    if (RequestStatus.DUPLICATE.equals(requestStatus) || RequestStatus.DUPLICATE_ATTACHMENT.equals(requestStatus) ||
+                            RequestStatus.NAMINGERROR.equals(requestStatus)) {
                         if(RequestStatus.DUPLICATE.equals(requestStatus))
                             setSW360SessionError(request, ErrorMessages.RELEASE_DUPLICATE);
+                        else if (RequestStatus.NAMINGERROR.equals(requestStatus))
+                            setSW360SessionError(request, ErrorMessages.RELEASE_NAME_VERSION_ERROR);
                         else
                             setSW360SessionError(request, ErrorMessages.DUPLICATE_ATTACHMENT);
                         response.setRenderParameter(PAGENAME, PAGENAME_EDIT_RELEASE);
@@ -1665,6 +1671,11 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                             break;
                         case DUPLICATE:
                             setSW360SessionError(request, ErrorMessages.RELEASE_DUPLICATE);
+                            response.setRenderParameter(PAGENAME, PAGENAME_EDIT_RELEASE);
+                            prepareRequestForReleaseEditAfterDuplicateError(request, release);
+                            break;
+                        case NAMINGERROR:
+                            setSW360SessionError(request, ErrorMessages.RELEASE_NAME_VERSION_ERROR);
                             response.setRenderParameter(PAGENAME, PAGENAME_EDIT_RELEASE);
                             prepareRequestForReleaseEditAfterDuplicateError(request, release);
                             break;

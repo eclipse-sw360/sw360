@@ -31,7 +31,7 @@
                 <label class="mandatory" for="proj_name">Name</label>
                 <input id="proj_name" name="<portlet:namespace/><%=Project._Fields.NAME%>" type="text"
                     placeholder="Enter Name" class="form-control" minlength="2"
-                    value="<sw360:out value="${project.name}"/>" required/>
+                    value="<sw360:out value="${project.name}"/>" required pattern=".*\S.*"/>
                  <div class="invalid-feedback">
                     Please enter a project name!
                 </div>

@@ -110,7 +110,25 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     public static final List<EccInformation._Fields> ECC_FIELDS = Arrays.asList(EccInformation._Fields.ECC_STATUS, EccInformation._Fields.AL, EccInformation._Fields.ECCN, EccInformation._Fields.MATERIAL_INDEX_NUMBER, EccInformation._Fields.ECC_COMMENT);
 
     private final MailUtil mailUtil = new MailUtil();
-
+    private static final ImmutableList<Component._Fields> listOfStringFieldsInCompToTrim = ImmutableList.of(
+            Component._Fields.NAME, Component._Fields.DESCRIPTION, Component._Fields.COMPONENT_OWNER,
+            Component._Fields.OWNER_ACCOUNTING_UNIT, Component._Fields.OWNER_GROUP, Component._Fields.OWNER_COUNTRY,
+            Component._Fields.HOMEPAGE, Component._Fields.MAILINGLIST, Component._Fields.WIKI, Component._Fields.BLOG);
+    private static final ImmutableList<Release._Fields> listOfStringFieldsInReleaseToTrim = ImmutableList.of(
+            Release._Fields.CPEID, Release._Fields.NAME, Release._Fields.VERSION, Release._Fields.RELEASE_DATE,
+            Release._Fields.DOWNLOADURL);
+    private static final ImmutableList<COTSDetails._Fields> listOfStringFieldsInCOTSDetailsToTrim = ImmutableList.of(
+            COTSDetails._Fields.USED_LICENSE, COTSDetails._Fields.LICENSE_CLEARING_REPORT_URL,
+            COTSDetails._Fields.OSS_INFORMATION_URL);
+    private static final ImmutableList<EccInformation._Fields> listOfStringFieldsInEccInformationToTrim = ImmutableList
+            .of(EccInformation._Fields.AL, EccInformation._Fields.ECCN, EccInformation._Fields.ECC_COMMENT,
+                    EccInformation._Fields.MATERIAL_INDEX_NUMBER);
+    private static final ImmutableList<ClearingInformation._Fields> listOfStringFieldsInClearingInformationToTrim = ImmutableList
+            .of(ClearingInformation._Fields.SCANNED, ClearingInformation._Fields.CLEARING_STANDARD,
+                    ClearingInformation._Fields.EXTERNAL_URL, ClearingInformation._Fields.COMMENT,
+                    ClearingInformation._Fields.REQUEST_ID, ClearingInformation._Fields.ADDITIONAL_REQUEST_INFO,
+                    ClearingInformation._Fields.EXTERNAL_SUPPLIER_ID, ClearingInformation._Fields.EVALUATED,
+                    ClearingInformation._Fields.PROC_START);
     public ComponentDatabaseHandler(Supplier<HttpClient> httpClient, String dbName, String attachmentDbName, ComponentModerator moderator, ReleaseModerator releaseModerator) throws MalformedURLException {
         super(httpClient, dbName, attachmentDbName);
         DatabaseConnector db = new DatabaseConnector(httpClient, dbName);
@@ -308,6 +326,13 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return new AddDocumentRequestSummary()
                     .setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT);
         }
+
+        removeLeadingTrailingWhitespace(component);
+        Set<String> categories = component.getCategories();
+        if (categories == null || categories.isEmpty()) {
+            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.NAMINGERROR);
+        }
+
         // Prepare the component
         prepareComponent(component);
 
@@ -327,6 +352,13 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
      * Add a single new release to the database
      */
     public AddDocumentRequestSummary addRelease(Release release, User user) throws SW360Exception {
+        removeLeadingTrailingWhitespace(release);
+        String name = release.getName();
+        String version = release.getVersion();
+        if (name == null || name.isEmpty() || version == null || version.isEmpty()) {
+            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.NAMINGERROR);
+        }
+
         // Prepare the release and get underlying component ID
         prepareRelease(release);
         if(isDuplicate(release)) {
@@ -449,6 +481,15 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     ///////////////////////////////
 
     public RequestStatus updateComponent(Component component, User user) throws SW360Exception {
+        removeLeadingTrailingWhitespace(component);
+        String name = component.getName();
+        if (name == null || name.isEmpty()) {
+            return RequestStatus.NAMINGERROR;
+        }
+        Set<String> categories = component.getCategories();
+        if (categories == null || categories.isEmpty()) {
+            return RequestStatus.NAMINGERROR;
+        }
         // Prepare component for database
         prepareComponent(component);
 
@@ -757,6 +798,13 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public RequestStatus updateRelease(Release release, User user, Iterable<Release._Fields> immutableFields) throws SW360Exception {
+        removeLeadingTrailingWhitespace(release);
+        String name = release.getName();
+        String version = release.getVersion();
+        if (name == null || name.isEmpty() || version == null || version.isEmpty()) {
+            return RequestStatus.NAMINGERROR;
+        }
+
         // Prepare release for database
         prepareRelease(release);
 
@@ -1842,5 +1890,70 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         } catch (InvalidSPDXAnalysisException | IOException e) {
             throw new SW360Exception(e.getMessage());
         }
+    }
+
+    private void removeLeadingTrailingWhitespace(Release release) {
+        DatabaseHandlerUtil.trimStringFields(release, listOfStringFieldsInReleaseToTrim);
+
+        ClearingInformation clearingInformation = release.getClearingInformation();
+        if (clearingInformation != null) {
+            DatabaseHandlerUtil.trimStringFields(clearingInformation, listOfStringFieldsInClearingInformationToTrim);
+        }
+
+        COTSDetails cotsDetails = release.getCotsDetails();
+        if (cotsDetails != null) {
+            DatabaseHandlerUtil.trimStringFields(cotsDetails, listOfStringFieldsInCOTSDetailsToTrim);
+        }
+
+        EccInformation eccInformation = release.getEccInformation();
+        if (eccInformation != null) {
+            DatabaseHandlerUtil.trimStringFields(eccInformation, listOfStringFieldsInEccInformationToTrim);
+        }
+
+        Repository repository = release.getRepository();
+        if (repository != null) {
+            String url = repository.getUrl();
+            if (url != null) {
+                repository.setUrl(url.trim());
+            }
+        }
+
+        release.setLanguages(DatabaseHandlerUtil.trimSetOfString(release.getLanguages()));
+
+        release.setOperatingSystems(DatabaseHandlerUtil.trimSetOfString(release.getOperatingSystems()));
+
+        release.setSoftwarePlatforms(DatabaseHandlerUtil.trimSetOfString(release.getSoftwarePlatforms()));
+
+        release.setMainLicenseIds(DatabaseHandlerUtil.trimSetOfString(release.getMainLicenseIds()));
+
+        release.setContributors(DatabaseHandlerUtil.trimSetOfString(release.getContributors()));
+
+        release.setModerators(DatabaseHandlerUtil.trimSetOfString(release.getModerators()));
+
+        release.setAttachments(DatabaseHandlerUtil.trimSetOfAttachement(release.getAttachments()));
+
+        release.setRoles(DatabaseHandlerUtil.trimMapOfStringKeySetValue(release.getRoles()));
+
+        release.setExternalIds(DatabaseHandlerUtil.trimMapOfStringKeyStringValue(release.getExternalIds()));
+
+        release.setAdditionalData(DatabaseHandlerUtil.trimMapOfStringKeyStringValue(release.getAdditionalData()));
+    }
+
+    private void removeLeadingTrailingWhitespace(Component component) {
+        DatabaseHandlerUtil.trimStringFields(component, listOfStringFieldsInCompToTrim);
+
+        component.setRoles(DatabaseHandlerUtil.trimMapOfStringKeySetValue(component.getRoles()));
+
+        component.setExternalIds(DatabaseHandlerUtil.trimMapOfStringKeyStringValue(component.getExternalIds()));
+
+        component.setAdditionalData(DatabaseHandlerUtil.trimMapOfStringKeyStringValue(component.getAdditionalData()));
+
+        component.setCategories(DatabaseHandlerUtil.trimSetOfString(component.getCategories()));
+
+        component.setAttachments(DatabaseHandlerUtil.trimSetOfAttachement(component.getAttachments()));
+
+        component.setLanguages(DatabaseHandlerUtil.trimSetOfString(component.getLanguages()));
+
+        component.setOperatingSystems(DatabaseHandlerUtil.trimSetOfString(component.getOperatingSystems()));
     }
 }
