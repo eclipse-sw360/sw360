@@ -29,15 +29,16 @@
         </core_rt:when>
         <core_rt:otherwise>
             The possible reasons for not loading linked obligations:
-            <li>No <b>Accepted</b> CLI file in linked release. (Obligations from accepted CLI file will be loaded here)</li>
-            <li>More than <b>ONE</b> Accepted CLI file in linked release. (Each release should have only one accepted CLI file)</li>
-            <li>No obligations are present in CLI file.</li>
+            <li>No <b>accepted</b> CLI xml file in linked release. (Obligations from accepted CLI file will be loaded here)</li>
+            <li>More than <b>one</b> Accepted CLI xml file in linked release. (Each release should have only one accepted CLI file)</li>
+            <li>Obligations are <b>not</b> present in Accepted CLI xml file.</li>
         </core_rt:otherwise>
     </core_rt:choose>
     </div>
 </core_rt:if>
 
 <core_rt:if test="${isObligationPresent}">
+    <jsp:useBean id="excludedReleases" type="java.util.Set<org.eclipse.sw360.datahandler.thrift.components.Release>" scope="request" />
 
 <liferay-portlet:renderURL var="friendlyReleaseURL" portletName="sw360_portlet_components">
     <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>"/>
@@ -49,6 +50,18 @@
     <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>"/>
     <portlet:param name="<%=PortalConstants.LICENSE_ID%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>"/>
 </liferay-portlet:renderURL>
+
+    <core_rt:if test="${not empty excludedReleases}">
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            Obligation status associated with the following release(s) are removed/updated due to changes in associated CLI.xml file
+            <core_rt:forEach items="${excludedReleases}" var="exRelease" varStatus="loop">
+            <li><sw360:DisplayReleaseLink release="${exRelease}" showFullname="true"/></li>
+            </core_rt:forEach>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true"><svg class="lexicon-icon"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#times"/></svg></span>
+            </button>
+        </div>
+    </core_rt:if>
 
 <div class="tab-content" id="pills-tabContent">
     <div class="tab-pane show active" id="pills-obligationsView" role="tabpanel" aria-labelledby="pills-obligations-tab">

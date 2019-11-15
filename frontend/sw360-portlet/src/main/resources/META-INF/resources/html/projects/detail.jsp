@@ -30,6 +30,7 @@
     <jsp:useBean id="licInfoAttUsages" type="java.util.Map<java.lang.String, org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage>" scope="request"/>
     <jsp:useBean id="sourceAttUsages" type="java.util.Map<java.lang.String, org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage>" scope="request"/>
     <jsp:useBean id="manualAttUsages" type="java.util.Map<java.lang.String, org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage>" scope="request"/>
+    <core_rt:set var="isProjectObligationsEnabled" value='<%=PortalConstants.IS_PROJECT_OBLIGATIONS_ENABLED%>'/>
 </c:catch>
 
 <%@include file="/html/utils/includes/logError.jspf" %>

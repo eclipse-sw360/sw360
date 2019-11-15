@@ -40,10 +40,8 @@ import org.ektorp.http.HttpClient;
 import java.net.MalformedURLException;
 import java.time.Instant;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -223,6 +221,14 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
     }
 
+    public void updateProjectForObligations(String id, Map<String, ObligationStatusInfo> obligationStatusMap) {
+        log.info("Updating linked obligations of project: " + id + ", as previously accepted CLI file was changed.");
+        Project project = repository.get(id);
+        project.setLinkedObligations(obligationStatusMap);
+        repository.update(project);
+        log.info("Successfully updated linked obligations of project: " + id);
+    }
+
     private void setReleaseRelations(Project updated, User user, Project current) {
         boolean isMainlineStateDisabled = !(BackendUtils.MAINLINE_STATE_ENABLED_FOR_USER
                 || PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user))
@@ -279,17 +285,19 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private Map<String, ObligationStatusInfo> deleteObligationsOfUnlinkedReleases(Project updated) {
         Set<String> updatedLinkedReleaseIds = nullToEmptyMap(updated.getReleaseIdToUsage()).keySet();
         // return null if no linked releases in updated project.
-        if (allAreEmptyOrNull(updatedLinkedReleaseIds)) {
+        if (CommonUtils.isNullOrEmptyCollection(updatedLinkedReleaseIds)) {
             return null;
         }
         Map<String, ObligationStatusInfo> updatedOsInfoMap = nullToEmptyMap(updated.getLinkedObligations());
         // using iterator to remove the entries without release
         for (Iterator<Map.Entry<String, ObligationStatusInfo>> it = updatedOsInfoMap.entrySet().iterator(); it.hasNext();) {
             Map.Entry<String, ObligationStatusInfo> entry = it.next();
+            Map<String, String> releaseIdToAcceptedCLI = entry.getValue().getReleaseIdToAcceptedCLI();
             // intersection of release present in updated and current project.
-            entry.getValue().setReleaseIds(Sets.intersection(entry.getValue().getReleaseIds(), updatedLinkedReleaseIds));
+            Set<String> releaseIds = Sets.intersection(releaseIdToAcceptedCLI.keySet(), updatedLinkedReleaseIds);
+            releaseIdToAcceptedCLI.keySet().retainAll(releaseIds);
             // remove the obligations without releases.
-            if (entry.getValue().getReleaseIdsSize() < 1) {
+            if (releaseIdToAcceptedCLI.isEmpty()) {
                 it.remove();
             }
         }

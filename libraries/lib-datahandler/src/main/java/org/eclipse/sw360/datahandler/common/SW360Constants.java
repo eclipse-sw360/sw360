@@ -40,6 +40,11 @@ public class SW360Constants {
     public static final String KEY_REV = "_rev";
 
     public static final String PROJECT_VULNERABILITY_RATING_ID_PREFIX = "pvrating_";
+    public static final String LICENSE_TYPE_GLOBAL = "Global";
+    public static final String LICENSE_TYPE_OTHERS = "Others";
+    public static final String NA = "n/a";
+    public static final String LICENSE_NAME_UNKNOWN = "License name unknown";
+    public static final String OBLIGATION_TOPIC_UNKNOWN = "Obligation topic unknown";
     // Proper values of the "type" member to deserialize to CouchDB
     public static final String TYPE_OBLIGATION = "obligation";
     public static final String TYPE_TODO = "todo";

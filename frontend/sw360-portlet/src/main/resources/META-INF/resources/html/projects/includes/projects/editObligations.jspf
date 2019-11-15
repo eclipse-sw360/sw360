@@ -28,11 +28,11 @@
     <table id="editObligationTable" class="table table-bordered" >
         <colgroup>
             <col />
+            <col style="width: 25%;" />
             <col style="width: 20%;" />
-            <col style="width: 15%;" />
-            <col style="width: 20%;" />
+            <col style="width: 25%;" />
             <col style="width: 12%;" />
-            <col style="width: 15%;" />
+            <!-- <col style="width: 15%;" /> -->
             <col style="width: 18%;" />
             <col />
         </colgroup>
@@ -45,7 +45,8 @@
                 <th>Licenses</th>
                 <th>Releases</th>
                 <th>Status</th>
-                <th>Action</th>
+                <!-- Commented code for obligation action, until action select options are provided -->
+                <!-- <th>Action</th> -->
                 <th>Comment</th>
             </tr>
         </thead>
@@ -79,7 +80,8 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button'], func
             var fullName = '${release.name} (${release.version})';
             releaseLinks.push({
                 id: "${release.id}",
-                name: fullName
+                name: fullName,
+                attachmentId: "${release.attachments.iterator().next().attachmentContentId}"
 	        });
         </core_rt:forEach>
 
@@ -88,7 +90,7 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button'], func
             "licenseLinks": licenseLinks,
             "releaseLinks": releaseLinks,
             "status": '<sw360:DisplayEnumOptions type="<%=ProjectObligationStatus.class%>" selected="${projectObligations.status}" />',
-            "action": "${projectObligations.action}",
+            /* "action": "${projectObligations.action}", */
             "comment": "${projectObligations.comment}",
             "text": '<sw360:out value="${projectObligations.text}" maxChar="200" />',
             "modifiedBy": "${projectObligations.modifiedBy}",
@@ -110,7 +112,7 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button'], func
             { "data": "licenseLinks", "render": { display: renderLicenseLink } },
             { "data": "releaseLinks", "render": { display: renderReleaseLink } },
             { "data": "status", "render": { display: renderStatus } },
-            { "data": "action", render: $.fn.dataTable.render.inputSelect(actionOptions, '', 'obl_action toplabelledInput', 'textlabel stackedLabel') },
+            /* { "data": "action", render: $.fn.dataTable.render.inputSelect(actionOptions, '', 'obl_action toplabelledInput', 'textlabel stackedLabel') }, */
             { "data": "comment", defaultContent: "", render: $.fn.dataTable.render.inputText('comment', 'obl_comment toplabelledInput', 'Enter comments') },
         ],
         "columnDefs": [
@@ -121,7 +123,7 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button'], func
                 }
             },
             {
-                "targets": 6,
+                "targets": 5,
                 "createdCell": function (td, cellData, rowData, row, col) {
                     $.fn.dataTable.render.inputText.updateTitle(td);
                     $.fn.dataTable.render.inputText.useInputDialog(td, "Enter obligation comment");
@@ -148,7 +150,7 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button'], func
             }
         ],
         "initComplete": datatables.showPageContainer
-    }, undefined, [0, 2, 3, 4, 5, 6]);
+    }, undefined, [0, 4, 5]);
 
     function renderStatus(status, type, row) {
         return '<select class="obl_status toplabelledInput form-control">' + status + '</select>';
@@ -187,9 +189,9 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button'], func
         storeData($(this));
     });
 
-    $("#editObligationTable tbody").on("change", 'td select.obl_action',function () {
+    /* $("#editObligationTable tbody").on("change", 'td select.obl_action',function () {
         storeData($(this));
-    });
+    }); */
 
     $("#editObligationTable tbody").on("change", 'td input.obl_comment',function () {
         if ($(this).closest('tr').find("input.obl_comment").val()) {
@@ -257,18 +259,19 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button'], func
         table.rows().every(function (rowIdx, tableLoop, rowLoop) {
             var rowData = this.data(),
                 mapKey = rowData.obligation,
+                releaseToAcceptedCLIMap = new Map(),
                 ids = [];
             for (release of rowData.releaseLinks) {
-                ids.push(release.id);
+                releaseToAcceptedCLIMap[release.id] = release.attachmentId;
             }
             var mapValue = {
                 licenseIds: rowData.licenseLinks,
-                releaseIds: ids
+                releaseIdToAcceptedCLI: releaseToAcceptedCLIMap
             };
             if (dataMap.has(mapKey)) {
                 $node = $(this.node()),
                 mapValue.status = $node.find('select.obl_status option:selected').val();
-                mapValue.action = $node.find("select.obl_action option:selected").val();
+                /* mapValue.action = $node.find("select.obl_action option:selected").val(); */
                 mapValue.comment = $node.find("input.obl_comment").val();
                 mapValue.modifiedOn = date;
             }

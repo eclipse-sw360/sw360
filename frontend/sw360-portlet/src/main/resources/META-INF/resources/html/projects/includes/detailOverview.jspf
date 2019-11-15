@@ -26,6 +26,7 @@
 				<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-attachmentUsages'}">active</core_rt:if>" href="#tab-attachmentUsages" data-toggle="list" role="tab">Attachment Usages</a>
 			</core_rt:if>
 			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ClearingStatus'}">active</core_rt:if>" href="#tab-ClearingStatus" data-toggle="list" role="tab">Clearing Status</a>
+			<core_rt:if test="${isProjectObligationsEnabled}">
 			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Obligations'}">active</core_rt:if>" href="#tab-Obligations" data-toggle="list" role="tab">Obligations
 				<core_rt:if test="${isObligationPresent}">
 					<span id="obligtionsCount"
@@ -45,6 +46,7 @@
 					</span>
 				</core_rt:if>
 			</a>
+			</core_rt:if>
 			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ECCStatus'}">active</core_rt:if>" href="#tab-ECCStatus" data-toggle="list" role="tab">ECC Status</a>
 			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Attachments'}">active</core_rt:if>" href="#tab-Attachments" data-toggle="list" role="tab">Attachments</a>
 			<core_rt:if test="${inProjectDetailsContext}">

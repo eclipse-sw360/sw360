@@ -26,10 +26,10 @@
         <colgroup>
             <col />
             <col style="width: 25%;" />
-            <col style="width: 15%;" />
+            <col style="width: 20%;" />
             <col style="width: 25%;" />
-            <col style="width: 7%;" />
-            <col style="width: 8%;" />
+            <col style="width: 10%;" />
+            <!-- <col style="width: 8%;" /> -->
             <col style="width: 20%;" />
             <col />
         </colgroup>
@@ -42,7 +42,8 @@
                 <th>Licenses</th>
                 <th>Releases</th>
                 <th>Status</th>
-                <th>Action</th>
+                <!-- Commented code for obligation action, until action select options are provided -->
+                <!-- <th>Action</th> -->
                 <th>Comment</th>
             </tr>
         </thead>
@@ -79,7 +80,7 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
             "rIds": releaseIds,
             "rNames": releaseNames.join(', <br>'),
             "status": "<sw360:DisplayEnum value='${projectObligations.status}'/>",
-            "action": '${projectObligations.action}',
+            /* "action": '${projectObligations.action}', */
             "comment": '${projectObligations.comment}',
             "text": '<sw360:out value="${projectObligations.text}" maxChar="200" />',
             "modifiedBy": '${projectObligations.modifiedBy}',
@@ -101,7 +102,7 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
             { "data": "lIds", "render": { display: renderLicenseLink } },
             { "data": "rNames", "render": { display: renderReleaseLink } },
             { "data": "status", className: 'text-center' },
-            { "data": "action" },
+           /*  { "data": "action" }, */
             { "data": "comment", render: $.fn.dataTable.render.ellipsis },
         ],
         "columnDefs": [
@@ -126,7 +127,7 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
         },
         "order": [[1, 'asc']],
         "initComplete": datatables.showPageContainer
-    }, [1, 2, 3, 4, 5, 6], [0, 5, 6]);
+    }, [1, 2, 3, 4, 5], [0, 5]);
 
     function renderReleaseLink(rNames, type, row) {
         var releaseLinks = [],
