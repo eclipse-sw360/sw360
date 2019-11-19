@@ -56,7 +56,8 @@ struct User {
     12: optional string commentMadeDuringModerationRequest,
     13: optional map<string, bool> notificationPreferences,
     14: optional set<string> formerEmailAddresses,
-    20: optional list<RestApiToken> restApiTokens
+    20: optional list<RestApiToken> restApiTokens,
+    21: optional map<string, bool> myProjectsPreferenceSelection
 }
 
 struct RestApiToken {

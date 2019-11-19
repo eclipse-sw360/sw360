@@ -10,6 +10,7 @@
  */
 package org.eclipse.sw360.portal.common;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
@@ -34,13 +35,18 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
+import org.eclipse.sw360.portal.common.datatables.data.PaginationParameters;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 
 import javax.portlet.PortletRequest;
+import javax.portlet.ResourceRequest;
+
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static java.lang.Math.min;
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.lang.Integer.parseInt;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 
@@ -370,5 +376,35 @@ public class PortletUtils {
 
     public static Map<String,String> getAdditionalDataMapFromRequest(PortletRequest request) {
         return getMapFromRequest(request, PortalConstants.ADDITIONAL_DATA_KEY, PortalConstants.ADDITIONAL_DATA_VALUE);
+    }
+
+    public static int getProjectDataCount(PaginationParameters projectParameters, int maxSize) {
+        if (projectParameters.getDisplayLength() == -1) {
+            return maxSize;
+        } else {
+            return min(projectParameters.getDisplayStart() + projectParameters.getDisplayLength(), maxSize);
+        }
+    }
+
+    public static void handlePaginationSortOrder(ResourceRequest request, PaginationParameters paginationParameters,
+            final ImmutableList<Project._Fields> projectFilteredFields, final int projectNoSort) {
+        if (!paginationParameters.getSortingColumn().isPresent()) {
+            for (Project._Fields filteredField : projectFilteredFields) {
+                if (!isNullOrEmpty(request.getParameter(filteredField.toString()))) {
+                    paginationParameters.setSortingColumn(Optional.of(projectNoSort));
+                    break;
+                }
+            }
+        }
+    }
+
+    public static Comparator<Project> compareByName(boolean isAscending) {
+        Comparator<Project> comparator = Comparator.comparing(p -> SW360Utils.printName(p).toLowerCase());
+        return isAscending ? comparator : comparator.reversed();
+    }
+
+    public static Comparator<Project> compareByDescription(boolean isAscending) {
+        Comparator<Project> comparator = Comparator.comparing(p -> nullToEmptyString(p.getDescription()));
+        return isAscending ? comparator : comparator.reversed();
     }
 }

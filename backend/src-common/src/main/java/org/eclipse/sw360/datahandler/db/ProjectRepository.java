@@ -68,6 +68,13 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
                     "    for(var i in doc.contributors) {\n" +
                     "      acc[doc.contributors[i]]=1;\n" +
                     "    }\n" +
+                    "    if(doc.projectOwner)\n" +
+                    "      acc[doc.projectOwner]=1;\n" +
+                    "    if(doc.projectResponsible)\n" +
+                    "      acc[doc.projectResponsible]=1;\n" +
+                    "    for(var i in doc.securityResponsibles) {\n" +
+                    "      acc[doc.securityResponsibles[i]]=1;\n" +
+                    "    }\n" +
                     "    for(var i in acc){\n" +
                     "      emit(i,doc);\n" +
                     "    }\n" +

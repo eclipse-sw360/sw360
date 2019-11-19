@@ -1606,7 +1606,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     private void serveProjectList(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
         HttpServletRequest originalServletRequest = PortalUtil.getOriginalServletRequest(PortalUtil.getHttpServletRequest(request));
         PaginationParameters paginationParameters = PaginationParser.parametersFrom(originalServletRequest);
-        handlePaginationSortOrder(request, paginationParameters);
+        PortletUtils.handlePaginationSortOrder(request, paginationParameters, projectFilteredFields, PROJECT_NO_SORT);
         List<Project> projectList = getFilteredProjectList(request);
 
         JSONArray jsonProjects = getProjectData(projectList, paginationParameters);
@@ -1622,20 +1622,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         }
     }
 
-    private void handlePaginationSortOrder(ResourceRequest request, PaginationParameters paginationParameters) {
-        if (!paginationParameters.getSortingColumn().isPresent()) {
-            for (Project._Fields filteredField : projectFilteredFields) {
-                if (!isNullOrEmpty(request.getParameter(filteredField.toString()))) {
-                    paginationParameters.setSortingColumn(Optional.of(PROJECT_NO_SORT));
-                    break;
-                }
-            }
-        }
-    }
-
     public JSONArray getProjectData(List<Project> projectList, PaginationParameters projectParameters) {
         List<Project> sortedProjects = sortProjectList(projectList, projectParameters);
-        int count = getProjectDataCount(projectParameters, projectList.size());
+        int count = PortletUtils.getProjectDataCount(projectParameters, projectList.size());
 
         JSONArray projectData = createJSONArray();
         for (int i = projectParameters.getDisplayStart(); i < count; i++) {
@@ -1658,14 +1647,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         return projectData;
     }
 
-    private int getProjectDataCount(PaginationParameters projectParameters, int maxSize) {
-        if (projectParameters.getDisplayLength() == -1) {
-            return maxSize;
-        } else {
-            return min(projectParameters.getDisplayStart() + projectParameters.getDisplayLength(), maxSize);
-        }
-    }
-
     private void setDefaultRequestAttributes(RenderRequest request) {
         request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_PROJECT);
         request.setAttribute(DEFAULT_LICENSE_INFO_HEADER_TEXT, getProjectDefaultLicenseInfoHeaderText());
@@ -1677,10 +1658,10 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
         switch (projectParameters.getSortingColumn().orElse(PROJECT_DT_ROW_NAME)) {
             case PROJECT_DT_ROW_NAME:
-                Collections.sort(projectList, compareByName(isAsc));
+                Collections.sort(projectList, PortletUtils.compareByName(isAsc));
                 break;
             case PROJECT_DT_ROW_DESCRIPTION:
-                Collections.sort(projectList, compareByDescription(isAsc));
+                Collections.sort(projectList, PortletUtils.compareByDescription(isAsc));
                 break;
             case PROJECT_DT_ROW_RESPONSIBLE:
                 Collections.sort(projectList, compareByResponsible(isAsc));
@@ -1697,18 +1678,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         }
 
         return projectList;
-    }
-
-    private Comparator<Project> compareByName(boolean isAscending) {
-        Comparator<Project> comparator = Comparator.comparing(
-                p -> SW360Utils.printName(p).toLowerCase());
-        return isAscending ? comparator : comparator.reversed();
-    }
-
-    private Comparator<Project> compareByDescription(boolean isAscending) {
-        Comparator<Project> comparator = Comparator.comparing(
-                p -> nullToEmptyString(p.getDescription()));
-        return isAscending ? comparator : comparator.reversed();
     }
 
     private Comparator<Project> compareByResponsible(boolean isAscending) {
