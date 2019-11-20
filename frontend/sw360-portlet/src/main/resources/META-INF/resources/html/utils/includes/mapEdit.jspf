@@ -35,7 +35,8 @@
                     </td>
 
                     <td class="content-middle">
-                        <svg class="action lexicon-icon" title="Delete" data-row-id="mapEditTableRow${loop1.count}_${loop2.count}">
+                        <svg class="action lexicon-icon" data-row-id="mapEditTableRow${loop1.count}_${loop2.count}">
+                            <title>Delete</title>
                             <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
                         </svg>
                     </td>
@@ -92,7 +93,8 @@
                 '<input id="<%=PortalConstants.CUSTOM_MAP_VALUE%>'+randomRowId+'" name="<portlet:namespace/><%=PortalConstants.CUSTOM_MAP_VALUE%>'+randomRowId+'" type="email" class="form-control" placeholder="${inputSubtitle}" title="${inputSubtitle}" />'+
                 '</td>'+
                 '<td class="content-middle">'+
-                '<svg title="Delete" class="action lexicon-icon" data-row-id="' + randomRowId + '">' +
+                '<svg class="action lexicon-icon" data-row-id="' + randomRowId + '">' +
+                '<title>Delete</title>' +
                 '<use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>' +
                 '</svg>' +
                 '</td>'+

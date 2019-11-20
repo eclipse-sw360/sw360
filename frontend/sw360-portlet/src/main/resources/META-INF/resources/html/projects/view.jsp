@@ -294,11 +294,10 @@
                     $copyAction = render.linkTo(
                         makeProjectUrl(id, '<%=PortalConstants.PAGENAME_DUPLICATE%>'),
                         "",
-                        '<svg class="lexicon-icon" title="Duplicate"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#paste"/></svg>'
+                        '<svg class="lexicon-icon"><title>Duplicate</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#paste"/></svg>'
                     ),
                     $deleteAction = $('<svg>', {
                         'class': 'delete lexicon-icon',
-                        title: 'Delete',
                         'data-project-id': id,
                         'data-project-name': row.name,
                         'data-linked-projects-count': row.lProjSize,
@@ -306,7 +305,7 @@
                         'data-project-attachment-count': row.attsSize,
                     });
 
-                $deleteAction.append($('<use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
+                $deleteAction.append($('<title>Delete</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
 
                 if(row.cState == 'CLOSED' && ${isUserAdmin != 'Yes'}) {
                     $editAction = $('<svg class="lexicon-icon disabled"><title>Only administrators can edit a closed project.</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>');
@@ -335,10 +334,10 @@
                 });
                 var $psBox = $('<div>', {
                     'class': 'stateBox capsuleLeft ' + projectStateBackgroundColour
-                }).text('PS');
+                }).text('PS').attr("title", "Project state: "+ row.state);
                 var $csBox = $('<div>', {
                     'class': 'stateBox capsuleRight ' + clearingStateBackgroundColour
-                }).text('CS');
+                }).text('CS').attr("title", "Project clearing state: " + row.cState);
 
                 $state.append($psBox, $csBox);
                 return $state[0].outerHTML;

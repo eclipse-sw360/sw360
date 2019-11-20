@@ -83,7 +83,8 @@
                 '<input class="form-control" id="<%=PortalConstants.ADDITIONAL_DATA_VALUE%>' + rowId + '" name="<portlet:namespace/><%=PortalConstants.ADDITIONAL_DATA_VALUE%>' + rowId + '" required="" minlength="1" placeholder="Enter additional data value" title="additional data value" value="' + value + '"/>' +
                 '</td>' +
                 '<td class="content-middle">' +
-                '<svg title="Delete" class="action lexicon-icon" data-row-id="' + rowId + '">' +
+                '<svg class="action lexicon-icon" data-row-id="' + rowId + '">' +
+                '<title>Delete</title>' +
                 '<use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>' +
                 '</svg>' +
                 '</td>' +

@@ -68,7 +68,8 @@
             </div>
         </td>
         <td class="content-middle">
-            <svg title="Delete" class="action lexicon-icon" data-row-id="releaseLinkRow${uuid}" data-release-name="<sw360:out value='${releaseLink.longName}' jsQuoting="true"/>">
+            <svg class="action lexicon-icon" data-row-id="releaseLinkRow${uuid}" data-release-name="<sw360:out value='${releaseLink.longName}' jsQuoting="true"/>">
+                <title>Delete</title>
                 <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
             </svg>
         </td>

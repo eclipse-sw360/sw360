@@ -305,18 +305,17 @@
                     $editAction = render.linkTo(
                         makeComponentUrl(id, '<%=PortalConstants.PAGENAME_EDIT%>'),
                         "",
-                        '<svg class="lexicon-icon" title="Edit"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>'
+                        '<svg class="lexicon-icon"><title>Edit</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>'
                     ),
                     $deleteAction = $('<svg>', {
                         'class': 'delete lexicon-icon',
-                        title: 'Delete',
                         'data-component-id': id,
                         'data-component-name': row.name,
                         'data-component-release-count': row.lRelsSize,
                         'data-component-attachment-count': row.attsSize,
                     });
             
-                $deleteAction.append($('<use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
+                $deleteAction.append($('<title>Delete</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
 
                 $actions.append($editAction, $deleteAction);
                 return $actions[0].outerHTML;
