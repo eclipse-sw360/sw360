@@ -82,7 +82,8 @@
                 '<input class="form-control" id="<%=PortalConstants.EXTERNAL_ID_VALUE%>' + rowId + '" name="<portlet:namespace/><%=PortalConstants.EXTERNAL_ID_VALUE%>' + rowId + '" required="" minlength="1" placeholder="Enter external id value" title="external id value" value="' + value + '"/>' +
                 '</td>' +
                 '<td class="content-middle">' +
-                '<svg title="Delete" class="action lexicon-icon" data-row-id="' + rowId + '">' +
+                '<svg class="action lexicon-icon" data-row-id="' + rowId + '">' +
+                '<title>Delete</title>' +
                 '<use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>' +
                 '</svg>' +
                 '</td>' +

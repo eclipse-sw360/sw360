@@ -74,7 +74,7 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
                 $editAction = render.linkTo(
                     makeReleaseUrl(row[6]),
                     "",
-                    '<svg class="lexicon-icon" title="Edit"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>'
+                    '<svg class="lexicon-icon"><title>Edit</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>'
                 );
 
             $actions.append($editAction);

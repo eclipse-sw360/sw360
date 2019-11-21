@@ -45,7 +45,8 @@
             </div>
         </td>
         <td class="content-middle">
-            <svg title="Delete" class="action lexicon-icon" data-row-id="projectLinkRow${uuid}">
+            <svg class="action lexicon-icon" data-row-id="projectLinkRow${uuid}">
+                <title>Delete</title>
                 <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
             </svg>
         </td>

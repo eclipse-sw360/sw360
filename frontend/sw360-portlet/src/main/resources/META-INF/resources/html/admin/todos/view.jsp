@@ -127,11 +127,10 @@
                     }),
                     $deleteAction = $('<svg>', {
                         'class': 'delete lexicon-icon',
-                        title: 'Delete',
                         'data-id': value,
                         'data-title': row.title
                     });
-                $deleteAction.append($('<use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
+                $deleteAction.append($('<title>Delete</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
 
                 $actions.append($deleteAction);
                 return $actions[0].outerHTML;
