@@ -546,8 +546,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 licenseWithText = licenseInfoResult.stream()
                         .flatMap(result -> result.getLicenseInfo().getLicenseNamesWithTexts().stream())
                         .filter(license -> license.getType().equals(LICENSE_TYPE_GLOBAL)
-                                && !license.getLicenseSpdxId().equals(SPDX_IDENTIFIER_UNKNOWN)
-                                && !license.getLicenseSpdxId().equals(SPDX_IDENTIFIER_NA)) // exclude unknown and n/a
+                                && !license.getLicenseName().equals(SW360Constants.LICENSE_NAME_UNKNOWN)
+                                && !license.getLicenseName().equals(SW360Constants.NA)) // exclude unknown and n/a
                         .findFirst().orElse(null);
             }
 

@@ -214,17 +214,18 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             final ProjectService.Iface client = thriftClients.makeProjectClient();
             final User user = UserCacheHolder.getUserFromRequest(request);
             final Project project = client.getProjectByIdForEdit(projectId, user);
-            JsonNode rootNode = OBJECT_MAPPER.readTree(request.getParameter(OBLIGATION_DATA));
-            final Map<String, ObligationStatusInfo> osiInfoMap = project.isSetLinkedObligations() ? project.getLinkedObligations() : Maps.newHashMap();
+            final JsonNode rootNode = OBJECT_MAPPER.readTree(request.getParameter(OBLIGATION_DATA));
+            final Map<String, ObligationStatusInfo> osiInfoMap = project.getLinkedObligationsSize() > 0 ? project.getLinkedObligations() : Maps.newHashMap();
+
             rootNode.fieldNames().forEachRemaining(topic -> {
                 JsonNode osiNode = rootNode.get(topic);
                 ObligationStatusInfo newOsi = OBJECT_MAPPER.convertValue(osiNode, ObligationStatusInfo.class);
-                osiInfoMap.computeIfAbsent(topic, e -> newOsi);
                 if (newOsi.isSetModifiedOn()) {
                     newOsi.setModifiedBy(user.getEmail());
                     newOsi.setModifiedOn(SW360Utils.getCreatedOn());
                     osiInfoMap.put(topic, newOsi);
                 }
+                osiInfoMap.computeIfAbsent(topic, e -> newOsi);
             });
             project.setLinkedObligations(osiInfoMap);
             requestStatus = client.updateProject(project, user);
@@ -952,7 +953,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 addProjectBreadcrumb(request, response, project);
                 request.setAttribute(PROJECT_OBLIGATIONS, SW360Utils.getProjectObligations(project));
                 request.setAttribute(IS_USER_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user) ? "Yes" : "No");
-                if (project.getReleaseIdToUsageSize() > 0) {
+                if (PortalConstants.IS_PROJECT_OBLIGATIONS_ENABLED && project.getReleaseIdToUsageSize() > 0) {
                     putLinkedObligations(request, project);
                 }
             } catch (TException e) {
@@ -1226,7 +1227,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 return;
             }
 
-            if (project.getReleaseIdToUsageSize() > 0 && PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)
+            if (PortalConstants.IS_PROJECT_OBLIGATIONS_ENABLED && project.getReleaseIdToUsageSize() > 0 && PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)
                     && PermissionUtils.makePermission(project, user).isActionAllowed(RequestedAction.WRITE)) {
                 putLinkedObligations(request, project);
             }
@@ -1484,17 +1485,18 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     private void putLinkedObligations(RenderRequest request, Project project) {
         final User user = UserCacheHolder.getUserFromRequest(request);
         List<Release> releases;
+        List<LicenseInfoParsingResult> licenseInfos = Lists.newArrayList();
         try {
             final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
             releases = componentClient.getFullReleasesById(project.getReleaseIdToUsage().keySet(), user)
                     .stream().filter(rel -> rel.getAttachmentsSize() > 0).collect(Collectors.toList());
             if (CommonUtils.isNotEmpty(releases)) {
-                final List<LicenseInfoParsingResult> licenseInfos = addLicenseInfos(request, project, releases);
+                licenseInfos = addLicenseInfos(request, project, releases);
                 sortLicenseInfo(licenseInfos);
-                request.setAttribute(PROJECT_RELEASE_LICENSE_INFO, licenseInfos);
             } else {
                 project.unsetLinkedObligations();
             }
+            request.setAttribute(PROJECT_RELEASE_LICENSE_INFO, licenseInfos);
         } catch (TException exception) {
             log.error("Could not fetch Release Information: ", exception);
         }
@@ -1504,39 +1506,58 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         final User user = UserCacheHolder.getUserFromRequest(request);
         final LicenseInfoService.Iface licenseClient = thriftClients.makeLicenseInfoClient();
         final List<LicenseInfoParsingResult> licenseInfos = new ArrayList<LicenseInfoParsingResult>();
-        releases.forEach(release -> {
-            Attachment filteredAttachment = SW360Utils.getApprovedClxAttachmentForRelease(release);
+        Map<String, String> releaseIdToAcceptedCLI = Maps.newHashMap();
+        Set<Release> excludedReleases = Sets.newHashSet();
 
-            if (filteredAttachment.isSetAttachmentContentId()) {
+        if (project.getLinkedObligationsSize() > 0) {
+            releaseIdToAcceptedCLI.putAll(SW360Utils.getReleaseIdtoAcceptedCLIMappings(project.getLinkedObligations()));
+        }
+
+        releases.forEach(release -> {
+            List<Attachment> filteredAttachments = SW360Utils.getApprovedClxAttachmentForRelease(release);
+            final String releaseId = release.getId();
+
+            if (releaseIdToAcceptedCLI.containsKey(releaseId)) {
+                excludedReleases.add(release);
+            }
+            if (filteredAttachments.size() == 1) {
+                final Attachment filteredAttachment = filteredAttachments.get(0);
+                final String attachmentContentId = filteredAttachment.getAttachmentContentId();
+
+                if (releaseIdToAcceptedCLI.containsKey(releaseId) && releaseIdToAcceptedCLI.get(releaseId).equals(attachmentContentId)) {
+                    releaseIdToAcceptedCLI.remove(releaseId);
+                    excludedReleases.remove(release);
+                }
+
                 release.unsetAttachments();
                 release.setAttachments(new HashSet<Attachment>(Arrays.asList(filteredAttachment)));
-
                 try {
                     List<LicenseInfoParsingResult> licenseResults = licenseClient.getLicenseInfoForAttachment(release,
-                            filteredAttachment.getAttachmentContentId(), user);
+                            attachmentContentId, user);
 
                     List<ObligationParsingResult> obligationResults = licenseClient.getObligationsForAttachment(release,
-                            filteredAttachment.getAttachmentContentId(), user);
+                            attachmentContentId, user);
 
-                    if (licenseResults.size() > 0 && obligationResults.size() > 0) {
+                    if (licenseResults.size() == 1 && obligationResults.size() == 1 && obligationResults.get(0).getObligationsSize() > 0) {
                         licenseInfos.add(licenseClient.createLicenseToObligationMapping(licenseResults.get(0), obligationResults.get(0)));
                     }
                 } catch (TException exception) {
                     log.error(String.format("Could not fetch license Information for attachment: %s in release: %s",
-                            filteredAttachment.getFilename(), release.getId()), exception);
+                            filteredAttachment.getFilename(), releaseId), exception);
                 }
             }
         });
-        setLinkedObligations(project, licenseInfos);
+        setLinkedObligations(project, licenseInfos, releaseIdToAcceptedCLI);
         request.setAttribute(APPROVED_OBLIGATIONS_COUNT, getFulfilledObligationsCount(project));
+        request.setAttribute(EXCLUDED_RELEASES, excludedReleases);
         return licenseInfos;
     }
 
-    private void setLinkedObligations(Project project, List<LicenseInfoParsingResult> licenseResults) {
+    private void setLinkedObligations(Project project, List<LicenseInfoParsingResult> licenseResults, Map<String, String> excludedReleaseIdToAcceptedCLI) {
         final LicenseInfoService.Iface licenseClient = thriftClients.makeLicenseInfoClient();
         Map<Project, List<LicenseInfoParsingResult>> projectObligationMap = Maps.newHashMap();
         try {
-            projectObligationMap = licenseClient.setProjectObligationStatus(project, licenseResults);
+            projectObligationMap = licenseClient.setProjectObligationStatus(project, licenseResults, excludedReleaseIdToAcceptedCLI);
             project.unsetLinkedObligations();
             licenseResults.clear();
             licenseResults.addAll(projectObligationMap.values().iterator().next());
@@ -1553,13 +1574,13 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 .forEach(e -> {
                     e.getLicenseInfo().setLicenseNamesWithTexts(e.getLicenseInfo().getLicenseNamesWithTexts().stream()
                             .sorted(Comparator.comparing(LicenseNameWithText::getType, String.CASE_INSENSITIVE_ORDER)
-                                    .thenComparing(LicenseNameWithText::getLicenseSpdxId, String.CASE_INSENSITIVE_ORDER))
+                                    .thenComparing(LicenseNameWithText::getLicenseName, String.CASE_INSENSITIVE_ORDER))
                             .collect(Collectors.toCollection(LinkedHashSet::new)));
                 });
     }
 
     private int getFulfilledObligationsCount(Project project) {
-        if (project.isSetLinkedObligations() && project.getLinkedObligationsSize() > 0) {
+        if (project.getLinkedObligationsSize() > 0) {
             return Math.toIntExact(project.getLinkedObligations().values().stream()
                     .filter(obligation -> ProjectObligationStatus.FULFILLED.equals(obligation.getStatus())).count());
         }

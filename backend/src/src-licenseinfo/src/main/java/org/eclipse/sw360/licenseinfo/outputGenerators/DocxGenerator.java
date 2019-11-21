@@ -257,7 +257,6 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
             fillCommonRulesTable(document, project);
 
-            fillLinkedObligations(document, Maps.newHashMap(), project);
             // because of the impossible API component subsections must be the last thing in the docx file
             // the rest of the sections must be generated after this
             writeComponentSubsections(document, projectLicenseInfoResults, obligationResults);
@@ -701,7 +700,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         setTableBorders(table);
     }
 
-
+    /* TODO: This method will used once project obligations approach is fixed */
     private void fillLinkedObligations(XWPFDocument document, Map<String, String> externalIdMap, Project project) {
         XWPFTable table = document.getTables().get(OBLIGATION_STATUS_TABLE_INDEX);
         final int[] currentRow = new int[] { 0 };

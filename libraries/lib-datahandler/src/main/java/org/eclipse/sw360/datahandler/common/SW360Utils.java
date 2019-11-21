@@ -232,20 +232,16 @@ public class SW360Utils {
         return getVersionedName(release.getName(), release.getVersion());
     }
 
-    public static Attachment getApprovedClxAttachmentForRelease(Release release) {
+    public static List<Attachment> getApprovedClxAttachmentForRelease(Release release) {
         Predicate<Attachment> isApprovedCLI = attachment -> attachment.getCheckStatus().equals(CheckStatus.ACCEPTED)
                 && AttachmentType.COMPONENT_LICENSE_INFO_XML.equals(attachment.getAttachmentType());
 
-        List<Attachment> attachmentList = release.getAttachments().stream().filter(isApprovedCLI).collect(Collectors.toList());
+        return release.getAttachments().stream().filter(isApprovedCLI).collect(Collectors.toList());
+    }
 
-        if (CommonUtils.isNotEmpty(attachmentList)) {
-            if (attachmentList.size() == 1) {
-                return attachmentList.get(0);
-            } else {
-                log.warn("More then 1 Accepted CLI file for Release: " + release.getId() + " - " + printName(release));
-            }
-        }
-        return new Attachment();
+    public static Map<String, String> getReleaseIdtoAcceptedCLIMappings(Map<String, ObligationStatusInfo> obligationStatusMap) {
+        return obligationStatusMap.values().stream().flatMap(e -> e.getReleaseIdToAcceptedCLI().entrySet().stream())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldValue, newValue) -> oldValue));
     }
 
     public static String printFullname(Release release) {

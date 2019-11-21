@@ -60,6 +60,7 @@
 
     <core_rt:set  var="addMode"  value="${empty project.id}" />
     <core_rt:set  var="pageName"  value="<%= request.getParameter("pagename") %>" />
+    <core_rt:set var="isProjectObligationsEnabled" value='<%=PortalConstants.IS_PROJECT_OBLIGATIONS_ENABLED%>'/>
 </c:catch>
 
 <%--These variables are used as a trick to allow referencing enum values in EL expressions below--%>
@@ -69,11 +70,11 @@
 
 <core_rt:if test="${empty attributeNotFoundException}">
 
-<core_rt:set var="isObligationEnabled"  value="${hasWritePermissions and isUserAtLeastClearingAdmin}" />
+<core_rt:set var="isObligationEnabled"  value="${isProjectObligationsEnabled and hasWritePermissions and isUserAtLeastClearingAdmin}" />
 <core_rt:if test="${isObligationEnabled}">
     <core_rt:set var="isObligationPresent"  value="${not empty project.linkedObligations}" />
     <core_rt:if test="${isObligationPresent}">
-        <jsp:useBean id="projectReleaseLicenseInfo" type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult>" scope="request" />
+    <jsp:useBean id="projectReleaseLicenseInfo" type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult>" scope="request" />
     <jsp:useBean id="approvedObligationsCount" type="java.lang.Integer" scope="request"/>
     </core_rt:if>
 </core_rt:if>

@@ -42,6 +42,8 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.closeQuietly;
+import static org.eclipse.sw360.datahandler.common.SW360Constants.LICENSE_NAME_UNKNOWN;
+import static org.eclipse.sw360.datahandler.common.SW360Constants.OBLIGATION_TOPIC_UNKNOWN;
 
 /**
  * Abstract class with common helper methods for CLIParser and CombinedCLIParser
@@ -55,12 +57,10 @@ public abstract class AbstractCLIParser extends LicenseInfoParser {
     private static final String LICENSENAME_ATTRIBUTE_NAME = "name";
     private static final String SPDX_IDENTIFIER_ATTRIBUTE_NAME = "spdxidentifier";
     private static final String TYPE_ATTRIBUTE_NAME = "type";
-    private static final String LICENSE_NAME_UNKNOWN = "License name unknown";
     private static final String TYPE_UNKNOWN = "Type unknown";
     private static final String OBLIGATION_TEXT_UNKNOWN = "Obligation text unknown";
     private static final Logger log = Logger.getLogger(CLIParser.class);
     private static final String SPDX_IDENTIFIER_UNKNOWN = "SPDX identifier unknown";
-    private static final String OBLIGATION_TOPIC_UNKNOWN = "Obligation topic unknown";
 
     private static final String OBLIGATION_TOPIC_ELEMENT_NAME = "Topic";
     private static final String OBLIGATION_TEXT_ELEMENT_NAME = "Text";

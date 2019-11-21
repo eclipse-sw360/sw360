@@ -27,13 +27,14 @@
     <table class="table info_table" id="poInfoTableByRelease" style="table-layout: auto">
         <thead>
             <tr>
-                <th colspan="5" class="headlabel">Project Obligation Status</th>
+                <th colspan="4" class="headlabel">Project Obligation Status</th>
             </tr>
             <tr>
                 <th width="35%">Release &#8883; Attachment &#8883;
                     License Type &#8883; License &#8883; Obligation</th>
                 <th width="25%">Text</th>
-                <th width="10">Action taken</th>
+                <!-- Commented code for obligation action, until action select options are provided -->
+                <!-- <th width="10">Action taken</th> -->
                 <th width="10%">Status</th>
                 <th width="20%">Comment</th>
             </tr>
@@ -47,7 +48,7 @@
                 <core_rt:set var="bckgrndClass" value="text-success" />
 
                 <tr id="releaseRow_${loop.count}" data-tt-id="${release.id}" data-row-type="release">
-                    <td colspan="5">
+                    <td colspan="4">
                         <sw360:DisplayReleaseLink release="${release}" showName="true"/>
                         <span class="badge badge-light text-dark">
                             <sw360:out value=" (${totalObligations})" />
@@ -62,7 +63,7 @@
                             data-tt-id="${release.id}_${licenseType}"
                             data-tt-parent-id="${release.id}" data-row-type="licenseType"
                             class="highlightSuccess">
-                            <td colspan="5"><sw360:out value="${licenseType}" /></td>
+                            <td colspan="4"><sw360:out value="${licenseType}" /></td>
                         </tr>
                     </core_rt:if>
 
@@ -71,7 +72,7 @@
                         data-tt-parent-id="${release.id}_${licenseType}"
                         data-row-type="licenseId"
                         <core_rt:if test="${obligationSize gt 0}">class="highlightWarning"</core_rt:if>>
-                        <td colspan="5">
+                        <td colspan="4">
                             <sw360:out value="${license.licenseSpdxId}" />
                         </td>
                     </tr>
@@ -94,9 +95,9 @@
                                 <td>
                                     <sw360:out value="${obligation.text}" maxChar="40" />
                                 </td>
-                                <td>
+                                <%-- <td>
                                     <sw360:out value="${osi.action}" />
-                                </td>
+                                </td> --%>
                                 <td>
                                     <sw360:DisplayEnum value="${osi.status}" />
                                 </td>

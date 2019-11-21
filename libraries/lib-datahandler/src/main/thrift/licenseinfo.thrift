@@ -117,9 +117,10 @@ service LicenseInfoService {
     list<ObligationParsingResult> getObligationsForAttachment(1: Release release, 2: string attachmentContentId, 3: User user);
 
     /**
-     * populates the linked obligation status.
+     * remove the obligation associated with excluded release,
+     * and set the linked obligation status in project.
      */
-    map<Project, list<LicenseInfoParsingResult>> setProjectObligationStatus(1: Project project, 2: list<LicenseInfoParsingResult> licenseInfoResults);
+    map<Project, list<LicenseInfoParsingResult>> setProjectObligationStatus(1: Project project, 2: list<LicenseInfoParsingResult> licenseInfoResults, 3: map<string, string> excludedReleaseIdToAcceptedCLI);
 
     /**
      * create the mapping between license and obligations

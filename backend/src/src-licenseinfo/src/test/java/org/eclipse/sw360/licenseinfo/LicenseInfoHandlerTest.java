@@ -54,7 +54,7 @@ public class LicenseInfoHandlerTest {
     @Before
     public void setUp() throws Exception {
         when(attachmentDatabaseHandler.getAttachmentConnector()).thenReturn(connector);
-        handler = new LicenseInfoHandler(attachmentDatabaseHandler, null);
+        handler = new LicenseInfoHandler(attachmentDatabaseHandler, null, null);
     }
 
     @Test(expected = IllegalStateException.class)
