@@ -200,6 +200,7 @@ public class PortalConstants {
     public static final String STATE;
     public static final String PROJECT_TYPE;
     public static final String EXTENDED_EXCEL_EXPORT = "extendedExcelExport";
+    public static final String PROJECT_WITH_SUBPROJECT = "projectWithSubproject";
     public static final String PROJECT_NOT_FOUND = "projectNotFound";
     public static final String PAGENAME_LICENSE_INFO = "generateLicenseInfo";
     public static final String PAGENAME_SOURCE_CODE_BUNDLE = "generateSourceCodeBundle";

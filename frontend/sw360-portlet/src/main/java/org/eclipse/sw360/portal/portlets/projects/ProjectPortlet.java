@@ -966,6 +966,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     private void prepareLicenseInfo(RenderRequest request, RenderResponse response) throws IOException, PortletException {
         User user = UserCacheHolder.getUserFromRequest(request);
         String id = request.getParameter(PROJECT_ID);
+        boolean projectWithSubProjects = Boolean
+                .parseBoolean(request.getParameter(PortalConstants.PROJECT_WITH_SUBPROJECT));
 
         request.setAttribute(PortalConstants.SW360_USER, user);
         request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_PROJECT);
@@ -990,6 +992,12 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 List<ProjectLink> mappedProjectLinks = createLinkedProjects(project,
                         filterAndSortAttachments(SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES), true,
                         user);
+
+                if (!projectWithSubProjects) {
+                    mappedProjectLinks = mappedProjectLinks.stream()
+                            .filter(projectLink -> projectLink.getId().equals(id)).collect(Collectors.toList());
+                }
+
                 request.setAttribute(PROJECT_LIST, mappedProjectLinks);
                 addProjectBreadcrumb(request, response, project);
 
@@ -1058,6 +1066,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     private void prepareSourceCodeBundle(RenderRequest request, RenderResponse response) throws IOException, PortletException {
         User user = UserCacheHolder.getUserFromRequest(request);
         String id = request.getParameter(PROJECT_ID);
+        boolean projectWithSubProjects = Boolean
+                .parseBoolean(request.getParameter(PortalConstants.PROJECT_WITH_SUBPROJECT));
 
         request.setAttribute(PortalConstants.SW360_USER, user);
         request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_PROJECT);
@@ -1072,6 +1082,12 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
                 List<ProjectLink> mappedProjectLinks = createLinkedProjects(project,
                         filterAndSortAttachments(SW360Constants.SOURCE_CODE_ATTACHMENT_TYPES), true, user);
+
+                if (!projectWithSubProjects) {
+                    mappedProjectLinks = mappedProjectLinks.stream()
+                            .filter(projectLink -> projectLink.getId().equals(id)).collect(Collectors.toList());
+                }
+
                 request.setAttribute(PROJECT_LIST, mappedProjectLinks);
                 addProjectBreadcrumb(request, response, project);
                 storeAttachmentUsageCountInRequest(request, mappedProjectLinks, UsageData.sourcePackage(new SourcePackageUsage()));
