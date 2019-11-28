@@ -276,6 +276,7 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
 
     private HalResource<Component> createHalComponent(Component sw360Component, User user) throws TException {
         HalResource<Component> halComponent = new HalResource<>(sw360Component);
+        User componentCreator = restControllerHelper.getUserByEmail(sw360Component.getCreatedBy());
 
         if (sw360Component.getReleaseIds() != null) {
             Set<String> releases = sw360Component.getReleaseIds();
@@ -317,7 +318,7 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
             restControllerHelper.addEmbeddedAttachments(halComponent, sw360Component.getAttachments());
         }
 
-        restControllerHelper.addEmbeddedUser(halComponent, userService.getUserByEmail(sw360Component.getCreatedBy()), "createdBy");
+        restControllerHelper.addEmbeddedUser(halComponent, componentCreator, "createdBy");
 
         return halComponent;
     }
