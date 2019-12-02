@@ -26,6 +26,7 @@ typedef sw360.Visibility Visibility
 typedef sw360.ReleaseRelationship ReleaseRelationship
 typedef sw360.MainlineState MainlineState
 typedef sw360.ProjectReleaseRelationship ProjectReleaseRelationship
+typedef sw360.ObligationStatus ObligationStatus
 typedef components.Release Release
 typedef components.ReleaseClearingStateSummary ReleaseClearingStateSummary
 typedef users.User User
@@ -138,8 +139,8 @@ struct Project {
 //    100: optional set<string> releaseIds, //deleted
     101: optional ReleaseClearingStateSummary releaseClearingStateSummary,
 
-    // obligation status
-    102: optional map<string, ObligationStatusInfo> linkedObligations,
+    // linked release obligations
+    102: optional string linkedObligationId,
     200: optional map<RequestedAction, bool> permissions,
 }
 
@@ -171,22 +172,24 @@ struct ProjectTodo {
     4: required bool fulfilled;
 }
 
-enum ProjectObligationStatus {
-    OPEN = 0,
-    FULFILLED = 1,
-    IN_PROGRESS = 2,
+struct ProjectObligation {
+    1: optional string id,
+    2: optional string revision,
+    3: optional string type = "projectObligation",
+    4: required string projectId,
+    5: optional map<string, ObligationStatusInfo> linkedObligations
 }
 
 struct ObligationStatusInfo {
     1: optional string text, // need not be saved in database
     2: optional string action,
-    3: optional ProjectObligationStatus status,
+    3: optional ObligationStatus status,
     4: optional string comment,
     5: optional string modifiedBy,
     6: optional string modifiedOn,
     7: optional set<Release> releases, // used to display in UI, no need to save this in database
     8: required set<string> licenseIds,
-    9: optional map<string, string> releaseIdToAcceptedCLI,
+    9: optional map<string, string> releaseIdToAcceptedCLI
 }
 
 service ProjectService {
@@ -361,4 +364,19 @@ service ProjectService {
      * get the cyclic hierarchy of linkedProjects
      */
     string getCyclicLinkedProjectPath(1: Project project, 2: User user);
+
+    /**
+     * get linked obligation of a project
+     */
+    ProjectObligation getLinkedObligations(1: string obligationId, 2: User user);
+
+    /**
+     * add linked obligations to a project
+     */
+    RequestStatus addLinkedObligations(1: ProjectObligation obligation, 2: User user);
+
+    /**
+     * update linked obligations of a project
+     */
+    RequestStatus updateLinkedObligations(1: ProjectObligation obligation, 2: User user);
 }

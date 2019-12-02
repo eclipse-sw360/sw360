@@ -30,8 +30,8 @@
                 <th colspan="4" class="headlabel">Project Obligation Status</th>
             </tr>
             <tr>
-                <th width="35%">Release &#8883; Attachment &#8883;
-                    License Type &#8883; License &#8883; Obligation</th>
+                <th width="35%">Release &#8883; License Type &#8883;
+                    License &#8883; Obligation</th>
                 <th width="25%">Text</th>
                 <!-- Commented code for obligation action, until action select options are provided -->
                 <!-- <th width="10">Action taken</th> -->
@@ -40,7 +40,7 @@
             </tr>
         </thead>
         <tbody>
-            <core_rt:forEach items="${projectReleaseLicenseInfo}" var="releaseLicenseInfo" varStatus="loop">
+            <core_rt:forEach items="${projectObligationsInfoByRelease}" var="releaseLicenseInfo" varStatus="loop">
                 <core_rt:set var="release" value="${releaseLicenseInfo.release}" />
                 <core_rt:set var="licenses" value="${releaseLicenseInfo.licenseInfo.licenseNamesWithTexts}" />
                 <core_rt:set var="totalObligations" value="${releaseLicenseInfo.licenseInfo.totalObligations}" />

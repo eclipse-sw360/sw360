@@ -23,17 +23,7 @@
 
 <core_rt:if test="${not isObligationPresent}">
     <div class="alert alert-info" role="alert">
-    <core_rt:choose>
-        <core_rt:when test="${empty project.releaseIdToUsage}">
             No linked obligations.
-        </core_rt:when>
-        <core_rt:otherwise>
-            The possible reasons for not loading linked obligations:
-            <li>No <b>accepted</b> CLI xml file in linked release. (Obligations from accepted CLI file will be loaded here)</li>
-            <li>More than <b>one</b> Accepted CLI xml file in linked release. (Each release should have only one accepted CLI file)</li>
-            <li>Obligations are <b>not</b> present in Accepted CLI xml file.</li>
-        </core_rt:otherwise>
-    </core_rt:choose>
     </div>
 </core_rt:if>
 
@@ -53,13 +43,18 @@
 
     <core_rt:if test="${not empty excludedReleases}">
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            Obligation status associated with the following release(s) are removed/updated due to changes in associated CLI.xml file
-            <core_rt:forEach items="${excludedReleases}" var="exRelease" varStatus="loop">
-            <li><sw360:DisplayReleaseLink release="${exRelease}" showFullname="true"/></li>
-            </core_rt:forEach>
+            Obligation status associated with the following release(s) are orphaned due to changes in accepted license file.
+            <ul>
+                <core_rt:forEach items="${excludedReleases}" var="exRelease" varStatus="loop">
+                    <li><sw360:DisplayReleaseLink release="${exRelease}" showFullname="true"/></li>
+                </core_rt:forEach>
+            </ul>
             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                 <span aria-hidden="true"><svg class="lexicon-icon"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#times"/></svg></span>
             </button>
+            <core_rt:if test="${not inProjectDetailsContext}">
+                <input type="checkbox" name="deleteAllOrphanObligations" /> Select the checkbox and <b>Update</b> the project, to delete all orphaned obligations.
+            </core_rt:if>
         </div>
     </core_rt:if>
 
@@ -67,10 +62,10 @@
     <div class="tab-pane show active" id="pills-obligationsView" role="tabpanel" aria-labelledby="pills-obligations-tab">
         <core_rt:choose>
             <core_rt:when test="${inProjectDetailsContext}">
-                <%@include file="/html/projects/includes/projects/viewByObligations.jspf" %>
+                <%@include file="/html/projects/includes/projects/obligations.jspf" %>
             </core_rt:when>
             <core_rt:otherwise>
-                <%@include file="/html/projects/includes/projects/editObligations.jspf" %>
+                <%@include file="/html/projects/includes/projects/obligationsEdit.jspf" %>
             </core_rt:otherwise>
         </core_rt:choose>
     </div>

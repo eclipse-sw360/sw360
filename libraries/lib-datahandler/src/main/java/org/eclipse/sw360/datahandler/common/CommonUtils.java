@@ -249,6 +249,14 @@ public class CommonUtils {
         return false;
     }
 
+    public static boolean allAreNotEmpty(Collection... collections) {
+        for (Collection collection : collections) {
+            if (isNullOrEmptyCollection(collection)) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     public static boolean allAreEmpty(Object... objects) {
         return !atLeastOneIsNotEmpty(objects);
@@ -669,6 +677,10 @@ public class CommonUtils {
 
     public static boolean isNullEmptyOrWhitespace(String string) {
         return string == null || string.trim().length() == 0;
+    }
+
+    public static boolean isNotNullEmptyOrWhitespace(String string) {
+        return !isNullEmptyOrWhitespace(string);
     }
 
     public static <T> java.util.function.Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {

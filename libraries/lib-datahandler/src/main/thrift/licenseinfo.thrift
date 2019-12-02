@@ -104,6 +104,11 @@ struct LicenseInfoFile {
     2: required binary              generatedOutput,
 }
 
+struct LicenseObligationsStatusInfo {
+    1: list<LicenseInfoParsingResult> licenseInfoResults,
+    2: map<string, ObligationStatusInfo> obligationStatusMap
+}
+
 service LicenseInfoService {
 
     /**
@@ -117,10 +122,10 @@ service LicenseInfoService {
     list<ObligationParsingResult> getObligationsForAttachment(1: Release release, 2: string attachmentContentId, 3: User user);
 
     /**
-     * remove the obligation associated with excluded release,
-     * and set the linked obligation status in project.
+     * mark the obligation associated with excluded release,
+     * to map the parsed obligation and it's status.
      */
-    map<Project, list<LicenseInfoParsingResult>> setProjectObligationStatus(1: Project project, 2: list<LicenseInfoParsingResult> licenseInfoResults, 3: map<string, string> excludedReleaseIdToAcceptedCLI);
+    LicenseObligationsStatusInfo getProjectObligationStatus(1: map<string, ObligationStatusInfo> obligationStatusMap, 2: list<LicenseInfoParsingResult> licenseInfoResults, 3: map<string, string> excludedReleaseIdToAcceptedCLI);
 
     /**
      * create the mapping between license and obligations

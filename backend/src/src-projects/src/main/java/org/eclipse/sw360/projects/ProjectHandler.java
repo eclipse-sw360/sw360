@@ -22,10 +22,9 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectObligation;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import java.io.IOException;
@@ -284,5 +283,29 @@ public class ProjectHandler implements ProjectService.Iface {
         assertUser(user);
 
         return handler.getCyclicLinkedProjectPath(project, user);
+    }
+
+    @Override
+    public ProjectObligation getLinkedObligations(String obligationId, User user) throws TException {
+        assertId(obligationId);
+        assertUser(user);
+        return handler.getLinkedObligations(obligationId, user);
+    }
+
+    @Override
+    public RequestStatus addLinkedObligations(ProjectObligation obligation, User user) throws TException {
+        assertUser(user);
+        assertNotNull(obligation);
+        assertIdUnset(obligation.getId());
+        return handler.addLinkedObligations(obligation, user);
+    }
+
+    @Override
+    public RequestStatus updateLinkedObligations(ProjectObligation obligation, User user) throws TException {
+        assertNotNull(obligation);
+        assertId(obligation.getId());
+        assertId(obligation.getProjectId());
+        assertUser(user);
+        return handler.updateLinkedObligations(obligation, user);
     }
 }
