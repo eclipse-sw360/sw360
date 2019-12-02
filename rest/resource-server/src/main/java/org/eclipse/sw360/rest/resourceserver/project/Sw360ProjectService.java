@@ -47,6 +47,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.hateoas.Link;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.stereotype.Service;
 
 import static com.google.common.base.Strings.nullToEmpty;
@@ -112,7 +113,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         String cyclicLinkedProjectPath = sw360ProjectClient.getCyclicLinkedProjectPath(project, sw360User);
         if (!isNullEmptyOrWhitespace(cyclicLinkedProjectPath)) {
-            throw new RuntimeException("Cyclic linked Project : " + cyclicLinkedProjectPath);
+            throw new HttpMessageNotReadableException("Cyclic linked Project : " + cyclicLinkedProjectPath);
         }
         AddDocumentRequestSummary documentRequestSummary = sw360ProjectClient.addProject(project, sw360User);
         if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.SUCCESS) {
@@ -129,7 +130,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         String cyclicLinkedProjectPath = sw360ProjectClient.getCyclicLinkedProjectPath(project, sw360User);
         if (!isNullEmptyOrWhitespace(cyclicLinkedProjectPath)) {
-            throw new RuntimeException("Cyclic linked Project : " + cyclicLinkedProjectPath);
+            throw new HttpMessageNotReadableException("Cyclic linked Project : " + cyclicLinkedProjectPath);
         }
         RequestStatus requestStatus = sw360ProjectClient.updateProject(project, sw360User);
         if (requestStatus == RequestStatus.CLOSED_UPDATE_NOT_ALLOWED) {
@@ -174,20 +175,26 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     }
 
     public void addEmbeddedlinkedRelease(Release sw360Release, User sw360User, HalResource<Release> releaseResource,
-            Sw360ReleaseService releaseService) throws TException {
+            Sw360ReleaseService releaseService, Set<String> releaseIdsInBranch) throws TException {
+        releaseIdsInBranch.add(sw360Release.getId());
         Map<String, ReleaseRelationship> releaseIdToRelationship = sw360Release.getReleaseIdToRelationship();
         if (releaseIdToRelationship != null) {
             releaseIdToRelationship.keySet().stream().forEach(linkedReleaseId -> wrapTException(() -> {
+                if (releaseIdsInBranch.contains(linkedReleaseId)) {
+                    return;
+                }
                 Release linkedRelease = releaseService.getReleaseForUserById(linkedReleaseId, sw360User);
                 Release embeddedLinkedRelease = rch.convertToEmbeddedRelease(linkedRelease);
                 HalResource<Release> halLinkedRelease = new HalResource<>(embeddedLinkedRelease);
                 Link releaseLink = linkTo(ReleaseController.class)
                         .slash("api/releases/" + embeddedLinkedRelease.getId()).withSelfRel();
                 halLinkedRelease.add(releaseLink);
-                addEmbeddedlinkedRelease(linkedRelease, sw360User, halLinkedRelease, releaseService);
+                addEmbeddedlinkedRelease(linkedRelease, sw360User, halLinkedRelease, releaseService,
+                        releaseIdsInBranch);
                 releaseResource.addEmbeddedResource("sw360:releases", halLinkedRelease);
             }));
         }
+        releaseIdsInBranch.remove(sw360Release.getId());
     }
 
     @Override

@@ -22,6 +22,7 @@
 <%@ include file="/html/init.jsp" %>
 <%-- the following is needed by liferay to display error messages--%>
 <%@ include file="/html/utils/includes/errorKeyToMessage.jspf"%>
+<liferay-ui:error key="custom_error" message="${cyclicError}" embed="false"/>
 <%-- use require js on this page --%>
 <%@include file="/html/utils/includes/requirejs.jspf" %>
 

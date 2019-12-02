@@ -704,4 +704,9 @@ service ComponentService {
      * Gets releases referencing the given release id
      */ 
     list<Release> getReferencingReleases(1: string releaseId);
+
+    /**
+     * get the cyclic hierarchy of linkedReleases
+     */
+    string getCyclicLinkedReleasePath(1: Release release, 2: User user);
 }

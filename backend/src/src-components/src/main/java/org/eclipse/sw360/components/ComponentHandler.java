@@ -490,4 +490,12 @@ public class ComponentHandler implements ComponentService.Iface {
         assertNotNull(externalIds);
         return handler.searchReleasesByExternalIds(externalIds);
     }
+
+    @Override
+    public String getCyclicLinkedReleasePath(Release release, User user) throws TException {
+        assertNotNull(release);
+        assertUser(user);
+
+        return handler.getCyclicLinkedReleasePath(release, user);
+    }
 }

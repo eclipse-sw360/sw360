@@ -19,7 +19,6 @@ import com.google.common.collect.*;
 import com.liferay.portal.kernel.json.*;
 import com.liferay.portal.kernel.model.Organization;
 import com.liferay.portal.kernel.portlet.PortletResponseUtil;
-import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.util.PortalUtil;
 
@@ -1417,7 +1416,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
                 String cyclicLinkedProjectPath = client.getCyclicLinkedProjectPath(project, user);
                 if (!isNullEmptyOrWhitespace(cyclicLinkedProjectPath)) {
-                    addErrorMessages(cyclicLinkedProjectPath, request, response);
+                    FossologyAwarePortlet.addCustomErrorMessage(CYCLIC_LINKED_PROJECT + cyclicLinkedProjectPath,
+                            PAGENAME_EDIT, request, response);
                     response.setRenderParameter(PROJECT_ID, id);
                     return;
                 }
@@ -1447,7 +1447,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
                 String cyclicLinkedProjectPath = client.getCyclicLinkedProjectPath(project, user);
                 if (!isNullEmptyOrWhitespace(cyclicLinkedProjectPath)) {
-                    addErrorMessages(cyclicLinkedProjectPath, request, response);
+                    FossologyAwarePortlet.addCustomErrorMessage(CYCLIC_LINKED_PROJECT + cyclicLinkedProjectPath,
+                            PAGENAME_EDIT, request, response);
                     prepareRequestForEditAfterDuplicateError(request, project, user);
                     return;
                 }
@@ -1870,15 +1871,5 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         Comparator<Project> comparator = Comparator.comparing(
                 p -> nullToEmptyString(p.getState()));
         return isAscending ? comparator : comparator.reversed();
-    }
-
-    private void addErrorMessages(String cyclicHierarchy, ActionRequest request, ActionResponse response) {
-        SessionErrors.add(request, "custom_error");
-        request.setAttribute("cyclicError", CYCLIC_LINKED_PROJECT + cyclicHierarchy);
-        SessionMessages.add(request,
-                PortalUtil.getPortletId(request) + SessionMessages.KEY_SUFFIX_HIDE_DEFAULT_ERROR_MESSAGE);
-        SessionMessages.add(request,
-                PortalUtil.getPortletId(request) + SessionMessages.KEY_SUFFIX_HIDE_DEFAULT_SUCCESS_MESSAGE);
-        response.setRenderParameter(PAGENAME, PAGENAME_EDIT);
     }
 }

@@ -12,6 +12,9 @@ package org.eclipse.sw360.portal.portlets;
 
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.servlet.SessionErrors;
+import com.liferay.portal.kernel.servlet.SessionMessages;
+import com.liferay.portal.kernel.util.PortalUtil;
 
 import org.eclipse.sw360.datahandler.common.FossologyUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -37,6 +40,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.eclipse.sw360.portal.common.PortalConstants.PAGENAME;
 import static org.eclipse.sw360.portal.common.PortalConstants.RELEASE_ID;
 
 /**
@@ -210,5 +214,16 @@ public abstract class FossologyAwarePortlet extends LinkedReleasesAndProjectsAwa
         } catch (IOException e) {
             log.error("Problem rendering RequestStatus", e);
         }
+    }
+
+    public static void addCustomErrorMessage(String errorMessage, String pageName, ActionRequest request,
+            ActionResponse response) {
+        SessionErrors.add(request, "custom_error");
+        request.setAttribute("cyclicError", errorMessage);
+        SessionMessages.add(request,
+                PortalUtil.getPortletId(request) + SessionMessages.KEY_SUFFIX_HIDE_DEFAULT_ERROR_MESSAGE);
+        SessionMessages.add(request,
+                PortalUtil.getPortletId(request) + SessionMessages.KEY_SUFFIX_HIDE_DEFAULT_SUCCESS_MESSAGE);
+        response.setRenderParameter(PAGENAME, pageName);
     }
 }

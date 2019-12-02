@@ -215,7 +215,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
 
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Set<String> releaseIds = projectService.getReleaseIds(id, sw360User, transitive);
-
+        final Set<String> releaseIdsInBranch = new HashSet<>();
         boolean isTransitive = Boolean.parseBoolean(transitive);
         final List<Resource<Release>> releaseResources = new ArrayList<>();
         for (final String releaseId : releaseIds) {
@@ -223,7 +223,8 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
             final Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(sw360Release);
             final HalResource<Release> releaseResource = new HalResource<>(embeddedRelease);
             if (isTransitive) {
-                projectService.addEmbeddedlinkedRelease(sw360Release, sw360User, releaseResource, releaseService);
+                projectService.addEmbeddedlinkedRelease(sw360Release, sw360User, releaseResource, releaseService,
+                        releaseIdsInBranch);
             }
             releaseResources.add(releaseResource);
         }
