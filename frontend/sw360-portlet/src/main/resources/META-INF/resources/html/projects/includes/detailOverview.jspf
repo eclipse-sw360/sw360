@@ -97,8 +97,26 @@
 									</div>
 								</div>
 								<div class="btn-group" role="group">
-									<button id="downloadLicenseInfoButton" type="button" class="btn btn-secondary">Generate License Info</button>
-									<button id="downloadSourceCodeBundleButton" type="button" class="btn btn-secondary">Generate Source Code Bundle</button>
+									<div class="btn-group" id="downloadLicenseInfo" style="margin-right: auto;">
+										<button id="downloadLicenseInfoButton" type="button" data-toggle="dropdown" class="btn btn-secondary dropdown-toggle">
+											Generate License Info
+											<clay:icon symbol="caret-bottom" />
+										</button>
+										<div class="dropdown-menu">
+											<a class="dropdown-item" data-type="projectOnly">Project only</a>
+											<a class="dropdown-item" data-type="projectWithSubProject">Project with sub project</a>
+										</div>
+									</div>
+									<div class="btn-group" id="downloadSourceCode">
+										<button id="downloadSourceCodeBundleButton" type="button" data-toggle="dropdown" class="btn btn-secondary dropdown-toggle">
+											Generate Source Code Bundle
+											<clay:icon symbol="caret-bottom" />
+										</button>
+										<div class="dropdown-menu">
+											<a class="dropdown-item" data-type="projectOnly">Project only</a>
+											<a class="dropdown-item" data-type="projectWithSubProject">Project with sub project</a>
+										</div>
+									</div>
 								</div>
 							</div>
 							<div class="list-group-companion" data-belong-to="tab-attachmentUsages">

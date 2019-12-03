@@ -66,25 +66,36 @@
             table.treetable("loadBranch", node, rows);
         });
 
-        $('#downloadLicenseInfoButton').click(downloadLicenseInfo);
-        $('#downloadSourceCodeBundleButton').click(downloadSourceCodeBundleButton);
-
         $('#btnExportGroup a.dropdown-item').on('click', function(event) {
             exportSpreadsheet($(event.currentTarget).data('type'));
         });
 
-        function downloadLicenseInfo() {
-            window.location.href = '<portlet:renderURL> \
-              <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${project.id}"/> \
-              <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_LICENSE_INFO%>"/> \
-            </portlet:renderURL>';
+        $('#downloadLicenseInfo a.dropdown-item').on('click', function(event) {
+            var type=$(event.currentTarget).data('type');
+            downloadLicenseInfo(type);
+        });
+
+        $('#downloadSourceCode a.dropdown-item').on('click', function(event) {
+            var type=$(event.currentTarget).data('type');
+            downloadSourceCodeBundleButton(type);
+        });
+
+        function downloadLicenseInfo(type) {
+            var portletURL = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>');
+            portletURL.setParameter('<%=PortalConstants.PROJECT_ID%>', '${project.id}');
+            portletURL.setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_LICENSE_INFO%>');
+            portletURL.setParameter('<%=PortalConstants.PROJECT_WITH_SUBPROJECT%>', type === 'projectWithSubProject' ? 'true' : 'false');
+
+            window.location.href = portletURL.toString();
         }
 
-        function downloadSourceCodeBundleButton() {
-            window.location.href = '<portlet:renderURL> \
-              <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${project.id}"/> \
-              <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_SOURCE_CODE_BUNDLE%>"/> \
-            </portlet:renderURL>';
+        function downloadSourceCodeBundleButton(type) {
+            var portletURL = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>');
+            portletURL.setParameter('<%=PortalConstants.PROJECT_ID%>', '${project.id}');
+            portletURL.setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_SOURCE_CODE_BUNDLE%>');
+            portletURL.setParameter('<%=PortalConstants.PROJECT_WITH_SUBPROJECT%>', type === 'projectWithSubProject' ? 'true' : 'false');
+
+            window.location.href = portletURL.toString();
         }
 
         function exportSpreadsheet(type) {
