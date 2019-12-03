@@ -69,6 +69,44 @@ include::{snippets}/should_document_get_projects_by_type/http-response.adoc[]
 include::{snippets}/should_document_get_projects_by_type/links.adoc[]
 
 
+[[resources-projects-list-by-group]]
+==== Listing by group
+
+A `GET` request will list all of the service's projects by group. +
+Please set the request parameter `&group=<GROUP>`.
+
+===== Response structure
+include::{snippets}/should_document_get_projects_by_group/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_projects_by_group/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_projects_by_group/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_projects_by_group/links.adoc[]
+
+
+[[resources-projects-list-by-tag]]
+==== Listing by tag
+
+A `GET` request will list all of the service's projects by tag. +
+Please set the request parameter `&tag=<TAG>`.
+
+===== Response structure
+include::{snippets}/should_document_get_projects_by_tag/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_projects_by_tag/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_projects_by_tag/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_projects_by_tag/links.adoc[]
+
+
 [[resources-project-get-project-by-externalids]]
 ==== Listing by external ids
 

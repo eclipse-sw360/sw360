@@ -447,9 +447,58 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("_embedded.sw360:projects[]name").description("The name of the project"),
                                 fieldWithPath("_embedded.sw360:projects[]version").description("The project version"),
                                 fieldWithPath("_embedded.sw360:projects[]projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
+                                fieldWithPath("_embedded.sw360:projects[]visibility")
+                                        .description("The visibility of the project, possible values are: "
+                                                + Arrays.asList(Visibility.values())),
                                 fieldWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
+    }
+
+    @Test
+    public void should_document_get_projects_by_group() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/projects?group=" + project.getBusinessUnit())
+                .header("Authorization", "Bearer " + accessToken).accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        links(linkWithRel("curies").description("Curies are used for online documentation")),
+                        responseFields(
+                                fieldWithPath("_embedded.sw360:projects[]name").description("The name of the project"),
+                                fieldWithPath("_embedded.sw360:projects[]version").description("The project version"),
+                                fieldWithPath("_embedded.sw360:projects[]projectType")
+                                        .description("The project type, possible values are: "
+                                                + Arrays.asList(ProjectType.values())),
+                                fieldWithPath("_embedded.sw360:projects[]visibility")
+                                        .description("The visibility of the project, possible values are: "
+                                                + Arrays.asList(Visibility.values())),
+                                fieldWithPath("_embedded.sw360:projects")
+                                        .description("An array of <<resources-projects, Projects resources>>"),
+                                fieldWithPath("_links")
+                                        .description("<<resources-index-links,Links>> to other resources"))));
+    }
+
+    @Test
+    public void should_document_get_projects_by_tag() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/projects?tag=" + project.getTag())
+                .header("Authorization", "Bearer " + accessToken).accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        links(linkWithRel("curies").description("Curies are used for online documentation")),
+                        responseFields(
+                                fieldWithPath("_embedded.sw360:projects[]name").description("The name of the project"),
+                                fieldWithPath("_embedded.sw360:projects[]version").description("The project version"),
+                                fieldWithPath("_embedded.sw360:projects[]projectType")
+                                        .description("The project type, possible values are: "
+                                                + Arrays.asList(ProjectType.values())),
+                                fieldWithPath("_embedded.sw360:projects[]visibility")
+                                        .description("The visibility of the project, possible values are: "
+                                                + Arrays.asList(Visibility.values())),
+                                fieldWithPath("_embedded.sw360:projects")
+                                        .description("An array of <<resources-projects, Projects resources>>"),
+                                fieldWithPath("_links")
+                                        .description("<<resources-index-links,Links>> to other resources"))));
     }
 
     @Test
@@ -467,6 +516,9 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("_embedded.sw360:projects[]name").description("The name of the project"),
                                 fieldWithPath("_embedded.sw360:projects[]version").description("The project version"),
                                 fieldWithPath("_embedded.sw360:projects[]projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
+                                fieldWithPath("_embedded.sw360:projects[]visibility")
+                                        .description("The visibility of the project, possible values are: "
+                                                + Arrays.asList(Visibility.values())),
                                 fieldWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
