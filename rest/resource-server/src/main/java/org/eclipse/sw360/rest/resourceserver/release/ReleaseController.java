@@ -78,7 +78,8 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
     @RequestMapping(value = RELEASES_URL, method = RequestMethod.GET)
     public ResponseEntity<Resources<Resource>> getReleasesForUser(
             @RequestParam(value = "sha1", required = false) String sha1,
-            @RequestParam(value = "fields", required = false) List<String> fields) throws TException {
+            @RequestParam(value = "fields", required = false) List<String> fields,
+            @RequestParam(value = "name", required = false) String name) throws TException {
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<Release> sw360Releases = new ArrayList<>();
@@ -89,15 +90,20 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
             sw360Releases.addAll(releaseService.getReleasesForUser(sw360User));
         }
 
+        sw360Releases = sw360Releases.stream()
+                .filter(release -> name == null || name.isEmpty() || release.getName().equals(name))
+                .collect(Collectors.toList());
+
         List<Resource> releaseResources = new ArrayList<>();
         for (Release sw360Release : sw360Releases) {
             Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(sw360Release, fields);
             Resource<Release> releaseResource = new Resource<>(embeddedRelease);
             releaseResources.add(releaseResource);
         }
-        Resources<Resource> resources = new Resources<>(releaseResources);
 
-        return new ResponseEntity<>(resources, HttpStatus.OK);
+        Resources<Resource> resources = restControllerHelper.createResources(releaseResources);
+        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(resources, status);
     }
 
     private Release searchReleaseBySha1(String sha1, User sw360User) throws TException {
@@ -141,8 +147,9 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
                     resources.add(new Resource<>(embeddedComponent));
                 });
 
-        Resources<Resource<Object>> finalResources = new Resources(resources);
-        return new ResponseEntity(finalResources, HttpStatus.OK);
+        Resources<Resource> finalResources = restControllerHelper.createResources(resources);
+        HttpStatus status = finalResources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(finalResources, status);
     }
 
     @RequestMapping(value = RELEASES_URL + "/searchByExternalIds", method = RequestMethod.GET)

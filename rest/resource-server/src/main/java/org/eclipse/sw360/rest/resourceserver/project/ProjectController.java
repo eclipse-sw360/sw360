@@ -137,16 +137,17 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         List<Resource<Project>> projectResources = new ArrayList<>();
         sw360Projects.stream()
                 .filter(project -> projectType == null || projectType.equals(project.projectType.name()))
-                .filter(project -> group == null || group.equals(project.getBusinessUnit()))
-                .filter(project -> tag == null || tag.equals(project.getTag()))
+                .filter(project -> group == null || group.isEmpty() || group.equals(project.getBusinessUnit()))
+                .filter(project -> tag == null || tag.isEmpty() || tag.equals(project.getTag()))
                 .forEach(p -> {
                     Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
                     embeddedProject.setVisbility(p.getVisbility());
                     projectResources.add(new Resource<>(embeddedProject));
                 });
 
-        Resources<Resource<Project>> resources = new Resources<>(projectResources);
-        return new ResponseEntity<>(resources, HttpStatus.OK);
+        Resources<Resource<Project>> resources = restControllerHelper.createResources(projectResources);
+        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(resources, status);
     }
 
     @RequestMapping(value = PROJECTS_URL + "/{id}", method = RequestMethod.GET)
@@ -227,8 +228,9 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
             releaseResources.add(releaseResource);
         }
 
-        final Resources<Resource<Release>> resources = new Resources<>(releaseResources);
-        return new ResponseEntity<>(resources, HttpStatus.OK);
+        final Resources<Resource<Release>> resources = restControllerHelper.createResources(releaseResources);
+        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(resources, status);
     }
 
     @RequestMapping(value = PROJECTS_URL + "/{id}/releases/ecc", method = RequestMethod.GET)
@@ -248,8 +250,9 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
             releaseResources.add(releaseResource);
         }
 
-        final Resources<Resource<Release>> resources = new Resources<>(releaseResources);
-        return new ResponseEntity<>(resources, HttpStatus.OK);
+        final Resources<Resource<Release>> resources = restControllerHelper.createResources(releaseResources);
+        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(resources, status);
     }
 
     @RequestMapping(value = PROJECTS_URL + "/{id}/vulnerabilities", method = RequestMethod.GET)
@@ -263,8 +266,10 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
             vulnerabilityResources.add(vulnerabilityDTOResource);
         }
 
-        final Resources<Resource<VulnerabilityDTO>> resources = new Resources<>(vulnerabilityResources);
-        return new ResponseEntity<>(resources, HttpStatus.OK);
+        final Resources<Resource<VulnerabilityDTO>> resources = restControllerHelper
+                .createResources(vulnerabilityResources);
+        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(resources, status);
     }
 
     @RequestMapping(value = PROJECTS_URL + "/{id}/licenses", method = RequestMethod.GET)
@@ -289,8 +294,9 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
             licenseResources.add(licenseResource);
         }
 
-        final Resources<Resource<License>> resources = new Resources<>(licenseResources);
-        return new ResponseEntity<>(resources, HttpStatus.OK);
+        final Resources<Resource<License>> resources = restControllerHelper.createResources(licenseResources);
+        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(resources, status);
     }
 
     @RequestMapping(value = PROJECTS_URL + "/{id}/licenseinfo", method = RequestMethod.GET)
@@ -467,8 +473,9 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
                     projectResources.add(new Resource<>(embeddedProject));
                 });
 
-        Resources<Resource<Project>> resources = new Resources<>(projectResources);
-        return new ResponseEntity<>(resources, HttpStatus.OK);
+        Resources<Resource<Project>> resources = restControllerHelper.createResources(projectResources);
+        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(resources, status);
     }
 
     @RequestMapping(value = PROJECTS_URL + "/{id}/attachmentUsage", method = RequestMethod.GET)
@@ -488,7 +495,12 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
             attachmentUsage.remove("type");
         }
 
-        return new ResponseEntity<>(attachmentUsageMap, HttpStatus.OK);
+        if (listOfAttachmentUsages.isEmpty()) {
+            attachmentUsageMap = null;
+        }
+
+        HttpStatus status = attachmentUsageMap == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(attachmentUsageMap, status);
     }
 
     @Override

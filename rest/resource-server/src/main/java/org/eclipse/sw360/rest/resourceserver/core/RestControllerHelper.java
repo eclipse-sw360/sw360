@@ -521,6 +521,14 @@ public class RestControllerHelper<T> {
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
+    public Resources<Resource<T>> createResources(List<Resource<T>> listOfResources) {
+        Resources<Resource<T>> resources = null;
+        if (!listOfResources.isEmpty()) {
+            resources = new Resources<>(listOfResources);
+        }
+        return resources;
+    }
+
     private Map<String, Set<String>> getExternalIdsFromMultiMap(MultiValueMap<String, String> externalIdsMultiMap) {
         Map<String, Set<String>> externalIds = new HashMap<>();
         for (String externalIdKey : externalIdsMultiMap.keySet()) {
