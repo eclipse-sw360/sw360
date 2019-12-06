@@ -109,12 +109,77 @@ define('utils/render', [
         listShown.toggle();
     }
 
+    function toggleChildRow(thisObj, table) {
+        let tr = thisObj.closest('tr'),
+            row = table.row(tr);
+
+        if (row.child.isShown()) {
+            tr.find("td:first").html('&#x25BA');
+            row.child.hide();
+            tr.removeClass('shown');
+            row.child().removeClass('active');
+        } else {
+            tr.find("td:first").html('&#x25BC');
+            row.child(createChildRow(row.data())).show();
+            tr.addClass('shown');
+            row.child().addClass('active');
+        }
+    }
+
+    /*
+     * Define function for child row creation, which will contain additional data for a clicked table row
+     */
+    function createChildRow(rowData) {
+        var childHtmlString = '' +
+            '<div>' +
+            '<span>' + rowData.text + '</span>' +
+            '</div>';
+        return childHtmlString;
+    }
+
+    function toggleAllChildRows(thisObj, table) {
+        let textShown = thisObj.attr('data-show') === 'true';
+
+        table.rows(':not(.orphan)').every(function (rowIdx, tableLoop, rowLoop) {
+            let tr = $(this.node()),
+                row = table.row(tr);
+
+            if (textShown) {
+                if (row.child.isShown()) {
+                    $(tr).find('td:first').html('&#x25BA');
+                    row.child.hide();
+                    tr.removeClass('shown');
+                    row.child().removeClass('active')
+                }
+            } else {
+                if (!row.child.isShown()) {
+                    $(tr).find('td:first').html('&#x25BC');
+                    row.child(createChildRow(row.data())).show();
+                    tr.addClass('shown');
+                    row.child().addClass('active')
+                }
+            }
+        });
+
+        if (textShown) {
+            thisObj.attr('data-show', 'false');
+            thisObj.html('&#x25BA');
+            thisObj.attr('title', 'Expand all');
+        } else {
+            thisObj.attr('data-show', 'true');
+            thisObj.html('&#x25BC');
+            thisObj.attr('title', 'Collapse all');
+        }
+    }
+
     return {
 		linkTo: renderLinkTo,
 		userEmail: renderUserEmail,
 		truncate: truncate,
 		trashIcon: renderTrashIcon,
 		renderExpandableUrls: renderExpandableUrls,
-		toggleExpandableList: toggleExpandableList
+		toggleExpandableList: toggleExpandableList,
+		toggleChildRow: toggleChildRow,
+		toggleAllChildRows: toggleAllChildRows
 	};
 });

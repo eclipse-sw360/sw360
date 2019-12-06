@@ -20,6 +20,7 @@ import org.apache.xmlbeans.XmlCursor;
 import org.apache.xmlbeans.XmlException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -80,7 +81,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
     }
 
     @Override
-    public byte[] generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project, Collection<ObligationParsingResult> obligationResults, User user, Map<String, String> externalIds) throws SW360Exception {
+    public byte[] generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project, Collection<ObligationParsingResult> obligationResults, User user, Map<String, String> externalIds, Map<String, ObligationStatusInfo> obligationsStatus) throws SW360Exception {
         String licenseInfoHeaderText = project.getLicenseInfoHeaderText();
 
         ByteArrayOutputStream docxOutputStream = new ByteArrayOutputStream();
@@ -115,7 +116,8 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                             licenseInfoHeaderText,
                             true,
                             obligationResults,
-                            user
+                            user,
+                            obligationsStatus
                         );
                     } else {
                         throw new SW360Exception("Could not load the template for xwpf document: " + DOCX_TEMPLATE_REPORT_FILE);
@@ -215,7 +217,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         String licenseInfoHeaderText,
         boolean includeObligations,
         Collection<ObligationParsingResult> obligationResults,
-        User user) throws XmlException, TException {
+        User user, Map<String, ObligationStatusInfo> obligationsStatus) throws XmlException, TException {
 
             String businessUnit = project.getBusinessUnit();
             String projectName = project.getName();
@@ -257,6 +259,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
             fillCommonRulesTable(document, project);
 
+            fillLinkedObligations(document, obligationsStatus);
             // because of the impossible API component subsections must be the last thing in the docx file
             // the rest of the sections must be generated after this
             writeComponentSubsections(document, projectLicenseInfoResults, obligationResults);
@@ -700,13 +703,12 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         setTableBorders(table);
     }
 
-    /* TODO: This method will used once project obligations approach is fixed */
-    private void fillLinkedObligations(XWPFDocument document, Map<String, String> externalIdMap, Project project) {
+    private void fillLinkedObligations(XWPFDocument document, Map<String, ObligationStatusInfo> obligationsStatus) {
         XWPFTable table = document.getTables().get(OBLIGATION_STATUS_TABLE_INDEX);
         final int[] currentRow = new int[] { 0 };
 
-        if (project.getLinkedObligationsSize() > 0) {
-            project.getLinkedObligations().entrySet().stream().forEach(o -> {
+        if (!obligationsStatus.isEmpty()) {
+            obligationsStatus.entrySet().stream().forEach(o -> {
                 ObligationStatusInfo osi = o.getValue();
                 if (null != osi.getReleases()) {
                     currentRow[0] = currentRow[0] + 1;
@@ -716,7 +718,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                     row.addNewTableCell().setText(o.getKey());
                     row.addNewTableCell().setText(String.join(", \n", osi.getLicenseIds()));
                     row.addNewTableCell().setText(String.join(", \n", releases));
-                    row.addNewTableCell().setText(nullToEmptyString(osi.getStatus()));
+                    row.addNewTableCell().setText(ThriftEnumUtils.enumToString(osi.getStatus()));
                     row.addNewTableCell().setText(nullToEmptyString(osi.getAction()));
                     row.addNewTableCell().setText(nullToEmptyString(osi.getComment()));
                     currentRow[0] = currentRow[0] + 1;
@@ -728,7 +730,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         } else {
             currentRow[0] = currentRow[0] + 1;
             XWPFTableRow textRow = table.createRow();
-            textRow.getCell(0).setText("No Linked Obligations. Only APPROVED CLI files Obligations will be shown here.");
+            textRow.getCell(0).setText("No Linked Obligations.");
             mergeColumns(table, currentRow[0], 0, textRow.getCtRow().sizeOfTcArray() - 1);
         }
         setTableBorders(table);

@@ -200,41 +200,34 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             serveAttachmentUsagesRows(request, response);
         } else if (PortalConstants.SAVE_ATTACHMENT_USAGES.equals(action)) {
             saveAttachmentUsages(request, response);
+        } else if (PortalConstants.REMOVE_ORPHAN_OBLIGATION.equals(action)) {
+            removeOrphanObligation(request, response);
         } else if (isGenericAction(action)) {
             dealWithGenericAction(request, response, action);
-        } else if (PortalConstants.SAVE_PROJECT_LICENSE_OBLIGATION.equals(action)) {
-            updateProjectReleaseObligations(request, response);
         }
     }
 
-    private void updateProjectReleaseObligations(ResourceRequest request, ResourceResponse response) {
-        final String projectId = request.getParameter(PROJECT_ID);
-        RequestStatus requestStatus = null;
+    private void removeOrphanObligation(ResourceRequest request, ResourceResponse response) {
+        final String obligationId = request.getParameter(OBLIGATION_ID);
+        final String topic = request.getParameter(OBLIGATION_TOPIC);
+        RequestStatus status = null;
         try {
+            ProjectObligation obligation;
+            if (CommonUtils.isNullEmptyOrWhitespace(topic)) {
+                status = RequestStatus.FAILURE;
+                throw new IllegalArgumentException("Invalid obligation topic for project obligation id: " + obligationId);
+            }
             final ProjectService.Iface client = thriftClients.makeProjectClient();
             final User user = UserCacheHolder.getUserFromRequest(request);
-            final Project project = client.getProjectByIdForEdit(projectId, user);
-            final JsonNode rootNode = OBJECT_MAPPER.readTree(request.getParameter(OBLIGATION_DATA));
-            final Map<String, ObligationStatusInfo> osiInfoMap = project.getLinkedObligationsSize() > 0 ? project.getLinkedObligations() : Maps.newHashMap();
-
-            rootNode.fieldNames().forEachRemaining(topic -> {
-                JsonNode osiNode = rootNode.get(topic);
-                ObligationStatusInfo newOsi = OBJECT_MAPPER.convertValue(osiNode, ObligationStatusInfo.class);
-                if (newOsi.isSetModifiedOn()) {
-                    newOsi.setModifiedBy(user.getEmail());
-                    newOsi.setModifiedOn(SW360Utils.getCreatedOn());
-                    osiInfoMap.put(topic, newOsi);
-                }
-                osiInfoMap.computeIfAbsent(topic, e -> newOsi);
-            });
-            project.setLinkedObligations(osiInfoMap);
-            requestStatus = client.updateProject(project, user);
-        } catch (TException | IOException exception) {
-            log.error("Failed to update obligation status for project: " + projectId, exception);
+            obligation = client.getLinkedObligations(obligationId, user);
+            obligation.getLinkedObligations().remove(topic);
+            status = client.updateLinkedObligations(obligation, user);
+        } catch (TException exception) {
+            log.error("Failed to delete obligation: "+ obligationId +" with topic: " + topic, exception);
             response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "500");
         }
-        serveRequestStatus(request, response, requestStatus,
-                "Failed to update obligation status for project: " + projectId, log);
+        serveRequestStatus(request, response, status,
+                "Failed to delete obligation: "+ obligationId +" with topic: " + topic, log);
     }
 
     private void saveAttachmentUsages(ResourceRequest request, ResourceResponse response) throws IOException {
@@ -954,7 +947,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 request.setAttribute(PROJECT_OBLIGATIONS, SW360Utils.getProjectObligations(project));
                 request.setAttribute(IS_USER_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user) ? "Yes" : "No");
                 if (PortalConstants.IS_PROJECT_OBLIGATIONS_ENABLED && project.getReleaseIdToUsageSize() > 0) {
-                    putLinkedObligations(request, project);
+                    request.setAttribute(OBLIGATION_DATA, loadLinkedObligations(request, project));
                 }
             } catch (TException e) {
                 log.error("Error fetching project from backend!", e);
@@ -1243,9 +1236,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 return;
             }
 
-            if (PortalConstants.IS_PROJECT_OBLIGATIONS_ENABLED && project.getReleaseIdToUsageSize() > 0 && PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)
+            if (PortalConstants.IS_PROJECT_OBLIGATIONS_ENABLED && project.getReleaseIdToUsageSize() > 0
                     && PermissionUtils.makePermission(project, user).isActionAllowed(RequestedAction.WRITE)) {
-                putLinkedObligations(request, project);
+                request.setAttribute(OBLIGATION_DATA, loadLinkedObligations(request, project));
             }
             request.setAttribute(USING_PROJECTS, usingProjects);
             request.setAttribute(ALL_USING_PROJECTS_COUNT, allUsingProjectCount);
@@ -1340,9 +1333,11 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                     response.setRenderParameter(PROJECT_ID, id);
                     return;
                 }
-
                 requestStatus = client.updateProject(project, user);
                 setSessionMessage(request, requestStatus, "Project", "update", printName(project));
+                if (RequestStatus.SUCCESS.equals(requestStatus) && CommonUtils.isNotNullEmptyOrWhitespace(request.getParameter(OBLIGATION_DATA))) {
+                    updateLinkedObligations(request, project, user, client);
+                }
                 if (RequestStatus.DUPLICATE.equals(requestStatus) || RequestStatus.DUPLICATE_ATTACHMENT.equals(requestStatus)) {
                     if(RequestStatus.DUPLICATE.equals(requestStatus))
                         setSW360SessionError(request, ErrorMessages.PROJECT_DUPLICATE);
@@ -1370,14 +1365,21 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 }
 
                 AddDocumentRequestSummary summary = client.addProject(project, user);
-                String  newProjectId= summary.getId();
+                String newProjectId = summary.getId();
                 String sourceProjectId = request.getParameter(SOURCE_PROJECT_ID);
+                AddDocumentRequestStatus status = summary.getRequestStatus();
 
-                if (sourceProjectId != null) {
+                if (null != sourceProjectId && AddDocumentRequestStatus.SUCCESS.equals(status)) {
+                    if (project.getReleaseIdToUsageSize() > 0) {
+                        Project sourceProject = client.getProjectById(sourceProjectId, user);
+                        if (CommonUtils.isNotNullEmptyOrWhitespace(sourceProject.getLinkedObligationId())) {
+                            project.setId(newProjectId);
+                            copyLinkedObligationsForClonedProject(request, project, sourceProject, client, user);
+                        }
+                    }
                     copyAttachmentUsagesForClonedProject(request, sourceProjectId, newProjectId);
                 }
 
-                AddDocumentRequestStatus status = summary.getRequestStatus();
                 switch(status) {
                     case SUCCESS:
                         String successMsg = "Project " + printName(project) + " added successfully";
@@ -1388,6 +1390,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                     case DUPLICATE:
                         setSW360SessionError(request, ErrorMessages.PROJECT_DUPLICATE);
                         response.setRenderParameter(PAGENAME, PAGENAME_EDIT);
+                        if (CommonUtils.isNotNullEmptyOrWhitespace(sourceProjectId)) {
+                            request.setAttribute(SOURCE_PROJECT_ID, sourceProjectId);
+                        }
                         prepareRequestForEditAfterDuplicateError(request, project, user);
                         break;
                     default:
@@ -1399,6 +1404,77 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         } catch (TException e) {
             log.error("Error updating project in backend!", e);
             setSW360SessionError(request, ErrorMessages.DEFAULT_ERROR_MESSAGE);
+        }
+    }
+
+    private RequestStatus updateLinkedObligations(ActionRequest request, Project project, User user, ProjectService.Iface client) {
+        try {
+            final JsonNode rootNode = OBJECT_MAPPER.readTree(request.getParameter(OBLIGATION_DATA));
+            final boolean isDeleteAllOrphanObligations = Boolean.valueOf(request.getParameter(DELETE_ALL_ORPHAN_OBLIGATIONS));
+            final boolean isObligationPresent = CommonUtils.isNotNullEmptyOrWhitespace(project.getLinkedObligationId());
+            final String email = user.getEmail();
+            final String createdOn = SW360Utils.getCreatedOn();
+            final ProjectObligation obligation = isObligationPresent
+                    ? client.getLinkedObligations(project.getLinkedObligationId(), user)
+                    : new ProjectObligation().setProjectId(project.getId());
+
+            Map<String, ObligationStatusInfo> obligationStatusInfo = isObligationPresent
+                    && obligation.getLinkedObligationsSize() > 0 ? obligation.getLinkedObligations() : Maps.newHashMap();
+
+            rootNode.fieldNames().forEachRemaining(topic -> {
+                JsonNode osiNode = rootNode.get(topic);
+                ObligationStatusInfo newOsi = OBJECT_MAPPER.convertValue(osiNode, ObligationStatusInfo.class);
+
+                if (newOsi.getReleaseIdToAcceptedCLISize() < 1) {
+                    if (isDeleteAllOrphanObligations) {
+                        obligationStatusInfo.remove(topic);
+                    }
+                    return;
+                }
+
+                ObligationStatusInfo currentOsi = obligationStatusInfo.get(topic);
+                if (newOsi.isSetModifiedOn()) {
+                    newOsi.setModifiedBy(email);
+                    newOsi.setModifiedOn(createdOn);
+                    obligationStatusInfo.put(topic, newOsi);
+                } else if (null != currentOsi) {
+                    currentOsi.setReleaseIdToAcceptedCLI(newOsi.getReleaseIdToAcceptedCLI());
+                    obligationStatusInfo.put(topic, currentOsi);
+                }
+
+                obligationStatusInfo.computeIfAbsent(topic, e -> newOsi);
+            });
+
+            obligation.unsetLinkedObligations();
+            obligation.setLinkedObligations(obligationStatusInfo);
+            return isObligationPresent ? client.updateLinkedObligations(obligation, user) : client.addLinkedObligations(obligation, user);
+        } catch (TException | IOException exception) {
+            log.error("Failed to add/update obligation for project: " + project.getId(), exception);
+        }
+        return RequestStatus.FAILURE;
+    }
+
+    private void copyLinkedObligationsForClonedProject(ActionRequest request, Project newProject, Project sourceProject, ProjectService.Iface client, User user) {
+        try {
+            ProjectObligation obligation = client.getLinkedObligations(sourceProject.getLinkedObligationId(), user);
+            Set<String> newLinkedReleaseIds = newProject.getReleaseIdToUsage().keySet();
+            Set<String> sourceLinkedReleaseIds = sourceProject.getReleaseIdToUsage().keySet();
+            Map<String, ObligationStatusInfo> linkedObligations = obligation.getLinkedObligations();
+            if (!newLinkedReleaseIds.equals(sourceLinkedReleaseIds)) {
+                linkedObligations = obligation.getLinkedObligations().entrySet().stream().filter(entry -> {
+                    Set<String> releaseIds = entry.getValue().getReleaseIdToAcceptedCLI().keySet();
+                    releaseIds.retainAll(newLinkedReleaseIds);
+                    if (releaseIds.isEmpty()) {
+                        return false;
+                    }
+                    return true;
+                }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            }
+            if (!linkedObligations.isEmpty()) {
+                client.addLinkedObligations(new ProjectObligation().setProjectId(newProject.getId()).setLinkedObligations(linkedObligations), user);
+            }
+        } catch (TException e) {
+            log.error("Error duplicating obligations for project: " + newProject.getId(), e);
         }
     }
 
@@ -1420,7 +1496,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                     licenseInfoUsage.setProjectPath(projectPath.replace(sourceProjectId, newProjectId));
                 }
             });
-            attachmentClient.makeAttachmentUsages(attachmentUsages);
+            if (!attachmentUsages.isEmpty()) {
+                attachmentClient.makeAttachmentUsages(attachmentUsages);
+            }
         } catch (WrappedTException e) {
             throw new PortletException("Cannot clone attachment usages", e);
         }
@@ -1498,44 +1576,47 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         }
     }
 
-    private void putLinkedObligations(RenderRequest request, Project project) {
+    private ProjectObligation loadLinkedObligations(PortletRequest request, Project project) {
+
+        final ProjectService.Iface projectClient = thriftClients.makeProjectClient();
         final User user = UserCacheHolder.getUserFromRequest(request);
+        final Map<String, String> releaseIdToAcceptedCLI = Maps.newHashMap();
         List<Release> releases;
-        List<LicenseInfoParsingResult> licenseInfos = Lists.newArrayList();
+        ProjectObligation obligation = new ProjectObligation();
+        Map<String, ObligationStatusInfo> obligationStatusMap = Maps.newHashMap();
+
         try {
-            final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
-            releases = componentClient.getFullReleasesById(project.getReleaseIdToUsage().keySet(), user)
-                    .stream().filter(rel -> rel.getAttachmentsSize() > 0).collect(Collectors.toList());
+            releases = getLinkedReleases(CommonUtils.getNullToEmptyKeyset(project.getReleaseIdToUsage()), user);
             if (CommonUtils.isNotEmpty(releases)) {
-                licenseInfos = addLicenseInfos(request, project, releases);
-                sortLicenseInfo(licenseInfos);
-            } else {
-                project.unsetLinkedObligations();
+                if (CommonUtils.isNotNullEmptyOrWhitespace(project.getLinkedObligationId())) {
+                    obligation = projectClient.getLinkedObligations(project.getLinkedObligationId(), user);
+                    obligationStatusMap = obligation.getLinkedObligations();
+                    releaseIdToAcceptedCLI.putAll(SW360Utils.getReleaseIdtoAcceptedCLIMappings(obligationStatusMap));
+                }
+                obligation.setLinkedObligations(setLicenseInfoWithObligations(request, obligationStatusMap, releaseIdToAcceptedCLI, releases, user));
             }
-            request.setAttribute(PROJECT_RELEASE_LICENSE_INFO, licenseInfos);
-        } catch (TException exception) {
-            log.error("Could not fetch Release Information: ", exception);
+        } catch (TException e) {
+            log.error(String.format("error loading linked obligations for project: %s ", project.getId()), e);
         }
+        return obligation;
     }
 
-    private List<LicenseInfoParsingResult> addLicenseInfos(RenderRequest request, Project project, List<Release> releases) {
-        final User user = UserCacheHolder.getUserFromRequest(request);
+    private Map<String, ObligationStatusInfo> setLicenseInfoWithObligations(PortletRequest request,
+            Map<String, ObligationStatusInfo> obligationStatusMap, Map<String, String> releaseIdToAcceptedCLI,
+            List<Release> releases, User user) {
+
+        final Set<Release> excludedReleases = Sets.newHashSet();
+        final List<LicenseInfoParsingResult> licenseInfoWithObligations = Lists.newArrayList();
         final LicenseInfoService.Iface licenseClient = thriftClients.makeLicenseInfoClient();
-        final List<LicenseInfoParsingResult> licenseInfos = new ArrayList<LicenseInfoParsingResult>();
-        Map<String, String> releaseIdToAcceptedCLI = Maps.newHashMap();
-        Set<Release> excludedReleases = Sets.newHashSet();
 
-        if (project.getLinkedObligationsSize() > 0) {
-            releaseIdToAcceptedCLI.putAll(SW360Utils.getReleaseIdtoAcceptedCLIMappings(project.getLinkedObligations()));
-        }
-
-        releases.forEach(release -> {
+        for (Release release : releases) {
             List<Attachment> filteredAttachments = SW360Utils.getApprovedClxAttachmentForRelease(release);
             final String releaseId = release.getId();
 
             if (releaseIdToAcceptedCLI.containsKey(releaseId)) {
                 excludedReleases.add(release);
             }
+
             if (filteredAttachments.size() == 1) {
                 final Attachment filteredAttachment = filteredAttachments.get(0);
                 final String attachmentContentId = filteredAttachment.getAttachmentContentId();
@@ -1545,60 +1626,71 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                     excludedReleases.remove(release);
                 }
 
-                release.unsetAttachments();
-                release.setAttachments(new HashSet<Attachment>(Arrays.asList(filteredAttachment)));
                 try {
-                    List<LicenseInfoParsingResult> licenseResults = licenseClient.getLicenseInfoForAttachment(release,
-                            attachmentContentId, user);
+                    List<LicenseInfoParsingResult> licenseResults = licenseClient.getLicenseInfoForAttachment(release, attachmentContentId, user);
 
-                    List<ObligationParsingResult> obligationResults = licenseClient.getObligationsForAttachment(release,
-                            attachmentContentId, user);
+                    List<ObligationParsingResult> obligationResults = licenseClient.getObligationsForAttachment(release, attachmentContentId, user);
 
-                    if (licenseResults.size() == 1 && obligationResults.size() == 1 && obligationResults.get(0).getObligationsSize() > 0) {
-                        licenseInfos.add(licenseClient.createLicenseToObligationMapping(licenseResults.get(0), obligationResults.get(0)));
+                    if (CommonUtils.allAreNotEmpty(licenseResults, obligationResults) && obligationResults.get(0).getObligationsSize() > 0) {
+                        licenseInfoWithObligations.add(licenseClient.createLicenseToObligationMapping(licenseResults.get(0), obligationResults.get(0)));
                     }
                 } catch (TException exception) {
-                    log.error(String.format("Could not fetch license Information for attachment: %s in release: %s",
+                    log.error(String.format("Error fetchinig license Information for attachment: %s in release: %s",
                             filteredAttachment.getFilename(), releaseId), exception);
                 }
             }
-        });
-        setLinkedObligations(project, licenseInfos, releaseIdToAcceptedCLI);
-        request.setAttribute(APPROVED_OBLIGATIONS_COUNT, getFulfilledObligationsCount(project));
-        request.setAttribute(EXCLUDED_RELEASES, excludedReleases);
-        return licenseInfos;
-    }
-
-    private void setLinkedObligations(Project project, List<LicenseInfoParsingResult> licenseResults, Map<String, String> excludedReleaseIdToAcceptedCLI) {
-        final LicenseInfoService.Iface licenseClient = thriftClients.makeLicenseInfoClient();
-        Map<Project, List<LicenseInfoParsingResult>> projectObligationMap = Maps.newHashMap();
-        try {
-            projectObligationMap = licenseClient.setProjectObligationStatus(project, licenseResults, excludedReleaseIdToAcceptedCLI);
-            project.unsetLinkedObligations();
-            licenseResults.clear();
-            licenseResults.addAll(projectObligationMap.values().iterator().next());
-            project.setLinkedObligations(projectObligationMap.keySet().iterator().next().getLinkedObligations());
-        } catch (TException exception) {
-            log.error(String.format("Failed to set linked obligations for project: %s ", SW360Utils.printName(project)),
-                    exception);
         }
+
+        try {
+            LicenseObligationsStatusInfo licenseObligation = licenseClient.getProjectObligationStatus(obligationStatusMap,
+                    licenseInfoWithObligations, releaseIdToAcceptedCLI);
+            obligationStatusMap = licenseObligation.getObligationStatusMap();
+
+            request.setAttribute(APPROVED_OBLIGATIONS_COUNT, getFulfilledObligationsCount(obligationStatusMap));
+            request.setAttribute(EXCLUDED_RELEASES, excludedReleases);
+            request.setAttribute(PROJECT_OBLIGATIONS_INFO_BY_RELEASE, filterAndSortLicenseInfo(licenseObligation.getLicenseInfoResults()));
+        } catch (TException e) {
+            log.error("Failed to set obligation status for project!", e);
+        }
+        return obligationStatusMap;
     }
 
-    private void sortLicenseInfo(List<LicenseInfoParsingResult> licenseInfos) {
+    private List<Release> getLinkedReleases(Set<String> releaseIds, User user) throws TException {
+        final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        return componentClient.getFullReleasesById(releaseIds, user).stream()
+                .filter(release -> release.getAttachmentsSize() > 0).collect(Collectors.toList());
+    }
+
+    private List<LicenseInfoParsingResult> filterAndSortLicenseInfo(List<LicenseInfoParsingResult> licenseInfos) {
+        // filtering all license without obligations and license name unknown or n/a
+        Predicate<LicenseNameWithText> filterLicense = license -> (license.isSetObligations()
+                && !(SW360Constants.LICENSE_NAME_UNKNOWN.equals(license.getLicenseName())
+                        && SW360Constants.NA.equalsIgnoreCase(license.getLicenseName())));
+
         licenseInfos.stream()
                 .sorted(Comparator.comparing(LicenseInfoParsingResult::getName, String.CASE_INSENSITIVE_ORDER))
                 .forEach(e -> {
                     e.getLicenseInfo().setLicenseNamesWithTexts(e.getLicenseInfo().getLicenseNamesWithTexts().stream()
+                            .filter(filterLicense).map(license -> {
+                                // changing non-global license type as Others and global to Global
+                                if (SW360Constants.LICENSE_TYPE_GLOBAL.equalsIgnoreCase(license.getType())) {
+                                    license.setType(SW360Constants.LICENSE_TYPE_GLOBAL);
+                                } else {
+                                    license.setType(SW360Constants.LICENSE_TYPE_OTHERS);
+                                }
+                                return license;
+                            })
                             .sorted(Comparator.comparing(LicenseNameWithText::getType, String.CASE_INSENSITIVE_ORDER)
                                     .thenComparing(LicenseNameWithText::getLicenseName, String.CASE_INSENSITIVE_ORDER))
                             .collect(Collectors.toCollection(LinkedHashSet::new)));
                 });
+        return licenseInfos;
     }
 
-    private int getFulfilledObligationsCount(Project project) {
-        if (project.getLinkedObligationsSize() > 0) {
-            return Math.toIntExact(project.getLinkedObligations().values().stream()
-                    .filter(obligation -> ProjectObligationStatus.FULFILLED.equals(obligation.getStatus())).count());
+    private int getFulfilledObligationsCount(Map<String, ObligationStatusInfo> obligationStatusMap) {
+        if (CommonUtils.isNotEmpty(obligationStatusMap.keySet())) {
+            return Math.toIntExact(obligationStatusMap.values().stream()
+                    .filter(obligation -> ObligationStatus.FULFILLED.equals(obligation.getStatus())).count());
         }
         return 0;
     }

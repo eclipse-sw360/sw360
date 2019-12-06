@@ -93,6 +93,12 @@ enum ConfigFor {
     FOSSOLOGY_REST = 0,
 }
 
+enum ObligationStatus {
+    OPEN = 0,
+    FULFILLED = 1,
+    IN_PROGRESS = 2,
+}
+
 struct ConfigContainer {
     1: optional string id,
     2: optional string revision,

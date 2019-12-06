@@ -158,11 +158,13 @@ public class PortalConstants {
     public static final String TODO_ID = "todoId";
 
     //! Specialized keys for obligations
+    public static final String OBLIGATION_ID = "obligationId";
     public static final String OBLIGATION_TOPIC = "obligationTopic";
     public static final String OBLIGATION_ACTION = "obligationAction";
     public static final String OBLIGATION_STATUS = "obligationStatus";
     public static final String OBLIGATION_COMMENT = "obligationComment";
     public static final String OBLIGATION_DATA = "obligationData";
+    public static final String DELETE_ALL_ORPHAN_OBLIGATIONS = "deleteAllOrphanObligations";
 
     //! Specialized keys for attachments
     public static final String ATTACHMENTS = "attachments";
@@ -219,7 +221,8 @@ public class PortalConstants {
     public static final String PROJECT_PATH = "projectPath";
     public static final String PROJECT_PATHS = "projectPaths";
     public static final String SOURCE_PROJECT_ID = "sourceProjectId";
-    public static final String PROJECT_RELEASE_LICENSE_INFO = "projectReleaseLicenseInfo";
+    public static final String PROJECT_OBLIGATIONS_INFO_BY_RELEASE = "projectObligationsInfoByRelease";
+    public static final String LINKED_OBLIGATIONS = "linkedObligations";
     public static final String APPROVED_OBLIGATIONS_COUNT = "approvedObligationsCount";
     public static final String EXCLUDED_RELEASES = "excludedReleases";
 
@@ -395,7 +398,7 @@ public class PortalConstants {
     public static final String LOAD_LICENSE_INFO_ATTACHMENT_USAGE = "LoadLicenseInfoAttachmentUsage";
     public static final String LOAD_SOURCE_PACKAGE_ATTACHMENT_USAGE = "LoadSourcePackageAttachmentUsage";
     public static final String LOAD_PROJECT_LIST = "load_project_list";
-    public static final String SAVE_PROJECT_LICENSE_OBLIGATION = "save_project_license_obligation";
+    public static final String REMOVE_ORPHAN_OBLIGATION = "RemoveOrphanObligation";
 
     //component actions
     public static final String ADD_VENDOR = "add_vendor";
@@ -532,7 +535,7 @@ public class PortalConstants {
         MAINLINE_STATE_ENABLED_FOR_USER = Boolean.parseBoolean(props.getProperty("mainline.state.enabled.for.user", "false"));
         IS_CLEARING_TEAM_UNKNOWN_ENABLED = Boolean.parseBoolean(props.getProperty("clearing.team.unknown.enabled", "true"));
         PROJECT_OBLIGATIONS_ACTION_SET = CommonUtils.splitToSet(props.getProperty("project.obligation.actions", "Action 1,Action 2,Action 3"));
-        IS_PROJECT_OBLIGATIONS_ENABLED = Boolean.parseBoolean(props.getProperty("project.obligations.enabled", "false"));
+        IS_PROJECT_OBLIGATIONS_ENABLED = Boolean.parseBoolean(props.getProperty("project.obligations.enabled", "true"));
 
         // SW360 REST API Constants
         API_TOKEN_ENABLE_GENERATOR = Boolean.parseBoolean(props.getProperty("rest.apitoken.generator.enable", "false"));

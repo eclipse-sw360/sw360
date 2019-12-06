@@ -1,0 +1,376 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
+  ~
+  ~ SPDX-License-Identifier: EPL-1.0
+  ~
+  ~ All rights reserved. This program and the accompanying materials
+  ~ are made available under the terms of the Eclipse Public License v1.0
+  ~ which accompanies this distribution, and is available at
+  ~ http://www.eclipse.org/legal/epl-v10.html
+--%>
+<%@include file="/html/init.jsp"%>
+
+<%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
+<%@ page import="javax.portlet.PortletRequest"%>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.projects.Project"%>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.ObligationStatus" %>
+<%@ page import="org.eclipse.sw360.portal.common.PortalConstants"%>
+
+<portlet:resourceURL var="deleteOrphanObligationURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.REMOVE_ORPHAN_OBLIGATION%>'/>
+    <portlet:param name="<%=PortalConstants.OBLIGATION_ID%>" value="${requestScope.obligationData.id}"/>
+</portlet:resourceURL>
+
+<%-- <core_rt:set var="obligationsActionSet" value='<%=PortalConstants.PROJECT_OBLIGATIONS_ACTION_SET%>'/> --%>
+
+<!-- Obligation Edit -->
+<div id="obligation-edit">
+    <table id="editObligationsTable" class="table table-bordered" >
+        <colgroup>
+            <col />
+            <col style="width: 25%;" />
+            <col style="width: 20%;" />
+            <col style="width: 25%;" />
+            <col style="width: 12%;" />
+            <!-- <col style="width: 15%;" /> -->
+            <col style="width: 18%;" />
+            <col />
+        </colgroup>
+        <thead>
+            <tr>
+                <th class="more-info">
+                    <span title="Expand all" data-show="false">&#x25BA</span>
+                </th>
+                <th>Obligation</th>
+                <th>Licenses</th>
+                <th>Releases</th>
+                <th>Status</th>
+                <!-- Commented code for obligation action, until action select options are provided -->
+                <!-- <th>Action</th> -->
+                <th>Comment</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</div>
+<div class="dialogs auto-dialogs">
+    <div id="deleteObligationDialog" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-danger" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <clay:icon symbol="question-circle" />
+                        Delete Obligation?
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Do you really want to delete the obligation <b data-name="topic"></b>?</p>
+                    <hr/>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger">Delete Obligation</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modules/dialog'], function ($, datatables, render, button, dialog) {
+    let obligationJSON = [],
+        licenseLinks,
+        releaseLinks,
+        dataMap = new Map(),
+        actionOptions = {};
+
+    <core_rt:forEach items="${obligationsActionSet}" var="action">
+        actionOptions['${action}'] = '${action}';
+    </core_rt:forEach>
+
+    /* Print all attachment table data as array into the html page */
+    <core_rt:forEach items="${linkedObligations}" var="entry" varStatus="loop">
+        <core_rt:set var="projectObligations" value="${entry.value}" />
+            licenseLinks = [];
+            releaseLinks = [];
+
+        <core_rt:forEach items="${projectObligations.licenseIds}" var="licenseId">
+           licenseLinks.push("${licenseId}");
+        </core_rt:forEach >
+
+        <core_rt:if test="${not empty projectObligations.releases}">
+            <core_rt:forEach items="${projectObligations.releases}" var="release">
+                var fullName = '${release.name} (${release.version})';
+                releaseLinks.push({
+                    id: "${release.id}",
+                    name: fullName,
+                    attachmentId: "${release.attachments.iterator().next().attachmentContentId}"
+	            });
+            </core_rt:forEach>
+        </core_rt:if>
+
+        obligationJSON.push({
+            "DT_RowId": "${entry.key}",
+            "obligation": "${entry.key}",
+            "licenseLinks": licenseLinks,
+            "releaseLinks": releaseLinks,
+            "status": '<sw360:DisplayEnumOptions type="<%=ObligationStatus.class%>" selected="${projectObligations.status}" />',
+            /* "action": "${projectObligations.action}", */
+            "comment": "${projectObligations.comment}",
+            "text": '<sw360:out value="${projectObligations.text}" maxChar="200" />',
+            "modifiedBy": "${projectObligations.modifiedBy}",
+            "modifiedOn": "${projectObligations.modifiedOn}"
+        });
+    </core_rt:forEach >
+
+    /* create table */
+    var table = datatables.create('#editObligationsTable', {
+        "data": obligationJSON,
+        "deferRender": false, // do not change this.
+        "columns": [
+            {
+                "className": 'details-control',
+                "data": null,
+                "defaultContent": '&#x25BA'
+            },
+            { "data": "obligation", render: $.fn.dataTable.render.ellipsis },
+            { "data": "licenseLinks", "render": { display: renderLicenseLink } },
+            { "data": "releaseLinks", "render": { display: renderReleaseLink } },
+            { "data": "status", "render": { display: renderStatus } },
+            /* { "data": "action", render: $.fn.dataTable.render.inputSelect(actionOptions, '', 'obl_action toplabelledInput', 'textlabel stackedLabel') }, */
+            { "data": "comment", defaultContent: "", render: $.fn.dataTable.render.inputText('comment', 'obl_comment toplabelledInput', 'Enter comments') },
+        ],
+        "columnDefs": [
+            {
+                "targets": 0,
+                "createdCell": function (td, cellData, rowData, row, col) {
+                    $(td).attr('title', 'click the icon to toggle obligation text');
+                }
+            },
+            {
+                "targets": 5,
+                "createdCell": function (td, cellData, rowData, row, col) {
+                    $.fn.dataTable.render.inputText.updateTitle(td);
+                    $.fn.dataTable.render.inputText.useInputDialog(td, "Enter obligation comment");
+                }
+            }
+        ],
+        "createdRow": function (row, data, dataIndex, cell) {
+            if (data.releaseLinks < 1) {
+                $(row).addClass('orphan');
+                $(row).find(".details-control").removeClass('details-control').html('');
+                $(row).find("input,select").attr('disabled', true);
+            }
+            if (data.modifiedBy && data.modifiedOn) {
+                $(row).attr('title', 'Modified by: ' + data.modifiedBy + ' | Modified on: ' + data.modifiedOn);
+            }
+        },
+        "order": [[1, 'asc']],
+        "buttons": [
+            {
+                "className": 'd-none',
+                "attr": {
+                    "id": 'updateObligationsButtonHidden',
+                    "style": "display: none;"
+                },
+                "action": updateObligations
+            }
+        ],
+        "initComplete": datatables.showPageContainer
+    }, undefined, [0, 4, 5]);
+
+    function renderStatus(status, type, row) {
+        return '<select class="obl_status toplabelledInput form-control">' + status + '</select>';
+    }
+
+    function renderComment(comment, type, row, meta) {
+        return '<textarea class="obl_comment form-control" rows="1" placeholder="Enter Comment">' + comment + '</textarea>';
+    }
+
+    function renderReleaseLink(releaseLinks, type, row, meta) {
+        if (releaseLinks && releaseLinks.length > 0) {
+        let releases = [],
+            releasePortletURL = '<%=friendlyReleaseURL%>'.replace(/projects/g, "components");
+        for (let i = 0; i < releaseLinks.length; i++) {
+            releases[i] = render.linkTo(replaceFriendlyUrlParameter(releasePortletURL.toString(), releaseLinks[i].id, '<%=PortalConstants.PAGENAME_RELEASE_DETAIL%>'), releaseLinks[i].name);
+        }
+        return render.renderExpandableUrls(releases, 'Release', 25);
+        } else {
+            return getOrphanObligationMessage();
+        }
+    }
+
+    function getOrphanObligationMessage() {
+        return '<span title="This obligation is not associated with linked release">' +
+            'Orphaned <svg class="delete lexicon-icon float-right m-1 one action"><title>Delete</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/></svg> </span>';
+    }
+
+    function renderLicenseLink(licenseLinks, type, row) {
+        let licenses = [],
+            licensePortletURL = '<%=friendlyLicenseURL%>'.replace(/projects/g, "licenses");
+        for (let i = 0; i < licenseLinks.length; i++) {
+            licenses[i] = render.linkTo(replaceFriendlyUrlParameter(licensePortletURL.toString(), licenseLinks[i], '<%=PortalConstants.PAGENAME_DETAIL%>'), licenseLinks[i]);
+        }
+        return render.renderExpandableUrls(licenses, 'License', 21);
+    }
+
+    function replaceFriendlyUrlParameter(portletUrl, id, page) {
+        return portletUrl
+            .replace('<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>', page)
+            .replace('<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>', id);
+    }
+
+    /* Add event listener for change in any editable fields in table */
+    $("#editObligationsTable tbody").on("change", 'td select.obl_status', function () {
+        storeData($(this));
+    });
+
+    /* $("#editObligationsTable tbody").on("change", 'td select.obl_action',function () {
+        storeData($(this));
+    }); */
+
+    $("#editObligationsTable tbody").on("change", 'td input.obl_comment', function () {
+        if ($(this).closest('tr').find("input.obl_comment").val()) {
+            storeData($(this));
+        }
+    });
+
+    function storeData(thisObj) {
+        let $tr = thisObj.closest("tr");
+        if (!$tr.hasClass('orphan')) {
+            dataMap.set($tr.prop('id'), '');
+        }
+    }
+
+    /* Add event listener for deleting individual obligations */
+    $("#editObligationsTable tbody").on("click", 'svg.delete', function () {
+        let tr = $(this).closest("tr");
+        deleteObligation(tr);
+    });
+
+    // delete action
+    function deleteObligation(tr) {
+        var $dialog,
+            topic = $(tr).prop('id');
+
+        function deleteObligationInternal(callback) {
+            jQuery.ajax({
+                type: 'POST',
+                url: '<%=deleteOrphanObligationURL%>',
+                cache: false,
+                data: {
+                    "<portlet:namespace/><%=PortalConstants.OBLIGATION_TOPIC%>": topic
+                },
+                success: function (data) {
+                    callback();
+                    if (data.result == 'SUCCESS') {
+                        table.row('#' + topic).remove().draw(false);
+                        $dialog.close();
+                        let count = $('#detailTab #obligtionsCount').text(),
+                            fulfilled = count.split(' / ')[0],
+                            total = Number(count.split(' / ')[1]) - 1,
+                            status = $(tr).find('td select.obl_status option:selected').text();
+                        if (status.toUpperCase() === 'FULFILLED') {
+                            fulfilled = Number(fulfilled) - 1;
+                        }
+                        $('#detailTab #obligtionsCount').html(fulfilled + ' / ' + total);
+                    }
+                    else {
+                        $dialog.alert("I could not delete the obligation!");
+                    }
+                },
+                error: function () {
+                    callback();
+                    $dialog.alert("Failed to delete the obligation!");
+                }
+            });
+        }
+
+        $dialog = dialog.open('#deleteObligationDialog', {
+            topic: topic
+        }, function(submit, callback) {
+            deleteObligationInternal(callback);
+        });
+    }
+
+    /* Add event listener for opening and closing list of licenses */
+    $('#editObligationsTable tbody').on('click', 'td .TogglerLicenseList', function () {
+        render.toggleExpandableList($(this), 'License');
+    });
+
+    /* Add event listener for opening and closing list of releases */
+    $('#editObligationsTable tbody').on('click', 'td .TogglerReleaseList', function () {
+        render.toggleExpandableList($(this), 'Release');
+    });
+
+    /* Add event listener for opening and closing individual child row */
+    $('#editObligationsTable').on('click', 'td.details-control', function () {
+        render.toggleChildRow($(this), table);
+    });
+
+    /* Add event listener for opening and closing all the child rows */
+    $('#editObligationsTable thead').on('click', 'th.more-info', function() {
+        render.toggleAllChildRows($(this), table);
+    });
+
+    /*
+     * Define function for child row creation, which will contain obligation text for a clicked table row
+     */
+    function createChildRow(rowData) {
+        let childHtmlString = '' +
+            '<div>' +
+            '<span>' + rowData.text + '</span>' +
+            '</div>';
+        return childHtmlString;
+    }
+
+    /* collect all the obligation status */
+    function updateObligations(event, data, node, config) {
+        let btnData = node.data(),
+            date = new Date().toISOString().split('T')[0],
+            isDeleteAllOrphanObligations = $('input[name="deleteAllOrphanObligations"]').is(":checked"),
+            obligationMap = new Map();
+
+        if (dataMap.size < 1 && !isDeleteAllOrphanObligations) {
+            return;
+        }
+
+        table.rows().every(function (rowIdx, tableLoop, rowLoop) {
+            let rowData = this.data(),
+                mapKey = rowData.obligation,
+                releaseToAcceptedCLIMap = new Map(),
+                ids = [];
+            for (release of rowData.releaseLinks) {
+                releaseToAcceptedCLIMap[release.id] = release.attachmentId;
+            }
+            let mapValue = {
+                licenseIds: rowData.licenseLinks,
+                releaseIdToAcceptedCLI: releaseToAcceptedCLIMap
+            };
+            if (dataMap.has(mapKey)) {
+                $node = $(this.node()),
+                mapValue.status = $node.find('select.obl_status option:selected').val();
+                /* mapValue.action = $node.find("select.obl_action option:selected").val(); */
+                mapValue.comment = $node.find("input.obl_comment").val();
+                mapValue.modifiedOn = date;
+            }
+            obligationMap.set(mapKey, mapValue);
+        });
+
+        jsonObject = {};
+        for (const [key, value] of obligationMap.entries()) {
+            jsonObject[key] = value;
+        }
+        $('#projectEditForm').append('<input id="deleteAllOrphanObligations" type="hidden" name="<portlet:namespace/><%=PortalConstants.DELETE_ALL_ORPHAN_OBLIGATIONS%>"/>');
+        $("#deleteAllOrphanObligations").val(isDeleteAllOrphanObligations);
+        $('#projectEditForm').append('<input id="obligationData" type="hidden" name="<portlet:namespace/><%=PortalConstants.OBLIGATION_DATA%>"/>');
+        $("#obligationData").val(JSON.stringify(jsonObject));
+        dataMap.clear();
+        obligationMap.clear();
+    }
+});
+</script>

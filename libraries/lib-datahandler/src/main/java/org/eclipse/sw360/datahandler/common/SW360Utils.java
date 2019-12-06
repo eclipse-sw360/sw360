@@ -67,7 +67,6 @@ public class SW360Utils {
     public static final String FORMAT_DATE = "yyyy-MM-dd";
     public static final String FORMAT_DATE_TIME = "yyyy-MM-dd HH:mm:ss";
     public static final Comparator<ReleaseLink> RELEASE_LINK_COMPARATOR = Comparator.comparing(rl -> getReleaseFullname(rl.getVendor(), rl.getName(), rl.getVersion()).toLowerCase());
-
     private static final ObjectMapper objectMapper;
 
     private static Joiner spaceJoiner = Joiner.on(" ");
@@ -235,7 +234,6 @@ public class SW360Utils {
     public static List<Attachment> getApprovedClxAttachmentForRelease(Release release) {
         Predicate<Attachment> isApprovedCLI = attachment -> attachment.getCheckStatus().equals(CheckStatus.ACCEPTED)
                 && AttachmentType.COMPONENT_LICENSE_INFO_XML.equals(attachment.getAttachmentType());
-
         return release.getAttachments().stream().filter(isApprovedCLI).collect(Collectors.toList());
     }
 

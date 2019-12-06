@@ -46,6 +46,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
+import static org.eclipse.sw360.datahandler.common.SW360Assert.assertId;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.fail;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getBUFromOrganisation;
@@ -71,6 +72,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private final ProjectRepository repository;
     private final ProjectVulnerabilityRatingRepository pvrRepository;
+    private final ProjectObligationRepository obligationRepository;
     private final ProjectModerator moderator;
     private final AttachmentConnector attachmentConnector;
     private final ComponentDatabaseHandler componentDatabaseHandler;
@@ -109,6 +111,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         // Create the repositories
         repository = new ProjectRepository(db);
         pvrRepository = new ProjectVulnerabilityRatingRepository(db);
+        obligationRepository = new ProjectObligationRepository(db);
 
         // Create the moderator
         this.moderator = moderator;
@@ -221,12 +224,29 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
     }
 
-    public void updateProjectForObligations(String id, Map<String, ObligationStatusInfo> obligationStatusMap) {
-        log.info("Updating linked obligations of project: " + id + ", as previously accepted CLI file was changed.");
-        Project project = repository.get(id);
-        project.setLinkedObligations(obligationStatusMap);
+    public ProjectObligation getLinkedObligations(String obligationId, User user) throws TException {
+        ProjectObligation obligation = obligationRepository.get(obligationId);
+        assertNotNull(obligation);
+        assertId(obligation.getProjectId());
+        return obligation;
+    }
+
+    public RequestStatus addLinkedObligations(ProjectObligation obligation, User user) throws TException {
+        ThriftValidate.prepareProjectObligation(obligation);
+        obligationRepository.add(obligation);
+        Project project = repository.get(obligation.getProjectId());
+        project.setLinkedObligationId(obligation.getId());
         repository.update(project);
-        log.info("Successfully updated linked obligations of project: " + id);
+        return RequestStatus.SUCCESS;
+    }
+
+    public RequestStatus updateLinkedObligations(ProjectObligation obligation, User user) throws TException {
+        Project project = getProjectById(obligation.getProjectId(), user);
+        if (makePermission(project, user).isActionAllowed(RequestedAction.WRITE)) {
+            obligationRepository.update(obligation);
+            return RequestStatus.SUCCESS;
+        }
+        return RequestStatus.FAILURE;
     }
 
     private void setReleaseRelations(Project updated, User user, Project current) {
@@ -282,26 +302,25 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return true;
     }
 
-    private Map<String, ObligationStatusInfo> deleteObligationsOfUnlinkedReleases(Project updated) {
+    private ProjectObligation deleteObligationsOfUnlinkedReleases(Project updated) {
+        ProjectObligation obligation = obligationRepository.get(updated.getLinkedObligationId());
         Set<String> updatedLinkedReleaseIds = nullToEmptyMap(updated.getReleaseIdToUsage()).keySet();
         // return null if no linked releases in updated project.
         if (CommonUtils.isNullOrEmptyCollection(updatedLinkedReleaseIds)) {
-            return null;
+            obligation.unsetLinkedObligations();
+            return obligation;
         }
-        Map<String, ObligationStatusInfo> updatedOsInfoMap = nullToEmptyMap(updated.getLinkedObligations());
-        // using iterator to remove the entries without release
+        Map<String, ObligationStatusInfo> updatedOsInfoMap = nullToEmptyMap(obligation.getLinkedObligations());
         for (Iterator<Map.Entry<String, ObligationStatusInfo>> it = updatedOsInfoMap.entrySet().iterator(); it.hasNext();) {
             Map.Entry<String, ObligationStatusInfo> entry = it.next();
             Map<String, String> releaseIdToAcceptedCLI = entry.getValue().getReleaseIdToAcceptedCLI();
-            // intersection of release present in updated and current project.
-            Set<String> releaseIds = Sets.intersection(releaseIdToAcceptedCLI.keySet(), updatedLinkedReleaseIds);
-            releaseIdToAcceptedCLI.keySet().retainAll(releaseIds);
-            // remove the obligations without releases.
+            releaseIdToAcceptedCLI.keySet().retainAll(updatedLinkedReleaseIds);
             if (releaseIdToAcceptedCLI.isEmpty()) {
                 it.remove();
             }
         }
-        return updatedOsInfoMap;
+        obligation.setLinkedObligations(updatedOsInfoMap);
+        return obligation;
     }
 
     private void updateProjectDependentLinkedFields(Project updated, Project actual) throws SW360Exception {
@@ -312,8 +331,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         // update the obligations only if linked obligations were present in current project,
         // and there is change in linked releases in updated project
-        if (actual.getLinkedObligationsSize() > 0 && !actualLinkedReleaseIds.equals(updatedLinkedReleaseIds)) {
-            updated.setLinkedObligations(deleteObligationsOfUnlinkedReleases(updated));
+        if (CommonUtils.isNotNullEmptyOrWhitespace(actual.getLinkedObligationId()) && !actualLinkedReleaseIds.equals(updatedLinkedReleaseIds)) {
+            obligationRepository.update(deleteObligationsOfUnlinkedReleases(updated));
         }
     }
 
@@ -382,6 +401,9 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         attachmentConnector.deleteAttachments(project.getAttachments());
         attachmentDatabaseHandler.deleteUsagesBy(Source.projectId(project.getId()));
         repository.remove(project);
+        if (project.isSetLinkedObligationId()) {
+            obligationRepository.remove(project.getLinkedObligationId());
+        }
         moderator.notifyModeratorOnDelete(project.getId());
     }
 

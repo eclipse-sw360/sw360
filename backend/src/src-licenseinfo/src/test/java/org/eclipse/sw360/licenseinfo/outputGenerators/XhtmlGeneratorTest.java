@@ -13,6 +13,7 @@
 package org.eclipse.sw360.licenseinfo.outputGenerators;
 
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
+import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 
 import org.dom4j.Document;
@@ -134,11 +135,12 @@ public class XhtmlGeneratorTest {
         p.setLicenseInfoHeaderText("Lorem");
         p.setObligationsText("Ipsum");
         Map<String, String> externalIds = Collections.emptyMap();
+        Map<String, ObligationStatusInfo> obligationsStatus = Collections.emptyMap();
 
-        xmlString = xhtmlGenerator.generateOutputFile(lipresults, p, obligationResults, null, externalIds);
-        xmlString2 = xhtmlGenerator.generateOutputFile(lipresults2, p, obligationResults, null, externalIds);
-        xmlString3 = xhtmlGenerator.generateOutputFile(lipresults3, p, obligationResults, null, externalIds);
-        xmlStringEmpty = xhtmlGenerator.generateOutputFile(lipresultsEmpty, p, obligationResults, null, externalIds);
+        xmlString = xhtmlGenerator.generateOutputFile(lipresults, p, obligationResults, null, externalIds, obligationsStatus);
+        xmlString2 = xhtmlGenerator.generateOutputFile(lipresults2, p, obligationResults, null, externalIds, obligationsStatus);
+        xmlString3 = xhtmlGenerator.generateOutputFile(lipresults3, p, obligationResults, null, externalIds, obligationsStatus);
+        xmlStringEmpty = xhtmlGenerator.generateOutputFile(lipresultsEmpty, p, obligationResults, null, externalIds, obligationsStatus);
 
         generateDocumentsFromXml();
     }

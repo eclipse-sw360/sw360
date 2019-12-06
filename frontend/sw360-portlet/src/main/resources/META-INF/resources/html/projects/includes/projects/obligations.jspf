@@ -35,8 +35,8 @@
         </colgroup>
         <thead>
             <tr>
-                <th>
-                    <span class="more-info shown" title="Expand the icon to see obligation text" data-show="false">&#x25BA</span>
+                <th class="more-info">
+                    <span title="Expand all" data-show="false">&#x25BA</span>
                 </th>
                 <th>Obligation</th>
                 <th>Licenses</th>
@@ -59,7 +59,7 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
         releaseNames;
 
     /* Print all attachment table data as array into the html page */
-    <core_rt:forEach items="${project.linkedObligations}" var="entry" varStatus="loop">
+    <core_rt:forEach items="${linkedObligations}" var="entry" varStatus="loop">
         <core_rt:set var="projectObligations" value="${entry.value}" />
         licenseIds = [];
         releaseIds = [];
@@ -69,12 +69,15 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
             licenseIds.push("${licenseId}");
         </core_rt:forEach >
 
-        <core_rt:forEach items="${projectObligations.releases}" var="release">
-            releaseIds.push("${release.id}");
-            releaseNames.push("${release.name} (${release.version})");
-        </core_rt:forEach >
+        <core_rt:if test="${not empty projectObligations.releases}">
+            <core_rt:forEach items="${projectObligations.releases}" var="release">
+                releaseIds.push("${release.id}");
+                releaseNames.push("${release.name} (${release.version})");
+            </core_rt:forEach >
+        </core_rt:if>
 
         obligationJSON.push({
+            "DT_RowId": "${entry.key}",
             "obligation": '${entry.key}',
             "lIds": licenseIds.join(', <br>'),
             "rIds": releaseIds,
@@ -96,7 +99,7 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
             {
                 "className": 'details-control',
                 "data": null,
-                "defaultContent": ''
+                "defaultContent": '&#x25BA'
             },
             { "data": "obligation", render: $.fn.dataTable.render.ellipsis },
             { "data": "lIds", "render": { display: renderLicenseLink } },
@@ -106,6 +109,12 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
             { "data": "comment", render: $.fn.dataTable.render.ellipsis },
         ],
         "columnDefs": [
+            {
+                "targets": 0,
+                "createdCell": function (td, cellData, rowData, row, col) {
+                    $(td).attr('title', 'click the icon to toggle obligation text');
+                }
+            },
             {
                 "targets": 4,
                 "createdCell": function (td, cellData, rowData, row, col) {
@@ -121,6 +130,10 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
             }
         ],
         'createdRow': function (row, data, dataIndex, cell) {
+            if (data.rIds < 1) {
+                $(row).addClass('orphan');
+                $(row).find(".details-control").removeClass('details-control').html('');
+            }
             if (data.modifiedBy && data.modifiedOn) {
                 $(row).attr('title', 'Modified by: ' + data.modifiedBy + ' | Modified on: ' + data.modifiedOn);
             }
@@ -130,13 +143,17 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
     }, [1, 2, 3, 4, 5], [0, 5]);
 
     function renderReleaseLink(rNames, type, row) {
-        var releaseLinks = [],
-            releaseNames = rNames.split(", <br>"),
-            releasePortletURL = '<%=friendlyReleaseURL%>'.replace(/projects/g, "components");
-        for (var i = 0; i < releaseNames.length; i++) {
-            releaseLinks[i] = render.linkTo(replaceFriendlyUrlParameter(releasePortletURL.toString(), row.rIds[i], '<%=PortalConstants.PAGENAME_RELEASE_DETAIL%>'), releaseNames[i]);
+        if (row.rIds && row.rIds.length > 0) {
+            var releaseLinks = [],
+                releaseNames = rNames.split(", <br>"),
+                releasePortletURL = '<%=friendlyReleaseURL%>'.replace(/projects/g, "components");
+            for (var i = 0; i < releaseNames.length; i++) {
+                releaseLinks[i] = render.linkTo(replaceFriendlyUrlParameter(releasePortletURL.toString(), row.rIds[i], '<%=PortalConstants.PAGENAME_RELEASE_DETAIL%>'), releaseNames[i]);
+            }
+            return render.renderExpandableUrls(releaseLinks, 'Release', 28);
+        } else {
+            return '<span title="This obligation is not associated with linked release">Orphaned</span>';
         }
-        return render.renderExpandableUrls(releaseLinks, 'Release', 28);
     }
 
     function renderLicenseLink(lIds, type, row) {
@@ -165,31 +182,14 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
         render.toggleExpandableList($(this), 'Release');
     });
 
-    /* Add event listener for opening and closing details as child row */
-    $('#obligationsDetailTable thead').on('click', 'th .more-info', function() {
-        var textShown = $(this).attr('data-show');
-        table.rows().every(function (rowIdx, tableLoop, rowLoop) {
-            var tr = $(this.node()),
-                row = table.row(tr);
+    /* Add event listener for opening and closing individual child row */
+    $('#obligationsDetailTable tbody').on('click', 'td.details-control', function () {
+        render.toggleChildRow($(this), table);
+    });
 
-            if (row.child.isShown()) {
-                row.child.hide();
-                tr.removeClass('shown');
-                row.child().removeClass('active')
-            } else {
-                row.child(createChildRow(row.data())).show();
-                tr.addClass('shown');
-                row.child().addClass('active')
-            }
-        });
-
-        if (textShown === 'false') {
-            $(this).attr('data-show', 'true');
-            $(this).html('&#x25BC');
-        } else {
-            $(this).attr('data-show', 'false');
-            $(this).html('&#x25BA')
-        }
+    /* Add event listener for opening and closing all the child rows */
+    $('#obligationsDetailTable thead').on('click', 'th.more-info', function() {
+        render.toggleAllChildRows($(this), table);
     });
 
     /*
@@ -198,10 +198,8 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
     function createChildRow(rowData) {
         var childHtmlString = '' +
             '<div>' +
-            '<span class="dataTableChildRowCell" style="padding-right: 10px; width: 10%;"/>' +
-            '<span class="dataTableChildRowCell" style="padding-right: 50px; width: 90%;">' + rowData.text + '</span>' +
+            '<span>' + rowData.text + '</span>' +
             '</div>';
-
         return childHtmlString;
     }
 });

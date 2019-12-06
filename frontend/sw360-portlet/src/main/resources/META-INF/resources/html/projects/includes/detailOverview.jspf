@@ -34,16 +34,14 @@
 							<core_rt:when test="${approvedObligationsCount == 0}">
 							class="badge badge-danger"
 							</core_rt:when>
-							<core_rt:when test="${approvedObligationsCount == project.linkedObligations.size()}">
+							<core_rt:when test="${approvedObligationsCount == linkedObligations.size()}">
 							class="badge badge-success"
 							</core_rt:when>
 							<core_rt:otherwise>
 							class="badge badge-light"
 							</core_rt:otherwise>
 						</core_rt:choose>
-					>
-						${approvedObligationsCount} / ${project.linkedObligations.size()}
-					</span>
+					>${approvedObligationsCount} / ${linkedObligations.size()}</span>
 				</core_rt:if>
 			</a>
 			</core_rt:if>
@@ -137,12 +135,12 @@
 								</div>
 							</div>
 							<div class="list-group-companion" data-belong-to="tab-Obligations">
-								<core_rt:if test="${isObligationPresent}">
+								<core_rt:if test="${isProjectObligationsEnabled and isObligationPresent}">
 									<div class="nav nav-pills justify-content-center bg-light font-weight-bold" id="pills-tab" role="tablist">
 										<a class="nav-item nav-link active" id="pills-obligations-tab" data-toggle="pill" href="#pills-obligationsView" role="tab" aria-controls="pills-obligationsView" aria-selected="true">
-										View Obligations</a>
+										Obligations View</a>
 										<a class="nav-item nav-link" id="pills-releases-tab" data-toggle="pill" href="#pills-releasesView" role="tab" aria-controls="pills-releasesView" aria-selected="false">
-										View by Releases</a>
+										Release View</a>
 									</div>
 								</core_rt:if>
 							</div>
@@ -197,9 +195,11 @@
 		                <div id="tab-ClearingStatus" class="tab-pane <core_rt:if test="${selectedTab == 'tab-ClearingStatus'}">active show</core_rt:if>">
 		                    <%@include file="/html/projects/includes/projects/clearingStatus.jspf" %>
 		                </div>
-		                <div id="tab-Obligations"  class="tab-pane <core_rt:if test="${selectedTab == 'tab-Obligations'}">active show</core_rt:if>">
-		                    <%@include file="/html/projects/includes/projects/linkedObligations.jspf" %>
-		                </div>
+		                <core_rt:if test="${isProjectObligationsEnabled}">
+		                    <div id="tab-Obligations"  class="tab-pane <core_rt:if test="${selectedTab == 'tab-Obligations'}">active show</core_rt:if>">
+		                        <%@include file="/html/projects/includes/projects/linkedObligations.jspf" %>
+		                    </div>
+		                </core_rt:if>
 		                <div id="tab-ECCStatus" class="tab-pane <core_rt:if test="${selectedTab == 'tab-ECCStatus'}">active show</core_rt:if>">
 		                    <%@include file="/html/projects/includes/projects/eccStatus.jspf" %>
 		                </div>
