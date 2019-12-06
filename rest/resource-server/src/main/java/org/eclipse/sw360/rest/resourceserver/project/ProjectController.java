@@ -123,7 +123,9 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
     @RequestMapping(value = PROJECTS_URL, method = RequestMethod.GET)
     public ResponseEntity<Resources<Resource<Project>>> getProjectsForUser(
             @RequestParam(value = "name", required = false) String name,
-            @RequestParam(value = "type", required = false) String projectType) throws TException {
+            @RequestParam(value = "type", required = false) String projectType,
+            @RequestParam(value = "group", required = false) String group,
+            @RequestParam(value = "tag", required = false) String tag) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<Project> sw360Projects = new ArrayList<>();
         if (name != null && !name.isEmpty()) {
@@ -135,8 +137,11 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         List<Resource<Project>> projectResources = new ArrayList<>();
         sw360Projects.stream()
                 .filter(project -> projectType == null || projectType.equals(project.projectType.name()))
+                .filter(project -> group == null || group.equals(project.getBusinessUnit()))
+                .filter(project -> tag == null || tag.equals(project.getTag()))
                 .forEach(p -> {
                     Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
+                    embeddedProject.setVisbility(p.getVisbility());
                     projectResources.add(new Resource<>(embeddedProject));
                 });
 
