@@ -475,4 +475,30 @@ public class FossologyHandler implements FossologyService.Iface {
         return release.getName() + "-" + release.getVersion() + "-" + dateTimeFormatter.format(now) + "-SPDX.rdf";
     }
 
+    @Override
+    public RequestStatus triggerReportGenerationFossology(String releaseId, User user) throws TException {
+        Iface componentClient = thriftClients.makeComponentClient();
+        Release release = componentClient.getReleaseById(releaseId, user);
+        Set<ExternalToolProcess> fossologyProcesses = SW360Utils.getNotOutdatedExternalToolProcessesForTool(release,
+                ExternalTool.FOSSOLOGY);
+        if (isIllegalStateFossologyProcesses(releaseId, fossologyProcesses)) {
+            return RequestStatus.FAILURE;
+        }
+        if (fossologyProcesses.size() == 0) {
+            log.info("No FOSSology process found for release with id {}.", releaseId);
+            return RequestStatus.FAILURE;
+        } else if (fossologyProcesses.size() == 1) {
+            ExternalToolProcess extToolProcess = fossologyProcesses.iterator().next();
+            if (extToolProcess.getProcessSteps().size() > 2) {
+                extToolProcess.getProcessSteps().get(extToolProcess.getProcessSteps().size() - 1)
+                        .setStepStatus(ExternalToolProcessStatus.NEW);
+            } else {
+                log.info("Either the source of release with id {} is not yet uploaded or not yet scanned", releaseId);
+                return RequestStatus.FAILURE;
+            }
+            handleReportStep(componentClient, release, user, extToolProcess);
+            return RequestStatus.SUCCESS;
+        }
+        return RequestStatus.SUCCESS;
+    }
 }

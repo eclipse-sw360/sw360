@@ -54,4 +54,9 @@ service FossologyService {
      **/
     RequestStatus markFossologyProcessOutdated(1: string releaseId, 2: User user);
 
+    /**
+     * only trigger the report generation for already scanned documents.
+     **/
+    RequestStatus triggerReportGenerationFossology(1: string releaseId, 2: User user);
+
 }

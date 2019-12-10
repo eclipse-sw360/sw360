@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
@@ -556,7 +557,7 @@ public class SW360Utils {
      */
     public static ExternalToolProcessStep getExternalToolProcessStepOfFirstProcessForTool(Release release,
             ExternalTool et, String stepName) {
-        if (release == null || et == null || StringUtils.isEmpty(stepName)) {
+        if (release == null || et == null || CommonUtils.isNullEmptyOrWhitespace(stepName)) {
             return null;
         }
 
@@ -564,7 +565,7 @@ public class SW360Utils {
                 .stream() //
                 .findFirst() //
                 .map(ExternalToolProcess::getProcessSteps) //
-                .get() //
+                .orElseGet(Lists::newArrayList)//
                 .stream() //
                 .filter(etps -> stepName.equals(etps.getStepName())) //
                 .findFirst() //

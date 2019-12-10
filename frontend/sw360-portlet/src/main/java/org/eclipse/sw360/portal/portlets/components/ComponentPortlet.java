@@ -43,6 +43,7 @@ import org.eclipse.sw360.datahandler.thrift.codescoop.CodescoopService;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.cvesearch.CveSearchService;
 import org.eclipse.sw360.datahandler.thrift.cvesearch.VulnerabilityUpdateStatus;
+import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
@@ -68,6 +69,7 @@ import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
 import org.apache.thrift.protocol.TSimpleJSONProtocol;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
+import org.apache.commons.lang.StringUtils;
 
 import javax.portlet.*;
 import javax.portlet.filter.ResourceRequestWrapper;
@@ -75,6 +77,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -110,6 +114,8 @@ import static org.eclipse.sw360.portal.common.PortletUtils.getVerificationState;
     configurationPolicy = ConfigurationPolicy.REQUIRE
 )
 public class ComponentPortlet extends FossologyAwarePortlet {
+
+    private static final String QUERY_PARAMS_FOSSOLOGY = "?mod=showjobs&upload=";
 
     private static final Logger log = Logger.getLogger(ComponentPortlet.class);
 
@@ -159,6 +165,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             Component._Fields.VENDOR_NAMES,
             Component._Fields.COMPONENT_TYPE,
             Component._Fields.MAIN_LICENSE_IDS);
+
+    private static final String CONFIG_KEY_URL = "url";
 
     //! Serve resource and helpers
     @Override
@@ -220,6 +228,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             serveFossologyProcess(request, response);
         } else if (PortalConstants.FOSSOLOGY_ACTION_OUTDATED.equals(action)) {
             serveFossologyOutdated(request, response);
+        } else if (PortalConstants.FOSSOLOGY_ACTION_RELOAD_REPORT.equals(action)) {
+            serveFossologyReloadReport(request, response);
         } else {
             log.error("Unknown action parameter <" + action + ">, so no action has been performed!");
             renderRequestStatus(request, response, RequestStatus.FAILURE);
@@ -1234,12 +1244,24 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
         try {
             ComponentService.Iface client = thriftClients.makeComponentClient();
+            FossologyService.Iface fossologyClient = thriftClients.makeFossologyClient();
             Component component;
             Release release = null;
 
             if (!isNullOrEmpty(releaseId)) {
                 release = client.getReleaseById(releaseId, user);
 
+                ExternalToolProcessStep processStep = SW360Utils.getExternalToolProcessStepOfFirstProcessForTool(
+                        release, ExternalTool.FOSSOLOGY, FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD);
+                ConfigContainer fossologyConfig = fossologyClient.getFossologyConfig();
+                Map<String, Set<String>> configKeyToValues = fossologyConfig.getConfigKeyToValues();
+                String fossologyJobsViewLink = null;
+                if (!configKeyToValues.isEmpty()) {
+                    fossologyJobsViewLink = createFossologyJobViewLink(processStep, configKeyToValues,
+                            fossologyJobsViewLink);
+                }
+
+                request.setAttribute(FOSSOLOGY_JOB_VIEW_LINK, fossologyJobsViewLink);
                 request.setAttribute(RELEASE_ID, releaseId);
                 request.setAttribute(RELEASE, release);
                 request.setAttribute(DOCUMENT_ID, releaseId);
@@ -1271,6 +1293,38 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             log.error("Error fetching release from backend!", e);
             setSW360SessionError(request, ErrorMessages.ERROR_GETTING_RELEASE);
         }
+
+    }
+
+    private String createFossologyJobViewLink(ExternalToolProcessStep processStep,
+            Map<String, Set<String>> configKeyToValues, String fossologyJobsViewLink) {
+        String uploadId = null;
+        if (processStep != null) {
+            uploadId = processStep.getResult();
+        }
+        String url = configKeyToValues.get(CONFIG_KEY_URL).stream().findFirst().orElse(StringUtils.EMPTY);
+        String fossologyHostName = null;
+        String fossologyPath = null;
+        String protocol = null;
+        String portStr = StringUtils.EMPTY;
+        try {
+            URI fossologyRestURI = new URI(url);
+            fossologyHostName = fossologyRestURI.getHost();
+            fossologyPath = fossologyRestURI.getPath();
+            fossologyPath = fossologyPath.substring(0,fossologyPath.indexOf("/api/v"));
+            protocol = fossologyRestURI.getScheme();
+            int port = fossologyRestURI.getPort();
+            portStr = port == -1 ? StringUtils.EMPTY : ":" + port;
+        } catch (URISyntaxException e) {
+            log.error("Error creating URI from fossology REST Link.." + url);
+        }
+        if (!CommonUtils.isNullEmptyOrWhitespace(fossologyHostName)
+                && !CommonUtils.isNullEmptyOrWhitespace(uploadId)
+                && !CommonUtils.isNullEmptyOrWhitespace(protocol)) {
+            fossologyJobsViewLink = protocol + "://" + fossologyHostName + portStr + fossologyPath + "/"
+                    + QUERY_PARAMS_FOSSOLOGY + uploadId;
+        }
+        return fossologyJobsViewLink;
 
     }
 
