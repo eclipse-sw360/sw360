@@ -40,6 +40,7 @@ import org.eclipse.sw360.portal.users.UserCacheHolder;
 
 import javax.portlet.PortletRequest;
 import javax.portlet.ResourceRequest;
+import javax.portlet.RenderRequest;
 
 import java.util.*;
 import java.util.function.Function;
@@ -61,6 +62,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 public class PortletUtils {
 
     private static final Logger LOGGER = Logger.getLogger(PortletUtils.class);
+    private static final String TEMPLATE_FILE = "/welcomePageGuideline.html";
 
     private PortletUtils() {
         // Utility class with only static functions
@@ -406,5 +408,14 @@ public class PortletUtils {
     public static Comparator<Project> compareByDescription(boolean isAscending) {
         Comparator<Project> comparator = Comparator.comparing(p -> nullToEmptyString(p.getDescription()));
         return isAscending ? comparator : comparator.reversed();
+    }
+
+    public static void setWelcomePageGuideLine(RenderRequest request) {
+        String welcomePageGuideLine = null;
+        if (PortalConstants.CUSTOM_WELCOME_PAGE_GUIDELINE) {
+            welcomePageGuideLine = new String(
+                    CommonUtils.loadResource(PortletUtils.class, TEMPLATE_FILE).orElse(new byte[0]));
+        }
+        request.setAttribute("welcomePageGuideLine", welcomePageGuideLine);
     }
 }

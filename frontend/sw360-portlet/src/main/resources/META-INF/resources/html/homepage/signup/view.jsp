@@ -30,12 +30,17 @@
 </portlet:actionURL>
 
 <div class="jumbotron">
-	<h1 class="display-4">Welcome to SW360!</h1>
-	<p class="lead">
+    <core_rt:if test="${not empty welcomePageGuideLine}">
+        ${welcomePageGuideLine}
+    </core_rt:if>
+    <core_rt:if test="${empty welcomePageGuideLine}">
+        <h1 class="display-4">Welcome to SW360!</h1>
+        <p class="lead">
 		SW360 is an open source software project that provides both a web application and a repository to collect,
 		organize and make available information about software components. It establishes a central hub for software
 		components in an organization.
-	</p>
+        </p>
+    </core_rt:if>
 	<hr class="my-4">
 	<core_rt:if test="${themeDisplay.signedIn}">
 		<h3>You are signed in, please go ahead using SW360!</h3>

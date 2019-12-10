@@ -12,11 +12,17 @@ package org.eclipse.sw360.portal.portlets.homepage.welcome;
 
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCPortlet;
 
+import org.eclipse.sw360.portal.common.PortletUtils;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 
 import javax.portlet.Portlet;
+import javax.portlet.PortletException;
+import javax.portlet.RenderRequest;
+import javax.portlet.RenderResponse;
 
 import static org.eclipse.sw360.portal.common.PortalConstants.WELCOME_PORTLET_NAME;
+
+import java.io.IOException;
 
 @org.osgi.service.component.annotations.Component(
     immediate = true,
@@ -37,4 +43,9 @@ import static org.eclipse.sw360.portal.common.PortalConstants.WELCOME_PORTLET_NA
     configurationPolicy = ConfigurationPolicy.REQUIRE
 )
 public class WelcomePortlet extends MVCPortlet {
+    @Override
+    public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
+        PortletUtils.setWelcomePageGuideLine(request);
+        super.doView(request, response);
+    }
 }
