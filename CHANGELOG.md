@@ -4,6 +4,59 @@ This is the changelog file of the sw360 software. It starts with the first relea
 
 https://github.com/sw360/sw360portal
 
+## sw360-6.0.0-M1
+
+This release covers as the biggest change the new integration with the FOSSology REST API. It replaces the previous integration using an ssh login. It requires a migration of the couchdb database. More information about the scripts can be found in `scripts/migrations/README.md`.
+
+Apart from changing the integration with FOSSology from ssh to the REST API, the entire data structure has been changed to be tool agnostic: A data structure for external tool requests replaces the info for the FOSSology upload. In future, albeit not supported today by the UI, also other tools could be integrated using the same data structure.
+
+*Warning* Although the was much care for migrating existing data. It may happen with old datasets where source code attachments have been transferred to FOSSology using the ssh integration, the migration fails. For those datasets, the data must be changed manually. For example, just remove the status values.
+
+*Warning* Migrations run per default in dry run mode, meaning that no changes are written to the database. After you have reviewed the changes (and checked that the scripts runs), you must change the `DRY_RUN` variable accordingly to `False`.
+
+Two notable more features are provided by this release:
+
+* Management for project obligations
+* Merging release and vendor records added
+
+### New Features
+
+* `653a7e3` feat(ProjectUI): added project obligation logic on change of accepted license file
+* `648755a` feat(REST): Added parameter to GET project by Group and Tag
+* `8eae7d3` feat(rest): get attachmentUsages for a project
+* `b8549de` feat(REST): linked release hierarchy is included in the response
+* `1bc03f9` feat(Project-UI) License Obligation tracker at Project Level
+* `1f506f2` feat(Rest): New end points for project/component/release usage summary
+* `176557a` feat(moderation): Moderation requests to all clearing admin irrespective of their group
+* `82977a0` feature(merge): add wizard for merging vendors
+* `e476f39` feat(rest): Added support to add role category fields while creating project
+* `86afeef` feat(Projects): enabled Project/Release mainline state change only for clearing admins
+* `578f53c` feat(fossology-rest): replaced ssh communication to fossology with REST
+* `d19f658` feat(external-tool-request): added general datastructure for external tool requests
+* `71535e6` feat(Authorization): Added support to read keystore from central configuration
+* `43bd667` feature(release): add release merge wizard
+
+### Corrections
+
+* `ca88b44` fix(ProjectUI): Added options to generate ReadmeOSS for main project only or main project with subprojects.
+* `51bc423` fix(rest): Error getting component/project with unknown creator
+* `7814e7e` fix(ProjectUI): Obligation view for changes in linked release attachment
+* `255f54e` fix(ui): Added missing tooltip
+* `00c3110` fix(businessrules): NPE in clearingStateSummaryComputer
+* `6bb0cc2` fix(project): Keep release mainline state as it is while cloning project
+* `7b488d5` fix(projectUI): NPE in SW360Utils.getApprovedClxAttachmentForRelease
+* `7181861` fix(LicenseInfo): NPE in ProjectPortlet.prepareLicenseInfo and downloadLicenseInfo
+* `7df48da` fix(rest): License information generation based on attachment usages from rest.
+* `466185e` fix(project): prevent cyclic link in linked projects
+* `dcc4192` fix(projectUI): NPE in ProjectDatabaseHandler.setReleaseRelations
+* `6f02ae7` fix(component): incorrect release edit link in component edit page
+* `20211c9` fix(component): component merge not working
+* `e1921d7` Fix(Project UI): Removed 'Unknown' from Project Clearing Team dropdown
+* `16c3452` fix(REST): added support for createdComment field for uploadAttachements
+* `2e0d776` fix(Project/Admin): Set to default text feature is not working correctly for Obligation
+* `aa71a06` fix(Componnet): ComponentType field should be mandatory
+* `c7a0737` fix(links): Fixed the incorrect links
+
 ## sw360-5.1.0-M1
 
 This release contains a number of corrections after the Liferay Portal 7.2 CE GA1 based release has been rolled out. Therefore it contains mostly corrections for the UI. In addition to these, also the REST API endpoints were further improved. The report generation has been improved: Now, external Ids can be added to the generated documents.
