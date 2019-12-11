@@ -204,9 +204,9 @@ service ProjectService {
 
     // Summary getters
     /**
-     * get projects for user by emailadress
+     * get projects for user according to roles
      */
-    list<Project> getMyProjects(1: string user);
+    list<Project> getMyProjects(1: User user, 2:  map<string, bool> userRoles);
 
     /**
      * get all projects as project summaries which are visible to user

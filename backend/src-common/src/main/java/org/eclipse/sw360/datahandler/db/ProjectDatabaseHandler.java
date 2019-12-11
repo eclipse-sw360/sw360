@@ -23,6 +23,7 @@ import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
+import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
@@ -162,9 +163,45 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     ////////////////////////////
     // ADD INDIVIDUAL OBJECTS //
     ////////////////////////////
+    public List<Project> getMyProjectsFull(User user, Map<String, Boolean> userRoles) {
+        String userEmail = user.getEmail();
+        List<Project> myProjectsFull = repository.getMyProjectsFull(userEmail);
+        if (userRoles != null && !userRoles.isEmpty()) {
+            Boolean creator = userRoles.get(Project._Fields.CREATED_BY.toString());
+            Boolean moderator = userRoles.get(Project._Fields.MODERATORS.toString());
+            Boolean contributor = userRoles.get(Project._Fields.CONTRIBUTORS.toString());
+            Boolean projectOwner = userRoles.get(Project._Fields.PROJECT_OWNER.toString());
+            Boolean leadArchitect = userRoles.get(Project._Fields.LEAD_ARCHITECT.toString());
+            Boolean projectResponsible = userRoles.get(Project._Fields.PROJECT_RESPONSIBLE.toString());
+            Boolean securityResponsible = userRoles.get(Project._Fields.SECURITY_RESPONSIBLES.toString());
 
-    public List<Project> getMyProjectsFull(String user) {
-        return repository.getMyProjectsFull(user);
+            myProjectsFull = myProjectsFull.stream().filter(ProjectPermissions.isVisible(user)::test)
+                    .filter(project -> {
+                        if (creator != null && creator && project.getCreatedBy().equals(userEmail)) {
+                            return true;
+                        } else if (moderator != null && moderator && project.getModerators().contains(userEmail)) {
+                            return true;
+                        } else if (contributor != null && contributor
+                                && project.getContributors().contains(userEmail)) {
+                            return true;
+                        } else if (projectOwner != null && projectOwner
+                                && project.getProjectOwner().equals(userEmail)) {
+                            return true;
+                        } else if (leadArchitect != null && leadArchitect
+                                && project.getLeadArchitect().equals(userEmail)) {
+                            return true;
+                        } else if (projectResponsible != null && projectResponsible
+                                && project.getProjectResponsible().equals(userEmail)) {
+                            return true;
+                        } else if (securityResponsible != null && securityResponsible
+                                && project.getSecurityResponsibles().contains(userEmail)) {
+                            return true;
+                        }
+
+                        return false;
+                    }).collect(Collectors.toList());
+        }
+        return myProjectsFull;
     }
 
     public AddDocumentRequestSummary addProject(Project project, User user) throws SW360Exception {

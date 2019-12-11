@@ -72,10 +72,11 @@ public class ProjectHandler implements ProjectService.Iface {
     }
 
     @Override
-    public List<Project> getMyProjects(String user) throws TException {
-        assertNotEmpty(user);
+    public List<Project> getMyProjects(User user, Map<String, Boolean> userRoles) throws TException {
+        assertNotNull(user);
+        assertNotEmpty(user.getEmail());
 
-        return handler.getMyProjectsFull(user);
+        return handler.getMyProjectsFull(user, userRoles);
     }
 
     @Override

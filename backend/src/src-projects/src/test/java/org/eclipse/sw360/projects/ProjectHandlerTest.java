@@ -32,7 +32,9 @@ import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getProjectIds;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -47,6 +49,7 @@ public class ProjectHandlerTest {
     private static final User user1 = new User().setEmail("user1").setDepartment("AB CD EF");
     private static final User user2 = new User().setEmail("user2").setDepartment("AB CD FE");
     private static final User user3 = new User().setEmail("user3").setDepartment("AB CD EF");
+    private static final Map<String, Boolean> userRoles = new HashMap<>();
 
     ProjectHandler handler;
 
@@ -80,9 +83,9 @@ public class ProjectHandlerTest {
 
     @Test
     public void testGetMyProjects() throws Exception {
-        assertEquals(2, handler.getMyProjects(user1.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user2.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user3.getEmail()).size());
+        assertEquals(2, handler.getMyProjects(user1, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user2, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user3, userRoles).size());
     }
 
 
@@ -160,9 +163,9 @@ public class ProjectHandlerTest {
         assertEquals(SW360Utils.getCreatedOn(), projectActual.getCreatedOn());
         assertEquals("AB CD FE", projectActual.getBusinessUnit());
 
-        assertEquals(2, handler.getMyProjects(user1.getEmail()).size());
-        assertEquals(2, handler.getMyProjects(user2.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user3.getEmail()).size());
+        assertEquals(2, handler.getMyProjects(user1, userRoles).size());
+        assertEquals(2, handler.getMyProjects(user2, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user3, userRoles).size());
 
         assertEquals(3, handler.getAccessibleProjectsSummary(user1).size());
         assertEquals(2, handler.getAccessibleProjectsSummary(user2).size());
@@ -204,10 +207,9 @@ public class ProjectHandlerTest {
         assertEquals("Project1new", handler.getProjectById("P1", user1).getName());
         assertEquals("AB CD FE", handler.getProjectById("P1", user1).getBusinessUnit());
 
-
-        assertEquals(2, handler.getMyProjects(user1.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user2.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user3.getEmail()).size());
+        assertEquals(2, handler.getMyProjects(user1, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user2, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user3, userRoles).size());
 
         assertEquals(3, handler.getAccessibleProjectsSummary(user1).size());
         assertEquals(2, handler.getAccessibleProjectsSummary(user2).size());
@@ -250,10 +252,9 @@ public class ProjectHandlerTest {
         assertEquals("Project2new", handler.getProjectById("P2", user2).getName());
         assertEquals("AB CD EF", handler.getProjectById("P2", user2).getBusinessUnit());
 
-
-        assertEquals(2, handler.getMyProjects(user1.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user2.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user3.getEmail()).size());
+        assertEquals(2, handler.getMyProjects(user1, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user2, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user3, userRoles).size());
 
         assertEquals(3, handler.getAccessibleProjectsSummary(user1).size());
         assertEquals(1, handler.getAccessibleProjectsSummary(user2).size());
@@ -273,9 +274,9 @@ public class ProjectHandlerTest {
         assertEquals("AB CD FE", handler.getProjectById("P3", user3).getBusinessUnit());
 
 
-        assertEquals(2, handler.getMyProjects(user1.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user2.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user3.getEmail()).size());
+        assertEquals(2, handler.getMyProjects(user1, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user2, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user3, userRoles).size());
 
         assertEquals(2, handler.getAccessibleProjectsSummary(user1).size());
         assertEquals(2, handler.getAccessibleProjectsSummary(user2).size());
@@ -291,9 +292,9 @@ public class ProjectHandlerTest {
 
         assertEquals(RequestStatus.SUCCESS, status);
 
-        assertEquals(1, handler.getMyProjects(user1.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user2.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user3.getEmail()).size());
+        assertEquals(1, handler.getMyProjects(user1, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user2, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user3, userRoles).size());
 
         assertEquals(2, handler.getAccessibleProjectsSummary(user1).size());
         assertEquals(1, handler.getAccessibleProjectsSummary(user2).size());
@@ -313,9 +314,9 @@ public class ProjectHandlerTest {
 
         assertEquals(RequestStatus.IN_USE, status);
 
-        assertEquals(2, handler.getMyProjects(user1.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user2.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user3.getEmail()).size());
+        assertEquals(2, handler.getMyProjects(user1, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user2, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user3, userRoles).size());
 
         assertEquals(3, handler.getAccessibleProjectsSummary(user1).size());
         assertEquals(1, handler.getAccessibleProjectsSummary(user2).size());
@@ -330,9 +331,9 @@ public class ProjectHandlerTest {
 
         assertEquals(RequestStatus.SUCCESS, status);
 
-        assertEquals(1, handler.getMyProjects(user1.getEmail()).size());
-        assertEquals(0, handler.getMyProjects(user2.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user3.getEmail()).size());
+        assertEquals(1, handler.getMyProjects(user1, userRoles).size());
+        assertEquals(0, handler.getMyProjects(user2, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user3, userRoles).size());
 
         assertEquals(2, handler.getAccessibleProjectsSummary(user1).size());
         assertEquals(0, handler.getAccessibleProjectsSummary(user2).size());
@@ -348,9 +349,9 @@ public class ProjectHandlerTest {
 
         assertEquals(RequestStatus.SUCCESS, status);
 
-        assertEquals(2, handler.getMyProjects(user1.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user2.getEmail()).size());
-        assertEquals(0, handler.getMyProjects(user3.getEmail()).size());
+        assertEquals(2, handler.getMyProjects(user1, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user2, userRoles).size());
+        assertEquals(0, handler.getMyProjects(user3, userRoles).size());
 
         assertEquals(2, handler.getAccessibleProjectsSummary(user1).size());
         assertEquals(1, handler.getAccessibleProjectsSummary(user2).size());

@@ -22,7 +22,62 @@
 </portlet:resourceURL>
 
 <section id="my-projects">
-    <h4 class="actions">My Projects <span title="Reload"><clay:icon symbol="reload"/></span></h4>
+    <h4 class="actions">
+        My Projects
+        <div class="dropdown d-inline text-capitalize" id="dropdown">
+            <span title="Config" class="dropdown-toggle float-none" data-toggle="dropdown" id="configId">
+                <clay:icon symbol="select-from-list" />
+            </span>
+            <ul class="dropdown-menu" id="dropdownmenu" name="<portlet:namespace/>roles"
+                aria-labelledby="configId">
+                <li class="dropdown-header">Role in Project</li>
+                <li><hr class="my-2" /></li>
+                <li>
+                    <input type="checkbox" class="form-check-input ml-4" id="creator"
+                    <core_rt:if test="${userRoles==null||userRoles.CREATED_BY}">checked="checked"</core_rt:if> />
+                    <label class="form-check-label" for="creator">Creator</label>
+                </li>
+                <li>
+                    <input type="checkbox" class="form-check-input ml-4" id="moderator"
+                    <core_rt:if test="${userRoles==null||userRoles.MODERATORS}">checked="checked"</core_rt:if>>
+                    <label class="form-check-label" for="moderator">Moderator</label>
+                </li>
+                <li>
+                    <input type="checkbox" class="form-check-input ml-4" id="contributor"
+                    <core_rt:if test="${userRoles==null||userRoles.CONTRIBUTORS}">checked="checked"</core_rt:if>>
+                    <label class="form-check-label" for="contributor">Contributor</label>
+                </li>
+                <li>
+                    <input type="checkbox" class="form-check-input ml-4" id="projectOwner"
+                    <core_rt:if test="${userRoles==null||userRoles.PROJECT_OWNER}">checked="checked"</core_rt:if>>
+                    <label class="form-check-label" for="projectOwner">Project Owner</label>
+                </li>
+                <li>
+                    <input type="checkbox" class="form-check-input ml-4" id="leadArchitect"
+                    <core_rt:if test="${userRoles==null||userRoles.LEAD_ARCHITECT}">checked="checked"</core_rt:if>>
+                    <label class="form-check-label" for="leadArchitect"">Lead Architect</label>
+                </li>
+                <li>
+                    <input type="checkbox" class="form-check-input ml-4" id="projectResponsible"
+                    <core_rt:if test="${userRoles==null||userRoles.PROJECT_RESPONSIBLE}">checked="checked"</core_rt:if>>
+                    <label class="form-check-label" for="projectResponsible">Project Responsible</label>
+                </li>
+                <li>
+                    <input type="checkbox" class="form-check-input ml-4" id="securityResponsible"
+                    <core_rt:if test="${userRoles==null||userRoles.SECURITY_RESPONSIBLES}">checked="checked"</core_rt:if>>
+                    <label class="form-check-label" for="securityResponsible">Security Responsible</label>
+                </li>
+                <li><hr class="my-2" /></li>
+                <li>
+                    <center>
+                        <button class="btn btn-primary  btn-sm" type="button" name="<portlet:namespace/>userChoice"
+                            data-toggle="dropdown" id="search">Search</button>
+                    </center>
+                </li>
+            </ul>
+        </div>
+        <span title="Reload" style="float: right"><clay:icon symbol="reload" /></span>
+    </h4>
     <div class="row">
         <div class="col">
             <table id="myProjectsTable" class="table table-bordered table-lowspace" data-load-url="<%=loadProjectsURL%>">
@@ -38,10 +93,19 @@
 
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
+    var data;
+    var userChoice = false;
+    function assignSelectedValues() {
+        data = [];
+        $("#dropdownmenu input:checkbox").each(function() {
+            data.push($(this).prop('checked'));
+        });
+    }
+
     require(['jquery', 'bridges/datatables', 'utils/link' ], function($, datatables, link, event) {
         var table;
 
-        $('#my-projects h4 svg')
+        $('#my-projects h4 svg').not($("#configId svg"))
             .attr('data-action', 'reload-my-projects')
             .addClass('spinning disabled');
 
@@ -51,10 +115,10 @@
         $(document).on('pageshow.my-projects', function() {
             reloadTable();
         });
-
+        assignSelectedValues();
         table = datatables.create('#myProjectsTable', {
             // the following parameter must not be removed, otherwise it won't work anymore (probably due to datatable plugins)
-            bServerSide: false,
+            bServerSide: true,
             // the following parameter must not be converted to 'ajax', otherwise it won't work anymore (probably due to datatable plugins)
             sAjaxSource: $('#myProjectsTable').data().loadUrl,
 
@@ -67,10 +131,21 @@
                 {"title": "Approved Releases", data: 'releaseClearingState', render: renderReleaseClearingState},
             ],
             language: {
-                emptyTable: 'You do not own any projects.'
+                emptyTable: 'There are no projects found with your selection.'
             },
             initComplete: function() {
                 $('#my-projects h4 svg').removeClass('spinning disabled');
+            },
+            fnServerParams: function(aoData) {
+                aoData.push({
+                    "name" : $("#dropdownmenu").attr("name"),
+                    "value" : data.join()
+                });
+
+                aoData.push({
+                    "name" : $("#search").prop("name"),
+                    "value" : userChoice
+                });
             }
         });
 
@@ -94,5 +169,23 @@
                 $('#my-projects h4 svg').removeClass('spinning disabled');
             }, false );
         }
+
+        $('#search').on('click', function(event) {
+            assignSelectedValues();
+            userChoice = true;
+            $("#configId").dropdown('toggle')
+            reloadTable();
+            userChoice = false;
+        });
+    });
+
+    $('#dropdownmenu').on('click', function(event) {
+        event.stopPropagation();
+    });
+
+    $('#dropdown').on('hide.bs.dropdown', function() {
+        $("#my-projects input:checkbox").each(function(index) {
+            $(this).prop("checked", data[index]);
+        });
     });
 </script>
