@@ -152,10 +152,20 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
             replaceText(document, "$project-name", projectName);
             replaceText(document, "$project-version", projectVersion);
 
+            printErrorForNoRelease(document, projectLicenseInfoResults);
             fillExternalIds(document, externalIds);
             fillReleaseBulletList(document, projectLicenseInfoResults);
             fillReleaseDetailList(document, projectLicenseInfoResults, includeObligations, licenseToReferenceId);
             fillLicenseList(document, projectLicenseInfoResults, licenseToReferenceId);
+    }
+
+    private void printErrorForNoRelease(XWPFDocument document,
+            Collection<LicenseInfoParsingResult> projectLicenseInfoResults) {
+        if(!CommonUtils.isNotEmpty(projectLicenseInfoResults)) {
+            XWPFRun errorRun = document.createParagraph().createRun();
+            String errorText = "Either there is no releases based on your selection or the selected project does not contain any release";
+            addFormattedText(errorRun, errorText, FONT_SIZE, false, ALERT_COLOR);
+        }
     }
 
     private Map<LicenseNameWithText, Integer> populatelicenseToReferenceId(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Map<LicenseNameWithText, Integer> licenseToReferenceId) {

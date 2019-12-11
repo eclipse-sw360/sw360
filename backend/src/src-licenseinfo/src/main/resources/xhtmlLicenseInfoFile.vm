@@ -103,6 +103,10 @@
 
     <h2 id="releaseHeader">Releases</h2>
 
+    #if($licenseInfoResults.keySet().size() == 0)
+        <div class="inset error">Either there is no releases based on your selection or the selected project does not contain any release</div>
+    #end
+
     #if($licenseInfoResults.keySet().size() > 0)
         <ul id="releaseOverview">
             #foreach($releaseName in $licenseInfoResults.keySet())
