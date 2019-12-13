@@ -426,6 +426,8 @@ public class PortalConstants {
     public static final String FOSSOLOGY_ACTION_STATUS = FOSSOLOGY_PREFIX + "status";
     public static final String FOSSOLOGY_ACTION_PROCESS = FOSSOLOGY_PREFIX + "process";
     public static final String FOSSOLOGY_ACTION_OUTDATED = FOSSOLOGY_PREFIX + "outdated";
+    public static final String FOSSOLOGY_ACTION_RELOAD_REPORT = FOSSOLOGY_PREFIX + "reload_report";
+    public static final String FOSSOLOGY_JOB_VIEW_LINK = "fossologyJobViewLink";
 
     public static final String RELEASES_AND_PROJECTS = "releasesAndProjects";
 

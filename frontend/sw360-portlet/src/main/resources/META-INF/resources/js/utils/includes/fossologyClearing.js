@@ -39,6 +39,9 @@ define('utils/includes/fossologyClearing', [
                 if (submit == 'outdated') {
                     setOutdated(releaseId);
                     callback(false);
+                } else if (submit == 'reload_report') {
+                    generateReport(releaseId);
+                    callback(false);
                 }
             },
             // beforeShow:
@@ -49,6 +52,19 @@ define('utils/includes/fossologyClearing', [
         $dialog.$.on('hidden.bs.modal', function() {
             clearTimeout(timeoutId);
             dialogOpen = false;
+        });
+    }
+
+    function generateReport(releaseId){
+        dialogOpen = true;
+        $('.auto-refresh').show();
+        fossologyRequest(config.fossologyGenerateReportUrl, releaseId)
+        .then(function(data) {
+            handleSuccessResult($dialog, releaseId, data);
+        })
+        .catch(function(message) {
+            $dialog.closeMessage();
+            $dialog.alert(message, false);
         });
     }
 

@@ -21,6 +21,9 @@
 <portlet:resourceURL var="outdatedURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.FOSSOLOGY_ACTION_OUTDATED%>'/>
 </portlet:resourceURL>
+<portlet:resourceURL var="triggerReportGenURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.FOSSOLOGY_ACTION_RELOAD_REPORT%>'/>
+</portlet:resourceURL>
 
 
 <div class="dialogs">
@@ -29,6 +32,7 @@
         data-fossology-status-url="<%=statusURL%>"
         data-fossology-process-url="<%=processURL%>"
         data-fossology-outdated-url="<%=outdatedURL%>"
+        data-fossology-generate-report-url="<%=triggerReportGenURL%>"
         data-step-name-upload="<%=FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD %>"
         data-step-name-scan="<%=FossologyUtils.FOSSOLOGY_STEP_NAME_SCAN %>"
         data-step-name-report="<%=FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT %>"
@@ -76,16 +80,24 @@
                         </div>
                     </div>
                     <div class="row mt-4">
-                        <div class="col">
-                            <div class="auto-refresh text-right">
+                        <div class="col-md-12">
+                            <div class="auto-refresh">
                                 Auto-refresh in <span id="auto-refresh-seconds" class="ml-2">5</span>
                             </div>
                         </div>
+                        <core_rt:if test="${not empty fossologyJobViewLink}">
+                            <div class="col-md-12">
+                                <div class="fossology-link">
+                                    <a target="_blank" href="${fossologyJobViewLink}">Job view of FOSSology</a>
+                                </div>
+                            </div>
+                        </core_rt:if>
                     </div>
 				</div>
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light" data-submit="outdated">Set Outdated</button>
+                    <button type="button" class="btn btn-light" data-submit="reload_report">Reload Report</button>
                     <button type="button" class="btn btn-light" data-dismiss="modal">Close</button>
                 </div>
 			</div>

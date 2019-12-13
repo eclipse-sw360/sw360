@@ -164,6 +164,15 @@ public abstract class FossologyAwarePortlet extends LinkedReleasesAndProjectsAwa
         }
     }
 
+    private void fillJsonObjectFromFossologyProcessReloadReport(JSONObject jsonObject,
+            Set<ExternalToolProcess> fossologyProcesses) {
+        if (fossologyProcesses.size() == 1) {
+            jsonObject.put("stepName", FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT);
+            jsonObject.put("stepStatus", ExternalToolProcessStatus.NEW.toString());
+        } else {
+            jsonObject.put("error", "The source file is either not yet uploaded or scanning is not done.");
+        }
+    }
 
     // USED but not fossology related
 
@@ -174,4 +183,32 @@ public abstract class FossologyAwarePortlet extends LinkedReleasesAndProjectsAwa
         request.setAttribute(PortalConstants.RELEASES_AND_PROJECTS, releaseClearingStatuses);
     }
 
+    protected void serveFossologyReloadReport(ResourceRequest request, ResourceResponse response) {
+        Iface componentClient = thriftClients.makeComponentClient();
+        FossologyService.Iface fossologyClient = thriftClients.makeFossologyClient();
+        String releaseId = request.getParameter(RELEASE_ID);
+        JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+        String errorMsg = "Could not determine FOSSology state for this release!";
+        try {
+            Release release = componentClient.getReleaseById(releaseId, UserCacheHolder.getUserFromRequest(request));
+            RequestStatus result = fossologyClient.triggerReportGenerationFossology(releaseId,
+                    UserCacheHolder.getUserFromRequest(request));
+            if (result == RequestStatus.FAILURE) {
+                jsonObject.put("error", errorMsg);
+            } else {
+                Set<ExternalToolProcess> fossologyProcesses = SW360Utils
+                        .getNotOutdatedExternalToolProcessesForTool(release, ExternalTool.FOSSOLOGY);
+                fillJsonObjectFromFossologyProcessReloadReport(jsonObject, fossologyProcesses);
+            }
+        } catch (TException e) {
+            jsonObject.put("error", errorMsg);
+            log.error("Error pulling report from fossology", e);
+        }
+
+        try {
+            writeJSON(request, response, jsonObject);
+        } catch (IOException e) {
+            log.error("Problem rendering RequestStatus", e);
+        }
+    }
 }
