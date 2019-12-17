@@ -41,6 +41,7 @@ public class PortalConstants {
     public static final Boolean IS_CLEARING_TEAM_UNKNOWN_ENABLED;
     public static final Set<String> PROJECT_OBLIGATIONS_ACTION_SET;
     public static final Boolean IS_PROJECT_OBLIGATIONS_ENABLED;
+    public static final Boolean CUSTOM_WELCOME_PAGE_GUIDELINE;
 
     // DO NOT CHANGE THIS UNLESS YOU KNOW WHAT YOU ARE DOING !!!
     // - friendly url mapping files must be changed
@@ -541,6 +542,7 @@ public class PortalConstants {
         IS_CLEARING_TEAM_UNKNOWN_ENABLED = Boolean.parseBoolean(props.getProperty("clearing.team.unknown.enabled", "true"));
         PROJECT_OBLIGATIONS_ACTION_SET = CommonUtils.splitToSet(props.getProperty("project.obligation.actions", "Action 1,Action 2,Action 3"));
         IS_PROJECT_OBLIGATIONS_ENABLED = Boolean.parseBoolean(props.getProperty("project.obligations.enabled", "true"));
+        CUSTOM_WELCOME_PAGE_GUIDELINE = Boolean.parseBoolean(props.getProperty("custom.welcome.page.guideline", "false"));
 
         // SW360 REST API Constants
         API_TOKEN_ENABLE_GENERATOR = Boolean.parseBoolean(props.getProperty("rest.apitoken.generator.enable", "false"));

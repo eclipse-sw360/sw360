@@ -22,6 +22,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.portal.common.ErrorMessages;
 import org.eclipse.sw360.portal.common.PortalConstants;
+import org.eclipse.sw360.portal.common.PortletUtils;
 import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.users.UserUtils;
@@ -64,6 +65,7 @@ public class SignupPortlet extends Sw360Portlet {
     @Override
     public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
         String pageName = request.getParameter(PortalConstants.PAGENAME);
+        PortletUtils.setWelcomePageGuideLine(request);
         if (PortalConstants.PAGENAME_SUCCESS.equals(pageName)) {
             include("/html/homepage/signup/success.jsp", request, response);
         } else {
