@@ -20,21 +20,17 @@ class PropertyKeyMapping {
     static final String RELEASE_CPEID_KEY_JSON = "cpeId";
 
     static String componentThriftKeyFromJSONKey(String jsonKey) {
-        switch (jsonKey) {
-            case COMPONENT_VENDOR_KEY_JSON:
-                return COMPONENT_VENDOR_KEY_THRIFT;
-            default:
-                return jsonKey;
+        if (COMPONENT_VENDOR_KEY_JSON.equals(jsonKey)) {
+            return COMPONENT_VENDOR_KEY_THRIFT;
         }
+        return jsonKey;
     }
 
     static String releaseThriftKeyFromJSONKey(String jsonKey) {
-        switch (jsonKey) {
-            case RELEASE_CPEID_KEY_JSON:
-                return RELEASE_CPEID_KEY_THRIFT;
-            default:
-                return jsonKey;
+        if (RELEASE_CPEID_KEY_JSON.equals(jsonKey)) {
+            return RELEASE_CPEID_KEY_THRIFT;
         }
+        return jsonKey;
     }
 
 }

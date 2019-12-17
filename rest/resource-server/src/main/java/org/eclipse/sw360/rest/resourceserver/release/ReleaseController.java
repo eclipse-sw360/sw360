@@ -135,13 +135,12 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
         Set<org.eclipse.sw360.datahandler.thrift.components.Component> sw360Components = releaseService.getUsingComponentsForRelease(id, user);
 
         List<Resource> resources = new ArrayList<>();
-        sw360Projects.stream().forEach(p -> {
+        sw360Projects.forEach(p -> {
             Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
             resources.add(new Resource<>(embeddedProject));
         });
 
-        sw360Components.stream()
-                .forEach(c -> {
+        sw360Components.forEach(c -> {
                     Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c);
                     resources.add(new Resource<>(embeddedComponent));
                 });

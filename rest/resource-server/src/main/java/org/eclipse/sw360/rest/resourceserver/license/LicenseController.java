@@ -80,7 +80,7 @@ public class LicenseController implements ResourceProcessor<RepositoryLinksResou
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = LICENSES_URL, method = RequestMethod.POST)
     public ResponseEntity<Resource<License>> createLicense(
-            @RequestBody License license) throws URISyntaxException, TException {
+            @RequestBody License license) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         license = licenseService.createLicense(license, sw360User);
         HalResource<License> halResource = createHalLicense(license);
@@ -99,7 +99,6 @@ public class LicenseController implements ResourceProcessor<RepositoryLinksResou
     }
 
     private HalResource<License> createHalLicense(License sw360License) {
-        HalResource<License> halLicense = new HalResource<>(sw360License);
-        return halLicense;
+        return new HalResource<>(sw360License);
     }
 }

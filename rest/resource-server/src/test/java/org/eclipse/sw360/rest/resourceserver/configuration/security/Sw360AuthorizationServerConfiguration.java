@@ -37,7 +37,7 @@ public class Sw360AuthorizationServerConfiguration extends AuthorizationServerCo
     private final String GRANTED_AUTHORITY_BASIC = "BASIC";
 
     @Override
-    public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+    public void configure(AuthorizationServerEndpointsConfigurer endpoints) {
         endpoints
                 .tokenStore(tokenStore())
                 .tokenEnhancer(jwtAccessTokenConverter())
@@ -45,7 +45,7 @@ public class Sw360AuthorizationServerConfiguration extends AuthorizationServerCo
     }
 
     @Override
-    public void configure(AuthorizationServerSecurityConfigurer oauthServer) throws Exception {
+    public void configure(AuthorizationServerSecurityConfigurer oauthServer) {
         oauthServer.tokenKeyAccess("isAnonymous() || hasAuthority('" + GRANTED_AUTHORITY_BASIC + "')")
                 .checkTokenAccess("hasAuthority('" + GRANTED_AUTHORITY_BASIC + "')");
     }

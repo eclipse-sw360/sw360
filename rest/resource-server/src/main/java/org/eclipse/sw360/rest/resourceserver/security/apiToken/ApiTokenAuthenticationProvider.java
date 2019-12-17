@@ -104,7 +104,7 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
     private Set<GrantedAuthority> getGrantedAuthoritiesFromApiToken(RestApiToken restApiToken) {
         return restApiToken.getAuthorities()
                 .stream()
-                .map(a -> new SimpleGrantedAuthority(a))
+                .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toSet());
     }
 

@@ -324,28 +324,27 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         final Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachments = new HashMap<>();
 
 
-        mappedProjectLinks.forEach(projectLink -> wrapTException(() -> {
-            projectLink.getLinkedReleases().stream().filter(ReleaseLink::isSetAttachments).forEach(releaseLink -> {
-                String releaseLinkId = releaseLink.getId();
-                Set<String> excludedLicenseIds = releaseIdToExcludedLicenses.get(Source.releaseId(releaseLinkId));
+        mappedProjectLinks.forEach(projectLink -> wrapTException(() ->
+                projectLink.getLinkedReleases().stream().filter(ReleaseLink::isSetAttachments).forEach(releaseLink -> {
+            String releaseLinkId = releaseLink.getId();
+            Set<String> excludedLicenseIds = releaseIdToExcludedLicenses.get(Source.releaseId(releaseLinkId));
 
-                if (!selectedReleaseAndAttachmentIds.containsKey(releaseLinkId)) {
-                    selectedReleaseAndAttachmentIds.put(releaseLinkId, new HashSet<>());
+            if (!selectedReleaseAndAttachmentIds.containsKey(releaseLinkId)) {
+                selectedReleaseAndAttachmentIds.put(releaseLinkId, new HashSet<>());
+            }
+            final List<Attachment> attachments = releaseLink.getAttachments();
+            Release release = componentService.getReleaseById(releaseLinkId, sw360User);
+            for (final Attachment attachment : attachments) {
+                String attachemntContentId = attachment.getAttachmentContentId();
+                if (usedAttachmentContentIds.contains(attachemntContentId)) {
+                    List<LicenseInfoParsingResult> licenseInfoParsingResult = licenseInfoService
+                            .getLicenseInfoForAttachment(release, sw360User, attachemntContentId);
+                    excludedLicensesPerAttachments.put(attachemntContentId,
+                            getExcludedLicenses(excludedLicenseIds, licenseInfoParsingResult));
+                    selectedReleaseAndAttachmentIds.get(releaseLinkId).add(attachemntContentId);
                 }
-                final List<Attachment> attachments = releaseLink.getAttachments();
-                Release release = componentService.getReleaseById(releaseLinkId, sw360User);
-                for (final Attachment attachment : attachments) {
-                    String attachemntContentId = attachment.getAttachmentContentId();
-                    if (usedAttachmentContentIds.contains(attachemntContentId)) {
-                        List<LicenseInfoParsingResult> licenseInfoParsingResult = licenseInfoService
-                                .getLicenseInfoForAttachment(release, sw360User, attachemntContentId);
-                        excludedLicensesPerAttachments.put(attachemntContentId,
-                                getExcludedLicenses(excludedLicenseIds, licenseInfoParsingResult));
-                        selectedReleaseAndAttachmentIds.get(releaseLinkId).add(attachemntContentId);
-                    }
-                }
-            });
-        }));
+            }
+        })));
 
         final String projectName = sw360Project.getName();
         final String projectVersion = sw360Project.getVersion();
@@ -467,8 +466,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         Set<Project> sw360Projects = projectService.searchLinkingProjects(id, user);
 
         List<Resource<Project>> projectResources = new ArrayList<>();
-        sw360Projects.stream()
-                .forEach(p -> {
+        sw360Projects.forEach(p -> {
                     Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
                     projectResources.add(new Resource<>(embeddedProject));
                 });

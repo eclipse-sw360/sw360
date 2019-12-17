@@ -81,8 +81,7 @@ public class KeycloakAccessTokenConverter extends DefaultAccessTokenConverter im
         //user.setId("test2");
         //authentication.setDetails(user);
 
-        OAuth2Authentication authentication = super.extractAuthentication(jwtToken);
-        return authentication;
+        return super.extractAuthentication(jwtToken);
     }
 
 

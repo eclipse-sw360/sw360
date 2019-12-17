@@ -12,7 +12,6 @@
 package org.eclipse.sw360.rest.resourceserver.core.serializer;
 
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
@@ -33,7 +32,7 @@ public class JsonReleaseRelationSerializer extends JsonSerializer<Map<String, Pr
 
     @Override
     public void serialize(Map<String, ProjectReleaseRelationship> releaseRelationMap, JsonGenerator gen, SerializerProvider provider)
-            throws IOException, JsonProcessingException {
+            throws IOException {
 
         List<Map<String, String>> linkedReleases = new ArrayList<>();
         for (Map.Entry<String, ProjectReleaseRelationship> releaseRelation : releaseRelationMap.entrySet()) {
