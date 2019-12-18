@@ -49,8 +49,10 @@ public class AttachmentFrontendUtils {
 
     public InputStream getStreamToServeAFile(Collection<AttachmentContent> attachments, User user, Object context)
             throws TException, IOException {
-        if (attachments == null || attachments.size() == 0) {
+        if (attachments == null) {
             throw new SW360Exception("Tried to download empty set of Attachments");
+        } else if (attachments.size() == 0) {
+            return getConnector().getAttachmentBundleStream(new HashSet<>(), user, context);
         } else if(attachments.size() == 1) {
             // Temporary solutions, permission check needs to be implemented (getAttachmentStream)
             return getConnector().unsafeGetAttachmentStream(attachments.iterator().next());

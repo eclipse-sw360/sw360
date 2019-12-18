@@ -311,6 +311,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         String outputGenerator = request.getParameter(PortalConstants.LICENSE_INFO_SELECTED_OUTPUT_FORMAT);
         String extIdsFromRequest = request.getParameter(PortalConstants.EXTERNAL_ID_SELECTED_KEYS);
         List<String> selectedReleaseRelationships =  getSelectedReleaseRationships(request);
+        String[] selectedAttachmentIdsWithPathArray = request.getParameterValues(PortalConstants.LICENSE_INFO_RELEASE_TO_ATTACHMENT);
         final Set<ReleaseRelationship> listOfSelectedRelationships = selectedReleaseRelationships.stream()
                 .map(rel -> ThriftEnumUtils.stringToEnum(rel, ReleaseRelationship.class)).filter(Objects::nonNull)
                 .collect(Collectors.toSet());
@@ -320,8 +321,11 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
         String externalIds = Optional.ofNullable(extIdsFromRequest).orElse(StringUtils.EMPTY);
 
-        Set<String> selectedAttachmentIdsWithPath = Sets
-                .newHashSet(request.getParameterValues(PortalConstants.LICENSE_INFO_RELEASE_TO_ATTACHMENT));
+        Set<String> selectedAttachmentIdsWithPath = Sets.newHashSet();
+        if (null != selectedAttachmentIdsWithPathArray) {
+            selectedAttachmentIdsWithPath = Sets.newHashSet(selectedAttachmentIdsWithPathArray);
+        }
+
         Set<String> filteredSelectedAttachmentIdsWithPath = filterSelectedAttachmentIdsWithPath(selectedAttachmentIdsWithPath, listOfSelectedRelationshipsInString);
         final Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachmentIdWithPath = ProjectPortletUtils
                 .getExcludedLicensesPerAttachmentIdFromRequest(filteredSelectedAttachmentIdsWithPath, request);
