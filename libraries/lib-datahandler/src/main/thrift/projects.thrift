@@ -27,6 +27,7 @@ typedef sw360.ReleaseRelationship ReleaseRelationship
 typedef sw360.MainlineState MainlineState
 typedef sw360.ProjectReleaseRelationship ProjectReleaseRelationship
 typedef sw360.ObligationStatus ObligationStatus
+typedef sw360.SW360Exception SW360Exception
 typedef components.Release Release
 typedef components.ReleaseClearingStateSummary ReleaseClearingStateSummary
 typedef users.User User
@@ -262,7 +263,7 @@ service ProjectService {
      * get a project by id, if it is visible for the user
      * (part of project CRUD support)
      */
-    Project getProjectById(1: string id, 2: User user);
+    Project getProjectById(1: string id, 2: User user) throws (1: SW360Exception exp);
 
     /**
      * get multiple projects by id, if they are visible to the user
@@ -350,7 +351,7 @@ service ProjectService {
     /**
      * get clearing status data for all releases linked by the given project and its subprojects
      */
-    list<ReleaseClearingStatusData> getReleaseClearingStatuses(1: string projectId, 2: User user);
+    list<ReleaseClearingStatusData> getReleaseClearingStatuses(1: string projectId, 2: User user) throws (1: SW360Exception exp);
 
     /**
      * get the count value of projects which have `id` in releaseIdToUsage

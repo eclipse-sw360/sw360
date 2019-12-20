@@ -153,7 +153,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         assertNotNull(project);
 
         if(!makePermission(project, user).isActionAllowed(RequestedAction.READ)) {
-            throw fail("User " + user + " is not allowed to view the requested project " + project + "!");
+            throw fail(403, "User: %s is not allowed to view the requested project: %s", user.getEmail(), project.getId());
         }
 
         return project;
