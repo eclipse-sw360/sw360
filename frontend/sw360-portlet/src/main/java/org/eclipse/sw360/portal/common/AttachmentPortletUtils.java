@@ -55,6 +55,8 @@ import static java.net.URLConnection.guessContentTypeFromStream;
  * @author birgit.heydenreich@tngtech.com
  */
 public class AttachmentPortletUtils extends AttachmentFrontendUtils {
+    private static final String EMPTY_ATTACHMENT_BUNDLE_NAME = "Empty.zip";
+
     public static final String DEFAULT_ATTACHMENT_BUNDLE_NAME = "AttachmentBundle.zip";
 
     private static final Logger log = Logger.getLogger(AttachmentPortletUtils.class);
@@ -142,6 +144,9 @@ public class AttachmentPortletUtils extends AttachmentFrontendUtils {
                 // to prevent auto encoding content (chrome).
                 response.setProperty(HttpHeaders.CONTENT_ENCODING, "identity");
             }
+        } else if (!CommonUtils.isNotEmpty(attachments)) {
+            filename = EMPTY_ATTACHMENT_BUNDLE_NAME;
+            contentType = "application/zip";
         } else {
             filename = downloadFileName.orElse(DEFAULT_ATTACHMENT_BUNDLE_NAME);
             contentType = "application/zip";
