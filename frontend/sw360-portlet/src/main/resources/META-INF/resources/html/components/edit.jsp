@@ -41,13 +41,6 @@
 <portlet:actionURL var="deleteAttachmentsOnCancelURL" name='<%=PortalConstants.ATTACHMENT_DELETE_ON_CANCEL%>'>
 </portlet:actionURL>
 
-<portlet:resourceURL var="sw360ComponentUrl">
-    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CODESCOOP_ACTION_COMPONENT%>'/>
-</portlet:resourceURL>
-<portlet:resourceURL var="sw360AutocompleteUrl">
-    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CODESCOOP_ACTION_AUTOCOMPLETE%>'/>
-</portlet:resourceURL>
-
 <portlet:defineObjects/>
 <liferay-theme:defineObjects/>
 
@@ -210,17 +203,6 @@
             </div>
         </div>
     </div>
-
-    <c:if test="${codescoopActive}">
-        <script>
-            document.addEventListener("DOMContentLoaded", function() {
-                require(['modules/codeScoop' ], function(codeScoop) {
-                    var api = new codeScoop();
-                    api.activateAutoFill("<%=sw360ComponentUrl%>", "<%=sw360AutocompleteUrl%>");
-                });
-            });
-        </script>
-    </c:if>
 
     <jsp:include page="/html/utils/includes/searchAndSelectUsers.jsp" />
     <jsp:include page="/html/utils/includes/searchUsers.jsp" />

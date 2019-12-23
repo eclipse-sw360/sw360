@@ -187,26 +187,3 @@
         $(".datepicker").datepicker({changeMonth:true,changeYear:true,dateFormat: "yy-mm-dd"});
 	});
 </script>
-
-<core_rt:if test="${codescoopActive}">
-    <portlet:resourceURL var="sw360ComponentUrl">
-        <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CODESCOOP_ACTION_COMPONENT%>'/>
-    </portlet:resourceURL>
-    <portlet:resourceURL var="sw360ReleasesUrl">
-        <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CODESCOOP_ACTION_RELEASES%>'/>
-    </portlet:resourceURL>
-    <portlet:resourceURL var="sw360PurlUrl">
-        <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CODESCOOP_ACTION_PURL%>'/>
-    </portlet:resourceURL>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            require(['modules/codeScoop' ], function(codeScoop) {
-                var api = new codeScoop();
-                setTimeout(function () {
-                    api.activateReleaseAutocomplete("<%=sw360ComponentUrl%>", "<%=sw360ReleasesUrl%>", "<%=sw360PurlUrl%>");
-                }, 500);
-            });
-        });
-    </script>
-</core_rt:if>

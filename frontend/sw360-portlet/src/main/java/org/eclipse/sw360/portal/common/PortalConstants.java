@@ -504,15 +504,6 @@ public class PortalConstants {
     public static final String API_TOKEN_HASH_SALT;
     public static final String API_TOKEN_ID = "tokenId";
 
-    // CodeScoop integration
-    public static final String CODESCOOP_ACTIVE = "codescoopActive";
-    public static final String CODESCOOP_ACTION = "codescoop_action_";
-    public static final String CODESCOOP_ACTION_COMPOSITE = CODESCOOP_ACTION + "composite";
-    public static final String CODESCOOP_ACTION_COMPONENT = CODESCOOP_ACTION + "component";
-    public static final String CODESCOOP_ACTION_RELEASES = CODESCOOP_ACTION + "releases";
-    public static final String CODESCOOP_ACTION_AUTOCOMPLETE = CODESCOOP_ACTION + "autocomplete";
-    public static final String CODESCOOP_ACTION_PURL = CODESCOOP_ACTION + "purl";
-
     public static final String WRITE_ACCESS_USER = "writeAccessUser";
 
     public static final String EXTERNAL_ID_SELECTED_KEYS = "externalIds";
