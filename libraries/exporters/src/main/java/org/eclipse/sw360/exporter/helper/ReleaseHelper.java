@@ -131,14 +131,8 @@ public class ReleaseHelper implements ExporterHelper<Release> {
                 // check again and add value
                 if (component == null) {
                     row.add("");
-                    row.add("");
                 } else {
                     row.add(ThriftEnumUtils.enumToString(component.getComponentType()));
-                    if (component.getCategories() == null) {
-                        row.add("");
-                    } else {
-                        row.add(component.getCategories().toString());
-                    }
                 }
 
                 // project origin and project mainline state only if wanted
@@ -150,6 +144,15 @@ public class ReleaseHelper implements ExporterHelper<Release> {
                     } else {
                         row.add("");
                         row.add("");
+                    }
+                }
+                if(component == null) {
+                    row.add("");
+                } else {
+                    if (component.getCategories() == null) {
+                        row.add("");
+                    } else {
+                        row.add(component.getCategories().toString());
                     }
                 }
 
