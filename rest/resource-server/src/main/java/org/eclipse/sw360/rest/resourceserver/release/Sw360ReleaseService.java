@@ -36,7 +36,10 @@ import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.stereotype.Service;
+
+import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 
 import java.util.List;
 import java.util.Map;
@@ -79,6 +82,11 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
     public Release createRelease(Release release, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        String cyclicLinkedReleasePath = sw360ComponentClient.getCyclicLinkedReleasePath(release, sw360User);
+        if (!isNullEmptyOrWhitespace(cyclicLinkedReleasePath)) {
+            throw new HttpMessageNotReadableException("Cyclic linked Release : " + cyclicLinkedReleasePath);
+        }
+
         AddDocumentRequestSummary documentRequestSummary = sw360ComponentClient.addRelease(release, sw360User);
         if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.SUCCESS) {
             release.setId(documentRequestSummary.getId());
@@ -91,6 +99,11 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
     public RequestStatus updateRelease(Release release, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        String cyclicLinkedReleasePath = sw360ComponentClient.getCyclicLinkedReleasePath(release, sw360User);
+        if (!isNullEmptyOrWhitespace(cyclicLinkedReleasePath)) {
+            throw new HttpMessageNotReadableException("Cyclic linked Release : " + cyclicLinkedReleasePath);
+        }
+
         RequestStatus requestStatus = sw360ComponentClient.updateRelease(release, sw360User);
         if (requestStatus != RequestStatus.SUCCESS) {
             throw new RuntimeException("sw360 release with name '" + release.getName() + " cannot be updated.");

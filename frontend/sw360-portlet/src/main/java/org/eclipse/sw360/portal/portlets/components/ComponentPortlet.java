@@ -132,6 +132,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
     private static final int MAX_RESULT_LIMIT_CHECK_COMPONENT_NAME = 15;
 
+    private static final String CYCLIC_LINKED_RELEASE = "Release cannot be created/updated due to cyclic linked release present. Cyclic Hierarchy : ";
+
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private boolean typeIsComponent(String documentType) {
@@ -1615,6 +1617,17 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                     String ModerationRequestCommentMsg = request.getParameter(MODERATION_REQUEST_COMMENT);
                     user.setCommentMadeDuringModerationRequest(ModerationRequestCommentMsg);
 
+                    String cyclicLinkedReleasePath = client.getCyclicLinkedReleasePath(release, user);
+                    if (!isNullEmptyOrWhitespace(cyclicLinkedReleasePath)) {
+                        FossologyAwarePortlet.addCustomErrorMessage(CYCLIC_LINKED_RELEASE + cyclicLinkedReleasePath,
+                                PAGENAME_EDIT_RELEASE, request, response);
+                        prepareRequestForReleaseEditAfterDuplicateError(request, release);
+                        request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_RELEASE);
+                        response.setRenderParameter(COMPONENT_ID, id);
+                        response.setRenderParameter(RELEASE_ID, releaseId);
+                        return;
+                    }
+
                     RequestStatus requestStatus = client.updateRelease(release, user);
                     setSessionMessage(request, requestStatus, "Release", "update", printName(release));
                     if (RequestStatus.DUPLICATE.equals(requestStatus) || RequestStatus.DUPLICATE_ATTACHMENT.equals(requestStatus)) {
@@ -1651,6 +1664,16 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                     release.setComponentId(component.getId());
                     release.setClearingState(ClearingState.NEW_CLEARING);
                     ComponentPortletUtils.updateReleaseFromRequest(request, release);
+
+                    String cyclicLinkedReleasePath = client.getCyclicLinkedReleasePath(release, user);
+                    if (!isNullEmptyOrWhitespace(cyclicLinkedReleasePath)) {
+                        FossologyAwarePortlet.addCustomErrorMessage(CYCLIC_LINKED_RELEASE + cyclicLinkedReleasePath,
+                                PAGENAME_EDIT_RELEASE, request, response);
+                        prepareRequestForReleaseEditAfterDuplicateError(request, release);
+                        response.setRenderParameter(COMPONENT_ID, request.getParameter(COMPONENT_ID));
+                        return;
+                    }
+
                     AddDocumentRequestSummary summary = client.addRelease(release, user);
 
                     AddDocumentRequestStatus status = summary.getRequestStatus();
