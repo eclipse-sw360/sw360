@@ -66,9 +66,12 @@ public class DisplayVendorEdit extends NameSpaceAwareTag {
         display.append("<div class=\"form-group\">");
         printLabel(display);
         display.append(String.format("<input type=\"hidden\" readonly=\"\" value=\"\"  id=\"%s\" name=\"%s%s\"/>", id, namespace, id))
+                .append("<div class=\"form-group has-feedback\">")
                 .append(String.format(
                         "<input type=\"text\" readonly=\"\" class=\"form-control edit-vendor clickable\" placeholder=\"Click to set vendor\" id=\"%sDisplay\" data-release-id=\"%s\"/>",
-                        id, releaseId));
+                        id, releaseId))
+                .append("<span class=\"glyphicon glyphicon-remove-circle form-control-feedback clearSelection\" id=\"clearVendor\"/>")
+                .append("</div>");
         display.append("</div>");
     }
 
@@ -76,9 +79,12 @@ public class DisplayVendorEdit extends NameSpaceAwareTag {
         display.append("<div class=\"form-group\">");
         printLabel(display);
         display.append(String.format("<input type=\"hidden\" readonly=\"\" value=\"%s\"  id=\"%s\" name=\"%s%s\"/>", vendor.getId(), id, namespace, id))
+                .append("<div class=\"form-group has-feedback\">")
                 .append(String.format(
                         "<input type=\"text\" readonly=\"\" class=\"form-control edit-vendor clickable\" value=\"%s\" id=\"%sDisplay\" data-release-id=\"%s\"/>",
-                        vendor.getFullname(), id, releaseId));
+                        vendor.getFullname(), id, releaseId))
+                .append("<span class=\"glyphicon glyphicon-remove-circle form-control-feedback clearSelection\" id=\"clearVendor\"/>")
+                .append("</div>");
         display.append("</div>");
     }
 

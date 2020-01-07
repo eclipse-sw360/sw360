@@ -345,5 +345,10 @@
             $('#<%=Release._Fields.VENDOR_ID.toString()%>').val(beforeComma.trim());
             $('#<%=Release._Fields.VENDOR_ID.toString()%>Display').val(afterComma.trim());
         }
+
+        $("#clearVendor").click(function() {
+            $('#<%=Release._Fields.VENDOR_ID.toString()%>').val("");
+            $('#<%=Release._Fields.VENDOR_ID.toString()%>Display').val("").attr("placeholder", "Click to set vendor");
+        });
     });
 </script>

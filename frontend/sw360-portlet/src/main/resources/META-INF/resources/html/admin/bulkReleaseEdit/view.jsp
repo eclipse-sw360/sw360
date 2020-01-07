@@ -118,6 +118,13 @@
         var PortletURL = Liferay.PortletURL;
 
         require(['jquery', 'bridges/datatables', 'components/includes/vendors/searchVendor', 'utils/includes/quickfilter'], function($, datatables, vendorsearch, quickfilter) {
+
+            $(".clearSelection").click(function(event) {
+                var vendorTextBoxData = $(event.currentTarget.previousSibling).data();
+                $('#vendorId'+ vendorTextBoxData.releaseId).val("");
+                $('#vendorId'+ vendorTextBoxData.releaseId+'Display').val("").attr("placeholder", "Click to set vendor");
+            });
+
             var componentsInfoTable;
 
             // initializing
