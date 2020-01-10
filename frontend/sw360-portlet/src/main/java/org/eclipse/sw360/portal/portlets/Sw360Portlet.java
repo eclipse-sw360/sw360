@@ -326,6 +326,16 @@ abstract public class Sw360Portlet extends MVCPortlet {
         setSessionMessage(request, requestStatus, type, verb, null);
     }
 
+    public void setSessionErrorBasedOnErrorCode(RenderRequest request, int errorCode) {
+        if (errorCode == 404) {
+            setSW360SessionError(request, ErrorMessages.ERROR_PROJECT_OR_DEPENDENCIES_NOT_FOUND);
+        } else if (errorCode == 403) {
+            setSW360SessionError(request, ErrorMessages.ERROR_PROJECT_OR_LINKEDPROJECT_NOT_ACCESSIBLE);
+        } else {
+            setSW360SessionError(request, ErrorMessages.ERROR_GETTING_PROJECT);
+        }
+    }
+
     protected void addEditDocumentMessage(RenderRequest request, Map<RequestedAction, Boolean> permissions, DocumentState documentState) {
 
         List<String> msgs = new ArrayList<>();

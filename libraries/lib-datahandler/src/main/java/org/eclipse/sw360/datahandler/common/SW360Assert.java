@@ -40,7 +40,7 @@ public class SW360Assert {
 
     public static <T> T assertNotNull(T object, String messageFormat, Object... args) throws SW360Exception {
         if (object == null) {
-            throw fail(messageFormat, args);
+            throw fail(404, messageFormat, args);
         }
         return object;
     }
@@ -128,6 +128,13 @@ public class SW360Assert {
     public static SW360Exception fail(String messageFormat, Object... args) throws SW360Exception {
         SW360Exception sw360Exception = new SW360Exception();
         throw fail(sw360Exception, messageFormat, args);
+    }
+
+    public static SW360Exception fail(int errorCode, String messageFormat, Object... args) throws SW360Exception {
+        String message = String.format(messageFormat, args);
+        SW360Exception exp = new SW360Exception(message).setErrorCode(errorCode);
+        log.error(message, exp);
+        throw exp;
     }
 
     public static SW360Exception fail(Throwable t, String messageFormat, Object... args) throws SW360Exception {

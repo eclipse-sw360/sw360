@@ -18,6 +18,7 @@ import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -123,7 +124,7 @@ public class ProjectHandler implements ProjectService.Iface {
     ////////////////////////////
 
     @Override
-    public Project getProjectById(String id, User user) throws TException {
+    public Project getProjectById(String id, User user) throws SW360Exception {
         assertUser(user);
         assertId(id);
 
@@ -257,7 +258,7 @@ public class ProjectHandler implements ProjectService.Iface {
     }
 
     @Override
-    public List<ReleaseClearingStatusData> getReleaseClearingStatuses(String projectId, User user) throws TException {
+    public List<ReleaseClearingStatusData> getReleaseClearingStatuses(String projectId, User user) throws SW360Exception {
         return handler.getReleaseClearingStatuses(projectId, user);
     }
 

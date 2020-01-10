@@ -46,6 +46,7 @@ enum AddDocumentRequestStatus {
 
 exception SW360Exception {
     1: required string why,
+    2: optional i32 errorCode,
 }
 
 enum ModerationState {
