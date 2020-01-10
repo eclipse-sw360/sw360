@@ -340,6 +340,11 @@
             $('#<%=Component._Fields.DEFAULT_VENDOR_ID.toString()%>').val(beforeComma.trim());
             $('#<%=Component._Fields.DEFAULT_VENDOR_ID.toString()%>Display').val(afterComma.trim());
         }
+
+        $("#clearVendor").click(function() {
+            $('#<%=Component._Fields.DEFAULT_VENDOR_ID.toString()%>').val("");
+            $('#<%=Component._Fields.DEFAULT_VENDOR_ID.toString()%>Display').val("").attr("placeholder", "Click to set vendor");
+        });
     });
     </script>
 </core_rt:if>

@@ -314,4 +314,11 @@
 	    }
     }
 
+    .clearSelection {
+        cursor: pointer;
+        height: 96% !important;
+        background-color: white;
+        right: 1% !important;
+        pointer-events: auto !important;
+    }
 }
