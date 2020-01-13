@@ -75,7 +75,7 @@ The software is tested with
 
 ### PROBLEMS
 
-Running with the tested software shows no problems if you encounter some please report them at: 
+Running with the tested software shows no problems if you encounter some please report them at:
 
 https://github.com/eclipse/sw360/issues
 
@@ -166,12 +166,10 @@ are excluded from the WAR file while packaging. Using below configuration,
 
 ### License
 
+SPDX-License-Identifier: EPL-2.0
 
-SPDX Short Identifier: http://spdx.org/licenses/EPL-1.0
+This program and the accompanying materials are made
+available under the terms of the Eclipse Public License 2.0
+which is available at https://www.eclipse.org/legal/epl-2.0/
 
-SPDX-License-Identifier: EPL-1.0
-
-All rights reserved. This program and the accompanying materials
-are made available under the terms of the Eclipse Public License v1.0
-which accompanies this distribution, and is available at
-http://www.eclipse.org/legal/epl-v10.html
+SPDX-License-Identifier: EPL-2.0

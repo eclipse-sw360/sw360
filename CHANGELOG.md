@@ -2,7 +2,7 @@
 
 This is the changelog file of the sw360 software. It starts with the first release being provided at eclipse/sw360. For older releases, please refer to the first project location:
 
-https://github.com/sw360/sw360portal
+https://github.com/eclipse/sw360
 
 ## sw360-6.0.0-M1
 
@@ -375,11 +375,8 @@ Because of changes in the couchdb schema you likely need to run a migration scri
 
 ## License
 
-SPDX Short Identifier: http://spdx.org/licenses/EPL-1.0
+This program and the accompanying materials are made
+available under the terms of the Eclipse Public License 2.0
+which is available at https://www.eclipse.org/legal/epl-2.0/
 
-SPDX-License-Identifier: EPL-1.0
-
-All rights reserved. This program and the accompanying materials
-are made available under the terms of the Eclipse Public License v1.0
-which accompanies this distribution, and is available at
-http://www.eclipse.org/legal/epl-v10.html
+SPDX-License-Identifier: EPL-2.0
