@@ -230,12 +230,6 @@
     <jsp:include page="/html/utils/includes/searchReleases.jsp" />
 </core_rt:if>
 
-<c:if test="${codescoopActive}">
-    <script>
-        var sw360Purl = "${componentpurl}";
-    </script>
-</c:if>
-
 <script>
     require(['jquery', 'components/includes/vendors/searchVendor', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup', 'modules/validation' ], function($, vendorsearch, autocomplete, dialog, listgroup, validation) {
         document.title = "${component.name} - " + document.title;

@@ -12,7 +12,6 @@
 <%@ page import="javax.portlet.PortletRequest" %>
 <%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
-<%@ page import="org.eclipse.sw360.datahandler.thrift.components.Component" %>
 
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
@@ -22,15 +21,6 @@
 
 <portlet:defineObjects/>
 <liferay-theme:defineObjects/>
-
-<portlet:resourceURL var="sw360ComponentUrl">
-    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CODESCOOP_ACTION_COMPONENT%>'/>
-</portlet:resourceURL>
-
-<portlet:actionURL var="updateComponentURL" name="updateComponent">
-    <portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="${component.id}"/>
-</portlet:actionURL>
-
 
 <c:catch var="attributeNotFoundException">
     <jsp:useBean id="component" class="org.eclipse.sw360.datahandler.thrift.components.Component" scope="request"/>
@@ -55,24 +45,3 @@
 
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
-<c:if test="${codescoopActive}">
-    <form id="component_edit_form" name="componentEditForm" action="<%=updateComponentURL%>&updateOnlyRequested" method="post" style="display: none;">
-    </form>
-    <script>
-        var edit_form_fields = {
-            description: '<portlet:namespace/><%=Component._Fields.DESCRIPTION%>',
-            homepage: '<portlet:namespace/><%=Component._Fields.HOMEPAGE%>',
-            categories: '<portlet:namespace/><%=Component._Fields.CATEGORIES%>',
-            languages: '<portlet:namespace/><%=Component._Fields.LANGUAGES%>',
-            licenses: '<portlet:namespace/><%=Component._Fields.MAIN_LICENSE_IDS%>',
-            externalIdKey: '<portlet:namespace/><%=PortalConstants.EXTERNAL_ID_KEY%>externalIdsTableRow',
-            externalIdValue: '<portlet:namespace/><%=PortalConstants.EXTERNAL_ID_VALUE%>externalIdsTableRow'
-        };
-        document.addEventListener("DOMContentLoaded", function() {
-            require(['modules/codeScoop' ], function(codeScoop) {
-                var api = new codeScoop();
-                api.activateMerge("<%=sw360ComponentUrl%>");
-            });
-        });
-    </script>
-</c:if>

@@ -64,11 +64,7 @@
     <portlet:param name="<%=PortalConstants.LICENSE_ID%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>"/>
 </liferay-portlet:renderURL>
 
-<portlet:resourceURL var="sw360CompositeUrl">
-    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CODESCOOP_ACTION_COMPOSITE%>'/>
-</portlet:resourceURL>
-
-<div class="container" style="display: none;">
+div class="container" style="display: none;">
 	<div class="row">
 		<div class="col-3 sidebar">
 			<div class="card-deck">
@@ -170,31 +166,6 @@
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-    var renderCallback = function () {
-    };
-    var dataGetter = function(field) {
-    };
-</script>
-
-<core_rt:if test="${codescoopActive}">
-    <script>
-        window.codescoopEnabled = true;
-        document.addEventListener("DOMContentLoaded", function() {
-            require(['modules/codeScoop' ], function(codeScoop) {
-                var api = new codeScoop();
-                api.activateIndexes("componentsTable", "<%=sw360ComponentsURL%>", "<%=sw360CompositeUrl%>");
-                renderCallback = api._update_indexes;
-                dataGetter = api._get_composite_data_item;
-            });
-            document
-                .getElementById("componentsTable")
-                .getElementsByTagName("tfoot")[0]
-                .getElementsByTagName("th")[0]
-                .setAttribute("colspan", 10)
-        });
-    </script>
-</core_rt:if>
-<script>
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;
 
@@ -246,42 +217,6 @@
             // create and render data table
             function createComponentsTable() {
                 var columnDefs =  [];
-                var columns = [
-                    {"title": "Vendor", data: "vndrs"},
-                    {"title": "Component Name", data: "name", render: {display: renderComponentNameLink}},
-                    {"title": "Main Licenses", data: "lics", render: {display: renderLicenseLink}},
-                    {"title": "Component Type", data: "cType"},
-                    {"title": "Actions", data: "id", render: {display: renderComponentActions}, className: 'two actions', orderable: false }
-                ];
-                var printColumns = [0, 1, 2, 3];
-
-                if (window.codescoopEnabled) {
-                    columns = [
-                        {"title": "Logo", data: function(row, type, val, meta){
-                                return dataGetter(row.DT_RowId, 'logo');
-                            }},
-                        {"title": "Vendor", data: "vndrs"},
-                        {"title": "Component Name", data: "name", render: {display: renderComponentNameLink}},
-                        {"title": "Main Licenses", data: "lics", render: {display: renderLicenseLink}},
-                        {"title": "Rate", data: function(row, type, val, meta){
-                                return dataGetter(row.DT_RowId, 'rate');
-                            }},
-                        {"title": "Interest", data: function(row, type, val, meta){
-                                return dataGetter(row.DT_RowId, 'index', 'interest');
-                            }},
-                        {"title": "Activity", data: function(row, type, val, meta){
-                                return dataGetter(row.DT_RowId, 'index', 'activity');
-                            }},
-                        {"title": "Health", data: function(row, type, val, meta){
-                                return dataGetter(row.DT_RowId, 'index', 'health');
-                            }},
-                        {"title": "Component Type", data: "cType"},
-                        {"title": "Actions", data: "id", render: {display: renderComponentActions}, className: 'two actions', orderable: false }
-                    ];
-                    columnDefs = [{ "orderable": false, "targets": [0, 4, 5, 6 ,7] }];
-                    printColumns = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-                }
-
                 var componentsTable = datatables.create('#componentsTable', {
                     bServerSide: true,
                     sAjaxSource: '<%=sw360ComponentsURL%>',

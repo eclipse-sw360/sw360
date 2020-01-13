@@ -175,9 +175,5 @@
         var checkComponentNameUrl = '${checkComponentNameUrl}',
             checkComponentNameParamKey = '<portlet:namespace/><%=PortalConstants.COMPONENT_NAME%>',
             openOnBlurOfElementId = '#comp_name';
-
-        <core_rt:if test="${not codescoopActive}">
-            linkListDialog.registerLinkListDialog(openOnBlurOfElementId, checkComponentNameUrl, checkComponentNameParamKey);
-        </core_rt:if>
     });
 </script>
