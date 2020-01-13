@@ -66,7 +66,7 @@
 
 /** ComponentType **/
 .sw360-tt-ComponentType:hover:after {
-    content: "OSS: \A COTS: \A Internal: \A Inner-Source: \A Service: \A Freeware: ";
+    content: "OSS: \A COTS: \A Internal: \A Inner-Source: \A Service: \A Freeware: \A Code Snippet: ";
 }
 
 .sw360-tt-ComponentType-OSS:hover:after {
@@ -95,6 +95,11 @@
 }
 
 .sw360-tt-ComponentType-FREESOFTWARE:hover:after {
+    content: "";
+    display: none;
+}
+
+.sw360-tt-ComponentType-CODE_SNIPPET:hover:after {
     content: "";
     display: none;
 }
@@ -370,7 +375,7 @@
 
 /** ReleaseRelationShip **/
 .sw360-tt-ReleaseRelationship:hover:after {
-    content: "Unkown: If you just do not know \A Contained: If you just do not know whether it is dynamically linked \A Refered: Referencing a stand alone used other part \A Dynamically Linked: Software dynamically linked - as the name says \A Statically linked: Software statically linked - as the name says \A Side by side: Not decided so far \A Standalone: Software is given as standalone delivery, ie. not technically connected \A Internal Use: Used for creating or building or ? the product or projects but not delivered \A Optional: Is not mandatory part of the installation \A To be replaced: Is there but should be moved out";
+    content: "Unkown: If you just do not know \A Contained: If you just do not know whether it is dynamically linked \A Refered: Referencing a stand alone used other part \A Dynamically Linked: Software dynamically linked - as the name says \A Statically linked: Software statically linked - as the name says \A Side by side: Not decided so far \A Standalone: Software is given as standalone delivery, ie. not technically connected \A Internal Use: Used for creating or building or ? the product or projects but not delivered \A Optional: Is not mandatory part of the installation \A To be replaced: Is there but should be moved out \A Code Snippet: From references release, a fragment is used.";
 }
 
 .sw360-tt-ReleaseRelationship-UNKNOWN:hover:after {
@@ -412,6 +417,11 @@
 
 .sw360-tt-ReleaseRelationship-TO_BE_REPLACED:hover:after {
     content: "Is there but should be moved out.";
+}
+
+.sw360-tt-ReleaseRelationship-CODE_SNIPPET:hover:after {
+    content: "";
+    display: none;
 }
 
 /** RepositoryType **/

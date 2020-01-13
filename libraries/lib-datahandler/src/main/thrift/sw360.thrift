@@ -79,6 +79,7 @@ enum ReleaseRelationship {
     INTERNAL_USE = 7,
     OPTIONAL = 8,
     TO_BE_REPLACED = 9,
+    CODE_SNIPPET = 10,
 }
 
 enum MainlineState {
