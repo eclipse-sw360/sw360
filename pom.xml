@@ -45,9 +45,11 @@
     </modules>
 
     <properties>
-        <!-- This is the single place for changing the version of SW360 -->
-        <revision>7.1.0-SNAPSHOT</revision>
-
+        <!-- This is first of two places for changing the version of SW360 -->
+        <!-- note that 6.1.0-SNAPSHOT relates to 6.0.${patchlevel} -->
+        <!-- pls see also the profile cli -->
+        <revision>7.${patchlevel}</revision>
+        <patchlevel>1.0-SNAPSHOT</patchlevel>
         <java.version>1.8</java.version>
         <ektorp.version>1.5.0</ektorp.version>
         <thrift.version>0.11.0</thrift.version>
@@ -443,6 +445,16 @@
                         </plugin>
                 </plugins>
             </build>
+        </profile>
+        <profile>
+        <activation>
+            <activeByDefault>false</activeByDefault>
+        </activation>
+        <id>ci</id>
+        <properties>
+            <!-- second of two places for version setting: minor version -->
+            <patchlevel>0.${count}</patchlevel>
+        </properties>
         </profile>
     </profiles>
 </project>
