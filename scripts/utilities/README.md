@@ -16,9 +16,12 @@ To execute it is recommended to do this in the following order:
       1. `fieldName` = *"field_to_be_migrated"*
       2. `oldValue` = *"old_value"*
       3. `newValue` = *"new_value"*
+- `002_update_view.py`
+    - Script to update a view for a design document.
+      Following variables needs to be updated based on the requirement
+      1. `doc_id` = *"document_id"*
+      2. `nested_field_key` = *"field_to_be_updated"*
+      3. `newValue` = *"new_value"*
 
 ## Run the scripts for a database not running on localhost
 tbd.
-
-## Run the scripts within docker
-You can use the bash script `./dockerized-migration-runner.sh` to run the scripts wrapped within a docker container.
