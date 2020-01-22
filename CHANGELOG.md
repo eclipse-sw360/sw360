@@ -4,6 +4,35 @@ This is the changelog file of the sw360 software. It starts with the first relea
 
 https://github.com/eclipse/sw360
 
+## sw360-7.0.0-M1
+
+The main reason for release version 7 is to have the license upgrade from EPL-1.0 to EPL-2.0. All contributing parties have submitted their consent by e-mail and on most cases also approved the referring pull request (https://github.com/eclipse/sw360/pull/756).
+
+Another change which justifies a major version jump is the required view update in the couchdb. Please see https://github.com/eclipse/sw360/blob/master/scripts/migrations/README.md for more information when migrating from an older version. The view update allows users to configure the `My Projects` portlet.
+
+### New Features
+
+* `9b92795` feat(docs): relicensing from EPL-1.0 to EPL-2.0
+* `66a4126` feat(Component/ReleaseUI): Added button to remove selected vendor for component and release
+* `860aa3e` feat(ProjectMigration): script to migrate a project field to new value
+* `bd99641` feat(REST): Add parameter to GET release by name
+* `322c45d` feat(WelcomePageUI): display configurable content for guidelines on welcome page
+* `abac231` feat(fossology-pull-report): Added the button to pull the already generated report from fossology
+* `062c899` feat(HomePageUI): Listing of MyProjects is made configurable
+* `9849cb0` feat(licenseinfo): Added filter to exclude releases based on selected relationship
+
+### Corrections
+
+* `2a52475` fix(ProjectUI): Show proper error msg ,when loading of project fails due to access or dependency not found
+* `752bd78` fix(ProjectUI): fixed 'Project is temporarily unavailable' issue due to obligation feature
+* `b32afd5` fix(ReleaseUI/REST): prevent cyclic link in release
+* `0d2647d` fix(licenseinfo): White page while downloading license disclosure
+
+### Infrastructure
+
+* `d22aaaf` test: add script to start temporary couchdb with docker
+* `df54014` chore(cleanup): drop unused and outdated code related to the codescoop integration
+
 ## sw360-6.0.0-M1
 
 This release covers as the biggest change the new integration with the FOSSology REST API. It replaces the previous integration using an ssh login. It requires a migration of the couchdb database. More information about the scripts can be found in `scripts/migrations/README.md`.
