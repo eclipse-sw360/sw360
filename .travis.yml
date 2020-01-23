@@ -34,16 +34,20 @@ before_install:
   - sudo apt-get install -y couchdb
   - sudo service couchdb restart
   - ./scripts/install-thrift.sh --no-cleanup
-install: mvn dependency:resolve || true
 
-env: MVN_ARGS="package"
-script: mvn --fail-at-end $MVN_ARGS
+env:
+  GIT_COMMIT_COUNT="$(git rev-list  `git rev-list --tags --no-walk --max-count=1`..HEAD --count)"
+  MVN_ARGS="package"
+install:
+  mvn dependency:resolve || true
+script:
+  mvn --fail-at-end $MVN_ARGS
 
 matrix:
   include:
-    - name: mvn package
+    - name: mvn package -Pci -Dcount=$GIT_COMMIT_COUNT
       env: MVN_ARGS="package"
-    - name: mvn validate
+    - name: mvn validate -Pci -Dcount=$GIT_COMMIT_COUNT
       env: MVN_ARGS="validate"
       before_install:
     - name: mvn dependency:analyze
