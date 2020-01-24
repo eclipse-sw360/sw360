@@ -63,7 +63,7 @@
     <portlet:param name="<%=PortalConstants.LICENSE_ID%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>"/>
 </liferay-portlet:renderURL>
 
-div class="container" style="display: none;">
+<div class="container" style="display: none;">
 	<div class="row">
 		<div class="col-3 sidebar">
 			<div class="card-deck">
@@ -165,6 +165,12 @@ div class="container" style="display: none;">
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
+    var renderCallback = function () {
+    };
+    var dataGetter = function(field) {
+    };
+</script>
+<script>
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;
 
@@ -215,13 +221,20 @@ div class="container" style="display: none;">
 
             // create and render data table
             function createComponentsTable() {
-                var columnDefs =  [];
+                let columns = [
+                    {"title": "Vendor", data: "vndrs"},
+                    {"title": "Component Name", data: "name", render: {display: renderComponentNameLink}},
+                    {"title": "Main Licenses", data: "lics", render: {display: renderLicenseLink}},
+                    {"title": "Component Type", data: "cType"},
+                    {"title": "Actions", data: "id", render: {display: renderComponentActions}, className: 'two actions', orderable: false }
+                ];
+                let printColumns = [0, 1, 2, 3];
                 var componentsTable = datatables.create('#componentsTable', {
                     bServerSide: true,
                     sAjaxSource: '<%=sw360ComponentsURL%>',
 
                     columns: columns,
-                    columnDefs: columnDefs,
+                    columnDefs: [],
                     drawCallback: renderCallback,
                     initComplete: datatables.showPageContainer,
                     order: [
