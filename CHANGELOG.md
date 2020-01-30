@@ -4,6 +4,22 @@ This is the changelog file of the sw360 software. It starts with the first relea
 
 https://github.com/eclipse/sw360
 
+## sw360-7.0.1-M1
+
+After tagging 7.0.0, we found two bugs to be corrected to provide a sound SW360. Therefore, here a new tagged version of sw360. Everyone should use 7.0.1-M1 instead of 7.0.0.
+
+Adding rolling version since last tag will prepare automated tagging with incrementing patch level, retaining manual tagging for major and minor version only.
+
+### Corrections
+
+* `0dcd109` fix(ProjectUI: fixed blank / non-responsive screen on project
+* `da677b5` fix(ui): fix issue #762
+
+### Infrastructure
+
+* `a37e24d` chore(readme): adding some more badges
+* `f1a7c63`feat(chore): adding rolling versions based on commit count 
+
 ## sw360-7.0.0-M1
 
 The main reason for release version 7 is to have the license upgrade from EPL-1.0 to EPL-2.0. All contributing parties have submitted their consent by e-mail and on most cases also approved the referring pull request (https://github.com/eclipse/sw360/pull/756).
