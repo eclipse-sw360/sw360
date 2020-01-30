@@ -114,7 +114,7 @@ Actually, there is a hierarchy of maven files, in general
 
 For deployment run the command
 ```
-mvn install -Dbase.deploy.dir=<SOME_ABSOLUTE_PATH> -P deploy
+mvn package -P deploy -Dbase.deploy.dir=. -Dliferay.deploy.dir=${LIFERAY_INSTALL}/deploy -Dbackend.deploy.dir=${LIFERAY_INSTALL}/tomcat-9.0.17/webapps -Drest.deploy.dir=${LIFERAY_INSTALL}/tomcat-9.0.17/webapps -DskipTests
 ```
 which copies the artifacts depending on their type to the following folders:
   - backend: `<SOME_ABSOLUTE_PATH>/tomcat`
