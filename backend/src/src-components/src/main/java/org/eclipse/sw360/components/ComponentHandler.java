@@ -161,7 +161,7 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     @Override
-    public Release getReleaseById(String id, User user) throws TException {
+    public Release getReleaseById(String id, User user) throws SW360Exception {
         assertId(id);
         assertUser(user);
 

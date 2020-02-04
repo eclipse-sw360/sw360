@@ -248,7 +248,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         Release release = releaseRepository.get(id);
 
         if (release == null) {
-            throw fail("Could not fetch release from database! id=" + id);
+            throw fail(404, "Could not fetch release from database! id=" + id);
         }
 
         vendorRepository.fillVendor(release);

@@ -191,19 +191,15 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
     public ResponseEntity linkReleases(
             @PathVariable("id") String id,
             @RequestBody List<String> releaseURIs) throws URISyntaxException, TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        Project project = projectService.getProjectForUserById(id, sw360User);
-        Map<String, ProjectReleaseRelationship> releaseIdToUsage = new HashMap<>();
-        for (String releaseURIString : releaseURIs) {
-            URI releaseURI = new URI(releaseURIString);
-            String path = releaseURI.getPath();
-            String releaseId = path.substring(path.lastIndexOf('/') + 1);
-            releaseIdToUsage.put(releaseId,
-                    new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.OPEN));
-        }
-        project.setReleaseIdToUsage(releaseIdToUsage);
-        projectService.updateProject(project, sw360User);
+        addOrPatchReleasesToProject(id, releaseURIs, false);
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
 
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/releases", method = RequestMethod.PATCH)
+    public ResponseEntity patchReleases(@PathVariable("id") String id, @RequestBody List<String> releaseURIs)
+            throws URISyntaxException, TException {
+        addOrPatchReleasesToProject(id, releaseURIs, true);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
@@ -543,5 +539,26 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         }
 
         return halProject;
+    }
+
+    private void addOrPatchReleasesToProject(String id, List<String> releaseURIs, boolean patch)
+            throws URISyntaxException, TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Project project = projectService.getProjectForUserById(id, sw360User);
+        Map<String, ProjectReleaseRelationship> releaseIdToUsage = new HashMap<>();
+        if (patch) {
+            releaseIdToUsage = project.getReleaseIdToUsage();
+        }
+
+        for (String releaseURIString : releaseURIs) {
+            URI releaseURI = new URI(releaseURIString);
+            String path = releaseURI.getPath();
+            String releaseId = path.substring(path.lastIndexOf('/') + 1);
+            releaseService.getReleaseForUserById(releaseId, sw360User);
+            releaseIdToUsage.put(releaseId,
+                    new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.OPEN));
+        }
+        project.setReleaseIdToUsage(releaseIdToUsage);
+        projectService.updateProject(project, sw360User);
     }
 }

@@ -24,6 +24,7 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -35,6 +36,7 @@ import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.stereotype.Service;
 
@@ -65,7 +67,18 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
     public Release getReleaseForUserById(String releaseId, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        return sw360ComponentClient.getReleaseById(releaseId, sw360User);
+        Release releaseById = null;
+        try {
+            releaseById = sw360ComponentClient.getReleaseById(releaseId, sw360User);
+        } catch (SW360Exception sw360Exp) {
+            if (sw360Exp.getErrorCode() == 404) {
+                throw new ResourceNotFoundException("Release does not exists! id=" + releaseId);
+            } else {
+                throw sw360Exp;
+            }
+        }
+
+        return releaseById;
     }
 
     @Override

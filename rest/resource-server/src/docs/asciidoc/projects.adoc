@@ -304,6 +304,17 @@ include::{snippets}/should_document_link_releases/curl-request.adoc[]
 ===== Example response
 include::{snippets}/should_document_link_releases/http-response.adoc[]
 
+[[resources-project-patch-releases]]
+==== Patch Releases to the project
+
+A `PATCH` request to append new releases to existing releases in a project
+
+===== Example request
+include::{snippets}/should_document_patch_releases/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_patch_releases/http-response.adoc[]
+
 [[resources-project-get-download-licenseinfo]]
 ==== Download License Info
 
