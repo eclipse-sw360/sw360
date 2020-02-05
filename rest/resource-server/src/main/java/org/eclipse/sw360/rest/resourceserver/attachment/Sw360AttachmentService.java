@@ -75,27 +75,33 @@ public class Sw360AttachmentService {
     public AttachmentInfo getAttachmentById(String id) throws TException {
         AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
         List<Attachment> attachments = attachmentClient.getAttachmentsByIds(Collections.singleton(id));
-        return createAttachmentInfo(attachmentClient, attachments);
+        if (attachments.isEmpty()) {
+            throw new ResourceNotFoundException("Attachment not found.");
+        }
+        return createAttachmentInfo(attachmentClient, attachments.get(0));
     }
 
-    public AttachmentInfo getAttachmentBySha1(String sha1) throws TException {
+    public List<AttachmentInfo> getAttachmentsBySha1(String sha1) throws TException {
         AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
         List<Attachment> attachments = attachmentClient.getAttachmentsBySha1s(Collections.singleton(sha1));
-        return createAttachmentInfo(attachmentClient, attachments);
+        return createAttachmentInfos(attachmentClient, attachments);
     }
 
-    private AttachmentInfo createAttachmentInfo(AttachmentService.Iface attachmentClient, List<Attachment> attachments) throws TException {
-        AttachmentInfo attachmentInfo = new AttachmentInfo(getValidAttachment(attachments));
-        String attachmentId = attachmentInfo.getAttachment().getAttachmentContentId();
-        attachmentInfo.setOwner(attachmentClient.getAttachmentOwnersByIds(Collections.singleton(attachmentId)).get(0));
+    private AttachmentInfo createAttachmentInfo(AttachmentService.Iface attachmentClient, Attachment attachment)
+            throws TException {
+        AttachmentInfo attachmentInfo = new AttachmentInfo(attachment);
+        attachmentInfo.setOwner(attachmentClient
+                .getAttachmentOwnersByIds(Collections.singleton(attachment.getAttachmentContentId())).get(0));
         return attachmentInfo;
     }
 
-    private Attachment getValidAttachment(List<Attachment> attachments) {
-        if (attachments.isEmpty()) {
-            throw new ResourceNotFoundException();
+    private List<AttachmentInfo> createAttachmentInfos(AttachmentService.Iface attachmentClient,
+            List<Attachment> attachments) throws TException {
+        List<AttachmentInfo> attachmentInfos = new ArrayList<>();
+        for (Attachment attachment : attachments) {
+            attachmentInfos.add(createAttachmentInfo(attachmentClient, attachment));
         }
-        return attachments.get(0);
+        return attachmentInfos;
     }
 
     public void downloadAttachmentWithContext(Object context, String attachmentId, HttpServletResponse response, User sw360User) {
@@ -108,7 +114,7 @@ public class Sw360AttachmentService {
             response.setContentType(contentType);
             response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", filename));
             FileCopyUtils.copy(attachmentStream, response.getOutputStream());
-        } catch (TException|IOException e) {
+        } catch (TException | IOException e) {
             log.error(e.getMessage());
         }
     }

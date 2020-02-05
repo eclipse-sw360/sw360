@@ -30,3 +30,20 @@ include::{snippets}/should_document_get_attachment/http-response.adoc[]
 
 ===== Links
 include::{snippets}/should_document_get_attachment/links.adoc[]
+
+[[should_document_get_attachments_by_sha1]]
+==== Get attachment info by SHA1
+
+A `GET` request will get attachment information with the given sha1 and the resources having it. Please set the request parameter `&sha1=<SHA1>`.
+
+===== Response structure
+include::{snippets}/should_document_get_attachments_by_sha1/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_attachments_by_sha1/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_attachments_by_sha1/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_attachments_by_sha1/links.adoc[]
