@@ -267,9 +267,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
     private void setProjectPathToAttachmentUsages(List<AttachmentUsage> usagesToCreate, Project project) {
         usagesToCreate.forEach(usage -> {
-            LicenseInfoUsage licenseInfo= usage.getUsageData().getLicenseInfo();
-            if (licenseInfo != null && !licenseInfo.isSetProjectPath())
-                licenseInfo.setProjectPath(project.getId());
+            if (usage.isSetUsageData() && usage.getUsageData().getSetField().equals(UsageData._Fields.LICENSE_INFO)
+                    && usage.getUsageData().getLicenseInfo().isSetProjectPath())
+                usage.getUsageData().getLicenseInfo().setProjectPath(project.getId());
         });
     }
 
