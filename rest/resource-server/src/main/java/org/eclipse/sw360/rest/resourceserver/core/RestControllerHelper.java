@@ -23,7 +23,12 @@ import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
 import org.eclipse.sw360.rest.resourceserver.license.LicenseController;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProject;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.eclipse.sw360.rest.resourceserver.project.ProjectController;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
@@ -62,6 +67,7 @@ import java.net.URLEncoder;
 import java.util.*;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -535,5 +541,36 @@ public class RestControllerHelper<T> {
         }
 
         return externalIds;
+    }
+
+    public <P, R> void checkForCyclicOrInvalidDependencies(P client, R element, User user) throws TException {
+        String cyclicLinkedElementPath = null;
+        try {
+            if (client instanceof ProjectService.Iface) {
+                ProjectService.Iface projectClient = (ProjectService.Iface) client;
+                cyclicLinkedElementPath = projectClient.getCyclicLinkedProjectPath((Project) element, user);
+            } else if (client instanceof ComponentService.Iface) {
+                ComponentService.Iface componentClient = (ComponentService.Iface) client;
+                cyclicLinkedElementPath = componentClient.getCyclicLinkedReleasePath((Release) element, user);
+            }
+        } catch (SW360Exception sw360Exp) {
+            if (sw360Exp.getErrorCode() == 404) {
+                throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
+            } else if (sw360Exp.getErrorCode() == 403) {
+                if (element instanceof Project) {
+                    throw new AccessDeniedException(
+                            "Error fetching project. Either Project or its Linked Projects are not accessible");
+                }
+            } else {
+                throw sw360Exp;
+            }
+        }
+        if (!isNullEmptyOrWhitespace(cyclicLinkedElementPath)) {
+            if (element instanceof Project) {
+                throw new HttpMessageNotReadableException("Cyclic linked Project : " + cyclicLinkedElementPath);
+            } else if (element instanceof Release) {
+                throw new HttpMessageNotReadableException("Cyclic linked Release : " + cyclicLinkedElementPath);
+            }
+        }
     }
 }

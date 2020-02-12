@@ -28,6 +28,7 @@ enum RequestStatus {
     DUPLICATE_ATTACHMENT = 6,
     ACCESS_DENIED = 7,
     CLOSED_UPDATE_NOT_ALLOWED = 8,
+    INVALID_INPUT = 9,
 }
 
 enum RemoveModeratorRequestStatus {
@@ -40,7 +41,8 @@ enum AddDocumentRequestStatus {
     SUCCESS = 0,
     DUPLICATE = 1,
     FAILURE = 2,
-    NAMINGERROR = 3
+    NAMINGERROR = 3,
+    INVALID_INPUT = 4
 }
 
 exception SW360Exception {

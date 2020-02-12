@@ -552,7 +552,6 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
             URI releaseURI = new URI(releaseURIString);
             String path = releaseURI.getPath();
             String releaseId = path.substring(path.lastIndexOf('/') + 1);
-            releaseService.getReleaseForUserById(releaseId, sw360User);
             releaseIdToUsage.put(releaseId,
                     new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.OPEN));
         }

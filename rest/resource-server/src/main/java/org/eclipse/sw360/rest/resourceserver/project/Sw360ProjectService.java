@@ -124,10 +124,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public Project createProject(Project project, User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        String cyclicLinkedProjectPath = sw360ProjectClient.getCyclicLinkedProjectPath(project, sw360User);
-        if (!isNullEmptyOrWhitespace(cyclicLinkedProjectPath)) {
-            throw new HttpMessageNotReadableException("Cyclic linked Project : " + cyclicLinkedProjectPath);
-        }
+        rch.checkForCyclicOrInvalidDependencies(sw360ProjectClient, project, sw360User);
         AddDocumentRequestSummary documentRequestSummary = sw360ProjectClient.addProject(project, sw360User);
         if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.SUCCESS) {
             project.setId(documentRequestSummary.getId());
@@ -135,19 +132,21 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             return project;
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
             throw new DataIntegrityViolationException("sw360 project with name '" + project.getName() + "' already exists.");
+        } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
+            throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
         }
         return null;
     }
 
     public RequestStatus updateProject(Project project, User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        String cyclicLinkedProjectPath = sw360ProjectClient.getCyclicLinkedProjectPath(project, sw360User);
-        if (!isNullEmptyOrWhitespace(cyclicLinkedProjectPath)) {
-            throw new HttpMessageNotReadableException("Cyclic linked Project : " + cyclicLinkedProjectPath);
-        }
+        String cyclicLinkedProjectPath = null;
+        rch.checkForCyclicOrInvalidDependencies(sw360ProjectClient, project, sw360User);
         RequestStatus requestStatus = sw360ProjectClient.updateProject(project, sw360User);
         if (requestStatus == RequestStatus.CLOSED_UPDATE_NOT_ALLOWED) {
             throw new RuntimeException("User cannot modify a closed project");
+        } if (requestStatus == RequestStatus.INVALID_INPUT) {
+            throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
         } else if (requestStatus != RequestStatus.SUCCESS) {
             throw new RuntimeException("sw360 project with name '" + project.getName() + " cannot be updated.");
         }

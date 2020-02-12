@@ -83,6 +83,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private final AttachmentConnector attachmentConnector;
     private final ComponentDatabaseHandler componentDatabaseHandler;
     private final ReleaseRelationsUsageRepository relUsageRepository;
+    private final ReleaseRepository releaseRepository;
+    private final VendorRepository vendorRepository;
     private final MailUtil mailUtil = new MailUtil();
 
     // this caching structure is only used for filling clearing state summaries and
@@ -120,6 +122,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         pvrRepository = new ProjectVulnerabilityRatingRepository(db);
         obligationRepository = new ProjectObligationRepository(db);
         relUsageRepository = new ReleaseRelationsUsageRepository(db);
+        vendorRepository = new VendorRepository(db);
+        releaseRepository = new ReleaseRepository(db, vendorRepository);
 
         // Create the moderator
         this.moderator = moderator;
@@ -224,6 +228,11 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return addDocumentRequestSummary;
         }
 
+        if (!isDependenciesExists(project, user)) {
+            return new AddDocumentRequestSummary()
+                    .setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT);
+        }
+
         // Save creating user
         project.createdBy = user.getEmail();
         project.createdOn = getCreatedOn();
@@ -259,6 +268,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return RequestStatus.CLOSED_UPDATE_NOT_ALLOWED;
         } else if (!changePassesSanityCheck(project, actual)){
             return RequestStatus.FAILED_SANITY_CHECK;
+        } else if (!isDependenciesExists(project, user)) {
+            return RequestStatus.INVALID_INPUT;
         } else if (makePermission(actual, user).isActionAllowed(RequestedAction.WRITE)) {
             copyImmutableFields(project,actual);
             project.setAttachments( getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), project.getAttachments()) );
@@ -273,6 +284,41 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         } else {
             return moderator.updateProject(project, user);
         }
+    }
+
+    private boolean isDependenciesExists(Project project, User user) {
+        boolean isValidDependentIds = true;
+        if (project.isSetReleaseIdToUsage()) {
+            Set<String> releaseIds = project.getReleaseIdToUsage().keySet();
+            isValidDependentIds = DatabaseHandlerUtil.isAllIdInSetExists(releaseIds, releaseRepository);
+        }
+
+        if (isValidDependentIds && project.isSetLinkedProjects()) {
+            Set<String> projectIds = project.getLinkedProjects().keySet();
+            isValidDependentIds =  DatabaseHandlerUtil.isAllIdInSetExists(projectIds, repository) && verifyLinkedProjectsAreAccessible(projectIds, user);
+        }
+
+        if (isValidDependentIds && project.isSetLinkedObligationId()) {
+            String obligationId = project.getLinkedObligationId();
+            isValidDependentIds = DatabaseHandlerUtil.isAllIdInSetExists(Sets.newHashSet(obligationId), obligationRepository);
+        }
+        return isValidDependentIds;
+    }
+
+    private boolean verifyLinkedProjectsAreAccessible(Set<String> linkedProjectIds, User user) {
+        long nonAccessibleProjectIdsCount = 0;
+        if (linkedProjectIds != null) {
+            nonAccessibleProjectIdsCount = linkedProjectIds.stream().filter(id -> {
+                Project project = repository.get(id);
+                return !PermissionUtils.makePermission(project, user).isActionAllowed(RequestedAction.READ);
+            }).count();
+        }
+
+        if (nonAccessibleProjectIdsCount > 0)
+            return false;
+
+        return true;
+
     }
 
     public ProjectObligation getLinkedObligations(String obligationId, User user) throws TException {
@@ -742,7 +788,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public String getCyclicLinkedProjectPath(Project project, User user) throws TException {
-        return AttachmentAwareDatabaseHandler.getCyclicLinkedPath(project, this, user);
+        return DatabaseHandlerUtil.getCyclicLinkedPath(project, this, user);
     }
 
     private void releaseIdToProjects(Project project, User user, Set<String> visitedProjectIds, Multimap<String, ProjectWithReleaseRelationTuple> releaseIdToProjects) throws SW360Exception {

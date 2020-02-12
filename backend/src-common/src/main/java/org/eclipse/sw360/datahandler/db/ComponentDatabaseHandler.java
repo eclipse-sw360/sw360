@@ -303,6 +303,11 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return new AddDocumentRequestSummary()
                     .setRequestStatus(AddDocumentRequestStatus.NAMINGERROR);
         }
+
+        if (!isDependenciesExistInComponent(component)) {
+            return new AddDocumentRequestSummary()
+                    .setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT);
+        }
         // Prepare the component
         prepareComponent(component);
 
@@ -334,6 +339,11 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                         .forEach(addDocumentRequestSummary::setId);
             }
             return addDocumentRequestSummary;
+        }
+
+        if (!isDependenciesExistsInRelease(release)) {
+            return new AddDocumentRequestSummary()
+                    .setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT);
         }
 
         String componentId = release.getComponentId();
@@ -449,6 +459,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return RequestStatus.DUPLICATE;
         } else if (duplicateAttachmentExist(component)) {
             return RequestStatus.DUPLICATE_ATTACHMENT;
+        } else if (!isDependenciesExistInComponent(component)){
+            return RequestStatus.INVALID_INPUT;
         } else if (makePermission(actual, user).isActionAllowed(RequestedAction.WRITE)) {
             // Nested releases and attachments should not be updated by this method
             boolean isComponentNameChanged = false;
@@ -470,6 +482,38 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
         return RequestStatus.SUCCESS;
 
+    }
+
+    private boolean isDependenciesExistInComponent(Component component) {
+        boolean isValidDependentIds = true;
+        if (component.isSetReleaseIds()) {
+            Set<String> releaseIds = component.getReleaseIds();
+            isValidDependentIds = DatabaseHandlerUtil.isAllIdInSetExists(releaseIds, releaseRepository);
+        }
+
+        if (isValidDependentIds && component.isSetDefaultVendorId()) {
+            isValidDependentIds = DatabaseHandlerUtil.isAllIdInSetExists(Sets.newHashSet(component.getDefaultVendorId()), vendorRepository);
+        }
+        return isValidDependentIds;
+    }
+
+    private boolean isDependenciesExistsInRelease(Release release) {
+        boolean isValidDependentIds = true;
+        if (release.isSetComponentId()) {
+            String componentId = release.getComponentId();
+            isValidDependentIds = DatabaseHandlerUtil.isAllIdInSetExists(Sets.newHashSet(componentId), componentRepository);
+        }
+
+        if (isValidDependentIds && release.isSetReleaseIdToRelationship()) {
+            Set<String> releaseIds = release.getReleaseIdToRelationship().keySet();
+            isValidDependentIds = DatabaseHandlerUtil.isAllIdInSetExists(Sets.newHashSet(releaseIds), releaseRepository);
+        }
+
+        if (isValidDependentIds && release.isSetVendorId()) {
+            String vendorId = release.getVendorId();
+            isValidDependentIds = DatabaseHandlerUtil.isAllIdInSetExists(Sets.newHashSet(vendorId), vendorRepository);
+        }
+        return isValidDependentIds;
     }
 
     private void updateComponentDependentFieldsForRelease(Component component) {
@@ -726,6 +770,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return RequestStatus.DUPLICATE_ATTACHMENT;
         } else if (changeWouldResultInDuplicate(actual, release)) {
             return RequestStatus.DUPLICATE;
+        }  else if (!isDependenciesExistsInRelease(release)) {
+            return RequestStatus.INVALID_INPUT;
         } else {
             DocumentPermissions<Release> permissions = makePermission(actual, user);
             boolean hasChangesInEccFields = hasChangesInEccFields(release, actual);
@@ -1579,7 +1625,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public String getCyclicLinkedReleasePath(Release release, User user) throws TException {
-        return getCyclicLinkedPath(release, this, user);
+        return DatabaseHandlerUtil.getCyclicLinkedPath(release, this, user);
     }
 
     public List<Component> searchComponentByNameForExport(String name) {

@@ -305,11 +305,11 @@ public class ProjectHandlerTest {
     @Test
     public void testDontDeleteUsedProject1_1() throws Exception {
 
-        final Project p2 = handler.getProjectById("P2", user2);
-        p2.setLinkedProjects(ImmutableMap.of("P1", ProjectRelationship.CONTAINED));
-        handler.updateProject(p2,user2);
+        final Project p1 = handler.getProjectById("P1", user1);
+        p1.setLinkedProjects(ImmutableMap.of("P2", ProjectRelationship.CONTAINED));
+        handler.updateProject(p1,user1);
 
-        RequestStatus status = handler.deleteProject("P1", user1);
+        RequestStatus status = handler.deleteProject("P2", user2);
 
         assertEquals(RequestStatus.IN_USE, status);
 
