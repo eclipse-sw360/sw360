@@ -18,9 +18,14 @@ import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
+import org.eclipse.sw360.datahandler.thrift.components.ExternalTool;
+import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
+import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStatus;
+import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStep;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -34,6 +39,7 @@ import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
@@ -50,6 +56,8 @@ import java.util.*;
 
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
@@ -80,7 +88,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
     @MockBean
     private Sw360LicenseService licenseServiceMock;
 
-    private Release release;
+    private Release release, release3;
     private Attachment attachment;
     Component component;
     private Project project;
@@ -181,6 +189,18 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         release2.setSoftwarePlatforms(new HashSet<>(Arrays.asList("Java SE", ".NET")));
         releaseList.add(release2);
 
+        release3 = new Release();
+        release3.setId("987456");
+        release3.setName("Angular");
+        release3.setVersion("2.3.1");
+        release3.setCreatedOn("2016-12-18");
+        release3.setCreatedBy("admin@sw360.org");
+        release3.setComponentId("1234");
+        Attachment attachment3 = new Attachment(attachment);
+        attachment3.setAttachmentContentId("34535345");
+        attachment3.setAttachmentType(AttachmentType.SOURCE);
+        release3.setAttachments(ImmutableSet.of(attachment3));
+
         Set<Project> projectList = new HashSet<>();
         project = new Project();
         project.setId("376576");
@@ -221,6 +241,44 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                 new License("GNU General Public License 2.0").setText("GNU General Public License 2.0 Text")
                         .setShortname("GPL-2.0-or-later")
                         .setId(UUID.randomUUID().toString()));
+
+        ExternalToolProcess fossologyProcess = new ExternalToolProcess();
+        fossologyProcess.setAttachmentId("5345ab789");
+        fossologyProcess.setAttachmentHash("535434657567");
+        fossologyProcess.setExternalTool(ExternalTool.FOSSOLOGY);
+        fossologyProcess.setProcessStatus(ExternalToolProcessStatus.DONE);
+        List<ExternalToolProcessStep> processSteps = new ArrayList<>();
+        ExternalToolProcessStep uploadStep = new ExternalToolProcessStep();
+        uploadStep.setStepName("01_upload");
+        uploadStep.setProcessStepIdInTool("2");
+        uploadStep.setResult("12");
+        uploadStep.setStartedBy("abc@sw360.org");
+        uploadStep.setStartedByGroup("DEPARTMENT");
+        uploadStep.setStartedOn("2020-02-27T08:18:51.393Z");
+        uploadStep.setFinishedOn("2020-02-27T08:18:55.696Z");
+        uploadStep.setStepStatus(ExternalToolProcessStatus.DONE);
+
+        ExternalToolProcessStep scanStep = uploadStep.deepCopy();
+        scanStep.setStepName("02_scan");
+        scanStep.setProcessStepIdInTool("3");
+        scanStep.setResult("14");
+        scanStep.setStartedOn("2020-02-27T08:41:26.882Z");
+        scanStep.setFinishedOn("2020-02-27T08:42:29.445Z");
+
+        ExternalToolProcessStep reportStep = uploadStep.deepCopy();
+        reportStep.setStepName("03_report");
+        reportStep.setProcessStepIdInTool("4");
+        reportStep.setResult(attachment.getAttachmentContentId());
+        reportStep.setStartedOn("2020-02-27T08:46:50.155Z");
+        reportStep.setFinishedOn("2020-02-27T08:47:15.708Z");
+
+        processSteps.add(uploadStep);
+        processSteps.add(scanStep);
+        processSteps.add(reportStep);
+        fossologyProcess.setProcessSteps(processSteps);
+        release3.setExternalToolProcesses(ImmutableSet.of(fossologyProcess));
+        when(releaseServiceMock.getReleaseForUserById(eq(release3.getId()), anyObject())).thenReturn(release3);
+        when(releaseServiceMock.getExternalToolProcess(release3)).thenReturn(fossologyProcess);
     }
 
     @Test
@@ -438,6 +496,56 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("_embedded.sw360:releases[]externalIds").description("External Ids of the release"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
+    }
+
+    @Test
+    public void should_document_trigger_fossology_process() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(
+                get("/api/releases/" + release3.getId() + "/triggerFossologyProcess?markFossologyProcessOutdated=false")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(responseFields(
+                        fieldWithPath("content.message").description(
+                                "Message indicating whether FOSSology Process for Release triggered or not"),
+                        fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"))));
+    }
+
+    @Test
+    public void should_document_check_fossology_process_status() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/releases/" + release3.getId() + "/checkFossologyProcessStatus").header("Authorization",
+                "Bearer " + accessToken)).andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(responseFields(
+                        fieldWithPath("status").description("The status of triggered FOSSology, possible values are: " + Arrays.asList(RequestStatus.SUCCESS, RequestStatus.FAILURE, RequestStatus.PROCESSING)),
+                        fieldWithPath("fossologyProcessInfo")
+                                .description("The information about triggered FOSSology process."),
+                        fieldWithPath("fossologyProcessInfo.externalTool")
+                                .description("The name of external tool ,possible values are: " + Arrays.asList(ExternalTool.values())),
+                        fieldWithPath("fossologyProcessInfo.processStatus")
+                                .description("The status of process, possible values are: " + Arrays.asList(ExternalToolProcessStatus.values())),
+                        fieldWithPath("fossologyProcessInfo.attachmentId")
+                                .description("The attachement Id of the source."),
+                        fieldWithPath("fossologyProcessInfo.attachmentHash")
+                                .description("The attachement hash of the source."),
+                        fieldWithPath("fossologyProcessInfo.processSteps")
+                                .description("An array of ExternalToolProcessStep"),
+                        fieldWithPath("fossologyProcessInfo.processSteps[]stepName")
+                                .description("The name of step in FOSSology process, possible values are: " + Arrays.asList("01_upload", "02_scan", "03_report")),
+                        fieldWithPath("fossologyProcessInfo.processSteps[]stepStatus")
+                                .description("The status of step, possible values are: " + Arrays.asList(ExternalToolProcessStatus.DONE, ExternalToolProcessStatus.IN_WORK, ExternalToolProcessStatus.NEW)),
+                        fieldWithPath("fossologyProcessInfo.processSteps[]startedBy")
+                                .description("The email of user ,triggering the step."),
+                        fieldWithPath("fossologyProcessInfo.processSteps[]startedByGroup")
+                                .description("The group of user ,triggering the step."),
+                        fieldWithPath("fossologyProcessInfo.processSteps[]startedOn")
+                                .description("The start time of step."),
+                        fieldWithPath("fossologyProcessInfo.processSteps[]processStepIdInTool")
+                                .description("The upload id, scan id or report id in FOSSology."),
+                        fieldWithPath("fossologyProcessInfo.processSteps[]finishedOn")
+                                .description("The finished time of step."),
+                        fieldWithPath("fossologyProcessInfo.processSteps[]result")
+                                .description("The result of step , -1 or null indicates failure."))));
     }
 
     @Test

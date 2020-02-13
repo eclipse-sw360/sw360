@@ -36,6 +36,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -57,6 +58,11 @@ public class FossologyHandler implements FossologyService.Iface {
     private final FossologyRestConfig fossologyRestConfig;
     private final FossologyRestClient fossologyRestClient;
     private final AttachmentConnector attachmentConnector;
+
+    private static final String SCAN_RESPONSE_STATUS_VALUE_QUEUED = "Queued";
+    private static final String SCAN_RESPONSE_STATUS_VALUE_PROCESSING = "Processing";
+    private static final String SCAN_RESPONSE_STATUS_VALUE_COMPLETED = "Completed";
+    private static final String SCAN_RESPONSE_STATUS_VALUE_FAILED = "Failed";
 
     @Autowired
     public FossologyHandler(ThriftClients thriftClients, FossologyRestConfig fossologyRestConfig,
@@ -375,8 +381,8 @@ public class FossologyHandler implements FossologyService.Iface {
         case IN_WORK:
             // query state
             int scanningJobId = Integer.valueOf(furthestStep.getProcessStepIdInTool());
-            int status = fossologyRestClient.checkScanStatus(scanningJobId);
-            if (status > 0) {
+            int status = scanStatusCode(fossologyRestClient.checkScanStatus(scanningJobId));
+            if (status > 0 || status == -1) {
                 furthestStep.setFinishedOn(Instant.now().toString());
                 furthestStep.setStepStatus(ExternalToolProcessStatus.DONE);
                 furthestStep.setResult(status + "");
@@ -500,5 +506,32 @@ public class FossologyHandler implements FossologyService.Iface {
             return RequestStatus.SUCCESS;
         }
         return RequestStatus.SUCCESS;
+    }
+
+    @Override
+    public Map<String, String> checkUnpackStatus(int uploadId) throws TException {
+        return fossologyRestClient.checkUnpackStatus(uploadId);
+    }
+
+    @Override
+    public Map<String, String> checkScanStatus(int scanJobId) throws TException {
+        return fossologyRestClient.checkScanStatus(scanJobId);
+    }
+
+    private int scanStatusCode(Map<String, String> responseMap) {
+        if (responseMap == null || responseMap.isEmpty())
+            return -1;
+
+        String status = responseMap.get("status");
+        switch (status) {
+        case SCAN_RESPONSE_STATUS_VALUE_COMPLETED:
+            return 1;
+        case SCAN_RESPONSE_STATUS_VALUE_QUEUED:
+        case SCAN_RESPONSE_STATUS_VALUE_PROCESSING:
+            return 0;
+        case SCAN_RESPONSE_STATUS_VALUE_FAILED:
+        default:
+            return -1;
+        }
     }
 }

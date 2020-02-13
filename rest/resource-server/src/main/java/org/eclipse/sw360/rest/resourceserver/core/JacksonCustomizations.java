@@ -62,6 +62,8 @@ class JacksonCustomizations {
             setMixInAnnotation(VulnerabilityDTO.class, Sw360Module.VulnerabilityDTOMixin.class);
             setMixInAnnotation(EccInformation.class, Sw360Module.EccInformationMixin.class);
             setMixInAnnotation(EmbeddedProject.class, Sw360Module.EmbeddedProjectMixin.class);
+            setMixInAnnotation(ExternalToolProcess.class, Sw360Module.ExternalToolProcessMixin.class);
+            setMixInAnnotation(ExternalToolProcessStep.class, Sw360Module.ExternalToolProcessStepMixin.class);
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -688,6 +690,48 @@ class JacksonCustomizations {
             @Override
             @JsonProperty("eccStatus")
             abstract public ECCStatus getEccStatus();
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_EMPTY)
+        @JsonIgnoreProperties({
+            "id",
+            "processIdInTool",
+            "setProcessIdInTool",
+            "setAttachmentId",
+            "setAttachmentHash",
+            "setId",
+            "setExternalTool",
+            "setProcessStatus",
+            "processStepsIterator",
+            "setProcessSteps",
+            "processStepsSize"
+        })
+        static abstract class ExternalToolProcessMixin extends ExternalToolProcess {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_EMPTY)
+        @JsonIgnoreProperties({
+            "id",
+            "linkToStep",
+            "setProcessIdInTool",
+            "userIdInTool",
+            "userCredentialsInTool",
+            "userGroupInTool",
+            "setId",
+            "setStepName",
+            "setStepStatus",
+            "setLinkToStep",
+            "setStartedBy",
+            "setStartedByGroup",
+            "setStartedOn",
+            "setProcessStepIdInTool",
+            "setUserIdInTool",
+            "setUserCredentialsInTool",
+            "setUserGroupInTool",
+            "setFinishedOn",
+            "setResult"
+        })
+        static abstract class ExternalToolProcessStepMixin extends ExternalToolProcessStep {
         }
     }
 }

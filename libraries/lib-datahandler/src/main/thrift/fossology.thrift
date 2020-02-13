@@ -58,4 +58,13 @@ service FossologyService {
      **/
     RequestStatus triggerReportGenerationFossology(1: string releaseId, 2: User user);
 
+    /**
+     * Check unpack status for an upload Id.
+     **/
+    map<string, string> checkUnpackStatus(i32 uploadId);
+
+    /**
+     * Check scan status for a scan job Id.
+     **/
+    map<string, string> checkScanStatus(i32 scanJobId);
 }

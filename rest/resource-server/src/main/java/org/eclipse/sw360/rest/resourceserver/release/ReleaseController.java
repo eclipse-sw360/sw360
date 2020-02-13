@@ -21,6 +21,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
+import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
@@ -46,14 +47,17 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -65,6 +69,7 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 public class ReleaseController implements ResourceProcessor<RepositoryLinksResource> {
     public static final String RELEASES_URL = "/releases";
     private static final Logger log = Logger.getLogger(ReleaseController.class);
+    private static final Map<String, ReentrantLock> mapOfLocks = new HashMap<String, ReentrantLock>();
 
     @NonNull
     private Sw360ReleaseService releaseService;
@@ -277,6 +282,61 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
         attachmentService.downloadAttachmentWithContext(release, attachmentId, response, sw360User);
     }
 
+    @RequestMapping(value = RELEASES_URL + "/{id}/checkFossologyProcessStatus", method = RequestMethod.GET)
+    public ResponseEntity<Map<String, Object>> checkFossologyProcessStatus(@PathVariable("id") String releaseId)
+            throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        Release release = releaseService.getReleaseForUserById(releaseId, user);
+        Map<String, Object> responseMap = new HashMap<>();
+        ExternalToolProcess fossologyProcess = releaseService.getExternalToolProcess(release);
+        ReentrantLock lock = mapOfLocks.get(releaseId);
+        if (lock != null && lock.isLocked()) {
+            responseMap.put("status", RequestStatus.PROCESSING);
+        } else if (fossologyProcess != null && releaseService.isFOSSologyProcessCompleted(fossologyProcess)) {
+            log.info("FOSSology process for Release : " + releaseId + " is complete.");
+            responseMap.put("status", RequestStatus.SUCCESS);
+        } else {
+            responseMap.put("status", RequestStatus.FAILURE);
+        }
+        responseMap.put("fossologyProcessInfo", fossologyProcess);
+        return new ResponseEntity<>(responseMap, HttpStatus.OK);
+    }
+
+    @RequestMapping(value = RELEASES_URL + "/{id}/triggerFossologyProcess", method = RequestMethod.GET)
+    public ResponseEntity<HalResource> triggerFossologyProcess(@PathVariable("id") String releaseId,
+            @RequestParam(value = "markFossologyProcessOutdated", required = false) boolean markFossologyProcessOutdated,
+            HttpServletResponse response) throws TException, IOException {
+        releaseService.checkFossologyConnection();
+
+        ReentrantLock lock = mapOfLocks.get(releaseId);
+        Map<String, String> responseMap = new HashMap<>();
+        HttpStatus status = null;
+        if (lock == null || !lock.isLocked()) {
+            if (mapOfLocks.size() > 10) {
+                responseMap.put("message",
+                        "Max 10 FOSSology Process can be triggered simultaneously. Please try after sometime.");
+                status = HttpStatus.TOO_MANY_REQUESTS;
+            } else {
+                User user = restControllerHelper.getSw360UserFromAuthentication();
+                releaseService.executeFossologyProcess(user, attachmentService, mapOfLocks, releaseId,
+                        markFossologyProcessOutdated);
+                responseMap.put("message", "FOSSology Process for Release Id : " + releaseId + " has been triggered.");
+                status = HttpStatus.OK;
+            }
+
+        } else {
+            status = HttpStatus.NOT_ACCEPTABLE;
+            responseMap.put("message", "FOSSology Process for Release Id : " + releaseId
+                    + " is already running. Please wait till it is completed.");
+        }
+        HalResource responseResource = new HalResource(responseMap);
+        Link checkStatusLink = linkTo(ReleaseController.class).slash("api" + RELEASES_URL).slash(releaseId)
+                .slash("checkFossologyProcessStatus").withSelfRel();
+        responseResource.add(checkStatusLink);
+
+        return new ResponseEntity<HalResource>(responseResource, status);
+    }
+
     @Override
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
         resource.add(linkTo(ReleaseController.class).slash("api" + RELEASES_URL).withRel("releases"));
@@ -315,3 +375,5 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
         return halRelease;
     }
 }
+
+

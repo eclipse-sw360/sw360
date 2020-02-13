@@ -176,6 +176,34 @@ include::{snippets}/should_document_get_release_attachment/curl-request.adoc[]
 ===== Example response
 include::{snippets}/should_document_get_release_attachment/http-response.adoc[]
 
+[[resources-trigger_fossology_process-get]]
+==== Trigger FOSSology process
+
+A `GET` request will allow you to Trigger FOSSology process for a release. +
+Please set the request parameter `&markFossologyProcessOutdated=<true|false>` to set previous FOSSology process outdated and generate new.
+
+===== Response structure
+include::{snippets}/should_document_trigger_fossology_process/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_trigger_fossology_process/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_trigger_fossology_process/http-response.adoc[]
+
+[[resources-check_fossology_process_status-get]]
+==== Check FOSSology process status
+
+A `GET` request will allow you to check status of triggered FOSSology process of a release.
+
+===== Response structure
+include::{snippets}/should_document_check_fossology_process_status/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_check_fossology_process_status/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_check_fossology_process_status/http-response.adoc[]
 
 [[resources-release-get]]
 ==== Get a single release
