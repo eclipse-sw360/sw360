@@ -192,7 +192,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         releaseIdsInBranch.add(sw360Release.getId());
         Map<String, ReleaseRelationship> releaseIdToRelationship = sw360Release.getReleaseIdToRelationship();
         if (releaseIdToRelationship != null) {
-            releaseIdToRelationship.keySet().stream().forEach(linkedReleaseId -> wrapTException(() -> {
+            releaseIdToRelationship.keySet().forEach(linkedReleaseId -> wrapTException(() -> {
                 if (releaseIdsInBranch.contains(linkedReleaseId)) {
                     return;
                 }

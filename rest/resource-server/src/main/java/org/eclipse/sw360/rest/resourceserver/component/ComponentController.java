@@ -132,13 +132,12 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
         Set<Component> sw360Components = componentService.getUsingComponentsForComponent(id, user);
 
         List<Resource<Object>> resources = new ArrayList<>();
-        sw360Projects.stream().forEach(p -> {
+        sw360Projects.forEach(p -> {
             Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
             resources.add(new Resource<>(embeddedProject));
         });
 
-        sw360Components.stream()
-                .forEach(c -> {
+        sw360Components.forEach(c -> {
                     Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c);
                     resources.add(new Resource<>(embeddedComponent));
                 });
@@ -295,7 +294,7 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
         if (!isNullOrEmpty(sw360Component.getDefaultVendorId())) {
             Vendor defaultVendor;
             if (sw360Component.getDefaultVendor() == null
-                    || sw360Component.getDefaultVendor().getId() != sw360Component.getDefaultVendorId()) {
+                    || !sw360Component.getDefaultVendor().getId().equals(sw360Component.getDefaultVendorId())) {
                 defaultVendor = vendorService.getVendorById(sw360Component.getDefaultVendorId());
             } else {
                 defaultVendor = sw360Component.getDefaultVendor();

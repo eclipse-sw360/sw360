@@ -116,14 +116,12 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     }
 
     public Set<Project> getProjectsByRelease(String releaseId, User sw360User) throws TException {
-        Set<Project> usedByProjects = projectService.getProjectsByRelease(releaseId, sw360User);
-        return usedByProjects;
+        return projectService.getProjectsByRelease(releaseId, sw360User);
     }
 
     public Set<Component> getUsingComponentsForRelease(String releaseId, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        Set<Component> usingComponentsForComponent = sw360ComponentClient.getUsingComponentsForRelease(releaseId);
-        return usingComponentsForComponent;
+        return sw360ComponentClient.getUsingComponentsForRelease(releaseId);
     }
 
     private ComponentService.Iface getThriftComponentClient() throws TTransportException {

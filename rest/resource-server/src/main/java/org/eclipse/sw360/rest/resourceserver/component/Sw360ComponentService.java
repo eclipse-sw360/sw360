@@ -76,17 +76,15 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         Component component = sw360ComponentClient.getComponentById(componentId, sw360User);
         Set<String> releaseIds = SW360Utils.getReleaseIds(component.getReleases());
-        Set<Project> usedByProjects = projectService.getProjectsByReleaseIds(releaseIds, sw360User);
 
-        return usedByProjects;
+        return projectService.getProjectsByReleaseIds(releaseIds, sw360User);
     }
 
     public Set<Component> getUsingComponentsForComponent(String componentId, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         Component component = sw360ComponentClient.getComponentById(componentId, sw360User);
         Set<String> releaseIds = SW360Utils.getReleaseIds(component.getReleases());
-        Set<Component> usingComponentsForComponent = sw360ComponentClient.getUsingComponentsForComponent(releaseIds);
-        return usingComponentsForComponent;
+        return sw360ComponentClient.getUsingComponentsForComponent(releaseIds);
     }
 
     @Override

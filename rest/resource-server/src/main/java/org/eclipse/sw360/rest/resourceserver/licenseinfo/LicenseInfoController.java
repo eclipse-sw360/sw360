@@ -13,7 +13,6 @@ package org.eclipse.sw360.rest.resourceserver.licenseinfo;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
-import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.license.LicenseController;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +36,6 @@ public class LicenseInfoController implements ResourceProcessor<RepositoryLinksR
     }
 
     private HalResource<LicenseInfo> createHalLicense(LicenseInfo sw360LicenseInfo) {
-        HalResource<LicenseInfo> halLicenseInfo = new HalResource<>(sw360LicenseInfo);
-        return halLicenseInfo;
+        return new HalResource<>(sw360LicenseInfo);
     }
 }

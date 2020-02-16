@@ -210,7 +210,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
         projectList.add(project2);
 
-        Set<String> releaseIds = new HashSet<>(Arrays.asList("3765276512"));
+        Set<String> releaseIds = new HashSet<>(Collections.singletonList("3765276512"));
         Set<String> releaseIdsTransitive = new HashSet<>(Arrays.asList("3765276512", "5578999"));
 
         given(this.projectServiceMock.getProjectsForUser(anyObject())).willReturn(projectList);
@@ -293,7 +293,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
         Source ownerSrc1 = Source.releaseId("9988776655");
         Source usedBySrc = Source.projectId(project.getId());
-        LicenseInfoUsage licenseInfoUsage1 = new LicenseInfoUsage(new HashSet<String>());
+        LicenseInfoUsage licenseInfoUsage1 = new LicenseInfoUsage(new HashSet<>());
         licenseInfoUsage1.setProjectPath("11223344:22334455");
         licenseInfoUsage1.setExcludedLicenseIds(Sets.newHashSet("22334455", "9988776655"));
         UsageData usageData1 = new UsageData();
@@ -303,7 +303,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         attachmentUsage1.setId("11223344889977");
 
         Source ownerSrc2 = Source.releaseId("5566778899");
-        LicenseInfoUsage licenseInfoUsage2 = new LicenseInfoUsage(new HashSet<String>());
+        LicenseInfoUsage licenseInfoUsage2 = new LicenseInfoUsage(new HashSet<>());
         licenseInfoUsage2.setProjectPath("11223344:22334455:445566778899");
         licenseInfoUsage2.setExcludedLicenseIds(Sets.newHashSet("44553322", "5566778899"));
         UsageData usageData2 = new UsageData();
@@ -312,7 +312,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         attachmentUsage2.setUsageData(usageData2);
         attachmentUsage2.setId("8899776655");
 
-        List<AttachmentUsage> attachmentUsageList = new ArrayList<AttachmentUsage>();
+        List<AttachmentUsage> attachmentUsageList = new ArrayList<>();
         attachmentUsageList.add(attachmentUsage1);
         attachmentUsageList.add(attachmentUsage2);
         given(this.attachmentServiceMock.getAllAttachmentUsage(anyObject())).willReturn(attachmentUsageList);
@@ -528,7 +528,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_get_projects_by_externalIds() throws Exception {
         Map<String, Set<String>> externalIdsQuery = new HashMap<>();
-        externalIdsQuery.put("portal-id", new HashSet<>(Arrays.asList("13319-XX3")));
+        externalIdsQuery.put("portal-id", new HashSet<>(Collections.singletonList("13319-XX3")));
         externalIdsQuery.put("project-ext", new HashSet<>(Arrays.asList("515432", "7657")));
         given(this.projectServiceMock.searchByExternalIds(eq(externalIdsQuery), anyObject())).willReturn((new HashSet<>(projectList)));
 
@@ -637,7 +637,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         Map<String, ProjectReleaseRelationship> releaseIdToUsage = new HashMap<>();
         releaseIdToUsage.put("3765276512", new ProjectReleaseRelationship(CONTAINED, OPEN));
         project.put("linkedReleases", releaseIdToUsage);
-        Map<String, ProjectRelationship> linkedProjects = new HashMap<String, ProjectRelationship>();
+        Map<String, ProjectRelationship> linkedProjects = new HashMap<>();
         linkedProjects.put("376576", ProjectRelationship.CONTAINED);
         project.put("linkedProjects", linkedProjects);
         project.put("leadArchitect", "lead@sw360.org");

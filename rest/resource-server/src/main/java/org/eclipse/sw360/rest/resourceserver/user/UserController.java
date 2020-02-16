@@ -99,7 +99,6 @@ public class UserController implements ResourceProcessor<RepositoryLinksResource
     }
 
     private HalResource<User> createHalUser(User sw360User) {
-        HalResource<User> halResource = new HalResource<>(sw360User);
-        return halResource;
+        return new HalResource<>(sw360User);
     }
 }

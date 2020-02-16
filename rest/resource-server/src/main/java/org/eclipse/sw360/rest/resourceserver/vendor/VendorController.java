@@ -91,7 +91,6 @@ public class VendorController implements ResourceProcessor<RepositoryLinksResour
     }
 
     private HalResource<Vendor> createHalVendor(Vendor sw360Vendor) {
-        HalResource<Vendor> halResource = new HalResource<>(sw360Vendor);
-        return halResource;
+        return new HalResource<>(sw360Vendor);
     }
 }

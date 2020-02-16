@@ -173,7 +173,7 @@ public class RestControllerHelper<T> {
 
     private PaginationOptions<T> paginationOptionsFromPageable(Pageable pageable, String resourceClassName) throws ResourceClassNotFoundException {
         Comparator<T> comparator = this.comparatorFromPageable(pageable, resourceClassName);
-        return new PaginationOptions<T>(pageable.getPageNumber(), pageable.getPageSize(), comparator);
+        return new PaginationOptions<>(pageable.getPageNumber(), pageable.getPageSize(), comparator);
     }
 
     private Comparator<T> comparatorFromPageable(Pageable pageable,  String resourceClassName) throws ResourceClassNotFoundException {
