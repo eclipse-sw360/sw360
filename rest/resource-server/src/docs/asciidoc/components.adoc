@@ -72,7 +72,7 @@ include::{snippets}/should_document_get_components_by_name/links.adoc[]
 ==== Listing by type
 
 A `GET` request will list all of the service's components by component type. +
-Component types = `{INTERNAL, OSS, COTS, FREESOFTWARE, INNER_SOURCE, SERVICE}`
+Component types = `{INTERNAL, OSS, COTS, FREESOFTWARE, INNER_SOURCE, SERVICE, CODE_SNIPPET}`
 
 ===== Response structure
 include::{snippets}/should_document_get_components_by_type/response-fields.adoc[]

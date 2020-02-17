@@ -50,6 +50,7 @@ public class ThriftEnumUtils {
             .put(ComponentType.INNER_SOURCE, "Inner Source")
             .put(ComponentType.SERVICE, "Service")
             .put(ComponentType.FREESOFTWARE, "Freeware")
+            .put(ComponentType.CODE_SNIPPET, "Code Snippet")
             .build();
 
     private static final ImmutableMap<Ternary,String> MAP_TERNARY_STRING = ImmutableMap.of(
@@ -153,6 +154,7 @@ public class ThriftEnumUtils {
             .put(ReleaseRelationship.INTERNAL_USE, "Internal use")
             .put(ReleaseRelationship.OPTIONAL, "Optional")
             .put(ReleaseRelationship.TO_BE_REPLACED, "To be replaced")
+            .put(ReleaseRelationship.CODE_SNIPPET, "Code Snippet")
             .build();
 
     private static final ImmutableMap<RepositoryType, String> MAP_REPOSITORY_TYPE_STRING = ImmutableMap.<RepositoryType, String>builder()

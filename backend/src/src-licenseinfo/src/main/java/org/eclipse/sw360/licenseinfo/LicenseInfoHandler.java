@@ -588,6 +588,8 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
                 return "Inner source";
             case SERVICE:
                 return "Service";
+            case CODE_SNIPPET:
+                return "Code Snippet";
         }
 
         return "";
