@@ -39,6 +39,9 @@ To migrate it is recommended to do this in the following order:
 ### 6.0.0 -> 7.0.0
 - `015_update_fullmyprojects_view.py`
 
+### 7.0.1-M1 -> 7.1.0
+- `016_update_byExternalIds_component_view.py`
+
 ## Optional usage
 - `009_overwrite_release_name_with_component_name.py`
 - `010_repair_missing_vendorId_links_in_releases.py`

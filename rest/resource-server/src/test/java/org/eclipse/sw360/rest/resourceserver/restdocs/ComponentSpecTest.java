@@ -92,7 +92,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         given(this.attachmentServiceMock.getResourcesFromList(anyObject())).willReturn(new Resources<>(attachmentResources));
         given(this.attachmentServiceMock.uploadAttachment(anyObject(), anyObject(), anyObject())).willReturn(attachment);
         Map<String, Set<String>> externalIds = new HashMap<>();
-        externalIds.put("component-id-key", Collections.singleton(""));
+        externalIds.put("component-id-key", ImmutableSet.of("1831A3", "c77321"));
 
         List<Component> componentList = new ArrayList<>();
         Set<Component> usedByComponent = new HashSet<>();
@@ -548,7 +548,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_get_components_by_externalIds() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        mockMvc.perform(get("/api/components/searchByExternalIds?component-id-key=")
+        mockMvc.perform(get("/api/components/searchByExternalIds?component-id-key=1831A3&component-id-key=c77321")
                 .contentType(MediaTypes.HAL_JSON)
                 .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())

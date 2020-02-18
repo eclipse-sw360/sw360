@@ -97,7 +97,7 @@ import java.util.*;
                     "}"),
         @View(name = "byExternalIds",
                 map = "function(doc) {" +
-                        "  if (doc.type == 'release') {" +
+                        "  if (doc.type == 'component') {" +
                         "    for (var externalId in doc.externalIds) {" +
                         "       emit( [externalId, doc.externalIds[externalId]] , doc._id);" +
                         "    }" +
