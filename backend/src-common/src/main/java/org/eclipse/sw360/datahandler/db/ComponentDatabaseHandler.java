@@ -15,9 +15,11 @@ import com.google.common.collect.*;
 import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
+import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.entitlement.ComponentModerator;
 import org.eclipse.sw360.datahandler.entitlement.ReleaseModerator;
@@ -25,6 +27,7 @@ import org.eclipse.sw360.datahandler.permissions.DocumentPermissions;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
@@ -46,10 +49,15 @@ import org.eclipse.sw360.mail.MailConstants;
 import org.eclipse.sw360.mail.MailUtil;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.spdx.SpdxBOMImporter;
+import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
 import org.ektorp.DocumentOperationResult;
 import org.ektorp.http.HttpClient;
 import org.jetbrains.annotations.NotNull;
+import org.spdx.rdfparser.InvalidSPDXAnalysisException;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -283,8 +291,13 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
      */
     public AddDocumentRequestSummary addComponent(Component component, String user) throws SW360Exception {
         if(isDuplicate(component)) {
-            return new AddDocumentRequestSummary()
+            final AddDocumentRequestSummary addDocumentRequestSummary = new AddDocumentRequestSummary()
                     .setRequestStatus(AddDocumentRequestStatus.DUPLICATE);
+            Set<String> duplicates = componentRepository.getComponentIdsByName(component.getName());
+            if (duplicates.size() == 1) {
+                duplicates.forEach(addDocumentRequestSummary::setId);
+            }
+            return addDocumentRequestSummary;
         }
         if(component.getName().trim().length() == 0) {
             return new AddDocumentRequestSummary()
@@ -312,8 +325,15 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         // Prepare the release and get underlying component ID
         prepareRelease(release);
         if(isDuplicate(release)) {
-            return new AddDocumentRequestSummary()
+            final AddDocumentRequestSummary addDocumentRequestSummary = new AddDocumentRequestSummary()
                     .setRequestStatus(AddDocumentRequestStatus.DUPLICATE);
+            List<Release> duplicates = releaseRepository.searchByNameAndVersion(release.getName(), release.getVersion());
+            if (duplicates.size() == 1) {
+                duplicates.stream()
+                        .map(Release::getId)
+                        .forEach(addDocumentRequestSummary::setId);
+            }
+            return addDocumentRequestSummary;
         }
 
         String componentId = release.getComponentId();
@@ -1761,5 +1781,20 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 MailConstants.TEXT_FOR_UPDATE_RELEASE,
                 SW360Constants.NOTIFICATION_CLASS_RELEASE, Release._Fields.SUBSCRIBERS.toString(),
                 release.getName(), release.getVersion());
+    }
+
+    public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws SW360Exception {
+        final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
+        final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
+        try {
+            final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
+            try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
+                final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
+                final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
+                return spdxBOMImporter.importSpdxBOMAsRelease(inputStream, attachmentContent);
+            }
+        } catch (InvalidSPDXAnalysisException | IOException e) {
+            throw new SW360Exception(e.getMessage());
+        }
     }
 }

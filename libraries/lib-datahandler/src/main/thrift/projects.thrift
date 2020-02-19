@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2014-2018. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2014-2019. Part of the SW360 Portal Project.
  * With contributions by Bosch Software Innovations GmbH, 2016.
  *
  * This program and the accompanying materials are made
@@ -20,6 +20,7 @@ namespace java org.eclipse.sw360.datahandler.thrift.projects
 namespace php sw360.thrift.projects
 
 typedef sw360.RequestStatus RequestStatus
+typedef sw360.RequestSummary RequestSummary
 typedef sw360.DocumentState DocumentState
 typedef sw360.Visibility Visibility
 typedef sw360.ReleaseRelationship ReleaseRelationship
@@ -407,4 +408,9 @@ service ProjectService {
      * Get used release relations by project id
      */
     list<UsedReleaseRelations> getUsedReleaseRelationsByProjectId(1: string projectId);
+
+    /**
+     * parse a bom file and write the information to SW360
+     **/
+    RequestSummary importBomFromAttachmentContent(1: User user, 2:string attachmentContentId);
 }

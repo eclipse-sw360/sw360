@@ -30,7 +30,7 @@ while read file ; do
     echo "$(tput bold)ERROR: no EPL-2.0 licensing is specified in $file$(tput sgr0)"
     failure=true
 done <<< "$(git ls-files \
-    | grep -Ev '\.(csv|rdf|ent|dtd|lar|png|gif|psd|ico|jpg|docx|gitignore|cert|jks)' \
+    | grep -Ev '\.(csv|rdf|ent|dtd|lar|png|gif|psd|ico|jpg|docx|gitignore|cert|jks|spdx|rdf)' \
     | grep -Ev '(LICENSE|NOTICE|README|CHANGELOG)' \
     | grep -v 'id_rsa')"
 

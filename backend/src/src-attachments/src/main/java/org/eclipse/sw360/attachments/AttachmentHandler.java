@@ -52,6 +52,10 @@ public class AttachmentHandler implements AttachmentService.Iface {
 
     @Override
     public List<AttachmentContent> makeAttachmentContents(List<AttachmentContent> attachmentContents) throws TException {
+        for (AttachmentContent attachmentContent : attachmentContents) {
+            validateAttachment(attachmentContent);
+            assertIdUnset(attachmentContent.getId());
+        }
         return handler.makeAttachmentContents(attachmentContents);
     }
 

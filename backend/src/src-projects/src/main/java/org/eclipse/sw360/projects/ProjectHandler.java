@@ -18,6 +18,7 @@ import org.eclipse.sw360.datahandler.db.ProjectSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -169,6 +170,13 @@ public class ProjectHandler implements ProjectService.Iface {
         assertUser(user);
 
         return handler.searchByExternalIds(externalIds, user);
+    }
+
+    @Override
+    public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws TException {
+        assertNotNull(attachmentContentId);
+        assertUser(user);
+        return handler.importBomFromAttachmentContent(user, attachmentContentId);
     }
 
     ////////////////////////////

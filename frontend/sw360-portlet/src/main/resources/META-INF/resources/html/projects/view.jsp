@@ -136,6 +136,7 @@
                     <div class="btn-toolbar" role="toolbar">
                         <div class="btn-group" role="group">
                             <button type="button" class="btn btn-primary" onclick="window.location.href='<%=addProjectURL%>'">Add Project</button>
+                            <button type="button" class="btn btn-secondary" data-action="import-spdx-bom">Import SPDX BOM</button>
                         </div>
                         <div id="btnExportGroup" class="btn-group" role="group">
                             <button id="btnExport" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -210,6 +211,7 @@
 
 
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
+<%@ include file="/html/utils/includes/importBom.jspf" %>
 <script>
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;

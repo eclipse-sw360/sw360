@@ -213,10 +213,34 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             loadSpdxLicenseInfo(request, response);
         } else if (PortalConstants.WRITE_SPDX_LICENSE_INFO_INTO_RELEASE.equals(action)) {
             writeSpdxLicenseInfoIntoRelease(request, response);
+        } else if (PortalConstants.IMPORT_BOM.equals(action)) {
+            importBom(request, response);
         } else if (isGenericAction(action)) {
             dealWithGenericAction(request, response, action);
         }
     }
+
+    private void importBom(ResourceRequest request, ResourceResponse response) {
+        final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        User user = UserCacheHolder.getUserFromRequest(request);
+        String attachmentContentId = request.getParameter(ATTACHMENT_CONTENT_ID);
+
+        try {
+            final RequestSummary requestSummary = componentClient.importBomFromAttachmentContent(user, attachmentContentId);
+
+            LiferayPortletURL releaseUrl = createDetailLinkTemplate(request);
+            releaseUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_RELEASE_DETAIL);
+            releaseUrl.setParameter(RELEASE_ID, requestSummary.getMessage());
+            JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+            jsonObject.put("redirectUrl", releaseUrl.toString());
+
+            renderRequestSummary(request, response, requestSummary, jsonObject);
+        } catch (TException e) {
+            log.error("Failed to import BOM.", e);
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE, Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+        }
+    }
+
 
     @Override
     protected void dealWithFossologyAction(ResourceRequest request, ResourceResponse response, String action) throws IOException, PortletException {
@@ -889,7 +913,6 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
         // generate redirect url
         LiferayPortletURL componentUrl = createDetailLinkTemplate(request);
-        componentUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_DETAIL);
         componentUrl.setParameter(PortalConstants.COMPONENT_ID, componentSelection.getId());
 
         // write response JSON

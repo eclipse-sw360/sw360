@@ -45,46 +45,46 @@
 </portlet:resourceURL>
 
 <div class="dialogs">
-	<div id="fileUploadDialog" data-title="Upload Attachment" class="modal fade" tabindex="-1" role="dialog"
-      data-portlet-namespace="<portlet:namespace/>"
-      data-link-attachment-url="<%=attachmentLinkToAjaxURL%>"
-      data-cancel-attachment-url="<%=cancelAttachmentAjaxURL%>"
-      data-new-attachment-url="<%=newAttachmentAjaxURL%>"
-      data-upload-attachment-part-url="<%=uploadPartAjaxURL%>">
-    >
-		<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
-		    <div class="modal-content">
-			<div class="modal-body container">
+    <div id="fileUploadDialog" data-title="Upload Attachment" class="modal fade" tabindex="-1" role="dialog"
+         data-portlet-namespace="<portlet:namespace/>"
+         data-link-attachment-url="<%=attachmentLinkToAjaxURL%>"
+         data-cancel-attachment-url="<%=cancelAttachmentAjaxURL%>"
+         data-new-attachment-url="<%=newAttachmentAjaxURL%>"
+         data-upload-attachment-part-url="<%=uploadPartAjaxURL%>">
+        >
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <div class="modal-body container">
 
                     <core_rt:choose>
-                        <core_rt:when test="${empty documentID}">
-                            <div class="alert fade show alert-error" role="alert">
-                                Cannot add attachments before saving the document
-                            </span>
-                        </core_rt:when>
-                        <core_rt:otherwise>
-                            <div class="lfr-dynamic-uploader">
-                                <div class="lfr-upload-container">
-                                    <div id="fileupload-drop" class="upload-target">
-                                        <span>Drop a File Here</span>
-                                        <br/>
-                                        Or
-                                        <br/>
-                                        <button id="fileupload-browse" type="button" class="btn btn-secondary">Browse</button>
-                                    </div>
+                    <core_rt:when test="${empty documentID}">
+                        <span class="alert fade show alert-error" role="alert">
+                            Cannot add attachments before saving the document
+                        </span>
+                    </core_rt:when>
+                    <core_rt:otherwise>
+                        <div class="lfr-dynamic-uploader">
+                            <div class="lfr-upload-container">
+                                <div id="fileupload-drop" class="upload-target">
+                                    <span>Drop a File Here</span>
+                                    <br/>
+                                    Or
+                                    <br/>
+                                    <button id="fileupload-browse" type="button" class="btn btn-secondary">Browse</button>
                                 </div>
                             </div>
-                            <div id="fileupload-files" class="upload-list"></div>
-                        </core_rt:otherwise>
+                        </div>
+                        <div id="fileupload-files" class="upload-list"></div>
+                    </core_rt:otherwise>
                     </core_rt:choose>
 
-				</div>
-			    <div class="modal-footer">
-		        <button type="button" class="btn btn-light" data-dismiss="modal">Close</button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-dismiss="modal">Close</button>
                     <button type="button" data-submit="pause" class="btn btn-secondary" title="Pause">Pause</button>
-			        <button type="button" data-submit="upload" class="btn btn-primary" title="Upload">Upload</button>
-			    </div>
-			</div>
-		</div>
-	</div>
+                    <button type="button" data-submit="upload" class="btn btn-primary" title="Upload">Upload</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
