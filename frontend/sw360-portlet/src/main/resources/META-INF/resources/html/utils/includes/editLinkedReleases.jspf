@@ -33,3 +33,19 @@
 </table>
 
 <button type="button" class="btn btn-secondary" id="addLinkedReleasesToReleaseButton">Click to add Releases</button>
+
+<script>
+    require(['jquery', 'modules/dialog'], function($, dialog) {
+        $('#LinkedReleasesInfo').on('click', "svg[data-action='delete-release']", function(event) {
+            var releaseRowId = $(event.currentTarget).data().uuid,
+                releaseName = $(event.currentTarget).data().releaseName;
+
+            $dialog = dialog.confirm('danger', 'question-circle', 'Delete link to release?', '<p>Do you really want to remove the link to release <b data-name="releaseName"></b>?</p>', 'Delete Link', {
+                releaseName: releaseName
+            }, function(submit, callback) {
+                $('#releaseLinkRow' + releaseRowId).remove();
+                callback(true);
+            });
+        });
+    });
+</script>
