@@ -214,7 +214,7 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-core</artifactId>
-            <version>4.2.3.RELEASE</version>
+            <version>4.2.14.RELEASE</version>
             <scope>compile</scope>
         </dependency>
 
