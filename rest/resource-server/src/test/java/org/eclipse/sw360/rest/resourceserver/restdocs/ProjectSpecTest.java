@@ -47,7 +47,9 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.Resources;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Sets;
 
 import java.io.IOException;
@@ -769,12 +771,14 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_link_releases() throws Exception {
-        List<String> releaseIds = Arrays.asList("3765276512", "5578999", "3765276513");
+        MockHttpServletRequestBuilder requestBuilder = post("/api/projects/" + project.getId() + "/releases");
+        add_patch_releases(requestBuilder);
+    }
 
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        this.mockMvc.perform(post("/api/projects/" + project.getId() + "/releases").contentType(MediaTypes.HAL_JSON)
-                .content(this.objectMapper.writeValueAsString(releaseIds))
-                .header("Authorization", "Bearer " + accessToken)).andExpect(status().isCreated());
+    @Test
+    public void should_document_patch_releases() throws Exception {
+        MockHttpServletRequestBuilder requestBuilder = patch("/api/projects/" + project.getId() + "/releases");
+        add_patch_releases(requestBuilder);
     }
 
     @Test
@@ -792,5 +796,14 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 parameterWithName("variant").description("All the possible values for variants are "
                                         + Arrays.asList(OutputFormatVariant.values())),
                                 parameterWithName("externalIds").description("The external Ids of the project"))));
+    }
+
+    private void add_patch_releases(MockHttpServletRequestBuilder requestBuilder) throws Exception {
+        List<String> releaseIds = Arrays.asList("3765276512", "5578999", "3765276513");
+
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        this.mockMvc.perform(requestBuilder.contentType(MediaTypes.HAL_JSON)
+                .content(this.objectMapper.writeValueAsString(releaseIds))
+                .header("Authorization", "Bearer " + accessToken)).andExpect(status().isCreated());
     }
 }

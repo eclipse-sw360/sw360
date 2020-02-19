@@ -24,6 +24,7 @@ typedef sw360.DocumentState DocumentState
 typedef sw360.ReleaseRelationship ReleaseRelationship
 typedef sw360.MainlineState MainlineState
 typedef sw360.ProjectReleaseRelationship ProjectReleaseRelationship
+typedef sw360.SW360Exception SW360Exception
 typedef attachments.Attachment Attachment
 typedef attachments.FilledAttachment FilledAttachment
 typedef users.User User
@@ -488,7 +489,7 @@ service ComponentService {
     /**
       * get release from database filled with vendor and permissions for user
       **/
-    Release getReleaseById(1: string id, 2: User user);
+    Release getReleaseById(1: string id, 2: User user) throws (1: SW360Exception exp);
 
      /**
        * get release from database filled with vendor and permissions for user
