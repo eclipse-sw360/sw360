@@ -49,10 +49,11 @@
                 </select>
             </div>
         </td>
-        <td class="actions">
-            <div class="actions">
-                <svg class="lexicon-icon" data-action="delete-release" data-uuid="${uuid}"><title>Delete</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#delete"/></svg>
-            </div>
+        <td class="content-middle">
+            <svg class="action lexicon-icon" data-release-name="<sw360:out value='${releaseLink.longName}' jsQuoting="true"/>" data-action="delete-release" data-uuid="${uuid}">
+                <title>Delete</title>
+                <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
+            </svg>
         </td>
     </tr>
 </core_rt:forEach>
