@@ -705,7 +705,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     public List<ReleaseClearingStatusData> getReleaseClearingStatuses(String projectId, User user) throws SW360Exception {
         Project project = getProjectById(projectId, user);
         SetMultimap<String, ProjectWithReleaseRelationTuple> releaseIdsToProject = releaseIdToProjects(project, user);
-        List<Release> releasesById = componentDatabaseHandler.getFullReleases(releaseIdsToProject.keySet());
+        List<Release> releasesById = componentDatabaseHandler.getDetailedReleasesForExport(releaseIdsToProject.keySet());
         Map<String, Component> componentsById = ThriftUtils.getIdMap(
                 componentDatabaseHandler.getComponentsShort(
                         releasesById.stream().map(Release::getComponentId).collect(Collectors.toSet())));
