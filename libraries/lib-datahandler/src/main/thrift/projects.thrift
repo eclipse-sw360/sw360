@@ -372,7 +372,7 @@ service ProjectService {
     /**
      * get the cyclic hierarchy of linkedProjects
      */
-    string getCyclicLinkedProjectPath(1: Project project, 2: User user);
+    string getCyclicLinkedProjectPath(1: Project project, 2: User user) throws (1: SW360Exception exp);
 
     /**
      * get linked obligation of a project

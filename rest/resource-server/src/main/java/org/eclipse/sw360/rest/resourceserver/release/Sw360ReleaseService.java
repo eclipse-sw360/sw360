@@ -94,30 +94,26 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
     public Release createRelease(Release release, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        String cyclicLinkedReleasePath = sw360ComponentClient.getCyclicLinkedReleasePath(release, sw360User);
-        if (!isNullEmptyOrWhitespace(cyclicLinkedReleasePath)) {
-            throw new HttpMessageNotReadableException("Cyclic linked Release : " + cyclicLinkedReleasePath);
-        }
-
+        rch.checkForCyclicOrInvalidDependencies(sw360ComponentClient, release, sw360User);
         AddDocumentRequestSummary documentRequestSummary = sw360ComponentClient.addRelease(release, sw360User);
         if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.SUCCESS) {
             release.setId(documentRequestSummary.getId());
             return release;
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
             throw new DataIntegrityViolationException("sw360 release with name '" + release.getName() + "' already exists.");
+        } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
+            throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
         }
         return null;
     }
 
     public RequestStatus updateRelease(Release release, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        String cyclicLinkedReleasePath = sw360ComponentClient.getCyclicLinkedReleasePath(release, sw360User);
-        if (!isNullEmptyOrWhitespace(cyclicLinkedReleasePath)) {
-            throw new HttpMessageNotReadableException("Cyclic linked Release : " + cyclicLinkedReleasePath);
-        }
-
+        rch.checkForCyclicOrInvalidDependencies(sw360ComponentClient, release, sw360User);
         RequestStatus requestStatus = sw360ComponentClient.updateRelease(release, sw360User);
-        if (requestStatus != RequestStatus.SUCCESS) {
+        if (requestStatus == RequestStatus.INVALID_INPUT) {
+            throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
+        } else if (requestStatus != RequestStatus.SUCCESS) {
             throw new RuntimeException("sw360 release with name '" + release.getName() + " cannot be updated.");
         }
         return requestStatus;
