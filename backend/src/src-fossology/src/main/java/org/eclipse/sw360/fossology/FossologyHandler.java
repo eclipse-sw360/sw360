@@ -496,6 +496,7 @@ public class FossologyHandler implements FossologyService.Iface {
                 return RequestStatus.FAILURE;
             }
             handleReportStep(componentClient, release, user, extToolProcess);
+            updateFossologyProcessInRelease(extToolProcess, release, user, componentClient);
             return RequestStatus.SUCCESS;
         }
         return RequestStatus.SUCCESS;
