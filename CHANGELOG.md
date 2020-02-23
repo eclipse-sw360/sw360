@@ -4,6 +4,37 @@ This is the changelog file of the sw360 software. It starts with the first relea
 
 https://github.com/eclipse/sw360
 
+## sw360-8.0.0-M1
+
+It is not really that we like to ignore minor releases, but release 8 is coming because:
+
+* changes in the DB for external id handling, pls see migration script: `scripts/migrations/016_update_byExternalIds_component_view.py`
+* changes in the Thrift API, allowing for SPDX BOM import pls see: `libraries/lib-datahandler/src/main/thrift/projects.thrift`
+
+And as a larger, very important feature, there is the SPDX BOM import there in a first version, adding two modes:
+
+* Import a project with linked releases from a SPDX BOM file
+* Import a list of components and releases from a SPDX BOM file
+
+Moreover a very important feature or fix has been provided for ensuring that malformed REST requests do not lead to failure in the application. Previously, providing wrong typed references (for example: linking releases to a project) was accepted by the application and can lead to malfunction then. The following list lists the detailed changes since 7.0.1:
+
+### New Features
+
+* `712ba79` feat(rest): validate the linked document ids in the payload before updating it in the DB
+* `f90fcc4` feat(bomImport): implement SPDX BOM import for projects and releases
+* `24999ce` feat(AddProjectReleaseRelation): add a project release relation for source code snippets
+* `48de678` feat(REST): Patch Releases to Project
+
+### Corrections
+
+* `d34d454` fix(ReleaseUI): fixed reload report in FOSSology Process
+* `336534a` fix(REST): fixed search component by external id
+* `bc28c54` fix(EditReleaseUI): Fixed missing functionality of button to delete release to release relation
+* `e437a5b` fix(spreadsheet-export): fixed the secuence of values based on headers
+* `4c0d5c9` fix(thrift): add should return ID on duplicate
+* `1d65e70` fix(html): fix minor bugs and styling
+* `b7a83d6` fix(ui): saving attachment usage issue for source code bundle and others
+
 ## sw360-7.0.1-M1
 
 After tagging 7.0.0, we found two bugs to be corrected to provide a sound SW360. Therefore, here a new tagged version of sw360. Everyone should use 7.0.1-M1 instead of 7.0.0.
@@ -18,7 +49,7 @@ Adding rolling version since last tag will prepare automated tagging with increm
 ### Infrastructure
 
 * `a37e24d` chore(readme): adding some more badges
-* `f1a7c63`feat(chore): adding rolling versions based on commit count 
+* `f1a7c63`feat(chore): adding rolling versions based on commit count
 
 ## sw360-7.0.0-M1
 
