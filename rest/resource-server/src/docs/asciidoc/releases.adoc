@@ -120,7 +120,19 @@ A `POST` request is used to upload attachment to release
 
 |attachment.attachmentContentId
 |String
-|Attachment content id
+|Id of attachment info
+
+|attachment.attachmentType
+|String
+|Type of attachment, possible values are: [DOCUMENT, SOURCE, DESIGN, REQUIREMENT, CLEARING_REPORT, COMPONENT_LICENSE_INFO_XML, COMPONENT_LICENSE_INFO_COMBINED, SCAN_RESULT_REPORT, SCAN_RESULT_REPORT_XML, SOURCE_SELF, BINARY, BINARY_SELF, DECISION_REPORT, LEGAL_EVALUATION, LICENSE_AGREEMENT, SCREENSHOT, OTHER, README_OSS]
+
+|attachment.checkStatus
+|String
+|Status of attachment, possible values are: [NOTCHECKED, ACCEPTED, REJECTED]
+
+|attachment.createdComment
+|String
+|Comment while uploading attachment.
 |===
 
 [red]#Response structure#

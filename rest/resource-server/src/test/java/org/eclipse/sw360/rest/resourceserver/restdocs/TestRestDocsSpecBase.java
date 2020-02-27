@@ -83,7 +83,7 @@ public abstract class TestRestDocsSpecBase {
     }
 
     public void testAttachmentUpload(String url, String id) throws Exception {
-        String attachment = "{ \"filename\":\"spring-core-4.3.4.RELEASE.jar\", \"attachmentContentId\":\"2\"}";
+        String attachment = "{ \"filename\":\"spring-core-4.3.4.RELEASE.jar\", \"attachmentContentId\":\"2\", \"attachmentType\":\"SOURCE\", \"checkStatus\":\"ACCEPTED\", \"createdComment\":\"Uploading Sources.\" }";
         /*
          * TODO Suggestion to use better library in future, instead of MockMultipartFile
          * to have better document generation feature. below logic is used to generate
