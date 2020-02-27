@@ -113,7 +113,7 @@ public class DatabaseHandlerUtil {
             nonExistingIdCount = setOfIds.stream()
                     .filter(id -> {
                         if(CommonUtils.isNullEmptyOrWhitespace(id))
-                           return true;
+                           return false;
                         T obj = (T) repository.get(id);
                         return Objects.isNull(obj);
                     }).count();

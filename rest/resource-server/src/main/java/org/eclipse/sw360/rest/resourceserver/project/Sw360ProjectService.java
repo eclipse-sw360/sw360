@@ -142,6 +142,16 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         String cyclicLinkedProjectPath = null;
         rch.checkForCyclicOrInvalidDependencies(sw360ProjectClient, project, sw360User);
+
+        // TODO: Move this logic to backend
+        if (project.getReleaseIdToUsage() != null) {
+            for (String releaseId : project.getReleaseIdToUsage().keySet()) {
+                if (isNullEmptyOrWhitespace(releaseId)) {
+                    throw new HttpMessageNotReadableException("Release Id can't be empty");
+                }
+            }
+        }
+
         RequestStatus requestStatus = sw360ProjectClient.updateProject(project, sw360User);
         if (requestStatus == RequestStatus.CLOSED_UPDATE_NOT_ALLOWED) {
             throw new RuntimeException("User cannot modify a closed project");
