@@ -252,7 +252,9 @@ public class ThriftEnumUtils {
     private static final ImmutableMap<ObligationStatus, String> MAP_OBLIGATION_STATUS_STRING = ImmutableMap.of(
             ObligationStatus.OPEN, "Open",
             ObligationStatus.FULFILLED, "Fulfilled",
-            ObligationStatus.IN_PROGRESS, "In Progress"
+            ObligationStatus.IN_PROGRESS, "In Progress",
+            ObligationStatus.NOT_APPLICABLE, "Not Applicable",
+            ObligationStatus.TO_BE_FULFILLED_BY_PARENT_PROJECT, "To be fulfilled by parent project"
     );
 
     public static final ImmutableMap<Class<? extends TEnum>, Map<? extends TEnum, String>>

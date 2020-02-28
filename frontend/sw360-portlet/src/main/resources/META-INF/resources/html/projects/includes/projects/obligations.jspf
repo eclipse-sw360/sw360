@@ -124,6 +124,10 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
                         $(td).addClass('text-success');
                     } else if (status === 'In Progress') {
                         $(td).addClass('text-warning');
+                    } else if (status === 'Not Applicable') {
+                        $(td).addClass('text-secondary');
+                    } else if (status === 'To be fulfilled by parent project') {
+                        $(td).addClass('text-info');
                     }
                 }
             }
