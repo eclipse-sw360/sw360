@@ -4,6 +4,14 @@ This is the changelog file of the sw360 software. It starts with the first relea
 
 https://github.com/eclipse/sw360
 
+## sw360-8.0.1-M1
+
+There is some small but very substantial bug in 8.0.0, which prevents the user from creating records in special conditions. Therefore, version 8.0.0 is deprecated and replaced by version 8.0.1.
+
+### Corrections
+
+* `c20fa46` fix(component/release): Add component and release error in UI
+
 ## sw360-8.0.0-M1
 
 It is not really that we like to ignore minor releases, but release 8 is coming because:
