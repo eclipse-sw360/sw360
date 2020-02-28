@@ -127,8 +127,8 @@
                         tooltip: "<sw360:out value='${vulnerability.priorityToolTip}'/>"
                     },
                     title: {
-                        text: "<sw360:out value='${vulnerability.title}'/>",
-                        tooltip: "<sw360:out value='${vulnerability.description}'/>"
+                        text: "<sw360:out value='${vulnerability.title}'  jsQuoting='true'/>",
+                        tooltip: "<sw360:out value='${vulnerability.description}' jsQuoting='true'/>"
                     },
                     matchedBy: {
                         text: "<sw360:out value='${vulnerability.matchedBy}'/>",
