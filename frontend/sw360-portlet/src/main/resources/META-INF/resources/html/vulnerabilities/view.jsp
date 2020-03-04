@@ -136,8 +136,8 @@
                     result.push({
                         externalId: "${vulnerability.externalId}",
                         title: {
-                            text: "<sw360:out value='${vulnerability.title}'/>",
-                            tooltip: "<sw360:out value='${vulnerability.description}'/>"
+                            text: "<sw360:out value='${vulnerability.title}'  jsQuoting='true'/>",
+                            tooltip: "<sw360:out value='${vulnerability.description}' jsQuoting='true'/>"
                         },
                         cvss: {
                             weighting: "${vulnerability.cvss}",
