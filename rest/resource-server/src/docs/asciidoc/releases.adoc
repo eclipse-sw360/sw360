@@ -85,6 +85,24 @@ include::{snippets}/should_document_get_releases_by_external-ids/curl-request.ad
 ===== Example response
 include::{snippets}/should_document_get_releases_by_external-ids/http-response.adoc[]
 
+[[should_document_get_releases_by_sha1]]
+==== Listing by attachments with SHA1
+
+A `GET` request will get a collection of releases that have attachments with the given sha1. Please set the request parameter `&sha1=<SHA1>`.
+
+===== Response structure
+include::{snippets}/should_document_get_releases_by_sha1/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_releases_by_sha1/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_releases_by_sha1/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_releases_by_sha1/links.adoc[]
+
+
 
 [[resources-release-attachment-info-get]]
 ==== Listing attachment info

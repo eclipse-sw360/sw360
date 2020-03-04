@@ -14,6 +14,13 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.MainlineState;
+import org.eclipse.sw360.datahandler.thrift.Source;
+import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -22,6 +29,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.util.Base64Utils;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.io.IOException;
@@ -34,6 +42,10 @@ import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 public class TestHelper {
+
+    public static String release1Id = "121831bjh1v2j";
+    public static String releaseId2 = "3451831bjh1v2jxxz";
+    public static String attachmentShaUsedMultipleTimes = "12345";
 
     static public void checkResponse(String responseBody, String linkRelation, int embeddedArraySize) throws IOException {
         TestHelper.checkResponse(responseBody, linkRelation, embeddedArraySize, null);
@@ -108,6 +120,66 @@ public class TestHelper {
         }
     }
 
+    public static List<Release> getDummyReleaseListForTest() {
+        List<Release> releases = new ArrayList<>();
+
+        Release release1 = new Release();
+        release1.setName("Release 1");
+        release1.setId(release1Id);
+        release1.setComponentId("component123");
+        release1.setVersion("1.0.4");
+        release1.setCpeid("cpe:id-1231");
+        release1.setMainlineState(MainlineState.MAINLINE);
+        release1.setClearingState(ClearingState.APPROVED);
+        releases.add(release1);
+
+        Release release2 = new Release();
+        release2.setName("Release 2");
+        release2.setId(releaseId2);
+        release2.setComponentId("component456");
+        release2.setVersion("2.0.0");
+        release2.setCpeid("cpe:id-4567");
+        release2.setMainlineState(MainlineState.OPEN);
+        release2.setClearingState(ClearingState.NEW_CLEARING);
+        releases.add(release2);
+
+        return releases;
+    }
+
+    public static List<Attachment> getDummyAttachmentsListForTest() {
+        List<Attachment> attachments = new ArrayList<>();
+        Attachment attachment1 = new Attachment();
+        attachment1.setAttachmentContentId("a1");
+        attachment1.setSha1(attachmentShaUsedMultipleTimes);
+        attachment1.setFilename("Attachment 1");
+        attachment1.setAttachmentType(AttachmentType.BINARY);
+        attachments.add(attachment1);
+
+        Attachment attachment2 = new Attachment();
+        attachment2.setAttachmentContentId("a2");
+        attachment2.setSha1(attachmentShaUsedMultipleTimes);
+        attachment2.setFilename("Attachment 2");
+        attachment2.setAttachmentType(AttachmentType.SOURCE);
+        attachments.add(attachment2);
+
+        return attachments;
+    }
+
+    public static List<AttachmentInfo> getDummyAttachmentInfoListForTest() {
+        Source source1 = new Source(Source._Fields.RELEASE_ID, release1Id);
+        Source source2 = new Source(Source._Fields.RELEASE_ID, releaseId2);
+
+        List<AttachmentInfo> attachmentInfos = new ArrayList<>();
+        AttachmentInfo attachmentInfo1 = new AttachmentInfo(getDummyAttachmentsListForTest().get(0));
+        attachmentInfo1.setOwner(source1);
+        attachmentInfos.add(attachmentInfo1);
+
+        AttachmentInfo attachmentInfo2 = new AttachmentInfo(getDummyAttachmentsListForTest().get(1));
+        attachmentInfo2.setOwner(source2);
+        attachmentInfos.add(attachmentInfo2);
+
+        return attachmentInfos;
+    }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     private static class OAuthToken {

@@ -67,7 +67,7 @@ public class AttachmentSpecTest extends TestRestDocsSpecBase {
 
     @Before
     public void before() throws TException {
-        List<Attachment> attachmentList = new ArrayList<>();
+        List<Attachment> attachments = new ArrayList<>();
         attachment = new Attachment();
 
         attachment.setAttachmentContentId("76537653");
@@ -83,7 +83,7 @@ public class AttachmentSpecTest extends TestRestDocsSpecBase {
         attachment.setCheckedOn("2016-12-18");
         attachment.setCheckStatus(CheckStatus.ACCEPTED);
 
-        attachmentList.add(attachment);
+        attachments.add(attachment);
 
         Release release = new Release();
         release.setId("874687");
@@ -98,11 +98,14 @@ public class AttachmentSpecTest extends TestRestDocsSpecBase {
         release.setClearingState(ClearingState.APPROVED);
 
         AttachmentInfo attachmentInfo = new AttachmentInfo(attachment);
+        List<AttachmentInfo> attachmentInfos = new ArrayList<>();
+        attachmentInfos.add(attachmentInfo);
         Source owner = new Source();
         owner.setReleaseId(release.getId());
         attachmentInfo.setOwner(owner);
 
         given(this.attachmentServiceMock.getAttachmentById(eq(attachment.getAttachmentContentId()))).willReturn(attachmentInfo);
+        given(this.attachmentServiceMock.getAttachmentsBySha1(eq(attachment.getSha1()))).willReturn(attachmentInfos);
         given(this.releaseServiceMock.getReleaseForUserById(eq(release.getId()), anyObject())).willReturn(release);
 
         User user = new User();
@@ -142,5 +145,21 @@ public class AttachmentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("_embedded.sw360:releases").description("The release this attachment belongs to"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
+    }
+
+    @Test
+    public void should_document_get_attachments_by_sha1() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/attachments?sha1=da373e491d3863477568896089ee9457bc316783")
+                        .header("Authorization", "Bearer " + accessToken).accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        links(linkWithRel("curies").description("Curies are used for online documentation")),
+                        responseFields(
+                                fieldWithPath("_links")
+                                        .description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("_embedded.sw360:attachments").description(
+                                        "The collection of <<resources-attachments,Attachment resources>>. In most cases the result should contain either one element or an empty collection. If the same binary file is uploaded and attached to multiple sw360 resources, the collection will contain all the attachments with matching sha1 hash."))))
+                .andReturn();
     }
 }
