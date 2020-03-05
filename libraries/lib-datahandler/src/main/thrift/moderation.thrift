@@ -21,6 +21,7 @@ namespace php sw360.thrift.moderation
 typedef sw360.RequestStatus RequestStatus
 typedef sw360.RemoveModeratorRequestStatus RemoveModeratorStatus
 typedef sw360.ModerationState ModerationState
+typedef sw360.Comment Comment
 typedef components.Component Component
 typedef components.Release Release
 typedef projects.Project Project
@@ -28,6 +29,7 @@ typedef users.User User
 typedef licenses.License License
 typedef licenses.Todo Todo
 typedef components.ComponentType ComponentType
+typedef projects.ClearingRequest ClearingRequest
 
 enum DocumentType {
     COMPONENT = 1,
@@ -199,4 +201,44 @@ service ModerationService {
      * delete moderation request specified by id if user is requesting user of moderation request
      **/
     RequestStatus deleteModerationRequest(1: string id, 2: User user);
+
+    /**
+     * write clearing request for project to database
+     **/
+    string createClearingRequest(1: ClearingRequest clearingRequest, 2: User user);
+
+    /**
+     * update clearing request in database
+     **/
+    RequestStatus updateClearingRequest(1: ClearingRequest clearingRequest, 2: User user, 3: string projectUrl);
+
+    /**
+     * get list of clearing requests where user is requesting user or clearing team
+     **/
+    set<ClearingRequest> getMyClearingRequests(1: User user);
+
+    /**
+     * get clearing request by project Id
+     **/
+    ClearingRequest getClearingRequestByProjectId(1: string projectId);
+
+    /**
+     * update clearing request for associated project deletion
+     **/
+    oneway void updateClearingRequestForProjectDeletion(1: Project project, 2: User user);
+
+    /**
+     * get clearing request by Id for view/read
+     **/
+    ClearingRequest getClearingRequestById(1: string id, 2: User user);
+
+    /**
+     * get clearing request by Id for edit
+     **/
+    ClearingRequest getClearingRequestByIdForEdit(1: string id, 2: User user);
+
+    /**
+     * add comment to clearing request
+     **/
+    RequestStatus addCommentToClearingRequest(1: string id, 2: Comment comment, 3: User user);
 }

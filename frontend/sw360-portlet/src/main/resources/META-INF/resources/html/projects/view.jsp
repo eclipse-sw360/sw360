@@ -10,6 +10,7 @@
   --%>
 <%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.projects.Project" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest" %>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 <%@ page import="javax.portlet.PortletRequest" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectType" %>
@@ -31,6 +32,7 @@
 <jsp:useBean id="tag" class="java.lang.String" scope="request"/>
 <jsp:useBean id="name" class="java.lang.String" scope="request"/>
 <jsp:useBean id="state" class="java.lang.String" scope="request"/>
+<jsp:useBean id="isUserAtLeastClearingAdmin" type="java.lang.Boolean" scope="request" />
 
 <core_rt:set var="stateAutoC" value='<%=PortalConstants.STATE%>'/>
 <core_rt:set var="projectTypeAutoC" value='<%=PortalConstants.PROJECT_TYPE%>'/>
@@ -42,6 +44,14 @@
 
 <portlet:resourceURL var="deleteAjaxURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.REMOVE_PROJECT%>'/>
+</portlet:resourceURL>
+
+<portlet:resourceURL var="createClearingRequestURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CREATE_CLEARING_REQUEST%>'/>
+</portlet:resourceURL>
+
+<portlet:resourceURL var="viewClearingRequestURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.VIEW_CLEARING_REQUEST%>'/>
 </portlet:resourceURL>
 
 <portlet:renderURL var="impProjectURL">
@@ -56,6 +66,11 @@
     <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>"/>
     <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>"/>
 </portlet:renderURL>
+
+<liferay-portlet:renderURL var="friendlyClearingRequestURL" portletName="sw360_portlet_moderations">
+    <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>"/>
+    <portlet:param name="<%=PortalConstants.CLEARING_REQUEST_ID%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>"/>
+</liferay-portlet:renderURL>
 
 <portlet:actionURL var="applyFiltersURL" name="applyFilters">
 </portlet:actionURL>
@@ -207,6 +222,112 @@
             </div>
         </div>
     </div>
+
+    <div id="createClearingRequestDialog" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-info" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <clay:icon symbol="check-square" />
+                        Create Clearing Request?
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Fill the form to create clearing request for the project <b data-name="name"></b>?</p>
+                     <div data-hide="hasNoDependencies">
+                        <p>
+                        This project contains:
+                        </p>
+                        <ul>
+                            <li data-hide="hasNoLinkedProjects"><span data-name="linkedProjects"></span> linked projects</li>
+                            <li data-hide="hasNoLinkedReleases"><span data-name="linkedReleases"></span> linked releases</li>
+                            <li><span data-name="clearingStatus"></span></li>
+                        </ul>
+                    </div>
+                    <hr/>
+                    <form id="createClearingRequestForm">
+                        <div class="form-group">
+                            <label for="clearingTeamEmail" class="mandatory">Please enter the clearing team email id:</label>
+                            <input id="clearingTeamEmail" type="email" class="form-control" data-name="comment" rows="4" placeholder="Please enter the clearing team email" required/>
+                            <div class="invalid-feedback">
+                                The email is required in valid format!
+                            </div>
+                        </div>
+						<div class="form-group">
+							<label for="requestedClearingDate" class="mandatory">Requested Clearing Date:</label>
+							<input class="datepicker form-control" id="requestedClearingDate" type="text" pattern="\d{4}-\d{2}-\d{2}" placeholder="Requested Clearing Date YYYY-MM-DD" required/>
+							<div class="invalid-feedback">
+                                Should be greater than 7 days from today and in valid format!
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="clearingRequestComment">Please comment your request</label>
+                            <textarea id="clearingRequestComment" class="form-control" data-name="comment" rows="4" placeholder="Comment your request..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-dismiss="modal">Close</button>
+                    <button type="button" id="createClearingrequestButton" class="btn btn-primary">Create Request</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="viewClearingRequestDialog" class="modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-info" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <clay:icon symbol="check-square" />
+                        Clearing Request:
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Clearing request <b data-name="clearingRequestId"></b> details for the project <b data-name="projectName"></b>:</p>
+                        <table class="table table-bordered aligned-top">
+                            <tr>
+                                <th style="width: 30%;">Requesting user:</th>
+                                <td><span data-name="requestingUser"></span></td>
+                            </tr>
+                            <tr>
+                                <th>Requester comment:</th>
+                                <td><span data-name="requesterComment"></span></td>
+                            </tr>
+                            <tr>
+                                <th>Requested clearing date:</th>
+                                <td><span data-name="requestedDate"></span></td>
+                            </tr>
+                            <tr>
+                                <th>Clearing team:</th>
+                                <td><span data-name="clearingTeam"></span></td>
+                            </tr>
+                            <tr>
+                                <th>Agreed clearing date:</th>
+                                <td><span data-name="agreedDate"></span></td>
+                            </tr>
+                            <tr>
+                                <th>Clearing team comment:</th>
+                                <td data-name="ctComment"></td>
+                            </tr>
+                            <tr>
+                                <th>Request Status:</th>
+                                <td><span data-name="status"></span></td>
+                            </tr>
+                        </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 
@@ -217,7 +338,7 @@
         var PortletURL = Liferay.PortletURL;
         const clearingSummaryColumnIndex = 4;
 
-        require(['jquery', 'modules/autocomplete', 'modules/dialog', 'bridges/datatables', 'utils/render'], function($, autocomplete, dialog, datatables, render) {
+        require(['jquery', 'modules/autocomplete', 'modules/dialog', 'modules/validation', 'bridges/datatables', 'utils/render', 'bridges/jquery-ui'], function($, autocomplete, dialog, validation, datatables, render) {
             var projectsTable;
 
              // initializing
@@ -242,6 +363,30 @@
                 var data = $(event.currentTarget).data();
                 deleteProject(data.projectId, data.projectName, data.linkedProjectsCount, data.linkedReleasesCount, data.projectAttachmentCount);
             });
+            $('#projectsTable').on('click', 'svg.disabledClearingRequest', function(event) {
+                var disabledBtnData = $(event.currentTarget).data();
+
+                if (disabledBtnData.accessDenied) {
+                        dialog.warn(
+                                'You do not have <b>WRITE</b> access to the project!'
+                            );
+                } else {
+                dialog.warn(
+                        'Clearing Request cannot be created for <b>CLOSED</b> or <b>PRIVATE</b> project!'
+                    );
+                }
+            });
+            $('#projectsTable').on('click', 'svg.createClearingRequest', function(event) {
+                var createBtnData = $(event.currentTarget).data();
+                createClearingRequest(createBtnData, $(this));
+            });
+            $('#projectsTable').on('click', 'svg.viewClearingRequest', function(event) {
+                var viewBtnData = $(event.currentTarget).data();
+                viewClearingRequest(viewBtnData, $(this));
+            });
+            $('#projectsTable').on('click', 'svg.clearing', function(event) {
+                openSelectClearingDialog($(event.currentTarget).data('projectId'));
+            });
             $('#btnExportGroup a.dropdown-item').on('click', function(event) {
                 exportSpreadsheet($(event.currentTarget).data('type'));
             });
@@ -259,6 +404,12 @@
                     .replace('<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>', page)
                     .replace('<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>', projectId);
                 return portletURL;
+            }
+
+            function replaceFriendlyUrlParameter(portletUrl, id, page) {
+                return portletUrl
+                    .replace('<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>', page)
+                    .replace('<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>', id);
             }
 
             // create and render datatable
@@ -292,6 +443,7 @@
                         'class': 'actions'
                     }),
                     $editAction,
+                    $clearingRequestAction,
                     $copyAction = render.linkTo(
                         makeProjectUrl(id, '<%=PortalConstants.PAGENAME_DUPLICATE%>'),
                         "",
@@ -308,6 +460,28 @@
 
                 $deleteAction.append($('<title>Delete</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
 
+                    if (row.cState === 'CLOSED' || row.visbility === 'PRIVATE') {
+                        $clearingRequestAction = $('<svg>', {
+                            'class': 'disabledClearingRequest lexicon-icon disabled',
+                        }).append('<title>CR is not allowed for PRIVATE and CLOSED projects</title>');
+                    } else if (row.crId) {
+                        $clearingRequestAction = $('<svg>', {
+                            'class': 'viewClearingRequest lexicon-icon text-warning', // pending or in-progress clearing request
+                            'data-clearing-request-id': row.crId,
+                            'data-project-name': row.name,
+                        }).append('<title>View Clearing Request</title>');
+                    } else {
+                        $clearingRequestAction = $('<svg>', {
+                            'class': 'createClearingRequest lexicon-icon',
+                            'data-project-id': id,
+                            'data-project-name': row.name,
+                            'data-linked-projects-count': row.lProjSize,
+                            'data-linked-releases-count': row.lRelsSize,
+                        }).append('<title>Create Clearing Request</title>');
+                    }
+
+                $clearingRequestAction.append($('<use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#check-square"/>'));
+
                 if(row.cState == 'CLOSED' && ${isUserAdmin != 'Yes'}) {
                     $editAction = $('<svg class="lexicon-icon disabled"><title>Only administrators can edit a closed project.</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>');
                 } else {
@@ -318,12 +492,12 @@
                     );
                 }
 
-                $actions.append($editAction, $copyAction, $deleteAction);
+                $actions.append($editAction, $clearingRequestAction, $copyAction, $deleteAction);
                 return $actions[0].outerHTML;
             }
 
             function renderProjectNameLink(name, type, row) {
-                return render.linkTo(replaceFriendlyUrlParameter(row.id, '<%=PortalConstants.PAGENAME_DETAIL%>'), name);
+                return render.linkTo(replaceFriendlyUrlParameter('<%=friendlyProjectURL%>', row.id, '<%=PortalConstants.PAGENAME_DETAIL%>'), name);
             }
 
             function renderStateBoxes(state, type, row) {
@@ -423,9 +597,14 @@
                         "<portlet:namespace/><%=Project._Fields.ID%>": ids
                     },
                     success: function (response) {
+                        const isNotClearingAdmin = '${isUserAtLeastClearingAdmin}' === 'false';
                         for (var i = 0; i < response.length; i++) {
-                            var cell_clearingsummary = projectsTable.cell("#" + response[i].id, clearingSummaryColumnIndex);
+                            var cell_clearingsummary = projectsTable.cell("#" + response[i].id, clearingSummaryColumnIndex),
+                                isCreateCR = $('#' + response[i].id + ' td:eq(5)').find('.createClearingRequest');
                             cell_clearingsummary.data(displayClearingStateSummary(response[i].clearing));
+                            if (isNotClearingAdmin && !response[i].writeAccessUser && isCreateCR.length) {
+                                isCreateCR.removeClass('createClearingRequest').addClass('disabledClearingRequest').attr('data-access-denied', true);
+                            }
                         }
                     },
                     error: function () {
@@ -449,7 +628,7 @@
                     approvedCount;
 
                 if (clearing) {
-                    releaseCount = d(clearing.newRelease) + d(clearing.underClearing) + d(clearing.underClearingByProjectTeam) + d(clearing.reportAvailable) + d(clearing.approved);
+                    releaseCount = d(clearing.newRelease) + d(clearing.underClearing) + d(clearing.sentToClearingTool) + d(clearing.reportAvailable) + d(clearing.approved);
                     approvedCount = d(clearing.approved);
                     resultElementAsString = "<span class=\"clearingstate content-center\" title=\"" + approvedCount + (approvedCount === 1 ? " release" : " releases") + " out of " + releaseCount + (approvedCount === 1 ? " has" : " have") + " approved clearing reports (including subprojects).\">" + approvedCount + "/" + releaseCount + "</span>";
                 }
@@ -520,6 +699,137 @@
                     hasNoAttachments: attachmentsSize == 0
                 }, function(submit, callback) {
                     deleteProjectInternal(callback);
+                });
+            }
+
+            // clearing request action
+            function createClearingRequest(cBtnData, thisObj) {
+                var $dialog,
+                    projectId = cBtnData.projectId,
+	                name = cBtnData.projectName,
+	                linkedProjectsSize = cBtnData.linkedProjectsCount,
+	                linkedReleasesSize = cBtnData.linkedReleasesCount,
+                    clearingStatus = $(thisObj).closest('tr').find('td span.clearingstate').attr("title"),
+                    clearingSvg = thisObj;
+
+                function createClearingRequestInternal(callback) {
+                    let dataObj = {},
+                        name = "<portlet:namespace/><%=PortalConstants.CLEARING_REQUEST%>",
+                        crData = {
+                            projectId : projectId,
+                            requestedClearingDate : $("#requestedClearingDate").val(),
+                            clearingTeam : $("#clearingTeamEmail").val(),
+                            requestingUserComment : $("#clearingRequestComment").val()
+                        };
+                    dataObj[name] = JSON.stringify(crData);
+                    jQuery.ajax({
+                        type: 'POST',
+                        url: '<%=createClearingRequestURL%>',
+                        cache: false,
+                        data: dataObj,
+                        success: function (status) {
+                            callback();
+                            $('#createClearingRequestDialog #createClearingrequestButton').prop("disabled", true).hide();
+                            if (!status || status.length == 0 || Object.getOwnPropertyNames(status).length == 0) {
+                                $dialog.alert("Failed to create clearing request!");
+                            } else {
+                                var statusData = JSON.parse(status);
+                                if (statusData.result == "SUCCESS") {
+                                    $dialog.success("Clearing request <b>" + statusData.clearingId + "</b> is created successfully! <br>Clearing team will confirm on the <b>agreed clearing date</b>.");
+                                    setTimeout(function(){
+                                        $dialog.close();
+                                        }, 7000);
+                                    $(thisObj).removeClass('createClearingRequest').addClass('viewClearingRequest text-warning').attr('data-clearing-request-id', statusData.clearingId).attr('title','View Clearing Request');
+                                } else if (statusData.result == "FAILURE") {
+                                    $dialog.alert(statusData.message);
+                                } else {
+                                    $dialog.alert("Failed to create clearing request!");
+                                }
+                            }
+                        },
+                        error: function () {
+                            callback();
+                            $('#createClearingRequestDialog #createClearingrequestButton').prop("disabled", true).hide();
+                            $dialog.alert("Error create clearing request!");
+                        }
+                    });
+                }
+
+                $('.datepicker').datepicker({
+                    minDate: 7,
+                    changeMonth: true,
+                    changeYear: true,
+                    dateFormat: "yy-mm-dd"
+                });
+
+                $dialog = dialog.open('#createClearingRequestDialog', {
+                    name: name,
+                    linkedProjects: linkedProjectsSize,
+                    linkedReleases: linkedReleasesSize,
+                    hasNoDependencies: linkedProjectsSize == 0 && linkedReleasesSize == 0,
+                    hasNoLinkedProjects: linkedProjectsSize == 0,
+                    hasNoLinkedReleases: linkedReleasesSize == 0,
+                    clearingStatus: clearingStatus
+                }, function(submit, callback) {
+                    let selectedDate = $("#requestedClearingDate").val();
+                    if (!validation.isValidDate(selectedDate, 7)) {
+                        $dialog.alert("Invalid requested clearing date!<br>Should be greater then 7 days from today and in YYYY-MM-DD format!");
+                        callback();
+                        setTimeout(function() {
+                            $("#createClearingRequestDialog .alert-danger").hide();
+                        }, 5000);
+                    } else if (validation.validate('#createClearingRequestForm')) {
+                        createClearingRequestInternal(callback);
+                    } else {
+                        callback();
+                    }
+                }, function() {
+                    $('#createClearingRequestDialog #createClearingRequestForm').removeClass('was-validated');
+                });
+            }
+
+            function viewClearingRequest(viewBtnData, thisObj) {
+	            var projectName = viewBtnData.projectName,
+	                clearingRequestId = $(thisObj).attr('data-clearing-request-id');
+
+                jQuery.ajax({
+                    type: 'POST',
+                    url: '<%=viewClearingRequestURL%>',
+                    cache: false,
+                    data: {
+                        "<portlet:namespace/><%=PortalConstants.CLEARING_REQUEST_ID%>": clearingRequestId
+                    },
+                    success: function (result) {
+                        if (!result || result.length == 0 || Object.getOwnPropertyNames(result).length == 0) {
+                            dialog.warn(
+                                    'We are not able to find the clearing request (ID: <b data-name="crId"></b>) in db for the project <b data-name="projectName"></b><br>Refresh the page and try again',
+                                    {
+                                        projectName: projectName,
+                                        crId: clearingRequestId
+                                    }
+                               );
+                        }
+                        else {
+                            let resultData = JSON.parse(JSON.parse(result).clearingRequest),
+                                requestPortletURL = '<%=friendlyClearingRequestURL%>'.replace(/projects/g, "moderation"),
+                                clearingRequestUrl =  render.linkTo(replaceFriendlyUrlParameter(requestPortletURL.toString(), clearingRequestId, '<%=PortalConstants.PAGENAME_DETAIL_CLEARING_REQUEST%>'), clearingRequestId);
+                            $dialog = dialog.open('#viewClearingRequestDialog', {
+                                clearingRequestId: clearingRequestUrl,
+                                projectName: projectName,
+                                requestingUser: resultData.requestingUser,
+                                requestedDate: resultData.requestedClearingDate,
+                                requesterComment: resultData.requestingUserComment,
+                                clearingTeam: resultData.clearingTeam,
+                                ctComment: resultData.clearingTeamComment,
+                                agreedDate: resultData.agreedClearingDate,
+                                status: resultData.clearingState,
+                                submittedOn: resultData.timestamp,
+                            }, undefined, undefined, undefined, true);
+                        }
+                    },
+                    error: function () {
+                        dialog.warn("Failed to fetch clearing request from database.");
+                    }
                 });
             }
         });

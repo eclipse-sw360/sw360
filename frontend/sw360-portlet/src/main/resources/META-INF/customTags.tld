@@ -729,6 +729,23 @@
         </attribute>
     </tag>
     <tag>
+        <name>DisplayClearingRequestLink</name>
+        <tag-class>org.eclipse.sw360.portal.tags.links.DisplayLinkToClearingRequest</tag-class>
+        <body-content>JSP</body-content>
+        <attribute>
+            <name>clearingRequestId</name>
+            <required>false</required>
+            <type>java.lang.String</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>bare</name>
+            <required>false</required>
+            <type>java.lang.Boolean</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
+    <tag>
         <name>ProjectName</name>
         <tag-class>org.eclipse.sw360.portal.tags.ProjectName</tag-class>
         <body-content>empty</body-content>

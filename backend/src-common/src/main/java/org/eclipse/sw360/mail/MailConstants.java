@@ -22,6 +22,7 @@ public class MailConstants {
     public static final String DEFAULT_END = "defaultEnd";
     public static final String UNSUBSCRIBE_NOTICE_BEFORE = "unsubscribeNoticeBefore";
     public static final String UNSUBSCRIBE_NOTICE_AFTER = "unsubscribeNoticeAfter";
+    public static final String DASH = " - ";
 
     public static final String SUBJECT_FOR_NEW_MODERATION_REQUEST = "subjectForNewModerationRequest";
     public static final String SUBJECT_FOR_UPDATE_MODERATION_REQUEST = "subjectForUpdateModerationRequest";
@@ -34,6 +35,11 @@ public class MailConstants {
     public static final String SUBJECT_FOR_UPDATE_RELEASE = "subjectForUpdateRelease";
     public static final String SUBJECT_FOR_NEW_PROJECT = "subjectForNewProject";
     public static final String SUBJECT_FOR_UPDATE_PROJECT = "subjectForUpdateProject";
+    public static final String SUBJECT_FOR_NEW_CLEARING_REQUEST = "subjectForNewClearingRequest";
+    public static final String SUBJECT_FOR_UPDATED_CLEARING_REQUEST = "subjectForUpdatedClearingRequest";
+    public static final String SUBJECT_FOR_APPROVED_CLEARING_REQUEST = "subjectForApprovedClearingRequest";
+    public static final String SUBJECT_FOR_DECLINED_CLEARING_REQUEST = "subjectForDeclinedClearingRequest";
+    public static final String SUBJECT_FOR_UPDATED_PROJECT_WITH_CLEARING_REQUEST = "subjectForUpdatedProjectWithClearingRequest";
 
     public static final String TEXT_FOR_NEW_MODERATION_REQUEST = "textForNewModerationRequest";
     public static final String TEXT_FOR_UPDATE_MODERATION_REQUEST = "textForUpdateModerationRequest";
@@ -46,6 +52,8 @@ public class MailConstants {
     public static final String TEXT_FOR_UPDATE_RELEASE = "textForUpdateRelease";
     public static final String TEXT_FOR_NEW_PROJECT = "textForNewProject";
     public static final String TEXT_FOR_UPDATE_PROJECT = "textForUpdateProject";
+    public static final String TEXT_FOR_APPROVED_CLEARING_REQUEST = "textForApprovedClearingRequest";
+    public static final String TEXT_FOR_DECLINED_CLEARING_REQUEST = "textForDeclinedClearingRequest";
 
     private MailConstants() {
         // Utility class with only static functions

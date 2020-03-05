@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.portal.portlets.moderation;
 
+import com.fasterxml.jackson.core.JsonFactory;
 import com.liferay.portal.kernel.model.Organization;
 import com.liferay.portal.kernel.servlet.SessionMessages;
 
@@ -29,18 +30,21 @@ import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
+import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
+import org.eclipse.sw360.portal.common.ErrorMessages;
 import org.eclipse.sw360.portal.common.PortalConstants;
+import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
 import org.eclipse.sw360.portal.portlets.FossologyAwarePortlet;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 import org.eclipse.sw360.portal.users.UserUtils;
-
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.jetbrains.annotations.NotNull;
@@ -53,6 +57,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
+import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
 
 @org.osgi.service.component.annotations.Component(
@@ -76,6 +81,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.*;
 public class ModerationPortlet extends FossologyAwarePortlet {
 
     private static final Logger log = Logger.getLogger(ModerationPortlet.class);
+    private static final JsonFactory JSON_FACTORY = new JsonFactory();
 
     @Override
     public void serveResource(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
@@ -84,6 +90,8 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             removeMeFromModerators(request, response);
         } else if (PortalConstants.DELETE_MODERATION_REQUEST.equals(action)) {
             serveDeleteModerationRequest(request, response);
+        } else if (PortalConstants.ADD_COMMENT.equals(action)) {
+            addCommentToClearingRequest(request, response);
         } else if (isGenericAction(action)) {
             dealWithGenericAction(request, response, action);
         }
@@ -92,6 +100,11 @@ public class ModerationPortlet extends FossologyAwarePortlet {
     private void serveDeleteModerationRequest(ResourceRequest request, ResourceResponse response) throws IOException {
         RequestStatus requestStatus = ModerationPortletUtils.deleteModerationRequest(request, log);
         serveRequestStatus(request, response, requestStatus, "Problem removing moderation request", log);
+    }
+
+    private void addCommentToClearingRequest(ResourceRequest request, ResourceResponse response) throws PortletException {
+        RequestStatus requestStatus = ModerationPortletUtils.addCommentToClearingRequest(request, log);
+        serveRequestStatus(request, response, requestStatus, "Error adding comment to clearing request", log);
     }
 
     private void removeMeFromModerators(ResourceRequest request, ResourceResponse response){
@@ -110,10 +123,14 @@ public class ModerationPortlet extends FossologyAwarePortlet {
 
     @Override
     public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
-        if (PAGENAME_EDIT.equals(request.getParameter(PAGENAME))) {
+        final String pageName = request.getParameter(PAGENAME);
+        if (PAGENAME_EDIT.equals(pageName)) {
             renderEditView(request, response);
-        } else if (PAGENAME_ACTION.equals(request.getParameter(PAGENAME))) {
+        } else if (PAGENAME_ACTION.equals(pageName)) {
             renderActionView(request, response);
+        } else if (PAGENAME_EDIT_CLEARING_REQUEST.equals(pageName) || PAGENAME_DETAIL_CLEARING_REQUEST.equals(pageName)) {
+            renderClearingRequest(request, response, pageName);
+            include("/html/moderation/clearing/clearingRequest.jsp", request, response);
         } else {
             renderStandardView(request, response);
         }
@@ -167,6 +184,44 @@ public class ModerationPortlet extends FossologyAwarePortlet {
                 log.error("Error in Moderation ", e);
             }
         }
+    }
+
+    private void renderClearingRequest(RenderRequest request, RenderResponse response, String pageName) throws PortletException {
+        final String clearingId = request.getParameter(CLEARING_REQUEST_ID);
+        final User user = UserCacheHolder.getUserFromRequest(request);
+
+        if (CommonUtils.isNullEmptyOrWhitespace(clearingId)) {
+            throw new PortletException("Clearing request ID not set!");
+        }
+
+        try {
+            ModerationService.Iface client = thriftClients.makeModerationClient();
+            ClearingRequest clearingRequest;
+            if (PAGENAME_EDIT_CLEARING_REQUEST.equals(pageName)) {
+                clearingRequest = client.getClearingRequestByIdForEdit(clearingId, user);
+            } else {
+                clearingRequest = client.getClearingRequestById(clearingId, user);
+            }
+            request.setAttribute(CLEARING_REQUEST, clearingRequest);
+            request.setAttribute(WRITE_ACCESS_USER, false);
+
+            if (CommonUtils.isNotNullEmptyOrWhitespace(clearingRequest.getProjectId()) ) {
+                ProjectService.Iface projectClient = thriftClients.makeProjectClient();
+                Project project = projectClient.getProjectById(clearingRequest.getProjectId(), UserCacheHolder.getUserFromRequest(request));
+                request.setAttribute(PROJECT, SW360Utils.printName(project));
+                request.setAttribute(WRITE_ACCESS_USER, makePermission(project, user).isActionAllowed(RequestedAction.WRITE));
+            }
+            addClearingBreadcrumb(request, response, clearingId);
+        } catch (TException e) {
+            log.error("Error fetching clearing request from backend!", e);
+            setSW360SessionError(request, ErrorMessages.ERROR_GETTING_CLEARING_REQUEST);
+        }
+    }
+
+    @UsedAsLiferayAction
+    public void updateClearingRequest(ActionRequest request, ActionResponse response) throws PortletException, IOException {
+        RequestStatus requestStatus = requestStatus = ModerationPortletUtils.updateClearingRequest(request, log);
+        setSessionMessage(request, requestStatus, "Clearing Request", "update");
     }
 
     private void declineModerationRequest(User user, ModerationRequest moderationRequest, RenderRequest request) throws TException {
@@ -288,14 +343,24 @@ public class ModerationPortlet extends FossologyAwarePortlet {
         addBreadcrumbEntry(request, moderationRequest.getDocumentName(), baseUrl);
     }
 
+    private void addClearingBreadcrumb(RenderRequest request, RenderResponse response, String Id) {
+        PortletURL baseUrl = response.createRenderURL();
+        baseUrl.setParameter(PAGENAME, PAGENAME_EDIT_CLEARING_REQUEST);
+        baseUrl.setParameter(CLEARING_REQUEST_ID, Id);
+
+        addBreadcrumbEntry(request, "Clearing Request", baseUrl);
+    }
+
     public void renderStandardView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
         User user = UserCacheHolder.getUserFromRequest(request);
 
         List<ModerationRequest> openModerationRequests = null;
         List<ModerationRequest> closedModerationRequests = null;
+        List<ClearingRequest> openClearingRequests = null;
+        List<ClearingRequest> closedClearingRequests = null;
+        ModerationService.Iface client = thriftClients.makeModerationClient();
 
         try {
-            ModerationService.Iface client = thriftClients.makeModerationClient();
             List<ModerationRequest> moderationRequests = client.getRequestsByModerator(user);
             Map<Boolean, List<ModerationRequest>> partitionedModerationRequests = moderationRequests
                     .stream()
@@ -309,6 +374,20 @@ public class ModerationPortlet extends FossologyAwarePortlet {
         request.setAttribute(MODERATION_REQUESTS, CommonUtils.nullToEmptyList(openModerationRequests));
         request.setAttribute(CLOSED_MODERATION_REQUESTS, CommonUtils.nullToEmptyList(closedModerationRequests));
         request.setAttribute(IS_USER_AT_LEAST_CLEARING_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user) ? "Yes" : "No");
+
+        try {
+            Set<ClearingRequest> clearingRequestsSet = client.getMyClearingRequests(user);
+
+            Map<Boolean, List<ClearingRequest>> partitionedClearingRequests = clearingRequestsSet
+                    .stream().collect(Collectors.groupingBy(ModerationPortletUtils::isClosedClearingRequest));
+            closedClearingRequests = partitionedClearingRequests.get(true);
+            openClearingRequests = partitionedClearingRequests.get(false);
+        } catch (TException e) {
+            log.error("Could not fetch clearing requests from backend!", e);
+        }
+
+        request.setAttribute(CLEARING_REQUESTS, CommonUtils.nullToEmptyList(openClearingRequests));
+        request.setAttribute(CLOSED_CLEARING_REQUESTS, CommonUtils.nullToEmptyList(closedClearingRequests));
         super.doView(request, response);
     }
 

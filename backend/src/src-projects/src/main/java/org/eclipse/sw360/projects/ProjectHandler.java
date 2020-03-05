@@ -21,6 +21,7 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
+import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectObligation;
@@ -117,6 +118,17 @@ public class ProjectHandler implements ProjectService.Iface {
     public Set<Project> searchLinkingProjects(String id, User user) throws TException {
         assertId(id);
         return handler.searchLinkingProjects(id, user);
+    }
+
+    ////////////////////////////
+    // CLEARING REQUEST EMAIL //
+    ////////////////////////////
+    @Override
+    public AddDocumentRequestSummary createClearingRequest(ClearingRequest clearingRequest, User user, String projectUrl) throws TException {
+        assertNotNull(clearingRequest);
+        assertNotEmpty(projectUrl);
+        assertUser(user);
+        return handler.createClearingRequest(clearingRequest, user, projectUrl);
     }
 
     ////////////////////////////

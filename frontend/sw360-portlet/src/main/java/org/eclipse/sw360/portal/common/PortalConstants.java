@@ -13,6 +13,8 @@ package org.eclipse.sw360.portal.common;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -78,6 +80,7 @@ public class PortalConstants {
     public static final String DOCUMENT_TYPE = "documentType";
     public static final String VIEW_SIZE = "viewSize";
     public static final String TOTAL_ROWS = "totalRows";
+    public static final String RESULT = "result";
 
     public static final String IS_USER_AT_LEAST_CLEARING_ADMIN = "isUserAtLeastClearingAdmin";
     public static final String IS_USER_AT_LEAST_ECC_ADMIN = "isUserAtLeastECCAdmin";
@@ -106,6 +109,21 @@ public class PortalConstants {
     public static final String CLOSED_MODERATION_REQUESTS = "closedModerationRequests";
     public static final String DELETE_MODERATION_REQUEST = "deleteModerationRequest";
     public static final String MODERATION_ACTIONS_ALLOWED = "moderationAllowed";
+
+    //! Specialized keys for clearing
+    public static final String CLEARING_REQUEST = "clearingRequest";
+    public static final String CLEARING_REQUESTS = "clearingRequests";
+    public static final String CLEARING_REQUEST_ID = "clearingId";
+    public static final String CLOSED_CLEARING_REQUESTS = "closedClearingRequests";
+    public static final String CREATE_CLEARING_REQUEST = "create_clearing_request";
+    public static final String VIEW_CLEARING_REQUEST = "view_clearing_request";
+    public static final String AGREED_CLEARING_DATE = "agreedClearingDate";
+    public static final String CLEARING_TEAM_COMMENT = "clearingTeamComment";
+    public static final String PAGENAME_DETAIL_CLEARING_REQUEST = "detailClearingRequest";
+    public static final String PAGENAME_EDIT_CLEARING_REQUEST = "editClearingRequest";
+    public static final String ADD_COMMENT = "addComment";
+    public static final String CLEARING_REQUEST_COMMENT = "clearingRequestComment";
+
 
     //! Specialized keys for components
     public static final String COMPONENT_PORTLET_NAME = PORTLET_NAME_PREFIX + "components";
@@ -183,7 +201,8 @@ public class PortalConstants {
     public static final String SPDX_LICENSE_INFO = "spdxLicenseInfo";
 
     //! Specialized keys for projects
-    public static final String PROJECT_PORTLET_NAME = PORTLET_NAME_PREFIX + "projects";
+    public static final String PROJECTS = "projects";
+    public static final String PROJECT_PORTLET_NAME = PORTLET_NAME_PREFIX + PROJECTS;
     public static final String PROJECT_BDPIMPORT_PORTLET_NAME = PORTLET_NAME_PREFIX + "projectbdpimport";
     public static final String PROJECT_WSIMPORT_PORTLET_NAME = PORTLET_NAME_PREFIX + "projectwsimport";
     public static final String PROJECT_ID = "projectid";
@@ -230,6 +249,8 @@ public class PortalConstants {
     public static final String PROJECT_RELEASE_TO_RELATION = "projectReleaseToRelation";
     public static final String PROJECT_USED_RELEASE_RELATIONS = "usedProjectReleaseRelations";
     public static final String SELECTED_PROJECT_RELEASE_RELATIONS = "selectedProjectReleaseRelations";
+    public static final String PROJECT_URL = "projectUrl";
+
 
     public static final String FOSSOLOGY_PORTLET_NAME = PORTLET_NAME_PREFIX + "fossology";
     public static final String USER_LIST = "userList";
@@ -537,7 +558,6 @@ public class PortalConstants {
         PROJECT_OBLIGATIONS_ACTION_SET = CommonUtils.splitToSet(props.getProperty("project.obligation.actions", "Action 1,Action 2,Action 3"));
         IS_PROJECT_OBLIGATIONS_ENABLED = Boolean.parseBoolean(props.getProperty("project.obligations.enabled", "true"));
         CUSTOM_WELCOME_PAGE_GUIDELINE = Boolean.parseBoolean(props.getProperty("custom.welcome.page.guideline", "false"));
-
         // SW360 REST API Constants
         API_TOKEN_ENABLE_GENERATOR = Boolean.parseBoolean(props.getProperty("rest.apitoken.generator.enable", "false"));
         API_TOKEN_MAX_VALIDITY_READ_IN_DAYS = props.getProperty("rest.apitoken.read.validity.days", "90");

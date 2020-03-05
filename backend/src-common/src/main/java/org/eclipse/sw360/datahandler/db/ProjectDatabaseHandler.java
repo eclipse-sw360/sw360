@@ -46,6 +46,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -152,6 +153,86 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public List<Project> searchByName(String name, User user) {
         return repository.searchByName(name, user);
+    }
+
+    /////////////////////////////
+    // CREATE CLEARING REQUEST //
+    /////////////////////////////
+
+    public AddDocumentRequestSummary createClearingRequest(ClearingRequest clearingRequest, User user, String projectUrl) throws SW360Exception {
+        Project project = getProjectById(clearingRequest.getProjectId(), user);
+        AddDocumentRequestSummary requestSummary = new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.FAILURE);
+
+        if (!(PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user) || isWriteActionAllowedOnProject(project, user))) {
+            return requestSummary.setMessage("You do not have WRITE access to the project!");
+        }
+
+        if (CommonUtils.isNotNullEmptyOrWhitespace(project.getClearingRequestId())) {
+            log.warn("Clearing request is already present for the project: " + project.getId());
+            return requestSummary.setRequestStatus(AddDocumentRequestStatus.DUPLICATE).setId(project.getClearingRequestId());
+        }
+
+        if (!SW360Utils.isValidDate(clearingRequest.getRequestedClearingDate(), DateTimeFormatter.ISO_LOCAL_DATE, 7)) {
+            log.warn("Invalid requested clearing date: " + clearingRequest.getRequestedClearingDate() + " is entered, by user: "+ user.getEmail());
+            return requestSummary.setMessage("Invalid requested clearing date!");
+        }
+
+        if (!(ProjectClearingState.CLOSED.equals(project.getClearingState()) || Visibility.PRIVATE.equals(project.getVisbility()))) {
+            clearingRequest.setProjectBU(project.getBusinessUnit());
+            String crId = moderator.createClearingRequest(clearingRequest, user);
+            if (CommonUtils.isNotNullEmptyOrWhitespace(crId)) {
+                project.setClearingRequestId(crId);
+                repository.update(project);
+                sendMailForNewClearing(project, projectUrl, user, clearingRequest);
+                return requestSummary.setRequestStatus(AddDocumentRequestStatus.SUCCESS).setId(project.getClearingRequestId());
+            } else {
+                log.error("Failed to create clearing request for project: " + project.getId());
+            }
+        } else {
+            log.error("Cannot create clearing request for closed or private project: " + project.getId());
+        }
+        return requestSummary.setMessage("Failed to create clearing request!");
+    }
+
+    private boolean isWriteActionAllowedOnProject(Project project, User user) {
+        return makePermission(project, user).isActionAllowed(RequestedAction.WRITE);
+    }
+
+    public RequestStatus updateProjectForClearingRequestUpdate(ClearingRequest clearingRequest, String projectUrl, User user) throws SW360Exception {
+        Project project = getProjectById(clearingRequest.getProjectId(), user);
+        if (CommonUtils.isNotNullEmptyOrWhitespace(project.getClearingRequestId())) {
+            switch (clearingRequest.getClearingState()) {
+            case IN_PROGRESS:
+            case IN_QUEUE:
+            case ACCEPTED:
+                project.setClearingState(ProjectClearingState.IN_PROGRESS);
+                sendMailForUpdatedCR(project, projectUrl, user);
+                break;
+
+            case CLOSED:
+                project.setClearingState(ProjectClearingState.CLOSED);
+                sendMailForClosedOrRejectedCR(project, user, true);
+                break;
+
+            case NEW:
+                project.setClearingState(ProjectClearingState.OPEN);
+                sendMailForUpdatedCR(project, projectUrl, user);
+                break;
+
+            case REJECTED:
+                project.setClearingState(ProjectClearingState.OPEN);
+                sendMailForClosedOrRejectedCR(project, user, false);
+                project.unsetClearingRequestId();
+                break;
+
+            default:
+                break;
+            }
+            repository.update(project);
+            return RequestStatus.SUCCESS;
+        }
+        log.error("Failed to update project for change in clearing request, projectId: " + project.getId());
+        return RequestStatus.FAILURE;
     }
 
     ////////////////////////////
@@ -270,7 +351,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return RequestStatus.FAILED_SANITY_CHECK;
         } else if (!isDependenciesExists(project, user)) {
             return RequestStatus.INVALID_INPUT;
-        } else if (makePermission(actual, user).isActionAllowed(RequestedAction.WRITE)) {
+        } else if (isWriteActionAllowedOnProject(project, user)) {
             copyImmutableFields(project,actual);
             project.setAttachments( getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), project.getAttachments()) );
             setReleaseRelations(project, user, actual);
@@ -279,6 +360,12 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
             //clean up attachments in database
             attachmentConnector.deleteAttachmentDifference(actual.getAttachments(), project.getAttachments());
+
+            if (CommonUtils.isNotNullEmptyOrWhitespace(actual.getClearingRequestId()) && isLinkedReleaseUpdated(project, actual)) {
+                Comment comment = new Comment().setText("*** This is auto-generated comment *** \nLinked release(s) are updated for the project.").setCommentedBy(user.getEmail());
+                moderator.addCommentToClearingRequest(actual.getClearingRequestId(), comment, user);
+                sendMailForUpdatedProjectWithClearingRequest(project, user);
+            }
             sendMailNotificationsForProjectUpdate(project, user.getEmail());
             return RequestStatus.SUCCESS;
         } else {
@@ -331,7 +418,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     public RequestStatus addLinkedObligations(ProjectObligation obligation, User user) throws TException {
         ThriftValidate.prepareProjectObligation(obligation);
         obligationRepository.add(obligation);
-        Project project = repository.get(obligation.getProjectId());
+        Project project = getProjectById(obligation.getProjectId(), user);
         project.setLinkedObligationId(obligation.getId());
         repository.update(project);
         return RequestStatus.SUCCESS;
@@ -339,11 +426,20 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public RequestStatus updateLinkedObligations(ProjectObligation obligation, User user) throws TException {
         Project project = getProjectById(obligation.getProjectId(), user);
-        if (makePermission(project, user).isActionAllowed(RequestedAction.WRITE)) {
+        if (isWriteActionAllowedOnProject(project, user)) {
             obligationRepository.update(obligation);
             return RequestStatus.SUCCESS;
         }
         return RequestStatus.FAILURE;
+    }
+
+    private boolean isLinkedReleaseUpdated(Project updated, Project current) {
+        Set<String> updatedReleaseIds = CommonUtils.getNullToEmptyKeyset(updated.getReleaseIdToUsage());
+        Set<String> currentReleaseIds = CommonUtils.getNullToEmptyKeyset(current.getReleaseIdToUsage());
+        if (updatedReleaseIds.equals(currentReleaseIds)) {
+            return false;
+        }
+        return true;
     }
 
     private void setReleaseRelations(Project updated, User user, Project current) {
@@ -482,7 +578,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         // Remove the project if the user is allowed to do it by himself
         if (makePermission(project, user).isActionAllowed(RequestedAction.DELETE)) {
-            removeProjectAndCleanUp(project);
+            removeProjectAndCleanUp(project, user);
             return RequestStatus.SUCCESS;
         } else {
             return moderator.deleteProject(project, user);
@@ -494,7 +590,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
        return !usingProjects.isEmpty();
     }
 
-    private void removeProjectAndCleanUp(Project project) throws SW360Exception {
+    private void removeProjectAndCleanUp(Project project, User user) throws SW360Exception {
         attachmentConnector.deleteAttachments(project.getAttachments());
         attachmentDatabaseHandler.deleteUsagesBy(Source.projectId(project.getId()));
         repository.remove(project);
@@ -503,6 +599,9 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
         moderator.notifyModeratorOnDelete(project.getId());
         deleteUsedReleaseRelations(project.getId());
+        if (CommonUtils.isNotNullEmptyOrWhitespace(project.getClearingRequestId())) {
+            moderator.unlinkClearingRequestForProjectDeletion(project, user);
+        }
     }
 
     private void deleteUsedReleaseRelations(String projectId) throws SW360Exception {
@@ -748,6 +847,13 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return projects;
     }
 
+    private List<Release> getDirectlyLinkedReleasesInNewState(Project project) {
+        Set<String> releaseIds = CommonUtils.nullToEmptyMap(project.getReleaseIdToUsage()).keySet();
+        List<Release> releases = componentDatabaseHandler.getReleasesForClearingStateSummary(releaseIds);
+        return releases.stream().filter(release -> null == release.getClearingState()
+                || ClearingState.NEW_CLEARING.equals(release.getClearingState())).collect(Collectors.toList());
+    }
+
     public List<ReleaseClearingStatusData> getReleaseClearingStatuses(String projectId, User user) throws SW360Exception {
         Project project = getProjectById(projectId, user);
         SetMultimap<String, ProjectWithReleaseRelationTuple> releaseIdsToProject = releaseIdToProjects(project, user);
@@ -911,6 +1017,79 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
 
         return releaseIds;
+    }
+
+    private String extractReleaseNameForClearingEmail(List<Release> releases) {
+        if (CommonUtils.isNullOrEmptyCollection(releases)) {
+            return "<li>No linked release(s) with clearing state new.</li>";
+        }
+
+        StringBuilder builder = new StringBuilder();
+        for (Release release : releases) {
+            builder.append("<li>").append(SW360Utils.printFullname(release)).append("</li>");
+        }
+        return builder.toString();
+    }
+
+    private int getTotalReleaseCount(ReleaseClearingStateSummary clearingSummary) {
+        return clearingSummary.getNewRelease() + clearingSummary.getReportAvailable() + clearingSummary.getUnderClearing()
+                + clearingSummary.getSentToClearingTool()+ clearingSummary.getApproved();
+    }
+
+    private void sendMailForNewClearing(Project project, String projectUrl, User user, ClearingRequest clearingRequest) {
+        project = fillClearingStateSummary(Arrays.asList(project), user).get(0);
+        List<Release> releases = getDirectlyLinkedReleasesInNewState(project);
+        int totalCount, approvedCount;
+        totalCount = approvedCount = 0;
+        if (project.isSetReleaseClearingStateSummary()) {
+            ReleaseClearingStateSummary clearingSummary = project.getReleaseClearingStateSummary();
+            approvedCount = clearingSummary.getApproved();
+            totalCount = getTotalReleaseCount(clearingSummary);
+        }
+        mailUtil.sendClearingMail(ClearingRequestEmailTemplate.NEW, clearingRequest.getClearingTeam(), MailConstants.SUBJECT_FOR_NEW_CLEARING_REQUEST,
+                new StringBuilder(CommonUtils.nullToEmptyString(user.getUserGroup())).append(MailConstants.DASH).append(SW360Utils.printFullname(user)).toString(),
+                CommonUtils.nullToEmptyString(clearingRequest.getId()), CommonUtils.nullToEmptyString(projectUrl), SW360Utils.printName(project),
+                String.valueOf(project.getLinkedProjectsSize()), String.valueOf(project.getReleaseIdToUsageSize()), String.valueOf(totalCount),
+                String.valueOf(approvedCount), clearingRequest.getRequestedClearingDate(), extractReleaseNameForClearingEmail(releases));
+
+    }
+
+    private void sendMailForUpdatedCR(Project project, String projectUrl, User user) {
+        List<Release> releases = getDirectlyLinkedReleasesInNewState(project);
+        ClearingRequest clearingRequest = moderator.getClearingRequestByProjectId(project.getId(), user);
+        mailUtil.sendClearingMail(ClearingRequestEmailTemplate.UPDATED, clearingRequest.getClearingTeam(), MailConstants.SUBJECT_FOR_UPDATED_CLEARING_REQUEST,
+                new StringBuilder(CommonUtils.nullToEmptyString(user.getUserGroup())).append(MailConstants.DASH).append(SW360Utils.printFullname(user)).toString(),
+                CommonUtils.nullToEmptyString(clearingRequest.getId()), CommonUtils.nullToEmptyString(projectUrl), SW360Utils.printName(project),
+                CommonUtils.getEnumStringOrNull(clearingRequest.getClearingState()), clearingRequest.getRequestedClearingDate(),
+                CommonUtils.nullToEmptyString(clearingRequest.getAgreedClearingDate()), extractReleaseNameForClearingEmail(releases));
+    }
+
+    private void sendMailForUpdatedProjectWithClearingRequest(Project updated, User user) {
+        updated = fillClearingStateSummary(Arrays.asList(updated), user).get(0);
+        List<Release> releases = getDirectlyLinkedReleasesInNewState(updated);
+        ClearingRequest clearingRequest = moderator.getClearingRequestByProjectId(updated.getId(), user);
+        int totalCount, approvedCount;
+        totalCount = approvedCount = 0;
+        if (updated.isSetReleaseClearingStateSummary()) {
+            ReleaseClearingStateSummary clearingSummary = updated.getReleaseClearingStateSummary();
+            approvedCount = clearingSummary.getApproved();
+            totalCount = getTotalReleaseCount(clearingSummary);
+        }
+        mailUtil.sendClearingMail(ClearingRequestEmailTemplate.PROJECT_UPDATED, clearingRequest.getClearingTeam(), MailConstants.SUBJECT_FOR_UPDATED_PROJECT_WITH_CLEARING_REQUEST,
+                new StringBuilder(CommonUtils.nullToEmptyString(user.getUserGroup())).append(MailConstants.DASH).append(SW360Utils.printFullname(user)).toString(),
+                SW360Utils.printName(updated), updated.getClearingRequestId(), String.valueOf(updated.getLinkedProjectsSize()),
+                String.valueOf(updated.getReleaseIdToUsageSize()), String.valueOf(totalCount),
+                String.valueOf(approvedCount), CommonUtils.getEnumStringOrNull(clearingRequest.getClearingState()),
+                clearingRequest.getRequestedClearingDate(), CommonUtils.nullToEmptyString(clearingRequest.getAgreedClearingDate()),
+                extractReleaseNameForClearingEmail(releases));
+    }
+
+    private void sendMailForClosedOrRejectedCR(Project project, User user, boolean isApproved) {
+        ClearingRequest clearingRequest = moderator.getClearingRequestByProjectId(project.getId(), user);
+        mailUtil.sendMail(clearingRequest.getRequestingUser(),
+                isApproved ? MailConstants.SUBJECT_FOR_APPROVED_CLEARING_REQUEST : MailConstants.SUBJECT_FOR_DECLINED_CLEARING_REQUEST,
+                isApproved ? MailConstants.TEXT_FOR_APPROVED_CLEARING_REQUEST : MailConstants.TEXT_FOR_DECLINED_CLEARING_REQUEST,
+                "", "", false, project.getClearingRequestId(), SW360Utils.printName(project));
     }
 
     private void sendMailNotificationsForNewProject(Project project, String user) {

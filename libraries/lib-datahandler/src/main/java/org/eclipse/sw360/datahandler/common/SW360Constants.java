@@ -59,6 +59,7 @@ public class SW360Constants {
     public static final String TYPE_PROJECT = "project";
     public static final String TYPE_PROJECT_OBLIGATION = "projectObligation";
     public static final String TYPE_MODERATION = "moderation";
+    public static final String TYPE_CLEARING = "clearing";
 
     /**
      * Hashmap containing the name field for each type.

@@ -22,6 +22,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.*;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
+import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectObligation;
 import org.eclipse.sw360.datahandler.thrift.projects.UsedReleaseRelations;
@@ -55,7 +56,7 @@ public class ThriftUtils {
             .add(License.class).add(Todo.class).add(Obligation.class) // License service
             .add(LicenseType.class).add(Risk.class).add(RiskCategory.class) // License service
             .add(CustomProperties.class) // License service
-            .add(Project.class).add(ProjectObligation.class).add(UsedReleaseRelations.class) // Project service
+            .add(Project.class).add(ProjectObligation.class).add(UsedReleaseRelations.class).add(ClearingRequest.class)  // Project service
             .add(User.class) // User service
             .add(Vendor.class) // Vendor service
             .add(ModerationRequest.class) // Moderation service‚

@@ -12,6 +12,7 @@ package org.eclipse.sw360.moderation;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.thrift.Comment;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
 import org.eclipse.sw360.datahandler.thrift.RemoveModeratorRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -21,12 +22,14 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
+import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.moderation.db.ModerationDatabaseHandler;
 
 import java.net.MalformedURLException;
 import java.util.List;
+import java.util.Set;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
 
@@ -205,4 +208,70 @@ public class ModerationHandler implements ModerationService.Iface {
         return handler.getRequestsByRequestingUser(user.getEmail());
     }
 
+    @Override
+    public ClearingRequest getClearingRequestByProjectId(String projectId) throws TException {
+        assertId(projectId);
+
+        return handler.getClearingRequestByProjectId(projectId);
+    }
+
+    @Override
+    public Set<ClearingRequest> getMyClearingRequests(User user) throws TException {
+        assertUser(user);
+
+        return handler.getMyClearingRequests(user.getEmail());
+    }
+
+    @Override
+    public String createClearingRequest(ClearingRequest clearingRequest, User user) throws TException {
+        assertNotNull(clearingRequest);
+        assertEmpty(clearingRequest.getId());
+        assertUser(user);
+
+        return handler.createClearingRequest(clearingRequest, user);
+    }
+
+    @Override
+    public ClearingRequest getClearingRequestById(String id, User user) throws TException {
+        assertId(id);
+        assertUser(user);
+
+        return handler.getClearingRequestById(id, user);
+    }
+
+    @Override
+    public ClearingRequest getClearingRequestByIdForEdit(String id, User user) throws TException {
+        assertId(id);
+        assertUser(user);
+
+        return handler.getClearingRequestByIdForEdit(id, user);
+    }
+
+    @Override
+    public RequestStatus updateClearingRequest(ClearingRequest clearingRequest, User user, String projectUrl) throws TException {
+        assertNotNull(clearingRequest);
+        assertId(clearingRequest.getId());
+        assertNotEmpty(projectUrl);
+        assertUser(user);
+
+        return handler.updateClearingRequest(clearingRequest, user, projectUrl);
+    }
+
+    @Override
+    public void updateClearingRequestForProjectDeletion(Project project, User user) throws TException {
+        assertNotNull(project);
+        assertId(project.getClearingRequestId());
+        assertUser(user);
+
+        handler.updateClearingRequestForProjectDeletion(project, user);
+    }
+
+    @Override
+    public RequestStatus addCommentToClearingRequest(String id, Comment comment, User user) throws TException {
+        assertId(id);
+        assertNotNull(comment);
+        assertUser(user);
+
+        return handler.addCommentToClearingRequest(id, comment, user);
+    }
 }

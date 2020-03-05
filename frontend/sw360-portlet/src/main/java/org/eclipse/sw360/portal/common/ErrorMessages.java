@@ -51,6 +51,7 @@ public class ErrorMessages {
     public static final String REST_API_EXPIRE_DATE_NOT_VALID = "Your selected token expiration date is not valid.";
     public static final String ERROR_PROJECT_OR_DEPENDENCIES_NOT_FOUND = "Error fetching project. Project or its dependencies are not found.";
     public static final String ERROR_PROJECT_OR_LINKEDPROJECT_NOT_ACCESSIBLE = "Error fetching project. Project or its Linked Projects are not accessible.";
+    public static final String ERROR_GETTING_CLEARING_REQUEST = "Error fetching clearing request from backend.";
 
     //this map is used in errorKeyToMessage.jspf to generate key-value pairs for the liferay-ui error tag
     public static final ImmutableList<String> allErrorMessages = ImmutableList.<String>builder()
@@ -89,6 +90,7 @@ public class ErrorMessages {
             .add(REST_API_EXPIRE_DATE_NOT_VALID)
             .add(ERROR_PROJECT_OR_DEPENDENCIES_NOT_FOUND)
             .add(ERROR_PROJECT_OR_LINKEDPROJECT_NOT_ACCESSIBLE)
+            .add(ERROR_GETTING_CLEARING_REQUEST)
             .build();
 
     private ErrorMessages() {

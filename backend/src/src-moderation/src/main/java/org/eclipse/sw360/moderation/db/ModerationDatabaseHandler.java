@@ -19,6 +19,8 @@ import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
+import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
+import org.eclipse.sw360.datahandler.thrift.Comment;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -28,8 +30,10 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.moderation.DocumentType;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
+import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
+import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
@@ -48,6 +52,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.notEmptyOrNull;
+import static org.eclipse.sw360.datahandler.common.SW360Assert.fail;
+import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 
 /**
  * Class for accessing the CouchDB database for the moderation objects
@@ -59,11 +65,13 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.notEmptyOrNull;
 public class ModerationDatabaseHandler {
 
     private static final Logger log = Logger.getLogger(ModerationDatabaseHandler.class);
+    private static final String CR = "CR-";
 
     /**
      * Connection to the couchDB database
      */
     private final ModerationRequestRepository repository;
+    private final ClearingRequestRepository clearingRequestRepository;
     private final LicenseDatabaseHandler licenseDatabaseHandler;
     private final ProjectDatabaseHandler projectDatabaseHandler;
     private final ComponentDatabaseHandler componentDatabaseHandler;
@@ -76,6 +84,7 @@ public class ModerationDatabaseHandler {
 
         // Create the repository
         repository = new ModerationRequestRepository(db);
+        clearingRequestRepository = new ClearingRequestRepository(db);
 
         licenseDatabaseHandler = new LicenseDatabaseHandler(httpClient, dbName);
         projectDatabaseHandler = new ProjectDatabaseHandler(httpClient, dbName, attachmentDbName);
@@ -88,6 +97,14 @@ public class ModerationDatabaseHandler {
 
     public List<ModerationRequest> getRequestsByRequestingUser(String user) {
         return repository.getRequestsByRequestingUser(user);
+    }
+
+    public ClearingRequest getClearingRequestByProjectId(String projectId) {
+        return clearingRequestRepository.getClearingRequestByProjectId(projectId);
+    }
+
+    public Set<ClearingRequest> getMyClearingRequests(String user) {
+        return new HashSet<ClearingRequest>(clearingRequestRepository.getMyClearingRequests(user));
     }
 
     public ModerationRequest getRequest(String requestId) {
@@ -103,6 +120,95 @@ public class ModerationDatabaseHandler {
         return requests;
     }
 
+    public String createClearingRequest(ClearingRequest request, User user) {
+        request.setTimestamp(System.currentTimeMillis());
+        long id = 1;
+        synchronized (ModerationDatabaseHandler.class) {
+            Set<String> allIds = clearingRequestRepository.getAllIds();
+            String maxId = allIds.stream().max(Comparator.comparingInt(SW360Utils::parseStringToNumber)).orElse("");
+            if (CommonUtils.isNotNullEmptyOrWhitespace(maxId)) {
+                maxId = maxId.split("-")[1];
+                id = Long.valueOf(maxId) + 1;
+            }
+            request.setId(new StringBuilder(CR).append(id).toString());
+            clearingRequestRepository.add(request);
+        }
+        return request.getId();
+    }
+
+    public ClearingRequest getClearingRequestById(String id, User user) throws SW360Exception {
+        ClearingRequest clearingRequest = clearingRequestRepository.get(id);
+        if (CommonUtils.isNullEmptyOrWhitespace(clearingRequest.getProjectId())) {
+            return clearingRequest;
+        }
+        if (!(clearingRequest.getClearingTeam().equals(user.getEmail()) || clearingRequest.getRequestingUser().equals(user.getEmail()))) {
+            projectDatabaseHandler.getProjectById(clearingRequest.getProjectId(), user); // check if user have READ access to project.
+        }
+        return clearingRequest;
+    }
+
+    public ClearingRequest getClearingRequestByIdForEdit(String id, User user) throws SW360Exception {
+        ClearingRequest clearingRequest = clearingRequestRepository.get(id);
+        if (CommonUtils.isNullEmptyOrWhitespace(clearingRequest.getProjectId())) {
+            return clearingRequest;
+        }
+        Project project = projectDatabaseHandler.getProjectById(clearingRequest.getProjectId(), user);
+        if (!(clearingRequest.getClearingTeam().equals(user.getEmail())
+                || clearingRequest.getRequestingUser().equals(user.getEmail())
+                || makePermission(project, user).isActionAllowed(RequestedAction.WRITE))) {
+            throw fail("User " + SW360Utils.printFullname(user) + ", does not have WRITE access to clearing request: " + clearingRequest.getId());
+        }
+        return clearingRequest;
+    }
+
+    public RequestStatus updateClearingRequest(ClearingRequest request, User user, String projectUrl) {
+        try {
+            if (!request.isSetTimestampOfDecision() && (ClearingRequestState.CLOSED.equals(request.getClearingState())
+                    || ClearingRequestState.REJECTED.equals(request.getClearingState()))) {
+                request.setTimestampOfDecision(System.currentTimeMillis());
+            }
+            ClearingRequest currentRequest = clearingRequestRepository.get(request.getId());
+            if (!currentRequest.getClearingState().equals(request.getClearingState())) {
+                Comment comment = new Comment().setText(new StringBuilder("*** This is auto-generated comment *** \nStatus changed from: ")
+                        .append(ThriftEnumUtils.enumToString(currentRequest.getClearingState())).append(" to ")
+                        .append(ThriftEnumUtils.enumToString(request.getClearingState())).toString());
+                comment.setCommentedBy(user.getEmail());
+                comment.setCommentedOn(System.currentTimeMillis());
+                request.addToComments(comment);
+            }
+            clearingRequestRepository.update(request);
+            projectDatabaseHandler.updateProjectForClearingRequestUpdate(request, projectUrl, user);
+            return RequestStatus.SUCCESS;
+        } catch (SW360Exception e) {
+            log.error("Failed to update clearing request: " + request.getId(), e);
+        }
+        return RequestStatus.FAILURE;
+    }
+
+    public void updateClearingRequestForProjectDeletion(Project project, User user) {
+        ClearingRequest clearingRequest = clearingRequestRepository.get(project.getClearingRequestId());
+        Comment comment = new Comment().setText(new StringBuilder("*** This is auto-generated comment *** \nCR is orphaned as project (name): \"")
+                .append(SW360Utils.printName(project))
+                .append("\" associated with CR is deleted!").toString());
+        comment.setCommentedBy(user.getEmail());
+        comment.setCommentedOn(System.currentTimeMillis());
+        clearingRequest.unsetProjectId();
+        clearingRequest.addToComments(comment);
+        clearingRequestRepository.update(clearingRequest);
+    }
+
+    public RequestStatus addCommentToClearingRequest(String id, Comment comment, User user) {
+        try {
+            ClearingRequest clearingRequest = getClearingRequestByIdForEdit(id, user);
+            comment.setCommentedOn(System.currentTimeMillis());
+            clearingRequest.addToComments(comment);
+            clearingRequestRepository.update(clearingRequest);
+            return RequestStatus.SUCCESS;
+        } catch (SW360Exception e) {
+            log.error("Failed to add comment in clearing request: " + id, e);
+        }
+        return RequestStatus.FAILURE;
+    }
 
     public void updateModerationRequest(ModerationRequest request) {
         repository.update(request);

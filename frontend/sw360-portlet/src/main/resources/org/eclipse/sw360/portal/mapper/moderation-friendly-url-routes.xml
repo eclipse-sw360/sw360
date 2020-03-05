@@ -18,4 +18,10 @@
         <generated-parameter name="moderationId">{id}</generated-parameter>
         <implicit-parameter name="p_p_id">sw360_portlet_moderations</implicit-parameter>
     </route>
+    <route>
+        <pattern>/clearing/{page}/{clearingId}</pattern>
+        <generated-parameter name="pagename">{page}</generated-parameter>
+        <generated-parameter name="clearingId">{clearingId}</generated-parameter>
+        <implicit-parameter name="p_p_id">sw360_portlet_moderations</implicit-parameter>
+    </route>
 </routes>
