@@ -1488,10 +1488,10 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     private List<Component> getFilteredComponentList(PortletRequest request) {
         Map<String, Set<String>> filterMap = getComponentFilterMap(request);
         List<Component> componentList;
+        int limit = -1;
 
         try {
             final User user = UserCacheHolder.getUserFromRequest(request);
-            int limit = CustomFieldHelper.loadAndStoreStickyViewSize(request, user, CUSTOM_FIELD_COMPONENTS_VIEW_SIZE);
             ComponentService.Iface componentClient = thriftClients.makeComponentClient();
             if (filterMap.isEmpty()) {
                 componentList = componentClient.getRecentComponentsSummary(limit, user);
