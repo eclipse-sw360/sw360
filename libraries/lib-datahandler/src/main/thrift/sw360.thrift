@@ -109,6 +109,8 @@ enum ObligationStatus {
     OPEN = 0,
     FULFILLED = 1,
     IN_PROGRESS = 2,
+    NOT_APPLICABLE = 3,
+    TO_BE_FULFILLED_BY_PARENT_PROJECT = 4,
 }
 
 enum ClearingRequestEmailTemplate {
