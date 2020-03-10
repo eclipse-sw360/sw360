@@ -134,6 +134,8 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             throw new DataIntegrityViolationException("sw360 project with name '" + project.getName() + "' already exists.");
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
             throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
+        } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.NAMINGERROR) {
+            throw new HttpMessageNotReadableException("Project name field cannot be empty or contain only whitespace character");
         }
         return null;
     }
@@ -153,6 +155,10 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         }
 
         RequestStatus requestStatus = sw360ProjectClient.updateProject(project, sw360User);
+        if (requestStatus == RequestStatus.NAMINGERROR) {
+            throw new HttpMessageNotReadableException("Project name field cannot be empty or contain only whitespace character");
+        }
+
         if (requestStatus == RequestStatus.CLOSED_UPDATE_NOT_ALLOWED) {
             throw new RuntimeException("User cannot modify a closed project");
         } if (requestStatus == RequestStatus.INVALID_INPUT) {
@@ -265,5 +271,4 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                 .flattenProjectLinkTree(SW360Utils.getLinkedProjects(project, deep, new ThriftClients(), log, user));
         return linkedProjects.stream().map(projectLinkMapper).collect(Collectors.toList());
     }
-
 }
