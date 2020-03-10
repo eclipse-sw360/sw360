@@ -29,6 +29,7 @@ enum RequestStatus {
     ACCESS_DENIED = 7,
     CLOSED_UPDATE_NOT_ALLOWED = 8,
     INVALID_INPUT = 9,
+    PROCESSING = 10,
 }
 
 enum RemoveModeratorRequestStatus {

@@ -30,6 +30,11 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Wraps the FOSSology REST API and offers an API on a higher level. Configures
@@ -80,11 +85,6 @@ curl -k -s -S -X GET \
  */
 @Component
 public class FossologyRestClient {
-
-    private static final String SCAN_RESPONSE_STATUS_VALUE_QUEUED = "Queued";
-    private static final String SCAN_RESPONSE_STATUS_VALUE_PROCESSING = "Processing";
-    private static final String SCAN_RESPONSE_STATUS_VALUE_COMPLETED = "Completed";
-    private static final String SCAN_RESPONSE_STATUS_VALUE_FAILED = "Failed";
 
     private static final String PARAMETER_VALUE_REPORT_FORMAT_SPDX2 = "spdx2";
 
@@ -260,21 +260,21 @@ public class FossologyRestClient {
      * jobId.
      *
      * @param jobId the id of the scan jobId whose status should be queried.
-     * @return an integer denoting the current status of the scan job, 1 for
-     *         completed, 0 for running, -1 for failure
+     * @return the Map object containing details like status, eta.
      */
-    public int checkScanStatus(int jobId) {
+    public Map<String ,String> checkScanStatus(int jobId) {
         String baseUrl = restConfig.getBaseUrlWithSlash();
         String token = restConfig.getAccessToken();
+        Map<String ,String> responseMap=new HashMap<>();
 
         if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token)) {
             log.error("Configuration is missing values! Url: <{}>, Token: <{}>", baseUrl, token);
-            return -1;
+            return responseMap;
         }
 
         if (jobId < 0) {
             log.error("Invalid arguments, jobId must not be less thann 0!");
-            return -1;
+            return responseMap;
         }
 
         HttpHeaders headers = new HttpHeaders();
@@ -286,20 +286,14 @@ public class FossologyRestClient {
                     JsonNode.class);
         } catch (RestClientException e) {
             log.error("Error while trying to query status of scanning process with job id {}.", e, jobId);
-            return -1;
+            return responseMap;
         }
 
         String status = response.getBody().findValuesAsText("status").get(0);
-        switch (status) {
-        case SCAN_RESPONSE_STATUS_VALUE_COMPLETED:
-            return 1;
-        case SCAN_RESPONSE_STATUS_VALUE_QUEUED:
-        case SCAN_RESPONSE_STATUS_VALUE_PROCESSING:
-            return 0;
-        case SCAN_RESPONSE_STATUS_VALUE_FAILED:
-        default:
-            return -1;
-        }
+        int eta = response.getBody().get("eta").intValue();
+        responseMap.put("eta", eta+"");
+        responseMap.put("status", status);
+        return responseMap;
     }
 
     /**
@@ -389,5 +383,50 @@ public class FossologyRestClient {
             log.error("Error while trying to download report with id {}.", e, reportId);
             return null;
         }
+    }
+
+    /**
+     * Checks the package unpack status of a former uploaded package, identified by
+     * the given uploadId.
+     *
+     * @param uploadId the upload whose sources should be unpacked.
+     * @return the Map object containing details like status.
+     */
+    public Map<String, String> checkUnpackStatus(int uploadId) {
+        String baseUrl = restConfig.getBaseUrlWithSlash();
+        String token = restConfig.getAccessToken();
+        Map<String, String> responseMap = new HashMap<>();
+        if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token)) {
+            log.error("Configuration is missing values! Url: <{}>, Token: <{}>", baseUrl, token);
+            return responseMap;
+        }
+
+        if (uploadId < 0) {
+            log.error("Invalid arguments, uploadId must not be less thann 0!");
+            return responseMap;
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + token);
+        JsonNode response;
+        try {
+            JsonNode[] responseArr = restTemplate.exchange(baseUrl + "jobs?upload=" + uploadId, HttpMethod.GET,
+                    new HttpEntity<>(headers), JsonNode[].class).getBody();
+            String uploadIdStr = "" + uploadId;
+            List<JsonNode> uploadStatus = Arrays.stream(responseArr)
+                    .filter(node -> uploadIdStr.equals(node.findValuesAsText("uploadId").get(0)))
+                    .collect(Collectors.toList());
+            if (!uploadStatus.isEmpty()) {
+                response = uploadStatus.get(0);
+            } else
+                return responseMap;
+        } catch (RestClientException e) {
+            log.error("Error: {} while trying to query status of scanning process with jobId: {}.", e, uploadId);
+            return responseMap;
+        }
+
+        String status = response.findValuesAsText("status").get(0);
+        responseMap.put("status", status);
+        return responseMap;
     }
 }
