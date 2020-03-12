@@ -152,6 +152,18 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+            <version>${annotation-api.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>apache.thrift</groupId>
+            <artifactId>thrift</artifactId>
+            <version>1.13</version>
+            <scope>system</scope>
+            <systemPath>/usr/share/java/libthrift.jar</systemPath>
+        </dependency>
+        <dependency>
             <groupId>com.github.stephenc.findbugs</groupId>
             <artifactId>findbugs-annotations</artifactId>
             <version>1.3.9-1</version>
