@@ -223,6 +223,13 @@ public class ModerationHandler implements ModerationService.Iface {
     }
 
     @Override
+    public Set<ClearingRequest> getClearingRequestsByBU(String businessUnit) throws TException {
+        assertNotEmpty(businessUnit);
+
+        return handler.getClearingRequestsByBU(businessUnit);
+    }
+
+    @Override
     public String createClearingRequest(ClearingRequest clearingRequest, User user) throws TException {
         assertNotNull(clearingRequest);
         assertEmpty(clearingRequest.getId());

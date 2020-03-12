@@ -15,7 +15,6 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestEmailTemplate;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
@@ -47,9 +46,11 @@ public class MailUtil extends BackendUtils {
     private static final String NEW_CLEARING_REQUEST_EMAIL_TEMPLATE_FILE = "/NewClearingRequestEmailTemplate.html";
     private static final String UPDATE_CLEARING_REQUEST_EMAIL_TEMPLATE_FILE = "/UpdateClearingRequestEmailTemplate.html";
     private static final String UPDATE_PROJECT_WITH_CR_EMAIL_TEMPLATE_FILE = "/UpdateProjectWithCREmailTemplate.html";
+    private static final String NEW_COMMENT_IN_CR_EMAIL_HTML_TEMPLATE_FILE = "/NewCommentInCREmailTemplate.html";
     private static final String NEW_CR_EMAIL_HTML_TEMPLATE = SW360Utils.dropCommentedLine(MailUtil.class, NEW_CLEARING_REQUEST_EMAIL_TEMPLATE_FILE);
     private static final String UPDATE_CR_EMAIL_HTML_TEMPLATE = SW360Utils.dropCommentedLine(MailUtil.class, UPDATE_CLEARING_REQUEST_EMAIL_TEMPLATE_FILE);
     private static final String UPDATE_PROJECT_WITH_CR_EMAIL_HTML_TEMPLATE = SW360Utils.dropCommentedLine(MailUtil.class, UPDATE_PROJECT_WITH_CR_EMAIL_TEMPLATE_FILE);
+    private static final String NEW_COMMENT_IN_CR_EMAIL_HTML_TEMPLATE = SW360Utils.dropCommentedLine(MailUtil.class, NEW_COMMENT_IN_CR_EMAIL_HTML_TEMPLATE_FILE);
 
     private static ExecutorService mailExecutor;
     private Session session;
@@ -112,9 +113,11 @@ public class MailUtil extends BackendUtils {
         }
     }
 
-    public void sendClearingMail(ClearingRequestEmailTemplate template, String recipient, String subjectNameInPropertiesFile, String... textParameters) {
+    public void sendClearingMail(ClearingRequestEmailTemplate template, Set<String> recipients, String subjectNameInPropertiesFile, String... textParameters) {
         MimeMessage messageWithSubjectAndText = makeHtmlMessageWithSubjectAndText(template, subjectNameInPropertiesFile, textParameters);
-        sendMailWithSubjectAndText(recipient, messageWithSubjectAndText);
+        for (String recipient : nullToEmptySet(recipients)) {
+            sendMailWithSubjectAndText(recipient, messageWithSubjectAndText);
+        }
     }
 
     public void sendMail(String recipient, String subjectNameInPropertiesFile, String textNameInPropertiesFile, String notificationClass, String roleName, String ... textParameters) {
@@ -181,6 +184,10 @@ public class MailUtil extends BackendUtils {
             mainContentFormat = UPDATE_PROJECT_WITH_CR_EMAIL_HTML_TEMPLATE;
             break;
 
+        case NEW_COMMENT:
+            mainContentFormat = NEW_COMMENT_IN_CR_EMAIL_HTML_TEMPLATE;
+            break;
+
         default:
             break;
         }
@@ -239,7 +246,7 @@ public class MailUtil extends BackendUtils {
     private void sendMailWithSubjectAndText(String recipient, MimeMessage message) {
         try {
             message.setFrom(new InternetAddress(from));
-            message.addRecipient(Message.RecipientType.TO, new InternetAddress(recipient));
+            message.setRecipient(Message.RecipientType.TO, new InternetAddress(recipient));
             if (isMailingEnabledAndValid()) {
                 sendMailAsync(message);
             } else {
@@ -265,23 +272,6 @@ public class MailUtil extends BackendUtils {
         } catch (MessagingException | IOException e) {
             log.error("Cannot dump E-mail message to log", e);
         }
-    }
-
-    /*
-     * use this method only for clearing email,
-     * as wee need to display the email sending status in UI
-     */
-    private synchronized RequestStatus sendMailInSync(MimeMessage message) {
-        try {
-            String recipient = Arrays.toString(message.getRecipients(Message.RecipientType.TO));
-            log.info("Sending synchronous E-Mail to recipient " + recipient);
-            Transport.send(message);
-            log.info("Successfully sent synchronous message to " + recipient);
-            return RequestStatus.SUCCESS;
-        } catch (MessagingException e) {
-            log.error("Could not sent E-Mail notification via SMTP " + host, e);
-        }
-        return RequestStatus.FAILURE;
     }
 
     private void sendMailAsync(MimeMessage message) {

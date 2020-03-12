@@ -36,6 +36,7 @@ public class MailConstants {
     public static final String SUBJECT_FOR_NEW_PROJECT = "subjectForNewProject";
     public static final String SUBJECT_FOR_UPDATE_PROJECT = "subjectForUpdateProject";
     public static final String SUBJECT_FOR_NEW_CLEARING_REQUEST = "subjectForNewClearingRequest";
+    public static final String SUBJECT_FOR_CLEARING_REQUEST_COMMENT = "subjectForClearingRequestComment";
     public static final String SUBJECT_FOR_UPDATED_CLEARING_REQUEST = "subjectForUpdatedClearingRequest";
     public static final String SUBJECT_FOR_APPROVED_CLEARING_REQUEST = "subjectForApprovedClearingRequest";
     public static final String SUBJECT_FOR_DECLINED_CLEARING_REQUEST = "subjectForDeclinedClearingRequest";

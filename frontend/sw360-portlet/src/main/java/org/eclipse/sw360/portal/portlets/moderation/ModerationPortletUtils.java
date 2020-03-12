@@ -82,6 +82,10 @@ public class ModerationPortletUtils {
     public static RequestStatus updateClearingRequest(PortletRequest request, Logger log) {
         String id = request.getParameter(PortalConstants.CLEARING_REQUEST_ID);
         User user = UserCacheHolder.getUserFromRequest(request);
+        String isReOpen = request.getParameter(PortalConstants.RE_OPEN_REQUEST);
+        if (CommonUtils.isNotNullEmptyOrWhitespace(isReOpen) && Boolean.parseBoolean(isReOpen)) {
+            return reOpenClearingRequest(id, request, user);
+        }
         String agreedDate = request.getParameter(ClearingRequest._Fields.AGREED_CLEARING_DATE.toString());
         String clearingTeamComment = request.getParameter(ClearingRequest._Fields.CLEARING_TEAM_COMMENT.toString());
         String status = request.getParameter(ClearingRequest._Fields.CLEARING_STATE.toString());
@@ -89,19 +93,12 @@ public class ModerationPortletUtils {
             try {
                 ModerationService.Iface client = new ThriftClients().makeModerationClient();
                 ClearingRequest clearingRequest = client.getClearingRequestByIdForEdit(id, user);
-                if (null == clearingRequest) {
-                    return RequestStatus.FAILURE;
-                }
                 clearingRequest.setAgreedClearingDate(agreedDate);
                 if (CommonUtils.isNotNullEmptyOrWhitespace(clearingTeamComment)) {
                     clearingRequest.setClearingTeamComment(clearingTeamComment);
                 }
                 clearingRequest.setClearingState(ClearingRequestState.findByValue(parseInt(status)));
-                LiferayPortletURL projectUrl = getProjectPortletUrl(request);
-                if (null != projectUrl) {
-                    projectUrl.setParameter(PortalConstants.PROJECT_ID, clearingRequest.getProjectId());
-                    projectUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_DETAIL);
-                }
+                LiferayPortletURL projectUrl = getProjectPortletUrl(request, clearingRequest.getProjectId());
                 return client.updateClearingRequest(clearingRequest, user, CommonUtils.nullToEmptyString(projectUrl));
             } catch (TException e) {
                 log.error("Failed to update clearing request", e);
@@ -111,13 +108,31 @@ public class ModerationPortletUtils {
         return RequestStatus.FAILURE;
     }
 
-    private static LiferayPortletURL getProjectPortletUrl(PortletRequest request) {
+    private static RequestStatus reOpenClearingRequest(String id, PortletRequest request, User user) {
+        try {
+            ModerationService.Iface client = new ThriftClients().makeModerationClient();
+            ClearingRequest clearingRequest = client.getClearingRequestByIdForEdit(id, user);
+            clearingRequest.unsetAgreedClearingDate();
+            clearingRequest.setClearingState(ClearingRequestState.NEW);
+            clearingRequest.unsetTimestampOfDecision();
+            LiferayPortletURL projectUrl = getProjectPortletUrl(request, clearingRequest.getProjectId());
+            return client.updateClearingRequest(clearingRequest, user, CommonUtils.nullToEmptyString(projectUrl));
+        } catch (TException e) {
+            log.error("Failed to re-open clearing request", e);
+        }
+        return RequestStatus.FAILURE;
+    }
+
+    private static LiferayPortletURL getProjectPortletUrl(PortletRequest request, String projectId) {
         Portlet portlet = PortletLocalServiceUtil.getPortletById(PortalConstants.PROJECT_PORTLET_NAME);
         Optional<Layout> layout = LayoutLocalServiceUtil.getLayouts(portlet.getCompanyId()).stream()
                 .filter(l -> ("/" + PortalConstants.PROJECTS.toLowerCase()).equals(l.getFriendlyURL())).findFirst();
         if (layout.isPresent()) {
             long plId = layout.get().getPlid();
-            return PortletURLFactoryUtil.create(request, PortalConstants.PROJECT_PORTLET_NAME, plId, PortletRequest.RENDER_PHASE);
+            LiferayPortletURL projectUrl = PortletURLFactoryUtil.create(request, PortalConstants.PROJECT_PORTLET_NAME, plId, PortletRequest.RENDER_PHASE);
+            projectUrl.setParameter(PortalConstants.PROJECT_ID, projectId);
+            projectUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_DETAIL);
+            return projectUrl;
         }
         return null;
     }
@@ -127,6 +142,6 @@ public class ModerationPortletUtils {
     }
 
     public static boolean isClosedClearingRequest(ClearingRequest cr) {
-        return cr.getClearingState() == ClearingRequestState.CLOSED;
+        return cr.getClearingState() == ClearingRequestState.CLOSED || cr.getClearingState() == ClearingRequestState.REJECTED;
     }
 }
