@@ -1,8 +1,34 @@
-## Changelog
+# Changelog
 
-This is the changelog file of the sw360 software. It starts with the first release being provided at eclipse/sw360. For older releases, please refer to the first project location:
+This is the changelog file of the sw360 project. It starts with the first release being provided at eclipse/sw360. For older releases, please refer to the first project location:
 
-https://github.com/eclipse/sw360
+https://github.com/sw360/sw360portal/releases
+
+## sw360-8.1.0-M1
+
+A version upgrade is justified, because of a number of new features have been integrated: FOSSology scans can be now triggered over the SW360 REST API. By this feature, an upload, for example from sw360antenna, could also trigger the FOSSology scan right away. It requires FOSSology being integrated with sw360.
+
+Another new endpoint is the query for SHA1 values of a file to check if that attachment is actually already found at some release. With this endpoint, one would not need to search for release names and version before making a new entry, but just search for the source code attachment using its SHA1 value to check if an upload has been performed already.
+
+A third new feature is the ability to agree on a clearing job for the software components of a project or product. A project owner can now send to a clearing expert a request to perform the clearing of software components right from SW360.
+
+### Features
+
+* `bb9f2ba` feat(REST): Trigger FOSSology process and check status
+* `99e23dc` feat(ObligationUI): Added new status fields for Obligation
+* `d025c4a` feat(rest): Attachement sha1 improvement
+* `9a53e7b` feat(ProjectUI): Project Clearing Report
+
+### Corrections
+
+* `7bd1fd5` fix(UI/REST): Remove Trailing and leading whitespace for all fields in component, release and project
+* `a2a4b16` fix(components): components listing limited to 200 entries both in UI and excel spreadseet
+* `0de1db1` fix(vulerability): vulnerability view breaks at backslash in description
+* `83e6f28` fix(REST): Updated upload attachment documentation
+
+### Chores
+
+* `1fc2e0b` Add pull request tempalte and .github folder (11 days ago) <Stephanie.Neubauer@bosch.io>
 
 ## sw360-8.0.1-M1
 
