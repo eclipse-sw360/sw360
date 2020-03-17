@@ -126,6 +126,15 @@
             columnDefs: [{
                   targets: 1,
                   createdCell: function(td, cellData, rowData, row, col) {
+                      var options = $(td).find('.attachmentType option');
+                      $(options[1]).insertBefore($(options[0]));
+                      $(options[4]).insertBefore($(options[0]));
+                      $(options[5]).insertBefore($(options[0]));
+                      $(options[6]).insertBefore($(options[0]));
+                      if (!rowData.attachmentType && !rowData.sha1) {
+                          $(options[0]).removeAttr('selected');
+                          $(options[1]).attr('selected', '');
+                      }
                       $.fn.dataTable.render.inputSelect.updateTitle(td);
                   }
             }, {
