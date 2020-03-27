@@ -53,6 +53,7 @@ public class PortalConstants {
     // Keep this in sync with configuration/portal-ext.properties#system.site.roles
     public static final String ROLENAME_ADMIN = "Administrator";
     public static final String ROLENAME_CLEARING_ADMIN = "Clearing Admin";
+    public static final String ROLENAME_CLEARING_EXPERT = "Clearing Expert";
     public static final String ROLENAME_ECC_ADMIN = "ECC Admin";
     public static final String ROLENAME_SECURITY_ADMIN = "Security Admin";
     public static final String ROLENAME_SW360_ADMIN = "SW360 Admin";
@@ -85,6 +86,7 @@ public class PortalConstants {
     public static final String IS_USER_AT_LEAST_CLEARING_ADMIN = "isUserAtLeastClearingAdmin";
     public static final String IS_USER_AT_LEAST_ECC_ADMIN = "isUserAtLeastECCAdmin";
     public static final String IS_USER_ADMIN = "isUserAdmin";
+    public static final String IS_CLEARING_EXPERT = "isClearingExpert";
 
     //! Specialized keys for licenses
     public static final String LICENSES_PORTLET_NAME = PORTLET_NAME_PREFIX + "licenses";

@@ -216,6 +216,7 @@ public class ThriftEnumUtils {
             .put(UserGroup.USER, "User")
             .put(UserGroup.ADMIN, "Admin")
             .put(UserGroup.CLEARING_ADMIN, "Clearing Admin")
+            .put(UserGroup.CLEARING_EXPERT, "Clearing Expert")
             .put(UserGroup.ECC_ADMIN, "ECC Admin")
             .put(UserGroup.SECURITY_ADMIN, "Security Admin")
             .put(UserGroup.SW360_ADMIN, "SW360 Admin")
