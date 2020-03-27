@@ -17,6 +17,47 @@
             <th colspan="3" class="headlabel">Additional Data</th>
         </tr>
     </thead>
+	<c:forEach var="customField" items="${customFields}">
+		<tr>
+			<td>
+				<div class="form-group">
+					<input class="form-control" id="${customField.fieldKey}" name="<portlet:namespace/><%=PortalConstants.ADDITIONAL_DATA_KEY%>${customField.fieldKey}"
+						   type="text" value="<sw360:out value="${customField.fieldLabel}"/>" readonly/>
+				</div>
+			</td>
+			<td>
+				<div class="form-group">
+					<c:if test="${customField.fieldType == 'TEXTFIELD'}" >
+						<input class="form-control" id="${customField.fieldLabel}" name="<portlet:namespace/><%=PortalConstants.ADDITIONAL_DATA_VALUE%>${customField.fieldKey}"
+							   type="text" placeholder="Enter ${customField.fieldLabel}" value="<sw360:out value="${customField.value}"/>" />
+					</c:if>
+					<c:if test="${customField.fieldType == 'TEXTAREA'}" >
+						<textarea class="form-control" id="${customField.fieldLabel}" name="<portlet:namespace/><%=PortalConstants.ADDITIONAL_DATA_VALUE%>${customField.fieldKey}"
+								  rows="4" placeholder="Enter ${customField.fieldLabel}"><sw360:out value="${customField.value}"/></textarea>
+					</c:if>
+					<c:if test="${customField.fieldType == 'DATE'}" >
+						<input id="${customField.fieldLabel}" class="datepicker form-control" name="<portlet:namespace/><%=PortalConstants.ADDITIONAL_DATA_VALUE%>${customField.fieldKey}" type="text"
+							   placeholder="Enter ${customField.fieldLabel}" pattern="\d{4}-\d{2}-\d{2}"
+							   value="<sw360:out value="${customField.value}"/>"/>
+					</c:if>
+					<c:if test="${customField.fieldType == 'DROPDOWN'}" >
+						<select class="form-control" id="${customField.fieldLabel}" name="<portlet:namespace/><%=PortalConstants.ADDITIONAL_DATA_VALUE%>${customField.fieldKey}">
+							<option value="">Select:</option>
+							<c:forEach var="option" items="${customField.options}">
+								<option value="${option}" <c:if test="${option eq customField.value}">selected</c:if>>${option}</option>
+							</c:forEach>
+						</select>
+					</c:if>
+					<c:if test="${customField.fieldType == 'CHECKBOX'}" >
+						<input id="${customField.fieldLabel}" type="checkbox" class="form-check-input" name="<portlet:namespace/><%=PortalConstants.ADDITIONAL_DATA_VALUE%>${customField.fieldKey}"
+						value="${customField.options[0]}" <c:if test="${not empty customField.value}">checked</c:if>/>
+						<label class="form-check-label" for="${customField.fieldKey}">${customField.options[0]}</label>
+					</c:if>
+
+				</div>
+			</td>
+		</tr>
+	</c:forEach>
 </table>
 
 <button type="button" class="btn btn-secondary" id="add-additional-data">Click to add row to Additional Data</button>
@@ -47,6 +88,9 @@
 </div>
 
 <script>
+	require(['jquery', /* jquery-plugins */ 'jquery-ui'], function($) {
+		$(".datepicker").datepicker({changeMonth:true,changeYear:true,dateFormat: "yy-mm-dd"});
+	});
     require(['jquery', 'modules/dialog'], function($, dialog) {
 
         createAdditionalDataTable();

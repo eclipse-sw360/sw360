@@ -55,6 +55,8 @@ import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.exporter.ComponentExporter;
 import org.eclipse.sw360.portal.common.*;
+import org.eclipse.sw360.portal.common.customfields.CustomField;
+import org.eclipse.sw360.portal.common.customfields.CustomFieldPageIdentifier;
 import org.eclipse.sw360.portal.common.datatables.PaginationParser;
 import org.eclipse.sw360.portal.common.datatables.data.PaginationParameters;
 import org.eclipse.sw360.portal.portlets.FossologyAwarePortlet;
@@ -648,12 +650,22 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     private void prepareComponentEdit(RenderRequest request) {
         String id = request.getParameter(COMPONENT_ID);
         final User user = UserCacheHolder.getUserFromRequest(request);
+
+        Map<String, CustomField> customFieldMap = CustomFieldHelper.getCustomFields(request, user, CustomFieldPageIdentifier.COMPONENT);
         request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_COMPONENT);
         if (id != null) {
             try {
                 ComponentService.Iface client = thriftClients.makeComponentClient();
                 Component component = client.getComponentByIdForEdit(id, user);
-
+                Map<String, String> additionalData = component.getAdditionalData();
+                Iterator<Map.Entry<String,String>> iter = additionalData.entrySet().iterator();
+                while(iter.hasNext()) {
+                    Map.Entry<String, String> entry = iter.next();
+                    if(customFieldMap.containsKey(entry.getKey())){
+                        customFieldMap.get(entry.getKey()).setValue(entry.getValue());
+                        iter.remove();
+                    }
+                }
                 request.setAttribute(COMPONENT, component);
                 request.setAttribute(DOCUMENT_ID, id);
 
@@ -677,6 +689,9 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 SessionMessages.add(request, "request_processed", "New Component");
             }
         }
+        List<CustomField> customFields = new ArrayList<>(customFieldMap.values());
+        customFields.sort(Comparator.comparing(CustomField::getFieldId));
+        request.setAttribute("customFields", customFields);
     }
 
     private void prepareReleaseEdit(RenderRequest request, RenderResponse response) throws PortletException {
@@ -690,6 +705,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             throw new PortletException("Component or Release ID not set!");
         }
 
+        Map<String, CustomField> customFieldMap = CustomFieldHelper.getCustomFields(request, user, CustomFieldPageIdentifier.RELEASE);
         try {
             ComponentService.Iface client = thriftClients.makeComponentClient();
             Component component;
@@ -697,6 +713,15 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
             if (!isNullOrEmpty(releaseId)) {
                 release = client.getReleaseByIdForEdit(releaseId, user);
+                Map<String, String> additionalData = release.getAdditionalData();
+                Iterator<Map.Entry<String,String>> iter = additionalData.entrySet().iterator();
+                while(iter.hasNext()) {
+                    Map.Entry<String, String> entry = iter.next();
+                    if(customFieldMap.containsKey(entry.getKey())){
+                        customFieldMap.get(entry.getKey()).setValue(entry.getValue());
+                        iter.remove();
+                    }
+                }
                 request.setAttribute(RELEASE, release);
                 request.setAttribute(DOCUMENT_ID, releaseId);
                 setAttachmentsInRequest(request, release);
@@ -742,6 +767,9 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 request.setAttribute(COMPONENT_PURL, "");
             }
 
+            List<CustomField> customFields = new ArrayList<>(customFieldMap.values());
+            customFields.sort(Comparator.comparing(CustomField::getFieldId));
+            request.setAttribute("customFields", customFields);
             request.setAttribute(COMPONENT, component);
             request.setAttribute(IS_USER_AT_LEAST_ECC_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.ECC_ADMIN, user) ? "Yes" : "No");
 
@@ -763,16 +791,29 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         }
 
         try {
+            Map<String, CustomField> customFieldMap = CustomFieldHelper.getCustomFields(request, user, CustomFieldPageIdentifier.RELEASE);
             ComponentService.Iface client = thriftClients.makeComponentClient();
             String emailFromRequest = LifeRayUserSession.getEmailFromRequest(request);
 
             Release release = PortletUtils.cloneRelease(emailFromRequest, client.getReleaseById(releaseId, user));
 
+            Map<String, String> additionalData = release.getAdditionalData();
+            Iterator<Map.Entry<String,String>> iter = additionalData.entrySet().iterator();
+            while(iter.hasNext()) {
+                Map.Entry<String, String> entry = iter.next();
+                if(customFieldMap.containsKey(entry.getKey())){
+                    customFieldMap.get(entry.getKey()).setValue(entry.getValue());
+                    iter.remove();
+                }
+            }
             if (isNullOrEmpty(id)) {
                 id = release.getComponentId();
             }
             Component component = client.getComponentById(id, user);
             addComponentBreadcrumb(request, response, component);
+            List<CustomField> customFields = new ArrayList<>(customFieldMap.values());
+            customFields.sort(Comparator.comparing(CustomField::getFieldId));
+            request.setAttribute("customFields", customFields);
             request.setAttribute(COMPONENT, component);
             request.setAttribute(RELEASE_LIST, Collections.emptyList());
             setUsingDocs(request, null, user, client);

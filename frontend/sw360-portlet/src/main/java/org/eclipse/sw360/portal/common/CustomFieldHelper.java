@@ -21,7 +21,12 @@ import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalServiceUtil;
 import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
 
+import com.liferay.portal.kernel.util.UnicodeProperties;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.portal.common.customfields.CustomField;
+import org.eclipse.sw360.portal.common.customfields.CustomFieldPageIdentifier;
+import org.eclipse.sw360.portal.common.customfields.CustomFieldPropertyKey;
+import org.eclipse.sw360.portal.common.customfields.CustomFieldType;
 import org.eclipse.sw360.portal.users.UserUtils;
 
 import org.apache.log4j.Logger;
@@ -29,6 +34,8 @@ import org.apache.log4j.Logger;
 import javax.portlet.PortletRequest;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
@@ -77,6 +84,64 @@ public class CustomFieldHelper {
         } catch (PortalException | SystemException e) {
             log.error("Could not load custom field " + field, e);
             return Optional.empty();
+        }
+    }
+
+    public static Map<String, CustomField> getCustomFields(PortletRequest request, User user, CustomFieldPageIdentifier identifier){
+        try {
+            Map<String, CustomField> customFieldsMap = new HashMap<>();
+
+            com.liferay.portal.kernel.model.User liferayUser = UserUtils.findLiferayUser(request, user);
+            ExpandoBridge exp = liferayUser.getExpandoBridge();
+            Map<String, Serializable> attributes = exp.getAttributes();
+
+            attributes.forEach((key, value) -> {
+                if (!CustomFieldPageIdentifier.is(key, identifier)) {
+                    return;
+                }
+
+                String[] fieldProperties = key.split("-");
+
+                if (fieldProperties.length != 3) {
+                    log.warn("Invalid custom field name pattern: " + key);
+                    return;
+                }
+
+                int fieldId;
+                try {
+                    fieldId = Integer.parseInt(fieldProperties[1]);
+                } catch (NumberFormatException nfe) {
+                    log.warn("Invalid custom field name pattern: " + key);
+                    return;
+                }
+                CustomField customField = new CustomField();
+                customField.setFieldKey(key);
+                customField.setFieldId(fieldId);
+                customField.setFieldLabel(fieldProperties[2]);
+                customFieldsMap.put(fieldProperties[2], customField);
+                UnicodeProperties unicodeProperties = exp.getAttributeProperties(key);
+                unicodeProperties.forEach((propertyKey, propertyValue) -> {
+                    if (propertyKey != null && propertyKey.equals(CustomFieldPropertyKey.DISPLAY_TYPE.getKey())) {
+                        customField.setFieldType(CustomFieldType.getType(propertyValue));
+
+                        if (CustomFieldType.isOptionRequiredType(customField.getFieldType())) {
+                            Serializable defaultValue = exp.getAttributeDefault(key);
+                            if (defaultValue == null) {
+                                log.warn("Option for '" + key + "' is required.");
+                                return;
+                            }
+                            String[] options = (String[]) defaultValue;
+                            for (String option : options) {
+                                customField.addOption(option);
+                            }
+                        }
+                    }
+                });
+            });
+            return customFieldsMap;
+        } catch (PortalException e) {
+            log.error("Could not load custom fields.", e);
+            return null;
         }
     }
 
