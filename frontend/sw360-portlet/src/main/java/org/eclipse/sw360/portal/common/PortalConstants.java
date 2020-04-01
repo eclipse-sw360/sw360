@@ -203,6 +203,10 @@ public class PortalConstants {
     public static final String ATTACHMENT_USAGES_RESTRICTED_COUNTS = "attachmentUsagesRestrictedCounts";
     public static final String SPDX_LICENSE_INFO = "spdxLicenseInfo";
 
+    // ! Specialized keys for changelog
+    public static final String LOAD_CHANGE_LOGS = "load_change_logs";
+    public static final String VIEW_CHANGE_LOGS = "view_change_logs";
+
     //! Specialized keys for projects
     public static final String PROJECTS = "projects";
     public static final String PROJECT_PORTLET_NAME = PORTLET_NAME_PREFIX + PROJECTS;

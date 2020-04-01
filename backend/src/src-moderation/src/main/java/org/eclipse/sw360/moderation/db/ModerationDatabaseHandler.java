@@ -10,13 +10,16 @@
 
 package org.eclipse.sw360.moderation.db;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
+import org.eclipse.sw360.datahandler.db.ChangeLogsRepository;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
+import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestEmailTemplate;
@@ -26,6 +29,7 @@ import org.eclipse.sw360.datahandler.thrift.ModerationState;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
@@ -288,6 +292,7 @@ public class ModerationDatabaseHandler {
 
     public void acceptRequest(ModerationRequest request, String moderationComment, String reviewer) {
         ModerationRequest dbRequest = repository.get(request.getId());
+        ModerationRequest requestBefore = dbRequest.deepCopy();
         // when an MR requests deletion of a document and is accepted, all outstanding MRs for that document are deleted,
         // which means that at this point we can't be sure that the MR still exists.
         // Therefore, we update it only if it still exists in the DB, but send mail notifications using the data from
@@ -299,6 +304,8 @@ public class ModerationDatabaseHandler {
             dbRequest.setCommentDecisionModerator(moderationComment);
             repository.update(dbRequest);
         }
+        DatabaseHandlerUtil.addChangeLogs(dbRequest, requestBefore, reviewer, Operation.MODERATION_ACCEPT,
+                null, Lists.newArrayList(), dbRequest.getDocumentId(),null);
         sendMailNotificationsForAcceptedRequest(request);
     }
 

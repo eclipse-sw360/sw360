@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright Siemens AG, 2013-2016. Part of the SW360 Portal Project.
-  ~ With modifications by Bosch Software Innovations GmbH, 2016.
-  ~ With modifacations by Verifa Oy, 2018.
+  ~ Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
   ~
   ~ This program and the accompanying materials are made
   ~ available under the terms of the Eclipse Public License 2.0
@@ -11,46 +9,27 @@
   ~ SPDX-License-Identifier: EPL-2.0
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
+        <artifactId>backend-svc</artifactId>
         <groupId>org.eclipse.sw360</groupId>
-        <artifactId>backend</artifactId>
         <version>${revision}</version>
     </parent>
+    <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>backend-src</artifactId>
-    <packaging>pom</packaging>
+    <artifactId>svc-changelogs</artifactId>
+    <packaging>war</packaging>
+    <name>svc-changelogs</name>
 
-    <modules>
-        <module>src-licenses</module>
-        <module>src-users</module>
-        <module>src-vendors</module>
-        <module>src-search</module>
-        <module>src-components</module>
-        <module>src-projects</module>
-        <module>src-attachments</module>
-        <module>src-moderation</module>
-        <module>src-fossology</module>
-        <module>src-vulnerabilities</module>
-        <module>src-licenseinfo</module>
-        <module>src-cvesearch</module>
-        <module>src-schedule</module>
-        <module>src-wsimport</module>
-        <module>src-changelogs</module>
-    </modules>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.eclipse.sw360</groupId>
-            <artifactId>src-common</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-    </dependencies>
+    <properties>
+        <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+    </properties>
 
     <build>
+        <finalName>changelogs</finalName>
+
         <plugins>
             <plugin>
                 <artifactId>maven-dependency-plugin</artifactId>
@@ -62,10 +41,10 @@
                             <goal>unpack</goal>
                         </goals>
                         <configuration>
-                            <artifactItems combine.children="append">
+                            <artifactItems>
                                 <artifactItem>
                                     <groupId>org.eclipse.sw360</groupId>
-                                    <artifactId>src-common</artifactId>
+                                    <artifactId>src-${project.build.finalName}</artifactId>
                                     <version>${project.version}</version>
                                     <type>jar</type>
                                     <overWrite>true</overWrite>
@@ -79,4 +58,13 @@
             </plugin>
         </plugins>
     </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.eclipse.sw360</groupId>
+            <artifactId>src-${project.build.finalName}</artifactId>
+            <version>${project.version}</version>
+            <type>jar</type>
+        </dependency>
+    </dependencies>
 </project>
