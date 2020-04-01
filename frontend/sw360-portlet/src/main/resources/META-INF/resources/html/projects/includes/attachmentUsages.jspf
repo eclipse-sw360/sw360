@@ -34,33 +34,33 @@
         >
         <thead>
         <tr>
-            <th colspan="7" class="headlabel">Linked Releases And Projects</th>
+            <th colspan="7" class="headlabel"><liferay-ui:message key="linked.releases.and.projects" /></th>
         </tr>
         <tr>
-            <th rowspan="2">Name</th>
-            <th rowspan="2">Relation</th>
-            <th rowspan="2">Uploaded By</th>
-            <th rowspan="2">Type</th>
-            <th colspan="3">Used in</th>
+            <th rowspan="2"><liferay-ui:message key="name" /></th>
+            <th rowspan="2"><liferay-ui:message key="relation" /></th>
+            <th rowspan="2"><liferay-ui:message key="uploaded.by" /></th>
+            <th rowspan="2"><liferay-ui:message key="type" /></th>
+            <th colspan="3"><liferay-ui:message key="used.in" /></th>
         </tr>
         <tr>
-            <th>License Info</th>
-            <th>Source Code Bundle</th>
-            <th>Other</th>
+            <th><liferay-ui:message key="license.info" /></th>
+            <th><liferay-ui:message key="source.code.bundle" /></th>
+            <th><liferay-ui:message key="other" /></th>
         </tr>
         </thead>
         <tbody>
             <%@include file="/html/projects/includes/attachmentUsagesRows.jspf"%>
             <core_rt:if test="${projectList.size() == 1 and empty projectList.get(0).linkedReleases}">
                 <tr>
-                    <td colspan="7">No linked releases or projects</td>
+                    <td colspan="7"><liferay-ui:message key="no.linked.releases.or.projects" /></td>
                 </tr>
                 </thead>
                 <tbody>
                     <%@include file="/html/projects/includes/attachmentUsagesRows.jspf"%>
                     <core_rt:if test="${projectList.size() == 1 and empty projectList.get(0).linkedReleases}">
                         <tr>
-                            <td colspan="7">No linked releases or projects</td>
+                            <td colspan="7"><liferay-ui:message key="no.linked.releases.or.projects" /></td>
                         </tr>
                     </core_rt:if>
             </core_rt:if>
@@ -111,10 +111,10 @@
                 url: $form.prop("action"),
                 data: $form.serialize()
             }).done(function(){
-                alert.success($form, 'Saved attachment usages.', 4);
+                alert.success($form, '<liferay-ui:message key="saved.attachment.usages" />', 4);
                 button.finish('#saveAttachmentUsagesButton');
             }).fail(function(xhr, status, error){
-                alert.danger($form, '<b>Couldn\'t save attachment usages:</b> ' + xhr.responseText, 6);
+                alert.danger($form, '<liferay-ui:message key="couldnt.save.attachment.usages" />' + xhr.responseText, 6);
                 button.finish('#saveAttachmentUsagesButton');
             });
         }

@@ -52,7 +52,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.LICENSE_ADMIN_PORT
         "javax.portlet.display-name=License Administration",
         "javax.portlet.info.short-title=License",
         "javax.portlet.info.title=License Administration",
-
+        "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.view-template=/html/admin/licenseAdmin/view.jsp",
     },
     service = Portlet.class,

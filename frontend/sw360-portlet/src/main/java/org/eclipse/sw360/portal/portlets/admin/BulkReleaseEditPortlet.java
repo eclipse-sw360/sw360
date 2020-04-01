@@ -49,7 +49,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.*;
         "javax.portlet.display-name=Bulk Release Edit",
         "javax.portlet.info.short-title=Bulk Release Edit",
         "javax.portlet.info.title=Bulk Release Edit",
-
+        "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.view-template=/html/admin/bulkReleaseEdit/view.jsp",
     },
     service = Portlet.class,

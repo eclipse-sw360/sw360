@@ -11,6 +11,9 @@ package org.eclipse.sw360.portal.tags;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
+
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -18,11 +21,13 @@ import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.ResourceBundle;
 
 /**
  * This displays a user in Edit mode
@@ -107,20 +112,23 @@ public class DisplayUserEdit extends NameSpaceAwareTag {
                     userList.add(email);
                 }
             }
-
+            
             Joiner commaJoiner = Joiner.on(", ");
             String mails = getString(commaJoiner.join(emailList));
             String userNames = getString(commaJoiner.join(userList));
 
+            HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+            ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+            
             display.append("<div class=\"form-group\">");
-            display.append(String.format("<label for=\"%sDisplay\">%s</label>", id, description))
+            display.append(String.format("<label for=\"%sDisplay\">%s</label>", id, LanguageUtil.get(resourceBundle, description)))
                     .append(String.format("<input type=\"hidden\" readonly=\"\" value=\"%s\"  id=\"%s\" name=\"%s%s\"/>", mails, id, namespace, id))
                     .append(String.format("<input type=\"text\" readonly value=\"%s\" id=\"%sDisplay\" ", userNames, id));
 
             if (!readonly) {
-                display.append(String.format(" placeholder=\"Click to edit\" class=\"form-control clickable userSearchDialogInteractive\" data-id=\"%s\" data-multi-user=\"%s\"", id,  multiUsers ? "true" : "false"));
+                display.append(String.format(" placeholder=\"" + LanguageUtil.get(resourceBundle, "click.to.edit") + "\" class=\"form-control clickable userSearchDialogInteractive\" data-id=\"%s\" data-multi-user=\"%s\"", id,  multiUsers ? "true" : "false"));
             } else {
-                display.append(" placeholder=\"Will be set automatically\" class=\"form-control\"");
+                display.append(" placeholder=\"" + LanguageUtil.get(resourceBundle, "will.be.set.automatically") + "\" class=\"form-control\"");
             }
 
             display.append("/>");

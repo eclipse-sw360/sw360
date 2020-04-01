@@ -20,7 +20,7 @@
 <core_rt:set var="FOSSOLOGY_CONNECTION_ENABLED" value="<%=FossologyConnectionHelper.getInstance().isFossologyConnectionEnabled()%>"/>
 <core_rt:if test="${component.releasesSize == 0 }">
     <div class="alert alert-info">
-        Please add release to view their clearing status here.
+        <liferay-ui:message key="please.add.release.to.view.their.clearing.status.here" />
     </div>
 </core_rt:if>
 <core_rt:if test="${component.releasesSize > 0 }">
@@ -77,13 +77,34 @@ require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProje
         table = datatables.create('#releasesTable', {
             data: result,
             columns: [
-                {title: "Name"},
-                {title: "Version"},
-                {title: "Clearing State"},
-                {title: "Clearing Report"},
-                {title: "Release Mainline State"},
-                {title: "Actions", render: {display: renderActions}, className: "six actions" }
+                {title: "<liferay-ui:message key="name" />"},
+                {title: "<liferay-ui:message key="version" />"},
+                {title: "<liferay-ui:message key="clearing.state" />"},
+                {title: "<liferay-ui:message key="clearing.report" />"},
+                {title: "<liferay-ui:message key="release.mainline.state" />"},
+                {title: "<liferay-ui:message key="action" />", render: {display: renderActions}, className: "six actions" }
             ],
+            language: {
+                paginate: {
+                    previous: "<liferay-ui:message key="previous" />",
+                    next: "<liferay-ui:message key="next" />"
+                },
+                emptyTable: "<liferay-ui:message key="no.data.available.in.table" />",
+                info: "<liferay-ui:message key="showing" />",
+                infoEmpty: "<liferay-ui:message key="infoempty" />",
+                lengthMenu: '<liferay-ui:message key="show" /> <select>'+
+                '<option value="10">10</option>'+
+                '<option value="25">25</option>'+
+                '<option value="50">50</option>'+
+                '<option value="100">100</option>'+
+                '<option value="-1"><liferay-ui:message key="all" /></option>'+
+                '</select> <liferay-ui:message key="entries" />',
+                 infoFiltered: "<liferay-ui:message key="filtered.from.max.total.entries" />",
+                 zeroRecords: "<liferay-ui:message key="no.matching.records.found" />",
+                 search: "<liferay-ui:message key="search" />",
+                 processing: "<liferay-ui:message key="processing" />",
+                 loadingRecords: "<liferay-ui:message key="loading" />"
+            },
             columnDefs: [
                 {
                     targets: [1],
@@ -110,24 +131,24 @@ require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProje
                         $fossologyAction = $('<svg>', {
                             'class': 'disabled lexicon-icon',
                             'data-release-id': row.DT_RowId
-                        }).append('<title>Fossology is not configured</title>'),
+                        }).append('<title><liferay-ui:message key="fossology.is.not.configured" /></title>'),
                     </core_rt:when>
                     <core_rt:otherwise>
                         $fossologyAction = $('<svg>', {
                             'class': 'fossology lexicon-icon',
                             'data-release-id': row.DT_RowId
-                        }).append('<title>Fossology Process</title>'),
+                        }).append('<title><liferay-ui:message key="fossology.process" /></title>'),
                     </core_rt:otherwise>
                 </core_rt:choose>
                 $editAction = render.linkTo(
                     makeReleaseUrl(row.DT_RowId, 'edit'),
                     "",
-                    '<svg class="lexicon-icon"><title>Edit</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>'
+                    '<svg class="lexicon-icon"><title><liferay-ui:message key="edit" /></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>'
                 ),
                 $copyAction = render.linkTo(
                     makeReleaseUrl(row.DT_RowId, 'duplicate'),
                     "",
-                    '<svg class="lexicon-icon"><title>Duplicate</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#paste"/></svg>'
+                    '<svg class="lexicon-icon"><title><liferay-ui:message key="duplicate" /></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#paste"/></svg>'
                 ),
                 $linkAction = $('<svg>', {
                     'class': 'link lexicon-icon',
@@ -137,7 +158,7 @@ require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProje
                 $mergeAction = render.linkTo(
                     makeReleaseUrl(row.DT_RowId, 'merge'),
                     "",
-                    '<svg class="lexicon-icon"><title>Merge</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#merge"/></svg>'
+                    '<svg class="lexicon-icon"><title><liferay-ui:message key="merge" /></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#merge"/></svg>'
                 ),
                 $deleteAction = $('<svg>', {
                     'class': 'delete lexicon-icon',
@@ -148,8 +169,8 @@ require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProje
                 });
 
             $fossologyAction.append($('<use href="<%=request.getContextPath()%>/images/icons.svg#fossology"/>'));
-            $linkAction.append($('<title>Link Project</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#link"/>'));
-            $deleteAction.append($('<title>Delete</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
+            $linkAction.append($('<title><liferay-ui:message key="link.project" /></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#link"/>'));
+            $deleteAction.append($('<title><liferay-ui:message key="delete" /></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
 
             $actions.append($fossologyAction, $editAction, $copyAction, $linkAction, $mergeAction, $deleteAction);
             return $actions[0].outerHTML;
@@ -177,16 +198,16 @@ require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProje
                         $dialog.close();
                     }
                     else if (data.result == 'SENT_TO_MODERATOR') {
-                        $dialog.info("You may not delete the release, but a request was sent to a moderator!");
+                        $dialog.info("<liferay-ui:message key="you.may.not.delete.the.release.but.a.request.was.sent.to.a.moderator" />");
                     } else if (data.result == 'IN_USE') {
-                        $dialog.warning("I could not delete the release, since it is used by another component (release) or project");
+                        $dialog.warning("<liferay-ui:message key="i.could.not.delete.the.release.since.it.is.used.by.another.component.release.or.project" />");
                     } else {
-                        $dialog.alert("I could not delete the release!");
+                        $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.release" />");
                     }
                 },
                 error: function() {
                     callback();
-                    $dialog.alert("I could not delete the release!");
+                    $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.release" />");
                 }
             });
         }
@@ -194,25 +215,25 @@ require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProje
         $dialog = dialog.confirm(
             'danger',
             'question-circle',
-            'Delete Release?',
-                '<p>Do you really want to delete the release <b data-name="name"></b>?</p>' +
+            '<liferay-ui:message key="delete.release" />?',
+                '<p><liferay-ui:message key="do.you.really.want.to.delete.the.release.x" /></p>?' +
                 '<div data-hide="hasNoDependencies">' +
                     '<p>' +
-                        'This release <b data-name="name"></b> contains:' +
+                        '<liferay-ui:message key="this.release.x.contains" />' +
                     '</p>' +
                     '<ul>' +
-                        '<li data-hide="hasNoReleases"><span data-name="releases"></span> releases</li>' +
-                        '<li data-hide="hasNoAttachments"><span data-name="attachments"></span> attachments</li>' +
+                        '<li data-hide="hasNoReleases"><span data-name="releases"></span> <liferay-ui:message key="releases" /></li>' +
+                        '<li data-hide="hasNoAttachments"><span data-name="attachments"></span> <liferay-ui:message key="attachments" /></li>' +
                     '</ul>' +
                 '</div>' +
                 '<hr/>' +
                 '<form>' +
                     '<div class="form-group">' +
-                        '<label for="moderationDeleteCommentField">Please comment your changes</label>' +
-                        '<textarea id="moderationDeleteCommentField" class="form-control" data-name="comment" rows="4" placeholder="Comment your request..."></textarea>' +
+                        '<label for="moderationDeleteCommentField"><liferay-ui:message key="please.comment.your.changes" /></label>' +
+                        '<textarea id="moderationDeleteCommentField" class="form-control" data-name="comment" rows="4" placeholder="<liferay-ui:message key="comment.your.request" />"></textarea>' +
                     '</div>' +
                 '</form>',
-            'Delete Release',
+            '<liferay-ui:message key="delete.release" />',
             {
                 name: name,
                 releases: linkedReleasesSize,

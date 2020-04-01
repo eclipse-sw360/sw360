@@ -44,7 +44,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.*;
         "javax.portlet.display-name=Search Results",
         "javax.portlet.info.short-title=Search Results",
         "javax.portlet.info.title=Search Results",
-
+        "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.view-template=/html/search/view.jsp",
     },
     service = Portlet.class,

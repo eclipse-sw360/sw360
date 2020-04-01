@@ -31,7 +31,7 @@
     <portlet:param name="<%=PortalConstants.DOCUMENT_TYPE%>" value="${documentType}"/>
 </portlet:resourceURL>
 
-<table id="attachmentInfo" class="table edit-table attachments" title="Attachment Information ${documentType}"
+<table id="attachmentInfo" class="table edit-table attachments" title="<liferay-ui:message key="attachment.information" /> ${documentType}"
   data-ajax-url="<%=attachmentListAjaxURL%>"
   data-input-filename-name="<portlet:namespace/><%=Release._Fields.ATTACHMENTS%><%=Attachment._Fields.FILENAME%>"
   data-input-content-id-name="<portlet:namespace/><%=Release._Fields.ATTACHMENTS%><%=Attachment._Fields.ATTACHMENT_CONTENT_ID%>"
@@ -55,34 +55,34 @@
     </colgroup>
     <thead>
         <tr>
-            <th class="headLabel" colspan="12">Attachments</th>
+            <th class="headLabel" colspan="12"><liferay-ui:message key="attachments" /></th>
         </tr>
         <tr>
-            <th class="headlabel" rowspan="2">Filename</th>
-            <th class="headlabel" rowspan="2">Type</th>
-            <th class="headlabel" colspan="4">Upload</th>
-            <th class="headlabel" colspan="5">Approval</th>
+            <th class="headlabel" rowspan="2"><liferay-ui:message key="filename" /></th>
+            <th class="headlabel" rowspan="2"><liferay-ui:message key="type" /></th>
+            <th class="headlabel" colspan="4"><liferay-ui:message key="upload" /></th>
+            <th class="headlabel" colspan="5"><liferay-ui:message key="approval" /></th>
             <th class="headlabel" rowspan="2"></th>
         </tr>
         <tr>
             <!-- Uploader -->
-            <th class="headlabel">Comment</th>
-            <th class="headlabel">Group</th>
-            <th class="headlabel">Name</th>
-            <th class="headlabel">Date</th>
+            <th class="headlabel"><liferay-ui:message key="comment" /></th>
+            <th class="headlabel"><liferay-ui:message key="group" /></th>
+            <th class="headlabel"><liferay-ui:message key="name" /></th>
+            <th class="headlabel"><liferay-ui:message key="date" /></th>
             <!-- Approver -->
-            <th class="headlabel">Status</th>
-            <th class="headlabel">Comment</th>
-            <th class="headlabel">Group</th>
-            <th class="headlabel">Name</th>
-            <th class="headlabel">Date</th>
+            <th class="headlabel"><liferay-ui:message key="status" /></th>
+            <th class="headlabel"><liferay-ui:message key="comment" /></th>
+            <th class="headlabel"><liferay-ui:message key="group" /></th>
+            <th class="headlabel"><liferay-ui:message key="name" /></th>
+            <th class="headlabel"><liferay-ui:message key="date" /></th>
         </tr>
     </thead>
     <tbody>
     </tbody>
 </table>
 
-<button id="upload-attachment-button" type="button" class="btn btn-secondary mt-3">Add Attachment</button>
+<button id="upload-attachment-button" type="button" class="btn btn-secondary mt-3"><liferay-ui:message key="add.attachment" /></button>
 
 <%@include file="/html/utils/includes/attachmentsUpload.jspf" %>
 
@@ -121,7 +121,7 @@
               /*  8 */ { data: "checkedTeam", defaultContent: "", render: $.fn.dataTable.render.ellipsis, className: 'content-middle' },
               /*  9 */ { data: "checkedBy", defaultContent: "", render: $.fn.dataTable.render.ellipsis, className: 'content-middle' },
               /* 10 */ { data: "checkedOn", defaultContent: "", className: 'content-middle' },
-              /* 11 */ { data: "actions", orderable: false, render: $.fn.dataTable.render.actions( [{ key: 'attachmentContentId', 'class': 'delete-attachment', icon: 'trash', title: 'Delete Attachment', approvalKey: 'checkStatus', usageCountsKey: 'usageCounts'}] ), className: "content-middle one action" }
+              /* 11 */ { data: "actions", orderable: false, render: $.fn.dataTable.render.actions( [{ key: 'attachmentContentId', 'class': 'delete-attachment', icon: 'trash', title: '<liferay-ui:message key="delete.attachment" />', approvalKey: 'checkStatus', usageCountsKey: 'usageCounts'}] ), className: "content-middle one action" }
             ],
             columnDefs: [{
                   targets: 1,
@@ -156,19 +156,27 @@
                   targets: 2,
                   createdCell: function(td, cellData, rowData, row, col) {
                       $.fn.dataTable.render.inputText.updateTitle(td);
-                      $.fn.dataTable.render.inputText.useInputDialog(td, "Update create comment");
+                      $.fn.dataTable.render.inputText.useInputDialog(td, "<liferay-ui:message key="update.create.comment" />");
                   }
             }, {
                   targets: 7,
                   createdCell: function(td, cellData, rowData, row, col) {
                       $.fn.dataTable.render.inputText.updateTitle(td);
-                      $.fn.dataTable.render.inputText.useInputDialog(td, "Update approval comment");
+                      $.fn.dataTable.render.inputText.useInputDialog(td, "<liferay-ui:message key="update.approval.comment" />");
                   }
             }],
             order: [[0, 'asc']],
             deferRender: true,
             language: {
-                emptyTable: "No attachments yet."
+                emptyTable: "<liferay-ui:message key="no.attachments.yet" />",
+                paginate: {
+                    previous: "<liferay-ui:message key="previous" />",
+                    next: "<liferay-ui:message key="next" />"
+                },
+                info: "<liferay-ui:message key="showing" />",
+                infoEmpty: "<liferay-ui:message key="infoempty" />",
+                processing: "<liferay-ui:message key="processing" />",
+                loadingRecords: "<liferay-ui:message key="loading" />"
             }
         });
 
@@ -186,13 +194,13 @@
             var warningMessage;
             var usagesCount = data.usagesCount;
             if(data.approvalstate == <%=CheckStatus.ACCEPTED.getValue()%>) {
-                warningMessage = "<p>An attachment cannot be deleted while it is approved. You have to reject the approval first.</p>";
+                warningMessage = "<p><liferay-ui:message key="an.attachment.cannot.be.deleted.while.it.is.approved.you.have.to.reject.the.approval.first" /></p>";
                 <core_rt:if test="${hasWritePermissions == false}">
-                warningMessage += "<p>For this, you have to create a moderation request.</p>";
+                warningMessage += "<p><liferay-ui:message key="for.this.you.have.to.create.a.moderation.request" /></p>";
                 </core_rt:if>
                 displayDeleteNotAllowedWarning(warningMessage);
             } else if (typeof usagesCount === 'number' && usagesCount !== 0){
-                warningMessage = "<p>An attachment cannot be deleted while it is used by some projects. You have to delete the usages first.</p>";
+                warningMessage = "<p><liferay-ui:message key="an.attachment.cannot.be.deleted.while.it.is.used.by.some.projects.you.have.to.delete.the.usages.first" /></p>";
                 displayDeleteNotAllowedWarning(warningMessage);
             } else {
                 deleteAttachment(data.key);
@@ -214,7 +222,7 @@
             var row = attachmentTable.row('#' + attachmentId),
                 attachmentName = row.data().filename;
 
-            dialog.confirm('danger', 'question-circle', 'Delete Attachment?', '<p>Do you really want to delete attachment <b data-name="name"></b> (<b data-name="id"></b>)?</p>', 'Delete Attachment', {
+            dialog.confirm('danger', 'question-circle', '<liferay-ui:message key="delete.attachment" />?', '<p><liferay-ui:message key="do.you.really.want.to.delete.attachment.x" />(<b data-name="id"></b>)?</p>', '<liferay-ui:message key="delete.attachment" />', {
                 name: attachmentName,
                 id: attachmentId
             }, function(submit, callback) {

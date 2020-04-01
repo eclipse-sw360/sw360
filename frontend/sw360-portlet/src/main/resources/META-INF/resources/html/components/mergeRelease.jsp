@@ -22,17 +22,17 @@
 
 <div id="releaseMergeWizard" class="container" data-step-id="0" data-release-target-id="${release.id}" data-componentid="${release.componentId}">
     <div class="row portlet-toolbar">
-        <div class="col portlet-title text-truncate" title="Merge into ${sw360:printReleaseName(release)}">
-            Merge into ${sw360:printReleaseName(release)}
+        <div class="col portlet-title text-truncate" title="<liferay-ui:message key="merge.into" /> ${sw360:printReleaseName(release)}">
+           <liferay-ui:message key="merge.into" /> ${sw360:printReleaseName(release)}
         </div>
     </div>
     <div class="row">
         <div class="col">
             <div class="wizardHeader">
                 <ul>
-                    <li class="active">1. Choose source<br /><small>Choose a release that should be merged into the current one</small></li>
-                    <li>2. Merge data<br /><small>Merge data from source into target release</small></li>
-                    <li>3. Confirm<br /><small>Check the merged version and confirm</small></li>
+                    <li class="active"><liferay-ui:message key="choose.source" /><br /><small><liferay-ui:message key="choose.a.release.that.should.be.merged.into.the.current.one" /></small></li>
+                    <li><liferay-ui:message key="merge.data" /><br /><small><liferay-ui:message key="merge.data.from.source.into.target.release" /></small></li>
+                    <li><liferay-ui:message key="confirm" /><br /><small><liferay-ui:message key="check.the.merged.version.and.confirm" /></small></li>
                 </ul>
             </div>
         </div>
@@ -43,25 +43,25 @@
                 <div class="step active" data-step-id="1">
                     <div class="spinner spinner-with-text">
                         <div class="spinner-border" role="status">
-                            <span class="sr-only">Loading data for step 1, please wait...</span>
+                            <span class="sr-only"><liferay-ui:message key="loading.data.for.step.1.please.wait" /></span>
                         </div>
-                        Loading data for step 1, please wait...
+                        <liferay-ui:message key="loading.data.for.step.1.please.wait" />
                     </div>
                 </div>
                 <div class="step" data-step-id="2">
                     <div class="spinner spinner-with-text">
                         <div class="spinner-border" role="status">
-                            <span class="sr-only">Loading data for step 2, please wait...</span>
+                            <span class="sr-only"><liferay-ui:message key="" /><liferay-ui:message key="loading.data.for.step.2.please.wait" /></span>
                         </div>
-                        Loading data for step 2, please wait...
+                        <liferay-ui:message key="loading.data.for.step.2.please.wait" />
                     </div>
                 </div>
                 <div class="step" data-step-id="3">
                     <div class="spinner spinner-with-text">
                         <div class="spinner-border" role="status">
-                            <span class="sr-only">Loading data for step 3, please wait...</span>
+                            <span class="sr-only"><liferay-ui:message key="" /><liferay-ui:message key="loading.data.for.step.3.please.wait" /></span>
                         </div>
-                        Loading data for step 3, please wait...
+                        <liferay-ui:message key="loading.data.for.step.3.please.wait" />
                     </div>
                 </div>
             </div>
@@ -107,13 +107,13 @@
                     });
                     let $idList = $('<ul>');
 
-                    $error.append($('<p/>').append($('<b/>').text('Could not merge releases: ' + data.error)));
-                    $error.append($('<p/>').text('This error can lead to inconsistencies in the database. Please inform the administrator with the following information:'));
+                    $error.append($('<p/>').append($('<b/>').text('<liferay-ui:message key="could.not.merge.releases" />' + data.error)));
+                    $error.append($('<p/>').text('<liferay-ui:message key="this.error.can.lead.to.inconsistencies.in.the.database.please.inform.the.administrator.with.the.following.information" />'));
                     $error.append($('<p>').append($idList));
                     
                     let releaseSourceId = $stepElement.data('releaseSourceId');
-                    $idList.append($('<li>').text('Source release: ' + releaseSourceId));
-                    $idList.append($('<li>').text('Target release: ' + $wizardRoot.data('releaseTargetId')));
+                    $idList.append($('<li>').text('<liferay-ui:message key="source.release" />' + releaseSourceId));
+                    $idList.append($('<li>').text('<liferay-ui:message key="target.release" />' + $wizardRoot.data('releaseTargetId')));
 
                     $stepElement.html('').append($error);
                     return false;
@@ -131,7 +131,7 @@
             $stepElement.html('' +
                     '<div class="stepFeedback"></div>' +
                     '<form>' +
-                    '    <table id="releaseSourcesTable" class="table table-bordered" title="Source release">' +
+                    '    <table id="releaseSourcesTable" class="table table-bordered" title="<liferay-ui:message key="source.release" />">' +
                     '        <colgroup>' +
                     '            <col style="width: 1.7rem;" />' +
                     '            <col style="width: 70%;" />' +
@@ -141,9 +141,9 @@
                     '        <thead>' +
                     '            <tr>' +
                     '                <th></th>' +
-                    '                <th>Release name</th>' +
-                    '                <th>Version</th>' + 
-                    '                <th>Created by</th>' +
+                    '                <th><liferay-ui:message key="release.name" /></th>' +
+                    '                <th><liferay-ui:message key="version" /></th>' + 
+                    '                <th><liferay-ui:message key="created.by" /></th>' +
                     '            </tr>' +
                     '        </thead>' +
                     '        <tbody>' +
@@ -160,8 +160,29 @@
                     { data: "version" },
                     { data: "createdBy" }
                 ],
+                language: {
+                    select: {
+                        style: 'single',
+                        rows: "<liferay-ui:message key="x.rows.selected" />"
+                    },
+                    paginate: {
+                        previous: "<liferay-ui:message key="previous" />",
+                        next: "<liferay-ui:message key="next" />"
+                    },
+                    emptyTable: "<liferay-ui:message key="no.data.available.in.table" />",
+                    info: "<liferay-ui:message key="showing" />",
+                    infoEmpty: "<liferay-ui:message key="infoempty" />",
+                    lengthMenu: '<liferay-ui:message key="show" /> <select>'+
+                    '<option value="10">10</option>'+
+                    '<option value="25">25</option>'+
+                    '<option value="50">50</option>'+
+                    '<option value="100">100</option>'+
+                    '<option value="-1"><liferay-ui:message key="all" /></option>'+
+                    '</select> <liferay-ui:message key="entries" />',
+                    processing: "<liferay-ui:message key="processing" />",
+                    loadingRecords: "<liferay-ui:message key="loading" />"
+                },
                 order: [ [ 1, 'asc' ] ],
-                select: 'single'
             }, undefined, [0], true);
             datatables.enableCheckboxForSelection(table, 0);
         }
@@ -169,7 +190,7 @@
         function submitChosenRelease($stepElement) {
             var checkedList = $stepElement.find('input:checked');
             if (checkedList.length !== 1 || $(checkedList.get(0)).val() ===  $wizardRoot.data('releaseTargetId')) {
-                $stepElement.find('.stepFeedback').html('<div class="alert alert-danger">Please choose exactly one release, which is not the release itself!</div>');
+                $stepElement.find('.stepFeedback').html('<div class="alert alert-danger"><liferay-ui:message key="please.choose.exactly.one.release.which.is.not.the.release.itself" /></div>');
                 $('html, body').stop().animate({ scrollTop: 0 }, 300, 'swing');
                 setTimeout(function() {
                     $stepElement.find('.stepFeedback').html('');
@@ -186,84 +207,84 @@
 
             $stepElement.append(renderNotice(data.usageInformation));
 
-            $stepElement.append(wizard.createCategoryLine('General'));
-            $stepElement.append(wizard.createSingleMergeLine('Vendor', 
+            $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="general" />'));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="vendor" />', 
                 data.releaseTarget.vendor ? data.releaseTarget.vendor.id : null, 
                 data.releaseSource.vendor ? data.releaseSource.vendor.id : null, 
                 vendorFormatter(data.releaseTarget.vendor, data.releaseSource.vendor)
             ));
-            $stepElement.append(wizard.createSingleMergeLine('Name', data.releaseTarget.name, data.releaseSource.name));
-            $stepElement.append(wizard.createSingleMergeLine('Version', data.releaseTarget.version, data.releaseSource.version));
-            $stepElement.append(wizard.createMultiMergeLine('Programming Languages', data.releaseTarget.languages, data.releaseSource.languages));
-            $stepElement.append(wizard.createMultiMergeLine('Operating Systems', data.releaseTarget.operatingSystems, data.releaseSource.operatingSystems));
-            $stepElement.append(wizard.createSingleMergeLine('CPE ID', data.releaseTarget.cpeid, data.releaseSource.cpeid));
-            $stepElement.append(wizard.createMultiMergeLine('Software Platforms', data.releaseTarget.softwarePlatforms, data.releaseSource.softwarePlatforms));
-            $stepElement.append(wizard.createSingleMergeLine('Release Date', data.releaseTarget.releaseDate, data.releaseSource.releaseDate));
-            $stepElement.append(wizard.createMultiMergeLine('Licenses', data.releaseTarget.mainLicenseIds, data.releaseSource.mainLicenseIds));
-            $stepElement.append(wizard.createSingleMergeLine('Download URL', data.releaseTarget.downloadurl, data.releaseSource.downloadurl));
-            $stepElement.append(wizard.createSingleMergeLine('Release Mainline State', data.releaseTarget.mainlineState, data.releaseSource.mainlineState, mapFormatter(data.displayInformation, 'mainlineState')));
-            $stepElement.append(wizard.createSingleMergeLine('Created on', data.releaseTarget.createdOn, data.releaseSource.createdOn));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="name" />', data.releaseTarget.name, data.releaseSource.name));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="version" />', data.releaseTarget.version, data.releaseSource.version));
+            $stepElement.append(wizard.createMultiMergeLine('<liferay-ui:message key="version" />', data.releaseTarget.languages, data.releaseSource.languages));
+            $stepElement.append(wizard.createMultiMergeLine('<liferay-ui:message key="operating.systems" />', data.releaseTarget.operatingSystems, data.releaseSource.operatingSystems));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="cpe.id3" />', data.releaseTarget.cpeid, data.releaseSource.cpeid));
+            $stepElement.append(wizard.createMultiMergeLine('<liferay-ui:message key="software.platforms" />', data.releaseTarget.softwarePlatforms, data.releaseSource.softwarePlatforms));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="release.date" />', data.releaseTarget.releaseDate, data.releaseSource.releaseDate));
+            $stepElement.append(wizard.createMultiMergeLine('<liferay-ui:message key="licenses" />', data.releaseTarget.mainLicenseIds, data.releaseSource.mainLicenseIds));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="download.url" />', data.releaseTarget.downloadurl, data.releaseSource.downloadurl));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="release.mainline.state" />', data.releaseTarget.mainlineState, data.releaseSource.mainlineState, mapFormatter(data.displayInformation, 'mainlineState')));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="created.on" />', data.releaseTarget.createdOn, data.releaseSource.createdOn));
             $stepElement.append(
                 renderCreatedBy(
-                    wizard.createSingleMergeLine('Created by', data.releaseTarget.createdBy, data.releaseSource.createdBy),
+                    wizard.createSingleMergeLine('<liferay-ui:message key="created.by" />', data.releaseTarget.createdBy, data.releaseSource.createdBy),
                     data.releaseSource.createdBy != data.releaseTarget.createdBy,
                     data.releaseSource.createdBy,
                     'text-center'
                 )
             );
-            $stepElement.append(wizard.createMultiMergeLine('Contributors', data.releaseTarget.contributors, data.releaseSource.contributors));
-            $stepElement.append(wizard.createMultiMergeLine('Moderators', data.releaseTarget.moderators, data.releaseSource.moderators));
-            $stepElement.append(wizard.createMultiMergeLine('Subscribers', data.releaseTarget.subscribers, data.releaseSource.subscribers));
-            $stepElement.append(wizard.createSingleMergeLine('Repository', data.releaseTarget.repository, data.releaseSource.repository, repositoryFormatter(data.displayInformation)));
-            $stepElement.append(wizard.createMultiMapMergeLine('Additional Roles', data.releaseTarget.roles, data.releaseSource.roles));
-            $stepElement.append(wizard.createMapMergeLine('External ids', data.releaseTarget.externalIds, data.releaseSource.externalIds));
-            $stepElement.append(wizard.createMapMergeLine('Additional Data', data.releaseTarget.additionalData, data.releaseSource.additionalData));
+            $stepElement.append(wizard.createMultiMergeLine('<liferay-ui:message key="contributors" />', data.releaseTarget.contributors, data.releaseSource.contributors));
+            $stepElement.append(wizard.createMultiMergeLine('<liferay-ui:message key="moderators" />', data.releaseTarget.moderators, data.releaseSource.moderators));
+            $stepElement.append(wizard.createMultiMergeLine('<liferay-ui:message key="subscribers" />', data.releaseTarget.subscribers, data.releaseSource.subscribers));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="repository" />', data.releaseTarget.repository, data.releaseSource.repository, repositoryFormatter(data.displayInformation)));
+            $stepElement.append(wizard.createMultiMapMergeLine('<liferay-ui:message key="additional.roles" />', data.releaseTarget.roles, data.releaseSource.roles));
+            $stepElement.append(wizard.createMapMergeLine('<liferay-ui:message key="external.ids" />', data.releaseTarget.externalIds, data.releaseSource.externalIds));
+            $stepElement.append(wizard.createMapMergeLine('<liferay-ui:message key="additional.data" />', data.releaseTarget.additionalData, data.releaseSource.additionalData));
             
-            $stepElement.append(wizard.createCategoryLine('Linked Releases'));
-            $stepElement.append(wizard.createMultiMergeLine('Linked Releases', Object.keys(data.releaseTarget.releaseIdToRelationship || {}), Object.keys(data.releaseSource.releaseIdToRelationship || {}), mapFormatter(data.displayInformation, 'release')));
+            $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="linked.releases" />'));
+            $stepElement.append(wizard.createMultiMergeLine('<liferay-ui:message key="linked.releases" />', Object.keys(data.releaseTarget.releaseIdToRelationship || {}), Object.keys(data.releaseSource.releaseIdToRelationship || {}), mapFormatter(data.displayInformation, 'release')));
 
-            $stepElement.append(wizard.createCategoryLine('Clearing Details'));
+            $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="clearing.details" />'));
             data.releaseTarget.clearingInformation = data.releaseTarget.clearingInformation || {};
             data.releaseSource.clearingInformation = data.releaseSource.clearingInformation || {};
-            $stepElement.append(wizard.createSingleMergeLine('Binaries Original from Community', data.releaseTarget.clearingInformation.binariesOriginalFromCommunity, data.releaseSource.clearingInformation.binariesOriginalFromCommunity, flagFormatter));
-            $stepElement.append(wizard.createSingleMergeLine('Binaries Self-Made', data.releaseTarget.clearingInformation.binariesSelfMade, data.releaseSource.clearingInformation.binariesSelfMade, flagFormatter));
-            $stepElement.append(wizard.createSingleMergeLine('Component License Information', data.releaseTarget.clearingInformation.componentLicenseInformation, data.releaseSource.clearingInformation.componentLicenseInformation, flagFormatter));
-            $stepElement.append(wizard.createSingleMergeLine('Source Code Delivery', data.releaseTarget.clearingInformation.sourceCodeDelivery, data.releaseSource.clearingInformation.sourceCodeDelivery, flagFormatter));
-            $stepElement.append(wizard.createSingleMergeLine('Source Code Original from Community', data.releaseTarget.clearingInformation.sourceCodeOriginalFromCommunity, data.releaseSource.clearingInformation.sourceCodeOriginalFromCommunity, flagFormatter));
-            $stepElement.append(wizard.createSingleMergeLine('Source Code Tool-Made', data.releaseTarget.clearingInformation.sourceCodeToolMade, data.releaseSource.clearingInformation.sourceCodeToolMade, flagFormatter));
-            $stepElement.append(wizard.createSingleMergeLine('Source Code Self-Made', data.releaseTarget.clearingInformation.sourceCodeSelfMade, data.releaseSource.clearingInformation.sourceCodeSelfMade, flagFormatter));
-            $stepElement.append(wizard.createSingleMergeLine('Screenshot of Website', data.releaseTarget.clearingInformation.screenshotOfWebSite, data.releaseSource.clearingInformation.screenshotOfWebSite, flagFormatter));
-            $stepElement.append(wizard.createSingleMergeLine('Finalized License Scan Report', data.releaseTarget.clearingInformation.finalizedLicenseScanReport, data.releaseSource.clearingInformation.finalizedLicenseScanReport, flagFormatter));
-            $stepElement.append(wizard.createSingleMergeLine('License Scan Report Result', data.releaseTarget.clearingInformation.licenseScanReportResult, data.releaseSource.clearingInformation.licenseScanReportResult, flagFormatter));
-            $stepElement.append(wizard.createSingleMergeLine('Legal Evaluation', data.releaseTarget.clearingInformation.legalEvaluation, data.releaseSource.clearingInformation.legalEvaluation, flagFormatter));
-            $stepElement.append(wizard.createSingleMergeLine('License Agreement', data.releaseTarget.clearingInformation.licenseAgreement, data.releaseSource.clearingInformation.licenseAgreement, flagFormatter));
-            $stepElement.append(wizard.createSingleMergeLine('Scanned', data.releaseTarget.clearingInformation.scanned, data.releaseSource.clearingInformation.scanned));
-            $stepElement.append(wizard.createSingleMergeLine('Component Clearing Report', data.releaseTarget.clearingInformation.componentClearingReport, data.releaseSource.clearingInformation.componentClearingReport, flagFormatter));
-            $stepElement.append(wizard.createSingleMergeLine('Clearing Standard', data.releaseTarget.clearingInformation.clearingStandard, data.releaseSource.clearingInformation.clearingStandard));
-            $stepElement.append(wizard.createSingleMergeLine('External URL', data.releaseTarget.clearingInformation.externalUrl, data.releaseSource.clearingInformation.externalUrl));
-            $stepElement.append(wizard.createSingleMergeLine('Comment', data.releaseTarget.clearingInformation.comment, data.releaseSource.clearingInformation.comment));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="binaries.original.from.community" />', data.releaseTarget.clearingInformation.binariesOriginalFromCommunity, data.releaseSource.clearingInformation.binariesOriginalFromCommunity, flagFormatter));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="binaries.self.made" />', data.releaseTarget.clearingInformation.binariesSelfMade, data.releaseSource.clearingInformation.binariesSelfMade, flagFormatter));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="component.license.information" />', data.releaseTarget.clearingInformation.componentLicenseInformation, data.releaseSource.clearingInformation.componentLicenseInformation, flagFormatter));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="source.code.delivery" />', data.releaseTarget.clearingInformation.sourceCodeDelivery, data.releaseSource.clearingInformation.sourceCodeDelivery, flagFormatter));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="source.code.original.from.community" />', data.releaseTarget.clearingInformation.sourceCodeOriginalFromCommunity, data.releaseSource.clearingInformation.sourceCodeOriginalFromCommunity, flagFormatter));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="source.code.tool.made" />', data.releaseTarget.clearingInformation.sourceCodeToolMade, data.releaseSource.clearingInformation.sourceCodeToolMade, flagFormatter));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="source.code.self.made" />', data.releaseTarget.clearingInformation.sourceCodeSelfMade, data.releaseSource.clearingInformation.sourceCodeSelfMade, flagFormatter));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="screenshot.of.website" />', data.releaseTarget.clearingInformation.screenshotOfWebSite, data.releaseSource.clearingInformation.screenshotOfWebSite, flagFormatter));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="finalized.license.scan.report" />', data.releaseTarget.clearingInformation.finalizedLicenseScanReport, data.releaseSource.clearingInformation.finalizedLicenseScanReport, flagFormatter));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="license.scan.report.result" />', data.releaseTarget.clearingInformation.licenseScanReportResult, data.releaseSource.clearingInformation.licenseScanReportResult, flagFormatter));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="legal.evaluation" />', data.releaseTarget.clearingInformation.legalEvaluation, data.releaseSource.clearingInformation.legalEvaluation, flagFormatter));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="license.agreement" />', data.releaseTarget.clearingInformation.licenseAgreement, data.releaseSource.clearingInformation.licenseAgreement, flagFormatter));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="scanned" />', data.releaseTarget.clearingInformation.scanned, data.releaseSource.clearingInformation.scanned));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="component.clearing.report" />', data.releaseTarget.clearingInformation.componentClearingReport, data.releaseSource.clearingInformation.componentClearingReport, flagFormatter));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="clearing.standard" />', data.releaseTarget.clearingInformation.clearingStandard, data.releaseSource.clearingInformation.clearingStandard));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="external.url" />', data.releaseTarget.clearingInformation.externalUrl, data.releaseSource.clearingInformation.externalUrl));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="comment" />', data.releaseTarget.clearingInformation.comment, data.releaseSource.clearingInformation.comment));
 
-            $stepElement.append(wizard.createCategoryLine('Request Information'));
-            $stepElement.append(wizard.createSingleMergeLine('Request ID', data.releaseTarget.clearingInformation.requestID, data.releaseSource.clearingInformation.requestID));
-            $stepElement.append(wizard.createSingleMergeLine('Additional Request Info', data.releaseTarget.clearingInformation.additionalRequestInfo, data.releaseSource.clearingInformation.additionalRequestInfo));
-            $stepElement.append(wizard.createSingleMergeLine('Evaluation Start', data.releaseTarget.clearingInformation.procStart, data.releaseSource.clearingInformation.procStart));
-            $stepElement.append(wizard.createSingleMergeLine('Evalutation End', data.releaseTarget.clearingInformation.evaluated, data.releaseSource.clearingInformation.evaluated));
+            $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="request.information" />'));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="request.id" />', data.releaseTarget.clearingInformation.requestID, data.releaseSource.clearingInformation.requestID));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="additional.request.info" />', data.releaseTarget.clearingInformation.additionalRequestInfo, data.releaseSource.clearingInformation.additionalRequestInfo));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="evaluation.start" />', data.releaseTarget.clearingInformation.procStart, data.releaseSource.clearingInformation.procStart));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="evaluation.end" />', data.releaseTarget.clearingInformation.evaluated, data.releaseSource.clearingInformation.evaluated));
 
-            $stepElement.append(wizard.createCategoryLine('Supplemental Information'));
-            $stepElement.append(wizard.createSingleMergeLine('External Supplier ID', data.releaseTarget.clearingInformation.externalSupplierID, data.releaseSource.clearingInformation.externalSupplierID));
-            $stepElement.append(wizard.createSingleMergeLine('Count of Security Vulnerabilities', data.releaseTarget.clearingInformation.countOfSecurityVn, data.releaseSource.clearingInformation.countOfSecurityVn));
+            $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="supplemental.information" />'));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="external.supplier.id" />', data.releaseTarget.clearingInformation.externalSupplierID, data.releaseSource.clearingInformation.externalSupplierID));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="count.of.security.vulnerabilities" />', data.releaseTarget.clearingInformation.countOfSecurityVn, data.releaseSource.clearingInformation.countOfSecurityVn));
 
-            $stepElement.append(wizard.createCategoryLine('ECC Information'));
+            $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="ecc.information" />'));
             data.releaseTarget.eccInformation = data.releaseTarget.eccInformation || {};
             data.releaseSource.eccInformation = data.releaseSource.eccInformation || {};
-            $stepElement.append(wizard.createSingleMergeLine('ECC Status', data.releaseTarget.eccInformation.eccStatus, data.releaseSource.eccInformation.eccStatus, mapFormatter(data.displayInformation, 'eccStatus')));
-            $stepElement.append(wizard.createSingleMergeLine('ECC Comment', data.releaseTarget.eccInformation.eccComment, data.releaseSource.eccInformation.eccComment));
-            $stepElement.append(wizard.createSingleMergeLine('Ausfuhrliste', data.releaseTarget.eccInformation.AL, data.releaseSource.eccInformation.AL));
-            $stepElement.append(wizard.createSingleMergeLine('ECCN', data.releaseTarget.eccInformation.ECCN, data.releaseSource.eccInformation.ECCN));
-            $stepElement.append(wizard.createSingleMergeLine('Material Index Number', data.releaseTarget.eccInformation.materialIndexNumber, data.releaseSource.eccInformation.materialIndexNumber));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="ecc.status" />', data.releaseTarget.eccInformation.eccStatus, data.releaseSource.eccInformation.eccStatus, mapFormatter(data.displayInformation, 'eccStatus')));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="ecc.comment" />', data.releaseTarget.eccInformation.eccComment, data.releaseSource.eccInformation.eccComment));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="ausfuhrliste" />', data.releaseTarget.eccInformation.AL, data.releaseSource.eccInformation.AL));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="eccn" />', data.releaseTarget.eccInformation.ECCN, data.releaseSource.eccInformation.ECCN));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="material.index.number" />', data.releaseTarget.eccInformation.materialIndexNumber, data.releaseSource.eccInformation.materialIndexNumber));
             $stepElement.append(
                 renderAssessorContactPerson(
-                    wizard.createSingleMergeLine('Assessor Contact Person', data.releaseTarget.eccInformation.assessorContactPerson, data.releaseSource.eccInformation.assessorContactPerson),
+                    wizard.createSingleMergeLine('<liferay-ui:message key="assessor.contact.person" />', data.releaseTarget.eccInformation.assessorContactPerson, data.releaseSource.eccInformation.assessorContactPerson),
                     true,
                     data.releaseSource.eccInformation.assessorContactPerson && data.releaseSource.eccInformation.assessorContactPerson != data.releaseTarget.eccInformation.assessorContactPerson,
                     data.releaseSource.eccInformation.assessorContactPerson,
@@ -271,25 +292,25 @@
                 )
             );
 
-            $stepElement.append(wizard.createCategoryLine('Commercial Details Administration'));
+            $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="commercial.details.administration" />'));
             data.releaseTarget.cotsDetails = data.releaseTarget.cotsDetails || {};
             data.releaseSource.cotsDetails = data.releaseSource.cotsDetails || {};
-            $stepElement.append(wizard.createSingleMergeLine('Usage Right Available', data.releaseTarget.cotsDetails.usageRightAvailable, data.releaseSource.cotsDetails.usageRightAvailable, flagFormatter));
-            $stepElement.append(wizard.createSingleMergeLine('COTS Responsible', data.releaseTarget.cotsDetails.cotsResponsible, data.releaseSource.cotsDetails.cotsResponsible));
-            $stepElement.append(wizard.createSingleMergeLine('COTS Clearing Deadline', data.releaseTarget.cotsDetails.clearingDeadline, data.releaseSource.cotsDetails.clearingDeadline));
-            $stepElement.append(wizard.createSingleMergeLine('COTS Clearing Report URL', data.releaseTarget.cotsDetails.licenseClearingReportURL, data.releaseSource.cotsDetails.licenseClearingReportURL));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="usage.right.available" />', data.releaseTarget.cotsDetails.usageRightAvailable, data.releaseSource.cotsDetails.usageRightAvailable, flagFormatter));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="cots.responsible" />', data.releaseTarget.cotsDetails.cotsResponsible, data.releaseSource.cotsDetails.cotsResponsible));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="cots.clearing.deadline" />', data.releaseTarget.cotsDetails.clearingDeadline, data.releaseSource.cotsDetails.clearingDeadline));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="cots.clearing.report.url" />', data.releaseTarget.cotsDetails.licenseClearingReportURL, data.releaseSource.cotsDetails.licenseClearingReportURL));
 
-            $stepElement.append(wizard.createCategoryLine('COTS OSS Information'));
-            $stepElement.append(wizard.createSingleMergeLine('Used License', data.releaseTarget.cotsDetails.usedLicense, data.releaseSource.cotsDetails.usedLicense));
-            $stepElement.append(wizard.createSingleMergeLine('Contains OSS', data.releaseTarget.cotsDetails.containsOSS, data.releaseSource.cotsDetails.containsOSS, flagFormatter));
-            $stepElement.append(wizard.createSingleMergeLine('OSS contract signed', data.releaseTarget.cotsDetails.ossContractSigned, data.releaseSource.cotsDetails.ossContractSigned, flagFormatter));
-            $stepElement.append(wizard.createSingleMergeLine('OSS Information URL', data.releaseTarget.cotsDetails.ossInformationURL, data.releaseSource.cotsDetails.ossInformationURL));
-            $stepElement.append(wizard.createSingleMergeLine('Source Code Available', data.releaseTarget.cotsDetails.sourceCodeAvailable, data.releaseSource.cotsDetails.sourceCodeAvailable, flagFormatter));
+            $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="cots.oss.information" />'));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="used.license" />', data.releaseTarget.cotsDetails.usedLicense, data.releaseSource.cotsDetails.usedLicense));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="contains.oss" />', data.releaseTarget.cotsDetails.containsOSS, data.releaseSource.cotsDetails.containsOSS, flagFormatter));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="oss.contract.signed" />', data.releaseTarget.cotsDetails.ossContractSigned, data.releaseSource.cotsDetails.ossContractSigned, flagFormatter));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="oss.information.url" />', data.releaseTarget.cotsDetails.ossInformationURL, data.releaseSource.cotsDetails.ossInformationURL));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="source.code.available" />', data.releaseTarget.cotsDetails.sourceCodeAvailable, data.releaseSource.cotsDetails.sourceCodeAvailable, flagFormatter));
 
-            $stepElement.append(wizard.createCategoryLine('Attachments'));
+            $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="attachments" />'));
             var sourceAttachmentMerge = createSourceCodeAttachmentsMultiMergeLine(data.displayInformation, data.releaseTarget.attachments, data.releaseSource.attachments);
             $stepElement.append(sourceAttachmentMerge.$element);
-            $stepElement.append(wizard.createMultiMergeLine('Other Attachments', 
+            $stepElement.append(wizard.createMultiMergeLine('<liferay-ui:message key="other.attachments" />', 
                 filterAttachments(data.releaseTarget.attachments, sourceAttachmentMerge.sourceCodeAttachmentIds), 
                 filterAttachments(data.releaseSource.attachments, sourceAttachmentMerge.sourceCodeAttachmentIds),
                 attachmentFormatter(data.displayInformation)
@@ -324,68 +345,68 @@
             releaseSelection.id = releaseTarget.id;
             releaseSelection.componentId = releaseTarget.componentId;
 
-            releaseSelection.vendor = wizard.getEnhancedFinalSingleValue('Vendor').target ? releaseTarget.vendor : releaseSource.vendor;
+            releaseSelection.vendor = wizard.getEnhancedFinalSingleValue('<liferay-ui:message key="vendor" />').target ? releaseTarget.vendor : releaseSource.vendor;
             releaseSelection.vendorId = releaseSelection.vendor ? releaseSelection.vendorId : undefined;
-            releaseSelection.name = wizard.getFinalSingleValue('Name');
-            releaseSelection.version = wizard.getFinalSingleValue('Version');
-            releaseSelection.languages = wizard.getFinalMultiValue('Programming Languages');
-            releaseSelection.operatingSystems = wizard.getFinalMultiValue('Operating Systems');
-            releaseSelection.cpeid = wizard.getFinalSingleValue('CPE ID');
-            releaseSelection.softwarePlatforms = wizard.getFinalMultiValue('Software Platforms');
-            releaseSelection.releaseDate = wizard.getFinalSingleValue('Release Date');
-            releaseSelection.mainLicenseIds = wizard.getFinalMultiValue('Licenses');
-            releaseSelection.downloadurl = wizard.getFinalSingleValue('Download URL');
-            releaseSelection.mainlineState = wizard.getFinalSingleValue('Release Mainline State');
-            releaseSelection.createdOn = wizard.getFinalSingleValue('Created on');
-            releaseSelection.createdBy = wizard.getFinalSingleValue('Created by');
+            releaseSelection.name = wizard.getFinalSingleValue('<liferay-ui:message key="name" />');
+            releaseSelection.version = wizard.getFinalSingleValue('<liferay-ui:message key="version" />');
+            releaseSelection.languages = wizard.getFinalMultiValue('<liferay-ui:message key="programming.languages" />');
+            releaseSelection.operatingSystems = wizard.getFinalMultiValue('<liferay-ui:message key="operating.systems" />');
+            releaseSelection.cpeid = wizard.getFinalSingleValue('<liferay-ui:message key="cpe.id3" />');
+            releaseSelection.softwarePlatforms = wizard.getFinalMultiValue('<liferay-ui:message key="software.platforms" />');
+            releaseSelection.releaseDate = wizard.getFinalSingleValue('<liferay-ui:message key="release.date" />');
+            releaseSelection.mainLicenseIds = wizard.getFinalMultiValue('<liferay-ui:message key="licenses" />');
+            releaseSelection.downloadurl = wizard.getFinalSingleValue('<liferay-ui:message key="download.url" />');
+            releaseSelection.mainlineState = wizard.getFinalSingleValue('<liferay-ui:message key="release.mainline.state" />');
+            releaseSelection.createdOn = wizard.getFinalSingleValue('<liferay-ui:message key="created.on" />');
+            releaseSelection.createdBy = wizard.getFinalSingleValue('<liferay-ui:message key="created.by" />');
 
-            releaseSelection.contributors = wizard.getFinalMultiValue('Contributors');
-            releaseSelection.moderators = wizard.getFinalMultiValue('Moderators');
-            releaseSelection.subscribers = wizard.getFinalMultiValue('Subscribers');
-            releaseSelection.repository = wizard.getFinalSingleValue('Repository');
-            releaseSelection.roles = wizard.getFinalMultiMapValue('Additional Roles');
-            releaseSelection.externalIds = wizard.getFinalMapValue('External ids');
-            releaseSelection.additionalData = wizard.getFinalMapValue('Additional Data');
+            releaseSelection.contributors = wizard.getFinalMultiValue('<liferay-ui:message key="contributors" />');
+            releaseSelection.moderators = wizard.getFinalMultiValue('<liferay-ui:message key="moderators" />');
+            releaseSelection.subscribers = wizard.getFinalMultiValue('<liferay-ui:message key="subscribers" />');
+            releaseSelection.repository = wizard.getFinalSingleValue('<liferay-ui:message key="repository" />');
+            releaseSelection.roles = wizard.getFinalMultiMapValue('<liferay-ui:message key="additional.roles" />');
+            releaseSelection.externalIds = wizard.getFinalMapValue('<liferay-ui:message key="external.ids" />');
+            releaseSelection.additionalData = wizard.getFinalMapValue('<liferay-ui:message key="additional.data" />');
             
             releaseSelection.releaseIdToRelationship = {};
-            wizard.getEnhancedFinalMultiValue('Linked Releases').forEach(function(result) {
+            wizard.getEnhancedFinalMultiValue('<liferay-ui:message key="linked.releases" />').forEach(function(result) {
                 releaseSelection.releaseIdToRelationship[result.value] = result.target ? releaseTarget.releaseIdToRelationship[result.value] : releaseSource.releaseIdToRelationship[result.value];
             });
 
             releaseSelection.clearingInformation = {};
-            releaseSelection.clearingInformation.binariesOriginalFromCommunity = wizard.getFinalSingleValue('Binaries Original from Community');
-            releaseSelection.clearingInformation.binariesSelfMade = wizard.getFinalSingleValue('Binaries Self-Made');
-            releaseSelection.clearingInformation.componentLicenseInformation = wizard.getFinalSingleValue('Component License Information');
-            releaseSelection.clearingInformation.sourceCodeDelivery = wizard.getFinalSingleValue('Source Code Delivery');
-            releaseSelection.clearingInformation.sourceCodeOriginalFromCommunity = wizard.getFinalSingleValue('Source Code Original from Community');
-            releaseSelection.clearingInformation.sourceCodeToolMade = wizard.getFinalSingleValue('Source Code Tool-Made');
-            releaseSelection.clearingInformation.sourceCodeSelfMade = wizard.getFinalSingleValue('Source Code Self-Made');
-            releaseSelection.clearingInformation.screenshotOfWebSite = wizard.getFinalSingleValue('Screenshot of Website');
-            releaseSelection.clearingInformation.finalizedLicenseScanReport = wizard.getFinalSingleValue('Finalized License Scan Report');
-            releaseSelection.clearingInformation.licenseScanReportResult = wizard.getFinalSingleValue('License Scan Report Result');
-            releaseSelection.clearingInformation.legalEvaluation = wizard.getFinalSingleValue('Legal Evaluation');
-            releaseSelection.clearingInformation.licenseAgreement = wizard.getFinalSingleValue('License Agreement');
-            releaseSelection.clearingInformation.scanned = wizard.getFinalSingleValue('Scanned');
-            releaseSelection.clearingInformation.componentClearingReport = wizard.getFinalSingleValue('Component Clearing Report');
-            releaseSelection.clearingInformation.clearingStandard = wizard.getFinalSingleValue('Clearing Standard');
-            releaseSelection.clearingInformation.externalUrl = wizard.getFinalSingleValue('External URL');
-            releaseSelection.clearingInformation.comment = wizard.getFinalSingleValue('Comment');
+            releaseSelection.clearingInformation.binariesOriginalFromCommunity = wizard.getFinalSingleValue('<liferay-ui:message key="binaries.original.from.community" />');
+            releaseSelection.clearingInformation.binariesSelfMade = wizard.getFinalSingleValue('<liferay-ui:message key="binaries.self.made" />');
+            releaseSelection.clearingInformation.componentLicenseInformation = wizard.getFinalSingleValue('<liferay-ui:message key="component.license.information" />');
+            releaseSelection.clearingInformation.sourceCodeDelivery = wizard.getFinalSingleValue('<liferay-ui:message key="source.code.delivery" />');
+            releaseSelection.clearingInformation.sourceCodeOriginalFromCommunity = wizard.getFinalSingleValue('<liferay-ui:message key="source.code.original.from.community" />');
+            releaseSelection.clearingInformation.sourceCodeToolMade = wizard.getFinalSingleValue('<liferay-ui:message key="source.code.tool.made" />');
+            releaseSelection.clearingInformation.sourceCodeSelfMade = wizard.getFinalSingleValue('<liferay-ui:message key="source.code.self.made" />');
+            releaseSelection.clearingInformation.screenshotOfWebSite = wizard.getFinalSingleValue('<liferay-ui:message key="screenshot.of.website" />');
+            releaseSelection.clearingInformation.finalizedLicenseScanReport = wizard.getFinalSingleValue('<liferay-ui:message key="finalized.license.scan.report" />');
+            releaseSelection.clearingInformation.licenseScanReportResult = wizard.getFinalSingleValue('<liferay-ui:message key="license.scan.report.result" />');
+            releaseSelection.clearingInformation.legalEvaluation = wizard.getFinalSingleValue('<liferay-ui:message key="legal.evaluation" />');
+            releaseSelection.clearingInformation.licenseAgreement = wizard.getFinalSingleValue('<liferay-ui:message key="license.agreement" />');
+            releaseSelection.clearingInformation.scanned = wizard.getFinalSingleValue('<liferay-ui:message key="scanned" />');
+            releaseSelection.clearingInformation.componentClearingReport = wizard.getFinalSingleValue('<liferay-ui:message key="component.clearing.report" />');
+            releaseSelection.clearingInformation.clearingStandard = wizard.getFinalSingleValue('<liferay-ui:message key="clearing.standard" />');
+            releaseSelection.clearingInformation.externalUrl = wizard.getFinalSingleValue('<liferay-ui:message key="external.url" />');
+            releaseSelection.clearingInformation.comment = wizard.getFinalSingleValue('<liferay-ui:message key="comment" />');
 
-            releaseSelection.clearingInformation.requestID = wizard.getFinalSingleValue('Request ID');
-            releaseSelection.clearingInformation.additionalRequestInfo = wizard.getFinalSingleValue('Additional Request Info');
-            releaseSelection.clearingInformation.procStart = wizard.getFinalSingleValue('Evaluation Start');
-            releaseSelection.clearingInformation.evaluated = wizard.getFinalSingleValue('Evalutation End');
+            releaseSelection.clearingInformation.requestID = wizard.getFinalSingleValue('<liferay-ui:message key="request.id" />');
+            releaseSelection.clearingInformation.additionalRequestInfo = wizard.getFinalSingleValue('<liferay-ui:message key="additional.request.info" />');
+            releaseSelection.clearingInformation.procStart = wizard.getFinalSingleValue('<liferay-ui:message key="evaluation.start" />');
+            releaseSelection.clearingInformation.evaluated = wizard.getFinalSingleValue('<liferay-ui:message key="evaluation.end" />');
             
-            releaseSelection.clearingInformation.externalSupplierID = wizard.getFinalSingleValue('External Supplier ID');
-            releaseSelection.clearingInformation.countOfSecurityVn = wizard.getFinalSingleValue('Count of Security Vulnerabilities');
+            releaseSelection.clearingInformation.externalSupplierID = wizard.getFinalSingleValue('<liferay-ui:message key="external.supplier.id" />');
+            releaseSelection.clearingInformation.countOfSecurityVn = wizard.getFinalSingleValue('<liferay-ui:message key="count.of.security.vulnerabilities" />');
 
             releaseSelection.eccInformation = {};
-            releaseSelection.eccInformation.eccStatus = wizard.getFinalSingleValue('ECC Status');
-            releaseSelection.eccInformation.eccComment = wizard.getFinalSingleValue('ECC Comment');
-            releaseSelection.eccInformation.AL = wizard.getFinalSingleValue('Ausfuhrliste');
-            releaseSelection.eccInformation.ECCN = wizard.getFinalSingleValue('ECCN');
-            releaseSelection.eccInformation.materialIndexNumber = wizard.getFinalSingleValue('Material Index Number');
-            assessorResult = wizard.getEnhancedFinalSingleValue('Assessor Contact Person');
+            releaseSelection.eccInformation.eccStatus = wizard.getFinalSingleValue('<liferay-ui:message key="ecc.status" />');
+            releaseSelection.eccInformation.eccComment = wizard.getFinalSingleValue('<liferay-ui:message key="ecc.comment" />');
+            releaseSelection.eccInformation.AL = wizard.getFinalSingleValue('<liferay-ui:message key="ausfuhrliste" />');
+            releaseSelection.eccInformation.ECCN = wizard.getFinalSingleValue('<liferay-ui:message key="eccn" />');
+            releaseSelection.eccInformation.materialIndexNumber = wizard.getFinalSingleValue('<liferay-ui:message key="material.index.number" />');
+            assessorResult = wizard.getEnhancedFinalSingleValue('<liferay-ui:message key="assessor.contact.person" />');
             if(assessorResult.target) {
                 releaseSelection.eccInformation.assessorContactPerson = releaseTarget.eccInformation.assessorContactPerson;
                 releaseSelection.eccInformation.assessorDepartment = releaseTarget.eccInformation.assessorDepartment;
@@ -397,25 +418,25 @@
             }
 
             releaseSelection.cotsDetails = {};
-            releaseSelection.cotsDetails.usageRightAvailable = wizard.getFinalSingleValue('Usage Right Available');
-            releaseSelection.cotsDetails.cotsResponsible = wizard.getFinalSingleValue('COTS Responsible');
-            releaseSelection.cotsDetails.clearingDeadline = wizard.getFinalSingleValue('COTS Clearing Deadline');
-            releaseSelection.cotsDetails.licenseClearingReportURL = wizard.getFinalSingleValue('COTS Clearing Report URL');
+            releaseSelection.cotsDetails.usageRightAvailable = wizard.getFinalSingleValue('<liferay-ui:message key="usage.right.available" />');
+            releaseSelection.cotsDetails.cotsResponsible = wizard.getFinalSingleValue('<liferay-ui:message key="cots.responsible" />');
+            releaseSelection.cotsDetails.clearingDeadline = wizard.getFinalSingleValue('<liferay-ui:message key="cots.clearing.deadline" />');
+            releaseSelection.cotsDetails.licenseClearingReportURL = wizard.getFinalSingleValue('<liferay-ui:message key="cots.clearing.report.url" />');
 
-            releaseSelection.cotsDetails.usedLicense = wizard.getFinalSingleValue('Used License');
-            releaseSelection.cotsDetails.containsOSS = wizard.getFinalSingleValue('Contains OSS');
-            releaseSelection.cotsDetails.ossContractSigned = wizard.getFinalSingleValue('OSS contract signed');
-            releaseSelection.cotsDetails.ossInformationURL = wizard.getFinalSingleValue('OSS Information URL');
-            releaseSelection.cotsDetails.sourceCodeAvailable = wizard.getFinalSingleValue('Source Code Available');
+            releaseSelection.cotsDetails.usedLicense = wizard.getFinalSingleValue('<liferay-ui:message key="used.license" />');
+            releaseSelection.cotsDetails.containsOSS = wizard.getFinalSingleValue('<liferay-ui:message key="contains.oss" />');
+            releaseSelection.cotsDetails.ossContractSigned = wizard.getFinalSingleValue('<liferay-ui:message key="oss.contract.signed" />');
+            releaseSelection.cotsDetails.ossInformationURL = wizard.getFinalSingleValue('<liferay-ui:message key="oss.information.url" />');
+            releaseSelection.cotsDetails.sourceCodeAvailable = wizard.getFinalSingleValue('<liferay-ui:message key="source.code.available" />');
 
 
             releaseSelection.attachments = [];
-            sourceCodeAttachments = wizard.getFinalMultiValue('Matching Source Attachments');
+            sourceCodeAttachments = wizard.getFinalMultiValue('<liferay-ui:message key="matching.source.attachments" />');
             $.each(sourceCodeAttachments, function(index, value) {
                 /* add just required fields for easy identification */
                 releaseSelection.attachments.push(JSON.parse('{ "attachmentContentId": "' + value.attachmentContentId + '", "filename": "' + value.filename + '"}'));
             });
-            attachments = wizard.getFinalMultiValue('Other Attachments');
+            attachments = wizard.getFinalMultiValue('<liferay-ui:message key="other.attachments" />');
             $.each(attachments, function(index, value) {
                 /* add just required fields for easy identification */
                 releaseSelection.attachments.push(JSON.parse('{ "attachmentContentId": "' + value.attachmentContentId + '", "filename": "' + value.filename + '"}'));
@@ -438,101 +459,101 @@
 
             $stepElement.append(renderNotice(usageInformation));
 
-            $stepElement.append(wizard.createCategoryLine('General'));
-            $stepElement.append(wizard.createSingleDisplayLine('Vendor', 
+            $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="general" />'));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="vendor" />', 
                 data.releaseSelection.vendor ? data.releaseSelection.vendor.id : null, 
                 vendorFormatter(releaseTarget.vendor, releaseSource.vendor)
             ));
-            $stepElement.append(wizard.createSingleDisplayLine('Name', data.releaseSelection.name));
-            $stepElement.append(wizard.createSingleDisplayLine('Version', data.releaseSelection.version));
-            $stepElement.append(wizard.createMultiDisplayLine('Programming Languages', data.releaseSelection.languages));
-            $stepElement.append(wizard.createMultiDisplayLine('Operating Systems', data.releaseSelection.operatingSystems));
-            $stepElement.append(wizard.createSingleDisplayLine('CPE ID', data.releaseSelection.cpeid));
-            $stepElement.append(wizard.createMultiDisplayLine('Software Platforms', data.releaseSelection.softwarePlatforms));
-            $stepElement.append(wizard.createSingleDisplayLine('Release Date', data.releaseSelection.releaseDate));
-            $stepElement.append(wizard.createMultiDisplayLine('Licenses', data.releaseSelection.mainLicenseIds));
-            $stepElement.append(wizard.createSingleDisplayLine('Download URL', data.releaseSelection.downloadurl));
-            $stepElement.append(wizard.createSingleDisplayLine('Release Mainline State', data.releaseSelection.mainlineState, mapFormatter(displayInformation, 'mainlineState')));
-            $stepElement.append(wizard.createSingleDisplayLine('Created on', data.releaseSelection.createdOn));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="name" />', data.releaseSelection.name));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="version" />', data.releaseSelection.version));
+            $stepElement.append(wizard.createMultiDisplayLine('<liferay-ui:message key="programming.languages" />', data.releaseSelection.languages));
+            $stepElement.append(wizard.createMultiDisplayLine('<liferay-ui:message key="operating.systems" />', data.releaseSelection.operatingSystems));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="cpe.id3" />', data.releaseSelection.cpeid));
+            $stepElement.append(wizard.createMultiDisplayLine('<liferay-ui:message key="software.platforms" />', data.releaseSelection.softwarePlatforms));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="release.date" />', data.releaseSelection.releaseDate));
+            $stepElement.append(wizard.createMultiDisplayLine('<liferay-ui:message key="licenses" />', data.releaseSelection.mainLicenseIds));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="download.url" />', data.releaseSelection.downloadurl));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="release.mainline.state" />', data.releaseSelection.mainlineState, mapFormatter(displayInformation, 'mainlineState')));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="created.on" />', data.releaseSelection.createdOn));
             $stepElement.append(
                 renderCreatedBy(
-                    wizard.createSingleDisplayLine('Created by', data.releaseSelection.createdBy),
+                    wizard.createSingleDisplayLine('<liferay-ui:message key="created.by" />', data.releaseSelection.createdBy),
                     releaseSource.createdBy != releaseTarget.createdBy,
                     data.releaseSelection.createdBy === releaseSource.createdBy ? releaseTarget.createdBy : releaseSource.createdBy,
                     'pl-3'
                 )
             );
-            $stepElement.append(wizard.createMultiDisplayLine('Contributors', data.releaseSelection.contributors));
-            $stepElement.append(wizard.createMultiDisplayLine('Moderators', data.releaseSelection.moderators));
-            $stepElement.append(wizard.createMultiDisplayLine('Subscribers', data.releaseSelection.subscribers));
-            $stepElement.append(wizard.createSingleDisplayLine('Repository', data.releaseSelection.repository, repositoryFormatter(displayInformation)));
-            $stepElement.append(wizard.createMultiMapDisplayLine('Additional Roles', data.releaseSelection.roles));
-            $stepElement.append(wizard.createMapDisplayLine('External ids', data.releaseSelection.externalIds));
-            $stepElement.append(wizard.createMapDisplayLine('Additional Data', data.releaseSelection.additionalData));
+            $stepElement.append(wizard.createMultiDisplayLine('<liferay-ui:message key="contributors" />', data.releaseSelection.contributors));
+            $stepElement.append(wizard.createMultiDisplayLine('<liferay-ui:message key="moderators" />', data.releaseSelection.moderators));
+            $stepElement.append(wizard.createMultiDisplayLine('<liferay-ui:message key="subscribers" />', data.releaseSelection.subscribers));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="repository" />', data.releaseSelection.repository, repositoryFormatter(displayInformation)));
+            $stepElement.append(wizard.createMultiMapDisplayLine('<liferay-ui:message key="additional.roles" />', data.releaseSelection.roles));
+            $stepElement.append(wizard.createMapDisplayLine('<liferay-ui:message key="external.ids" />', data.releaseSelection.externalIds));
+            $stepElement.append(wizard.createMapDisplayLine('<liferay-ui:message key="additional.data" />', data.releaseSelection.additionalData));
             
-            $stepElement.append(wizard.createCategoryLine('Linked Releases'));
-            $stepElement.append(wizard.createMultiDisplayLine('Linked Releases', Object.keys(data.releaseSelection.releaseIdToRelationship), mapFormatter(displayInformation, 'release')));
+            $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="linked.releases" />'));
+            $stepElement.append(wizard.createMultiDisplayLine('<liferay-ui:message key="linked.releases" />', Object.keys(data.releaseSelection.releaseIdToRelationship), mapFormatter(displayInformation, 'release')));
 
-            $stepElement.append(wizard.createCategoryLine('Clearing Details'));
-            $stepElement.append(wizard.createSingleDisplayLine('Binaries Original from Community', data.releaseSelection.clearingInformation.binariesOriginalFromCommunity, flagFormatter));
-            $stepElement.append(wizard.createSingleDisplayLine('Binaries Self-Made', data.releaseSelection.clearingInformation.binariesSelfMade, flagFormatter));
-            $stepElement.append(wizard.createSingleDisplayLine('Component License Information', data.releaseSelection.clearingInformation.componentLicenseInformation, flagFormatter));
-            $stepElement.append(wizard.createSingleDisplayLine('Source Code Delivery', data.releaseSelection.clearingInformation.sourceCodeDelivery, flagFormatter));
-            $stepElement.append(wizard.createSingleDisplayLine('Source Code Original from Community', data.releaseSelection.clearingInformation.sourceCodeOriginalFromCommunity, flagFormatter));
-            $stepElement.append(wizard.createSingleDisplayLine('Source Code Tool-Made', data.releaseSelection.clearingInformation.sourceCodeToolMade, flagFormatter));
-            $stepElement.append(wizard.createSingleDisplayLine('Source Code Self-Made', data.releaseSelection.clearingInformation.sourceCodeSelfMade, flagFormatter));
-            $stepElement.append(wizard.createSingleDisplayLine('Screenshot of Website', data.releaseSelection.clearingInformation.screenshotOfWebSite, flagFormatter));
-            $stepElement.append(wizard.createSingleDisplayLine('Finalized License Scan Report', data.releaseSelection.clearingInformation.finalizedLicenseScanReport, flagFormatter));
-            $stepElement.append(wizard.createSingleDisplayLine('License Scan Report Result', data.releaseSelection.clearingInformation.licenseScanReportResult, flagFormatter));
-            $stepElement.append(wizard.createSingleDisplayLine('Legal Evaluation', data.releaseSelection.clearingInformation.legalEvaluation, flagFormatter));
-            $stepElement.append(wizard.createSingleDisplayLine('License Agreement', data.releaseSelection.clearingInformation.licenseAgreement, flagFormatter));
-            $stepElement.append(wizard.createSingleDisplayLine('Scanned', data.releaseSelection.clearingInformation.scanned));
-            $stepElement.append(wizard.createSingleDisplayLine('Component Clearing Report', data.releaseSelection.clearingInformation.componentClearingReport, flagFormatter));
-            $stepElement.append(wizard.createSingleDisplayLine('Clearing Standard', data.releaseSelection.clearingInformation.clearingStandard));
-            $stepElement.append(wizard.createSingleDisplayLine('External URL', data.releaseSelection.clearingInformation.externalUrl));
-            $stepElement.append(wizard.createSingleDisplayLine('Comment', data.releaseSelection.clearingInformation.comment));
+            $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="clearing.details" />'));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="binaries.original.from.community" />', data.releaseSelection.clearingInformation.binariesOriginalFromCommunity, flagFormatter));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="binaries.self.made" />', data.releaseSelection.clearingInformation.binariesSelfMade, flagFormatter));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="component.license.information" />', data.releaseSelection.clearingInformation.componentLicenseInformation, flagFormatter));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="source.code.delivery" />', data.releaseSelection.clearingInformation.sourceCodeDelivery, flagFormatter));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="source.code.original.from.community" />', data.releaseSelection.clearingInformation.sourceCodeOriginalFromCommunity, flagFormatter));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="source.code.tool.made" />', data.releaseSelection.clearingInformation.sourceCodeToolMade, flagFormatter));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="source.code.self.made" />', data.releaseSelection.clearingInformation.sourceCodeSelfMade, flagFormatter));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="screenshot.of.website" />', data.releaseSelection.clearingInformation.screenshotOfWebSite, flagFormatter));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="finalized.license.scan.report" />', data.releaseSelection.clearingInformation.finalizedLicenseScanReport, flagFormatter));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="license.scan.report.result" />', data.releaseSelection.clearingInformation.licenseScanReportResult, flagFormatter));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="legal.evaluation" />', data.releaseSelection.clearingInformation.legalEvaluation, flagFormatter));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="license.agreement" />', data.releaseSelection.clearingInformation.licenseAgreement, flagFormatter));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="scanned" />', data.releaseSelection.clearingInformation.scanned));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="component.clearing.report" />', data.releaseSelection.clearingInformation.componentClearingReport, flagFormatter));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="clearing.standard" />', data.releaseSelection.clearingInformation.clearingStandard));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="external.url" />', data.releaseSelection.clearingInformation.externalUrl));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="comment" />', data.releaseSelection.clearingInformation.comment));
 
-            $stepElement.append(wizard.createCategoryLine('Request Information'));
-            $stepElement.append(wizard.createSingleDisplayLine('Request ID', data.releaseSelection.clearingInformation.requestID));
-            $stepElement.append(wizard.createSingleDisplayLine('Additional Request Info', data.releaseSelection.clearingInformation.additionalRequestInfo));
-            $stepElement.append(wizard.createSingleDisplayLine('Evaluation Start', data.releaseSelection.clearingInformation.procStart));
-            $stepElement.append(wizard.createSingleDisplayLine('Evalutation End', data.releaseSelection.clearingInformation.evaluated));
+            $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="request.information" />'));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="request.id" />', data.releaseSelection.clearingInformation.requestID));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="additional.request.info" />', data.releaseSelection.clearingInformation.additionalRequestInfo));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="evaluation.start" />', data.releaseSelection.clearingInformation.procStart));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="evaluation.end" />', data.releaseSelection.clearingInformation.evaluated));
 
-            $stepElement.append(wizard.createCategoryLine('Supplemental Information'));
-            $stepElement.append(wizard.createSingleDisplayLine('External Supplier ID', data.releaseSelection.clearingInformation.externalSupplierID));
-            $stepElement.append(wizard.createSingleDisplayLine('Count of Security Vulnerabilities', data.releaseSelection.clearingInformation.countOfSecurityVn));
+            $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="supplemental.information" />'));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="external.supplier.id" />', data.releaseSelection.clearingInformation.externalSupplierID));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="count.of.security.vulnerabilities" />', data.releaseSelection.clearingInformation.countOfSecurityVn));
 
-            $stepElement.append(wizard.createCategoryLine('ECC Information'));
-            $stepElement.append(wizard.createSingleDisplayLine('ECC Status', data.releaseSelection.eccInformation.eccStatus, mapFormatter(displayInformation, 'eccStatus')));
-            $stepElement.append(wizard.createSingleDisplayLine('ECC Comment', data.releaseSelection.eccInformation.eccComment));
-            $stepElement.append(wizard.createSingleDisplayLine('Ausfuhrliste', data.releaseSelection.eccInformation.AL));
-            $stepElement.append(wizard.createSingleDisplayLine('ECCN', data.releaseSelection.eccInformation.ECCN));
-            $stepElement.append(wizard.createSingleDisplayLine('Material Index Number', data.releaseSelection.eccInformation.materialIndexNumber));
+            $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="ecc.information" />'));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="ecc.status" />', data.releaseSelection.eccInformation.eccStatus, mapFormatter(displayInformation, 'eccStatus')));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="ecc.comment" />', data.releaseSelection.eccInformation.eccComment));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="ausfuhrliste" />', data.releaseSelection.eccInformation.AL));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="eccn" />', data.releaseSelection.eccInformation.ECCN));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="material.index.number" />', data.releaseSelection.eccInformation.materialIndexNumber));
             $stepElement.append(
                 renderAssessorContactPerson(
-                    wizard.createSingleDisplayLine('Assessor Contact Person', data.releaseSelection.eccInformation.assessorContactPerson),
+                    wizard.createSingleDisplayLine('<liferay-ui:message key="assessor.contact.person" />', data.releaseSelection.eccInformation.assessorContactPerson),
                     false,
-                    !wizard.getEnhancedFinalSingleValue('Assessor Contact Person').target,
+                    !wizard.getEnhancedFinalSingleValue('<liferay-ui:message key="assessor.contact.person" />').target,
                     true,
                     'pl-3'
                 )
             );
 
-            $stepElement.append(wizard.createCategoryLine('Commercial Details Administration'));
-            $stepElement.append(wizard.createSingleDisplayLine('Usage Right Available', data.releaseSelection.cotsDetails.usageRightAvailable, flagFormatter));
-            $stepElement.append(wizard.createSingleDisplayLine('COTS Responsible', data.releaseSelection.cotsDetails.cotsResponsible));
-            $stepElement.append(wizard.createSingleDisplayLine('COTS Clearing Deadline', data.releaseSelection.cotsDetails.clearingDeadline));
-            $stepElement.append(wizard.createSingleDisplayLine('COTS Clearing Report URL', data.releaseSelection.cotsDetails.licenseClearingReportURL));
+            $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="commercial.details.administration" />'));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="usage.right.available" />', data.releaseSelection.cotsDetails.usageRightAvailable, flagFormatter));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="cots.responsible" />', data.releaseSelection.cotsDetails.cotsResponsible));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="cots.clearing.deadline" />', data.releaseSelection.cotsDetails.clearingDeadline));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="cots.clearing.report.url" />', data.releaseSelection.cotsDetails.licenseClearingReportURL));
 
-            $stepElement.append(wizard.createCategoryLine('COTS OSS Information'));
-            $stepElement.append(wizard.createSingleDisplayLine('Used License', data.releaseSelection.cotsDetails.usedLicense));
-            $stepElement.append(wizard.createSingleDisplayLine('Contains OSS', data.releaseSelection.cotsDetails.containsOSS, flagFormatter));
-            $stepElement.append(wizard.createSingleDisplayLine('OSS contract signed', data.releaseSelection.cotsDetails.ossContractSigned, flagFormatter));
-            $stepElement.append(wizard.createSingleDisplayLine('OSS Information URL', data.releaseSelection.cotsDetails.ossInformationURL));
-            $stepElement.append(wizard.createSingleDisplayLine('Source Code Available', data.releaseSelection.cotsDetails.sourceCodeAvailable, flagFormatter));
+            $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="cots.oss.information" />'));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="used.license" />', data.releaseSelection.cotsDetails.usedLicense));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="contains.oss" />', data.releaseSelection.cotsDetails.containsOSS, flagFormatter));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="oss.contract.signed" />', data.releaseSelection.cotsDetails.ossContractSigned, flagFormatter));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="oss.information.url" />', data.releaseSelection.cotsDetails.ossInformationURL));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="source.code.available" />', data.releaseSelection.cotsDetails.sourceCodeAvailable, flagFormatter));
 
-            $stepElement.append(wizard.createCategoryLine('Attachments'));
-            $stepElement.append(wizard.createMultiDisplayLine('Attachments', data.releaseSelection.attachments, attachmentFormatter(displayInformation)));
+            $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="attachments" />'));
+            $stepElement.append(wizard.createMultiDisplayLine('<liferay-ui:message key="attachments" />', data.releaseSelection.attachments, attachmentFormatter(displayInformation)));
         }
 
         function submitConfirmedMergedRelease($stepElement) {
@@ -546,7 +567,7 @@
                 $stepElement.html('<div class="stepFeedback"></div>');
             }
 
-            $stepElement.find('.stepFeedback').html('<div class="alert alert-danger">Cannot continue to merge of releases: ' + textStatus + error + '</div>');
+            $stepElement.find('.stepFeedback').html('<div class="alert alert-danger"><liferay-ui:message key="cannot.continue.to.merge.of.releases" />' + textStatus + error + '</div>');
             $('html, body').stop().animate({ scrollTop: 0 }, 300, 'swing');
         }
 
@@ -559,13 +580,13 @@
         function flagFormatter(flag) {
             if(flag) {
                 return  '<span class=\"text-success\">' +
-                        '   <svg class=\"lexicon-icon\"><title>Yes</title><use href=\"/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#check-circle\"/></svg>' +
-                        '   &nbsp;Yes' +
+                        '   <svg class=\"lexicon-icon\"><title><liferay-ui:message key="yes" /></title><use href=\"/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#check-circle\"/></svg>' +
+                        '   &nbsp;<liferay-ui:message key="yes" />' +
                         '</span>';
             } else {
                 return  '<span class=\"text-danger\">' +
-                        '   <svg class=\"lexicon-icon\"><title>Yes</title><use href=\"/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#times-circle\"/></svg>' +
-                        '   &nbsp;No' +
+                        '   <svg class=\"lexicon-icon\"><title><liferay-ui:message key="yes" /></title><use href=\"/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#times-circle\"/></svg>' +
+                        '   &nbsp;<title><liferay-ui:message key="no" />' +
                         '</span>';
             }
         }
@@ -600,7 +621,7 @@
         function renderCreatedBy($line, renderInfo, user, alignment) {
             var $info = "<small class='merge-info-createdby form-text mt-0 pb-2 " + alignment + "'>" + 
                 "<svg class='lexicon-icon'><use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle-open' /></svg> " + 
-                "The user <b class='user'>" + (user || '') + "</b> will be added to the list of moderators." +
+                <liferay-ui:message key="the.user.x.or.will.be.added.to.the.list.of.moderators" /> +
                 "</small>";
 
             if(renderInfo) {
@@ -623,9 +644,9 @@
             } else {       
                 message = "<svg class='lexicon-icon'><use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle-open' /></svg> ";
                 if(useTarget) {
-                    message += "Changing the assessor contact person to <b>" + (user || '') + "</b> will change the fields <b>Assessor Department</b> and <b>Assessement Date</b> accordingly.";
+                    message += <liferay-ui:message key="changing.the.assessor.contact.person.to.x.or.will.change.the.fields.assessor.department.and.assessement.date.accordingly" />;
                 } else {
-                    message += "The fields <b>Assessor Department</b> and <b>Assessement Date</b> will be taken as well.";
+                    message += <liferay-ui:message key="the.fields.assessor.department.and.assessement.date.will.be.taken.as.well" />;
                 }
             }
 
@@ -640,7 +661,7 @@
             targetAttachments = targetAttachments || [];
             sourceAttachments = sourceAttachments || [];
 
-            result.$element = wizard.createCustomMergeLines('Matching Source Attachments', function(container, createSingleMergeContent) {
+            result.$element = wizard.createCustomMergeLines('<liferay-ui:message key="matching.source.attachments" />', function(container, createSingleMergeContent) {
                 var rowIndex = 0;
 
                 targetAttachments.forEach(function(targetAttachment) {
@@ -661,7 +682,7 @@
             result.$element.append('' +
                 "<small class='merge-info-attachments form-text mt-0 pb-2 text-center'>" +
                     "<svg class='lexicon-icon'><use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle-open' /></svg> " +
-                    "Source Code Attachments are always taken from source release and cannot be deselected." +
+                    "<liferay-ui:message key="source.code.attachments.are.always.taken.from.source.release.and.cannot.be.deselected" />" +
                 "</small>"
             );
 
@@ -689,7 +710,7 @@
         function renderNotice(usageInformation) {
             var $note = $(
                 '<div class="alert mt-4">' +
-                    'The following documents will be affected by this merge and are changed accordingly:' +
+                    '<liferay-ui:message key="the.following.documents.will.be.affected.by.this.merge.and.are.changed.accordingly" />' +
                     '<ul>' +
                     '</ul>' +
                 '</div>'
@@ -704,40 +725,40 @@
             }
             
             if(usageInformation.projects > 0) {
-                var $li = $('<li><b class="number"></b> project(s)</li>');
+                var $li = $('<li><b class="number"></b> <liferay-ui:message key="projects2" /></li>');
                 $li.find('.number').text(usageInformation.projects)
                 
                 $note.find('ul').append($li);
             }
             if(usageInformation.releases > 0) {
-                var $li = $('<li><b class="number"></b> release(s)</li>');
+                var $li = $('<li><b class="number"></b> <liferay-ui:message key="releases2" /></li>');
                 $li.find('.number').text(usageInformation.releases)
                 
                 $note.find('ul').append($li);
             }
             if(usageInformation.releaseVulnerabilities > 0) {
-                var $li = $('<li><b class="number"></b> vulnerabilities</li>');
+                var $li = $('<li><b class="number"></b> <liferay-ui:message key="vulnerabilities2" /></li>');
                 $li.find('.number').text(usageInformation.releaseVulnerabilities)
                 
                 $note.find('ul').append($li);
             }
             if(usageInformation.attachmentUsages > 0) {
-                var $li = $('<li><b class="number"></b> attachment usage(s)</li>');
+                var $li = $('<li><b class="number"></b> <liferay-ui:message key="attachment.usages2" /></li>');
                 $li.find('.number').text(usageInformation.attachmentUsages)
                 
                 $note.find('ul').append($li);
             }
             if(usageInformation.projectRatings > 0) {
-                var $li = $('<li><b class="number"></b> project rating(s)</li>');
+                var $li = $('<li><b class="number"></b> <liferay-ui:message key="project.ratings" /></li>');
                 $li.find('.number').text(usageInformation.projectRatings)
                 
                 $note.find('ul').append($li);
             }
 
             if(usageInformation.projects + usageInformation.releases + usageInformation.releaseVulnerabilities + usageInformation.attachmentUsages + usageInformation.projectRatings > 1000) {
-                $note.append('<b>More than 1000 documents affected. The merge operation might time out. In consequence only some of ' +
-                    'the documents might be changed accordingly. In this case just restart the operation as long as the source release ' + 
-                    'continues to exist.');
+                $note.append('<b><liferay-ui:message key="more.than.1000.documents.affected.the.merge.operation.might.time.out.in.consequence.only.some.of" /> ' +
+                    '<liferay-ui:message key="the.documents.might.be.changed.accordingly.in.this.case.just.restart.the.operation.as.long.as.the.source.release" /> ' + 
+                    '<liferay-ui:message key="continues.to.exist" />');
                 $note.addClass('alert-warning');
             } else {
                 $note.addClass('alert-info');

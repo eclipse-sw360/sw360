@@ -10,13 +10,13 @@
 
 <%@ page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship" %>
 
-<h4>Linked Projects</h4>
+<h4><liferay-ui:message key="linked.projects" /></h4>
 <table class="table edit-table three-columns-with-actions" id="LinkedProjectsInfo">
     <thead>
         <tr>
-            <th>Project Name</th>
-            <th>Project Version</th>
-            <th>Project Relation <sw360:DisplayEnumInfo type="<%=ProjectRelationship.class%>"/></th>
+            <th><liferay-ui:message key="project.name" /></th>
+            <th><liferay-ui:message key="project.version" /></th>
+            <th><liferay-ui:message key="project.relation" /> <sw360:DisplayEnumInfo type="<%=ProjectRelationship.class%>"/></th>
             <th></th>
         </tr>
     </thead>
@@ -25,7 +25,7 @@
     </tbody>
 </table>
 
-<button type="button" class="btn btn-secondary" id="addLinkedProjectButton">Add Projects</button>
+<button type="button" class="btn btn-secondary" id="addLinkedProjectButton"><liferay-ui:message key="add.projects" /></button>
 
 <div class="dialogs">
     <div id="deleteLinkedProjectDialog" class="modal fade" tabindex="-1" role="dialog">
@@ -34,7 +34,7 @@
                 <div class="modal-header">
                     <h5 class="modal-title">
                         <clay:icon symbol="question-circle" />
-                        Delete link to project?
+                        <liferay-ui:message key="delete.link.to.project" />
                     </h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
@@ -42,12 +42,12 @@
                 </div>
                 <div class="modal-body">
                     <p>
-                        Do you really want to remove the link to project <b data-name="project"></b>?
+                        <liferay-ui:message key="do.you.really.want.to.remove.the.link.to.project.x" />
                     </p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger">Delete Link</button>
+                    <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="cancel" /></button>
+                    <button type="button" class="btn btn-danger"><liferay-ui:message key="delete.link" /></button>
                 </div>
             </div>
         </div>

@@ -26,16 +26,16 @@
     <table class="table info_table" id="poInfoTableByRelease" style="table-layout: auto">
         <thead>
             <tr>
-                <th colspan="4" class="headlabel">Project Obligation Status</th>
+                <th colspan="4" class="headlabel"><liferay-ui:message key="project.obligation.status" /></th>
             </tr>
             <tr>
-                <th width="35%">Release &#8883; License Type &#8883;
-                    License &#8883; Obligation</th>
-                <th width="25%">Text</th>
+                <th width="35%"><liferay-ui:message key="release" /> &#8883; <liferay-ui:message key="license.type" /> &#8883;
+                    <liferay-ui:message key="release" /> &#8883; <liferay-ui:message key="obligation" /></th>
+                <th width="25%"><liferay-ui:message key="text" /></th>
                 <!-- Commented code for obligation action, until action select options are provided -->
-                <!-- <th width="10">Action taken</th> -->
-                <th width="10%">Status</th>
-                <th width="20%">Comment</th>
+                <!-- <th width="10"><liferay-ui:message key="action.taken" /></th> -->
+                <th width="10%"><liferay-ui:message key="status" /></th>
+                <th width="20%"><liferay-ui:message key="comment" /></th>
             </tr>
         </thead>
         <tbody>
@@ -81,7 +81,7 @@
                             <tr
                             <core_rt:set var="osi" value="${obligation.obligationStatusInfo}" />
                             <core_rt:if test="${not empty osi.modifiedBy}">
-                                title="Modified By: ${osi.modifiedBy} &#10;Modified On: ${osi.modifiedOn}"
+                                title="<liferay-ui:message key="modified.by" />: ${osi.modifiedBy} &#10;<liferay-ui:message key="modified.on" />: ${osi.modifiedOn}"
                             </core_rt:if>
                                 id="obligationRow_${loop.count}_${licenseLoop.count}_${obligationLoop.count}"
                                 data-tt-id="${release.id}_${licenseType}_${loop.count}_${licenseLoop.count}_${obligationLoop.count}"

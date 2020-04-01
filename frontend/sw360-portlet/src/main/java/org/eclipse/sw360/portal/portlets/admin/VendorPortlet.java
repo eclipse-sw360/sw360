@@ -67,7 +67,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.*;
         "javax.portlet.display-name=Vendor Administration",
         "javax.portlet.info.short-title=Vendors",
         "javax.portlet.info.title=Vendor Administration",
-
+        "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.view-template=/html/admin/vendors/view.jsp",
     },
     service = Portlet.class,

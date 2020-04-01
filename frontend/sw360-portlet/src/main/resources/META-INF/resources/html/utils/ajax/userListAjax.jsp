@@ -41,7 +41,7 @@
 <core_rt:if test="${userList.size() == 0}">
     <tr>
         <td colspan="5">
-            No user found with your search.
+            <liferay-ui:message key="no.user.found.with.your.search" />
         </td>
     </tr>
 

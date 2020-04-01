@@ -42,7 +42,7 @@ import static org.apache.log4j.Logger.getLogger;
         "javax.portlet.display-name=My Subscriptions",
         "javax.portlet.info.short-title=My Subscriptions",
         "javax.portlet.info.title=My Subscriptions",
-
+        "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.view-template=/html/homepage/mysubscriptions/view.jsp",
     },
     service = Portlet.class,

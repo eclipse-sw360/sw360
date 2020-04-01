@@ -40,7 +40,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.ATTACHMENT_CLEANUP
         "javax.portlet.display-name=Attachment Cleanup",
         "javax.portlet.info.short-title=Attachment Cleanup",
         "javax.portlet.info.title=Attachment Cleanup",
-
+        "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.view-template=/html/admin/attachmentCleanup/view.jsp",
     },
     service = Portlet.class,

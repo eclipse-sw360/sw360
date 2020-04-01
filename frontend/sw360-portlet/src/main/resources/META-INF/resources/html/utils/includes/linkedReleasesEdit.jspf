@@ -11,15 +11,15 @@
 <%@ page import="org.eclipse.sw360.datahandler.thrift.MainlineState" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.ReleaseRelationship" %>
 
-<h4 class="mt-4">Linked Releases</h4>
+<h4 class="mt-4"><liferay-ui:message key="linked.releases" /></h4>
 <table class="table edit-table five-columns-with-actions" id="LinkedReleasesInfo">
     <thead>
         <tr>
-            <th>Vendor Name</th>
-            <th>Release Name</th>
-            <th>Release Version</th>
-            <th>Release Relation <sw360:DisplayEnumInfo type="<%=ReleaseRelationship.class%>"/></th>
-            <th>Project Mainline State <sw360:DisplayEnumInfo type="<%=MainlineState.class%>"/></th>
+            <th><liferay-ui:message key="vendor.name" /></th>
+            <th><liferay-ui:message key="release.name" /></th>
+            <th><liferay-ui:message key="release.version" /></th>
+            <th><liferay-ui:message key="release.relation" /> <sw360:DisplayEnumInfo type="<%=ReleaseRelationship.class%>"/></th>
+            <th><liferay-ui:message key="project.mainline.state" /> <sw360:DisplayEnumInfo type="<%=MainlineState.class%>"/></th>
             <th></th>
         </tr>
     </thead>
@@ -28,7 +28,7 @@
     </tbody>
 </table>
 
-<button type="button" class="btn btn-secondary" id="addLinkedReleasesToReleaseButton">Add Releases</button>
+<button type="button" class="btn btn-secondary" id="addLinkedReleasesToReleaseButton"><liferay-ui:message key="add.releases" /></button>
 
 <div class="dialogs">
     <div id="deleteLinkedReleaseDialog" class="modal fade" tabindex="-1" role="dialog">
@@ -37,7 +37,7 @@
 			<div class="modal-header">
 				<h5 class="modal-title">
 					<clay:icon symbol="question-circle" />
-					Delete link to release?
+					<liferay-ui:message key="delete.link.to.release" />
 				</h5>
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
@@ -45,12 +45,12 @@
 			</div>
 				<div class="modal-body">
 			        <p>
-                        Do you really want to remove the link to release <b data-name="release"></b>?
+                        <liferay-ui:message key="do.you.really.want.to.remove.the.link.to.release.x" />
                     </p>
 				</div>
 			    <div class="modal-footer">
-			        <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
-			        <button type="button" class="btn btn-danger">Delete Link</button>
+			        <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="cancel" /></button>
+			        <button type="button" class="btn btn-danger"><liferay-ui:message key="delete.link" /></button>
 			    </div>
 			</div>
 		</div>

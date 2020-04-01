@@ -41,8 +41,8 @@
 <core_rt:if test="${empty attributeNotFoundException}">
     <div class="container" style="display: none;">
 	<div class="row">
-            <div class="col portlet-title left text-truncate" title="Generate License Information">
-                Generate License Information
+            <div class="col portlet-title left text-truncate" title="<liferay-ui:message key="generate.license.information" />">
+                <liferay-ui:message key="generate.license.information" />
             </div>
             <div class="col portlet-title text-truncate" title="${sw360:printProjectName(project)}">
                 <sw360:ProjectName project="${project}"/>
@@ -50,7 +50,7 @@
         </div>
         <div class="row">
             <div class="col" >
-            <button id="selectVariantAndDownload" type="button" class="btn btn-primary">Download</button>
+            <button id="selectVariantAndDownload" type="button" class="btn btn-primary"><liferay-ui:message key="download" /></button>
                 <form id="downloadLicenseInfoForm" class="form-inline" name="downloadLicenseInfoForm" action="<%=downloadLicenseInfoURL%>" method="post">
                     <%@include file="/html/projects/includes/attachmentSelectTable.jspf" %>
                 </form>
@@ -66,7 +66,7 @@
   <!-- <div class="modal-dialog" role="document"> -->
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Select Other Options</h5>
+        <h5 class="modal-title"><liferay-ui:message key="select.other.options" /></h5>
         <button id="closeModalButton" type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -92,7 +92,7 @@
                     </c:if>
 						<c:if test="${not empty externalIds}">
 								<div class="form-group form-check">
-									<label for="externalIdLabel" class="font-weight-bold h3">Select the external Ids:</label>
+									<label for="externalIdLabel" class="font-weight-bold h3"><liferay-ui:message key="select.the.external.ids" />:</label>
 							        <c:forEach var="extId" items="${externalIds}">
 									   <div class="checkbox form-check">
 										  <label><input id="<%=PortalConstants.EXTERNAL_ID_SELECTED_KEYS%>" name="externalIdsSelection" type="checkbox" value="${extId}">
@@ -102,13 +102,13 @@
 								</div>
 						</c:if>
 					<div class="form-group form-check">
-						<label for="outputFormatLabel" class="licenseInfoOpFormat font-weight-bold h3">Select output format and variant:</label>
+						<label for="outputFormatLabel" class="licenseInfoOpFormat font-weight-bold h3"><liferay-ui:message key="select.output.format.and.variant" />:</label>
 						<sw360:DisplayOutputFormats options='${licenseInfoOutputFormats}' />
 					</div>
 	  </div>
       <div class="modal-footer">
-        <button id="downloadFileModal" type="button" value="Download" class="btn btn-primary">Download</button>
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button id="downloadFileModal" type="button" value="Download" class="btn btn-primary"><liferay-ui:message key="download" /></button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal"><liferay-ui:message key="close" /></button>
       </div>
     </div>
   </div>

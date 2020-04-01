@@ -12,6 +12,10 @@ package org.eclipse.sw360.portal.tags;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
+
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspTagException;
 import javax.servlet.jsp.JspWriter;
@@ -21,6 +25,7 @@ import javax.servlet.jsp.jstl.core.LoopTagSupport;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -66,11 +71,13 @@ public class DisplayDownloadReport extends LoopTagSupport {
 
     @Override
     public int doEndTag() throws JspException {
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         JspWriter jspWriter = pageContext.getOut();
         try {
             LoopTagStatus status = getLoopStatus();
             if (status.getCount() <= 1) {
-                jspWriter.print("no report");
+                jspWriter.print(LanguageUtil.get(resourceBundle,"no.report"));
             }
 
             jspWriter.write("</span>");

@@ -27,12 +27,12 @@
                 <div class="col-auto">
                     <div class="btn-toolbar" role="toolbar">
                         <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-danger" data-action="cleanup">Clean up attachments</button>
+                            <button type="button" class="btn btn-danger" data-action="cleanup"><liferay-ui:message key="clean.up.attachments" /></button>
                         </div>
                     </div>
                 </div>
-                <div class="col portlet-title text-truncate" title="Attachment Administration">
-                    Attachment Administration
+                <div class="col portlet-title text-truncate" title="<liferay-ui:message key="attachment.administration" />">
+                    <liferay-ui:message key="attachment.administration" />
                 </div>
             </div>
         </div>
@@ -58,14 +58,14 @@
                         callback();
 
                         if(data.result == 'SUCCESS')
-                            $dialog.success("I deleted " + data.totalAffectedObjects + " out of " + data.totalObjects + " attachments in the database.", true);
+                            $dialog.success("<liferay-ui:message key="i.deleted.x.out.of.y.attachments.in.the.database" />", true);
                         else {
-                            $dialog.alert("I could not cleanup the attachments!");
+                            $dialog.alert("<liferay-ui:message key="i.could.not.cleanup.the.attachments" />");
                         }
                     },
                     error: function () {
                         callback();
-                        $dialog.alert("I could not cleanup the attachments!");
+                        $dialog.alert("<liferay-ui:message key="i.could.not.cleanup.the.attachments" />");
                     }
                 });
             }
@@ -73,9 +73,9 @@
             $dialog = dialog.confirm(
                 'danger',
                 'question-circle',
-                'Cleanup Attachment Database?',
-                '<p>Do you really want to clean up the attachment database?</p>',
-                'Clean up',
+                '<liferay-ui:message key="cleanup.attachment.database" />?',
+                '<p><liferay-ui:message key="do.you.really.want.to.clean.up.the.attachment.database" /></p>',
+                '<liferay-ui:message key="clean.up" />',
                 {},
                 function(submit, callback) {
                     cleanUpInternal(callback);

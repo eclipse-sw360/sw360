@@ -39,33 +39,33 @@
 					<div class="btn-toolbar" role="toolbar">
 						<div class="btn-group" role="group">
 							<button type="button" class="btn btn-primary" onclick="window.location.href='<portlet:resourceURL><portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.DOWNLOAD_LICENSE_BACKUP%>'/></portlet:resourceURL>'">
-                                Download License Archive
+                                <liferay-ui:message key="download.license.archive" />
                             </button>
 						</div>
                         <div class="btn-group" role="group">
 							<button type="button" class="btn btn-primary" data-action="import-spdx">
-                                Import SPDX Information
+                                <liferay-ui:message key="import.spdx.information" />
                             </button>
 						</div>
                         <div class="btn-group" role="group">
 							<button type="button" class="btn btn-danger" data-action="delete-licenses">
-                                Delete all License information
+                                <liferay-ui:message key="delete.all.license.information" />
                             </button>
 						</div>
 					</div>
 				</div>
-                <div class="col portlet-title text-truncate" title="License Administration">
-					License Administration
+                <div class="col portlet-title text-truncate" title="<liferay-ui:message key="license.administration" />">
+					<liferay-ui:message key="license.administration" />
 				</div>
             </div>
             <div class="row">
                 <div class="col">
-                    <h4>Upload License Archive</h4>
+                    <h4><liferay-ui:message key="upload.license.archive" /></h4>
                     <form id="uploadLicenseArchiveForm" name="uploadLicenseArchiveForm" action="<%=updateLicenseArchiveURL%>" method="post" class="form needs-validation" novalidate>
                         <div class="form-group">
                             <input id="<portlet:namespace/>LicenseArchivefileuploadInput" type="file" class="form-control-file" name="<portlet:namespace/>file" required>
                             <div class="invalid-feedback">
-                                Please select a file!
+                                <liferay-ui:message key="please.select.a.file" />
                             </div>
                         </div>
                         <div class="form-check">
@@ -73,7 +73,7 @@
                                 name="<portlet:namespace/>overwriteIfExternalIdMatches"
                                 value="true">
                             <label for="overwriteIfExternalIdMatches" class="form-check-label">
-                                Overwrite if externals IDs match
+                                <liferay-ui:message key="overwrite.if.externals.ids.match" />
                             </label>
                         </div>
                         <div class="form-check">
@@ -81,11 +81,11 @@
                                 name="<portlet:namespace/>overwriteIfIdMatchesEvenWithoutExternalIdMatch"
                                 value="true">
                             <label for="overwriteIfIdMatchesEvenWithoutExternalIdMatch" class="form-check-label">
-                                Overwrite if IDs match
+                                <liferay-ui:message key="overwrite.if.ids.match" />
                             </label>
                         </div>
 
-                        <button type="submit" class="btn btn-secondary">Upload Licenses</button>
+                        <button type="submit" class="btn btn-secondary"><liferay-ui:message key="upload.licenses" /></button>
                     </form>
                 </div>
             </div>
@@ -115,21 +115,21 @@ require(['jquery', 'modules/dialog', 'modules/validation'], function($, dialog, 
                 callback();
             }).done(function (data) {
                 if (data.result == 'SUCCESS') {
-                    $dialog.success("I imported " + data.totalAffectedObjects + " out of " + data.totalObjects + " SPDX licenses. " + data.message, true);
+                    $dialog.success(<liferay-ui:message key="i.imported.x.out.of.y.spdx.licenses.z" />, true);
                 }else {
-                    $dialog.alert("I could not import all SPDX license information!");
+                    $dialog.alert("<liferay-ui:message key="i.could.not.import.all.spdx.license.information" />");
                 }
             }).fail(function(){
-                $dialog.alert('Something went wrong.');
+                $dialog.alert('<liferay-ui:message key="something.went.wrong" />');
             });
         }
 
         $dialog = dialog.confirm(
             null,
             'question-circle',
-            'Import SPDX licenses?',
-            '<p>Do you really want to import all SPDX all licenses?',
-            'Import SPDX licenses',
+            '<liferay-ui:message key="import.spdx.licenses" />?',
+            '<p><liferay-ui:message key="do.you.really.want.to.import.all.spdx.all.licenses" />?',
+            '<liferay-ui:message key="import.spdx.licenses" />',
             {},
             function(submit, callback) {
                 importSpdxLicenseInformationInternal(callback);
@@ -150,23 +150,23 @@ require(['jquery', 'modules/dialog', 'modules/validation'], function($, dialog, 
                callback();
             }).done(function (data) {
                 if (data.result == 'SUCCESS') {
-                    $dialog.success("I deleted " + data.totalAffectedObjects + " out of " + data.totalObjects + " documents in the database.", true);
+                    $dialog.success("<liferay-ui:message key="i.deleted.x.out.of.y.documents.in.the.database" />", true);
                 }else {
-                    $dialog.alert("I could not delete the license information!");
+                    $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.license.information" />");
                 }
             }).fail(function(){
-                $dialog.alert('Something went wrong.');
+                $dialog.alert('<liferay-ui:message key="something.went.wrong" />');
             });
         }
 
         $dialog = dialog.confirm(
             'danger',
             'question-circle',
-            'Delete all Licenses?',
-            '<div class="alert alert-warning">Note: other documents might use the licenses.</div>' +
-            '<p>Do you really want to delete all licenses, license types, todos, obligations, risks, risk categories and todo custom properties from the database?' +
-            '<div class="alert alert-info">This function is meant to be followed by a new license import.</div>',
-            'Delete all License information',
+            '<liferay-ui:message key="delete.all.licenses" />?',
+            '<div class="alert alert-warning"><liferay-ui:message key="note.other.documents.might.use.the.licenses" /></div>' +
+            '<p><liferay-ui:message key="do.you.really.want.to.delete.all.licenses.license.types.todos.obligations.risks.risk.categories.and.todo.custom.properties.from.the.database" />' +
+            '<div class="alert alert-info"><liferay-ui:message key="this.function.is.meant.to.be.followed.by.a.new.license.import" /></div>',
+            '<liferay-ui:message key="delete.all.license.information" />',
             {},
             function(submit, callback) {
                 deleteAllLicenseInformationInternal(callback);

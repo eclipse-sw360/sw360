@@ -39,7 +39,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.RECENT_RELEASES_PO
         "javax.portlet.display-name=Recent Releases",
         "javax.portlet.info.short-title=Recent Releases",
         "javax.portlet.info.title=Recent Releases",
-
+        "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.view-template=/html/homepage/recentreleases/view.jsp",
     },
     service = Portlet.class,

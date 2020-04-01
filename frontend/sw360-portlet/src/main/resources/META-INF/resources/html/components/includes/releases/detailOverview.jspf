@@ -29,11 +29,11 @@
 	<div class="row">
 		<div class="col-3 sidebar">
 			<div id="detailTab" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
-			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab">Summary</a>
-			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-linkedReleases'}">active</core_rt:if>" href="#tab-linkedReleases" data-toggle="list" role="tab">Linked Releases</a>
-			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ClearingDetails'}">active</core_rt:if>" href="#tab-ClearingDetails" data-toggle="list" role="tab">Clearing Details</a>
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab"><liferay-ui:message key="summary" /></a>
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-linkedReleases'}">active</core_rt:if>" href="#tab-linkedReleases" data-toggle="list" role="tab"><liferay-ui:message key="linked.releases" /></a>
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ClearingDetails'}">active</core_rt:if>" href="#tab-ClearingDetails" data-toggle="list" role="tab"><liferay-ui:message key="clearing.details" /></a>
                 <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ECCDetails'}">active</core_rt:if>" href="#tab-ECCDetails" data-toggle="list" role="tab">
-                    ECC Details
+                    <liferay-ui:message key="ecc.details" />
                     <span
                         <core_rt:if test="${release.eccInformation.eccStatus.value == 0 || release.eccInformation.eccStatus.value == 3}"> class="badge badge-empty badge-danger" </core_rt:if> <%--ECCStatus.OPEN || ECCStatus.REJECTED--%>
                         <core_rt:if test="${release.eccInformation.eccStatus.value == 1}"> class="badge badge-empty badge-warning" </core_rt:if> <%--ECCStatus.IN_PROGRESS--%>
@@ -42,9 +42,9 @@
                         <core_rt:if test="${release.eccInformation.eccStatus.value != 3}">&nbsp;</core_rt:if> <%--ECCStatus.REJECTED--%>
                     </span>
                 </a>
-                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Attachments'}">active</core_rt:if>" href="#tab-Attachments" data-toggle="list" role="tab">Attachments</a>
+                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Attachments'}">active</core_rt:if>" href="#tab-Attachments" data-toggle="list" role="tab"><liferay-ui:message key="attachments" /></a>
 			<core_rt:if test="${cotsMode}">
-                    <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-CommercialDetails'}">active</core_rt:if>" href="#tab-CommercialDetails" data-toggle="list" role="tab">Commercial Details</a>
+                    <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-CommercialDetails'}">active</core_rt:if>" href="#tab-CommercialDetails" data-toggle="list" role="tab"><liferay-ui:message key="commercial.details" /></a>
                 </core_rt:if>
                 <core_rt:if test="${inReleaseDetailsContext}">
 				<%@include file="/html/utils/includes/vulnerabilityTab.jspf" %>
@@ -63,7 +63,7 @@
                                     <core_rt:if test="${release.clearingState.value == 1}"><span class="badge badge-circle badge-danger"></span></core_rt:if>
                                     <core_rt:if test="${release.clearingState.value == 2}"><span class="badge badge-circle badge-warning"></span></core_rt:if>
                                     <core_rt:if test="${release.clearingState.value == 3}"><span class="badge badge-circle badge-warning"></span></core_rt:if>
-                                    Version ${release.version}
+                                    <liferay-ui:message key="version" /> ${release.version}
                                     <clay:icon symbol="caret-bottom" />
                                 </button>
                                 <div class="dropdown-menu" aria-labelledby="changeReleaseButton">
@@ -74,21 +74,21 @@
                                             <core_rt:if test="${releaseItr.clearingState.value == 1}"><span class="badge badge-circle badge-danger"></span></core_rt:if>
                                             <core_rt:if test="${releaseItr.clearingState.value == 2}"><span class="badge badge-circle badge-warning"></span></core_rt:if>
                                             <core_rt:if test="${releaseItr.clearingState.value == 3}"><span class="badge badge-circle badge-warning"></span></core_rt:if>
-                                            Version ${releaseItr.version}
+                                            <liferay-ui:message key="version" /> ${releaseItr.version}
                                         </a>
                                     </core_rt:forEach>
                                 </div>
                             </div>
 
                             <div class="btn-group" role="group">
-                                <button type="button" class="btn btn-primary" onclick="window.location.href='<%=editReleaseURL%>' + window.location.hash">Edit Release</button>
+                                <button type="button" class="btn btn-primary" onclick="window.location.href='<%=editReleaseURL%>' + window.location.hash"><liferay-ui:message key="edit.release" /></button>
                             </div>
                             <div class="btn-group" role="group">
-                                <button type="button" id="linkToProject" class="btn btn-secondary" data-release-id="${releaseId}" data-release-name="<sw360:ReleaseName release="${release}"/>">Link to Project</button>
+                                <button type="button" id="linkToProject" class="btn btn-secondary" data-release-id="${releaseId}" data-release-name="<sw360:ReleaseName release="${release}"/>"><liferay-ui:message key="link.to.project" /></button>
                             </div>
                             <core_rt:if test="${isUserAllowedToMerge}">
                                 <div class="btn-group" role="group">
-                                    <button type="button" data-release-id="${release.id}" id="mergeButton" class="btn btn-secondary">Merge</button>
+                                    <button type="button" data-release-id="${release.id}" id="mergeButton" class="btn btn-secondary"><liferay-ui:message key="merge" /></button>
                                 </div>
                             </core_rt:if>
                             <div class="btn-group" role="group">
@@ -98,21 +98,21 @@
                             <div class="list-group-companion" data-belong-to="tab-Attachments">
                                 <core_rt:if test="${inReleaseDetailsContext}">
                                     <div class="btn-group" role="group">
-                                        <button id="downloadAttachmentBundle" type="button" class="btn btn-secondary">Download Attachment Bundle</button>
+                                        <button id="downloadAttachmentBundle" type="button" class="btn btn-secondary"><liferay-ui:message key="download.attachment.bundle" /></button>
                                     </div>
                                 </core_rt:if>
                             </div>
                             <div class="list-group-companion" data-belong-to="tab-Vulnerabilities">
                                 <div class="btn-group" role="group">
                                     <button id="btnShowVulnerabilityCount" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                        Show <span data-name="count"></span>
+                                        <liferay-ui:message key="show" /> <span data-name="count"></span>
                                         <clay:icon symbol="caret-bottom" />
                                     </button>
                                     <div class="dropdown-menu" aria-labelledby="btnExport">
                                         <a class="dropdown-item" data-type="200">200</a>
                                         <a class="dropdown-item" data-type="500">500</a>
                                         <a class="dropdown-item" data-type="1000">1000</a>
-                                        <a class="dropdown-item" data-type="-1">All</a>
+                                        <a class="dropdown-item" data-type="-1"><liferay-ui:message key="all" /></a>
                                     </div>
                                 </div>
                             </div>
@@ -201,18 +201,18 @@
             doAjax(url, function(data) {
                 if(data.result === "SUCCESS") {
                     if(subscribed) {
-                        $button.text('Subscribe');
+                        $button.text('<liferay-ui:message key="subscribe" />');
                         $button.removeClass('btn-outline-danger');
                         $button.addClass('btn-outline-success');
                     } else {
-                        $button.text('Unsubscribe');
+                        $button.text('<liferay-ui:message key="unsubscribe" />');
                         $button.removeClass('btn-outline-success');
                         $button.addClass('btn-outline-danger');
                     }
                     $button.toggleClass('subscribed');
                 } else {
                      Liferay.Util.openToast({
-                        title: 'Error',
+                        title: '<liferay-ui:message key="error" />',
                         message: data.result,
                         type: 'danger'
                      });
@@ -220,8 +220,8 @@
                 button.finish($button);
             }, function() {
                 Liferay.Util.openToast({
-                    title: 'Error',
-                    message: 'Could not subscribe to release.',
+                    title: '<liferay-ui:message key="error" />',
+                    message: '<liferay-ui:message key="could.not.subscribe.to.release" />',
                     type: 'danger'
                 });
                 button.finish($button);

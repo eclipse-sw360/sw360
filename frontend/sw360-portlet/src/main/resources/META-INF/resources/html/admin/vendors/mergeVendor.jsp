@@ -18,17 +18,17 @@
 
 <div id="vendorMergeWizard" class="container" data-step-id="0" data-vendor-target-id="${vendor.id}">
     <div class="row portlet-toolbar">
-        <div class="col portlet-title text-truncate" title="Merge into <sw360:out value='${vendor.fullname}'/>">
-            Merge into <sw360:out value='${vendor.fullname}'/>
+        <div class="col portlet-title text-truncate" title="<liferay-ui:message key="merge.into" /> <sw360:out value='${vendor.fullname}'/>">
+            <liferay-ui:message key="merge.into" /> <sw360:out value='${vendor.fullname}'/>
         </div>
     </div>
     <div class="row">
         <div class="col">
             <div class="wizardHeader">
                 <ul>
-                    <li class="active">1. Choose source<br /><small>Choose a vendor that should be merged into the current one</small></li>
-                    <li>2. Merge data<br /><small>Merge data from source into target vendor</small></li>
-                    <li>3. Confirm<br /><small>Check the merged version and confirm</small></li>
+                    <li class="active"><liferay-ui:message key="choose.source" /><br /><small><liferay-ui:message key="choose.a.vendor.that.should.be.merged.into.the.current.one" /></small></li>
+                    <li><liferay-ui:message key="merge.data" /><br /><small><liferay-ui:message key="merge.data.from.source.into.target.vendor" /></small></li>
+                    <li><liferay-ui:message key="confirm" /><br /><small><liferay-ui:message key="check.the.merged.version.and.confirm" /></small></li>
                 </ul>
             </div>
         </div>
@@ -39,31 +39,32 @@
                 <div class="step active" data-step-id="1">
                     <div class="spinner spinner-with-text">
                         <div class="spinner-border" role="status">
-                            <span class="sr-only">Loading data for step 1, please wait...</span>
+                            <span class="sr-only"><liferay-ui:message key="loading.data.for.step.1.please.wait" /></span>
                         </div>
-                        Loading data for step 1, please wait...
+                        <liferay-ui:message key="loading.data.for.step.1.please.wait" />
                     </div>
                 </div>
                 <div class="step" data-step-id="2">
                     <div class="spinner spinner-with-text">
                         <div class="spinner-border" role="status">
-                            <span class="sr-only">Loading data for step 2, please wait...</span>
+                            <span class="sr-only"><liferay-ui:message key="loading.data.for.step.2.please.wait" /></span>
                         </div>
-                        Loading data for step 2, please wait...
+                        <liferay-ui:message key="loading.data.for.step.2.please.wait" />
                     </div>
                 </div>
                 <div class="step" data-step-id="3">
                     <div class="spinner spinner-with-text">
                         <div class="spinner-border" role="status">
-                            <span class="sr-only">Loading data for step 3, please wait...</span>
+                            <span class="sr-only"><liferay-ui:message key="loading.data.for.step.3.please.wait" /></span>
                         </div>
-                        Loading data for step 3, please wait...
+                        <liferay-ui:message key="loading.data.for.step.3.please.wait" />
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
 
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
@@ -103,13 +104,13 @@
                     });
                     let $idList = $('<ul>');
 
-                    $error.append($('<p/>').append($('<b/>').text('Could not merge vendors: ' + data.error)));
-                    $error.append($('<p/>').text('This error can lead to inconsistencies in the database. Please inform the administrator that the following vendors could not be merged:'));
+                    $error.append($('<p/>').append($('<b/>').text('<liferay-ui:message key="could.not.merge.vendors" /> ' + data.error)));
+                    $error.append($('<p/>').text('<liferay-ui:message key="this.error.can.lead.to.inconsistencies.in.the.database.please.inform.the.administrator.that.the.following.vendors.could.not.be.merged" />'));
                     $error.append($('<p>').append($idList));
                     
                     let releaseSourceId = $stepElement.data('releaseSourceId');
-                    $idList.append($('<li>').text('Source vendor: ' + releaseSourceId));
-                    $idList.append($('<li>').text('Target vendor: ' + $wizardRoot.data('releaseTargetId')));
+                    $idList.append($('<li>').text('<liferay-ui:message key="source.vendor" />: ' + releaseSourceId));
+                    $idList.append($('<li>').text('<liferay-ui:message key="target.vendor" />: ' + $wizardRoot.data('releaseTargetId')));
                     
                     $stepElement.html('').append($error);
                     return false;
@@ -127,7 +128,7 @@
             $stepElement.html('' +
                     '<div class="stepFeedback"></div>' +
                     '<form>' +
-                    '    <table id="vendorSourcesTable" class="table table-bordered" title="Source vendor">' +
+                    '    <table id="vendorSourcesTable" class="table table-bordered" title="<liferay-ui:message key="source.vendor" />">' +
                     '        <colgroup>' +
                     '            <col style="width: 1.7rem;" />' +
                     '            <col style="width: 50%;" />' +
@@ -137,8 +138,8 @@
                     '        <thead>' +
                     '            <tr>' +
                     '                <th></th>' +
-                    '                <th>Vendor Full Name</th>' +
-                    '                <th>Vendor Short Name</th>' +
+                    '                <th><liferay-ui:message key="vendor.full.name" /></th>' +
+                    '                <th><liferay-ui:message key="vendor.short.name" /></th>' +
                     '                <th>URL</th>' +
                     '            </tr>' +
                     '        </thead>' +
@@ -157,7 +158,26 @@
                     { data: "url" }
                 ],
                 order: [ [ 1, 'asc' ] ],
-                select: 'single'
+                language: {
+                    select: {
+                        style: 'single',
+                        rows: "<liferay-ui:message key="x.rows.selected" />"
+                    },
+                    paginate: {
+                        previous: "<liferay-ui:message key="previous" />",
+                        next: "<liferay-ui:message key="next" />"
+                    },
+                    emptyTable: "<liferay-ui:message key="no.data.available.in.table" />",
+                    info: "<liferay-ui:message key="showing" />",
+                    infoEmpty: "<liferay-ui:message key="infoempty" />",
+                    lengthMenu: '<liferay-ui:message key="show" /> <select>'+
+                    '<option value="10">10</option>'+
+                    '<option value="25">25</option>'+
+                    '<option value="50">50</option>'+
+                    '<option value="100">100</option>'+
+                    '<option value="-1"><liferay-ui:message key="all" /></option>'+
+                    '</select> <liferay-ui:message key="entries" />'
+                },
             });
             datatables.enableCheckboxForSelection(table, 0);
         }
@@ -165,7 +185,7 @@
         function submitChosenVendor($stepElement) {
             var checkedList = $stepElement.find('input:checked');
             if (checkedList.length !== 1 || $(checkedList.get(0)).val() ===  $wizardRoot.data('vendorTargetId')) {
-                $stepElement.find('.stepFeedback').html('<div class="alert alert-danger">Please choose exactly one vendor, which is not the target vendor itself!</div>');
+                $stepElement.find('.stepFeedback').html('<div class="alert alert-danger"><liferay-ui:message key="please.choose.exactly.one.vendor.which.is.not.the.target.vendor.itself" /></div>');
                 $('html, body').stop().animate({ scrollTop: 0 }, 300, 'swing');
                 setTimeout(function() {
                     $stepElement.find('.stepFeedback').html('');
@@ -184,10 +204,10 @@
 
             $stepElement.append(renderNotice(data.affectedComponents, data.affectedReleases));
             
-            $stepElement.append(wizard.createCategoryLine('Vendor'));
-            $stepElement.append(wizard.createSingleMergeLine('Full Name', data.vendorTarget.fullname, data.vendorSource.fullname));
-            $stepElement.append(wizard.createSingleMergeLine('Short Name', data.vendorTarget.shortname, data.vendorSource.shortname));
-            $stepElement.append(wizard.createSingleMergeLine('URL', data.vendorTarget.url, data.vendorSource.url));
+            $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="vendor" />'));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="full.name" />', data.vendorTarget.fullname, data.vendorSource.fullname));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="short.name" />', data.vendorTarget.shortname, data.vendorSource.shortname));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="url" />', data.vendorTarget.url, data.vendorSource.url));
             
             wizard.registerClickHandlers();
         }
@@ -197,9 +217,9 @@
 
             vendorSelection.id = $wizardRoot.data('vendorTargetId');
 
-            vendorSelection.fullname = wizard.getFinalSingleValue('Full Name');
-            vendorSelection.shortname = wizard.getFinalSingleValue('Short Name');
-            vendorSelection.url = wizard.getFinalSingleValue('URL');
+            vendorSelection.fullname = wizard.getFinalSingleValue('<liferay-ui:message key="full.name" />');
+            vendorSelection.shortname = wizard.getFinalSingleValue('<liferay-ui:message key="short.name" />');
+            vendorSelection.url = wizard.getFinalSingleValue('<liferay-ui:message key="url" />');
 
             $stepElement.data('vendorSelection', vendorSelection);
         }
@@ -212,10 +232,10 @@
 
             $stepElement.append(renderNotice($wizardRoot.data('affectedComponents'), $wizardRoot.data('affectedReleases')));
 
-            $stepElement.append(wizard.createCategoryLine('Vendor'));
-            $stepElement.append(wizard.createSingleDisplayLine('Full Name', data.vendorSelection.fullname));
-            $stepElement.append(wizard.createSingleDisplayLine('Short Name', data.vendorSelection.shortname));
-            $stepElement.append(wizard.createSingleDisplayLine('URL', data.vendorSelection.url));
+            $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="vendor" />'));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="full.name" />', data.vendorSelection.fullname));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="short.name" />', data.vendorSelection.shortname));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="url" />', data.vendorSelection.url));
         }
 
         function submitConfirmedMergedVendor($stepElement) {
@@ -229,7 +249,7 @@
                 $stepElement.html('<div class="stepFeedback"></div>');
             }
 
-            $wizardRoot.find('.active.step .stepFeedback').html('<div class="alert alert-danger">An error happened while communicating with the server: ' + textStatus + error + '</div>');
+            $wizardRoot.find('.active.step .stepFeedback').html('<div class="alert alert-danger"><liferay-ui:message key="an.error.happened.while.communicating.with.the.server" />: ' + textStatus + error + '</div>');
             $('html, body').stop().animate({ scrollTop: 0 }, 300, 'swing');
             setTimeout(function() {
                 $wizardRoot.find('.active.step .stepFeedback').html('');
@@ -239,7 +259,7 @@
         function renderNotice(affectedComponents, affectedReleases) {
             var $note = $(
                 '<div class="alert mt-4">' +
-                    'The following documents will be affected by this merge and are changed accordingly:' +
+                    '<liferay-ui:message key="the.following.documents.will.be.affected.by.this.merge.and.are.changed.accordingly" />' +
                     '<ul>' +
                     '</ul>' +
                 '</div>'
@@ -250,21 +270,21 @@
             }
 
             if(affectedComponents > 0) {
-                var $li = $('<li><b class="number"></b> component(s)</li>');
+                var $li = $('<li><b class="number"></b> <liferay-ui:message key="components2" /></li>');
                 $li.find('.number').text(affectedComponents)
                 
                 $note.find('ul').append($li);
             }
             if(affectedReleases > 0) {
-                var $li = $('<li><b class="number"></b> release(s)</li>');
+                var $li = $('<li><b class="number"></b> <liferay-ui:message key="releases2" /></li>');
                 $li.find('.number').text(affectedReleases)
                 
                 $note.find('ul').append($li);
             }
             if(affectedComponents + affectedReleases > 1000) {
-                $note.append('<b>More than 1000 documents affected. The merge operation might time out. In consequence only some of ' +
-                    'the documents might be changed accordingly. In this case just restart the operation as long as the source vendor ' + 
-                    'continues to exist.');
+                $note.append('<b><liferay-ui:message key="more.than.1000.documents.affected.the.merge.operation.might.time.out.in.consequence.only.some.of" /> ' +
+                    '<liferay-ui:message key="the.documents.might.be.changed.accordingly.in.this.case.just.restart.the.operation.as.long.as.the.source.vendor" /> ' + 
+                    '<liferay-ui:message key="continues.to.exist" />');
                 $note.addClass('alert-warning');
             } else {
                 $note.addClass('alert-info');

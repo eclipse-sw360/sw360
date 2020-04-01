@@ -41,7 +41,7 @@ import org.osgi.service.component.annotations.ConfigurationPolicy;
         "javax.portlet.display-name=My Task Submissions",
         "javax.portlet.info.short-title=My Task Submissions",
         "javax.portlet.info.title=My Task Submissions",
-
+        "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.view-template=/html/homepage/mytasksubmissions/view.jsp",
     },
     service = Portlet.class,

@@ -9,10 +9,17 @@
  */
 package org.eclipse.sw360.portal.tags;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
+import javax.servlet.jsp.PageContext;
 import javax.servlet.jsp.tagext.SimpleTagSupport;
+
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
+
 import java.io.IOException;
+import java.util.ResourceBundle;
 
 /**
  * This displays undefined/true/false for booleans depending on if they are set
@@ -34,17 +41,20 @@ public class DisplayBoolean extends SimpleTagSupport {
     }
 
     public void doTag() throws JspException, IOException {
+        PageContext pageContext = (PageContext) getJspContext();
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         JspWriter out = getJspContext().getOut();
 
         if (defined && value) {
             out.print("<span class=\"text-success\">");
-            out.print("<svg class=\"lexicon-icon\"><title>Yes</title><use href=\"/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#check-circle\"/></svg>");
-            out.print("&nbsp;Yes");
+            out.print("<svg class=\"lexicon-icon\"><title>"+LanguageUtil.get(resourceBundle,"yes")+"</title><use href=\"/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#check-circle\"/></svg>");
+            out.print("&nbsp;"+LanguageUtil.get(resourceBundle,"yes"));
             out.print("</span>");
         } else {
             out.print("<span class=\"text-danger\">");
-            out.print("<svg class=\"lexicon-icon\"><title>No</title><use href=\"/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#times-circle\"/></svg>");
-            out.print("&nbsp;No");
+            out.print("<svg class=\"lexicon-icon\"><title>"+LanguageUtil.get(resourceBundle,"no")+"</title><use href=\"/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#times-circle\"/></svg>");
+            out.print("&nbsp;"+LanguageUtil.get(resourceBundle,"no"));
             out.print("</span>");
         }
     }

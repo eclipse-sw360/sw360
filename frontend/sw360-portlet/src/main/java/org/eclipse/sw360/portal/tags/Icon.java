@@ -9,22 +9,26 @@
  */
 package org.eclipse.sw360.portal.tags;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.PageContext;
 import javax.servlet.jsp.tagext.SimpleTagSupport;
 
 import com.google.common.base.Strings;
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
 
 import org.apache.commons.lang.StringEscapeUtils;
 
 import java.io.IOException;
+import java.util.ResourceBundle;
 
 public class Icon extends SimpleTagSupport {
 
     private String icon = "";
     private String title = "";
     private String className = "";
-
+    
     public void setIcon(String icon) {
         this.icon = icon;
     }
@@ -37,11 +41,15 @@ public class Icon extends SimpleTagSupport {
         this.className = className;
     }
 
-    public void doTag() throws JspException, IOException {
+    public void doTag() throws JspException, IOException {   
+        
+        PageContext pageContext = (PageContext) getJspContext();  
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();   
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         String tag = "<svg class=\"lexicon-icon " + className + "\">";
-
+        
         if(!Strings.isNullOrEmpty(title)) {
-            tag += "<title>" + StringEscapeUtils.escapeHtml(title) + "</title>";
+            tag += "<title>" + StringEscapeUtils.escapeHtml(LanguageUtil.get(resourceBundle, title)) + "</title>";
         }
         tag += "<use href=\"" + ((PageContext) getJspContext()).getServletContext().getContextPath() + "/images/icons.svg#" + icon + "\"/>";
 

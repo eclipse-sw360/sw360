@@ -13,9 +13,15 @@ import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.thrift.TException;
 
+import java.util.ResourceBundle;
+
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 
@@ -60,14 +66,17 @@ public class DisplayVendorEdit extends NameSpaceAwareTag {
         }
         return SKIP_BODY;
     }
-
+    
     private void printEmptyVendor(StringBuilder display) {
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+        
         display.append("<div class=\"form-group\">");
         printLabel(display);
         display.append(String.format("<input type=\"hidden\" readonly=\"\" value=\"\"  id=\"%s\" name=\"%s%s\"/>", id, namespace, id))
                 .append("<div class=\"form-group has-feedback\">")
                 .append(String.format(
-                        "<input type=\"text\" readonly=\"\" class=\"form-control edit-vendor clickable\" placeholder=\"Click to set vendor\" id=\"%sDisplay\" data-release-id=\"%s\"/>",
+                        "<input type=\"text\" readonly=\"\" class=\"form-control edit-vendor clickable\" placeholder=\"" + LanguageUtil.get(resourceBundle, "click.to.set.vendor") + "\" id=\"%sDisplay\" data-release-id=\"%s\"/>",
                         id, releaseId))
                 .append("<span class=\"glyphicon glyphicon-remove-circle form-control-feedback clearSelection\" id=\"clearVendor\"/>")
                 .append("</div>");
@@ -88,9 +97,12 @@ public class DisplayVendorEdit extends NameSpaceAwareTag {
     }
 
     private void printLabel(StringBuilder display) {
+    	HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+        
         if (StringUtils.isNotEmpty(label)) {
             display.append(
-                    String.format("<label for=\"%sDisplay\">%s</label>", id, label));
+                    String.format("<label for=\"%sDisplay\">%s</label>", id, LanguageUtil.get(resourceBundle,label)));
         }
     }
 

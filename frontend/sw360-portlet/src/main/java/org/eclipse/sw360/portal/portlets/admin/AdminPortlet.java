@@ -36,7 +36,7 @@ import org.osgi.service.component.annotations.ConfigurationPolicy;
         "javax.portlet.display-name=Administration",
         "javax.portlet.info.short-title=Admin",
         "javax.portlet.info.title=Administration",
-
+        "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.view-template=/html/admin/view.jsp",
     },
     service = Portlet.class,

@@ -11,24 +11,24 @@
 <table class="table label-value-table" id="cotsDetailOverview">
     <thead>
     <tr>
-        <th colspan="2">Commercial Details Administration</th>
+        <th colspan="2"><liferay-ui:message key="commercial.details.administration" /></th>
     </tr>
     </thead>
     <tr>
-        <td>Usage Right Available:</td>
+        <td><liferay-ui:message key="usage.right.available" />:</td>
         <td><sw360:DisplayBoolean defined="${cotsDetails.setUsageRightAvailable}"
                                   value="${cotsDetails.usageRightAvailable}"/></td>
     </tr>
     <tr>
-        <td>COTS Responsible:</td>
+        <td><liferay-ui:message key="cots.responsible" />:</td>
         <td><sw360:DisplayUserEmail email="${cotsDetails.cotsResponsible}"/></td>
     </tr>
     <tr>
-        <td>COTS Clearing Deadline:</td>
+        <td><liferay-ui:message key="cots.clearing.deadline" />:</td>
         <td><sw360:out value="${cotsDetails.clearingDeadline}"/></td>
     </tr>
     <tr>
-        <td>COTS Clearing Report URL:</td>
+        <td><liferay-ui:message key="cots.clearing.report.url" />:</td>
         <td><sw360:out value="${cotsDetails.licenseClearingReportURL}"/></td>
     </tr>
 </table>
@@ -36,29 +36,29 @@
 <table class="table label-value-table" id="cotsOssInformation">
     <thead>
     <tr>
-        <th colspan="2">COTS OSS Information</th>
+        <th colspan="2"><liferay-ui:message key="cots.oss.information" /></th>
     </tr>
     </thead>
     <tr>
-        <td>Used License:</td>
+        <td><liferay-ui:message key="used.license" />:</td>
         <td><sw360:out value="${cotsDetails.usedLicense}"/></td>
     </tr>
     <tr>
-        <td>Contains Open Source Software:</td>
+        <td><liferay-ui:message key="contains.open.source.software" />:</td>
         <td><sw360:DisplayBoolean defined="${cotsDetails.setContainsOSS}"
                                   value="${cotsDetails.containsOSS}"/></td>
     </tr>
     <tr>
-        <td>OSS Contract Signed:</td>
+        <td><liferay-ui:message key="oss.contract.signed" />:</td>
         <td><sw360:DisplayBoolean defined="${cotsDetails.setOssContractSigned}"
                                   value="${cotsDetails.ossContractSigned}"/></td>
     </tr>
     <tr>
-        <td>OSS Information URL:</td>
+        <td><liferay-ui:message key="oss.information.url" />:</td>
         <td><sw360:out value="${cotsDetails.ossInformationURL}"/></td>
     </tr>
     <tr>
-        <td>Source Code Available:</td>
+        <td><liferay-ui:message key="source.code.available" />:</td>
         <td><sw360:DisplayBoolean defined="${cotsDetails.setSourceCodeAvailable}"
                                   value="${cotsDetails.sourceCodeAvailable}"/></td>
     </tr>

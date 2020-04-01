@@ -44,15 +44,15 @@
 				<div class="col-auto">
 					<div class="btn-toolbar" role="toolbar">
 						<div class="btn-group" role="group">
-							<button type="button" class="btn btn-primary" onclick="window.location.href='<%=addVendorURL%>'">Add Vendor</button>
+							<button type="button" class="btn btn-primary" onclick="window.location.href='<%=addVendorURL%>'"><liferay-ui:message key="add.vendor" /></button>
 						</div>
 						<div class="btn-group" role="group">
-							<button type="button" class="btn btn-secondary" onclick="window.location.href='<%=exportVendorsURL%>'">Export Spreadsheet</button>
+							<button type="button" class="btn btn-secondary" onclick="window.location.href='<%=exportVendorsURL%>'"><liferay-ui:message key="export.spreadsheet" /></button>
 						</div>
 					</div>
 				</div>
-                <div class="col portlet-title text-truncate" title="Vendors (${vendorList.size()})">
-					Vendors (<span id="vendorCounter">${vendorList.size()}</span>)
+                <div class="col portlet-title text-truncate" title="<liferay-ui:message key="vendors" /> (${vendorList.size()})">
+					<liferay-ui:message key="vendors" /> (<span id="vendorCounter">${vendorList.size()}</span>)
 				</div>
             </div>
 
@@ -130,9 +130,9 @@
                         "1": "<sw360:out value="${vendor.shortname}"/>",
                         "2": "<sw360:out value="${vendor.url}"/>",
                         "3":  '<div class="actions">'
-                            +   '<svg class="edit lexicon-icon" data-vendor-id="${vendor.id}"><title>Edit</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>'
-                            +   '<svg class="merge lexicon-icon" data-vendor-id="${vendor.id}"><title>Merge</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#merge"/></svg>'
-                            +   '<svg class="delete lexicon-icon" data-vendor-id="${vendor.id}" data-vendor-name="<sw360:out value="${vendor.fullname}"/>"><title>Delete</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/></svg>'
+                            +   '<svg class="edit lexicon-icon" data-vendor-id="${vendor.id}"><title><liferay-ui:message key="edit" /></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>'
+                            +   '<svg class="merge lexicon-icon" data-vendor-id="${vendor.id}"><title><liferay-ui:message key="merge" /></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#merge"/></svg>'
+                            +   '<svg class="delete lexicon-icon" data-vendor-id="${vendor.id}" data-vendor-name="<sw360:out value="${vendor.fullname}"/>"><title><liferay-ui:message key="delete" /></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/></svg>'
                             + '</div>'
 
                     });
@@ -141,15 +141,32 @@
                 vendorsTable = datatables.create('#vendorsTable', {
                     data: result,
                     columns: [
-                        {"title": "Full Name"},
-                        {"title": "Short Name"},
-                        {"title": "URL"},
-                        {"title": "Actions", className: "three actions" }
+                        {"title": "<liferay-ui:message key="full.name" />"},
+                        {"title": "<liferay-ui:message key="short.name" />"},
+                        {"title": "<liferay-ui:message key="url" />"},
+                        {"title": "<liferay-ui:message key="actions" />", className: "three actions" }
                     ],
                     searching: true,
                     language: {
-                        emptyTable: 'No vendors found.'
-                    }
+                        paginate: {
+                            previous: "<liferay-ui:message key="previous" />",
+                            next: "<liferay-ui:message key="next" />"
+                        },
+                        emptyTable: "<liferay-ui:message key="no.vendors.found" />",
+                        info: "<liferay-ui:message key="showing" />",
+                        infoEmpty: "<liferay-ui:message key="infoempty" />",
+                        lengthMenu: '<liferay-ui:message key="show" /> <select>'+
+                        '<option value="10">10</option>'+
+                        '<option value="25">25</option>'+
+                        '<option value="50">50</option>'+
+                        '<option value="100">100</option>'+
+                        '<option value="-1"><liferay-ui:message key="all" /></option>'+
+                        '</select> <liferay-ui:message key="entries" />',
+                        infoFiltered: "<liferay-ui:message key="filtered.from.max.total.entries" />",
+                        zeroRecords: "<liferay-ui:message key="no.matching.records.found" />",
+                        processing: "<liferay-ui:message key="processing" />",
+                        loadingRecords: "<liferay-ui:message key="loading" />"
+                    },
                 }, [0, 1, 2], [3]);
 
                 return vendorsTable;
@@ -175,12 +192,12 @@
                                 $('#vendorCounter').parent().attr('title', $('#vendorCounter').parent().text());
                                 $dialog.close();
                             } else {
-                                $dialog.alert("I could not delete the vendor!");
+                                $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.vendor" />");
                             }
                         },
                         error: function () {
                             callback();
-                            $dialog.alert("I could not delete the vendor!");
+                            $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.vendor" />");
                         }
                     });
                 }
@@ -188,9 +205,9 @@
                 $dialog = dialog.confirm(
                     'danger',
                     'question-circle',
-                    'Delete Vendor?',
-                    '<p>Do you really want to delete the vendor <b data-name="name"></b>?</p>',
-                    'Delete Vendor',
+                    '<liferay-ui:message key="delete.vendor" /> ?',
+                    '<p><liferay-ui:message key="do.you.really.want.to.delete.the.vendor.x" />?</p>',
+                    '<liferay-ui:message key="delete.vendor" />',
                     {
                         name: name,
                     },

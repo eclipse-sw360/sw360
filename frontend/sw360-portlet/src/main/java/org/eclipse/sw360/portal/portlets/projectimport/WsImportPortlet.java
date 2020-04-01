@@ -49,7 +49,7 @@ import static com.google.common.base.Strings.nullToEmpty;
         "javax.portlet.display-name=WhiteSource Import",
         "javax.portlet.info.short-title=WhiteSource Import",
         "javax.portlet.info.title=WhiteSource Import",
-
+        "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.view-template=/html/projects/wsimport.jsp",
     },
     service = Portlet.class,

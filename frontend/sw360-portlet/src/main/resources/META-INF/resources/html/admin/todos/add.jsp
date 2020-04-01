@@ -33,10 +33,10 @@
 				<div class="col-auto">
 					<div class="btn-toolbar" role="toolbar">
                         <div class="btn-group">
-                            <button type="button" class="btn btn-primary" data-action="save">Create ToDo</button>
+                            <button type="button" class="btn btn-primary" data-action="save"><liferay-ui:message key="create.todo" /></button>
                         </div>
                         <div class="btn-group">
-                            <button type="button" class="btn btn-light" data-action="cancel">Cancel</button>
+                            <button type="button" class="btn btn-light" data-action="cancel"><liferay-ui:message key="cancel" /></button>
                         </div>
 					</div>
 				</div>
@@ -48,26 +48,26 @@
                         <table id="todoAddTable" class="table edit-table three-columns">
                             <thead>
                                 <tr>
-                                    <th colspan="3">Add ToDo</th>
+                                    <th colspan="3"><liferay-ui:message key="add.todo" /></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
                                     <td>
                                         <div class="form-group">
-                                            <label for="todoTitle">Title</label>
-                                            <input id="todoTitle" type="text" required class="form-control" placeholder="Enter title..." name="<portlet:namespace/><%=Todo._Fields.TITLE%>"/>
+                                            <label for="todoTitle"><liferay-ui:message key="title" /></label>
+                                            <input id="todoTitle" type="text" required class="form-control" placeholder="<liferay-ui:message key="enter.title" />" name="<portlet:namespace/><%=Todo._Fields.TITLE%>"/>
                                             <div class="invalid-feedback">
-                                                Please enter a title!
+                                                <liferay-ui:message key="please.enter.a.title" />
                                             </div>
                                         </div>
                                     </td>
                                     <td colspan="2">
                                         <div class="form-group">
-                                            <label for="todoText">Text</label>
-                                            <input id="todoText" type="text" required class="form-control" placeholder="Enter text..." name="<portlet:namespace/><%=Todo._Fields.TEXT%>"/>
+                                            <label for="todoText"><liferay-ui:message key="text" /></label>
+                                            <input id="todoText" type="text" required class="form-control" placeholder="<liferay-ui:message key="enter.text" />" name="<portlet:namespace/><%=Todo._Fields.TEXT%>"/>
                                             <div class="invalid-feedback">
-                                                Please enter a text!
+                                                <liferay-ui:message key="please.enter.a.text" />
                                             </div>
                                         </div>
                                     </td>
@@ -76,7 +76,7 @@
                                     <td>
                                         <div class="form-check">
                                             <input id="todoValidForProject" type="checkbox" class="form-check-input" name="<portlet:namespace/><%=Todo._Fields.VALID_FOR_PROJECT%>"/>
-                                            <label for="todoValidForProject" class="form-check-label">Valid for Projects</label>
+                                            <label for="todoValidForProject" class="form-check-label"><liferay-ui:message key="valid.for.projects" /></label>
                                         </div>
                                     </td>
                                     <td></td>

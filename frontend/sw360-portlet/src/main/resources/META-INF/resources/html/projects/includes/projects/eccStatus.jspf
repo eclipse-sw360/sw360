@@ -10,7 +10,7 @@
 
 <core_rt:if test="${releasesAndProjects.size() == 0 }">
     <div class="alert alert-info" role="alert">
-        Please add linked releases or projects with linked releases to view their ECC status here.
+        <liferay-ui:message key="please.add.linked.releases.or.projects.with.linked.releases.to.view.their.ecc.status.here" />
     </div>
 </core_rt:if>
 
@@ -44,14 +44,34 @@
             datatables.create('#releasesECCTable', {
                 data: result,
                 columns: [
-                    {title: "Status"},
-                    {title: "Release Name"},
-                    {title: "Release Version", className: 'text-right'},
-                    {title: "Creator Group"},
-                    {title: "ECC Assessor"},
-                    {title: "ECC Assessor Group"},
-                    {title: "ECC Assessment Date"}
-                ]
+                    {title: "<liferay-ui:message key="status" />"},
+                    {title: "<liferay-ui:message key="release.name" />"},
+                    {title: "<liferay-ui:message key="release.version" />", className: 'text-right'},
+                    {title: "<liferay-ui:message key="creator.group" />"},
+                    {title: "<liferay-ui:message key="ecc.assessor" />"},
+                    {title: "<liferay-ui:message key="ecc.assessor.group" />"},
+                    {title: "<liferay-ui:message key="ecc.assessment.date" />"}
+                ],
+                language: {
+                    paginate: {
+                        previous: "<liferay-ui:message key="previous" />",
+                        next: "<liferay-ui:message key="next" />"
+                    },
+                    info: "<liferay-ui:message key="showing" />",
+                    lengthMenu: '<liferay-ui:message key="show" /> <select>'+
+                    '<option value="10">10</option>'+
+                    '<option value="25">25</option>'+
+                    '<option value="50">50</option>'+
+                    '<option value="100">100</option>'+
+                    '<option value="-1"><liferay-ui:message key="all" /></option>'+
+                    '</select> <liferay-ui:message key="entries" />',
+                    processing: "<liferay-ui:message key="processing" />",
+                    loadingRecords: "<liferay-ui:message key="loading" />",
+                    search: "<liferay-ui:message key="search" />",
+                    infoEmpty: "<liferay-ui:message key="infoempty" />",
+                    infoFiltered: "<liferay-ui:message key="filtered.from.max.total.entries" />",
+                    zeroRecords: "<liferay-ui:message key="no.matching.records.found" />"
+                }
             }, [0, 1, 2, 3, 4, 5, 6], undefined, true);
         }
 

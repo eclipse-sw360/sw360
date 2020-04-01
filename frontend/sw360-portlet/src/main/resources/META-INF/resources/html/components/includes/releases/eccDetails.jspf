@@ -13,39 +13,39 @@
 <table class="table label-value-table" id="ECCInfo">
     <thead>
     <tr>
-        <th colspan="2">ECC Information</th>
+        <th colspan="2"><liferay-ui:message key="ecc.information" /></th>
     </tr>
     </thead>
     <tr>
-        <td>ECC Status:</td>
+        <td><liferay-ui:message key="ecc.status" />:</td>
         <td><sw360:DisplayEnum value="${eccInfo.eccStatus}"/></td>
     </tr>
     <tr>
-        <td>AL:</td>
+        <td><liferay-ui:message key="al" />:</td>
         <td><sw360:out value="${eccInfo.AL}"/></td>
     </tr>
     <tr>
-        <td>ECCN:</td>
+        <td><liferay-ui:message key="eccn" />:</td>
         <td><sw360:out value="${eccInfo.ECCN}"/></td>
     </tr>
     <tr>
-        <td>Material Index Number:</td>
+        <td><liferay-ui:message key="material.index.number" />:</td>
         <td><sw360:out value="${eccInfo.materialIndexNumber}"/></td>
     </tr>
     <tr>
-        <td>ECC Comment:</td>
+        <td><liferay-ui:message key="ecc.comment" />:</td>
         <td><sw360:out value="${eccInfo.eccComment}"/></td>
     </tr>
     <tr>
-        <td>Assessor Contact Person:</td>
+        <td><liferay-ui:message key="assessor.contact.person" />:</td>
         <td><sw360:out value="${eccInfo.assessorContactPerson}"/></td>
     </tr>
     <tr>
-        <td>Assessor Department:</td>
+        <td><liferay-ui:message key="assessor.department" />:</td>
         <td><sw360:out value="${eccInfo.assessorDepartment}"/></td>
     </tr>
     <tr>
-        <td>Assessment Date:</td>
+        <td><liferay-ui:message key="assessment.date" />:</td>
         <td><sw360:out value="${eccInfo.assessmentDate}"/></td>
     </tr>
 </table>

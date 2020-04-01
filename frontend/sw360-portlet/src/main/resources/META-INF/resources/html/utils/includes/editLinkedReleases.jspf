@@ -20,10 +20,10 @@
        </colgroup>
     <thead>
         <tr>
-            <th>Vendor Name</th>
-            <th>Release Name</th>
-            <th>Release Version</th>
-            <th>Release Relation <sw360:DisplayEnumInfo type="<%=ReleaseRelationship.class%>"/></th>
+            <th><liferay-ui:message key="vendor.name" /></th>
+            <th><liferay-ui:message key="release.name" /></th>
+            <th><liferay-ui:message key="release.version" /></th>
+            <th><liferay-ui:message key="release.relation" /> <sw360:DisplayEnumInfo type="<%=ReleaseRelationship.class%>"/></th>
             <th></th>
         </tr>
     </thead>
@@ -32,7 +32,7 @@
     </tbody>
 </table>
 
-<button type="button" class="btn btn-secondary" id="addLinkedReleasesToReleaseButton">Click to add Releases</button>
+<button type="button" class="btn btn-secondary" id="addLinkedReleasesToReleaseButton"><liferay-ui:message key="click.to.add.releases" /></button>
 
 <script>
     require(['jquery', 'modules/dialog'], function($, dialog) {
@@ -40,7 +40,7 @@
             var releaseRowId = $(event.currentTarget).data().uuid,
                 releaseName = $(event.currentTarget).data().releaseName;
 
-            $dialog = dialog.confirm('danger', 'question-circle', 'Delete link to release?', '<p>Do you really want to remove the link to release <b data-name="releaseName"></b>?</p>', 'Delete Link', {
+            $dialog = dialog.confirm('danger', 'question-circle', '<liferay-ui:message key="delete.link.to.release" />', '<p><liferay-ui:message key="do.you.really.want.to.remove.the.link.to.release.x.1" />?</p>', '<liferay-ui:message key="delete.link" />', {
                 releaseName: releaseName
             }, function(submit, callback) {
                 $('#releaseLinkRow' + releaseRowId).remove();

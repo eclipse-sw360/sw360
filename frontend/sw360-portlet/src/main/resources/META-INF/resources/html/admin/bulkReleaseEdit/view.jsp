@@ -34,8 +34,8 @@
 		</div>
 		<div class="col">
             <div class="row portlet-toolbar">
-				<div class="col portlet-title text-truncate" title="Release Bulk Edit">
-					Release Bulk Edit
+				<div class="col portlet-title text-truncate" title="<liferay-ui:message key="release.bulk.edit" />">
+					<liferay-ui:message key="release.bulk.edit" />
 				</div>
             </div>
 
@@ -44,12 +44,12 @@
 			        <table id="ComponentBasicInfo" class="table table-bordered">
                         <thead>
                             <tr>
-                                <th width="13%">Status</th>
-                                <th width="20%">CPE id</th>
-                                <th width="20%">Vendor</th>
-                                <th width="20%">Release name</th>
-                                <th width="20%">Release version</th>
-                                <th width="7%">Submit</th>
+                                <th width="13%"><liferay-ui:message key="status" /></th>
+                                <th width="20%"><liferay-ui:message key="cpe.id1" /></th>
+                                <th width="20%"><liferay-ui:message key="vendor" /></th>
+                                <th width="20%"><liferay-ui:message key="release.name" /></th>
+                                <th width="20%"><liferay-ui:message key="release.version" /></th>
+                                <th width="7%"><liferay-ui:message key="submit" /></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -58,7 +58,7 @@
                                     <td id="Status${release.id}" class="text-center">
                                         <div class="spinner text-center" style="display: none;">
                                             <div class="spinner-border" role="status">
-                                                <span class="sr-only">Update...</span>
+                                                <span class="sr-only"><liferay-ui:message key="update" />...</span>
                                             </div>
                                         </div>
                                         <span class="badge" data-type="result"></span>
@@ -67,7 +67,7 @@
                                         <div class="form-group">
                                             <input id='cpeid${release.id}' type="text"
                                                     class="form-control"
-                                                    placeholder="Enter CPE ID" required value="${release.cpeid}" />
+                                                    placeholder="<liferay-ui:message key="enter.cpe.id" />" required value="${release.cpeid}" />
                                         </div>
                                         <%-- this and following hidden spans are added to make display filter and sorting using dataTables work--%>
                                         <span style="display:none" id='plaincpeid${release.id}'>${release.cpeid}</span>
@@ -80,7 +80,7 @@
                                     <td>
                                         <div class="form-group">
                                             <input id='name${release.id}' type="text" class="form-control"
-                                                    placeholder="Enter Name"
+                                                    placeholder="<liferay-ui:message key="enter.name" />"
                                                         value="<sw360:out value="${release.name}"/>"
                                                     />
                                         </div>
@@ -89,13 +89,13 @@
                                     <td>
                                         <div class="form-group">
                                             <input id='version${release.id}'  type="text" class="form-control"
-                                                placeholder="Enter Version"
+                                                placeholder="<liferay-ui:message key="enter.version" />"
                                                 value="<sw360:out value="${release.version}"/>"/>
                                         </div>
                                         <span style="display:none" id='plainversion${release.id}'>${release.version}</span>
                                     </td>
                                     <td>
-                                        <button type="button" name="submit" class="btn btn-sm btn-primary" data-release-id="${release.id}">Update</button>
+                                        <button type="button" name="submit" class="btn btn-sm btn-primary" data-release-id="${release.id}"><liferay-ui:message key="update" /></button>
                                     </td>
                                 </tr>
                             </core_rt:forEach>
@@ -144,7 +144,24 @@
                 return datatables.create('#ComponentBasicInfo', {
                     searching: true,
                     language: {
-                        emptyTable: 'No releases found'
+                        paginate: {
+                            previous: "<liferay-ui:message key="previous" />",
+                            next: "<liferay-ui:message key="next" />",
+                        },
+                        emptyTable: "<liferay-ui:message key="no.releases.found" />",
+                        info: "<liferay-ui:message key="showing" />",
+                        infoEmpty: "<liferay-ui:message key="infoempty" />",
+                        lengthMenu: '<liferay-ui:message key="show" /> <select>'+
+                        '<option value="10">10</option>'+
+                        '<option value="25">25</option>'+
+                        '<option value="50">50</option>'+
+                        '<option value="100">100</option>'+
+                        '<option value="-1"><liferay-ui:message key="all" /></option>'+
+                        '</select> <liferay-ui:message key="entries" />',
+                        infoFiltered: "<liferay-ui:message key="filtered.from.max.total.entries" />",
+                        zeroRecords: "<liferay-ui:message key="no.matching.records.found" />",
+                        processing: "<liferay-ui:message key="processing" />",
+                        loadingRecords: "<liferay-ui:message key="loading" />"
                     },
                     columnDefs: [
                         { targets: [0], orderable: false}

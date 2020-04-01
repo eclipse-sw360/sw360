@@ -13,24 +13,24 @@
 </portlet:resourceURL>
 
 <div class="dialogs">
-    <div id="searchVendorDialog" data-title="Search Vendor" class="modal fade" tabindex="-1" role="dialog" data-view-vendor-url="<%=viewVendorURL%>">
+    <div id="searchVendorDialog" data-title="<liferay-ui:message key="search.vendor" />" class="modal fade" tabindex="-1" role="dialog" data-view-vendor-url="<%=viewVendorURL%>">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
             <div class="modal-content">
                 <div class="modal-body container">
                     <form class="form">
                         <div class="row form-group">
                             <div class="col-6">
-                                <input type="text" name="searchvendor" id="searchvendor" placeholder="Enter search text..." class="form-control" autofocus />
+                                <input type="text" name="searchvendor" id="searchvendor" placeholder="<liferay-ui:message key="enter.search.text" />" class="form-control" autofocus />
                             </div>
                             <div class="col">
-                                <button type="button" class="btn btn-secondary" id="searchbuttonvendor" disabled>Search</button>
+                                <button type="button" class="btn btn-secondary" id="searchbuttonvendor" disabled><liferay-ui:message key="search" /></button>
                             </div>
                         </div>
 
                         <div id="vendorsearchresults">
                             <div id="search-spinner" class="spinner text-center" style="display: none;">
                                 <div class="spinner-border" role="status">
-                                    <span class="sr-only">Searching...</span>
+                                    <span class="sr-only"><liferay-ui:message key="searching" /></span>
                                 </div>
                             </div>
 
@@ -45,9 +45,9 @@
                                 <thead>
                                     <tr>
                                         <th></th>
-                                        <th>Full Name</th>
-                                        <th>Short Name</th>
-                                        <th>URL</th>
+                                        <th><liferay-ui:message key="full.name" /></th>
+                                        <th><liferay-ui:message key="short.name" /></th>
+                                        <th><liferay-ui:message key="url" /></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -57,9 +57,9 @@
                     </form>
 				</div>
 			    <div class="modal-footer">
-		        <button type="button" class="btn btn-light" data-dismiss="modal">Close</button>
-			        <button name="add-vendor" data-submit="add" type="button" class="btn btn-secondary">Add Vendor</button>
-                    <button name="select-vendor" data-submit="select" type="button" class="btn btn-primary">Select Vendor</button>
+		        <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="close" /></button>
+			        <button name="add-vendor" data-submit="add" type="button" class="btn btn-secondary"><liferay-ui:message key="add.vendor" /></button>
+                    <button name="select-vendor" data-submit="select" type="button" class="btn btn-primary"><liferay-ui:message key="select.vendor" /></button>
 			    </div>
             </div>
         </div>

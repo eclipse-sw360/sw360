@@ -45,15 +45,15 @@
 				<div class="col-auto">
 					<div class="btn-toolbar" role="toolbar">
 						<div class="btn-group" role="group">
-							<button type="button" class="btn btn-primary" onclick="window.location.href='<%=addLicenseURL%>'">Add License</button>
+							<button type="button" class="btn btn-primary" onclick="window.location.href='<%=addLicenseURL%>'"><liferay-ui:message key="add.license" /></button>
 						</div>
 						<div class="btn-group" role="group">
-							<button type="button" class="btn btn-secondary" onclick="window.location.href='<%=exportLicensesURL%>'">Export Spreadsheet</button>
+							<button type="button" class="btn btn-secondary" onclick="window.location.href='<%=exportLicensesURL%>'"><liferay-ui:message key="export.spreadsheet" /></button>
 						</div>
 					</div>
 				</div>
-                <div class="col portlet-title text-truncate" title="Licenses (${licenseList.size()})">
-					Licenses (${licenseList.size()})
+                <div class="col portlet-title text-truncate" title="<liferay-ui:message key="licenses" /> (${licenseList.size()})">
+					<liferay-ui:message key="licenses" /> (${licenseList.size()})
 				</div>
             </div>
 
@@ -111,11 +111,31 @@
                 searching: true,
                 data: result,
                 columns: [
-                    { "title": "License Shortname" },
-                    { "title": "License Fullname" },
-                    { "title": "Is checked?", className: 'text-center' },
-                    { "title": "License Type" }
+                    { "title": "<liferay-ui:message key="license.shortname" />" },
+                    { "title": "<liferay-ui:message key="license.fullname" />" },
+                    { "title": "<liferay-ui:message key="is.checked" />?", className: 'text-center' },
+                    { "title": "<liferay-ui:message key="license.type" />" }
                 ],
+                language: {
+                    paginate: {
+                        previous: "<liferay-ui:message key="previous" />",
+                        next: "<liferay-ui:message key="next" />"
+                    },
+                    emptyTable: "<liferay-ui:message key="no.data.available.in.table" />",
+                    info: "<liferay-ui:message key="showing" />",
+                    infoEmpty: "<liferay-ui:message key="infoempty" />",
+                    lengthMenu: '<liferay-ui:message key="show" /> <select>'+
+                    '<option value="10">10</option>'+
+                    '<option value="25">25</option>'+
+                    '<option value="50">50</option>'+
+                    '<option value="100">100</option>'+
+                    '<option value="-1"><liferay-ui:message key="all" /></option>'+
+                    '</select> <liferay-ui:message key="entries" />',
+                    infoFiltered: "<liferay-ui:message key="filtered.from.max.total.entries" />",
+                    zeroRecords: "<liferay-ui:message key="no.matching.records.found" />",
+                    processing: "<liferay-ui:message key="processing" />",
+                    loadingRecords: "<liferay-ui:message key="loading" />"
+                },
                 initComplete: datatables.showPageContainer
             }, [0, 1, 2, 3]);
 

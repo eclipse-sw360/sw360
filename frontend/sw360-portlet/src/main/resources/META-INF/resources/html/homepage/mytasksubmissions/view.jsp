@@ -23,7 +23,7 @@
 </portlet:resourceURL>
 
 <section id="my-task-submissions">
-    <h4 class="actions">My Task Submissions <span title="Reload"><clay:icon symbol="reload"/></span></h4>
+    <h4 class="actions"><liferay-ui:message key="my.task.submissions" /><span title="<liferay-ui:message key="reload" />"><clay:icon symbol="reload"/></span></h4>
     <div class="row">
         <div class="col">
             <table id="tasksubmissionTable" class="table table-bordered table-lowspace" data-load-url="<%=loadTasksURL%>">
@@ -73,12 +73,20 @@
                     "<'row'<'col-sm-12'tr>>" +
                     "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
                 columns: [
-                    {"title": "Document Name", data: 'name', render: renderModerationRequestLink },
-                    {"title": "Status", data: 'state' },
-                    {"title": "Actions", data: 'id', className: "one action", orderable: false, render: renderDeleteAction }
+                    {"title": "<liferay-ui:message key="document.name" />", data: 'name', render: renderModerationRequestLink },
+                    {"title": "<liferay-ui:message key="status" />", data: 'state' },
+                    {"title": "<liferay-ui:message key="actions" />", data: 'id', className: "one action", orderable: false, render: renderDeleteAction }
                 ],
                 language: {
-                    emptyTable: 'You do not have any open moderation requests.'
+                    paginate: {
+                        previous: "<liferay-ui:message key="previous" />",
+                        next: "<liferay-ui:message key="next" />"
+                },
+                    emptyTable: "<liferay-ui:message key="you.do.not.have.any.open.moderation.requests" />",
+                    info: "<liferay-ui:message key="showing" />",
+                    infoEmpty: "<liferay-ui:message key="infoempty" />",
+                    processing: "<liferay-ui:message key="processing" />",
+                    loadingRecords: "<liferay-ui:message key="loading" />"
                 },
                 initComplete: function() {
                     $('#my-task-submissions h4 svg').removeClass('spinning disabled');
@@ -132,12 +140,12 @@
                         }
                         else {
                             callback();
-                            $dialog.alert("I could not delete the moderation request!");
+                            $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.moderation.request" />");
                         }
                     },
                     error: function () {
                         callback();
-                        $dialog.alert("I could not delete the moderation request!");
+                        $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.moderation.request" />");
                     }
                 });
             }
@@ -145,9 +153,9 @@
             $dialog = dialog.confirm(
                 'danger',
                 'question-circle',
-                'Delete Moderation Request?',
-                '<p>Do you really want to delete the moderation request for <b data-name="name"></b>?</p>',
-                'Delete Moderation Request',
+                '<liferay-ui:message key="delete.moderation.request" />?',
+                '<p><liferay-ui:message key="do.you.really.want.to.delete.the.moderation.request.for.x" />?</p>',
+                '<liferay-ui:message key="delete.moderation.request" />',
                 {
                     name: docName,
                 },

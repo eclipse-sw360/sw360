@@ -36,8 +36,8 @@
 		</div>
 		<div class="col">
             <div class="row portlet-toolbar">
-				<div class="col portlet-title text-truncate" title="ECC Overview">
-					ECC Overview
+				<div class="col portlet-title text-truncate" title="<liferay-ui:message key="ecc.overview" />">
+					<liferay-ui:message key="ecc.overview" />
 				</div>
             </div>
 
@@ -46,13 +46,13 @@
 			        <table id="eccInfoTable" class="table table-bordered">
                         <thead>
                             <tr>
-                                <th>Status</th>
-                                <th>Release Name</th>
-                                <th>Release version</th>
-                                <th>Creator Group</th>
-                                <th>ECC Assessor</th>
-                                <th>ECC Assessor Group</th>
-                                <th>ECC Assessment Date</th>
+                                <th><liferay-ui:message key="status" /></th>
+                                <th><liferay-ui:message key="release.name" /></th>
+                                <th><liferay-ui:message key="release.version" /></th>
+                                <th><liferay-ui:message key="creator.group" /></th>
+                                <th><liferay-ui:message key="ecc.assessor" /></th>
+                                <th><liferay-ui:message key="ecc.assessor.group" /></th>
+                                <th><liferay-ui:message key="ecc.assessment.date" /></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -107,6 +107,26 @@
 
             function configureEccInfoTable(){
                 return datatables.create('#eccInfoTable', {
+                    language: {
+                        paginate: {
+                            previous: "<liferay-ui:message key="previous" />",
+                            next: "<liferay-ui:message key="next" />"
+                        },
+                        emptyTable: "<liferay-ui:message key="no.data.available.in.table" />",
+                        info: "<liferay-ui:message key="showing" />",
+                        infoEmpty: "<liferay-ui:message key="infoempty" />",
+                        lengthMenu: '<liferay-ui:message key="show" /> <select>'+
+                        '<option value="10">10</option>'+
+                        '<option value="25">25</option>'+
+                        '<option value="50">50</option>'+
+                        '<option value="100">100</option>'+
+                        '<option value="-1"><liferay-ui:message key="all" /></option>'+
+                        '</select> <liferay-ui:message key="entries" />',
+                        infoFiltered: "<liferay-ui:message key="filtered.from.max.total.entries" />",
+                        zeroRecords: "<liferay-ui:message key="no.matching.records.found" />",
+                        processing: "<liferay-ui:message key="processing" />",
+                        loadingRecords: "<liferay-ui:message key="loading" />"
+                    },
                     searching: true
                 }, [0, 1, 2, 3, 4, 5, 6]);
             }

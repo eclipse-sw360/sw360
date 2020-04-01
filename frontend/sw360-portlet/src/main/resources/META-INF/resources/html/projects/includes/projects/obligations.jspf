@@ -35,15 +35,15 @@
         <thead>
             <tr>
                 <th class="more-info">
-                    <span title="Expand all" data-show="false">&#x25BA</span>
+                    <span title="<liferay-ui:message key="expand.all" />" data-show="false">&#x25BA</span>
                 </th>
-                <th>Obligation</th>
-                <th>Licenses</th>
-                <th>Releases</th>
-                <th>Status</th>
+                <th><liferay-ui:message key="obligation" /></th>
+                <th><liferay-ui:message key="licenses" /></th>
+                <th><liferay-ui:message key="releases" /></th>
+                <th><liferay-ui:message key="status" /></th>
                 <!-- Commented code for obligation action, until action select options are provided -->
                 <!-- <th>Action</th> -->
-                <th>Comment</th>
+                <th><liferay-ui:message key="comment" /></th>
             </tr>
         </thead>
         <tbody>

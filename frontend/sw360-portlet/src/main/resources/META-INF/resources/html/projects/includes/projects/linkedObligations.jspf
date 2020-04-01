@@ -22,7 +22,7 @@
 
 <core_rt:if test="${not isObligationPresent}">
     <div class="alert alert-info" role="alert">
-            No linked obligations.
+            <liferay-ui:message key="no.linked.obligations" />
     </div>
 </core_rt:if>
 

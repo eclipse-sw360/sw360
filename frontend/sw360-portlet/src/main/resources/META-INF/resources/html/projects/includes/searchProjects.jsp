@@ -22,7 +22,7 @@
 </portlet:resourceURL>
 
 <div class="dialogs">
-	<div id="searchProjectsDialog" data-title="Link Projects" class="modal fade" tabindex="-1" role="dialog">
+	<div id="searchProjectsDialog" data-title="<liferay-ui:message key="link.projects" />" class="modal fade" tabindex="-1" role="dialog">
 		<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
 		    <div class="modal-content">
 			<div class="modal-body container">
@@ -30,17 +30,17 @@
                     <form>
                         <div class="row form-group">
                             <div class="col">
-                                <input type="text" name="searchproject" id="searchproject" placeholder="Enter search text..." class="form-control"/>
+                                <input type="text" name="searchproject" id="searchproject" placeholder="<liferay-ui:message key="enter.search.text" />" class="form-control"/>
                             </div>
                             <div class="col">
-                                <button type="button" class="btn btn-secondary" id="searchbuttonproject">Search</button>
+                                <button type="button" class="btn btn-secondary" id="searchbuttonproject"><liferay-ui:message key="search" /></button>
                             </div>
                         </div>
 
                         <div id="Projectsearchresults">
                             <div class="spinner text-center" style="display: none;">
                                 <div class="spinner-border" role="status">
-                                    <span class="sr-only">Loading...</span>
+                                    <span class="sr-only"><liferay-ui:message key="loading" /></span>
                                 </div>
                             </div>
 
@@ -48,11 +48,11 @@
                                 <thead>
                                     <tr>
                                         <th></th>
-                                        <th>Project name</th>
-                                        <th>Version</th>
-                                        <th>State</th>
-                                        <th>Responsible</th>
-                                        <th>Description</th>
+                                        <th><liferay-ui:message key="project.name" /></th>
+                                        <th><liferay-ui:message key="version" /></th>
+                                        <th><liferay-ui:message key="state" /></th>
+                                        <th><liferay-ui:message key="responsible" /></th>
+                                        <th><liferay-ui:message key="description" /></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -62,8 +62,8 @@
                     </form>
 				</div>
 			    <div class="modal-footer">
-		        <button type="button" class="btn btn-light" data-dismiss="modal">Close</button>
-			        <button id="linkProjectsButton" type="button" class="btn btn-primary" title="Link projects">Link projects</button>
+		        <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="close" /></button>
+			        <button id="linkProjectsButton" type="button" class="btn btn-primary" title="<liferay-ui:message key="link.projects" />"><liferay-ui:message key="link.projects" /></button>
 			    </div>
 			</div>
 		</div>
@@ -124,8 +124,9 @@
                 paging: false,
                 info: false,
                 language: {
-                    emptyTable: "No projects found.",
-                    processing: "Processing..."
+                    emptyTable: "<liferay-ui:message key="no.projects.found" />",
+                    processing: "<liferay-ui:message key="processing" />",
+                    loadingRecords: "<liferay-ui:message key="loading" />"
                 },
                 select: 'multi+shift'
             }, undefined, [0]);
@@ -153,7 +154,7 @@
                     $dialog.$.find('#searchbuttonproject').prop('disabled', false);
                 },
                 error: function() {
-                    $dialog.alert('Cannot link to project.');
+                    $dialog.alert('<liferay-ui:message key="cannot.link.to.project" />');
                 }
             });
         }

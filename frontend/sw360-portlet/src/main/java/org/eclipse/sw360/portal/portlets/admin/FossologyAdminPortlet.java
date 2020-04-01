@@ -44,7 +44,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.FOSSOLOGY_PORTLET_
         "javax.portlet.display-name=Fossology Administration",
         "javax.portlet.info.short-title=Fossology",
         "javax.portlet.info.title=Fossology Administration",
-
+        "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.view-template=/html/admin/fossyAdmin/view.jsp",
     },
     service = Portlet.class,

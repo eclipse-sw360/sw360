@@ -52,7 +52,9 @@ import static java.lang.Math.min;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyString;
 import static org.eclipse.sw360.portal.common.PortalConstants.DATATABLE_RECORDS_FILTERED;
 import static org.eclipse.sw360.portal.common.PortalConstants.DATATABLE_RECORDS_TOTAL;
+import com.liferay.portal.kernel.language.LanguageUtil;
 import static org.eclipse.sw360.portal.common.PortalConstants.MY_PROJECTS_PORTLET_NAME;
+
 
 @org.osgi.service.component.annotations.Component(
     immediate = true,
@@ -66,7 +68,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.MY_PROJECTS_PORTLE
         "javax.portlet.display-name=My Projects",
         "javax.portlet.info.short-title=My Projects",
         "javax.portlet.info.title=My Projects",
-
+	    "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.view-template=/html/homepage/myprojects/view.jsp",
     },
     service = Portlet.class,
@@ -143,7 +145,7 @@ public class MyProjectsPortlet extends Sw360Portlet {
         }
         myProjects = getWithFilledClearingStateSummary(myProjects, user);
 
-        JSONArray jsonProjects = getProjectData(myProjects, paginationParameters);
+        JSONArray jsonProjects = getProjectData(myProjects, paginationParameters, request);
         JSONObject jsonResult = JSONFactoryUtil.createJSONObject();
         jsonResult.put("aaData", jsonProjects);
         jsonResult.put(DATATABLE_RECORDS_TOTAL, myProjects.size());
@@ -166,7 +168,7 @@ public class MyProjectsPortlet extends Sw360Portlet {
         }
     }
 
-    public JSONArray getProjectData(List<Project> projectList, PaginationParameters projectParameters) {
+    public JSONArray getProjectData(List<Project> projectList, PaginationParameters projectParameters, ResourceRequest request) {
         List<Project> sortedProjects = sortProjectList(projectList, projectParameters);
         int count = PortletUtils.getProjectDataCount(projectParameters, projectList.size());
 
@@ -179,7 +181,7 @@ public class MyProjectsPortlet extends Sw360Portlet {
             jsonObject.put("id", project.getId());
             jsonObject.put("name", SW360Utils.printName(project));
             jsonObject.put("description", Strings.nullToEmpty(project.getDescription()));
-            jsonObject.put("releaseClearingState", acceptedReleases(project.getReleaseClearingStateSummary()));
+            jsonObject.put("releaseClearingState", acceptedReleases(project.getReleaseClearingStateSummary(),request));
 
             projectData.put(jsonObject);
         }
@@ -187,11 +189,12 @@ public class MyProjectsPortlet extends Sw360Portlet {
         return projectData;
     }
 
-    private String acceptedReleases(ReleaseClearingStateSummary releaseClearingStateSummary) {
+    private String acceptedReleases(ReleaseClearingStateSummary releaseClearingStateSummary,ResourceRequest  request) {
         String releaseCounts;
 
         if (releaseClearingStateSummary == null) {
-            releaseCounts = "not available";
+            //releaseCounts = "not available";
+        	releaseCounts = LanguageUtil.get(getResourceBundle(request.getLocale()), "not.available");
         } else {
             int total = releaseClearingStateSummary.newRelease + releaseClearingStateSummary.sentToClearingTool
                     + releaseClearingStateSummary.underClearing + releaseClearingStateSummary.reportAvailable

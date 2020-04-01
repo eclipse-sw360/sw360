@@ -11,6 +11,9 @@ package org.eclipse.sw360.portal.tags;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
+
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
@@ -23,10 +26,12 @@ import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.apache.thrift.TException;
 import org.apache.thrift.meta_data.FieldMetaData;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.ResourceBundle;
 import java.util.Set;
 
 import static org.eclipse.sw360.portal.tags.TagUtils.*;
@@ -103,14 +108,16 @@ public class DisplayComponentChanges extends NameSpaceAwareTag {
             }
 
             String renderString = display.toString();
+            HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+            ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
 
             if (Strings.isNullOrEmpty(renderString)) {
-                renderString = "<div class=\"alert alert-info\">No changes in basic fields.</div>";
+                renderString = "<div class=\"alert alert-info\">"+LanguageUtil.get(resourceBundle,"no.changes.in.basic.fields")+"</div>";
             } else {
                 renderString = String.format("<table class=\"%s\" id=\"%schanges\" >", tableClasses, idPrefix)
-                        + "<thead><tr><th colspan=\"4\"> Changes for Basic fields</th></tr>"
+                        + "<thead><tr><th colspan=\"4\">"+ LanguageUtil.get(resourceBundle, "changes.for.basic.fields")+"</th></tr>"
                         + String.format("<tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr></thead><tbody>",
-                        FIELD_NAME, CURRENT_VAL, DELETED_VAL, SUGGESTED_VAL)
+                        LanguageUtil.get(resourceBundle,"field.name"), LanguageUtil.get(resourceBundle,"current.value"), LanguageUtil.get(resourceBundle,"former.value"), LanguageUtil.get(resourceBundle,"suggested.value"))
                         + renderString + "</tbody></table>";
             }
 

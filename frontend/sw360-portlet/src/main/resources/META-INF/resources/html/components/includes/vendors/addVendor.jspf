@@ -13,7 +13,7 @@
 </portlet:resourceURL>
 
 <div class="dialogs">
-    <div id="addVendorDialog" data-title="Create new Vendor" class="modal fade" tabindex="-1" role="dialog" data-add-vendor-url="<%=addVendorURL%>">
+    <div id="addVendorDialog" data-title="<liferay-ui:message key="create.new.vendor" />" class="modal fade" tabindex="-1" role="dialog" data-add-vendor-url="<%=addVendorURL%>">
         <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-body container">
@@ -21,35 +21,35 @@
                         <table class="table edit-table three-columns">
                             <thead>
                                 <tr>
-                                    <th colspan="3">Edit Vendor</th>
+                                    <th colspan="3"><liferay-ui:message key="edit.vendor" /></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
                                     <td>
                                         <div class="form-group">
-                                            <label for="vendorFullname">Full Name</label>
-                                            <input id="vendorFullname" type="text" required class="form-control" placeholder="Enter vendor fullname" data-name="fullname" autofocus/>
+                                            <label for="vendorFullname"><liferay-ui:message key="full.name" /></label>
+                                            <input id="vendorFullname" type="text" required class="form-control" placeholder="<liferay-ui:message key="enter.vendor.fullname" />" data-name="fullname" autofocus/>
                                                 <div class="invalid-feedback">
-                                                Please enter a full name!
+                                                <liferay-ui:message key="please.enter.a.full.name" />
                                             </div>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="form-group">
-                                            <label for="vendorShortname">Short Name</label>
-                                            <input id="vendorShortname" type="text" required class="form-control" placeholder="Enter vendor short name" data-name="shortname" />
+                                            <label for="vendorShortname"><liferay-ui:message key="short.name" /></label>
+                                            <input id="vendorShortname" type="text" required class="form-control" placeholder="<liferay-ui:message key="enter.vendor.short.name" />" data-name="shortname" />
                                             <div class="invalid-feedback">
-                                                Please enter a short name!
+                                                <liferay-ui:message key="please.enter.a.short.name" />
                                             </div>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="form-group">
-                                            <label for="vendorURL">URL</label>
-                                            <input id="vendorURL" type="url" required class="form-control" placeholder="Enter vendor url" data-name="url" />
+                                            <label for="vendorURL"><liferay-ui:message key="url" /></label>
+                                            <input id="vendorURL" type="url" required class="form-control" placeholder="<liferay-ui:message key="enter.vendor.url" />" data-name="url" />
                                             <div class="invalid-feedback">
-                                                Please enter an url!
+                                                <liferay-ui:message key="please.enter.an.url" />
                                             </div>
                                         </div>
                                     </td>
@@ -59,8 +59,8 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-		        <button type="button" class="btn btn-light" data-dismiss="modal">Close</button>
-			        <button name="add-vendor" data-submit="add" type="button" class="btn btn-primary">Add Vendor</button>
+		        <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="close" /></button>
+			        <button name="add-vendor" data-submit="add" type="button" class="btn btn-primary"><liferay-ui:message key="add.vendor" /></button>
 			    </div>
             </div>
         </div>

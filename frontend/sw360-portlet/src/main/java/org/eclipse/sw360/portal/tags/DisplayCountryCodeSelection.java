@@ -9,9 +9,15 @@
  */
 package org.eclipse.sw360.portal.tags;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
+import javax.servlet.jsp.PageContext;
 import javax.servlet.jsp.tagext.SimpleTagSupport;
+
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
+
 import java.io.IOException;
 import java.util.*;
 
@@ -35,10 +41,13 @@ public class DisplayCountryCodeSelection extends SimpleTagSupport {
     }
 
     private void writeOptions(String selected, String preferredCountryCodes) throws IOException {
+        PageContext pageContext = (PageContext) getJspContext();
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         JspWriter jspWriter = getJspContext().getOut();
 
         if (selected == null || selected.isEmpty()) {
-            jspWriter.write("<option value=\"\">Select a country</option>");
+            jspWriter.write("<option value=\"\">"+LanguageUtil.get(resourceBundle,"select.a.country")+"</option>");
         }
 
         List<String> validCountryCodeList = applyCountryCodes(preferredCountryCodes);

@@ -19,9 +19,9 @@
 	<div class="row">
 		<div class="col-3 sidebar">
 			<div id="detailTab" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
-			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab">Summary</a>
-			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-metaData'}">active</core_rt:if>" href="#tab-metaData" data-toggle="list" role="tab">Metadata</a>
-			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-references'}">active</core_rt:if>" href="#tab-references" data-toggle="list" role="tab">References</a>
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab"><liferay-ui:message key="summary" /></a>
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-metaData'}">active</core_rt:if>" href="#tab-metaData" data-toggle="list" role="tab"><liferay-ui:message key="metadata" /></a>
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-references'}">active</core_rt:if>" href="#tab-references" data-toggle="list" role="tab"><liferay-ui:message key="references" /></a>
 		    </div>
 	    </div>
 	    <div class="col">

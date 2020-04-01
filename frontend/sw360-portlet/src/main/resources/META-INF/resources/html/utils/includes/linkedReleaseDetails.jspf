@@ -27,17 +27,17 @@
  >
     <thead>
         <tr>
-            <th>Name</th>
-            <th>Release relation</th>
-            <th>License names</th>
-            <th>Clearing state</th>
+            <th><liferay-ui:message key="name" /></th>
+            <th><liferay-ui:message key="release.relation" /></th>
+            <th><liferay-ui:message key="license.names" /></th>
+            <th><liferay-ui:message key="clearing.state" /></th>
         </tr>
     </thead>
     <tbody>
         <%@include file="/html/utils/ajax/linkedReleasesRows.jspf" %>
         <core_rt:if test="${releaseList.size() < 1}">
             <tr>
-                <td colspan="4">No linked releases yet.</td>
+                <td colspan="4"><liferay-ui:message key="no.linked.releases.yet" /></td>
             </tr>
         </core_rt:if>
     </tbody>

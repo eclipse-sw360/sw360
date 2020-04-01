@@ -13,10 +13,16 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
+
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
+import javax.servlet.jsp.PageContext;
 import javax.servlet.jsp.tagext.SimpleTagSupport;
 
 import java.io.IOException;
+import java.util.ResourceBundle;
 import java.util.Set;
 
 /**
@@ -44,6 +50,10 @@ public class DisplaySubscribeButton extends SimpleTagSupport {
 
     public void doTag() throws JspException, IOException {
 
+        PageContext pageContext = (PageContext) getJspContext();
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+
         StringBuilder builder = new StringBuilder();
 
         Set<String> subscribers = null;
@@ -57,9 +67,9 @@ public class DisplaySubscribeButton extends SimpleTagSupport {
         subscribers= CommonUtils.nullToEmptySet(subscribers);
 
         if (subscribers.contains(email)) {
-            builder.append(String.format("<button type=\"button\" id=\"%s\" class=\"btn btn-outline-danger subscribed\">Unsubscribe</button>", id));
+            builder.append(String.format("<button type=\"button\" id=\"%s\" class=\"btn btn-outline-danger subscribed\">"+LanguageUtil.get(resourceBundle, "unsubscribe")+"</button>", id));
         } else {
-            builder.append(String.format("<button type=\"button\" id=\"%s\" class=\"btn btn-outline-success\">Subscribe</button>", id));
+            builder.append(String.format("<button type=\"button\" id=\"%s\" class=\"btn btn-outline-success\">"+LanguageUtil.get(resourceBundle, "subscribe")+"</button>", id));
         }
 
         getJspContext().getOut().print(builder.toString());

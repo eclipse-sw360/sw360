@@ -79,7 +79,7 @@ define('bridges/datatables', [
 
 				config.buttons.push({
 					extend: 'print',
-					text: '<svg class="lexicon-icon"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#print" /></svg> Print',
+					text: '<svg class="lexicon-icon"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#print" /></svg>' +Liferay.Language.get('print'),
 					autoPrint: true,
 					className: 'btn btn-sm btn-secondary btn-print',
 					exportOptions: {

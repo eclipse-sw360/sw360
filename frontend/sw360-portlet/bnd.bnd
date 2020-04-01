@@ -52,6 +52,7 @@ Import-Package: \
 	com.liferay.portal.kernel.theme, \
 	com.liferay.portal.kernel.util, \
 	com.liferay.portal.kernel.upload, \
+	com.liferay.portal.kernel.language.*, \
 	com.liferay.taglib.*, \
 	javax.portlet, \
 	javax.servlet, \

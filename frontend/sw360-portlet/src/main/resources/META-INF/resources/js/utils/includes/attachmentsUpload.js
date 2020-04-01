@@ -156,7 +156,7 @@ define('utils/includes/attachmentsUpload', ['jquery', 'resumable', 'modules/dial
                 $('<div class="col-8"></div>').text(file.fileName + " (" + file.size + "b)").appendTo($infoContainer);
 
                 $buttonContainer = $('<div class="col content-right"></div>').appendTo($infoContainer);
-                $deleteButton = $('<button type="button" class="btn btn-danger btn-sm" data-for="delete">Delete</button>');
+                $deleteButton = $('<button type="button" class="btn btn-danger btn-sm" data-for="delete">'+Liferay.Language.get('delete')+'</button>');
                 $deleteButton.attr('data-for', 'delete');
                 $deleteButton.prop('disabled', resumable.isUploading());
                 $deleteButton.appendTo($buttonContainer).click(function () {

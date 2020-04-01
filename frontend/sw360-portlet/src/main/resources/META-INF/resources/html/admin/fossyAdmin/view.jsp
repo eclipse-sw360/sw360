@@ -48,18 +48,18 @@
 				<div class="col-auto">
 					<div class="btn-toolbar" role="toolbar">
 						<div class="btn-group" role="group">
-							<button type="button" class="btn btn-primary" data-action="check">Re-Check connection</button>
+							<button type="button" class="btn btn-primary" data-action="check"><liferay-ui:message key="re.check.connection" /></button>
 						</div>
 						<div class="btn-group" role="group">
-							<button type="button" class="btn btn-primary" data-action="save">Save configuration</button>
+							<button type="button" class="btn btn-primary" data-action="save"><liferay-ui:message key="save.configuration" /></button>
 						</div>
 						<div class="btn-group" role="group">
-							<button type="button" class="btn btn-light" data-action="cancel">Cancel</button>
+							<button type="button" class="btn btn-light" data-action="cancel"><liferay-ui:message key="cancel" /></button>
 						</div>
 					</div>
 				</div>
-                <div class="col portlet-title text-truncate" title="FOSSology Connection Administration">
-					FOSSology Connection Administration
+                <div class="col portlet-title text-truncate" title="<liferay-ui:message key="fossology.connection.administration" />">
+					<liferay-ui:message key="fossology.connection.administration" />
 				</div>
             </div>
 
@@ -68,15 +68,15 @@
                     <table class="table edit-table three-columns">
                         <thead>
                             <tr>
-                                <th>Connection Status</th>
+                                <th><liferay-ui:message key="connection.status" /></th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td>
-                                    Connection to FOSSology is currently in state:
-                                    <span id="checkResult" class="badge ${currentConnStatusBadge} mx-3">${currentConnStatus}</span>
-                                    <span class="font-italic">(checked on saved configuration, which might be different from displayed one if you already edited it)</span>
+                                    <liferay-ui:message key="connection.to.fossology.is.currently.in.state" />:
+                                    <span id="checkResult" class="badge ${currentConnStatusBadge} mx-3"><liferay-ui:message key="${currentConnStatus}" /></span>
+                                    <span class="font-italic"><liferay-ui:message key="checked.on.saved.configuration.which.might.be.different.from.displayed.one.if.you.already.edited.it" /></span>
                                 </td>
                             </tr>
                         </tbody>
@@ -92,28 +92,28 @@
                         <table id="fossologyConfigEdit" class="table edit-table two-columns">
                             <thead>
                                 <tr>
-                                    <th colspan="2">Connection Configuration</th>
+                                    <th colspan="2"><liferay-ui:message key="connection.configuration" /></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
                                     <td>
                                         <div class="form-group">
-                                            <label for="fossologyUrl">URL</label>
-                                            <input id="fossologyUrl" type="text" required class="form-control" placeholder="Enter URL like http://domain:port/repo/api/v1/" name="<portlet:namespace/><%=PortalConstants.FOSSOLOGY_CONFIG_KEY_URL%>"
+                                            <label for="fossologyUrl"><liferay-ui:message key="url" /></label>
+                                            <input id="fossologyUrl" type="text" required class="form-control" placeholder="<liferay-ui:message key="enter.url.like" />" name="<portlet:namespace/><%=PortalConstants.FOSSOLOGY_CONFIG_KEY_URL%>"
                                                 value="<sw360:out value="${fossologyConfig[configKeyUrl]}"/>" />
                                              <div class="invalid-feedback">
-                                                Please enter a URL!
+                                                <liferay-ui:message key="please.enter.a.url" />
                                             </div>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="form-group">
-                                            <label for="fossologyFolderId">Folder Id</label>
-                                            <input id="fossologyFolderId" type="text" required class="form-control" placeholder="Enter folder id" name="<portlet:namespace/><%=PortalConstants.FOSSOLOGY_CONFIG_KEY_FOLDER_ID%>"
+                                            <label for="fossologyFolderId"><liferay-ui:message key="folder.id" /></label>
+                                            <input id="fossologyFolderId" type="text" required class="form-control" placeholder="<liferay-ui:message key="enter.folder.id" />" name="<portlet:namespace/><%=PortalConstants.FOSSOLOGY_CONFIG_KEY_FOLDER_ID%>"
                                                 value="<sw360:out value="${fossologyConfig[configKeyFolderId]}"/>" />
                                             <div class="invalid-feedback">
-                                                Please enter a folder id!
+                                                <liferay-ui:message key="please.enter.a.folder.id" />
                                             </div>
                                         </div>
                                     </td>
@@ -121,11 +121,11 @@
                                 <tr>
                                     <td colspan="2">
                                         <div class="form-group">
-                                            <label for="fossologyToken">Access Token</label>
-                                            <input id="fossologyToken" type="text" required class="form-control" placeholder="Enter access token" name="<portlet:namespace/><%=PortalConstants.FOSSOLOGY_CONFIG_KEY_TOKEN%>"
+                                            <label for="fossologyToken"><liferay-ui:message key="access.token" /></label>
+                                            <input id="fossologyToken" type="text" required class="form-control" placeholder="<liferay-ui:message key="enter.access.token" />" name="<portlet:namespace/><%=PortalConstants.FOSSOLOGY_CONFIG_KEY_TOKEN%>"
                                                 value="<sw360:out value="${fossologyConfig[configKeyToken]}"/>" />
                                             <div class="invalid-feedback">
-                                                Please enter a token!
+                                                <liferay-ui:message key="please.enter.a.token" />
                                             </div>
                                         </div>
                                     </td>
@@ -173,11 +173,13 @@
                     $resultElement.removeClass('badge-light');
                     if(data.result === 'FAILURE') {
                         $resultElement.addClass('badge-danger');
+                        var msg = "<liferay-ui:message key="FAILURE" />"; 
                     } else {
                         $resultElement.addClass('badge-success');
+                        var msg = "<liferay-ui:message key="SUCCESS" />";
                     }
 
-                    $resultElement.text(data.result);
+                    $resultElement.text(msg);
                 },
                 error: function () {
                     $resultElement.removeClass('badge-light');

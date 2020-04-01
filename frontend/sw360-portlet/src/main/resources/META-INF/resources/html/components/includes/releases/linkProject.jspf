@@ -25,22 +25,22 @@
 </portlet:resourceURL>
 
 <div class="dialogs">
-    <div id="linkProjectDialog" data-title="Link Release to Project" class="modal fade" tabindex="-1" role="dialog">
+    <div id="linkProjectDialog" data-title="<liferay-ui:message key="link.release.to.project" />" class="modal fade" tabindex="-1" role="dialog">
 		<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
 		    <div class="modal-content">
 			<div class="modal-body">
 			        <form class="form">
                         <div class="row form-group">
                             <div class="col-4">
-                                <input type="text" name="searchproject" id="searchproject" placeholder="Enter search text..." class="form-control" autofocus />
+                                <input type="text" name="searchproject" id="searchproject" placeholder="<liferay-ui:message key="enter.search.text" />" class="form-control" autofocus />
                             </div>
                             <div class="col-2">
-                                <button type="button" class="btn btn-secondary" id="searchbuttonproject" disabled>Search</button>
+                                <button type="button" class="btn btn-secondary" id="searchbuttonproject" disabled><liferay-ui:message key="search" /></button>
                             </div>
                             <div class="col text-right">
                                 <div class="form-check">
                                     <input type="checkbox" id="filterlinkedprojects" class="form-check-input" checked="checked"/>
-                                    <label for="filterlinkedprojects" class="form-check-label">Show already linked projects</label>
+                                    <label for="filterlinkedprojects" class="form-check-label"><liferay-ui:message key="show.already.linked.projects" /></label>
                                 </div>
                             </div>
                         </div>
@@ -68,11 +68,11 @@
                                 <thead>
                                     <tr>
                                         <th></th>
-                                        <th>Project name</th>
-                                        <th>Version</th>
-                                        <th>State</th>
-                                        <th>Responsible</th>
-                                        <th>Description</th>
+                                        <th><liferay-ui:message key="project.name" /></th>
+                                        <th><liferay-ui:message key="version" /></th>
+                                        <th><liferay-ui:message key="state" /></th>
+                                        <th><liferay-ui:message key="responsible" /></th>
+                                        <th><liferay-ui:message key="description" /></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -81,8 +81,8 @@
                     </div>
 				</div>
 			    <div class="modal-footer">
-			        <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
-			        <button type="button" class="btn btn-primary">Link to Project</button>
+			        <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="cancel" /></button>
+			        <button type="button" class="btn btn-primary"><liferay-ui:message key="link.to.project" /></button>
 			    </div>
 			</div>
 		</div>

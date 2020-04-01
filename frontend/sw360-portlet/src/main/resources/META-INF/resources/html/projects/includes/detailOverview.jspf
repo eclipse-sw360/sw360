@@ -17,16 +17,16 @@
 	<div class="row">
 		<div class="col-3 sidebar">
 			<div id="detailTab" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
-			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab">Summary</a>
-			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Administration'}">active</core_rt:if>" href="#tab-Administration" data-toggle="list" role="tab">Administration</a>
-			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-linkedProjects'}">active</core_rt:if>" href="#tab-linkedProjects" data-toggle="list" role="tab">Linked Releases And Projects</a>
-			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-linkedReleases'}">active</core_rt:if>" href="#tab-linkedReleases" data-toggle="list" role="tab">Linked Releases Hierarchy</a>
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab"><liferay-ui:message key="summary" /></a>
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Administration'}">active</core_rt:if>" href="#tab-Administration" data-toggle="list" role="tab"><liferay-ui:message key="administration" /></a>
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-linkedProjects'}">active</core_rt:if>" href="#tab-linkedProjects" data-toggle="list" role="tab"><liferay-ui:message key="linked.releases.and.projects" /></a>
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-linkedReleases'}">active</core_rt:if>" href="#tab-linkedReleases" data-toggle="list" role="tab"><liferay-ui:message key="linked.releases.hierarchy" /></a>
 			<core_rt:if test="${inProjectDetailsContext}">
-				<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-attachmentUsages'}">active</core_rt:if>" href="#tab-attachmentUsages" data-toggle="list" role="tab">Attachment Usages</a>
+				<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-attachmentUsages'}">active</core_rt:if>" href="#tab-attachmentUsages" data-toggle="list" role="tab"><liferay-ui:message key="attachment.usages" /></a>
 			</core_rt:if>
-			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ClearingStatus'}">active</core_rt:if>" href="#tab-ClearingStatus" data-toggle="list" role="tab">Clearing Status</a>
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ClearingStatus'}">active</core_rt:if>" href="#tab-ClearingStatus" data-toggle="list" role="tab"><liferay-ui:message key="clearing.status" /></a>
 			<core_rt:if test="${isProjectObligationsEnabled}">
-			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Obligations'}">active</core_rt:if>" href="#tab-Obligations" data-toggle="list" role="tab">Obligations
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Obligations'}">active</core_rt:if>" href="#tab-Obligations" data-toggle="list" role="tab"><liferay-ui:message key="obligations" />
 				<core_rt:if test="${isObligationPresent}">
 					<span id="obligtionsCount"
 						<core_rt:choose>
@@ -44,11 +44,11 @@
 				</core_rt:if>
 			</a>
 			</core_rt:if>
-			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ECCStatus'}">active</core_rt:if>" href="#tab-ECCStatus" data-toggle="list" role="tab">ECC Status</a>
-			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Attachments'}">active</core_rt:if>" href="#tab-Attachments" data-toggle="list" role="tab">Attachments</a>
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ECCStatus'}">active</core_rt:if>" href="#tab-ECCStatus" data-toggle="list" role="tab"><liferay-ui:message key="ecc.status" /></a>
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Attachments'}">active</core_rt:if>" href="#tab-Attachments" data-toggle="list" role="tab"><liferay-ui:message key="attachments" /></a>
 			<core_rt:if test="${inProjectDetailsContext}">
 				<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Vulnerabilities'}">active</core_rt:if>" href="#tab-Vulnerabilities" data-toggle="list" role="tab">
-					Vulnerabilities
+					<liferay-ui:message key="vulnerabilities" />
 						<span id="numberOfVulnerabilities"
 						<core_rt:if test="${numberOfUncheckedVulnerabilities.intValue() == 0 || !project.enableSvm || !project.enableVulnerabilitiesDisplay}">
 							class="badge badge-light"
@@ -79,39 +79,39 @@
 										disabled="disabled"
 									</core_rt:if>
 								>
-									Edit Project
+									<liferay-ui:message key="edit.project" />
 								</button>
 							</div>
 							<div class="list-group-companion" data-belong-to="tab-linkedProjects">
 								<div id="btnExportGroup" class="btn-group" role="group">
 									<button id="btnExport" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-										Export Spreadsheet
+										<liferay-ui:message key="export.spreadsheet" />
 										<clay:icon symbol="caret-bottom" />
 									</button>
 									<div class="dropdown-menu" aria-labelledby="btnExport">
-										<a class="dropdown-item" data-type="projectOnly">Projects only</a>
-										<a class="dropdown-item" data-type="projectWithReleases">Projects with linked releases</a>
+										<a class="dropdown-item" data-type="projectOnly"><liferay-ui:message key="projects.only" /></a>
+										<a class="dropdown-item" data-type="projectWithReleases"><liferay-ui:message key="projects.with.linked.releases" /></a>
 									</div>
 								</div>
 								<div class="btn-group" role="group">
 									<div class="btn-group" id="downloadLicenseInfo" style="margin-right: auto;">
 										<button id="downloadLicenseInfoButton" type="button" data-toggle="dropdown" class="btn btn-secondary dropdown-toggle">
-											Generate License Info
+											<liferay-ui:message key="generate.license.info" />
 											<clay:icon symbol="caret-bottom" />
 										</button>
 										<div class="dropdown-menu">
-											<a class="dropdown-item" data-type="projectOnly">Project only</a>
-											<a class="dropdown-item" data-type="projectWithSubProject">Project with sub project</a>
+											<a class="dropdown-item" data-type="projectOnly"><liferay-ui:message key="project.only" /></a>
+											<a class="dropdown-item" data-type="projectWithSubProject"><liferay-ui:message key="project.with.sub.project" /></a>
 										</div>
 									</div>
 									<div class="btn-group" id="downloadSourceCode">
 										<button id="downloadSourceCodeBundleButton" type="button" data-toggle="dropdown" class="btn btn-secondary dropdown-toggle">
-											Generate Source Code Bundle
+											<liferay-ui:message key="generate.source.code.bundle" />
 											<clay:icon symbol="caret-bottom" />
 										</button>
 										<div class="dropdown-menu">
-											<a class="dropdown-item" data-type="projectOnly">Project only</a>
-											<a class="dropdown-item" data-type="projectWithSubProject">Project with sub project</a>
+											<a class="dropdown-item" data-type="projectOnly"><liferay-ui:message key="project.only" /></a>
+											<a class="dropdown-item" data-type="projectWithSubProject"><liferay-ui:message key="project.with.sub.project" /></a>
 										</div>
 									</div>
 								</div>
@@ -119,47 +119,47 @@
 							<div class="list-group-companion" data-belong-to="tab-attachmentUsages">
 								<core_rt:if test="${writeAccessUser}">
 									<div class="btn-group" role="group">
-										<button id="saveAttachmentUsagesButton" type="button" class="btn btn-secondary">Save Usages</button>
+										<button id="saveAttachmentUsagesButton" type="button" class="btn btn-secondary"><liferay-ui:message key="save.usages" /></button>
 									</div>
 								</core_rt:if>
 							</div>
 							<div class="list-group-companion" data-belong-to="tab-ECCStatus">
 								<div class="btn-group" role="group">
-									<button id="exportReleasesSpreadsheetECCButton" type="button" class="btn btn-secondary">Export Spreadsheet</button>
+									<button id="exportReleasesSpreadsheetECCButton" type="button" class="btn btn-secondary"><liferay-ui:message key="export.spreadsheet" /></button>
 								</div>
 							</div>
 							<div class="list-group-companion" data-belong-to="tab-ClearingStatus">
 								<div class="btn-group" role="group">
-									<button id="exportReleasesSpreadsheetClearingButton" type="button" class="btn btn-secondary">Export Spreadsheet</button>
+									<button id="exportReleasesSpreadsheetClearingButton" type="button" class="btn btn-secondary"><liferay-ui:message key="export.spreadsheet" /></button>
 								</div>
 							</div>
 							<div class="list-group-companion" data-belong-to="tab-Obligations">
 								<core_rt:if test="${isProjectObligationsEnabled and isObligationPresent}">
 									<div class="nav nav-pills justify-content-center bg-light font-weight-bold" id="pills-tab" role="tablist">
 										<a class="nav-item nav-link active" id="pills-obligations-tab" data-toggle="pill" href="#pills-obligationsView" role="tab" aria-controls="pills-obligationsView" aria-selected="true">
-										Obligations View</a>
+										<liferay-ui:message key="obligations.view" /></a>
 										<a class="nav-item nav-link" id="pills-releases-tab" data-toggle="pill" href="#pills-releasesView" role="tab" aria-controls="pills-releasesView" aria-selected="false">
-										Release View</a>
+										<liferay-ui:message key="release.view" /></a>
 									</div>
 								</core_rt:if>
 							</div>
 							<div class="list-group-companion" data-belong-to="tab-Vulnerabilities">
 								<div class="btn-group" role="group">
 									<button id="btnShowVulnerabilityCount" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-										Show <span data-name="count"></span>
+										<liferay-ui:message key="show" /> <span data-name="count"></span>
 										<clay:icon symbol="caret-bottom" />
 									</button>
 									<div class="dropdown-menu" aria-labelledby="btnExport">
 										<a class="dropdown-item" data-type="200">200</a>
 										<a class="dropdown-item" data-type="500">500</a>
 										<a class="dropdown-item" data-type="1000">1000</a>
-										<a class="dropdown-item" data-type="-1">All</a>
+										<a class="dropdown-item" data-type="-1"><liferay-ui:message key="all" /></a>
 									</div>
 								</div>
 							</div>
 							<div class="list-group-companion" data-belong-to="tab-Attachments">
 								<div class="btn-group" role="group">
-									<button id="downloadAttachmentBundle" type="button" class="btn btn-secondary">Download Attachment Bundle</button>
+									<button id="downloadAttachmentBundle" type="button" class="btn btn-secondary"><liferay-ui:message key="download.attachment.bundle" /></button>
 								</div>
 							</div>
 						</div>

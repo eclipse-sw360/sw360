@@ -11,19 +11,19 @@
 <table class="table label-value-table" id="ReleaseDetailVendor">
     <thead>
         <tr>
-            <th colspan="2">Release Vendor</th>
+            <th colspan="2"><liferay-ui:message key="release.vendor" /></th>
         </tr>
     </thead>
     <tr>
-        <td>Full Name:</td>
+        <td><liferay-ui:message key="full.name" />:</td>
         <td><sw360:out value="${release.vendor.fullname}"/></td>
     </tr>
     <tr>
-        <td>Short Name:</td>
+        <td><liferay-ui:message key="short.name" />:</td>
         <td><sw360:out value="${release.vendor.shortname}"/></td>
     </tr>
     <tr>
-        <td>URL:</td>
+        <td><liferay-ui:message key="url" />:</td>
         <td><sw360:out value="${release.vendor.url}"/></td>
     </tr>
 </table>

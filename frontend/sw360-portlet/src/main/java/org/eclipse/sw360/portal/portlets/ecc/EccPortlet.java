@@ -40,7 +40,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.RELEASE_LIST;
         "javax.portlet.display-name=ECC",
         "javax.portlet.info.short-title=ECC",
         "javax.portlet.info.title=ECC",
-
+        "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.view-template=/html/ecc/view.jsp",
     },
     service = Portlet.class,

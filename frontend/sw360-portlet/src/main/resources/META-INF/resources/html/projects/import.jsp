@@ -41,21 +41,21 @@
             <div class="card-deck card-deck-vertical">
                 <div class="card">
                     <div class="card-header">
-                        Server
+                        <liferay-ui:message key="server" />
                     </div>
                     <div class="card-body">
                         <form id="remoteLoginForm" class="form needs-validation" novalidate>
                             <div class="alert alert-danger mb-3" style="display: none;"></div>
                             <div class="alert alert-success mb-3" <core_rt:if test="${not loggedIn}">style="display: none;"</core_rt:if>>
-                                You are logged in <clay:icon symbol="check"/>
+                                <liferay-ui:message key="you.are.logged.in" /> <clay:icon symbol="check"/>
                             </div>
                             <div class="form-group">
-                                <label for="project_name">Server URL</label>
+                                <label for="project_name"><liferay-ui:message key="server.url" /></label>
                                 <core_rt:if test="${empty hosts}">
                                     <input type="text" class="form-control form-control-sm" name="<portlet:namespace/><%=RemoteCredentials._Fields.SERVER_URL%>"
                                         value="<sw360:out value="${name}"/>" id="input-dataserver-url" autofocus required>
                                     <div class="invalid-feedback">
-                                        Please enter the server url!
+                                        <liferay-ui:message key="please.enter.the.server.url" />
                                     </div>
                                 </core_rt:if>
                                 <core_rt:if test="${not empty hosts}">
@@ -67,49 +67,49 @@
                                         </core_rt:forEach>
                                     </select>
                                     <div class="invalid-feedback">
-                                        Please select the server!
+                                        <liferay-ui:message key="please.select.the.server" />
                                     </div>
                                 </core_rt:if>
                             </div>
                             <div id="remoteLoginFormHidingPart">
                                 <div class="form-group">
-                                    <label for="input-dataserver-user">Server User</label>
+                                    <label for="input-dataserver-user"><liferay-ui:message key="server.user" /></label>
                                     <input class="form-control form-control-sm" id="input-dataserver-user"
                                         name="<portlet:namespace/><%=RemoteCredentials._Fields.USERNAME%>" />
                                     <div class="invalid-feedback">
-                                        Please enter the user name!
+                                        <liferay-ui:message key="please.enter.the.user.name" />
                                     </div>
                                 </div>
                                 <div class='form-group'>
-                                    <label for="input-dataserver-pw">Password</label>
+                                    <label for="input-dataserver-pw"><liferay-ui:message key="password" /></label>
                                     <input class="form-control form-control-sm" type="password" id="input-dataserver-pw"
                                         name="<portlet:namespace/><%=RemoteCredentials._Fields.PASSWORD%>" />
                                     <div class="invalid-feedback">
-                                        Please enter the password!
+                                        <liferay-ui:message key="please.enter.the.password" />
                                     </div>
                                 </div>
                             </div>
                             <div>
-                                <button id="buttonConnect" type="button" class="btn btn-primary btn-sm btn-block" <core_rt:if test="${loggedIn}">disabled</core_rt:if>>Connect</button>
+                                <button id="buttonConnect" type="button" class="btn btn-primary btn-sm btn-block" <core_rt:if test="${loggedIn}"><liferay-ui:message key="disabled" /></core_rt:if>><liferay-ui:message key="connect" /></button>
                             </div>
                             <div>
-                                <button id="buttonDisconnect" type="button" class="btn btn-secondary btn-sm btn-block mt-2" <core_rt:if test="${not loggedIn}">disabled</core_rt:if>>Disconnect</button>
+                                <button id="buttonDisconnect" type="button" class="btn btn-secondary btn-sm btn-block mt-2" <core_rt:if test="${not loggedIn}"><liferay-ui:message key="disabled" /></core_rt:if>><liferay-ui:message key="disconnect" /></button>
                             </div>
                         </form>
                     </div>
                 </div>
                 <div class="card">
                     <div class="card-header">
-                        Filter
+                        <liferay-ui:message key="filter" />
                     </div>
                     <div class="card-body">
                         <form class="form" id="remoteFilterForm">
                             <div class="form-group">
-                                <label for="project_name">Project Name (first letters)</label>
+                                <label for="project_name"><liferay-ui:message key="project.name.first.letters" /></label>
                                 <input type="text" class="form-control form-control-sm" name="<portlet:namespace/><%=Project._Fields.NAME%>"
-                                    value="<sw360:out value="${name}"/>" <core_rt:if test="${not loggedIn}">disabled</core_rt:if> id="input-project-name">
+                                    value="<sw360:out value="${name}"/>" <core_rt:if test="${not loggedIn}"><liferay-ui:message key="disabled" /></core_rt:if> id="input-project-name">
                             </div>
-                            <button id="buttonRefresh" type="button" class="btn btn-primary btn-sm btn-block" <core_rt:if test="${not loggedIn}">disabled</core_rt:if>>Refresh</button>
+                            <button id="buttonRefresh" type="button" class="btn btn-primary btn-sm btn-block" <core_rt:if test="${not loggedIn}"><liferay-ui:message key="disabled" /></core_rt:if>><liferay-ui:message key="refresh" /></button>
                         </form>
                     </div>
                 </div>
@@ -120,20 +120,20 @@
                 <div class="col-auto">
                     <div class="btn-toolbar" role="toolbar">
                         <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-primary" data-action="import-projects" disabled>Import Projects</button>
+                            <button type="button" class="btn btn-primary" data-action="import-projects" disabled><liferay-ui:message key="import.projects" /></button>
                         </div>
                     </div>
                 </div>
-                <div class="col portlet-title text-truncate" title="Project Import (BDP)">
-                    Project Import (BDP)
+                <div class="col portlet-title text-truncate" title="<liferay-ui:message key="project.import.bdp" />">
+                    <liferay-ui:message key="project.import.bdp" />
                 </div>
             </div>
 
             <div class="row">
                 <div class="col">
                     <div class="alert alert-info">
-                        <p>For performance reasons, only the first 50 results will be shown. Please enter the prefix of the project name to narrow the search.</p>
-                        <p class="mb-0">You may use the Shift-Key to select more rows.</p>
+                        <p><liferay-ui:message key="for.performance.reasons.only.the.first.50.results.will.be.shown.please.enter.the.prefix.of.the.project.name.to.narrow.the.search" /></p>
+                        <p class="mb-0"><liferay-ui:message key="you.may.use.the.shift.key.to.select.more.rows" /></p>
                     </div>
                     <table id="dataSourceTable" class="table table-bordered">
                         <colgroup>
@@ -194,14 +194,29 @@
                     },
                     columns: [
                         { title: '', className: 'text-center', render: $.fn.dataTable.render.inputCheckbox('project', ''), orderable: false },
-                        { title: "Project id in selected data source"},
-                        { title: "Project name"}
+                        { title: "<liferay-ui:message key="project.id.in.selected.data.source" />"},
+                        { title: "<liferay-ui:message key="project.name" />"}
                     ],
                     order: [
                         [1, 'asc']
                     ],
                     language: {
-                        emptyTable: "No projects available."
+                        paginate: {
+                            previous: "<liferay-ui:message key="previous" />",
+                            next: "<liferay-ui:message key="next" />"
+                    },
+                        emptyTable: "<liferay-ui:message key="no.projects.available" />",
+                        info: "<liferay-ui:message key="showing" />",
+                        infoEmpty: "<liferay-ui:message key="infoempty" />",
+                        lengthMenu: '<liferay-ui:message key="show" /> <select>'+
+                        '<option value="10">10</option>'+
+                        '<option value="25">25</option>'+
+                        '<option value="50">50</option>'+
+                        '<option value="100">100</option>'+
+                        '<option value="-1"><liferay-ui:message key="all" /></option>'+
+                        '</select> <liferay-ui:message key="entries" />',
+                        processing: "<liferay-ui:message key="processing" />",
+                        loadingRecords: "<liferay-ui:message key="loading" />"
                     }
                 });
                 datatables.enableCheckboxForSelection($table, 0);
@@ -236,7 +251,7 @@
                     connectDBRequestSuccess(response, serverUrl);
                 }).fail(function(){
                     $('#remoteLoginForm').find('.alert:nth-child(2)').hide();
-                    $('#remoteLoginForm').find('.alert:first').text('Could not connect to server.');
+                    $('#remoteLoginForm').find('.alert:first').text('<liferay-ui:message key="could.not.connect.to.server" />');
                     $('#remoteLoginForm').find('.alert:first').show();
                 });
             }
@@ -269,23 +284,23 @@
                             importUpdateProjectTable(response);
                         }).fail(function(){
                             $('#remoteLoginForm').find('.alert:first').show();
-                            $('#remoteLoginForm').find('.alert:first').text('Could not get the projects.');
+                            $('#remoteLoginForm').find('.alert:first').text('<liferay-ui:message key="could.not.get.the.projects" />');
                         });
                         break;
                     case '<%=ProjectImportConstants.RESPONSE__DB_CONNECT_ERROR%>':
                         $('#remoteLoginForm').find('.alert:nth-child(2)').hide();
                         $('#remoteLoginForm').find('.alert:first').show();
-                        $('#remoteLoginForm').find('.alert:first').text('Could not connect to database.');
+                        $('#remoteLoginForm').find('.alert:first').text('<liferay-ui:message key="could.not.connect.to.database" />');
                         break;
                     case '<%=ProjectImportConstants.RESPONSE__DB_URL_NOT_SET%>':
                         $('#remoteLoginForm').find('.alert:nth-child(2)').hide();
                         $('#remoteLoginForm').find('.alert:first').show();
-                        $('#remoteLoginForm').find('.alert:first').text('Please enter a server URL');
+                        $('#remoteLoginForm').find('.alert:first').text('<liferay-ui:message key="please.enter.a.server.url" />');
                         break;
                     case '<%=ProjectImportConstants.RESPONSE__UNAUTHORIZED%>':
                         $('#remoteLoginForm').find('.alert:nth-child(2)').hide();
                         $('#remoteLoginForm').find('.alert:first').show();
-                        $('#remoteLoginForm').find('.alert:first').text('Unable to authenticate with this username/password.');
+                        $('#remoteLoginForm').find('.alert:first').text('<liferay-ui:message key="unable.to.authenticate.with.this.username.password" />');
                         break;
                     default:
                     break;
@@ -331,9 +346,9 @@
                 $dialog = dialog.confirm(
                     null,
                     'question-circle',
-                    'Import projects?',
-                    '<p>The following projects will be imported:</p>' + $projectList[0].outerHTML,
-                    'Import projects',
+                    '<liferay-ui:message key="import.projects" />?',
+                    '<p><liferay-ui:message key="the.following.projects.will.be.imported" /></p>' + $projectList[0].outerHTML,
+                    '<liferay-ui:message key="import.projects" />',
                     {},
                     function(submit, callback) {
                         $.ajax({
@@ -355,7 +370,7 @@
                             switch(response.<%=ProjectImportConstants.RESPONSE__STATUS%>) {
                                 case '<%=ProjectImportConstants.RESPONSE__SUCCESS%>':
 
-                                    $dialog.success('Projects imported successfully.', true);
+                                    $dialog.success('<liferay-ui:message key="projects.imported.successfully" />', true);
                                     dataSourceTable.rows( { selected: true }).deselect();
 
                                     Object.keys(selectedProjects).forEach(function(key) {
@@ -389,17 +404,17 @@
                                         }
                                     });
 
-                                    $dialog.warning('Some projects failed to import: ' + $failedList[0].outerHTML);
+                                    $dialog.warning('<liferay-ui:message key="some.projects.failed.to.import" />' + $failedList[0].outerHTML);
                                     break;
                                 case '<%=ProjectImportConstants.RESPONSE__GENERAL_FAILURE%>':
-                                    $dialog.alert('Could not import the projects.');
+                                    $dialog.alert('<liferay-ui:message key="could.not.import.the.projects" />');
                                     break;
                                 default:
-                                    $dialog.alert('Unknown result from server.');
+                                    $dialog.alert('<liferay-ui:message key="unknown.result.from.server" />');
                             }
                         }).fail(function(){
                             callback();
-                            $dialog.alert('Could not import the projects.');
+                            $dialog.alert('<liferay-ui:message key="could.not.import.the.projects" />');
                         });
                     }
                 );

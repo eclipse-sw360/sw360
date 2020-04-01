@@ -10,13 +10,20 @@
 package org.eclipse.sw360.portal.tags;
 
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
+
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
+
 import org.apache.thrift.TEnum;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
+import javax.servlet.jsp.PageContext;
 import javax.servlet.jsp.tagext.SimpleTagSupport;
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.ResourceBundle;
 
 import static com.google.common.base.Predicates.instanceOf;
 import static com.google.common.collect.Iterables.all;
@@ -71,6 +78,10 @@ public class DisplayEnumSelection extends SimpleTagSupport {
     }
 
     private void doEnumValues(Iterable<? extends TEnum> enums) throws IOException {
+        PageContext pageContext = (PageContext) getJspContext();
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+
         JspWriter jspWriter = getJspContext().getOut();
 
         Iterator<? extends TEnum> iterator = enums.iterator();
@@ -84,7 +95,7 @@ public class DisplayEnumSelection extends SimpleTagSupport {
                     "<option value=\"%s\" class=\"textlabel stackedLabel\" " +
                             (selected ? "selected=\"selected\" " : "") +
                              ">%s</option>",
-                    value, enumItemDescription);
+                    value, LanguageUtil.get(resourceBundle, enumItemDescription.replace(' ','.').toLowerCase()));
             if (inQuotes && iterator.hasNext()){
                 jspWriter.write("\'"+ result+ "\' +");
             } else if (inQuotes) {

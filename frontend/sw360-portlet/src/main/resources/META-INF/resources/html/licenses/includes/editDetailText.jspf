@@ -11,7 +11,7 @@
 <table class="table edit-table" id="LicenseText">
     <thead>
         <tr>
-          <th>License Text</th>
+          <th><liferay-ui:message key="license.text" /></th>
         </tr>
     </thead>
     <tr>
@@ -19,7 +19,7 @@
             <div class="form-group">
                 <textarea name="<portlet:namespace/><%=License._Fields.TEXT%>" rows="20"
                     id="<portlet:namespace/><%=License._Fields.TEXT%>" class="form-control"
-                    placeholder="Enter the License-Text here...">${licenseDetail.text}</textarea>
+                    placeholder="<liferay-ui:message key="enter.the.license.text.here" />">${licenseDetail.text}</textarea>
             </div>
         </td>
     </tr>

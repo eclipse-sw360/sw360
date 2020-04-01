@@ -20,7 +20,7 @@
 </portlet:resourceURL>
 
 <section id="my-components">
-    <h4 class="actions">My Components <span title="Reload"><clay:icon symbol="reload"/></span></h4>
+    <h4 class="actions"><liferay-ui:message key="my.components" /> <span title="<liferay-ui:message key="reload" />"><clay:icon symbol="reload"/></span></h4>
     <div class="row">
         <div class="col">
             <table id="myComponentsTable" class="table table-bordered table-lowspace" data-load-url="<%=loadComponentsURL%>">
@@ -59,11 +59,19 @@
 				"<'row'<'col-sm-12'tr>>" +
 				"<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
             columns: [
-                {"title": "Component Name", data: 'name', render: renderComponentNameLink},
-                {"title": "Description", data: 'description', render: $.fn.dataTable.render.ellipsis }
+                {"title": "<liferay-ui:message key="component.name" />", data: 'name', render: renderComponentNameLink},
+                {"title": "<liferay-ui:message key="description" />", data: 'description', render: $.fn.dataTable.render.ellipsis }
             ],
             language: {
-                emptyTable: 'You do not own any components.'
+                paginate: {
+                    previous: "<liferay-ui:message key="previous" />",
+                    next: "<liferay-ui:message key="next" />"
+                },
+                emptyTable: "<liferay-ui:message key="you.do.not.own.any.components" />",
+                info: "<liferay-ui:message key="showing" />",
+                infoEmpty: "<liferay-ui:message key="infoempty" />",
+                processing: "<liferay-ui:message key="processing" />",
+                loadingRecords: "<liferay-ui:message key="loading" />"
             },
             initComplete: function() {
                 $('#my-components h4 svg').removeClass('spinning disabled');

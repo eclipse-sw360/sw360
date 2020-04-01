@@ -30,7 +30,7 @@
 <core_rt:if test="${licenseList.size() == 0}">
     <tr>
         <td colspan="2">
-            No license found with your search.
+            <liferay-ui:message key="no.license.found.with.your.search" />
         </td>
     </tr>
 

@@ -125,12 +125,20 @@
 				"<'row'<'col-sm-12'tr>>" +
 				"<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
             columns: [
-                {"title": "Project Name", data: 'name', render: renderProjectNameLink },
-                {"title": "Description", data: 'description', render: $.fn.dataTable.render.ellipsis },
-                {"title": "Approved Releases", data: 'releaseClearingState', render: renderReleaseClearingState},
+                {"title": "<liferay-ui:message key="project.name" />", data: 'name', render: renderProjectNameLink },
+                {"title": "<liferay-ui:message key="description" />", data: 'description', render: $.fn.dataTable.render.ellipsis },
+                {"title": "<liferay-ui:message key="approved.releases" />", data: 'releaseClearingState', render: renderReleaseClearingState},
             ],
             language: {
-                emptyTable: 'There are no projects found with your selection.'
+                paginate: {
+                    previous: "<liferay-ui:message key="previous" />",
+                    next: "<liferay-ui:message key="next" />"
+                },
+                emptyTable: '<liferay-ui:message key="there.are.no.projects.found.with.your.selection" />',
+                info: "<liferay-ui:message key="showing" />",
+                infoEmpty: "<liferay-ui:message key="infoempty" />",
+                processing: "<liferay-ui:message key="processing" />",
+                loadingRecords: "<liferay-ui:message key="loading" />"
             },
             initComplete: function() {
                 $('#my-projects h4 svg').removeClass('spinning disabled');
@@ -158,7 +166,7 @@
 
         function renderReleaseClearingState(state) {
             return $('<span/>', {
-                title: 'approved releases / total number of releases'
+                title: '<liferay-ui:message key="approved.releases.total.number.of.releases" />'
             }).text(state)[0].outerHTML;
         }
 

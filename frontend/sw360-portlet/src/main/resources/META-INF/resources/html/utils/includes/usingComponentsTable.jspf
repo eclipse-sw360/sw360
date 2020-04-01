@@ -10,7 +10,7 @@
 --%>
 
 <core_rt:if test="${usingComponents != null  && usingComponents.size()>0}">
-    <h4><sw360:out value="${documentName}"/> is used by the following components</h4>
+    <h4><sw360:out value="${documentName}"/> <liferay-ui:message key="is.used.by.the.following.components" /></h4>
 
     <table class="table table-bordered">
         <colgroup>
@@ -21,10 +21,10 @@
         </colgroup>
         <thead>
             <tr>
-                <th>Vendor</th>
-                <th>Name</th>
-                <th>Main Licenses</th>
-                <th>Component Type</th>
+                <th><liferay-ui:message key="vendor" /></th>
+                <th><liferay-ui:message key="name" /></th>
+                <th><liferay-ui:message key="main.licenses" /></th>
+                <th><liferay-ui:message key="component.type" /></th>
             </tr>
         </thead>
         <tbody>

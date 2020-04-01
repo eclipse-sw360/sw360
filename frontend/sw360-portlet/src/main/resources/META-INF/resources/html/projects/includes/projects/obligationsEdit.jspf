@@ -40,13 +40,13 @@
                 <th class="more-info">
                     <span title="Expand all" data-show="false">&#x25BA</span>
                 </th>
-                <th>Obligation</th>
-                <th>Licenses</th>
-                <th>Releases</th>
-                <th>Status</th>
+                <th><liferay-ui:message key="obligation" /></th>
+                <th><liferay-ui:message key="licenses" /></th>
+                <th><liferay-ui:message key="releases" /></th>
+                <th><liferay-ui:message key="status" /></th>
                 <!-- Commented code for obligation action, until action select options are provided -->
                 <!-- <th>Action</th> -->
-                <th>Comment</th>
+                <th><liferay-ui:message key="comment" /></th>
             </tr>
         </thead>
         <tbody>
@@ -116,7 +116,7 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
             { "data": "releaseLinks", "render": { display: renderReleaseLink } },
             { "data": "status", "render": { display: renderStatus } },
             /* { "data": "action", render: $.fn.dataTable.render.inputSelect(actionOptions, '', 'obl_action toplabelledInput', 'textlabel stackedLabel') }, */
-            { "data": "comment", defaultContent: "", render: $.fn.dataTable.render.inputText('comment', 'obl_comment toplabelledInput', 'Enter comments') },
+            { "data": "comment", defaultContent: "", render: $.fn.dataTable.render.inputText('comment', 'obl_comment toplabelledInput', '<liferay-ui:message key="enter.comments" />') },
         ],
         "columnDefs": [
             {
@@ -129,7 +129,7 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
                 "targets": 5,
                 "createdCell": function (td, cellData, rowData, row, col) {
                     $.fn.dataTable.render.inputText.updateTitle(td);
-                    $.fn.dataTable.render.inputText.useInputDialog(td, "Enter obligation comment");
+                    $.fn.dataTable.render.inputText.useInputDialog(td, "<liferay-ui:message key="enter.obligation.comment" />");
                 }
             }
         ],
@@ -140,7 +140,7 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
                 $(row).find("input,select").attr('disabled', true);
             }
             if (data.modifiedBy && data.modifiedOn) {
-                $(row).attr('title', 'Modified by: ' + data.modifiedBy + ' | Modified on: ' + data.modifiedOn);
+                $(row).attr('title', '<liferay-ui:message key="modified.by" />: ' + data.modifiedBy + ' | <liferay-ui:message key="modified.on" />: ' + data.modifiedOn);
             }
         },
         "order": [[1, 'asc']],
@@ -162,7 +162,7 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
     }
 
     function renderComment(comment, type, row, meta) {
-        return '<textarea class="obl_comment form-control" rows="1" placeholder="Enter Comment">' + comment + '</textarea>';
+        return '<textarea class="obl_comment form-control" rows="1" placeholder="<liferay-ui:message key="enter.comment" />">' + comment + '</textarea>';
     }
 
     function renderReleaseLink(releaseLinks, type, row, meta) {
@@ -172,15 +172,15 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
         for (let i = 0; i < releaseLinks.length; i++) {
             releases[i] = render.linkTo(replaceFriendlyUrlParameter(releasePortletURL.toString(), releaseLinks[i].id, '<%=PortalConstants.PAGENAME_RELEASE_DETAIL%>'), releaseLinks[i].name);
         }
-        return render.renderExpandableUrls(releases, 'Release', 25);
+        return render.renderExpandableUrls(releases, '<liferay-ui:message key="release" />', 25);
         } else {
             return getOrphanObligationMessage();
         }
     }
 
     function getOrphanObligationMessage() {
-        return '<span title="This obligation is not associated with linked release">' +
-            'Orphaned <svg class="delete lexicon-icon float-right m-1 one action"><title>Delete</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/></svg> </span>';
+        return '<span title="<liferay-ui:message key="this.obligation.is.not.associated.with.linked.release" />">' +
+            '<liferay-ui:message key="orphaned" /> <svg class="delete lexicon-icon float-right m-1 one action"><title><liferay-ui:message key="delete" /></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/></svg> </span>';
     }
 
     function renderLicenseLink(licenseLinks, type, row) {
@@ -189,7 +189,7 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
         for (let i = 0; i < licenseLinks.length; i++) {
             licenses[i] = render.linkTo(replaceFriendlyUrlParameter(licensePortletURL.toString(), licenseLinks[i], '<%=PortalConstants.PAGENAME_DETAIL%>'), licenseLinks[i]);
         }
-        return render.renderExpandableUrls(licenses, 'License', 21);
+        return render.renderExpandableUrls(licenses, '<liferay-ui:message key="license" />', 21);
     }
 
     function replaceFriendlyUrlParameter(portletUrl, id, page) {
@@ -254,17 +254,17 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
                         $('#detailTab #obligtionsCount').html(fulfilled + ' / ' + total);
                     }
                     else {
-                        $dialog.alert("I could not delete the obligation!");
+                        $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.obligation" />");
                     }
                 },
                 error: function () {
                     callback();
-                    $dialog.alert("Failed to delete the obligation!");
+                    $dialog.alert("<liferay-ui:message key="failed.to.delete.the.obligation" />");
                 }
             });
         }
 
-        $dialog = dialog.confirm('danger', 'question-circle', 'Delete Obligation?', '<p>Do you really want to delete the obligation <b data-name="topic"></b>?</p>', 'Delete Obligation', {
+        $dialog = dialog.confirm('danger', 'question-circle', '<liferay-ui:message key="delete.obligation" />?', '<p><liferay-ui:message key="do.you.really.want.to.delete.the.obligation.x" />?</p>', '<liferay-ui:message key="delete.obligation" />', {
             topic: topic
         }, function(submit, callback) {
             deleteObligationInternal(callback);
@@ -273,12 +273,12 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
 
     /* Add event listener for opening and closing list of licenses */
     $('#editObligationsTable tbody').on('click', 'td .TogglerLicenseList', function () {
-        render.toggleExpandableList($(this), 'License');
+        render.toggleExpandableList($(this), '<liferay-ui:message key="license" />');
     });
 
     /* Add event listener for opening and closing list of releases */
     $('#editObligationsTable tbody').on('click', 'td .TogglerReleaseList', function () {
-        render.toggleExpandableList($(this), 'Release');
+        render.toggleExpandableList($(this), '<liferay-ui:message key="license" />');
     });
 
     /* Add event listener for opening and closing individual child row */

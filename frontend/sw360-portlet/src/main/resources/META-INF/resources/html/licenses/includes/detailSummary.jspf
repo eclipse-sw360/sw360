@@ -14,25 +14,25 @@
 </portlet:actionURL>
 
 <core_rt:if test="${licenseDetail.checked != true}">
-    <div class="alert alert-danger">This license is <b>UNCHECKED</b>.</div>
+    <div class="alert alert-danger"><liferay-ui:message key="this.license.is.unchecked" /></div>
 </core_rt:if>
 
 <table class="table label-value-table" id="licenseDetailOverview">
     <thead>
         <tr>
-            <th colspan="2">License Details</th>
+            <th colspan="2"><liferay-ui:message key="license.details" /></th>
         </tr>
     </thead>
     <tr>
-        <td>Fullname:</td>
+        <td><liferay-ui:message key="fullname" />:</td>
         <td><sw360:out value="${licenseDetail.fullname}"/></td>
     </tr>
     <tr>
-        <td>Shortname:</td>
+        <td><liferay-ui:message key="shortname" />:</td>
         <td><sw360:out value="${licenseDetail.shortname}"/></td>
     </tr>
     <tr>
-        <td>Is checked:</td>
+        <td><liferay-ui:message key="is.checked" />:</td>
         <td>
             <core_rt:if test="${licenseDetail.checked == true}">
                 <span class="text-success">
@@ -47,18 +47,18 @@
         </td>
     </tr>
     <tr>
-        <td>Type:</td>
+        <td><liferay-ui:message key="type" />:</td>
         <td><sw360:out value="${licenseDetail.licenseType.licenseType}"/></td>
     </tr>
     <%--need nested ifs for the yes no because the values can be undefined--%>
     <tr>
-        <td>GPL-2.0 compatibility:</td>
+        <td><liferay-ui:message key="gpl.20.compatibility" />:</td>
         <td>
             <core_rt:choose>
                 <core_rt:when test="${licenseDetail.GPLv2Compat == 'UNDEFINED'}">
                     <span class="text-info">
                         <clay:icon symbol="question-circle" />
-                        Unknown
+                        <liferay-ui:message key="unknown" />
                     </span>
                 </core_rt:when>
                 <core_rt:when test="${licenseDetail.GPLv2Compat == 'YES'}">
@@ -71,13 +71,13 @@
         </td>
     </tr>
     <tr>
-        <td>GPL-3.0 compatibility:</td>
+        <td><liferay-ui:message key="gpl-30.compatibility" />:</td>
         <td>
             <core_rt:choose>
                 <core_rt:when test="${licenseDetail.GPLv3Compat == 'UNDEFINED'}">
                     <span class="text-info">
                         <clay:icon symbol="question-circle" />
-                        Unknown
+                        <liferay-ui:message key="unknown" />
                     </span>
                 </core_rt:when>
                 <core_rt:when test="${licenseDetail.GPLv3Compat == 'YES'}">
@@ -90,7 +90,7 @@
         </td>
     </tr>
     <tr>
-        <td>External link for more information:</td>
+        <td><liferay-ui:message key="external.link.for.more.information" />:</td>
         <td>
             <core_rt:choose>
                 <core_rt:when test="${isUserAtLeastClearingAdmin == 'Yes'}" >
@@ -101,7 +101,7 @@
                                 type="text"
                                 class="form-control"
                                 value="${licenseDetail.externalLicenseLink}">
-                            <button type="submit" id="RemoteLinkSubmit" class="btn btn-secondary">Save</button>
+                            <button type="submit" id="RemoteLinkSubmit" class="btn btn-secondary"><liferay-ui:message key="save" /></button>
                         </div>
                     </form>
                 </core_rt:when>

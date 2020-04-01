@@ -69,57 +69,57 @@
 			<div class="card-deck">
 				<div id="searchInput" class="card">
 					<div class="card-header">
-						Advanced Search
+						<liferay-ui:message key="advanced.search" />
 					</div>
                     <div class="card-body">
                         <form action="<%=applyFiltersURL%>" method="post">
                             <div class="form-group">
-                                <label for="component_name">Component Name</label>
+                                <label for="component_name"><liferay-ui:message key="component.name" /></label>
                                 <input type="text" class="form-control form-control-sm" name="<portlet:namespace/><%=Component._Fields.NAME%>"
                                     value="<sw360:out value="${name}"/>" id="component_name">
                             </div>
                             <div class="form-group">
-                                <label for="categories">Categories</label>
+                                <label for="categories"><liferay-ui:message key="categories" /></label>
                                 <input type="text" class="form-control form-control-sm" name="<portlet:namespace/><%=Component._Fields.CATEGORIES%>"
                                     value="<sw360:out value="${categories}"/>" id="categories">
                             </div>
                             <div class="form-group">
-                                <label for="component_type">Component Type</label>
+                                <label for="component_type"><liferay-ui:message key="component.type" /></label>
                                 <select class="form-control form-control-sm" id="component_type" name="<portlet:namespace/><%=Component._Fields.COMPONENT_TYPE%>">
                                     <option value="<%=PortalConstants.NO_FILTER%>" class="textlabel stackedLabel"></option>
                                     <sw360:DisplayEnumOptions type="<%=ComponentType.class%>" selectedName="${componentType}" useStringValues="true"/>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label for="languages">Languages</label>
+                                <label for="languages"><liferay-ui:message key="languages" /></label>
                                 <input type="text" class="form-control form-control-sm" name="<portlet:namespace/><%=Component._Fields.LANGUAGES%>"
                                     value="<sw360:out value="${languages}"/>" id="languages">
                             </div>
                             <div class="form-group">
-                                <label for="software_platforms">Software Platforms</label>
+                                <label for="software_platforms"><liferay-ui:message key="software.platforms" /></label>
                                 <input type="text" class="form-control form-control-sm"
                                     name="<portlet:namespace/><%=Component._Fields.SOFTWARE_PLATFORMS%>"
                                     value="<sw360:out value="${softwarePlatforms}"/>" id="software_platforms">
                             </div>
                             <div class="form-group">
-                                <label for="operating_systems">Operating Systems</label>
+                                <label for="operating_systems"><liferay-ui:message key="operating.systems" /></label>
                                 <input type="text" class="form-control form-control-sm"
                                     name="<portlet:namespace/><%=Component._Fields.OPERATING_SYSTEMS%>"
                                     value="<sw360:out value="${operatingSystems}"/>" id="operating_systems">
                             </div>
                             <div class="form-group">
-                                <label for="vendor_names">Vendors</label>
+                                <label for="vendor_names"><liferay-ui:message key="vendors" /></label>
                                 <input type="text" class="form-control form-control-sm"
                                     name="<portlet:namespace/><%=Component._Fields.VENDOR_NAMES%>"
                                     value="<sw360:out value="${vendorNames}"/>" id="vendor_names">
                             </div>
                             <div class="form-group">
-                                <label for="main_licenses">Main Licenses</label>
+                                <label for="main_licenses"><liferay-ui:message key="main.licenses" /></label>
                                 <input type="text" class="form-control form-control-sm"
                                     name="<portlet:namespace/><%=Component._Fields.MAIN_LICENSE_IDS%>"
                                     value="<sw360:out value="${mainLicenseIds}"/>" id="main_licenses">
                             </div>
-                            <button type="submit" class="btn btn-primary btn-sm btn-block">Search</button>
+                            <button type="submit" class="btn btn-primary btn-sm btn-block"><liferay-ui:message key="search" /></button>
 				        </form>
 					</div>
 				</div>
@@ -130,23 +130,23 @@
 				<div class="col-auto">
 					<div class="btn-toolbar" role="toolbar">
                         <div class="btn-group" role="group">
-							<button type="button" class="btn btn-primary" onclick="window.location.href='<%=addComponentURL%>'">Add Component</button>
-                            <button type="button" class="btn btn-secondary" data-action="import-spdx-bom">Import SPDX BOM</button>
+							<button type="button" class="btn btn-primary" onclick="window.location.href='<%=addComponentURL%>'"><liferay-ui:message key="add.component" /></button>
+							<button type="button" class="btn btn-secondary" data-action="import-spdx-bom"><liferay-ui:message key="import.spdx.bom" /></button>
 						</div>
 						<div id="btnExportGroup" class="btn-group" role="group">
 							<button id="btnExport" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-						        Export Spreadsheet
+						        <liferay-ui:message key="export.spreadsheet" />
 						        <clay:icon symbol="caret-bottom" />
 						    </button>
 						    <div class="dropdown-menu" aria-labelledby="btnExport">
-						      <a class="dropdown-item" href="#" data-type="componentOnly">Components only</a>
-						      <a class="dropdown-item" href="#" data-type="componentWithReleases">Components with releases</a>
+						      <a class="dropdown-item" href="#" data-type="componentOnly"><liferay-ui:message key="components.only" /></a>
+						      <a class="dropdown-item" href="#" data-type="componentWithReleases"><liferay-ui:message key="components.with.releases" /></a>
 						    </div>
 						</div>
 					</div>
 				</div>
-                <div class="col portlet-title text-truncate" title="Components (${totalRows})">
-					Components (<span id="componentCounter">${totalRows}</span>)
+                <div class="col portlet-title text-truncate" title="<liferay-ui:message key="components" /> (${totalRows})">
+					<liferay-ui:message key="components" />(<span id="componentCounter">${totalRows}</span>)
 				</div>
             </div>
 
@@ -224,11 +224,11 @@
             // create and render data table
             function createComponentsTable() {
                 let columns = [
-                    {"title": "Vendor", data: "vndrs"},
-                    {"title": "Component Name", data: "name", render: {display: renderComponentNameLink}},
-                    {"title": "Main Licenses", data: "lics", render: {display: renderLicenseLink}},
-                    {"title": "Component Type", data: "cType"},
-                    {"title": "Actions", data: "id", render: {display: renderComponentActions}, className: 'two actions', orderable: false }
+                    {"title": "<liferay-ui:message key="vendor" />", data: "vndrs"},
+                    {"title": "<liferay-ui:message key="component.name" />", data: "name", render: {display: renderComponentNameLink}},
+                    {"title": "<liferay-ui:message key="main.licenses" />", data: "lics", render: {display: renderLicenseLink}},
+                    {"title": "<liferay-ui:message key="component.type" />", data: "cType"},
+                    {"title": "<liferay-ui:message key="actions" />", data: "id", render: {display: renderComponentActions}, className: 'two actions', orderable: false }
                 ];
                 let printColumns = [0, 1, 2, 3];
                 var componentsTable = datatables.create('#componentsTable', {
@@ -239,6 +239,24 @@
                     columnDefs: [],
                     drawCallback: renderCallback,
                     initComplete: datatables.showPageContainer,
+                    language: {
+                        paginate: {
+                            previous: "<liferay-ui:message key="previous" />",
+                            next: "<liferay-ui:message key="next" />"
+                    },
+                        emptyTable: "<liferay-ui:message key="no.data.available.in.table" />",
+                        info: "<liferay-ui:message key="showing" />",
+                        infoEmpty: "<liferay-ui:message key="infoempty" />",
+                        lengthMenu: '<liferay-ui:message key="show" /> <select>'+
+                        '<option value="10">10</option>'+
+                        '<option value="25">25</option>'+
+                        '<option value="50">50</option>'+
+                        '<option value="100">100</option>'+
+                        '<option value="-1"><liferay-ui:message key="all" /></option>'+
+                        '</select> <liferay-ui:message key="entries" />',
+                        processing: "<liferay-ui:message key="processing" />",
+                        loadingRecords: "<liferay-ui:message key="loading" />"
+                    },
                     order: [
                         [1, 'asc']
                     ]
@@ -254,7 +272,7 @@
                     $editAction = render.linkTo(
                         makeComponentUrl(id, '<%=PortalConstants.PAGENAME_EDIT%>'),
                         "",
-                        '<svg class="lexicon-icon"><title>Edit</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>'
+                        '<svg class="lexicon-icon" title="<liferay-ui:message key="edit" />"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>'
                     ),
                     $deleteAction = $('<svg>', {
                         'class': 'delete lexicon-icon',
@@ -314,7 +332,7 @@
             // Delete component action
             function deleteComponent(id, name, numberOfReleases, attachmentsSize) {
                 var $dialog;
-
+                
                 function deleteComponentInternal(callback) {
                     jQuery.ajax({
                         type: 'POST',
@@ -334,24 +352,24 @@
                                 $dialog.close();
                             }
                             else if (data.result == 'SENT_TO_MODERATOR') {
-                                $dialog.info("You may not delete the component, but a request was sent to a moderator!", true);
+                                $dialog.info("<liferay-ui:message key="you.may.not.delete.the.component.but.a.request.was.sent.to.a.moderator" />", true);
                             }
                             else if (data.result == 'IN_USE') {
-                                $dialog.warning("I could not delete the component, since it is in use.");
+                                $dialog.warning("<liferay-ui:message key="i.could.not.delete.the.component.since.it.is.in.use" />");
                             } else {
-                                $dialog.alert("I could not delete the component.");
+                                $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.component" />");
                             }
                         },
                         error: function () {
                             callback();
-                            $dialog.alert("I could not delete the component!");
+                            $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.component" />");
                         }
                     });
                 }
 
                 if (numberOfReleases > 0) {
                     dialog.warn(
-                        'The component <b data-name="name"></b> cannot be deleted, since it contains <b data-name="releaseCount"></b> releases. Please delete the releases first.',
+						'<liferay-ui:message key="the.component.x.cannot.be.deleted.since.it.contains.y.releases.please.delete.the.releases.first" />',
                         {
                             name: name,
                             releaseCount: numberOfReleases
@@ -362,25 +380,25 @@
                     $dialog = dialog.confirm(
                         'danger',
                         'question-circle',
-                        'Delete Component?',
-                            '<p>Do you really want to delete the component <b data-name="name"></b>?</p>' +
+                        '<liferay-ui:message key="delete.component" />?',
+                            '<p><liferay-ui:message key="do.you.really.want.to.delete.the.component.x" /></p>' +
                             '<div data-hide="hasNoDependencies">' +
                                 '<p>' +
-                                    'This component <b data-name="name"></b> contains:' +
+                                    '<liferay-ui:message key="this.component.x.contains" />' +
                                 '</p>' +
                                 '<ul>' +
-                                    '<li data-hide="hasNoReleases"><span data-name="releases"></span> releases</li>' +
-                                    '<li data-hide="hasNoAttachments"><span data-name="attachments"></span> attachments</li>' +
+                                    '<li data-hide="hasNoReleases"><span data-name="releases"></span> <liferay-ui:message key="releases" /></li>' +
+                                    '<li data-hide="hasNoAttachments"><span data-name="attachments"></span> <liferay-ui:message key="attachments" /></li>' +
                                 '</ul>' +
                             '</div>' +
                             '<hr/>' +
                             '<form>' +
                                 '<div class="form-group">' +
-                                    '<label for="moderationDeleteCommentField">Please comment your changes</label>' +
-                                    '<textarea id="moderationDeleteCommentField" class="form-control" data-name="comment" rows="4" placeholder="Comment your request..."></textarea>' +
+                                    '<label for="moderationDeleteCommentField"><liferay-ui:message key="please.comment.your.changes" /></label>' +
+                                    '<textarea id="moderationDeleteCommentField" class="form-control" data-name="comment" rows="4" placeholder="<liferay-ui:message key="comment.your.request" />"></textarea>' +
                                 '</div>' +
                             '</form>',
-                        'Delete Component',
+                        '<liferay-ui:message key="delete.component" />',
                         {
                             name: name,
                             releases: numberOfReleases,

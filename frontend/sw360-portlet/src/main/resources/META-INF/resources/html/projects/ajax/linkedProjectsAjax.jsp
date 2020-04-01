@@ -25,14 +25,14 @@
         <td>
             <div class="form-group">
                 <input type="hidden" value="${projectLink.id}" name="<portlet:namespace/><%=Project._Fields.LINKED_PROJECTS%><%=ProjectLink._Fields.ID%>">
-                <input type="text" placeholder="Enter project" class="form-control" data-content="projectName"
+                <input type="text" placeholder="<liferay-ui:message key="enter.project" />" class="form-control" data-content="projectName"
                     value="<sw360:out value="${projectLink.name}"/>" readonly onclick="window.location='<sw360:DisplayProjectLink projectId="${projectLink.id}" bare="true"/>'"/>
             </div>
         </td>
         <td>
             <div class="form-group">
                 <input type="hidden" value="${projectLink.version}" name="<portlet:namespace/><%=ProjectLink._Fields.VERSION%>">
-                <input type="text" placeholder="No project version"  class="form-control"
+                <input type="text" placeholder="<liferay-ui:message key="no.project.version" />"  class="form-control"
                     value="<sw360:out value="${projectLink.version}"/>" readonly/>
             </div>
         </td>
@@ -45,7 +45,7 @@
         </td>
         <td class="content-middle">
             <svg class="action lexicon-icon" data-row-id="projectLinkRow${uuid}">
-                <title>Delete</title>
+                <title><liferay-ui:message key="delete" /></title>
                 <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
             </svg>
         </td>

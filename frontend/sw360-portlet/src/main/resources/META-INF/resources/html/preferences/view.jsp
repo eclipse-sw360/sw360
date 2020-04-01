@@ -38,29 +38,29 @@
                 <div class="col-auto">
                     <div class="btn-toolbar" role="toolbar">
                         <div class="btn-group" role="group">
-                            <button type="button" id="updateSettingsBtn" class="btn btn-primary">Update Settings</button>
+                            <button type="button" id="updateSettingsBtn" class="btn btn-primary"><liferay-ui:message key="update.settings" /></button>
                         </div>
                     </div>
                 </div>
-				<div class="col portlet-title text-truncate" title="User Preferences">
-					User Preferences
+				<div class="col portlet-title text-truncate" title="<liferay-ui:message key="user.preferences" />">
+					<liferay-ui:message key="user.preferences" />
 				</div>
             </div>
 
             <div class="row">
                 <div class="col-6">
-                    <h5>E-Mail Notification Preferences</h5>
+                    <h5><liferay-ui:message key="e.mail.notification.preferences" /></h5>
                     <form action="<%=saveUserPreferencesURL%>" id="preferencesForm" method="post">
                         <div class="form-group">
                             <div class="form-check">
                                 <input type="checkbox" class="form-check-input" name="<portlet:namespace/><%=User._Fields.WANTS_MAIL_NOTIFICATION%>" id="wants_mail_notification"
                                                     <core_rt:if test="${sw360User.wantsMailNotification == 'true'}"> checked="checked" </core_rt:if> />
-                                <label class="form-check-label" for="wants_mail_notification">Enable E-Mail Notifications</label>
+                                <label class="form-check-label" for="wants_mail_notification"><liferay-ui:message key="enable.e.mail.notifications" /></label>
                             </div>
                         </div>
 
                         <div class="alert alert-info">
-                            You will be notified on changes of an item if you have the selected role in the changed item.
+                            <liferay-ui:message key="you.will.be.notified.on.changes.of.an.item.if.you.have.the.selected.role.in.the.changed.item" />
                         </div>
 
                         <div class="accordion" id="notificationSettings">
@@ -95,27 +95,27 @@
                     <table id="readOnlyUserData" class="table label-value-table">
                         <thead>
                             <tr>
-                                <th colspan="2">SW360 User</th>
+                                <th colspan="2"><liferay-ui:message key="sw360.user" /></th>
                             </tr>
                         </thead>
                         <tr>
-                            <td>Name:</td>
+                            <td><liferay-ui:message key="name" />:</td>
                             <td><sw360:out value="${sw360User.fullname}"/></td>
                         </tr>
                         <tr>
-                            <td>E-mail:</td>
+                            <td><liferay-ui:message key="e.mail" />:</td>
                             <td><sw360:DisplayUserEmail email="${sw360User.email}" bare="true"/></td>
                         </tr>
                         <tr>
-                            <td>Group:</td>
+                            <td><liferay-ui:message key="group" />:</td>
                             <td><sw360:out value="${sw360User.department}"/></td>
                         </tr>
                         <tr>
-                            <td>External Id:</td>
+                            <td><liferay-ui:message key="external.id" />:</td>
                             <td><sw360:out value="${sw360User.externalid}"/></td>
                         </tr>
                         <tr>
-                            <td>Role:</td>
+                            <td><liferay-ui:message key="role" />:</td>
                             <td><sw360:DisplayEnum value="${sw360User.userGroup}"/></td>
                         </tr>
                     </table>
@@ -124,55 +124,55 @@
             <div class="row">
                 <div class="col">
                     <core_rt:if test="${enableTokenGenerator}">
-                        <h4>REST API Tokens</h4>
+                        <h4><liferay-ui:message key="rest.api.tokens" /></h4>
                         <form id="generateTokenForm" action="<%=generateTokenURL%>" method="post" novalidate class="needs-validation">
                             <table class="table label-value-table" id="restInfoTable">
                                 <thead>
                                 <tr>
-                                    <th colspan="2">REST API Token</th>
+                                    <th colspan="2"><liferay-ui:message key="rest.api.token" /></th>
                                 </tr>
                                 </thead>
                                 <tr>
-                                    <td>Name:</td>
+                                    <td><liferay-ui:message key="name" />:</td>
                                     <td>
                                         <div class="form-group">
                                             <input class="form-control" id="rest_token" required=""
                                                 name="<portlet:namespace/><%=RestApiToken._Fields.NAME%>"
-                                                type="text" placeholder="Enter token name" value="" />
+                                                type="text" placeholder="<liferay-ui:message key="enter.token.name" />" value="" />
                                             <div class="invalid-feedback">
-                                                Please enter a token name!
+                                                <liferay-ui:message key="please.enter.a.token.name" />
                                             </div>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td>Authorities:</td>
+                                    <td><liferay-ui:message key="authorities" />:</td>
                                     <td>
                                         <div class="form-check">
                                             <input type="checkbox" name="<portlet:namespace/><%=RestApiToken._Fields.AUTHORITIES%>READ"
                                                 id="authorities_read" class="form-check-input" />
-                                            <label class="form-check-label" for="authorities_read">Read Access</label>
+                                            <label class="form-check-label" for="authorities_read"><liferay-ui:message key="read.access" /></label>
                                             <br>
                                             <input type="checkbox" name="<portlet:namespace/><%=RestApiToken._Fields.AUTHORITIES%>WRITE"
                                                 id="authorities_write" class="form-check-input" />
-                                            <label class="form-check-label" for="authorities_write">Write Access</label>
+                                            <label class="form-check-label" for="authorities_write"><liferay-ui:message key="write.access" /></label>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td>Expiration Date:</td>
+                                    <td><liferay-ui:message key="expiration.date" />:</td>
                                     <td>
                                         <input id="expirationDate" class="datepicker form-control" required="" autocomplete="off"
                                             name="<portlet:namespace/>expirationDate"
-                                            type="text" placeholder="Enter expiration date" pattern="\d{4}-\d{2}-\d{2}" value="" />
+                                            type="text" placeholder="<liferay-ui:message key="enter.expiration.date" />" pattern="\d{4}-\d{2}-\d{2}" value="" />
                                         <div class="invalid-feedback">
-                                            Please enter an expiration date!
+                                            <liferay-ui:message key="please.enter.an.expiration.date" />
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td>Token:
-                                        <span title="Authorization Header (Authorization: Token <API-Token>)">
+                                    <td><liferay-ui:message key="token" />:
+                                        <span title="<liferay-ui:message key="authorization.header.authorization.token.api.token" />">
                                             <clay:icon symbol="info-circle-open" />
                                         </span>
                                     </td>
@@ -181,17 +181,17 @@
                                     </td>
                                 </tr>
                             </table>
-                            <button type="submit" class="btn btn-secondary">Generate Token</button>
+                            <button type="submit" class="btn btn-secondary"><liferay-ui:message key="generate.token" /></button>
                         </form>
 
                         <core_rt:if test="${accessTokenList.size()>0}">
                             <table class="table edit-table four-columns-with-actions mt-4">
                                 <thead>
                                 <tr>
-                                    <th>Token Name</th>
-                                    <th>Created On</th>
-                                    <th>Expiration Date</th>
-                                    <th>Authorities</th>
+                                    <th><liferay-ui:message key="token.name" /></th>
+                                    <th><liferay-ui:message key="created.on" /></th>
+                                    <th><liferay-ui:message key="expiration.date" /></th>
+                                    <th><liferay-ui:message key="authorities" /></th>
                                     <th></th>
                                 </tr>
                                 </thead>
@@ -203,7 +203,7 @@
                                         <td><sw360:DisplayApiTokenExpireDate token="${tokenFromTokenList}"/></td>
                                         <td><sw360:out value="${tokenFromTokenList.authorities}"/></td>
                                         <td><button type="button" class="btn btn-sm btn-danger"
-                                                onclick="window.location=generateDeleteTokenUrl('${tokenFromTokenList.name}')">Revoke Token</button>
+                                                onclick="window.location=generateDeleteTokenUrl('${tokenFromTokenList.name}')"><liferay-ui:message key="revoke.token" /></button>
                                         </td>
                                     </tr>
                                 </core_rt:forEach>

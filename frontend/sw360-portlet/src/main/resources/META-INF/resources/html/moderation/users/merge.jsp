@@ -35,7 +35,7 @@
                     <div id="moderation-header-heading" class="card-header">
                         <h2 class="mb-0">
                             <button class="btn btn-secondary btn-block" type="button" data-toggle="collapse" data-target="#moderation-header" aria-expanded="true" aria-controls="moderation-header">
-                                Moderation Request Information
+                                <liferay-ui:message key="moderation.request.information" />
                             </button>
                         </h2>
                     </div>
@@ -50,13 +50,13 @@
                         <div id="moderation-changes-heading" class="card-header">
                             <h2 class="mb-0">
                                 <button class="btn btn-secondary btn-block" type="button" data-toggle="collapse" data-target="#moderation-changes" aria-expanded="false" aria-controls="moderation-changes">
-                                    Proposed Changes
+                                    <liferay-ui:message key="proposed.changes" />
                                 </button>
                             </h2>
                         </div>
                         <div id="moderation-changes" class="collapse" aria-labelledby="moderation-changes-heading" data-parent="#moderation-wizard">
                             <div class="card-body">
-                                <h4 class="mt-2">Proposed User Attributes</h4>
+                                <h4 class="mt-2"><liferay-ui:message key="proposed.user.attributes" /></h4>
                                 <table class="table label-value-table" id="userOverview">
                                     <thead>
                                         <tr>
@@ -65,27 +65,27 @@
                                     </thead>
                                     <tbody>
                                         <tr>
-                                            <td>First Name:</td>
+                                            <td><liferay-ui:message key="first.name" />:</td>
                                             <td><sw360:out value="${newuser.givenname}"/></td>
                                         </tr>
                                         <tr>
-                                            <td>Last Name:</td>
+                                            <td><liferay-ui:message key="last.name" />:</td>
                                             <td><sw360:out value="${newuser.lastname}"/></td>
                                         </tr>
                                         <tr>
-                                            <td>Email:</td>
+                                            <td><liferay-ui:message key="email" />:</td>
                                             <td><sw360:out value="${newuser.email}"/></td>
                                         </tr>
                                         <tr>
-                                            <td>Group:</td>
+                                            <td><liferay-ui:message key="group" />:</td>
                                             <td><sw360:out value="${newuser.department}"/></td>
                                         </tr>
                                         <tr>
-                                            <td>Role:</td>
+                                            <td><liferay-ui:message key="role" />:</td>
                                             <td><sw360:DisplayEnum value="${newuser.userGroup}"/></td>
                                         </tr>
                                         <tr>
-                                            <td>External Id:</td>
+                                            <td><liferay-ui:message key="external.id" />:</td>
                                             <td><sw360:out value="${newuser.externalid}"/></td>
                                         </tr>
                                     </tbody>

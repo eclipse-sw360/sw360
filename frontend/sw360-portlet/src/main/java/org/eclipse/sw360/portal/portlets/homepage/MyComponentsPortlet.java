@@ -49,7 +49,7 @@ import org.osgi.service.component.annotations.ConfigurationPolicy;
         "javax.portlet.display-name=My Components",
         "javax.portlet.info.short-title=My Components",
         "javax.portlet.info.title=My Components",
-
+	    "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.view-template=/html/homepage/mycomponents/view.jsp",
     },
     service = Portlet.class,

@@ -41,7 +41,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.SCHEDULE_ADMIN_POR
         "javax.portlet.display-name=Schedule Administration",
         "javax.portlet.info.short-title=Schedule",
         "javax.portlet.info.title=Schedule Administration",
-
+        "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.view-template=/html/admin/scheduleAdmin/view.jsp",
     },
     service = Portlet.class,

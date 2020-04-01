@@ -10,8 +10,10 @@
 package org.eclipse.sw360.portal.portlets.moderation;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Organization;
 import com.liferay.portal.kernel.servlet.SessionMessages;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
@@ -72,7 +74,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.*;
         "javax.portlet.display-name=Moderations",
         "javax.portlet.info.short-title=Moderations",
         "javax.portlet.info.title=Moderations",
-
+        "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.view-template=/html/moderation/view.jsp",
     },
     service = Portlet.class,
@@ -140,6 +142,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
         final User user = UserCacheHolder.getUserFromRequest(request);
         final String id = request.getParameter(MODERATION_ID);
         String sessionMessage;
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         if (id != null) {
             try {
                 ModerationService.Iface client = thriftClients.makeModerationClient();
@@ -154,26 +157,26 @@ public class ModerationPortlet extends FossologyAwarePortlet {
                 if (ACTION_CANCEL.equals(action)) {
                     client.cancelInProgress(id);
 
-                    sessionMessage = "You have cancelled working on the previous moderation request.";
+                    sessionMessage = LanguageUtil.get(resourceBundle,"you.have.cancelled.working.on.the.previous.moderation.request");
                 } else if (ACTION_DECLINE.equals(action)) {
                     declineModerationRequest(user, moderationRequest, request);
 
                     client.refuseRequest(id, moderationComment, user.getEmail());
-                    sessionMessage = "You have declined the previous moderation request.";
+                    sessionMessage = LanguageUtil.get(resourceBundle,"you.have.declined.the.previous.moderation.request");
                 } else if (ACTION_ACCEPT.equals(action)) {
                     String requestingUserEmail = moderationRequest.getRequestingUser();
                     User requestingUser = UserCacheHolder.getUserFromEmail(requestingUserEmail);
                     acceptModerationRequest(user, requestingUser, moderationRequest, request);
 
                     client.acceptRequest(moderationRequest, moderationComment, user.getEmail());
-                    sessionMessage = "You have accepted the previous moderation request.";
+                    sessionMessage = LanguageUtil.get(resourceBundle,"you.have.accepted.the.previous.moderation.request");
                 } else if (ACTION_POSTPONE.equals(action)) {
                     // keep me assigned but do it later... so nothing to be done here, just update the comment message
                     moderationRequest.setCommentDecisionModerator(moderationComment);
                     client.updateModerationRequest(moderationRequest);
-                    sessionMessage = "You have postponed the previous moderation request.";
+                    sessionMessage = LanguageUtil.get(resourceBundle,"you.have.postponed.the.previous.moderation.request");
                 } else if (ACTION_RENDER_NEXT_AFTER_UNSUBSCRIBE.equals(action)) {
-                    sessionMessage = "You are removed from the list of moderators for the previous moderation request.";
+                    sessionMessage = LanguageUtil.get(resourceBundle,"you.are.removed.from.the.list.of.moderators.for.the.previous.moderation.request");
                 } else {
                    throw new PortletException("Unknown action");
                 }
@@ -290,6 +293,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
     }
 
     private void renderNextModeration(RenderRequest request, RenderResponse response, final User user, String sessionMessage, ModerationService.Iface client, ModerationRequest moderationRequest) throws IOException, PortletException, TException {
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         if (ACTION_CANCEL.equals(request.getParameter(ACTION))) {
             SessionMessages.add(request, "request_processed", sessionMessage);
             renderStandardView(request, response);
@@ -314,11 +318,11 @@ public class ModerationPortlet extends FossologyAwarePortlet {
                     .collect(Collectors.toList());
 
             if (requestsInProgressAndAssignedToMe.size()>0) {
-                sessionMessage += " You have returned to your first open request.";
+                sessionMessage += LanguageUtil.get(resourceBundle,"you.have.returned.to.your.first.open.request");
                 SessionMessages.add(request, "request_processed", sessionMessage);
                 renderEditViewForId(request, response, Collections.min(requestsInProgressAndAssignedToMe, compareByTimeStamp()).getId());
             } else {
-                sessionMessage += " You have no open Requests.";
+                sessionMessage += LanguageUtil.get(resourceBundle,"you.have.no.open.requests");
                 SessionMessages.add(request, "request_processed", sessionMessage);
                 renderStandardView(request, response);
             }
@@ -404,6 +408,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
         if (id != null) {
             ModerationRequest moderationRequest = null;
             User user = UserCacheHolder.getUserFromRequest(request);
+            ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
             try {
 
                 ModerationService.Iface client = thriftClients.makeModerationClient();
@@ -411,7 +416,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
                 boolean actionsAllowed = moderationRequest.getModerators().contains(user.getEmail()) && ModerationPortletUtils.isOpenModerationRequest(moderationRequest);
                 request.setAttribute(PortalConstants.MODERATION_ACTIONS_ALLOWED, actionsAllowed);
                 if(actionsAllowed) {
-                    SessionMessages.add(request, "request_processed", "You have assigned yourself to this moderation request.");
+                    SessionMessages.add(request, "request_processed", LanguageUtil.get(resourceBundle,"you.have.assigned.yourself.to.this.moderation.request"));
                     client.setInProgress(id, user);
                 }
                 request.setAttribute(PortalConstants.MODERATION_REQUEST, moderationRequest);

@@ -109,8 +109,8 @@ define('modules/sw360Wizard', [ 'jquery', 'modules/button' ], function($, button
 
         $wizardRoot.append('' +
             '<div class="wizardFooter btn-group content-right">' +
-            '    <button type="button" class="wizardBack btn btn-secondary" disabled>Back</button>' +
-            '    <button type="button" class="wizardNext btn btn-primary">Next</button>' +
+            '    <button type="button" class="wizardBack btn btn-secondary" disabled>'+Liferay.Language.get('back')+'</button>' +
+            '    <button type="button" class="wizardNext btn btn-primary">'+Liferay.Language.get('next')+'</button>' +
             '    <button type="button" class="wizardAbort btn btn-danger hide">Abort</button>' +
             '</div>'
         );
@@ -136,7 +136,7 @@ define('modules/sw360Wizard', [ 'jquery', 'modules/button' ], function($, button
             if (lastStep.hasClass('active')) {
                 $('.wizardNext', $wizardRoot).text('Finish')
             } else {
-                $('.wizardNext', $wizardRoot).text('Next');
+                $('.wizardNext', $wizardRoot).text(Liferay.Language.get('next'));
             }
         }
 

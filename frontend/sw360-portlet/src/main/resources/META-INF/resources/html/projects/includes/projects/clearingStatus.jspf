@@ -9,12 +9,13 @@
 --%>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 <%@ page import="org.eclipse.sw360.portal.common.page.PortletReleasePage" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 
 <jsp:useBean id="releasesAndProjects" type="java.util.List<org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData>" scope="request"/>
 
 <core_rt:if test="${releasesAndProjects.size() == 0 }">
     <div class="alert alert-info" role="alert">
-        Please add linked releases or projects with linked releases to view their clearing status here.
+        <liferay-ui:message key="please.add.linked.releases.or.projects.with.linked.releases.to.view.their.clearing.status.here" />
     </div>
 </core_rt:if>
 <core_rt:if test="${releasesAndProjects.size()  > 0 }">
@@ -50,20 +51,40 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
         table = datatables.create('#releasesTable', {
             data: result,
             columns: [
-                {title: "Name"},
-                {title: "Project Origin"},
-                {title: "Clearing State"},
-                {title: "Release Mainline State"},
-                {title: "Project Mainline State"},
-                {title: "Type"},
-                {title: "Actions", render: {display: renderActions}, className: "two actions" }
+                {title: "<liferay-ui:message key="name" />"},
+                {title: "<liferay-ui:message key="project.origin" />"},
+                {title: "<liferay-ui:message key="clearing.state" />"},
+                {title: "<liferay-ui:message key="release.mainline.state" />"},
+                {title: "<liferay-ui:message key="project.mainline.state" />"},
+                {title: "<liferay-ui:message key="type" />"},
+                {title: "<liferay-ui:message key="actions" />", render: {display: renderActions}, className: "two actions" }
             ],
             columnDefs: [
                 {
                     targets: [ 6 ],
                     visible: $('#releasesTable').data() ? $('#releasesTable').data().detailsContext : false
                 }
-            ]
+            ],
+            language: {
+                paginate: {
+                    previous: "<liferay-ui:message key="previous" />",
+                    next: "<liferay-ui:message key="next" />"
+                },
+                info: "<liferay-ui:message key="showing" />",
+                lengthMenu: '<liferay-ui:message key="show" /> <select>'+
+                '<option value="10">10</option>'+
+                '<option value="25">25</option>'+
+                '<option value="50">50</option>'+
+                '<option value="100">100</option>'+
+                '<option value="-1"><liferay-ui:message key="all" /></option>'+
+                '</select> <liferay-ui:message key="entries" />',
+                processing: "<liferay-ui:message key="processing" />",
+                loadingRecords: "<liferay-ui:message key="loading" />",
+                infoFiltered: "<liferay-ui:message key="filtered.from.max.total.entries" />",
+                zeroRecords: "<liferay-ui:message key="no.matching.records.found" />",
+                infoEmpty: "<liferay-ui:message key="infoempty" />",
+                search: "<liferay-ui:message key="search" />"
+            }
         }, [0, 1, 2, 3, 4, 5], 6, true);
 
         function renderActions(id, type, row) {
@@ -73,7 +94,7 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
                 $editAction = render.linkTo(
                     makeReleaseUrl(row[6]),
                     "",
-                    '<svg class="lexicon-icon"><title>Edit</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>'
+                    '<svg class="lexicon-icon"><title><liferay-ui:message key="edit" /></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>'
                 );
 
             $actions.append($editAction);
