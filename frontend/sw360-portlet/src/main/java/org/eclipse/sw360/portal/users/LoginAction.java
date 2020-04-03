@@ -28,7 +28,8 @@ import javax.servlet.http.HttpServletResponse;
     immediate = true,
     property = "key=login.events.post",
     service = LifecycleAction.class,
-    configurationPolicy = ConfigurationPolicy.REQUIRE
+    configurationPolicy = ConfigurationPolicy.REQUIRE,
+    enabled = false
 )
 public class LoginAction extends Action {
     protected final Logger log = LoggerFactory.getLogger(getClass());
