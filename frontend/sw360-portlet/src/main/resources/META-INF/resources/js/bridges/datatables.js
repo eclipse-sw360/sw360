@@ -50,7 +50,7 @@ define('bridges/datatables', [
 				"<'row'<'col-auto'i><'col'p>>",		// line below table
 			buttons: [],
 			info: true,
-			lengthMenu: [ [10, 25, 50, 100, -1], [10, 25, 50, 100, "All"] ],
+			lengthMenu: [ [10, 25, 50, 100, -1], [10, 25, 50, 100, Liferay.Language.get("all")] ],
 			pageLength: 10,
 			paging: true,
 			pagingType: 'simple_numbers',

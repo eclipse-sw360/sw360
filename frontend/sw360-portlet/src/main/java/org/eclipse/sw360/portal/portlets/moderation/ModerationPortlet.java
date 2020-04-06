@@ -101,12 +101,14 @@ public class ModerationPortlet extends FossologyAwarePortlet {
 
     private void serveDeleteModerationRequest(ResourceRequest request, ResourceResponse response) throws IOException {
         RequestStatus requestStatus = ModerationPortletUtils.deleteModerationRequest(request, log);
-        serveRequestStatus(request, response, requestStatus, "Problem removing moderation request", log);
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+        serveRequestStatus(request, response, requestStatus, LanguageUtil.get(resourceBundle,"problem.removing.moderation.request"), log);
     }
 
     private void addCommentToClearingRequest(ResourceRequest request, ResourceResponse response) throws PortletException {
         RequestStatus requestStatus = ModerationPortletUtils.addCommentToClearingRequest(request, log);
-        serveRequestStatus(request, response, requestStatus, "Error adding comment to clearing request", log);
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+        serveRequestStatus(request, response, requestStatus, LanguageUtil.get(resourceBundle,"error.adding.comment.to.clearing.request"), log);
     }
 
     private void removeMeFromModerators(ResourceRequest request, ResourceResponse response){
@@ -224,7 +226,8 @@ public class ModerationPortlet extends FossologyAwarePortlet {
     @UsedAsLiferayAction
     public void updateClearingRequest(ActionRequest request, ActionResponse response) throws PortletException, IOException {
         RequestStatus requestStatus = requestStatus = ModerationPortletUtils.updateClearingRequest(request, log);
-        setSessionMessage(request, requestStatus, "Clearing Request", "update");
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+        setSessionMessage(request, requestStatus, LanguageUtil.get(resourceBundle,"clearing.request"), "update");
     }
 
     private void declineModerationRequest(User user, ModerationRequest moderationRequest, RenderRequest request) throws TException {
@@ -352,7 +355,8 @@ public class ModerationPortlet extends FossologyAwarePortlet {
         baseUrl.setParameter(PAGENAME, PAGENAME_EDIT_CLEARING_REQUEST);
         baseUrl.setParameter(CLEARING_REQUEST_ID, Id);
 
-        addBreadcrumbEntry(request, "Clearing Request", baseUrl);
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+        addBreadcrumbEntry(request, LanguageUtil.get(resourceBundle,"clearing.request"), baseUrl);
     }
 
     public void renderStandardView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
@@ -472,8 +476,9 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             log.error("Could not retrieve component", e);
         }
 
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         if (actual_component == null) {
-            renderNextModeration(request, response, user, "Ignored unretrievable target", thriftClients.makeModerationClient(), moderationRequest);
+            renderNextModeration(request, response, user, LanguageUtil.get(resourceBundle,"eignored.unretrievable.target"), thriftClients.makeModerationClient(), moderationRequest);
             return;
         }
 
@@ -527,8 +532,9 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             log.error("Could not retrieve release", e);
         }
 
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         if (actual_release == null) {
-            renderNextModeration(request, response, user, "Ignored unretrievable target", thriftClients.makeModerationClient(), moderationRequest);
+            renderNextModeration(request, response, user, LanguageUtil.get(resourceBundle,"ignored.unretrievable.target"), thriftClients.makeModerationClient(), moderationRequest);
             return;
         }
 
@@ -547,8 +553,9 @@ public class ModerationPortlet extends FossologyAwarePortlet {
     private boolean refuseToDeleteUsedDocument(RenderRequest request, RenderResponse response, ModerationRequest moderationRequest, User user, boolean requestDocumentDelete, Boolean is_used) throws TException, IOException, PortletException {
         if (requestDocumentDelete && is_used) {
             ModerationService.Iface client = thriftClients.makeModerationClient();
-            client.refuseRequest(moderationRequest.getId(), "You cannot delete a document still used by others", user.getEmail());
-            renderNextModeration(request, response, user, "Ignored delete of used target", client, moderationRequest);
+            ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+            client.refuseRequest(moderationRequest.getId(), LanguageUtil.get(resourceBundle,"you.cannot.delete.a.document.still.used.by.others"), user.getEmail());
+            renderNextModeration(request, response, user, LanguageUtil.get(resourceBundle,"ignored.delete.of.used.target"), client, moderationRequest);
             return true;
         }
         return false;
@@ -594,8 +601,9 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             log.error("Could not retrieve project", e);
         }
 
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         if (actual_project == null) {
-            renderNextModeration(request, response, user, "Ignored unretrievable target", thriftClients.makeModerationClient(), moderationRequest);
+            renderNextModeration(request, response, user, LanguageUtil.get(resourceBundle,"ignored.unretrievable.target"), thriftClients.makeModerationClient(), moderationRequest);
             return;
         }
 
@@ -632,6 +640,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
     public void renderLicenseModeration(RenderRequest request, RenderResponse response, ModerationRequest moderationRequest, User user) throws IOException, PortletException, TException {
         License actual_license = null;
         User requestingUser = UserCacheHolder.getUserFromEmail(moderationRequest.getRequestingUser());
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         try {
             LicenseService.Iface client = thriftClients.makeLicenseClient();
             actual_license = client.getByID(moderationRequest.getDocumentId(),requestingUser.getDepartment());
@@ -643,7 +652,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
         }
 
         if (actual_license == null) {
-            renderNextModeration(request, response, user, "Ignored unretrievable target", thriftClients.makeModerationClient(), moderationRequest);
+            renderNextModeration(request, response, user, LanguageUtil.get(resourceBundle,"ignored.unretrievable.target"), thriftClients.makeModerationClient(), moderationRequest);
             return;
         }
 
@@ -660,8 +669,9 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             log.error("Could not retrieve user", e);
         }
 
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         if (changedUser == null) {
-            renderNextModeration(request, response, user, "Ignored unretrievable target", thriftClients.makeModerationClient(), moderationRequest);
+            renderNextModeration(request, response, user, LanguageUtil.get(resourceBundle,"ignored.unretrievable.target"), thriftClients.makeModerationClient(), moderationRequest);
             return;
         }
 

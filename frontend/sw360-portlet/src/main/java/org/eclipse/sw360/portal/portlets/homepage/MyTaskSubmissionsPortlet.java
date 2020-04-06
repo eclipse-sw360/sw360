@@ -13,6 +13,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.MY_TASK_SUBMISSION
 
 import java.io.IOException;
 import java.util.List;
+import java.util.ResourceBundle;
 
 import javax.portlet.Portlet;
 import javax.portlet.PortletException;
@@ -20,6 +21,8 @@ import javax.portlet.ResourceRequest;
 import javax.portlet.ResourceResponse;
 
 import com.google.common.collect.Lists;
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -60,7 +63,8 @@ public class MyTaskSubmissionsPortlet extends AbstractTasksPortlet {
 
     private void serveDeleteModerationRequest(ResourceRequest request, ResourceResponse response) throws IOException {
         RequestStatus requestStatus = ModerationPortletUtils.deleteModerationRequest(request, log);
-        serveRequestStatus(request, response, requestStatus, "Problem removing moderation request", log);
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+        serveRequestStatus(request, response, requestStatus, LanguageUtil.get(resourceBundle,"problem.removing.moderation.request"), log);
     }
 
     private void serveTaskList(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {

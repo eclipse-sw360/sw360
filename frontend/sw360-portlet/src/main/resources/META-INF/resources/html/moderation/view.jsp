@@ -215,21 +215,8 @@ AUI().use('liferay-portlet-url', function () {
                     {title: "<liferay-ui:message key="actions" />", className: 'one action'}
                 ],
                 language: {
-                    paginate: {
-                        previous: "<liferay-ui:message key="previous" />",
-                        next: "<liferay-ui:message key="next" />"
-                        },
-                    emptyTable: "<liferay-ui:message key="no.moderation.requests.found" />",
-                    info: "<liferay-ui:message key="showing" />",
-                    infoEmpty: "<liferay-ui:message key="infoempty" />",
-                    lengthMenu: '<liferay-ui:message key="show" /> <select>'+
-                    '<option value="10">10</option>'+
-                    '<option value="25">25</option>'+
-                    '<option value="50">50</option>'+
-                    '<option value="100">100</option>'+
-                    '<option value="-1"><liferay-ui:message key="all" /></option>'+
-                    '</select> <liferay-ui:message key="entries" />',
-                    processing: "<liferay-ui:message key="processing" />",
+                    url: "<liferay-ui:message key="datatables.lang" />",
+                    //emptyTable: "<liferay-ui:message key="no.moderation.requests.found" />",
                     loadingRecords: "<liferay-ui:message key="loading" />"
                 },
                 initComplete: datatables.showPageContainer
