@@ -39,12 +39,12 @@
 				<div class="col-auto">
 					<div class="btn-toolbar" role="toolbar">
 						<div class="btn-group" role="group">
-							<button type="button" class="btn btn-primary" onclick="window.location.href='<%=addTodoURL%>'">Add ToDo</button>
+							<button type="button" class="btn btn-primary" onclick="window.location.href='<%=addTodoURL%>'"><liferay-ui:message key="add.todo" /></button>
 						</div>
 					</div>
 				</div>
-                <div class="col portlet-title text-truncate" title="ToDos (${todoList.size()})">
-					ToDos (${todoList.size()})
+                <div class="col portlet-title text-truncate" title="<liferay-ui:message key="todos" /> (${todoList.size()})">
+					<liferay-ui:message key="todos" /> (${todoList.size()})
 				</div>
             </div>
 
@@ -99,11 +99,15 @@
                 searching: true,
                 data: result,
                 columns: [
-                    {"title": "Title", data: 'title' },
-                    {"title": "Text", data: 'text' },
-                    {"title": "Valid for Projects", data: 'projectValidity', className: 'text-center', render: $.fn.dataTable.render.inputCheckbox('project-validity', '', false, checkboxHook) },
-                    {"title": "Actions", data: 'id', render: renderActions }
+                    {"title": "<liferay-ui:message key="title" />", data: 'title' },
+                    {"title": "<liferay-ui:message key="text" />", data: 'text' },
+                    {"title": "<liferay-ui:message key="valid.for.projects" />", data: 'projectValidity', className: 'text-center', render: $.fn.dataTable.render.inputCheckbox('project-validity', '', false, checkboxHook) },
+                    {"title": "<liferay-ui:message key="actions" />", data: 'id', render: renderActions }
                 ],
+                language: {
+                    url: "<liferay-ui:message key="datatables.lang" />",
+                    loadingRecords: "<liferay-ui:message key="loading" />"
+                },
                 initComplete: datatables.showPageContainer
             }, [0, 1, 2], [3]);
 
@@ -158,14 +162,14 @@
                             todoTable.row('#' + id).remove().draw(false);
                             $dialog.close();
                         } else if(data.result == 'ACCESS_DENIED') {
-                            $dialog.alert("Only admin users can delete Todos!");
+                            $dialog.alert("<liferay-ui:message key="only.admin.users.can.delete.todos" />");
                         } else {
-                            $dialog.alert("I could not delete the todo.");
+                            $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.todo" />");
                         }
                     },
                     error: function () {
                         callback();
-                        $dialog.alert("I could not delete the todo.");
+                        $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.todo" />");
                     }
                 });
             }
@@ -173,9 +177,9 @@
             $dialog = dialog.confirm(
                 'danger',
                 'question-circle',
-                'Delete ToDo?',
-                '<p>Do you really want to delete the todo <b data-name="title"></b>?</p>',
-                'Delete ToDo',
+                '<liferay-ui:message key="delete.todo" />?',
+                '<p><liferay-ui:message key="do.you.really.want.to.delete.the.todo.x" />?</p>',
+                '<liferay-ui:message key="delete.todo" />',
                 {
                     title: title,
                 },

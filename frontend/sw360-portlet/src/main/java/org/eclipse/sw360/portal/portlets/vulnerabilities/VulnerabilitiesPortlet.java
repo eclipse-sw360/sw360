@@ -51,7 +51,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.*;
         "javax.portlet.display-name=Vulnerabilities",
         "javax.portlet.info.short-title=Vulnerabilities",
         "javax.portlet.info.title=Vulnerabilities",
-
+        "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.view-template=/html/vulnerabilities/view.jsp",
     },
     service = Portlet.class,

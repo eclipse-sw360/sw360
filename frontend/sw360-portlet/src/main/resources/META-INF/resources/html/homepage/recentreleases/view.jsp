@@ -18,7 +18,7 @@
 <jsp:useBean id="releases" type="java.util.List<org.eclipse.sw360.datahandler.thrift.components.Release>"
              class="java.util.ArrayList" scope="request"/>
 
-<h4>Recent Releases</h4>
+<h4><liferay-ui:message key="recent.releases" /></h4>
 <div class="row">
     <div class="col">
         <core_rt:if test="${releases.size() > 0 }">
@@ -31,7 +31,7 @@
             </ul>
         </core_rt:if>
         <core_rt:if test="${releases.size() == 0}">
-            <div class="alert alert-info">No recent releases.</div>
+            <div class="alert alert-info"><liferay-ui:message key="no.recent.releases" /></div>
         </core_rt:if>
     </div>
 </div>

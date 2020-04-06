@@ -18,19 +18,17 @@
         ${welcomePageGuideLine}
     </core_rt:if>
     <core_rt:if test="${empty welcomePageGuideLine}">
-        <h1 class="display-4">Welcome to SW360!</h1>
+        <h1 class="display-4"><liferay-ui:message key="welcome.to.sw360" /></h1>
         <p class="lead">
-		SW360 is an open source software project that provides both a web application and a repository to collect,
-		organize and make available information about software components. It establishes a central hub for software
-		components in an organization.
+		<liferay-ui:message key="sw360.is.an.open.source.software.project.that.provides.both.a.web.application.and.a.repository.to.collect.organize.and.make.available.information.about.software.components.it.establishes.a.central.hub.for.software.components.in.an.organization" />
         </p>
     </core_rt:if>
 	<hr class="my-4">
 	<div class="alert alert-success" role="alert">
-		Your account has been created, but it is still inactive. An administrator will review it and activate it.
-		You will be notified.
+		<liferay-ui:message key="your.account.has.been.created.but.it.is.still.inactive.an.administrator.will.review.it.and.activate.it" />
+		<liferay-ui:message key="you.will.be.notified" />
 	</div>
 	<div class="buttons">
-		<span class="sign-in"><a class="btn btn-primary btn-lg" href="${ themeDisplay.getURLSignIn() }" role="button">Sign In</a></span>
+		<span class="sign-in"><a class="btn btn-primary btn-lg" href="${ themeDisplay.getURLSignIn() }" role="button"><liferay-ui:message key="sign.in" /></a></span>
 	</div>
 </div>

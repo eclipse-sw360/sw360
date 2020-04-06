@@ -13,7 +13,7 @@
         <div class="col-4 offset-4">
             <div class="spinner text-center">
                 <div class="spinner-border" role="status">
-                    <span class="sr-only">Loading spinner...</span>
+                    <span class="sr-only"><liferay-ui:message key="loading.spinner" /></span>
                 </div>
             </div>
         </div>

@@ -21,8 +21,8 @@
         <thead>
             <tr>
                 <th><input type="checkbox" class="form-check-input" data-action="select"  checked="" /></th>
-                <th>Release</th>
-                <th>Project</th>
+                <th><liferay-ui:message key="release" /></th>
+                <th><liferay-ui:message key="project" /></th>
             </tr>
         </thead>
         <tbody>
@@ -47,6 +47,6 @@
 
 <core_rt:if test="${releasesAndProjects.size()==0}">
     <div class="alert alert-info" role="alert">
-        No releases linked to this project or its linked projects
+        <liferay-ui:message key="no.releases.linked.to.this.project.or.its.linked.projects" />
     </div>
 </core_rt:if>

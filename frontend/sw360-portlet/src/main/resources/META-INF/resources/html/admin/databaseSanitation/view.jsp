@@ -25,19 +25,19 @@
         <div class="col-auto">
             <div class="btn-toolbar" role="toolbar">
                 <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-primary" data-action="search-duplicates">Search duplicate identifiers</button>
+                    <button type="button" class="btn btn-primary" data-action="search-duplicates"><liferay-ui:message key="search.duplicate.identifiers" /></button>
                 </div>
             </div>
         </div>
-        <div class="col portlet-title text-truncate" title="Database Administration">
-            Database Administration
+        <div class="col portlet-title text-truncate" title="<liferay-ui:message key="database.administration" />">
+            <liferay-ui:message key="database.administration" />
         </div>
     </div>
     <div class="row">
         <div class="col">
             <div id="duplicateSearch">
                 <div class="alert alert-info" data-type="progress" style="display: none;">
-                    <p>Searching for duplicate identifiers...</p>
+                    <p><liferay-ui:message key="searching.for.duplicate.identifiers" /></p>
                     <div class="progress">
                         <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%"></div>
                     </div>
@@ -80,13 +80,13 @@
 
                     if (data.result == 'SUCCESS') {
                         $result.addClass('alert-success');
-                        $result.text("No duplicate identifiers were found");
+                        $result.text("<liferay-ui:message key="no.duplicate.identifiers.were.found" />");
                     } else if (data.result == 'FAILURE') {
                         $result.addClass('alert-danger');
-                        $result.text("Error in looking for duplicate identifiers");
+                        $result.text("<liferay-ui:message key="error.in.looking.for.duplicate.identifiers" />");
                     } else {
                         $result.addClass('alert-warning');
-                        $result.text('The following duplicate identifiers were found.');
+                        $result.text('<liferay-ui:message key="the.following.duplicate.identifiers.were.found" />');
                         $tables.append(data);
                     }
                     $result.show();
@@ -100,7 +100,7 @@
                     $progress.hide();
 
                     $result.addClass('alert-danger');
-                    $result.text("Error in looking for duplicate identifiers");
+                    $result.text("<liferay-ui:message key="error.in.looking.for.duplicate.identifiers" />");
                 }
             });
         });

@@ -75,16 +75,16 @@
         <div class="row">
             <div class="col-3 sidebar">
                 <div id="detailTab" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
-                    <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab">Summary</a>
-                    <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-linkedReleases'}">active</core_rt:if>" href="#tab-linkedReleases" data-toggle="list" role="tab">Linked Releases</a>
+                    <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab"><liferay-ui:message key="summary" /></a>
+                    <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-linkedReleases'}">active</core_rt:if>" href="#tab-linkedReleases" data-toggle="list" role="tab"><liferay-ui:message key="linked.releases" /></a>
 
                     <core_rt:if test="${not addMode}" >
-                        <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ClearingDetails'}">active</core_rt:if>" href="#tab-ClearingDetails" data-toggle="list" role="tab">Clearing Details</a>
-                        <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ECCDetails'}">active</core_rt:if>" href="#tab-ECCDetails" data-toggle="list" role="tab">ECC Details</a>
-                        <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Attachments'}">active</core_rt:if>" href="#tab-Attachments" data-toggle="list" role="tab">Attachments</a>
+                        <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ClearingDetails'}">active</core_rt:if>" href="#tab-ClearingDetails" data-toggle="list" role="tab"><liferay-ui:message key="clearing.details" /></a>
+                        <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ECCDetails'}">active</core_rt:if>" href="#tab-ECCDetails" data-toggle="list" role="tab"><liferay-ui:message key="ecc.details" /></a>
+                        <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Attachments'}">active</core_rt:if>" href="#tab-Attachments" data-toggle="list" role="tab"><liferay-ui:message key="attachments" /></a>
                     </core_rt:if>
                     <core_rt:if test="${cotsMode}">
-                        <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-CommercialDetails'}">active</core_rt:if>" href="#tab-CommercialDetails" data-toggle="list" role="tab">Commercial Details</a>
+                        <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-CommercialDetails'}">active</core_rt:if>" href="#tab-CommercialDetails" data-toggle="list" role="tab"><liferay-ui:message key="commercial.details" /></a>
                     </core_rt:if>
                 </div>
             </div>
@@ -94,24 +94,24 @@
                         <div class="btn-toolbar" role="toolbar">
                             <div class="btn-group" role="group">
                                 <core_rt:if test="${addMode}" >
-                                    <button type="button" id="formSubmit" class="btn btn-primary">Create Release</button>
+                                    <button type="button" id="formSubmit" class="btn btn-primary"><liferay-ui:message key="create.release" /></button>
                                 </core_rt:if>
 
                                 <core_rt:if test="${not addMode}" >
-                                    <button type="button" id="formSubmit" class="btn btn-primary">Update Release</button>
+                                    <button type="button" id="formSubmit" class="btn btn-primary"><liferay-ui:message key="update.release" /></button>
                                 </core_rt:if>
                             </div>
 
                             <core_rt:if test="${not addMode}" >
                                 <div class="btn-group" role="group">
                                     <button id="deleteReleaseButton" type="button" class="btn btn-danger"
-                                        <core_rt:if test="${usingComponents.size()>0 or usingProjects.size()>0}"> disabled="disabled" title="Deletion is disabled as the release is used." </core_rt:if>
-                                    >Delete Release</button>
+                                        <core_rt:if test="${usingComponents.size()>0 or usingProjects.size()>0}"> disabled="disabled" title="<liferay-ui:message key="deletion.is.disabled.as.the.release.is.used" />" </core_rt:if>
+                                    ><liferay-ui:message key="delete.release" /></button>
                                 </div>
                             </core_rt:if>
 
                             <div class="btn-group" role="group">
-                                <button id="cancelEditButton" type="button" class="btn btn-light">Cancel</button>
+                                <button id="cancelEditButton" type="button" class="btn btn-light"><liferay-ui:message key="cancel" /></button>
                             </div>
                         </div>
                     </div>
@@ -182,34 +182,34 @@
                     <div class="modal-header">
                         <h5 class="modal-title">
                             <clay:icon symbol="question-circle" />
-                            Delete Release?
+                            <liferay-ui:message key="delete.release" />?
                         </h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
                     <div class="modal-body">
-                        <p>Do you really want to delete the release <b data-name="name"></b>?</p>
+                        <p><liferay-ui:message key="do.you.really.want.to.delete.the.release.x" />?</p>
                         <div data-hide="hasNoDependencies">
                             <p>
-                                This release <span data-name="name"></span> contains:
+                                <liferay-ui:message key="this.release.x.contains.1" />
                             </p>
                             <ul>
-                                <li data-hide="hasNoLinkedReleases"><span data-name="linkedReleases"></span> linked releases</li>
-                                <li data-hide="hasNoAttachments"><span data-name="attachments"></span> attachments</li>
+                                <li data-hide="hasNoLinkedReleases"><span data-name="linkedReleases"></span><liferay-ui:message key="linked.releases" /> </li>
+                                <li data-hide="hasNoAttachments"><span data-name="attachments"></span><liferay-ui:message key="attachments" /> </li>
                             </ul>
                         </div>
                         <hr/>
                         <form>
                             <div class="form-group">
-                                <label for="deleteReleaseDialogComment">Please comment your changes</label>
-                                <textarea id="deleteReleaseDialogComment" class="form-control" data-name="comment" rows="4" placeholder="Comment your request..."></textarea>
+                                <label for="deleteReleaseDialogComment"><liferay-ui:message key="please.comment.your.changes" /></label>
+                                <textarea id="deleteReleaseDialogComment" class="form-control" data-name="comment" rows="4" placeholder="<liferay-ui:message key="comment.your.request" />"></textarea>
                             </div>
                         </form>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-danger">Delete Release</button>
+                        <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="cancel" /></button>
+                        <button type="button" class="btn btn-danger"><liferay-ui:message key="delete.release" /></button>
                     </div>
                 </div>
             </div>
@@ -314,14 +314,14 @@
             $dialog = dialog.confirm(
                 null,
                 'pencil',
-                'Create moderation request',
+                '<liferay-ui:message key="create.moderation.request" />',
                 '<form>' +
                     '<div class="form-group">' +
-                        '<label for="moderationRequestCommentField">Please comment your changes</label>' +
-                        '<textarea form=releaseEditForm name="<portlet:namespace/><%=PortalConstants.MODERATION_REQUEST_COMMENT%>" id="moderationRequestCommentField" class="form-control" placeholder="Leave a comment on your request" data-name="comment" autofocus></textarea>' +
+                        '<label for="moderationRequestCommentField"><liferay-ui:message key="please.comment.your.changes" /></label>' +
+                        '<textarea form=releaseEditForm name="<portlet:namespace/><%=PortalConstants.MODERATION_REQUEST_COMMENT%>" id="moderationRequestCommentField" class="form-control" placeholder="<liferay-ui:message key="leave.a.comment.on.your.request" />" data-name="comment" autofocus></textarea>' +
                     '</div>' +
                 '</form>',
-                'Send moderation request',
+                '<liferay-ui:message key="send.moderation.request" />',
                 {
                     comment: ''
                 },

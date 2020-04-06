@@ -15,31 +15,31 @@
 <table class="table edit-table three-columns" id="ComponentBasicInfo">
     <thead>
         <tr>
-            <th colspan="3">Release Summary</th>
+            <th colspan="3"><liferay-ui:message key="release.summary" /></th>
         </tr>
     </thead>
     <tr>
         <td>
-            <sw360:DisplayVendorEdit id="<%=Release._Fields.VENDOR_ID.toString()%>" vendor="${release.vendor}" label="Vendor"/>
+            <sw360:DisplayVendorEdit id="<%=Release._Fields.VENDOR_ID.toString()%>" vendor="${release.vendor}" label="vendor"/>
         </td>
         <td>
             <div class="form-group">
-                <label class="mandatory" for="comp_name">Name</label>
+                <label class="mandatory" for="comp_name"><liferay-ui:message key="name" /></label>
                 <input id="comp_name" name="<portlet:namespace/><%=Release._Fields.NAME%>" type="text" readonly
                     required class="form-control" value="<sw360:out value="${component.name}"/>" />
                 <small class="form-text">
-                    <span title="Name of the component">
+                    <span title="<liferay-ui:message key="name.of.the.component" />">
                         <clay:icon symbol="info-circle-open" />
-                        Name of the component.
+                        <liferay-ui:message key="name.of.the.component" />
                     </span>
                 </small>
             </div>
         </td>
         <td>
             <div class="form-group">
-                <label class="mandatory" for="comp_version">Version</label>
+                <label class="mandatory" for="comp_version"><liferay-ui:message key="version" /></label>
                 <input id="comp_version" class="form-control" name="<portlet:namespace/><%=Release._Fields.VERSION%>" type="text"
-                    placeholder="Enter Version" required pattern=".*\S.*"
+                    placeholder="<liferay-ui:message key="enter.version" />" required pattern=".*\S.*"
                     value="<sw360:out value="${release.version}"/>" />
             </div>
         </td>
@@ -47,33 +47,33 @@
     <tr>
         <td>
             <div class="form-group">
-                <label for="programminglanguages">Programming Languages</label>
+                <label for="programminglanguages"><liferay-ui:message key="programming.languages" /></label>
                 <input class="form-control" name="<portlet:namespace/><%=Component._Fields.LANGUAGES%>"
                     id="programminglanguages" type="text"
-                    placeholder="e.g., Java,C++, C#,..."
+                    placeholder="<liferay-ui:message key="e.g.java.c" />"
                     value="<sw360:DisplayCollection value='${release.languages}' />"/>
             </div>
         </td>
         <td>
             <div class="form-group">
-                <label for="op_systems">Operating Systems</label>
+                <label for="op_systems"><liferay-ui:message key="operating.systems" /></label>
                 <input class="form-control" id="op_systems"
                     name="<portlet:namespace/><%=Component._Fields.OPERATING_SYSTEMS%>" type="text"
-                    placeholder="e.g.,Linux,MAC,Windows,..."
+                    placeholder="<liferay-ui:message key="e.g.linux.mac.windows" />"
                     value="<sw360:DisplayCollection value="${release.operatingSystems}" />"/>
             </div>
         </td>
         <td>
             <div class="form-group">
-                <label for="comp_id">CPE ID</label>
+                <label for="comp_id"><liferay-ui:message key="cpe.id3" /></label>
                 <input id="comp_id" name="<portlet:namespace/><%=Release._Fields.CPEID%>" type="text"
                     class="form-control"
                     value="<sw360:out value="${release.cpeid}"/>"
-                    placeholder="Enter CPE ID"/>
+                    placeholder="<liferay-ui:message key="enter.cpe.id" />"/>
                 <small class="form-text">
-                    <span title="The formula for CPE ID creation is &#13;'cpe:2.3:a:VENDORNAME:COMPONENTNAME:VERSION'">
+                    <span title="<liferay-ui:message key="the.formula.for.cpe.id.creation.is" /> &#13;'cpe:2.3:a:VENDORNAME:COMPONENTNAME:VERSION'">
                         <clay:icon symbol="info-circle-open" />
-                        Learn more about the CPE ID format.
+                        <liferay-ui:message key="learn.more.about.the.cpe.id.format" />
                     </span>
                 </small>
             </div>
@@ -82,10 +82,10 @@
     <tr>
         <td>
             <div class="form-group">
-                <label for="platformsTB">Software Platforms</label>
+                <label for="platformsTB"><liferay-ui:message key="software.platforms" /></label>
                 <input class="form-control" id="platformsTB"
                     name="<portlet:namespace/><%=Component._Fields.SOFTWARE_PLATFORMS%>" type="text"
-                    placeholder="e.g.,Adobe AIR,.NET,Qt,..."
+                    placeholder="<liferay-ui:message key="e.g.adobe.air.net.qt" />"
                     value="<sw360:DisplayCollection value="${release.softwarePlatforms}" />"/>
             </div>
         </td>
@@ -96,9 +96,9 @@
     <tr>
         <td>
             <div class="form-group">
-                <label for="releaseDate">Release Date</label>
+                <label for="releaseDate"><liferay-ui:message key="release.date" /></label>
                 <input id="releaseDate" class="datepicker form-control" name="<portlet:namespace/><%=Release._Fields.RELEASE_DATE%>" type="text"
-                    placeholder="Enter Release Date"
+                    placeholder="<liferay-ui:message key="enter.release.date" />"
                     pattern="\d{4}-\d{2}-\d{2}"
                     value="<sw360:out value="${release.releaseDate}"/>"/>
             </div>
@@ -111,9 +111,9 @@
 
         <td>
             <div class="form-group">
-                <label for="downloadUrl">Download URL</label>
+                <label for="downloadUrl"><liferay-ui:message key="download.url" /></label>
                 <input id="downloadUrl" class="form-control" name="<portlet:namespace/><%=Release._Fields.DOWNLOADURL%>" type="URL"
-                    placeholder="Enter URL"
+                    placeholder="<liferay-ui:message key="enter.url" />"
                     value="<sw360:out value="${release.downloadurl}"/>"/>
             </div>
         </td>
@@ -122,7 +122,7 @@
     <tr>
         <td>
             <div class="form-group">
-                <label for="clearing_state">Clearing State</label>
+                <label for="clearing_state"><liferay-ui:message key="clearing.state" /></label>
                 <input id="clearing_state" class="form-control"
                         name="<portlet:namespace/><%=Release._Fields.CLEARING_STATE%>"
                         type="text" readonly
@@ -132,7 +132,7 @@
 
         <td>
             <div class="form-group">
-                <label for="mainline_state">Release Mainline State</label>
+                <label for="mainline_state"><liferay-ui:message key="release.mainline.state" /></label>
                 <select class="form-control" id="mainline_state"
                         name="<portlet:namespace/><%=Release._Fields.MAINLINE_STATE%>"
                     <core_rt:if test="${not isUserAtLeastClearingAdmin and not mainlineStateEnabledForUserRole}" >
@@ -143,16 +143,16 @@
                 </select>
                 <small class="form-text">
                     <sw360:DisplayEnumInfo type="<%=MainlineState.class%>"/>
-                    Learn more about mainline states.
+                    <liferay-ui:message key="learn.more.about.mainline.states" />
                 </small>
             </div>
         </td>
 
         <td>
             <div class="form-group">
-                <label for="created_on">Created on</label>
+                <label for="created_on"><liferay-ui:message key="created.on" /></label>
                 <input id="created_on" name="<portlet:namespace/><%=Release._Fields.CREATED_ON%>" type="date"
-                    placeholder="Creation date YYYY-MM-DD" required=""
+                    placeholder="<liferay-ui:message key="creation.date.yyyy.mm.dd" />" required=""
                         <core_rt:if test="${addMode}">
                             value="<%=SW360Utils.getCreatedOn()%>"
                         </core_rt:if>
@@ -167,16 +167,16 @@
     <tr>
         <td>
             <sw360:DisplayUserEdit email="${release.createdBy}" id="<%=Release._Fields.CREATED_BY.toString()%>"
-                                   description="Created by" multiUsers="false" readonly="true"/>
+                                   description="created.by" multiUsers="false" readonly="true"/>
         </td>
 
         <td>
             <sw360:DisplayUserEdit emails="${release.contributors}" id="<%=Release._Fields.CONTRIBUTORS.toString()%>"
-                                   description="Contributors" multiUsers="true" readonly="false"/>
+                                   description="contributors" multiUsers="true" readonly="false"/>
         </td>
         <td>
             <sw360:DisplayUserEdit emails="${release.moderators}" id="<%=Release._Fields.MODERATORS.toString()%>"
-                                   description="Moderators" multiUsers="true" readonly="false"/>
+                                   description="moderators" multiUsers="true" readonly="false"/>
         </td>
     </tr>
 </table>

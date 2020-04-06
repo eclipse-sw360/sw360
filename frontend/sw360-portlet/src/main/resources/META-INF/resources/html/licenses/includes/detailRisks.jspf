@@ -15,9 +15,9 @@
     </colgroup>
     <thead>
         <tr>
-            <th>Id</th>
-            <th>Text</th>
-            <th>Category</th>
+            <th><liferay-ui:message key="id" /></th>
+            <th><liferay-ui:message key="text" /></th>
+            <th><liferay-ui:message key="category" /></th>
         </tr>
     </thead>
     <tbody>
@@ -43,7 +43,8 @@
                 [0, 'asc']
             ],
             language: {
-                emptyTable: 'No license risks analysis available.'
+                url: "<liferay-ui:message key="datatables.lang" />",
+                loadingRecords: "<liferay-ui:message key="loading" />"
             }
         }, [0, 1, 2], undefined, true);
     });

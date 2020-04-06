@@ -11,9 +11,13 @@ package org.eclipse.sw360.portal.tags;
 
 import org.eclipse.sw360.portal.common.PortalConstants;
 
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
+
 import org.apache.thrift.TEnum;
 
 import java.io.IOException;
+import java.util.ResourceBundle;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
@@ -58,10 +62,11 @@ public class DisplayEnumInfo extends SimpleTagSupport {
     private void printEnumValuesInfo(Class enumClass) throws IOException {
         PageContext pageContext = (PageContext) getJspContext();
         HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         JspWriter jspWriter = getJspContext().getOut();
 
         String result = "<span class='" + PortalConstants.TOOLTIP_CLASS__CSS + " "
-                + PortalConstants.TOOLTIP_CLASS__CSS + "-" + enumClass.getSimpleName() + "'>"
+                + PortalConstants.TOOLTIP_CLASS__CSS + "-" + enumClass.getSimpleName() + "' data-content='"+LanguageUtil.get(resourceBundle,enumClass.getSimpleName())+"'>"
                 + "<svg class='lexicon-icon'><use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle-open' /></svg></span>";
 
         jspWriter.print(result);

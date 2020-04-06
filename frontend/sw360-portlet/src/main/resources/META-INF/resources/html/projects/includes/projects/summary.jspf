@@ -18,55 +18,55 @@
 <table class="table label-value-table" id="general">
     <thead>
     <tr>
-        <th colspan="2">General Information</th>
+        <th colspan="2"><liferay-ui:message key="general.information" /></th>
     </tr>
     </thead>
     <tr>
-        <td>Name:</td>
+        <td><liferay-ui:message key="name" />:</td>
         <td><sw360:out value="${project.name}"/></td>
     </tr>
     <tr>
-        <td>Version:</td>
+        <td><liferay-ui:message key="version" />:</td>
         <td><sw360:out value="${project.version}"/></td>
     </tr>
     <tr>
-        <td>Visibility:</td>
+        <td><liferay-ui:message key="visibility" />:</td>
         <td><sw360:DisplayEnum value="${project.visbility}"/></td>
     </tr>
     <tr>
-        <td>Created on:</td>
+        <td><liferay-ui:message key="created.on" />:</td>
         <td><sw360:out value="${project.createdOn}"/></td>
     </tr>
     <tr>
-        <td>Created by:</td>
+        <td><liferay-ui:message key="created.by" />:</td>
         <td><sw360:DisplayUserEmail email="${project.createdBy}"/></td>
     </tr>
     <tr>
-        <td>Homepage:</td>
+        <td><liferay-ui:message key="homepage" />:</td>
         <td><sw360:DisplayLink target="${project.homepage}"/></td>
     </tr>
     <tr>
-        <td>Wiki:</td>
+        <td><liferay-ui:message key="wiki" />:</td>
         <td><sw360:DisplayLink target="${project.wiki}"/></td>
     </tr>
     <tr>
-        <td>Project type:</td>
+        <td><liferay-ui:message key="project.type" />:</td>
         <td><sw360:DisplayEnum value="${project.projectType}"/></td>
     </tr>
     <tr>
-        <td>Domain:</td>
+        <td><liferay-ui:message key="domain" />:</td>
         <td><sw360:out value="${project.domain}"/></td>
     </tr>
     <tr>
-        <td>Tag:</td>
+        <td><liferay-ui:message key="tag" />:</td>
         <td><sw360:out value="${project.tag}"/></td>
     </tr>
     <tr>
-        <td>External ids:</td>
+        <td><liferay-ui:message key="external.ids" />:</td>
         <td><sw360:DisplayMap value="${project.externalIds}"/></td>
     </tr>
     <tr>
-        <td>Additional Data:</td>
+        <td><liferay-ui:message key="additional.data" />:</td>
         <td><sw360:DisplayMap value="${project.additionalData}"/></td>
     </tr>
 </table>
@@ -74,51 +74,51 @@
 <table class="table label-value-table" id="roles">
     <thead>
     <tr>
-        <th colspan="2">Roles</th>
+        <th colspan="2"><liferay-ui:message key="roles" /></th>
     </tr>
     </thead>
     <tr>
-        <td>Group:</td>
+        <td><liferay-ui:message key="group" />:</td>
         <td><sw360:out value="${project.businessUnit}"/></td>
     </tr>
     <tr>
-        <td>Project responsible:</td>
+        <td><liferay-ui:message key="project.responsible" />:</td>
         <td><sw360:DisplayUserEmail email="${project.projectResponsible}"/></td>
     </tr>
     <tr>
-        <td>Project owner:</td>
+        <td><liferay-ui:message key="project.owner" />:</td>
         <td><sw360:DisplayUserEmail email="${project.projectOwner}"/></td>
     </tr>
     <tr>
-        <td>Owner accounting unit:</td>
+        <td><liferay-ui:message key="owner.accounting.unit" />:</td>
         <td><sw360:out value="${project.ownerAccountingUnit}"/></td>
     </tr>
     <tr>
-        <td>Owner billing group:</td>
+        <td><liferay-ui:message key="owner.billing.group" />:</td>
         <td><sw360:out value="${project.ownerGroup}"/></td>
     </tr>
     <tr>
-        <td>Owner country:</td>
+        <td><liferay-ui:message key="owner.country" />:</td>
         <td><sw360:DisplayCountryCodeName value="${project.ownerCountry}"/></td>
     </tr>
     <tr>
-        <td>Lead architect:</td>
+        <td><liferay-ui:message key="lead.architect" />:</td>
         <td><sw360:DisplayUserEmail email="${project.leadArchitect}"/></td>
     </tr>
     <tr>
-        <td>Moderators:</td>
+        <td><liferay-ui:message key="moderators" />:</td>
         <td><sw360:DisplayUserEmailCollection value="${project.moderators}"/></td>
     </tr>
     <tr>
-        <td>Contributors:</td>
+        <td><liferay-ui:message key="contributors" />:</td>
         <td><sw360:DisplayUserEmailCollection value="${project.contributors}"/></td>
     </tr>
     <tr>
-        <td>Security Responsibles:</td>
+        <td><liferay-ui:message key="security.responsibles" />:</td>
         <td><sw360:DisplayUserEmailCollection value="${project.securityResponsibles}"/></td>
     </tr>
     <tr>
-        <td>Additional Roles:</td>
+        <td><liferay-ui:message key="additional.roles" />:</td>
         <td><sw360:DisplayMapOfEmailSets value="${project.roles}"/></td>
     </tr>
 </table>

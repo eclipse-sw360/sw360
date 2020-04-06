@@ -48,7 +48,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.*;
         "javax.portlet.display-name=Preferences",
         "javax.portlet.info.short-title=Preferences",
         "javax.portlet.info.title=Preferences",
-
+        "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.view-template=/html/preferences/view.jsp",
     },
     service = Portlet.class,

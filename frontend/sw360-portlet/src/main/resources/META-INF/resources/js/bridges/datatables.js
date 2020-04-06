@@ -50,7 +50,7 @@ define('bridges/datatables', [
 				"<'row'<'col-auto'i><'col'p>>",		// line below table
 			buttons: [],
 			info: true,
-			lengthMenu: [ [10, 25, 50, 100, -1], [10, 25, 50, 100, "All"] ],
+			lengthMenu: [ [10, 25, 50, 100, -1], [10, 25, 50, 100, Liferay.Language.get("all")] ],
 			pageLength: 10,
 			paging: true,
 			pagingType: 'simple_numbers',
@@ -79,7 +79,7 @@ define('bridges/datatables', [
 
 				config.buttons.push({
 					extend: 'print',
-					text: '<svg class="lexicon-icon"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#print" /></svg> Print',
+					text: '<svg class="lexicon-icon"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#print" /></svg>' +Liferay.Language.get('print'),
 					autoPrint: true,
 					className: 'btn btn-sm btn-secondary btn-print',
 					exportOptions: {

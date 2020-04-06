@@ -16,9 +16,16 @@ import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
+
 import java.util.HashSet;
 import java.util.Map;
+import java.util.ResourceBundle;
 import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.jsp.PageContext;
 
 /**
  * Helper class to render linked Releases
@@ -40,10 +47,11 @@ public class LinkedReleaseRenderer {
     }
 
 
-    public <T> void renderReleaseLinkList(StringBuilder display, Map<String, T> releaseRelationshipMap, Set<String> releaseIds, String msg) {
+    public <T> void renderReleaseLinkList(StringBuilder display, Map<String, T> releaseRelationshipMap, Set<String> releaseIds, String msg, HttpServletRequest request) {
         if (releaseIds.isEmpty()) return;
 
 
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         StringBuilder candidate = new StringBuilder();
         try {
             ComponentService.Iface componentClient = new ThriftClients().makeComponentClient();
@@ -59,16 +67,17 @@ public class LinkedReleaseRenderer {
         if (!tableContent.isEmpty()) {
 
             display.append(String.format("<table class=\"%s\" id=\"%s%s\" >", tableClasses, idPrefix, msg));
-            display.append(String.format("<thead><tr><th colspan=\"2\">%s</th></tr><tr><th>Release name</th><th>Release relationship</th></tr></thead><tbody>", msg));
+            display.append(String.format("<thead><tr><th colspan=\"2\">%s</th></tr><tr><th>"+LanguageUtil.get(resourceBundle,"release.name")+"</th><th>"+LanguageUtil.get(resourceBundle,"release.relationship")+"</th></tr></thead><tbody>", msg));
             display.append(tableContent);
             display.append("</tbody></table>");
         }
     }
 
-    public <T> void renderReleaseLinkListCompare(StringBuilder display, Map<String,T> oldReleaseRelationshipMap, Map<String, T> deleteReleaseRelationshipMap, Map<String, T> updateReleaseRelationshipMap, Set<String> releaseIds) {
+    public <T> void renderReleaseLinkListCompare(StringBuilder display, Map<String,T> oldReleaseRelationshipMap, Map<String, T> deleteReleaseRelationshipMap, Map<String, T> updateReleaseRelationshipMap, Set<String> releaseIds, HttpServletRequest request) {
         if (releaseIds.isEmpty()) return;
 
 
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         StringBuilder candidate = new StringBuilder();
         try {
             ComponentService.Iface componentClient = new ThriftClients().makeComponentClient();
@@ -98,7 +107,7 @@ public class LinkedReleaseRenderer {
         String tableContent = candidate.toString();
         if (!tableContent.isEmpty()) {
             display.append(String.format("<table class=\"%s\" id=\"%sUpdated\" >", tableClasses, idPrefix));
-            display.append("<thead><tr><th colspan=\"4\">Updated Release Links</th></tr><tr><th>Release name</th><th>Current Release relationship</th><th>Deleted Release relationship</th><th>Suggested release relationship</th></tr></thead><tbody>");
+            display.append("<thead><tr><th colspan=\"4\">"+LanguageUtil.get(resourceBundle,"updated.release.links")+"</th></tr><tr><th>"+LanguageUtil.get(resourceBundle,"release.name")+"</th><th>"+LanguageUtil.get(resourceBundle,"current.release.relationship")+"</th><th>Deleted Release relationship</th><th>Suggested release relationship</th></tr></thead><tbody>");
             display.append(tableContent);
             display.append("</tbody></table>");
         }

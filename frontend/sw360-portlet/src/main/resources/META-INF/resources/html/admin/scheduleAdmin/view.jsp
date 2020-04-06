@@ -36,36 +36,36 @@
         <div class="col-auto">
             <div class="btn-toolbar" role="toolbar">
                 <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-danger" onclick="window.location.href='<%=unscheduleAllServicesURL%>'" <core_rt:if test="${not anyServiceIsScheduled}">disabled</core_rt:if>>Cancel all Scheduled Tasks</button>
+                    <button type="button" class="btn btn-danger" onclick="window.location.href='<%=unscheduleAllServicesURL%>'" <core_rt:if test="${not anyServiceIsScheduled}">disabled</core_rt:if>><liferay-ui:message key="cancel.all.scheduled.tasks" /></button>
                 </div>
             </div>
         </div>
-        <div class="col portlet-title text-truncate" title="Schedule Task Administration">
-            Schedule Task Administration
+        <div class="col portlet-title text-truncate" title="<liferay-ui:message key="schedule.task.administration" />">
+            <liferay-ui:message key="schedule.task.administration" />
         </div>
     </div>
 
     <div class="row">
         <div class="col-6">
-            <h4>CVE Search</h4>
+            <h4><liferay-ui:message key="cve.search" /></h4>
             <table class="table bordered-table">
                 <tr>
-                    <th>Schedule Offset</th>
+                    <th><liferay-ui:message key="schedule.offset" /></th>
                     <td>${cvesearchOffset} (hh:mm:ss)</td>
                 </tr>
                 <tr>
-                    <th>Interval</th>
+                    <th><liferay-ui:message key="interval" /></th>
                     <td>${cvesearchInterval} (hh:mm:ss)</td>
                 </tr>
                 <tr>
-                    <th>Next Synchronization</th>
+                    <th><liferay-ui:message key="next.synchronization" /></th>
                     <td>${cvesearchNextSync}</td>
                 </tr>
             </table>
             <form class="form mt-3">
                 <div class="form-group">
-                    <button type="button" class="btn btn-primary" onclick="window.location.href='<%=scheduleCvesearchURL%>'" <core_rt:if test="${cveSearchIsScheduled}">disabled</core_rt:if>>Schedule CVE service</button>
-                    <button type="button" class="btn btn-light" onclick="window.location.href='<%=unscheduleCvesearchURL%>'" <core_rt:if test="${not cveSearchIsScheduled}">disabled</core_rt:if>>Cancel CVE service</button>
+                    <button type="button" class="btn btn-primary" onclick="window.location.href='<%=scheduleCvesearchURL%>'" <core_rt:if test="${cveSearchIsScheduled}">disabled</core_rt:if>><liferay-ui:message key="schedule.cve.service" /></button>
+                    <button type="button" class="btn btn-light" onclick="window.location.href='<%=unscheduleCvesearchURL%>'" <core_rt:if test="${not cveSearchIsScheduled}">disabled</core_rt:if>><liferay-ui:message key="cancel.cve.service" /></button>
                 </div>
             </form>
         </div>

@@ -36,26 +36,26 @@
 						<div class="btn-group" role="group">
 							<button type="button" class="btn btn-primary"
                               onclick="window.location.href='<portlet:resourceURL><portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.USER_LIST%>'/></portlet:resourceURL>'">
-                                Download Liferay Users
+                                <liferay-ui:message key="download.liferay.users" />
                             </button>
 						</div>
 					</div>
 				</div>
-                <div class="col portlet-title text-truncate" title="Liferay Users (${userList.size()})">
-					Liferay Users (${userList.size()})
+                <div class="col portlet-title text-truncate" title="<liferay-ui:message key="liferay.users" /> (${userList.size()})">
+					<liferay-ui:message key="liferay.users" /> (${userList.size()})
 				</div>
             </div>
 
             <div class="row">
                 <div class="col">
-                    <h4 class="mt-4">Users already in liferay</h4>
+                    <h4 class="mt-4"><liferay-ui:message key="users.already.in.liferay" /></h4>
 			        <table id="userTable" class="table table-bordered">
                         <thead>
                             <tr>
-                                <th>Given name</th>
-                                <th>Last name</th>
-                                <th>Department</th>
-                                <th>User Role</th>
+                                <th><liferay-ui:message key="given.name" /></th>
+                                <th><liferay-ui:message key="last.name" /></th>
+                                <th><liferay-ui:message key="department" /></th>
+                                <th><liferay-ui:message key="user.role" /></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -74,12 +74,12 @@
                         </tbody>
                     </table>
 
-                    <h4 class="mt-4">Users not in liferay</h4>
+                    <h4 class="mt-4"><liferay-ui:message key="users.not.in.liferay" /></h4>
                     <table id="userMissingTable" class="table table-bordered">
                         <thead>
                             <tr>
-                                <th>Given name</th>
-                                <th>Last name</th>
+                                <th><liferay-ui:message key="given.name" /></th>
+                                <th><liferay-ui:message key="last.name" /></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -92,19 +92,19 @@
                         </tbody>
                     </table>
 
-                    <h4 class="mt-4">Upload Users</h4>
+                    <h4 class="mt-4"><liferay-ui:message key="upload.users" /></h4>
                     <form id="usersForm" class="form needs-validation" name="usersForm" action="<%=updateLifeRayUsers%>" method="POST" enctype="multipart/form-data" novalidate>
                         <div class="form-row">
                             <div class="col">
                                 <div class="form-group">
                                     <input type="file" class="form-control-file" id="<portlet:namespace/>userFileUploadInput" name="<portlet:namespace/>file" required>
                                     <div class="invalid-feedback">
-                                        Please select a file!
+                                        <liferay-ui:message key="please.select.a.file" />
                                     </div>
                                 </div>
                             </div>
                             <div class="col-2">
-                                <button type="submit" class="btn btn-secondary btn-block" id="<portlet:namespace/>userCSV-Submit">Upload Users</button>
+                                <button type="submit" class="btn btn-secondary btn-block" id="<portlet:namespace/>userCSV-Submit"><liferay-ui:message key="upload.users" /></button>
                             </div>
                         </div>
                     </form>
@@ -140,6 +140,10 @@
 
             function createUserTable(tableSelector){
                 return datatables.create(tableSelector, {
+                    language: {
+                        url: "<liferay-ui:message key="datatables.lang" />",
+                        loadingRecords: "<liferay-ui:message key="loading" />"
+                    },
                     searching: true
                 });
             }

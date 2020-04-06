@@ -14,75 +14,75 @@
     <table class="table label-value-table" id="ReleaseDetailOverview">
         <thead>
         <tr>
-            <th colspan="2">General</th>
+            <th colspan="2"><liferay-ui:message key="general" /></th>
         </tr>
         </thead>
         <tr>
-            <td>CPE ID:</td>
+            <td><liferay-ui:message key="cpe.id3" />:</td>
             <td><sw360:out value="${release.cpeid}"/></td>
         </tr>
         <tr>
-            <td>Release Date of this Release:</td>
+            <td><liferay-ui:message key="release.date.of.this.release" />:</td>
             <td><sw360:out value="${release.releaseDate}"/></td>
         </tr>
         <tr>
-            <td>Created on:</td>
+            <td><liferay-ui:message key="created.on" />:</td>
             <td><sw360:out value="${release.createdOn}"/></td>
         </tr>
         <tr>
-            <td>Created by:</td>
+            <td><liferay-ui:message key="created.by" />:</td>
             <td><sw360:DisplayUserEmail email="${release.createdBy}"/></td>
         </tr>
         <tr>
-            <td>Contributors:</td>
+            <td><liferay-ui:message key="contributors" />:</td>
             <td><sw360:DisplayUserEmailCollection value="${release.contributors}"/></td>
         </tr>
         <tr>
-            <td>Moderators:</td>
+            <td><liferay-ui:message key="moderators" />:</td>
             <td><sw360:DisplayUserEmailCollection value="${release.moderators}"/></td>
         </tr>
         <tr>
-            <td>Subscribers:</td>
+            <td><liferay-ui:message key="subscribers" />:</td>
             <td><sw360:DisplayUserEmailCollection value="${release.subscribers}"/></td>
         </tr>
         <tr>
-            <td>Additional Roles:</td>
+            <td><liferay-ui:message key="additional.roles" />:</td>
             <td><sw360:DisplayMapOfEmailSets value="${release.roles}"/></td>
         </tr>
         <tr>
-            <td>Download URL:</td>
+            <td><liferay-ui:message key="download.url" />:</td>
             <td><sw360:DisplayLink target="${release.downloadurl}"/></td>
         </tr>
 
         <tr>
-            <td>Clearing State:</td>
+            <td><liferay-ui:message key="clearing.state" />:</td>
             <td><sw360:DisplayEnum value="${release.clearingState}"/></td>
         </tr>
         <tr>
-            <td>Release Mainline State:</td>
+            <td><liferay-ui:message key="release.mainline.state" />:</td>
             <td><sw360:DisplayEnum value="${release.mainlineState}"/></td>
         </tr>
 
         <tr>
-            <td>Main Licenses:</td>
+            <td><liferay-ui:message key="main.licenses" />:</td>
             <td>
                 <sw360:DisplayLicenseCollection licenseIds="${release.mainLicenseIds}" scopeGroupId="${pageContext.getAttribute('scopeGroupId')}"/>
             </td>
         </tr>
         <tr>
-            <td>Programming Languages:</td>
+            <td><liferay-ui:message key="programming.languages" />:</td>
             <td><sw360:DisplayCollection value="${release.languages}"/></td>
         </tr>
         <tr>
-            <td>Operating Systems:</td>
+            <td><liferay-ui:message key="operating.systems" />:</td>
             <td><sw360:DisplayCollection value="${release.operatingSystems}"/></td>
         </tr>
         <tr>
-            <td>External ids:</td>
+            <td><liferay-ui:message key="external.ids" />:</td>
             <td><sw360:DisplayMap value="${release.externalIds}"/></td>
         </tr>
         <tr>
-            <td>Additional Data:</td>
+            <td><liferay-ui:message key="additional.data" />:</td>
             <td><sw360:DisplayMap value="${release.additionalData}"/></td>
         </tr>
     </table>
@@ -91,12 +91,12 @@
         <table class="table label-value-table" id="ReleaseRepository">
             <thead>
             <tr>
-                <th colspan="2">Release Repository</th>
+                <th colspan="2"><liferay-ui:message key="release.repository" /></th>
             </tr>
             </thead>
 
             <tr>
-                <td>Repository:</td>
+                <td><liferay-ui:message key="repository" />:</td>
                 <td><sw360:DisplayLink target="${release.repository.url}"/> <sw360:out value="(${release.repository.repositorytype})"/></td>
             </tr>
         </table>

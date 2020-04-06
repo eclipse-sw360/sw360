@@ -17,20 +17,20 @@
 
 <core_rt:if test="${isUserAtLeastECCAdmin != 'Yes'}">
     <div class="alert alert-info">
-        You will create a moderation request if you update any ECC data.
+        <liferay-ui:message key="you.will.create.a.moderation.request.if.you.update.any.ecc.data" />
     </div>
 </core_rt:if>
 
 <table class="table edit-table three-columns" id="ECCInformation">
     <thead>
     <tr>
-        <th colspan="3" class="headlabel">ECC Information</th>
+        <th colspan="3" class="headlabel"><liferay-ui:message key="ecc.information" /></th>
     </tr>
     </thead>
     <tr>
         <td>
             <div class="form-group">
-                <label for="eccStatus">ECC Status</label>
+                <label for="eccStatus"><liferay-ui:message key="ecc.status" /></label>
                 <select class="form-control" id="eccStatus"
                         name="<portlet:namespace/><%=Release._Fields.ECC_INFORMATION%><%=EccInformation._Fields.ECC_STATUS%>"
                 >
@@ -38,18 +38,18 @@
                 </select>
                 <small class="form-text">
                     <sw360:DisplayEnumInfo type="<%=ECCStatus.class%>"/>
-                    Learn more about ECC statuses.
+                    <liferay-ui:message key="learn.more.about.ecc.statuses" />
                 </small>
             </div>
         </td>
         <td>
             <div class="form-group">
-                <label for="ECCComment">ECC Comment</label>
+                <label for="ECCComment"><liferay-ui:message key="ecc.comment" /></label>
                 <input id="ECCComment"
                     name="<portlet:namespace/><%=Release._Fields.ECC_INFORMATION%><%=EccInformation._Fields.ECC_COMMENT%>"
                     type="text"
                     class="form-control"
-                    placeholder="Enter ECC comment"
+                    placeholder="<liferay-ui:message key="enter.ecc.comment" />"
                     value="<sw360:out value="${release.eccInformation.eccComment}"/>"/>
             </div>
         </td>
@@ -60,34 +60,34 @@
 
         <td>
             <div class="form-group">
-                <label for="AL">Ausfuhrliste</label>
+                <label for="AL"><liferay-ui:message key="ausfuhrliste" /></label>
                 <input id="AL"
                     name="<portlet:namespace/><%=Release._Fields.ECC_INFORMATION%><%=EccInformation._Fields.AL%>"
                     type="text"
                     class="form-control"
-                    placeholder="Enter AL"
+                    placeholder="<liferay-ui:message key="enter.al" />"
                     value="<sw360:out value="${release.eccInformation.AL}"/>"/>
             </div>
         </td>
         <td>
             <div class="form-group">
-                <label for="ECCN">ECCN</label>
+                <label for="ECCN"><liferay-ui:message key="eccn" /></label>
                 <input id="ECCN"
                     name="<portlet:namespace/><%=Release._Fields.ECC_INFORMATION%><%=EccInformation._Fields.ECCN%>"
                     type="text"
                     class="form-control"
-                    placeholder="Enter ECCN"
+                    placeholder="<liferay-ui:message key="enter.eccn" />"
                     value="<sw360:out value="${release.eccInformation.ECCN}"/>"/>
             </div>
         </td>
         <td>
             <div class="form-group">
-                <label for="materialIndexNumber">Material Index Number</label>
+                <label for="materialIndexNumber"><liferay-ui:message key="material.index.number" /></label>
                 <input id="materialIndexNumber"
                     name="<portlet:namespace/><%=Release._Fields.ECC_INFORMATION%><%=EccInformation._Fields.MATERIAL_INDEX_NUMBER%>"
                     type="text"
                     class="form-control"
-                    placeholder="Enter material index number"
+                    placeholder="<liferay-ui:message key="enter.material.index.number" />"
                     value="<sw360:out value="${release.eccInformation.materialIndexNumber}"/>"/>
             </div>
         </td>
@@ -96,28 +96,28 @@
         <td>
             <sw360:DisplayUserEdit email="${release.eccInformation.assessorContactPerson}"
                                    id="<%=Release._Fields.ECC_INFORMATION.toString() + EccInformation._Fields.ASSESSOR_CONTACT_PERSON.toString()%>"
-                                   description="Assessor contact person" multiUsers="false" readonly="true"/>
+                                   description="assessor.contact.person" multiUsers="false" readonly="true"/>
         </td>
         <td>
             <div class="form-group">
-                <label for="assessorDepartment">Assessor Department</label>
+                <label for="assessorDepartment"><liferay-ui:message key="assessor.department" /></label>
                 <input id="assessorDepartment"
                     name="<portlet:namespace/><%=Release._Fields.ECC_INFORMATION%><%=EccInformation._Fields.ASSESSOR_DEPARTMENT%>"
                     type="text"
                     class="form-control"
                     readonly
-                    placeholder="Will be set automatically"
+                    placeholder="<liferay-ui:message key="will.be.set.automatically" />"
                     value="<sw360:out value="${release.eccInformation.assessorDepartment}"/>"/>
             </div>
         </td>
         <td>
             <div class="form-group">
-                <label for="assessmentDate">Assessment Date</label>
+                <label for="assessmentDate"><liferay-ui:message key="assessment.date" /></label>
                 <input id="assessmentDate"
                     class="datepicker form-control"
                     name="<portlet:namespace/><%=Release._Fields.ECC_INFORMATION%><%=EccInformation._Fields.ASSESSMENT_DATE%>"
                     type="text"
-                    placeholder="Will be set automatically"
+                    placeholder="<liferay-ui:message key="will.be.set.automatically" />"
                     pattern="\d{4}-\d{2}-\d{2}"
                     readonly
                     value="<sw360:out value="${release.eccInformation.assessmentDate}"/>"/>

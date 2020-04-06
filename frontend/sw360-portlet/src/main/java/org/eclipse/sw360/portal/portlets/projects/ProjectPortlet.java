@@ -26,6 +26,8 @@ import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
+import com.liferay.portal.kernel.language.LanguageUtil;
 
 import org.eclipse.sw360.datahandler.common.*;
 import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
@@ -98,7 +100,7 @@ import static org.eclipse.sw360.portal.portlets.projects.ProjectPortletUtils.isU
         "javax.portlet.display-name=Projects",
         "javax.portlet.info.short-title=Projects",
         "javax.portlet.info.title=Projects",
-
+	    "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.view-template=/html/projects/view.jsp",
     },
     service = Portlet.class,
@@ -1410,6 +1412,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     }
 
     private void prepareProjectEdit(RenderRequest request) {
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+
         User user = UserCacheHolder.getUserFromRequest(request);
         String id = request.getParameter(PROJECT_ID);
         setDefaultRequestAttributes(request);
@@ -1473,7 +1477,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 request.setAttribute(ALL_USING_PROJECTS_COUNT, 0);
                 request.setAttribute(PROJECT_OBLIGATIONS, SW360Utils.getProjectObligations(project));
 
-                SessionMessages.add(request, "request_processed", "New Project");
+                SessionMessages.add(request, "request_processed", LanguageUtil.get(resourceBundle,"new.project"));
             }
         }
 

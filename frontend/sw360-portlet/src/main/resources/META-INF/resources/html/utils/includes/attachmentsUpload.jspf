@@ -45,7 +45,7 @@
 </portlet:resourceURL>
 
 <div class="dialogs">
-    <div id="fileUploadDialog" data-title="Upload Attachment" class="modal fade" tabindex="-1" role="dialog"
+    <div id="fileUploadDialog" data-title="<liferay-ui:message key="upload.attachment" />" class="modal fade" tabindex="-1" role="dialog"
          data-portlet-namespace="<portlet:namespace/>"
          data-link-attachment-url="<%=attachmentLinkToAjaxURL%>"
          data-cancel-attachment-url="<%=cancelAttachmentAjaxURL%>"
@@ -59,18 +59,18 @@
                     <core_rt:choose>
                     <core_rt:when test="${empty documentID}">
                         <span class="alert fade show alert-error" role="alert">
-                            Cannot add attachments before saving the document
+                            <liferay-ui:message key="cannot.add.attachments.before.saving.the.document" />
                         </span>
                     </core_rt:when>
                     <core_rt:otherwise>
                         <div class="lfr-dynamic-uploader">
                             <div class="lfr-upload-container">
                                 <div id="fileupload-drop" class="upload-target">
-                                    <span>Drop a File Here</span>
+                                    <span><liferay-ui:message key="drop.a.file.here" /></span>
                                     <br/>
-                                    Or
+                                    <liferay-ui:message key="or" />
                                     <br/>
-                                    <button id="fileupload-browse" type="button" class="btn btn-secondary">Browse</button>
+                                    <button id="fileupload-browse" type="button" class="btn btn-secondary"><liferay-ui:message key="browse" /></button>
                                 </div>
                             </div>
                         </div>
@@ -80,9 +80,9 @@
 
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-dismiss="modal">Close</button>
-                    <button type="button" data-submit="pause" class="btn btn-secondary" title="Pause">Pause</button>
-                    <button type="button" data-submit="upload" class="btn btn-primary" title="Upload">Upload</button>
+                    <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="close" /></button>
+                    <button type="button" data-submit="pause" class="btn btn-secondary" title="<liferay-ui:message key="pause" />"><liferay-ui:message key="pause" /></button>
+                    <button type="button" data-submit="upload" class="btn btn-primary" title="<liferay-ui:message key="upload" />"><liferay-ui:message key="upload" /></button>
                 </div>
             </div>
         </div>

@@ -33,23 +33,23 @@
     <div class="row">
         <div class="col">
             <div class="alert alert-info" role="alert">
-                Total vulnerabilities: <strong>${numberOfVulnerabilities}</strong>
+                <liferay-ui:message key="total.vulnerabilities" /> <strong>${numberOfVulnerabilities}</strong>
             </div>
         </div>
     </div>
     <div class="row mt-2">
         <div class="col">
-            <h4>Vulnerabilities</h4>
+            <h4><liferay-ui:message key="vulnerabilities" /></h4>
             <form class="form-inline">
                 <table id="vulnerabilityTable" class="table table-bordered" data-view-size="${viewSize}" data-editable="${vulnerabilityVerificationEditable}" data-inside-component="${inComponentDetailsContext}">
                 </table>
                 <core_rt:if test="${vulnerabilityVerificationEditable}">
                     <div class="form-group">
-                        <label for="rating-change-for-selected">Change verification state of selected vulnerabilities to</label>
+                        <label for="rating-change-for-selected"><liferay-ui:message key="change.verification.state.of.selected.vulnerabilities.to" /></label>
                         <select id="rating-change-for-selected" class="form-control" name="<portlet:namespace/><%=VerificationState.class%>">
                             <sw360:DisplayEnumOptions type="<%=VerificationState.class%>" inQuotes="true"/>
                         </select>
-                        <button id="apply-to-selected" type="button" class="btn btn-primary">Change State</button>
+                        <button id="apply-to-selected" type="button" class="btn btn-primary"><liferay-ui:message key="change.state" /></button>
                     </div>
                 </core_rt:if>
             </form>
@@ -57,7 +57,7 @@
     </div>
     <div class="row mt-4">
         <div class="col">
-            <h4>Vulnerability matching statistics</h4>
+            <h4><liferay-ui:message key="vulnerability.matching.statistics" /></h4>
             <ul>
                 <core_rt:forEach items="${vulnerabilityMatchedByHistogram.keySet()}" var="matchedBy">
                     <li>
@@ -92,7 +92,7 @@
         });
 
         var viewSize = $('#vulnerabilityTable').data().viewSize;
-        $('#btnShowVulnerabilityCount [data-name="count"]').text(viewSize > 0 ? 'latest ' + viewSize : 'all');
+        $('#btnShowVulnerabilityCount [data-name="count"]').text(viewSize > 0 ? '<liferay-ui:message key="latest" /> ' + viewSize : '<liferay-ui:message key="all" />');
         $('#btnShowVulnerabilityCount + div > a').on('click', function(event) {
             var viewSize = $(event.currentTarget).data().type;
 
@@ -146,18 +146,22 @@
                 data: result,
                 columns: [
                     { title: '', data: null, className: 'text-center', render: $.fn.dataTable.render.inputCheckbox('vulnerability', '') },
-                    { title: "External id", data: 'externalIdLink' },
-                    { title: "Priority", data: 'priority', render: $.fn.dataTable.render.infoText('/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle-open') },
-                    { title: "Matched by", data: 'matchedBy', render: $.fn.dataTable.render.infoText() },
-                    { title: "Title", data: 'title', render: $.fn.dataTable.render.infoText() },
-                    { title: "Verification", data: 'relevance', render: $.fn.dataTable.render.infoText('/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle-open') },
-                    { title: "Actions", data: 'action', default: '' }
+                    { title: "<liferay-ui:message key="external.id" />", data: 'externalIdLink' },
+                    { title: "<liferay-ui:message key="priority" />", data: 'priority', render: $.fn.dataTable.render.infoText('/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle-open') },
+                    { title: "<liferay-ui:message key="matched.by" />", data: 'matchedBy', render: $.fn.dataTable.render.infoText() },
+                    { title: "<liferay-ui:message key="title" />", data: 'title', render: $.fn.dataTable.render.infoText() },
+                    { title: "<liferay-ui:message key="verification" />", data: 'relevance', render: $.fn.dataTable.render.infoText('/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle-open') },
+                    { title: "<liferay-ui:message key="actions" />", data: 'action', default: '' }
                 ],
+                language: {
+                    url: "<liferay-ui:message key="datatables.lang" />",
+                    loadingRecords: "<liferay-ui:message key="loading" />"
+                    },
                 order: [[3, 'asc'], [4, 'desc']],
             }
 
             if($('#vulnerabilityTable').data().insideComponent) {
-                tableDefinition.columns.splice(1, 0, { title: "Release", data: 'releaseName' });
+                tableDefinition.columns.splice(1, 0, { title: "<liferay-ui:message key="release" />", data: 'releaseName' });
             }
 
             if($('#vulnerabilityTable').data().editable) {
@@ -198,7 +202,7 @@
                 var newValueText = selectedValue.text();
 
                 var $dialog = dialog.open('#vulnerabilityDialog', {
-                    button: 'Change State',
+                    button: '<liferay-ui:message key="change.state" />',
                     vulnerabilityCount: selectedRows.data().length,
                     verification: newValueText
                 }, function(submit, callback, data) {
@@ -244,7 +248,7 @@
                                     selectedRows.every(function () {
                                         this.data().relevance = {
                                             text: newValueText,
-                                            tooltip: "You just changed this value. Please reload page."
+                                            tooltip: "<liferay-ui:message key="you.just.changed.this.value.please.reload.page" />"
                                         };
                                         this.invalidate();
                                     });
@@ -256,7 +260,7 @@
                             }
                         },
                         error: function() {
-                            reject('Unknown request error.');
+                            reject('<liferay-ui:message key="unknown.request.error" />');
                         }
                     });
                 });

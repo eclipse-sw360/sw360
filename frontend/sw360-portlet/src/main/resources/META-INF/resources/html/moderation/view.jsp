@@ -46,10 +46,10 @@
                 <%@ include file="/html/utils/includes/quickfilter.jspf" %>
             </div>
             <div id="requestTabs" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
-                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-OpenMR'}">active</core_rt:if>" href="#tab-OpenMR" data-toggle="list" role="tab">Open Moderation Requests</a>
-                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ClosedMR'}">active</core_rt:if>" href="#tab-ClosedMR" data-toggle="list" role="tab">Closed Moderation Requests</a>
-                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-OpenCR'}">active</core_rt:if>" href="#tab-OpenCR" data-toggle="list" role="tab">Open Clearing Requests</a>
-                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ClosedCR'}">active</core_rt:if>" href="#tab-ClosedCR" data-toggle="list" role="tab">Closed Clearing Requests</a>
+                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-OpenMR'}">active</core_rt:if>" href="#tab-OpenMR" data-toggle="list" role="tab"><liferay-ui:message key="open.moderation.requests" /></a>
+                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ClosedMR'}">active</core_rt:if>" href="#tab-ClosedMR" data-toggle="list" role="tab"><liferay-ui:message key="closed.moderation.requests" /></a>
+                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-OpenCR'}">active</core_rt:if>" href="#tab-OpenCR" data-toggle="list" role="tab"><liferay-ui:message key="open.clearing.requests" /></a>
+                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ClosedCR'}">active</core_rt:if>" href="#tab-ClosedCR" data-toggle="list" role="tab"><liferay-ui:message key="closed.clearing.requests" /></a>
             </div>
 		</div>
 		<div class="col">
@@ -57,8 +57,8 @@
 				<div class="col-auto">
 
 				</div>
-                <div class="col portlet-title text-truncate" title="Moderations (${moderationRequests.size()}/${closedModerationRequests.size()})">
-					Moderations (${moderationRequests.size()}/<span id="requestCounter">${closedModerationRequests.size()}</span>)
+                <div class="col portlet-title text-truncate" title="<liferay-ui:message key="moderations" /> (${moderationRequests.size()}/${closedModerationRequests.size()})">
+					<liferay-ui:message key="moderations" /> (${moderationRequests.size()}/<span id="requestCounter">${closedModerationRequests.size()}</span>)
 				</div>
             </div>
 
@@ -189,7 +189,7 @@ AUI().use('liferay-portlet-url', function () {
                     "5": '<sw360:DisplayUserEmailCollection value="${moderation.moderators}" bare="true"/>',
                     "6": "<sw360:DisplayEnum value="${moderation.moderationState}"/>",
                     <core_rt:if test="${isUserAtLeastClearingAdmin == 'Yes'}">
-                        "7": '<div class="actions"><svg class="delete lexicon-icon" data-moderation-request="<sw360:out value="${moderation.id}"/>" data-document-name="${moderation.documentName}"><title>Delete</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/></svg></div>'
+                        "7": '<div class="actions"><svg class="delete lexicon-icon" data-moderation-request="<sw360:out value="${moderation.id}"/>" data-document-name="${moderation.documentName}"><title><liferay-ui:message key="delete" /></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/></svg></div>'
                     </core_rt:if>
                     <core_rt:if test="${isUserAtLeastClearingAdmin != 'Yes'}">
                         "7": '<span class="badge badge-success">READY</span>'
@@ -205,17 +205,19 @@ AUI().use('liferay-portlet-url', function () {
                 searching: true,
                 data: tableData,
                 columns: [
-                    {title: "Date", render: {display: renderTimeToReadableFormat}, className: 'text-nowrap' },
-                    {title: "Type", className: 'text-nowrap'},
-                    {title: "Document Name"},
-                    {title: "Requesting User"},
-                    {title: "Department"},
-                    {title: "Moderators", render: {display: renderModeratorsListExpandable}},
-                    {title: "State", className: 'text-nowrap'},
-                    {title: "Actions", className: 'one action'}
+                    {title: "<liferay-ui:message key="date" />", render: {display: renderTimeToReadableFormat}, className: 'text-nowrap' },
+                    {title: "<liferay-ui:message key="type" />", className: 'text-nowrap'},
+                    {title: "<liferay-ui:message key="document.name" />"},
+                    {title: "<liferay-ui:message key="requesting.user" />"},
+                    {title: "<liferay-ui:message key="department" />"},
+                    {title: "<liferay-ui:message key="moderators" />", render: {display: renderModeratorsListExpandable}},
+                    {title: "<liferay-ui:message key="state" />", className: 'text-nowrap'},
+                    {title: "<liferay-ui:message key="actions" />", className: 'one action'}
                 ],
                 language: {
-                    emptyTable: "No moderation requests found."
+                    url: "<liferay-ui:message key="datatables.lang" />",
+                    //emptyTable: "<liferay-ui:message key="no.moderation.requests.found" />",
+                    loadingRecords: "<liferay-ui:message key="loading" />"
                 },
                 initComplete: datatables.showPageContainer
             }, [0,1,2,3,4,5,6], [7]);
@@ -387,12 +389,12 @@ AUI().use('liferay-portlet-url', function () {
                             $('#requestCounter').parent().attr('title', $('#requestCounter').parent().text());
                             $dialog.close();
                         } else {
-                            $dialog.alert("I could not delete the moderation request!");
+                            $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.moderation.request" />");
                         }
                     },
                     error: function () {
                         callback();
-                        $dialog.alert("I could not delete the moderation request!");
+                        $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.moderation.request" />");
                     }
                 });
             }
@@ -400,9 +402,9 @@ AUI().use('liferay-portlet-url', function () {
             $dialog = dialog.confirm(
                 'danger',
                 'question-circle',
-                'Delete Moderation Request?',
-                '<p>Do you really want to delete the moderation request <b data-name="name"></b>?</p>',
-                'Delete Moderation Request',
+                '<liferay-ui:message key="delete.moderation.request" />?',
+                '<p><liferay-ui:message key="do.you.really.want.to.delete.the.moderation.request.x" /></p>',
+                '<liferay-ui:message key="delete.moderation.request" />',
                 {
                     name: docName,
                 },

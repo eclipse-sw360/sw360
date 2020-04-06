@@ -40,22 +40,22 @@
                 <%@ include file="/html/utils/includes/quickfilter.jspf" %>
                 <div class="card">
                     <div class="card-header">
-                        Advanced Filter
+                        <liferay-ui:message key="advanced.filter" />
                     </div>
                     <div class="card-body">
                         <form action="<%=applyFiltersURL%>" method="post">
                             <div class="form-group">
-                                <label for="external_id">CVE ID</label>
+                                <label for="external_id"><liferay-ui:message key="cve.id" /></label>
                                 <input type="text" class="form-control" name="<portlet:namespace/><%=Vulnerability._Fields.EXTERNAL_ID%>"
                                     value="${externalId}" id="external_id">
                             </div>
                             <div class="form-group">
-                                <label for="vulnerable_config">Vulnerable Configuration</label>
+                                <label for="vulnerable_config"><liferay-ui:message key="vulnerable.configuration" /></label>
                                 <input type="text" class="form-control" name="<portlet:namespace/><%=Vulnerability._Fields.VULNERABLE_CONFIGURATION%>"
                                     value="${vulnerableConfiguration}" id="vulnerable_config">
                             </div>
                             <input id="viewSize" name="<portlet:namespace/><%=PortalConstants.VIEW_SIZE%>" value="${viewSize}" type="hidden">
-                            <button type="submit" class="btn btn-primary btn-sm btn-block">Filter</button>
+                            <button type="submit" class="btn btn-primary btn-sm btn-block"><liferay-ui:message key="filter" /></button>
                         </form>
                     </div>
                 </div>
@@ -67,20 +67,20 @@
 					<div class="btn-toolbar" role="toolbar">
 						<div class="btn-group" role="group">
 								<button id="viewSizeBtn" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-									Show <span data-name="count"></span>
+									<liferay-ui:message key="show" /> <span data-name="count"></span>
 									<clay:icon symbol="caret-bottom" />
 								</button>
 								<div class="dropdown-menu" aria-labelledby="btnExport">
 									<a class="dropdown-item" data-type="200">200</a>
 									<a class="dropdown-item" data-type="500">500</a>
 									<a class="dropdown-item" data-type="1000">1000</a>
-									<a class="dropdown-item" data-type="-1">All</a>
+									<a class="dropdown-item" data-type="-1"><liferay-ui:message key="all" /></a>
 								</div>
 							</div>
 					</div>
 				</div>
-                <div class="col portlet-title text-truncate" title="Vulnerabilities (<core_rt:if test="${vulnerabilityList.size() == totalRows}">${totalRows}</core_rt:if><core_rt:if test="${vulnerabilityList.size() != totalRows}">${vulnerabilityList.size()} latest of ${totalRows}</core_rt:if>)">
-					Vulnerabilities (<core_rt:if test="${vulnerabilityList.size() == totalRows}">${totalRows}</core_rt:if><core_rt:if test="${vulnerabilityList.size() != totalRows}">${vulnerabilityList.size()} latest of ${totalRows}</core_rt:if>)
+                <div class="col portlet-title text-truncate" title="<liferay-ui:message key="vulnerabilities" /> (<core_rt:if test="${vulnerabilityList.size() == totalRows}">${totalRows}</core_rt:if><core_rt:if test="${vulnerabilityList.size() != totalRows}">${vulnerabilityList.size()} latest of ${totalRows}</core_rt:if>)">
+					<liferay-ui:message key="vulnerabilities" /> (<core_rt:if test="${vulnerabilityList.size() == totalRows}">${totalRows}</core_rt:if><core_rt:if test="${vulnerabilityList.size() != totalRows}">${vulnerabilityList.size()} latest of ${totalRows}</core_rt:if>)
 				</div>
             </div>
 
@@ -109,7 +109,7 @@
             quickfilter.addTable(vulnerabilityTable);
 
             var viewSize = $('#vulnerabilitiesTable').data().viewSize;
-            $('#viewSizeBtn [data-name="count"]').text(viewSize > 0 ? 'latest ' + viewSize : 'all');
+            $('#viewSizeBtn [data-name="count"]').text(viewSize > 0 ? '<liferay-ui:message key="latest" /> ' + viewSize : '<liferay-ui:message key="all" />');
             $('#viewSizeBtn + div > a').on('click', function(event) {
                 var viewSize = $(event.currentTarget).data().type;
 
@@ -202,13 +202,17 @@
                     data:result,
                     searching: true,
                     columns: [
-                        { title: "External Id", data: 'externalId', render: renderDetailURL },
-                        { title: "Title", data: 'title', render: $.fn.dataTable.render.infoText() },
-                        { title: "Weighting", data: 'cvss', render: renderCvss },
-                        { title: "Publish Date", data: 'publishDate', default: '' },
-                        { title: "Last Update", data: 'lastExternalUpdate', default: '' }
+                        { title: "<liferay-ui:message key="external.id" />", data: 'externalId', render: renderDetailURL },
+                        { title: "<liferay-ui:message key="title" />", data: 'title', render: $.fn.dataTable.render.infoText() },
+                        { title: "<liferay-ui:message key="weighting" />", data: 'cvss', render: renderCvss },
+                        { title: "<liferay-ui:message key="publish.date" />", data: 'publishDate', default: '' },
+                        { title: "<liferay-ui:message key="last.update" />", data: 'lastExternalUpdate', default: '' }
                     ],
                     order: [[4, 'desc'],[3, 'desc']],
+                    language: {
+                        url: "<liferay-ui:message key="datatables.lang" />",
+                        loadingRecords: "<liferay-ui:message key="loading" />"
+                    },
                     initComplete: datatables.showPageContainer
                 }, [0, 1, 2, 3, 4]);
 

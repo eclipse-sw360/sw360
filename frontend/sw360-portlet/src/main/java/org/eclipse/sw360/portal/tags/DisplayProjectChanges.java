@@ -11,6 +11,9 @@ package org.eclipse.sw360.portal.tags;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
+
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.thrift.TException;
 import org.apache.thrift.meta_data.FieldMetaData;
@@ -23,10 +26,12 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.tags.urlutils.LinkedReleaseRenderer;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ResourceBundle;
 import java.util.Set;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.add;
@@ -114,14 +119,16 @@ public class DisplayProjectChanges extends UserAwareTag {
             }
 
             String renderString = display.toString();
+            HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+            ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
 
             if (Strings.isNullOrEmpty(renderString)) {
-                renderString = "<div class=\"alert alert-info\">No changes in basic fields.</div>";
+                renderString = "<div class=\"alert alert-info\">"+LanguageUtil.get(resourceBundle,"no.changes.in.basic.fields")+"</div>";
             } else {
                 renderString = String.format("<table class=\"%s\" id=\"%schanges\" >", tableClasses, idPrefix)
                         + "<thead>"
                         + String.format("<tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr></thead><tbody>",
-                        FIELD_NAME, CURRENT_VAL, DELETED_VAL, SUGGESTED_VAL)
+                        LanguageUtil.get(resourceBundle,"field.name"), LanguageUtil.get(resourceBundle,"current.value"), LanguageUtil.get(resourceBundle,"former.value"), LanguageUtil.get(resourceBundle,"suggested.value"))
                         + renderString + "</tbody></table>";
             }
 
@@ -140,6 +147,8 @@ public class DisplayProjectChanges extends UserAwareTag {
     }
 
     private void renderLinkedProjects(StringBuilder display, User user) {
+       HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+       ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
        if (ensureSomethingTodoAndNoNullLinkedProjects()) {
 
             Set<String> changedProjectIds = Sets.intersection(additions.getLinkedProjects().keySet(),
@@ -153,8 +162,8 @@ public class DisplayProjectChanges extends UserAwareTag {
 
             Set<String> addedProjectIds = Sets.difference(additions.getLinkedProjects().keySet(), changedProjectIds);
 
-            renderProjectLinkList(display, deletions.getLinkedProjects(), removedProjectIds, "Removed Project Links", user);
-            renderProjectLinkList(display, additions.getLinkedProjects(), addedProjectIds, "Added Project Links", user);
+            renderProjectLinkList(display, deletions.getLinkedProjects(), removedProjectIds, LanguageUtil.get(resourceBundle,"removed.project.links"), user);
+            renderProjectLinkList(display, additions.getLinkedProjects(), addedProjectIds, LanguageUtil.get(resourceBundle,"added.project.links"), user);
             renderProjectLinkListCompare(
                     display,
                     actual.getLinkedProjects(),
@@ -198,11 +207,14 @@ public class DisplayProjectChanges extends UserAwareTag {
         } catch (TException ignored) {
         }
         String tableContent = candidate.toString();
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+
         if (!tableContent.isEmpty()) {
 
             display.append(String.format("<table class=\"%s\" id=\"%s%s\" >", tableClasses, idPrefix, msg));
             display.append(String.format("<thead><tr><th colspan=\"2\">%s</th></tr>" +
-                    "<tr><th>Project Name</th><th>Project Relationship</th></tr></thead><tbody>", msg));
+                    "<tr><th>"+LanguageUtil.get(resourceBundle,"project.name")+"</th><th>"+LanguageUtil.get(resourceBundle,"project.relationship")+"</th></tr></thead><tbody>", msg));
             display.append(tableContent);
             display.append("</tbody></table>");
         }
@@ -246,13 +258,16 @@ public class DisplayProjectChanges extends UserAwareTag {
         }
 
         String tableContent = candidate.toString();
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+
         if (!tableContent.isEmpty()) {
             display.append(String.format("<table class=\"%s\" id=\"%sUpdated\" >", tableClasses, idPrefix));
-            display.append("<thead><tr><th colspan=\"4\">Updated Project Links</th></tr>" +
-                    "<tr><th>Project Name</th>" +
-                    "<th>Current Project Relationship</th>" +
-                    "<th>Deleted Project Relationship</th>" +
-                    "<th>Suggested Project Relationship</th></tr>" +
+            display.append("<thead><tr><th colspan=\"4\">"+LanguageUtil.get(resourceBundle,"updated.project.links")+"</th></tr>" +
+                    "<tr><th>"+LanguageUtil.get(resourceBundle,"project.name")+"</th>" +
+                    "<th>"+LanguageUtil.get(resourceBundle,"current.project.relationship")+"</th>" +
+                    "<th>"+LanguageUtil.get(resourceBundle,"deleted.project.relationship")+"</th>" +
+                    "<th>"+LanguageUtil.get(resourceBundle,"suggested.project.relationship")+"</th></tr>" +
                     "</thead><tbody>");
             display.append(tableContent);
             display.append("</tbody></table>");
@@ -280,12 +295,14 @@ public class DisplayProjectChanges extends UserAwareTag {
                    changedReleaseIds);
 
            LinkedReleaseRenderer renderer = new LinkedReleaseRenderer(display, tableClasses, idPrefix, user);
-           renderer.renderReleaseLinkList(display, deletions.getReleaseIdToUsage(), removedReleaseIds, "Removed Release Links");
-           renderer.renderReleaseLinkList(display, additions.getReleaseIdToUsage(), addedReleaseIds, "Added Release Links");
+           HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+           ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+           renderer.renderReleaseLinkList(display, deletions.getReleaseIdToUsage(), removedReleaseIds, LanguageUtil.get(resourceBundle,"removed.release.links"), request);
+           renderer.renderReleaseLinkList(display, additions.getReleaseIdToUsage(), addedReleaseIds, LanguageUtil.get(resourceBundle,"added.release.links"), request);
            renderer.renderReleaseLinkListCompare(display,
                    actual.getReleaseIdToUsage(),
                    deletions.getReleaseIdToUsage(),
-                   additions.getReleaseIdToUsage(), changedReleaseIds);
+                   additions.getReleaseIdToUsage(), changedReleaseIds, request);
         }
     }
 

@@ -28,9 +28,9 @@
 	<div class="row">
 		<div class="col-3 sidebar">
 			<div id="detailTab" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
-			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab">Summary</a>
-			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Releases'}">active</core_rt:if>" href="#tab-Releases" data-toggle="list" role="tab">Release Overview</a>
-			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Attachments'}">active</core_rt:if>" href="#tab-Attachments" data-toggle="list" role="tab">Attachments</a>
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab"><liferay-ui:message key="summary" /></a>
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Releases'}">active</core_rt:if>" href="#tab-Releases" data-toggle="list" role="tab"><liferay-ui:message key="release.overview" /></a>
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Attachments'}">active</core_rt:if>" href="#tab-Attachments" data-toggle="list" role="tab"><liferay-ui:message key="attachments" /></a>
 			<core_rt:if test="${inComponentDetailsContext}">
 				<%@include file="/html/utils/includes/vulnerabilityTab.jspf" %>
 			</core_rt:if>
@@ -42,11 +42,11 @@
                     <core_rt:if test="${inComponentDetailsContext}">
                         <div class="btn-toolbar" role="toolbar">
                             <div class="btn-group" role="group">
-                                <button type="button" class="btn btn-primary" onclick="window.location.href='<%=editComponentURL%>' + window.location.hash">Edit Component</button>
+                                <button type="button" class="btn btn-primary" onclick="window.location.href='<%=editComponentURL%>' + window.location.hash"><liferay-ui:message key="edit.component" /></button>
                             </div>
                             <core_rt:if test="${isUserAllowedToMerge}">
                                 <div class="btn-group" role="group">
-                                    <button type="button" data-component-id="${component.id}" id="mergeButton" class="btn btn-secondary">Merge</button>
+                                    <button type="button" data-component-id="${component.id}" id="mergeButton" class="btn btn-secondary"><liferay-ui:message key="merge" /></button>
                                 </div>
                             </core_rt:if>
                             <div class="btn-group" role="group">
@@ -55,20 +55,20 @@
                             </div>
                             <div class="list-group-companion" data-belong-to="tab-Attachments">
                             <div class="btn-group" role="group">
-                                    <button id="downloadAttachmentBundle" type="button" class="btn btn-secondary">Download Attachment Bundle</button>
+                                    <button id="downloadAttachmentBundle" type="button" class="btn btn-secondary"><liferay-ui:message key="download.attachment.bundle" /></button>
                                 </div>
                             </div>
                             <div class="list-group-companion" data-belong-to="tab-Vulnerabilities">
                                 <div class="btn-group" role="group">
                                     <button id="btnShowVulnerabilityCount" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                        Show <span data-name="count"></span>
+                                        <liferay-ui:message key="show" /> <span data-name="count"></span>
                                         <clay:icon symbol="caret-bottom" />
                                     </button>
                                     <div class="dropdown-menu" aria-labelledby="btnExport">
                                         <a class="dropdown-item" data-type="200">200</a>
                                         <a class="dropdown-item" data-type="500">500</a>
                                         <a class="dropdown-item" data-type="1000">1000</a>
-                                        <a class="dropdown-item" data-type="-1">All</a>
+                                        <a class="dropdown-item" data-type="-1"><liferay-ui:message key="all" /></a>
                                     </div>
                                 </div>
                             </div>
@@ -136,11 +136,11 @@
             doAjax(url, function(data) {
                 if(data.result === "SUCCESS") {
                     if(subscribed) {
-                        $button.text('Subscribe');
+                        $button.text('<liferay-ui:message key="subscribe" />');
                         $button.removeClass('btn-outline-danger');
                         $button.addClass('btn-outline-success');
                     } else {
-                        $button.text('Unsubscribe');
+                        $button.text('<liferay-ui:message key="unsubscribe" />');
                         $button.removeClass('btn-outline-success');
                         $button.addClass('btn-outline-danger');
                     }
@@ -155,8 +155,8 @@
                 button.finish($button);
             }, function() {
                 Liferay.Util.openToast({
-                    title: 'Error',
-                    message: 'Could not subscribe to release.',
+                    title: '<liferay-ui:message key="error" />',
+                    message: '<liferay-ui:message key="could.not.subscribe.to.release" />',
                     type: 'danger'
                 });
                 button.finish($button);

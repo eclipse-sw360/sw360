@@ -55,26 +55,26 @@
                 <div class="btn-toolbar" role="toolbar">
                     <div class="btn-group" role="group">
                         <core_rt:if test="${addMode}" >
-                            <button type="button" id="formSubmit" class="btn btn-primary">Create License</button>
+                            <button type="button" id="formSubmit" class="btn btn-primary"><liferay-ui:message key="create.license" /></button>
                         </core_rt:if>
 
                         <core_rt:if test="${not addMode}" >
-                            <button type="button" id="formSubmit" class="btn btn-primary">Update License</button>
+                            <button type="button" id="formSubmit" class="btn btn-primary"><liferay-ui:message key="update.license" /></button>
                         </core_rt:if>
                     </div>
 
                     <core_rt:if test="${not addMode}" >
                         <div class="btn-group" role="group">
-                            <button id="deleteLicenseButton" type="button" class="btn btn-danger">Delete License</button>
+                            <button id="deleteLicenseButton" type="button" class="btn btn-danger"><liferay-ui:message key="delete.license" /></button>
                         </div>
                     </core_rt:if>
 
                     <div class="btn-group" role="group">
                         <core_rt:if test="${not addMode}" >
-                            <button id="cancelEditButton" type="button" class="btn btn-light" onclick="window.location.href='<%=cancelToDetailURL%>' + window.location.hash">Cancel</button>
+                            <button id="cancelEditButton" type="button" class="btn btn-light" onclick="window.location.href='<%=cancelToDetailURL%>' + window.location.hash"><liferay-ui:message key="cancel" /></button>
                         </core_rt:if>
                         <core_rt:if test="${addMode}" >
-                            <button id="cancelEditButton" type="button" class="btn btn-light" onclick="window.location.href='<%=cancelToViewURL%>' + window.location.hash">Cancel</button>
+                            <button id="cancelEditButton" type="button" class="btn btn-light" onclick="window.location.href='<%=cancelToViewURL%>' + window.location.hash"><liferay-ui:message key="cancel" /></button>
                         </core_rt:if>
                     </div>
                 </div>
@@ -82,10 +82,10 @@
             <div class="col portlet-title column text-truncate" title="<sw360:out value="${licenseDetail.fullname}"/> (<sw360:out value="${licenseDetail.shortname}"/>)">
                 <sw360:out value="${licenseDetail.fullname}"/> (<sw360:out value="${licenseDetail.shortname}"/>)
                 <core_rt:if test="${licenseDetail.checked != true}">
-                    <span class="badge badge-danger">UNCHECKED</span>
+                    <span class="badge badge-danger"><liferay-ui:message key="unchecked" /></span>
                 </core_rt:if>
                 <core_rt:if test="${licenseDetail.checked == true}">
-                    <span class="badge badge-success">CHECKED</span>
+                    <span class="badge badge-success"><liferay-ui:message key="checked" /></span>
                 </core_rt:if>
             </div>
         </div>
@@ -109,18 +109,18 @@
                     <div class="modal-header">
                         <h5 class="modal-title">
                             <clay:icon symbol="question-circle" />
-                            Delete License?
+                            <liferay-ui:message key="delete.license" />?
                         </h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
                     <div class="modal-body">
-                        <p>Do you really want to delete the license <b data-name="name"></b>?</p>
+                        <p><liferay-ui:message key="do.you.really.want.to.delete.the.license.x" />?</p>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-danger">Delete License</button>
+                        <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="cancel" /></button>
+                        <button type="button" class="btn btn-danger"><liferay-ui:message key="delete.license" /></button>
                     </div>
                 </div>
             </div>

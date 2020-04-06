@@ -15,50 +15,50 @@
 
 <div class="container">
     <div class="row portlet-toolbar">
-        <div class="col portlet-title text-truncate" title="Administration">
-            Administration
+        <div class="col portlet-title text-truncate" title="<liferay-ui:message key="administration" />">
+            <liferay-ui:message key="administration" />
         </div>
     </div>
     <div class="row">
         <div class="col">
             <div class="btn-group justify-content-center" role="group" aria-label="Administration">
                 <a class="btn btn-secondary" href="${baseUrl}/../users">
-                    <clay:icon symbol="users"/> User
+                    <clay:icon symbol="users"/> <liferay-ui:message key="user" />
                 </a>
                 <a class="btn btn-secondary" href="${baseUrl}/../vendors">
-                    <clay:icon symbol="suitcase"/> Vendors
+                    <clay:icon symbol="suitcase"/> <liferay-ui:message key="vendors" />
                 </a>
 
                 <a class="btn btn-secondary" href="${baseUrl}/../bulkreleaseedit">
-                    <clay:icon symbol="pencil"/> Bulk Release Edit
+                    <clay:icon symbol="pencil"/> <liferay-ui:message key="bulk.release.edit" />
                 </a>
 
                 <a class="btn btn-secondary" href="${baseUrl}/../license-admin">
-                    <clay:icon symbol="document"/> Licenses
+                    <clay:icon symbol="document"/> <liferay-ui:message key="licenses" />
                 </a>
 
                 <a class="btn btn-secondary" href="${baseUrl}/../todos">
-                    <clay:icon symbol="list"/> ToDos
+                    <clay:icon symbol="list"/> <liferay-ui:message key="todos" />
                 </a>
 
                 <a class="btn btn-secondary" href="${baseUrl}/../schedule">
-                    <clay:icon symbol="calendar"/> Schedule
+                    <clay:icon symbol="calendar"/> <liferay-ui:message key="schedule" />
                 </a>
 
                 <a class="btn btn-secondary" href="${baseUrl}/../fossology">
-                    <svg class="lexicon-icon"><use href="<%=request.getContextPath()%>/images/icons.svg#fossology" /></svg> Fossology
+                    <svg class="lexicon-icon"><use href="<%=request.getContextPath()%>/images/icons.svg#fossology" /></svg> <liferay-ui:message key="fossology" />
                 </a>
 
                 <a class="btn btn-secondary" href="${baseUrl}/../importexport">
-                    <clay:icon symbol="import-export"/> Import & Export
+                    <clay:icon symbol="import-export"/> <liferay-ui:message key="import.export" />
                 </a>
 
                 <a class="btn btn-secondary" href="${baseUrl}/../attachmentcleanup">
-                    <clay:icon symbol="filter"/> Attachment Cleanup
+                    <clay:icon symbol="filter"/> <liferay-ui:message key="attachment.cleanup" />
                 </a>
 
                 <a class="btn btn-secondary" href="${baseUrl}/../databasesanitation">
-                    <clay:icon symbol="search"/> Database Sanitation
+                    <clay:icon symbol="search"/> <liferay-ui:message key="database.sanitation" />
                 </a>
             </div>
         </div>

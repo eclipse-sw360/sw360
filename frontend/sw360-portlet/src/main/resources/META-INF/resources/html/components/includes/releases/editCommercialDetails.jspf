@@ -14,7 +14,7 @@
 <table class="table edit-table three-columns" id="COTSDetailsAdmin">
     <thead>
     <tr>
-        <th colspan="3">Commercial Details Administration</th>
+        <th colspan="3"><liferay-ui:message key="commercial.details.administration" /></th>
     </tr>
     </thead>
     <tr>
@@ -25,7 +25,7 @@
                         value="<sw360:out value="${release.cotsDetails.usageRightAvailable == true}"/>"
                             <core_rt:if test="${release.cotsDetails.usageRightAvailable}"> checked="checked" </core_rt:if>
                 />
-                <label class="form-check-label" for="usageRightAvailable">Usage Right Available</label>
+                <label class="form-check-label" for="usageRightAvailable"><liferay-ui:message key="usage.right.available" /></label>
             </div>
         </td>
         <td>
@@ -35,12 +35,12 @@
         </td>
         <td>
             <div class="form-group">
-                <label for="cotsClearingDeadline">COTS Clearing Deadline</label>
+                <label for="cotsClearingDeadline"><liferay-ui:message key="cots.clearing.deadline" /></label>
                 <input id="cotsClearingDeadline"
                     class="datepicker form-control"
                     name="<portlet:namespace/><%=Release._Fields.COTS_DETAILS%><%=COTSDetails._Fields.CLEARING_DEADLINE%>"
                     type="text"
-                    placeholder="Clearing Deadline YYYY-MM-DD"
+                    placeholder="<liferay-ui:message key="clearing.deadline.yyyy.mm.dd" />"
                     pattern="\d{4}-\d{2}-\d{2}"
                     value="<sw360:out value="${release.cotsDetails.clearingDeadline}"/>"/>
             </div>
@@ -49,12 +49,12 @@
     <tr>
         <td>
             <div class="form-group">
-                <label for="LC_Url">COTS Clearing Report URL</label>
+                <label for="LC_Url"><liferay-ui:message key="cots.clearing.report.url" /></label>
                 <input id="LC_Url"
                     name="<portlet:namespace/><%=Release._Fields.COTS_DETAILS%><%=COTSDetails._Fields.LICENSE_CLEARING_REPORT_URL%>"
                     type="text"
                     class="form-control"
-                    placeholder="Enter URL"
+                    placeholder="<liferay-ui:message key="enter.url" />"
                     value="<sw360:out value="${release.cotsDetails.licenseClearingReportURL}"/>"/>
             </div>
         </td>
@@ -66,18 +66,18 @@
 <table class="table edit-table three-columns" id="COTSDetailsOSS">
     <thead>
     <tr>
-        <th colspan="3" class="headlabel">COTS OSS Information</th>
+        <th colspan="3" class="headlabel"><liferay-ui:message key="cots.oss.information" /></th>
     </tr>
     </thead>
     <tr>
         <td>
             <div class="form-group">
-                <label for="used_license">Used License</label>
+                <label for="used_license"><liferay-ui:message key="used.license" /></label>
                 <input id="used_license"
                     name="<portlet:namespace/><%=Release._Fields.COTS_DETAILS%><%=COTSDetails._Fields.USED_LICENSE%>"
                     type="text"
                     class="form-control"
-                    placeholder="Enter used license"
+                    placeholder="<liferay-ui:message key="enter.used.license" />"
                     value="<sw360:out value="${release.cotsDetails.usedLicense}"/>"/>
             </div>
         </td>
@@ -88,7 +88,7 @@
                        value="<sw360:out value="${release.cotsDetails.containsOSS == true}"/>"
                         <core_rt:if test="${release.cotsDetails.containsOSS}"> checked="checked" </core_rt:if>
                 />
-                <label class="form-check-label" for="containsOSS">Contains OSS</label>
+                <label class="form-check-label" for="containsOSS"><liferay-ui:message key="contains.oss" /></label>
             </div>
         </td>
         <td>
@@ -98,19 +98,19 @@
                        value="<sw360:out value="${release.cotsDetails.ossContractSigned == true}"/>"
                         <core_rt:if test="${release.cotsDetails.ossContractSigned}"> checked="checked" </core_rt:if>
                 />
-                <label class="form-check-label" for="OSSContractSigned">OSS contract signed</label>
+                <label class="form-check-label" for="OSSContractSigned"><liferay-ui:message key="oss.contract.signed" /></label>
             </div>
         </td>
     </tr>
     <tr>
         <td>
             <div class="form-group">
-                <label for="OSSInfoUrl">OSS Information URL</label>
+                <label for="OSSInfoUrl"><liferay-ui:message key="oss.information.url" /></label>
                 <input id="OSSInfoUrl"
                     name="<portlet:namespace/><%=Release._Fields.COTS_DETAILS%><%=COTSDetails._Fields.OSS_INFORMATION_URL%>"
                     type="text"
                     class="form-control"
-                    placeholder="Enter URL"
+                    placeholder="<liferay-ui:message key="enter.url" />"
                     value="<sw360:out value="${release.cotsDetails.ossInformationURL}"/>"/>
             </div>
         </td>
@@ -121,7 +121,7 @@
                        value="<sw360:out value="${release.cotsDetails.sourceCodeAvailable == true}"/>"
                         <core_rt:if test="${release.cotsDetails.sourceCodeAvailable}"> checked="checked" </core_rt:if>
                 />
-                <label class="form-check-label" for="sourceCodeAvailable">Source Code Available</label>
+                <label class="form-check-label" for="sourceCodeAvailable"><liferay-ui:message key="source.code.available" /></label>
             </div>
         </td>
         <td/>

@@ -60,7 +60,7 @@ import static org.eclipse.sw360.portal.users.UserUtils.getRoleConstantFromUserGr
         "javax.portlet.display-name=User Administration",
         "javax.portlet.info.short-title=User",
         "javax.portlet.info.title=User Administration",
-
+        "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.view-template=/html/admin/user/view.jsp",
     },
     service = Portlet.class,

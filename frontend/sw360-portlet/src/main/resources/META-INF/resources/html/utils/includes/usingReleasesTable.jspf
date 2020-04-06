@@ -11,12 +11,12 @@
 
 <h4><sw360:out value="${documentName}"/> is present in the following releases</h4>
 <core_rt:if test="${usingReleases != null  && usingReleases.size()>0}">
-    <table class="table" title="Usage overview">
+    <table class="table" title="<liferay-ui:message key="usage.overview" />">
         <thead>
             <tr>
-                <th>Release</th>
-                <th>CPE-ID</th>
-                <th>Release date</th>
+                <th><liferay-ui:message key="release" /></th>
+                <th><liferay-ui:message key="cpe.id2" /></th>
+                <th><liferay-ui:message key="release.date" /></th>
             </tr>
         </thead>
         <core_rt:forEach var="release" items="${usingReleases}" varStatus="loop">

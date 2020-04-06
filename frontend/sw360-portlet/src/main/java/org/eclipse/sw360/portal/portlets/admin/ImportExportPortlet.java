@@ -62,7 +62,7 @@ import static org.eclipse.sw360.importer.ComponentImportUtils.*;
         "javax.portlet.display-name=Import & Export",
         "javax.portlet.info.short-title=Import & Export",
         "javax.portlet.info.title=Import & Export",
-
+        "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.view-template=/html/admin/importexport/view.jsp",
     },
     service = Portlet.class,

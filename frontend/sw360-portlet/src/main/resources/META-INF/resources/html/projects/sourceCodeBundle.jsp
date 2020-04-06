@@ -38,8 +38,8 @@
 <core_rt:if test="${empty attributeNotFoundException}">
   <div class="container" style="display: none;">
 	<div class="row">
-            <div class="col portlet-title left text-truncate" title="Generate Source Code Bundle">
-                Generate Source Code Bundle
+            <div class="col portlet-title left text-truncate" title="<liferay-ui:message key="generate.source.code.bundle" />">
+                <liferay-ui:message key="generate.source.code.bundle" />
             </div>
             <div class="col portlet-title text-truncate" title="${sw360:printProjectName(project)}">
                 <sw360:ProjectName project="${project}"/>
@@ -50,7 +50,7 @@
                 <form id="downloadSourceBundleForm" class="form-inline" name="downloadSourceBundleForm" action="<%=downloadSourceBundleURL%>" method="post">
                     <%@include file="/html/projects/includes/attachmentSelectTable.jspf" %>
                     <div class="form-group">
-                        <input type="submit" class="btn btn-primary" value="Download File"/>
+                        <input type="submit" class="btn btn-primary" value="<liferay-ui:message key="download.file" />"/>
                     </div>
                 </form>
             </div>

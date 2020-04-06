@@ -29,76 +29,76 @@
 
 <div class="container">
 	<div class="row portlet-toolbar">
-        <div class="col portlet-title text-truncate" title="Import & Export">
-            Import & Export
+        <div class="col portlet-title text-truncate" title="<liferay-ui:message key="import.export" />">
+            <liferay-ui:message key="import.export" />
         </div>
     </div>
     <div class="row">
         <div class="col" data-section="export">
-            <h4>Export</h4>
+            <h4><liferay-ui:message key="export" /></h4>
             <div class="row mb-2">
                 <div class="col">
 			        <button type="button" class="btn btn-secondary btn-sm text-left" onclick="window.location.href='<portlet:resourceURL><portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.DOWNLOAD%>'/></portlet:resourceURL>'">
-                        <clay:icon symbol="download"/> Download Component CSV
+                        <clay:icon symbol="download"/><liferay-ui:message key="download.component.csv" /> 
                     </button>
                 </div>
             </div>
             <div class="row mb-2">
                 <div class="col">
 			        <button type="button" class="btn btn-secondary btn-sm text-left" onclick="window.location.href='<portlet:resourceURL><portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.DOWNLOAD_SAMPLE%>'/></portlet:resourceURL>'">
-                        <clay:icon symbol="download"/> Download CSV template for Component upload
+                        <clay:icon symbol="download"/><liferay-ui:message key="download.csv.template.for.component.upload" /> 
                     </button>
                 </div>
             </div>
             <div class="row mb-2">
                 <div class="col">
 			        <button type="button" class="btn btn-secondary btn-sm text-left" onclick="window.location.href='<portlet:resourceURL><portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.DOWNLOAD_SAMPLE_ATTACHMENT_INFO%>'/></portlet:resourceURL>'">
-                        <clay:icon symbol="download"/> Download Attachment sample information
+                        <clay:icon symbol="download"/><liferay-ui:message key="download.attachment.sample.information" /> 
                     </button>
                 </div>
             </div>
             <div class="row mb-2">
                 <div class="col">
 			        <button type="button" class="btn btn-secondary btn-sm text-left" onclick="window.location.href='<portlet:resourceURL><portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.DOWNLOAD_ATTACHMENT_INFO%>'/></portlet:resourceURL>'">
-                        <clay:icon symbol="download"/> Download Attachment information
+                        <clay:icon symbol="download"/><liferay-ui:message key="download.attachment.information" />
                     </button>
                 </div>
             </div>
             <div class="row mb-2">
                 <div class="col">
 			        <button type="button" class="btn btn-secondary btn-sm text-left" onclick="window.location.href='<portlet:resourceURL><portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.DOWNLOAD_SAMPLE_RELEASE_LINK_INFO%>'/></portlet:resourceURL>'">
-                        <clay:icon symbol="download"/> Download Release Link sample information
+                        <clay:icon symbol="download"/><liferay-ui:message key="download.release.link.sample.information" />
                     </button>
                 </div>
             </div>
             <div class="row mb-2">
                 <div class="col">
 			        <button type="button" class="btn btn-secondary btn-sm text-left" onclick="window.location.href='<portlet:resourceURL><portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.DOWNLOAD_RELEASE_LINK_INFO%>'/></portlet:resourceURL>'">
-                        <clay:icon symbol="download"/> Download Release Link information
+                        <clay:icon symbol="download"/><liferay-ui:message key="download.release.link.information" />
                     </button>
                 </div>
             </div>
             <div class="row">
                 <div class="col">
 			        <button type="button" class="btn btn-secondary btn-sm text-left" onclick="window.location.href='<portlet:resourceURL><portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.DOWNLOAD_LICENSE_BACKUP%>'/></portlet:resourceURL>'">
-                        <clay:icon symbol="download"/> Download License Archive
+                        <clay:icon symbol="download"/><liferay-ui:message key="download.license.archive" />
                     </button>
                 </div>
             </div>
         </div>
 
         <div class="col" data-section="import">
-            <h4>Import</h4>
+            <h4><liferay-ui:message key="import" /></h4>
             <form name="uploadForm" action="<%=updateComponentsURL%>" class="form needs-validation mb-2" method="POST" enctype="multipart/form-data" novalidate>
                 <div class="form-row">
                     <div class="col">
                         <input type="file" class="form-control-file" name="<portlet:namespace/>file" required>
                         <div class="invalid-feedback">
-                            Please select a file!
+                            <liferay-ui:message key="please.select.a.file" />
                         </div>
                     </div>
                     <div class="col content-right">
-                        <button type="submit" class="btn btn-secondary btn-sm text-left"><clay:icon symbol="upload"/> Upload Component CSV</button>
+                        <button type="submit" class="btn btn-secondary btn-sm text-left"><clay:icon symbol="upload"/><liferay-ui:message key="upload.component.csv" /></button>
                     </div>
                 </div>
             </form>
@@ -107,11 +107,11 @@
                     <div class="col">
                         <input type="file" class="form-control-file" name="<portlet:namespace/>file" required>
                         <div class="invalid-feedback">
-                            Please select a file!
+                            <liferay-ui:message key="please.select.a.file" />
                         </div>
                     </div>
                     <div class="col content-right">
-                        <button type="submit" class="btn btn-secondary btn-sm text-left"><clay:icon symbol="upload"/> Upload Component Attachments</button>
+                        <button type="submit" class="btn btn-secondary btn-sm text-left"><clay:icon symbol="upload"/><liferay-ui:message key="upload.component.attachments" /></button>
                     </div>
                 </div>
             </form>
@@ -120,11 +120,11 @@
                     <div class="col">
                         <input type="file" class="form-control-file" name="<portlet:namespace/>file" required>
                         <div class="invalid-feedback">
-                            Please select a file!
+                            <liferay-ui:message key="please.select.a.file" />
                         </div>
                     </div>
                     <div class="col content-right">
-                        <button type="submit" class="btn btn-secondary btn-sm text-left"><clay:icon symbol="upload"/> Upload Release Links</button>
+                        <button type="submit" class="btn btn-secondary btn-sm text-left"><clay:icon symbol="upload"/><liferay-ui:message key="upload.release.links" /></button>
                     </div>
                 </div>
             </form>
@@ -133,11 +133,11 @@
                     <div class="col">
                         <input type="file" class="form-control-file" name="<portlet:namespace/>file" required>
                         <div class="invalid-feedback">
-                            Please select a file!
+                            <liferay-ui:message key="please.select.a.file" />
                         </div>
                     </div>
                     <div class="col content-right">
-                        <button type="submit" class="btn btn-secondary btn-sm text-left ml-2"><clay:icon symbol="upload"/> Upload License Archive</button>
+                        <button type="submit" class="btn btn-secondary btn-sm text-left ml-2"><clay:icon symbol="upload"/><liferay-ui:message key="upload.license.archive" /></button>
                     </div>
                 </div>
             </form>

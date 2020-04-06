@@ -89,34 +89,34 @@
             <div class="card-deck">
                 <div id="searchInput" class="card">
                     <div class="card-header">
-                        Advanced Search
+                        <liferay-ui:message key="advanced.search" />
                     </div>
                     <div class="card-body">
                     <form action="<%=applyFiltersURL%>" method="post">
                         <div class="form-group">
-                            <label for="project_name">Project Name</label>
+                            <label for="project_name"><liferay-ui:message key="project.name" /></label>
                                 <input type="text" class="form-control form-control-sm" name="<portlet:namespace/><%=Project._Fields.NAME%>"
                                            value="<sw360:out value="${name}"/>" id="project_name">
                             </div>
                             <div class="form-group">
-                                <label for="project_version">Project Version</label>
+                                <label for="project_version"><liferay-ui:message key="project.version" /></label>
                                 <input type="text" class="form-control form-control-sm" name="<portlet:namespace/><%=Project._Fields.VERSION%>"
                                        value="<sw360:out value="${version}"/>" id="project_version">
                             </div>
                             <div class="form-group">
-                                <label for="project_type">Project Type</label>
+                                <label for="project_type"><liferay-ui:message key="project.type" /></label>
                                 <select class="form-control form-control-sm" id="project_type" name="<portlet:namespace/><%=Project._Fields.PROJECT_TYPE%>">
                                     <option value="<%=PortalConstants.NO_FILTER%>"></option>
                                     <sw360:DisplayEnumOptions type="<%=ProjectType.class%>" selectedName="${projectType}" useStringValues="true"/>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label for="project_responsible">Project Responsible (Email)</label>
+                                <label for="project_responsible"><liferay-ui:message key="project.responsible.email" /></label>
                                 <input type="text" class="form-control form-control-sm" name="<portlet:namespace/><%=Project._Fields.PROJECT_RESPONSIBLE%>"
                                        value="<sw360:out value="${projectResponsible}"/>" id="project_responsible">
                             </div>
                             <div class="form-group">
-                                <label for="group">Group</label>
+                                <label for="group"><liferay-ui:message key="group" /></label>
                                 <select class="form-control form-control-sm" id="group" name="<portlet:namespace/><%=Project._Fields.BUSINESS_UNIT%>">
                                     <option value=""
                                             <core_rt:if test="${empty businessUnit}"> selected="selected"</core_rt:if>></option>
@@ -128,18 +128,18 @@
                                 </select>
                             </div>
                             <div class="form-group">
-                               <label for="project_state">State</label>
+                               <label for="project_state"><liferay-ui:message key="state" /></label>
                                 <select class="form-control form-control-sm" id="project_state" name="<portlet:namespace/><%=Project._Fields.STATE%>">
                                     <option value="<%=PortalConstants.NO_FILTER%>"></option>
                                     <sw360:DisplayEnumOptions type="<%=ProjectState.class%>" selectedName="${state}" useStringValues="true"/>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label for="tag">Tag</label>
+                                <label for="tag"><liferay-ui:message key="tag" /></label>
                                 <input type="text" class="form-control form-control-sm" name="<portlet:namespace/><%=Project._Fields.TAG%>"
                                         value="<sw360:out value="${tag}"/>" id="tag">
                             </div>
-                            <button type="submit" class="btn btn-primary btn-sm btn-block">Search</button>
+                            <button type="submit" class="btn btn-primary btn-sm btn-block"><liferay-ui:message key="search" /></button>
                         </form>
                     </div>
                 </div>
@@ -150,23 +150,23 @@
                 <div class="col-auto">
                     <div class="btn-toolbar" role="toolbar">
                         <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-primary" onclick="window.location.href='<%=addProjectURL%>'">Add Project</button>
-                            <button type="button" class="btn btn-secondary" data-action="import-spdx-bom">Import SPDX BOM</button>
+                            <button type="button" class="btn btn-primary" onclick="window.location.href='<%=addProjectURL%>'"><liferay-ui:message key="add.project" /></button>
+                            <button type="button" class="btn btn-secondary" data-action="import-spdx-bom"><liferay-ui:message key="import.spdx.bom" /></button>
                         </div>
                         <div id="btnExportGroup" class="btn-group" role="group">
                             <button id="btnExport" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                Export Spreadsheet
+                                <liferay-ui:message key="export.spreadsheet" />
                                 <clay:icon symbol="caret-bottom" />
                             </button>
                             <div class="dropdown-menu" aria-labelledby="btnExport">
-                                <a class="dropdown-item" href="#" data-type="projectOnly">Projects only</a>
-                                <a class="dropdown-item" href="#" data-type="projectWithReleases">Projects with linked releases</a>
+                                <a class="dropdown-item" href="#" data-type="projectOnly"><liferay-ui:message key="projects.only" /></a>
+                                <a class="dropdown-item" href="#" data-type="projectWithReleases"><liferay-ui:message key="projects.with.linked.releases" /></a>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col portlet-title text-truncate" title="Projects">
-                    Projects
+                <div class="col portlet-title text-truncate" title="<liferay-ui:message key="projects" />">
+                    <liferay-ui:message key="projects" />
                 </div>
             </div>
 
@@ -189,35 +189,35 @@
                 <div class="modal-header">
                     <h5 class="modal-title">
                         <clay:icon symbol="question-circle" />
-                        Delete Project?
+                        <liferay-ui:message key="delete.project" />?
                     </h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
-                <div class="modal-body">
-                    <p>Do you really want to delete the project <b data-name="name"></b>?</p>
+                <div class="modal-body">		 
+					<p><liferay-ui:message key="do.you.really.want.to.delete.the.project.x" /></p>
                     <div data-hide="hasNoDependencies">
                         <p>
-                        This project <b data-name="name"></b> contains:
+                        <liferay-ui:message key="this.project.x.contains" />
                         </p>
                         <ul>
-                            <li data-hide="hasNoLinkedProjects"><span data-name="linkedProjects"></span> linked projects</li>
-                            <li data-hide="hasNoLinkedReleases"><span data-name="linkedReleases"></span> linked releases</li>
-                            <li data-hide="hasNoAttachments"><span data-name="attachments"></span> attachments</li>
+                            <li data-hide="hasNoLinkedProjects"><span data-name="linkedProjects"></span> <liferay-ui:message key="linked.projects" /></li>
+                            <li data-hide="hasNoLinkedReleases"><span data-name="linkedReleases"></span> <liferay-ui:message key="linked.releases" /></li>
+                            <li data-hide="hasNoAttachments"><span data-name="attachments"></span> <liferay-ui:message key="attachments" /></li>
                         </ul>
                     </div>
                     <hr/>
                     <form>
                         <div class="form-group">
-                            <label for="moderationDeleteCommentField">Please comment your changes</label>
-                            <textarea id="moderationDeleteCommentField" class="form-control" data-name="comment" rows="4" placeholder="Comment your request..."></textarea>
+                            <label for="moderationDeleteCommentField"><liferay-ui:message key="please.comment.your.changes" /></label>
+                            <textarea id="moderationDeleteCommentField" class="form-control" data-name="comment" rows="4" placeholder="<liferay-ui:message key="comment.your.request" />"></textarea>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger">Delete Project</button>
+                    <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="cancel" /></button>
+                    <button type="button" class="btn btn-danger"><liferay-ui:message key="delete.project" /></button>
                 </div>
             </div>
         </div>
@@ -422,15 +422,19 @@
                     sAjaxSource: '<%=loadProjectsURL%>',
 
                     columns: [
-                        {title: "Project Name", data: "name", render: {display: renderProjectNameLink}},
-                        {title: "Description", data: "desc", render: {display: renderDescription}},
-                        {title: "Project Responsible", data: "resp", render: {display: renderProjectResponsible}},
-                        {title: "State", data: "state", render: {display: renderStateBoxes} },
-                        {title: "<span title=\"Release clearing state\">Clearing Status</span>", data: "clearing" },
-                        {title: "Actions", data: "id", render: {display: renderProjectActions}, className: "four actions" }
+                        {title: "<liferay-ui:message key="project.name" />", data: "name", render: {display: renderProjectNameLink}},
+                        {title: "<liferay-ui:message key="description" />", data: "desc", render: {display: renderDescription}},
+                        {title: "<liferay-ui:message key="project.responsible" />", data: "resp", render: {display: renderProjectResponsible}},
+                        {title: "<liferay-ui:message key="state" />", data: "state", render: {display: renderStateBoxes} },
+                        {title: "<span title=\"<liferay-ui:message key="release.clearing.state" />\"><liferay-ui:message key="clearing.status" /></span>", data: "clearing" },
+                        {title: "<liferay-ui:message key="actions" />", data: "id", render: {display: renderProjectActions}, className: "four actions" }
                     ],
                     drawCallback: function (oSettings) {
                         loadClearingStateSummaries();
+                    },
+                    language: {
+                        url: "<liferay-ui:message key="datatables.lang" />",
+                        loadingRecords: "<liferay-ui:message key="loading" />"
                     },
                     initComplete: datatables.showPageContainer
                 }, [0, 1, 2, 3, 4], 5);
@@ -447,7 +451,7 @@
                     $copyAction = render.linkTo(
                         makeProjectUrl(id, '<%=PortalConstants.PAGENAME_DUPLICATE%>'),
                         "",
-                        '<svg class="lexicon-icon"><title>Duplicate</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#paste"/></svg>'
+                        '<svg class="lexicon-icon"><title><liferay-ui:message key="duplicate" /></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#paste"/></svg>'
                     ),
                     $deleteAction = $('<svg>', {
                         'class': 'delete lexicon-icon',
@@ -483,12 +487,12 @@
                 $clearingRequestAction.append($('<use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#check-square"/>'));
 
                 if(row.cState == 'CLOSED' && ${isUserAdmin != 'Yes'}) {
-                    $editAction = $('<svg class="lexicon-icon disabled"><title>Only administrators can edit a closed project.</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>');
+                    $editAction = $('<svg class="lexicon-icon disabled"><title><liferay-ui:message key="only.administrators.can.edit.a.closed.project" /></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>');
                 } else {
                     $editAction = render.linkTo(
                         makeProjectUrl(id, '<%=PortalConstants.PAGENAME_EDIT%>'),
                         "",
-                        '<svg class="lexicon-icon"><title>Edit</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>'
+                        '<svg class="lexicon-icon"><title><liferay-ui:message key="edit" /></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>'
                     );
                 }
 
@@ -672,17 +676,17 @@
                                 $dialog.close();
                             }
                             else if (data.result == 'SENT_TO_MODERATOR') {
-                                $dialog.info("You may not delete the project, but a request was sent to a moderator!", true);
+                                $dialog.info("<liferay-ui:message key="you.may.not.delete.the.project.but.a.request.was.sent.to.a.moderator" />", true);
                             } else if (data.result == 'IN_USE') {
-                                $dialog.warning("The project cannot be deleted, since it is used by another project!");
+                                $dialog.warning("<liferay-ui:message key="the.project.cannot.be.deleted.since.it.is.used.by.another.project" />");
                             }
                             else {
-                                $dialog.alert("I could not delete the project!");
+                                $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.project" />");
                             }
                         },
                         error: function () {
                             callback();
-                            $dialog.alert("I could not delete the project!");
+                            $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.project" />");
                         }
                     });
 

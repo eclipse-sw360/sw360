@@ -41,7 +41,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.DATABASE_SANITATIO
         "javax.portlet.display-name=Database Sanitation",
         "javax.portlet.info.short-title=Database Sanitation",
         "javax.portlet.info.title=Database Sanitation",
-
+        "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.view-template=/html/admin/databaseSanitation/view.jsp",
     },
     service = Portlet.class,

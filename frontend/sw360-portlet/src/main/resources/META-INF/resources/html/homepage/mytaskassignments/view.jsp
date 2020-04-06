@@ -19,7 +19,7 @@
 </portlet:resourceURL>
 
 <section id="my-task-assignments">
-    <h4 class="actions">My Task Assignments <span title="Reload"><clay:icon symbol="reload"/></span></h4>
+    <h4 class="actions"><liferay-ui:message key="my.task.assignments" /> <span title="<liferay-ui:message key="reload" />"><clay:icon symbol="reload"/></span></h4>
     <div class="row">
         <div class="col">
             <table id="taskassignmentTable" class="table table-bordered table-lowspace"  data-load-url="<%=loadTasksURL%>">
@@ -58,11 +58,19 @@
 				"<'row'<'col-sm-12'tr>>" +
 				"<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
             columns: [
-                {"title": "Document Name", data: 'name', render: renderModerationRequestLink },
-                {"title": "Status", data: 'state' },
+                {"title": "<liferay-ui:message key="document.name" />", data: 'name', render: renderModerationRequestLink },
+                {"title": "<liferay-ui:message key="status" />", data: 'state' },
             ],
             language: {
-                emptyTable: 'There are no tasks assigned to you.'
+                paginate: {
+                    previous: "<liferay-ui:message key="previous" />",
+                    next: "<liferay-ui:message key="next" />"
+                },
+                emptyTable: "<liferay-ui:message key="there.are.no.tasks.assigned.to.you" />",
+                info: "<liferay-ui:message key="showing" />",
+                infoEmpty: "<liferay-ui:message key="infoempty" />",
+                processing: "<liferay-ui:message key="processing" />",
+                loadingRecords: "<liferay-ui:message key="loading" />"
             },
             initComplete: function() {
                 $('#my-task-assignments h4 svg').removeClass('spinning disabled');

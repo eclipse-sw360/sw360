@@ -36,8 +36,8 @@
 		</div>
 		<div class="col">
             <div class="row portlet-toolbar">
-				<div class="col portlet-title text-truncate" title="ECC Overview">
-					ECC Overview
+				<div class="col portlet-title text-truncate" title="<liferay-ui:message key="ecc.overview" />">
+					<liferay-ui:message key="ecc.overview" />
 				</div>
             </div>
 
@@ -46,13 +46,13 @@
 			        <table id="eccInfoTable" class="table table-bordered">
                         <thead>
                             <tr>
-                                <th>Status</th>
-                                <th>Release Name</th>
-                                <th>Release version</th>
-                                <th>Creator Group</th>
-                                <th>ECC Assessor</th>
-                                <th>ECC Assessor Group</th>
-                                <th>ECC Assessment Date</th>
+                                <th><liferay-ui:message key="status" /></th>
+                                <th><liferay-ui:message key="release.name" /></th>
+                                <th><liferay-ui:message key="release.version" /></th>
+                                <th><liferay-ui:message key="creator.group" /></th>
+                                <th><liferay-ui:message key="ecc.assessor" /></th>
+                                <th><liferay-ui:message key="ecc.assessor.group" /></th>
+                                <th><liferay-ui:message key="ecc.assessment.date" /></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -107,6 +107,10 @@
 
             function configureEccInfoTable(){
                 return datatables.create('#eccInfoTable', {
+                    language: {
+                        url: "<liferay-ui:message key="datatables.lang" />",
+                        loadingRecords: "<liferay-ui:message key="loading" />"
+                    },
                     searching: true
                 }, [0, 1, 2, 3, 4, 5, 6]);
             }

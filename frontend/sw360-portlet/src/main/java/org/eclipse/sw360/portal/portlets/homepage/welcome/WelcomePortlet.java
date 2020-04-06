@@ -35,7 +35,7 @@ import java.io.IOException;
         "javax.portlet.display-name=Welcome",
         "javax.portlet.info.short-title=Welcome",
         "javax.portlet.info.title=Welcome",
-
+        "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.view-template=/html/homepage/welcome/view.jsp",
     },
     service = Portlet.class,

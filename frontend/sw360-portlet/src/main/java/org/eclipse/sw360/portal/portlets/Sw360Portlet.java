@@ -17,10 +17,12 @@ import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Sets;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCPortlet;
 import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
 
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
@@ -341,28 +343,29 @@ abstract public class Sw360Portlet extends MVCPortlet {
     }
 
     protected void addEditDocumentMessage(RenderRequest request, Map<RequestedAction, Boolean> permissions, DocumentState documentState) {
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
 
         List<String> msgs = new ArrayList<>();
         if (documentState.isSetModerationState()) {
             ModerationState moderationState = documentState.getModerationState();
             switch (moderationState) {
                 case PENDING:
-                    msgs.add("There is a pending Moderation request.");
+                    msgs.add(LanguageUtil.get(resourceBundle,"there.is.a.pending.moderation.request"));
                     break;
                 case APPROVED:
                     break;
                 case REJECTED:
                     break;
                 case INPROGRESS:
-                    msgs.add("There is a Moderation request in progress.");
+                    msgs.add(LanguageUtil.get(resourceBundle,"there.is.a.moderation.request.in.progress"));
                     break;
             }
         }
 
         if (!permissions.get(RequestedAction.WRITE)) {
-            msgs.add("You will create a moderation request if you update.");
+            msgs.add(LanguageUtil.get(resourceBundle,"you.will.create.a.moderation.request.if.you.update"));
         } else if (documentState.isIsOriginalDocument()) {
-            msgs.add("You are editing the original document.");
+            msgs.add(LanguageUtil.get(resourceBundle,"you.are.editing.the.original.document"));
         }
 
         SessionMessages.add(request, "request_processed", Joiner.on(" ").join(msgs));

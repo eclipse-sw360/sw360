@@ -71,10 +71,10 @@
         <div class="row">
             <div class="col-3 sidebar">
                 <div id="detailTab" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
-                    <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab">Summary</a>
+                    <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab"><liferay-ui:message key="summary" /></a>
                     <core_rt:if test="${not componentDivAddMode}" >
-                        <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Releases'}">active</core_rt:if>" href="#tab-Releases" data-toggle="list" role="tab">Releases</a>
-                        <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Attachments'}">active</core_rt:if>" href="#tab-Attachments" data-toggle="list" role="tab">Attachments</a>
+                        <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Releases'}">active</core_rt:if>" href="#tab-Releases" data-toggle="list" role="tab"><liferay-ui:message key="releases" /></a>
+                        <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Attachments'}">active</core_rt:if>" href="#tab-Attachments" data-toggle="list" role="tab"><liferay-ui:message key="attachments" /></a>
                     </core_rt:if>
                 </div>
             </div>
@@ -84,25 +84,25 @@
                         <div class="btn-toolbar" role="toolbar">
                             <div class="btn-group" role="group">
                                 <core_rt:if test="${componentDivAddMode}" >
-                                    <button type="button" id="formSubmit" class="btn btn-primary">Create Component</button>
+                                    <button type="button" id="formSubmit" class="btn btn-primary"><liferay-ui:message key="create.component" /></button>
                                 </core_rt:if>
 
                                 <core_rt:if test="${not componentDivAddMode}" >
-                                    <button type="button" id="formSubmit" class="btn btn-primary">Update Component</button>
+                                    <button type="button" id="formSubmit" class="btn btn-primary"><liferay-ui:message key="update.component" /></button>
                                 </core_rt:if>
                             </div>
 
                             <core_rt:if test="${not componentDivAddMode}" >
                                 <div class="btn-group" role="group">
                                     <button id="deleteComponentButton" type="button" class="btn btn-danger"
-                                        <core_rt:if test="${usingComponents.size()>0 or usingProjects.size()>0}"> disabled="disabled" title="Deletion is disabled as the component is used." </core_rt:if>
-                                        <core_rt:if test="${component.releasesSize>0}"> disabled="disabled" title="Deletion is disabled as the component contains releases." </core_rt:if>
-                                    >Delete Component</button>
+                                        <core_rt:if test="${usingComponents.size()>0 or usingProjects.size()>0}"> disabled="disabled" title="<liferay-ui:message key="deletion.is.disabled.as.the.component.is.used" />" </core_rt:if>
+                                        <core_rt:if test="${component.releasesSize>0}"> disabled="disabled" title="<liferay-ui:message key="deletion.is.disabled.as.the.component.contains.releases" />" </core_rt:if>
+                                    ><liferay-ui:message key="delete.component" /></button>
                                 </div>
                             </core_rt:if>
 
                             <div class="btn-group" role="group">
-                                <button id="cancelEditButton" type="button" class="btn btn-light">Cancel</button>
+                                <button id="cancelEditButton" type="button" class="btn btn-light"><liferay-ui:message key="cancel" /></button>
                             </div>
                         </div>
                     </div>
@@ -137,8 +137,8 @@
                                     <table class="table table-bordered">
                                         <thead>
                                             <tr>
-                                                <th>Name</th>
-                                                <th>Version</th>
+                                                <th><liferay-ui:message key="name" /></th>
+                                                <th><liferay-ui:message key="version" /></th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -150,7 +150,7 @@
                                             </core_rt:forEach>
                                         </tbody>
                                     </table>
-                                    <button type="button" class="btn btn-secondary mt-3" onclick="window.location.href='<%=addReleaseURL%>'">Add Release</button>
+                                    <button type="button" class="btn btn-secondary mt-3" onclick="window.location.href='<%=addReleaseURL%>'"><liferay-ui:message key="add.releases" /></button>
                                 </div>
                                 <core_rt:if test="${not componentDivAddMode}" >
                                     <div id="tab-Attachments" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Attachments'}">active show</core_rt:if>">
@@ -173,30 +173,30 @@
                     <div class="modal-header">
                         <h5 class="modal-title">
                             <clay:icon symbol="question-circle" />
-                            Delete Component?
+                            <liferay-ui:message key="delete.component" />?
                         </h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
                     <div class="modal-body">
-                        <p>Do you really want to delete the component <b data-name="name"></b>?</p>
+                        <p><liferay-ui:message key="do.you.really.want.to.delete.the.component.x" /></p>
                         <div data-hide="hasNoAttachments">
                             <p>
-                                This component <span data-name="name"></span> contains <b><span data-name="attachments"></span></b> attachments.
+                                <liferay-ui:message key="this.component.x.contains.y.attachments" />
                             </p>
                         </div>
                         <hr/>
                         <form>
                             <div class="form-group">
-                                <label for="deleteComponentDialogComment">Please comment your changes</label>
-                                <textarea id="deleteComponentDialogComment" class="form-control" data-name="comment" rows="4" placeholder="Comment your request..."></textarea>
+                                <label for="deleteComponentDialogComment"><liferay-ui:message key="please.comment.your.changes" /></label>
+                                <textarea id="deleteComponentDialogComment" class="form-control" data-name="comment" rows="4" placeholder="<liferay-ui:message key="comment.your.request" />"></textarea>
                             </div>
                         </form>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-danger">Delete Component</button>
+                        <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="cancel" /></button>
+                        <button type="button" class="btn btn-danger"><liferay-ui:message key="delete.component" /></button>
                     </div>
                 </div>
             </div>
@@ -296,14 +296,14 @@
             $dialog = dialog.confirm(
                 null,
                 'pencil',
-                'Create moderation request',
+                '<liferay-ui:message key="create.moderation.request" />',
                 '<form>' +
                     '<div class="form-group">' +
-                        '<label for="moderationRequestCommentField">Please comment your changes</label>' +
-                        '<textarea form="componentEditForm" name="<portlet:namespace/><%=PortalConstants.MODERATION_REQUEST_COMMENT%>" id="moderationRequestCommentField" class="form-control" placeholder="Leave a comment on your request" data-name="comment" autofocus></textarea>' +
+                        '<label for="moderationRequestCommentField"><liferay-ui:message key="please.comment.your.changes" /></label>' +
+                        '<textarea form="componentEditForm" name="<portlet:namespace/><%=PortalConstants.MODERATION_REQUEST_COMMENT%>" id="moderationRequestCommentField" class="form-control" placeholder="<liferay-ui:message key="leave.a.comment.on.your.request" />" data-name="comment" autofocus></textarea>' +
                     '</div>' +
                 '</form>',
-                'Send moderation request',
+                '<liferay-ui:message key="send.moderation.request" />',
                 {
                     comment: ''
                 },

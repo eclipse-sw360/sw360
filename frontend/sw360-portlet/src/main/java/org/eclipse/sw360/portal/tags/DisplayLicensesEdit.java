@@ -10,10 +10,14 @@
 package org.eclipse.sw360.portal.tags;
 
 import com.google.common.base.Joiner;
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 import java.util.HashSet;
+import java.util.ResourceBundle;
 import java.util.Set;
 
 /**
@@ -52,10 +56,13 @@ public class DisplayLicensesEdit extends NameSpaceAwareTag {
     }
 
     private void printHtmlElements(StringBuilder display, String licenseIdsStr) {
+    	HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+        
         display.append("<div class=\"form-group\">");
-        display.append(String.format("<label for=\"%sDisplay\">Licenses</label>", id))
+        display.append(String.format("<label for=\"%sDisplay\">" + LanguageUtil.get(resourceBundle,"licenses") + "</label>", id))
                 .append(String.format("<input type=\"hidden\" readonly=\"\" value=\"%s\" id=\"%s\" name=\"%s%s\"/>", licenseIdsStr, id, namespace, id))
-                .append(String.format("<input class=\"clickable licenseSearchDialogInteractive form-control\" data-id=\"%s\" type=\"text\" readonly=\"\" placeholder=\"Click to set Licenses\" value=\"%s\" id=\"%sDisplay\" />", id, licenseIdsStr, id));
+                .append(String.format("<input class=\"clickable licenseSearchDialogInteractive form-control\" data-id=\"%s\" type=\"text\" readonly=\"\" placeholder=\""+LanguageUtil.get(resourceBundle,"click.to.set.licenses")+"\" value=\"%s\" id=\"%sDisplay\" />", id, licenseIdsStr, id));
         display.append("</div>");
     }
 }

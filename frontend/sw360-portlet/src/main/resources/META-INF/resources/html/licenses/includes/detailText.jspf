@@ -13,7 +13,7 @@
 <table class="table table-bordered" id="LicenseText">
     <thead>
         <tr>
-            <th>License Text</th>
+            <th><liferay-ui:message key="license.text" /></th>
         </tr>
     </thead>
     <tr>

@@ -15,7 +15,7 @@ define('utils/render', [
 		var $trashIcon = $('<svg>', {
 			'class': 'delete lexicon-icon'
 		});
-		$trashIcon.append($('<title>Delete</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
+		$trashIcon.append($('<title>'+Liferay.Language.get('delete')+'</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
 
 		return $trashIcon;
 	}

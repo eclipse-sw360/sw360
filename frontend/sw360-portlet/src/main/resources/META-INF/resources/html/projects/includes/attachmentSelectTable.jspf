@@ -26,7 +26,7 @@
 <c:set var="tableModeSourceBundle" value="<%=PortalConstants.PROJECT_LINK_TABLE_MODE_SOURCE_BUNDLE%>"/>
 
 <div id="infobar" class="alert alert-info">
-    <div class="spinner">Loading previously stored selection...</div>
+    <div class="spinner"><liferay-ui:message key="loading.previously.stored.selection" /></div>
 </div>
 
 <table class="table" id="LinkedProjectsInfo" style="width: 100%; max-width: 100%;"
@@ -55,12 +55,12 @@
     <thead>
         <tr>
             <th><input type="checkbox" class="form-check-input" checked="checked" id="selectAllCheckbox"/></th>
-            <th>Lvl</th>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Clearing State</th>
-            <th>Uploaded by</th>
-            <th>Clearing Team</th>
+            <th><liferay-ui:message key="lvl" /></th>
+            <th><liferay-ui:message key="name" /></th>
+            <th><liferay-ui:message key="type" /></th>
+            <th><liferay-ui:message key="clearing.state" /></th>
+            <th><liferay-ui:message key="uploaded.by" /></th>
+            <th><liferay-ui:message key="clearing.team" /></th>
         </tr>
     </thead>
     <tbody>
@@ -84,9 +84,9 @@
                     <core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo}">
                         <div class="form-group">
                             <button type="button" id="${projectPath}_use-sel" class="mt-1 mb-1 btn btn-sm btn-secondary use-subproject-selection" data-tt-parent-id="${projectLink.nodeId}">
-                                Use selection of this subproject
+                                <liferay-ui:message key="use.selection.of.this.subproject" />
                             </button>
-                            <span class="text-danger"><clay:icon symbol="warning"/> Current selection will be overwritten!</span>
+                            <span class="text-danger"><clay:icon symbol="warning"/> <liferay-ui:message key="current.selection.will.be.overwritten" /></span>
                         </div>
                     </core_rt:if>
                 </td>
@@ -168,7 +168,7 @@
                                   used in <b>${attachmenUsageCountMap[mapKey]}</b> projects
                                 </core_rt:when>
                                 <core_rt:otherwise>
-                                  <i>not used in any project yet</i>
+                                  <i><liferay-ui:message key="not.used.in.any.project.yet" /></i>
                                 </core_rt:otherwise>
                             </core_rt:choose>
                     </td>
@@ -182,7 +182,7 @@
                 <core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo}">
                     <tr data-tt-id="${releaseLink.nodeId}_${attachment.attachmentContentId}_loader" data-tt-parent-id="${releaseLink.nodeId}_${attachment.attachmentContentId}">
                         <td colspan="7">
-                            <div class="spinner"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading license information. Please wait...</div>
+                            <div class="spinner"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> <liferay-ui:message key="loading.license.information.please.wait" /></div>
                         </td>
                     </tr>
                 </core_rt:if>
@@ -191,7 +191,7 @@
     </core_rt:forEach>
     <core_rt:if test="${projectList.size() < 1 and $releaseList.size() < 1}">
         <tr>
-            <td colspan="7">No linked releases or projects</td>
+            <td colspan="7"><liferay-ui:message key="no.linked.releases.or.projects" /></td>
         </tr>
     </core_rt:if>
     </tbody>
@@ -320,7 +320,7 @@
                         var errorText = licenses.length > 0 ? ' Error: ' + licenses[0].error + ' Parsed file: ' + licenses[0].file : '';
                         $linkedProjectsInfoTable.find('tr[data-tt-id=' + data.ttId + '_loader] td').append($('<div/>', {
                             'class': 'error foregroundAlert',
-                            text: 'No license found.' + errorText
+                            text: "<liferay-ui:message key="no.license.found" />" + errorText
                         }));
                         $linkedProjectsInfoTable.find('tr[data-tt-id=' + data.ttId + '_loader] td .spinner').hide();
                         loadedCallback();
@@ -425,13 +425,13 @@
 
                 $errorMessage = $('<div/>', {
                     'class': 'alert alert-danger',
-                    text: 'Cannot load license information: ' + error
+                    text: "<liferay-ui:message key="cannot.load.license.information" />" + error
                 });
 
                 $reloadLink = $('<a/>', {
                     href: 'javascript:;',
                     'class': 'text-danger',
-                    text: 'Reload'
+                    text: "<liferay-ui:message key="reload" />"
                 });
                 $reloadLink.on('click', function() {
                     onNodeExpand.call(node);
@@ -465,7 +465,7 @@
                             removeProjectLoader(ttId);
                         }
                         $('#infobar').removeClass('alert-info').addClass('alert-secondary').html($('<span>', {
-                            text: "No previous selection found. If you have writing permissions to this project, your selection will be stored automatically when downloading."
+                            text: "<liferay-ui:message key="no.previous.selection.found.if.you.have.writing.permissions.to.this.project.your.selection.will.be.stored.automatically.when.downloading" />"
                         }));
                     } else {
                         restoreSelection($linkedProjectsInfoTable, result, ttId, prefix, function(error, warnings) {
@@ -484,15 +484,15 @@
                                 ));
                             } else {
                                 $('#infobar').removeClass('alert-info').addClass('alert-success').html($('<span>', {
-                                    text: "Your selection has been restored. However, please check before downloading. You may also restore the default selection" +
-                                        " by clicking on the checkbox in the header row."
+                                    text: "<liferay-ui:message key="your.selection.has.been.restored.however.please.check.before.downloading.you.may.also.restore.the.default.selection" />" +
+                                        " <liferay-ui:message key="by.clicking.on.the.checkbox.in.the.header.row" />"
                                 }));
                             }
                         });
                     }
                 }).fail(function(error) {
                     $('#infobar').removeClass('alert-info').addClass('alert-danger').html($('<span>', {
-                        text: "Cannot load previous selection: " + error.statusText + ' (' + error.status + ')'
+                        text: <liferay-ui:message key="cannot.load.previous.selection.x.y" />
                     }));
                 });
             }
@@ -574,7 +574,7 @@
                             warnings.push({
                                 release: releaseName || 'unknown release',
                                 attachment: attachmentName || 'unknown attachment',
-                                text: 'Last export happened with old storage format, so restored data might not be correct for attachments of releases in subprojects.'
+                                text: "<liferay-ui:message key="last.export.happened.with.old.storage.format.so.restored.data.might.not.be.correct.for.attachments.of.releases.in.subprojects" />"
                             });
                             loadCountdown.decrement();
                         } else {
@@ -591,13 +591,13 @@
                                         warnings.push({
                                             release: findReleaseName($linkedProjectsInfoTable, usage, prefix),
                                             attachment: findAttachmentName($linkedProjectsInfoTable, usage, prefix),
-                                            text: 'License "' + licenseId + '" not found. License is not excluded.'
+                                            text: <liferay-ui:message key="license.x.not.found.license.is.not.excluded" />
                                         });
                                     } else if($row.length > 1) {
                                         warnings.push({
                                             release: findReleaseName($linkedProjectsInfoTable, usage, prefix),
                                             attachment: findAttachmentName($linkedProjectsInfoTable, usage, prefix),
-                                            text: 'License "' + licenseId + '" is not unique. License is not excluded.'
+                                            text: <liferay-ui:message key="license.x.is.not.unique.license.is.not.excluded" />
                                         });
                                     } else {
                                         $row.find('input[name="' + config.portletNamespace + prefix + usage.usageData.licenseInfo.projectPath + ':' + usage.owner.releaseId + ':' + releaseRelation + usage.attachmentContentId + '"]').prop('checked', false).trigger('change');

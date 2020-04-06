@@ -12,12 +12,12 @@
 <table class="table edit-table two-columns-with-actions" id="externalIdsTable">
     <thead>
         <tr>
-            <th colspan="3" class="headlabel">External Ids</th>
+            <th colspan="3" class="headlabel"><liferay-ui:message key="external.ids" /></th>
         </tr>
     </thead>
 </table>
 
-<button type="button" class="btn btn-secondary" id="add-external-id">Click to add row to External Ids</button>
+<button type="button" class="btn btn-secondary" id="add-external-id"><liferay-ui:message key="click.to.add.row.to.external.ids" /></button>
 
 <div class="dialogs">
     <div id="deleteExternalIdDialog" class="modal fade" tabindex="-1" role="dialog">
@@ -26,7 +26,7 @@
 			<div class="modal-header">
 				<h5 class="modal-title">
 					<clay:icon symbol="question-circle" />
-					Delete Item?
+					<liferay-ui:message key="delete.item" />?
 				</h5>
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
@@ -36,8 +36,8 @@
 			        <p data-name="text"></p>
 				</div>
 			    <div class="modal-footer">
-			        <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
-			        <button type="button" class="btn btn-danger">Delete Item</button>
+			        <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="cancel" /></button>
+			        <button type="button" class="btn btn-danger"><liferay-ui:message key="delete.item" /></button>
 			    </div>
 			</div>
 		</div>
@@ -55,7 +55,7 @@
             var rowId = $(event.currentTarget).data().rowId;
 
             dialog.open('#deleteExternalIdDialog', {
-                text: "Do you really want to remove this item?",
+                text: "<liferay-ui:message key="do.you.really.want.to.remove.this.item" />",
             }, function(submit, callback) {
                 $('#' + rowId).remove();
                 callback(true);
@@ -74,11 +74,11 @@
             var newRowAsString =
                 '<tr id="' + rowId + '" class="bodyRow">' +
                 '<td>' +
-                '<input list="externalKeyList" class="form-control" id="<%=PortalConstants.EXTERNAL_ID_KEY%>' + rowId + '" name="<portlet:namespace/><%=PortalConstants.EXTERNAL_ID_KEY%>' + rowId + '" required="" minlength="1" placeholder="Enter external id key" title="external id name" value="' + key + '"/>' +
+                '<input list="externalKeyList" class="form-control" id="<%=PortalConstants.EXTERNAL_ID_KEY%>' + rowId + '" name="<portlet:namespace/><%=PortalConstants.EXTERNAL_ID_KEY%>' + rowId + '" required="" minlength="1" placeholder="<liferay-ui:message key="enter.external.id.key" />" title="<liferay-ui:message key="external.id.name" />" value="' + key + '"/>' +
                 prepareKeyDatalist() + // creates a datalist with preferred key names
                 '</td>' +
                 '<td>' +
-                '<input class="form-control" id="<%=PortalConstants.EXTERNAL_ID_VALUE%>' + rowId + '" name="<portlet:namespace/><%=PortalConstants.EXTERNAL_ID_VALUE%>' + rowId + '" required="" minlength="1" placeholder="Enter external id value" title="external id value" value="' + value + '"/>' +
+                '<input class="form-control" id="<%=PortalConstants.EXTERNAL_ID_VALUE%>' + rowId + '" name="<portlet:namespace/><%=PortalConstants.EXTERNAL_ID_VALUE%>' + rowId + '" required="" minlength="1" placeholder="<liferay-ui:message key="enter.external.id.value" />" title="<liferay-ui:message key="external.id.value" />" value="' + value + '"/>' +
                 '</td>' +
                 '<td class="content-middle">' +
                 '<svg class="action lexicon-icon" data-row-id="' + rowId + '">' +

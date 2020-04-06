@@ -40,7 +40,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.RECENT_COMPONENTS_
         "javax.portlet.display-name=Recent Components",
         "javax.portlet.info.short-title=Recent Components",
         "javax.portlet.info.title=Recent Components",
-
+        "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.view-template=/html/homepage/recentcomponents/view.jsp",
     },
     service = Portlet.class,

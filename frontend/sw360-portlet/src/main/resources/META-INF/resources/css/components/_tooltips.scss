@@ -66,7 +66,7 @@
 
 /** ComponentType **/
 .sw360-tt-ComponentType:hover:after {
-    content: "OSS: \A COTS: \A Internal: \A Inner-Source: \A Service: \A Freeware: \A Code Snippet: ";
+    content: attr(data-content);
 }
 
 .sw360-tt-ComponentType-OSS:hover:after {
@@ -106,7 +106,7 @@
 
 /** Ternary **/
 .sw360-tt-Ternary:hover:after {
-    content: "Undefined: \A No: \A Yes: ";
+    content: attr(data-content);
 }
 
 .sw360-tt-Ternary-UNDEFINED:hover:after {
@@ -126,7 +126,7 @@
 
 /** ProjectType **/
 .sw360-tt-ProjectType:hover:after {
-    content: "Customer: \A Internal: \A Product: \A Service: \A Inner Source: ";
+    content: attr(data-content);
 }
 
 .sw360-tt-ProjectType-CUSTOMER:hover:after {
@@ -156,71 +156,71 @@
 
 /** AttachmentType **/
 .sw360-tt-AttachmentType:hover:after {
-    content: "Attachment Type";
+    content: attr(data-content);
 }
 
 .sw360-tt-AttachmentType-DOCUMENT:hover:after {
-    content: "just a document";
+    content: attr(data-content);
 }
 
 .sw360-tt-AttachmentType-SOURCE:hover:after {
-    content: "original course code";
+    content: attr(data-content);
 }
 
 .sw360-tt-AttachmentType-DESIGN:hover:after {
-    content: "design document";
+    content: attr(data-content);
 }
 
 .sw360-tt-AttachmentType-REQUIREMENT:hover:after {
-    content: "requirements document";
+    content: attr(data-content);
 }
 
 .sw360-tt-AttachmentType-CLEARING_REPORT:hover:after {
-    content: "OSS licensing reporting";
+    content: attr(data-content);
 }
 
 .sw360-tt-AttachmentType-COMPONENT_LICENSE_INFO_XML:hover:after {
-    content: "XML document with licenseing information - e.g. SPDX";
+    content: attr(data-content);
 }
 
 .sw360-tt-AttachmentType-COMPONENT_LICENSE_INFO_COMBINED:hover:after {
-    content: "XML document with licensing information covering multiple componnts at once - e.g. SPDX";
+    content: attr(data-content);
 }
 
 .sw360-tt-AttachmentType-SCAN_RESULT_REPORT:hover:after {
-    content: "Output what a scanner for licenses has found";
+    content: attr(data-content);
 }
 
 .sw360-tt-AttachmentType-SCAN_RESULT_REPORT_XML:hover:after {
-    content: "Output what a scanner for licenses has found this time in XML";
+    content: attr(data-content);
 }
 
 .sw360-tt-AttachmentType-SOURCE_SELF:hover:after {
-    content: "Self assembled source code distribution";
+    content: attr(data-content);
 }
 
 .sw360-tt-AttachmentType-BINARY:hover:after {
-    content: "Binary of component from vendor";
+    content: attr(data-content);
 }
 
 .sw360-tt-AttachmentType-BINARY_SELF:hover:after {
-    content: "Self built binary";
+    content: attr(data-content);
 }
 
 .sw360-tt-AttachmentType-DECISION_REPORT:hover:after {
-    content: "documenting importing decisions for using this item";
+    content: attr(data-content);
 }
 
 .sw360-tt-AttachmentType-LEGAL_EVALUATION:hover:after {
-    content: "Some legal evaluation created for this item";
+    content: attr(data-content);
 }
 
 .sw360-tt-AttachmentType-LICENSE_AGREEMENT:hover:after {
-    content: "A ruling license agreement for this item, note that this could be for commercial software for example";
+    content: attr(data-content);
 }
 
 .sw360-tt-AttachmentType-SCREENSHOT:hover:after {
-    content: "Screenshot, usually screenshot of the Website with licensing information";
+    content: attr(data-content);
 }
 
 .sw360-tt-AttachmentType-README_OSS:hover:after {
@@ -229,12 +229,12 @@
 }
 
 .sw360-tt-AttachmentType-OTHER:hover:after {
-    content: "anything that dos not match to the given above";
+    content: attr(data-content);
 }
 
 /** ClearingState **/
 .sw360-tt-ClearingState:hover:after {
-    content: "New: \A Sent to fossology: \A Under Clearing: \A Report available: \A Approved: ";
+    content: attr(data-content);
 }
 
 .sw360-tt-ClearingState-NEW_CLEARING:hover:after {
@@ -264,7 +264,7 @@
 
 /** FossologyStatus **/
 .sw360-tt-FossologyStatus:hover:after {
-    content: "Fossology Status";
+    content: attr(data-content);
 }
 
 .sw360-tt-FossologyStatus-CONNECTION_FAILED:hover:after {
@@ -329,23 +329,23 @@
 
 /** ModerationState **/
 .sw360-tt-ModerationState:hover:after {
-    content: "Approved: \A Pending: \A Rejected: \A In Progress: ";
+    content: attr(data-content);
 }
 
 .sw360-tt-ModerationState-APPROVED:hover:after {
-    content: "A person who has received the moderation request (which could be creator of the document, a clearing admin, a moderator, etc.) has approved the moderation request. It could be deleted then.";
+    content: attr(data-content);
 }
 
 .sw360-tt-ModerationState-PENDING:hover:after {
-    content: "Not opened so far.";
+    content: attr(data-content);
 }
 
 .sw360-tt-ModerationState-REJECTED:hover:after {
-    content: "A person who has received the moderation request (which could be creator of the document, a clearing admin, a moderator, etc.) has rejected the moderation request.";
+    content: attr(data-content);
 }
 
 .sw360-tt-ModerationState-INPROGRESS:hover:after {
-    content: "A person who has received the moderation request (which could be creator of the document, a clearing admin, a moderator, etc.) has opened / viewed the moderation request, but did not decide.";
+    content: attr(data-content);
 }
 
 /** ClearingRequestState **/
@@ -379,7 +379,7 @@
 
 /** ProjectRelationShip **/
 .sw360-tt-ProjectRelationship:hover:after {
-    content: "Unknown: \A Duplicate: \A Contained: \A Refered: ";
+    content: attr(data-content);
 }
 
 .sw360-tt-ProjectRelationship-UNKNOWN:hover:after {
@@ -404,27 +404,27 @@
 
 /** ReleaseRelationShip **/
 .sw360-tt-ReleaseRelationship:hover:after {
-    content: "Unkown: If you just do not know \A Contained: If you just do not know whether it is dynamically linked \A Refered: Referencing a stand alone used other part \A Dynamically Linked: Software dynamically linked - as the name says \A Statically linked: Software statically linked - as the name says \A Side by side: Not decided so far \A Standalone: Software is given as standalone delivery, ie. not technically connected \A Internal Use: Used for creating or building or ? the product or projects but not delivered \A Optional: Is not mandatory part of the installation \A To be replaced: Is there but should be moved out \A Code Snippet: From references release, a fragment is used.";
+    content: attr(data-content);
 }
 
 .sw360-tt-ReleaseRelationship-UNKNOWN:hover:after {
-    content: "If you just do not know.";
+    content: attr(data-content);
 }
 
 .sw360-tt-ReleaseRelationship-CONTAINED:hover:after {
-    content: "If you just do not know whether it is dynamically linked.";
+    content: attr(data-content);
 }
 
 .sw360-tt-ReleaseRelationship-REFERRED:hover:after {
-    content: "Referencing a stand alone used other part.";
+    content: attr(data-content);
 }
 
 .sw360-tt-ReleaseRelationship-DYNAMICALLY_LINKED:hover:after {
-    content: "Software dynamically linked - as the name says.";
+    content: attr(data-content);
 }
 
 .sw360-tt-ReleaseRelationship-STATICALLY_LINKED:hover:after {
-    content: "Software statically linked - as the name says.";
+    content: attr(data-content);
 }
 
 .sw360-tt-ReleaseRelationship-SIDE_BY_SIDE:hover:after {
@@ -433,19 +433,19 @@
 }
 
 .sw360-tt-ReleaseRelationship-STANDALONE:hover:after {
-    content: "Software is given as standalone delivery, ie. not technically connected.";
+    content: attr(data-content);
 }
 
 .sw360-tt-ReleaseRelationship-INTERNAL_USE:hover:after {
-    content: "Used for creating or building or ? the product or projects but not delivered.";
+    content: attr(data-content);
 }
 
 .sw360-tt-ReleaseRelationship-OPTIONAL:hover:after {
-    content: "Is not mandatory part of the installation.";
+    content: attr(data-content);
 }
 
 .sw360-tt-ReleaseRelationship-TO_BE_REPLACED:hover:after {
-    content: "Is there but should be moved out.";
+    content: attr(data-content);
 }
 
 .sw360-tt-ReleaseRelationship-CODE_SNIPPET:hover:after {
@@ -455,7 +455,7 @@
 
 /** RepositoryType **/
 .sw360-tt-RepositoryType:hover:after {
-    content: "Repository Type";
+    content: attr(data-content);
 }
 
 .sw360-tt-RepositoryType-UNKNOWN:hover:after {
@@ -565,70 +565,70 @@
 
 /** MainlineState **/
 .sw360-tt-MainlineState:hover:after {
-    content: "Open: Not decided so far \A Mainline: Organisation or person thinks that use of this software is recommended, which included multiple versions \A Specific: The software is not recommended in general, but for special use case or for this particular version it is acceptable \A In Phaseout: The software has issues, please consider removing it soon, if in use \A Denied: Software which is not allowed for use. For example, software that does not have licensing";
+    content: attr(data-content);
 }
 
 .sw360-tt-MainlineState-OPEN:hover:after {
-    content: "Not decided so far";
+    content: attr(data-content);
 }
 
 .sw360-tt-MainlineState-MAINLINE:hover:after {
-    content: "Organisation or person thinks that use of this software is recommended, which included multiple versions.";
+    content: attr(data-content);
 }
 
 .sw360-tt-MainlineState-SPECIFIC:hover:after {
-    content: "The software is not recommended in general, but for special use case or for this particular version it is acceptable.";
+    content: attr(data-content);
 }
 
 .sw360-tt-MainlineState-PHASEOUT:hover:after {
-    content: "The software has issues, please consider removing it soon, if in use.";
+    content: attr(data-content);
 }
 
 .sw360-tt-MainlineState-DENIED:hover:after {
-    content: "Software which is not allowed for use. For example, software that does not have licensing.";
+    content: attr(data-content);
 }
 
 /** CheckStatus **/
 .sw360-tt-CheckStatus:hover:after {
-    content: "Accepted: Reviewed and confirmed attachment \A Rejected: Document or attachment cannot be used \A Not checked: Default value after upload";
+    content: attr(data-content);
 }
 
 .sw360-tt-CheckStatus-ACCEPTED:hover:after {
-    content: "Reviewed and confirmed attachment.";
+    content: attr(data-content);
 }
 
 .sw360-tt-CheckStatus-REJECTED:hover:after {
-    content: "Document or attachment cannot be used.";
+    content: attr(data-content);
 }
 
 .sw360-tt-CheckStatus-NOTCHECKED:hover:after {
-    content: "Default value after upload.";
+    content: attr(data-content);
 }
 
 /** Visibility **/
 .sw360-tt-Visibility:hover:after {
-    content: "Private: Only visible by creator (and admin which applies to all visibility levels) \A Me and Moderators: Visible by creator and moderators \A Group and Moderators: All users of the same group and the moderators \A Everyone: Every user who is logged into the system";
+    content: attr(data-content);
 }
 
 .sw360-tt-Visibility-PRIVATE:hover:after {
-    content: "Only visible by creator (and admin which applies to all visibility levels).";
+    content: attr(data-content);
 }
 
 .sw360-tt-Visibility-ME_AND_MODERATORS:hover:after {
-    content: "Visible by creator and moderators.";
+    content: attr(data-content);
 }
 
 .sw360-tt-Visibility-BUISNESSUNIT_AND_MODERATORS:hover:after {
-    content: "All users of the same group and the moderators.";
+    content: attr(data-content);
 }
 
 .sw360-tt-Visibility-EVERYONE:hover:after {
-    content: "Every user who is logged into the system.";
+    content: attr(data-content);
 }
 
 /** ProjectState **/
 .sw360-tt-ProjectState:hover:after {
-    content: "Active: \A Phase out: \A Unkown: ";
+    content: attr(data-content);
 }
 
 .sw360-tt-ProjectState-ACTIVE:hover:after {
@@ -648,7 +648,7 @@
 
 /** ProjectClearingState **/
 .sw360-tt-ProjectClearingState:hover:after {
-    content: "Open: \A In Progress: \A Closed: ";
+    content: attr(data-content);
 }
 
 .sw360-tt-ProjectClearingState-OPEN:hover:after {
@@ -668,7 +668,7 @@
 
 /** UserGroup **/
 .sw360-tt-UserGroup:hover:after {
-    content: "User: \A Admin: \A Clearing Admin: \A ECC Admin: \A Security Admin: \A SW360 Admin: ";
+    content: attr(data-content);
 }
 
 .sw360-tt-UserGroup-USER:hover:after {
@@ -703,7 +703,7 @@
 
 /** VulnerabilityRatingForProject **/
 .sw360-tt-VulnerabilityRatingForProject:hover:after {
-    content: "Not checked: \A Irrelevant: \A Resolved: \A Applicable: ";
+    content: attr(data-content);
 }
 
 .sw360-tt-VulnerabilityRatingForProject-NOT_CHECKED:hover:after {
@@ -728,24 +728,24 @@
 
 /** VerificationState **/
 .sw360-tt-VerificationState:hover:after {
-    content: "Not checked: No one has yet looked at this and verified it \A Checked: It is verified \A Incorrect: It was decided that the verification should be rejected";
+    content: attr(data-content);
 }
 
 .sw360-tt-VerificationState-NOT_CHECKED:hover:after {
-    content: "No one has yet looked at this and verified it.";
+    content: attr(data-content);
 }
 
 .sw360-tt-VerificationState-CHECKED:hover:after {
-    content: "It is verified.";
+    content: attr(data-content);
 }
 
 .sw360-tt-VerificationState-INCORRECT:hover:after {
-    content: "It was decided that the verification should be rejected.";
+    content: attr(data-content);
 }
 
 /** ECCStatus **/
 .sw360-tt-ECCStatus:hover:after {
-    content: "Open: \A In Progress: \A Approved: \A Rejected: ";
+    content: attr(data-content);
 }
 
 .sw360-tt-ECCStatus-OPEN:hover:after {
@@ -770,7 +770,7 @@
 
 /** DocumentType **/
 .sw360-tt-DocumentType:hover:after {
-    content: "Component: \A Release: \A Project: \A License: \A User: ";
+    content: attr(data-content);
 }
 
 .sw360-tt-DocumentType-COMPONENT:hover:after {

@@ -26,11 +26,11 @@
              scope="request"/>
 
 <core_rt:if test="${duplicateReleases.size()>0}">
-    <h4>Releases with the same identifier [name(version)]</h4>
+    <h4><liferay-ui:message key="releases.with.the.same.identifier.name.version" /></h4>
     <table id="duplicateReleasesTable" class="table table-bordered">
         <thead>
         <tr>
-            <th>Release Name</th><th>Links</th>
+            <th><liferay-ui:message key="release.name" /></th><th><liferay-ui:message key="links" /></th>
         </tr>
         </thead>
         <tbody>
@@ -50,11 +50,11 @@
 </core_rt:if>
 
 <core_rt:if test="${duplicateReleaseSources.size()>0}">
-    <h4>Releases with more than one source attachment</h4>
+    <h4><liferay-ui:message key="releases.with.more.than.one.source.attachment" /></h4>
     <table id="duplicateReleaseSourcesTable" class="table table-bordered">
         <thead>
         <tr>
-            <th>Release Name</th><th>Source Attachments Count</th>
+            <th><liferay-ui:message key="release.name" /></th><th><liferay-ui:message key="source.attachments.count" /></th>
         </tr>
         </thead>
         <tbody>
@@ -72,11 +72,11 @@
 </core_rt:if>
 
 <core_rt:if test="${duplicateComponents.size()>0}">
-    <h4>Components with the same identifier [name]</h4>
+    <h4><liferay-ui:message key="components.with.the.same.identifier.name" /></h4>
     <table id="duplicateComponentsTable" class="table table-bordered">
         <thead>
         <tr>
-            <th>Component Name</th><th>Links</th>
+            <th><liferay-ui:message key="component.name" /></th><th><liferay-ui:message key="links" /></th>
         </tr>
         </thead>
         <tbody>
@@ -96,11 +96,11 @@
 </core_rt:if>
 
 <core_rt:if test="${duplicateProjects.size()>0}">
-    <h4>Projects with the same identifier [name(version)]</h4>
+    <h4><liferay-ui:message key="projects.with.the.same.identifier.name.version" /></h4>
     <table id="duplicateProjectsTable" class="table table-bordered">
         <thead>
         <tr>
-            <th>Project Name</th><th>Links</th>
+            <th><liferay-ui:message key="project.name" /></th><th><liferay-ui:message key="links" /></th>
         </tr>
         </thead>
         <tbody>

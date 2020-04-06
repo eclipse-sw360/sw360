@@ -35,7 +35,7 @@
                     <div id="moderation-header-heading" class="card-header">
                         <h2 class="mb-0">
                             <button class="btn btn-secondary btn-block" type="button" data-toggle="collapse" data-target="#moderation-header" aria-expanded="true" aria-controls="moderation-header">
-                                Moderation Request Information
+                                <liferay-ui:message key="moderation.request.information" />
                             </button>
                         </h2>
                     </div>
@@ -50,7 +50,7 @@
                         <div id="moderation-changes-heading" class="card-header">
                             <h2 class="mb-0">
                                 <button class="btn btn-secondary btn-block" type="button" data-toggle="collapse" data-target="#moderation-changes" aria-expanded="false" aria-controls="moderation-changes">
-                                    Proposed Changes
+                                    <liferay-ui:message key="proposed.changes" />
                                 </button>
                             </h2>
                         </div>
@@ -65,7 +65,7 @@
                     <div id="current-document-heading" class="card-header">
                         <h2 class="mb-0">
                             <button class="btn btn-secondary btn-block" type="button" data-toggle="collapse" data-target="#current-document" aria-expanded="false" aria-controls="current-document">
-                                Current Project
+                                <liferay-ui:message key="current.project" />
                             </button>
                         </h2>
                     </div>

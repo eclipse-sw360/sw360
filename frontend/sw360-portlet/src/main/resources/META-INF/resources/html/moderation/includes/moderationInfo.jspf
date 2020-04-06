@@ -19,16 +19,16 @@
         <table class="table label-value-table mt-2" id="ModerationRequestData">
             <thead>
                 <tr>
-                    <th colspan="2">Moderation Request</th>
+                    <th colspan="2"><liferay-ui:message key="moderation.request" /></th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td>Requesting User:</td>
+                    <td><liferay-ui:message key="requesting.user" />:</td>
                     <td><sw360:DisplayUserEmail email="${moderationRequest.requestingUser}" bare="true"/></td>
                 </tr>
                 <tr>
-                    <td>Submitted on:</td>
+                    <td><liferay-ui:message key="submitted.on" />:</td>
                     <td>
                         <core_rt:if test="${moderationRequest.isSetTimestamp()}">
                             <jsp:setProperty name="submitDateRequest" property="time" value="${moderationRequest.timestamp}"/>
@@ -37,7 +37,7 @@
                     </td>
                 </tr>
                 <tr>
-                    <td>Comment on Moderation Request:</td>
+                    <td><liferay-ui:message key="comment.on.moderation.request" />:</td>
                     <td>
                         <core_rt:if test="${moderationRequest.isSetCommentRequestingUser()}">
                             <textarea id="moderationRequestCommentField" class="form-control" readonly><sw360:out value="${moderationRequest.commentRequestingUser}" stripNewlines="false"/></textarea>
@@ -52,16 +52,16 @@
         <table class="table label-value-table mt-2" id="ModerationDecisionData">
             <thead>
                 <tr>
-                    <th colspan="2">Moderation Decision</th>
+                    <th colspan="2"><liferay-ui:message key="moderation.decision" /></th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td>Status:</td>
+                    <td><liferay-ui:message key="status" />:</td>
                     <td><sw360:DisplayEnum value="${moderationRequest.moderationState}"/></td>
                 </tr>
                 <tr>
-                    <td>Moderator:</td>
+                    <td><liferay-ui:message key="moderator" />:</td>
                     <td>
                         <core_rt:if test="${moderationRequest.isSetReviewer()}">
                             <sw360:DisplayUserEmail email="${moderationRequest.reviewer}" bare="true"/>
@@ -71,7 +71,7 @@
                 </tr>
                 <core_rt:if test="${moderationRequest.isSetTimestampOfDecision()}">
                     <tr>
-                        <td>Submitted on:</td>
+                        <td><liferay-ui:message key="submitted.on" />:</td>
                         <td>
                             <jsp:setProperty name="submitDateDecision" property="time" value="${moderationRequest.timestampOfDecision}"/>
                             <fmt:formatDate value="${submitDateDecision}" pattern="yyyy-MM-dd"/>
@@ -80,7 +80,7 @@
                 </core_rt:if>
                 <core_rt:if test="${moderationRequest.isSetCommentDecisionModerator() || (!moderationRequest.isSetCommentDecisionModerator() && moderationAllowed)}">
                     <tr>
-                        <td>Comment on Moderation Decision:</td>
+                        <td><liferay-ui:message key="comment.on.moderation.decision" />:</td>
                         <td>
                             <textarea id="moderationDecisionCommentField" class="form-control"
                                 <core_rt:if test="${not moderationAllowed}">readonly</core_rt:if>

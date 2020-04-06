@@ -44,19 +44,19 @@
 					<div class="btn-toolbar" role="toolbar">
                         <core_rt:if test="${addMode}" >
                             <div class="btn-group">
-                                <button type="button" class="btn btn-primary" data-action="save">Create Vendor</button>
+                                <button type="button" class="btn btn-primary" data-action="save"><liferay-ui:message key="create.vendor" /></button>
                             </div>
                         </core_rt:if>
 						<core_rt:if test="${not addMode}" >
                             <div class="btn-group">
-                                <button type="button" class="btn btn-primary" data-action="save">Update Vendor</button>
+                                <button type="button" class="btn btn-primary" data-action="save"><liferay-ui:message key="update.vendor" /></button>
                             </div>
                             <div class="btn-group">
-                                <button type="button" class="btn btn-danger" data-action="delete" data-vendor-name="<sw360:out value="${vendor.fullname}"/>">Delete Vendor</button>
+                                <button type="button" class="btn btn-danger" data-action="delete" data-vendor-name="<sw360:out value="${vendor.fullname}"/>"><liferay-ui:message key="delete.vendor" /></button>
 						    </div>
                         </core_rt:if>
                         <div class="btn-group">
-                            <button type="button" class="btn btn-light" data-action="cancel">Cancel</button>
+                            <button type="button" class="btn btn-light" data-action="cancel"><liferay-ui:message key="cancel" /></button>
                         </div>
 					</div>
 				</div>
@@ -71,38 +71,38 @@
                         <table id="VendorEdit" class="table edit-table three-columns">
                             <thead>
                                 <tr>
-                                    <th colspan="3">Edit Vendor</th>
+                                    <th colspan="3"><liferay-ui:message key="edit.vendor" /></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
                                     <td>
                                         <div class="form-group">
-                                            <label for="vendorFullname">Full Name</label>
-                                            <input id="vendorFullname" type="text" required class="form-control" placeholder="Enter vendor fullname" name="<portlet:namespace/><%=Vendor._Fields.FULLNAME%>"
+                                            <label for="vendorFullname"><liferay-ui:message key="full.name" /></label>
+                                            <input id="vendorFullname" type="text" required class="form-control" placeholder="<liferay-ui:message key="enter.vendor.fullname" />" name="<portlet:namespace/><%=Vendor._Fields.FULLNAME%>"
                                                 value="<sw360:out value="${vendor.fullname}"/>" />
                                              <div class="invalid-feedback">
-                                                Please enter a full name!
+                                                <liferay-ui:message key="please.enter.a.full.name" />
                                             </div>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="form-group">
-                                            <label for="vendorShortname">Short Name</label>
-                                            <input id="vendorShortname" type="text" required class="form-control" placeholder="Enter vendor short name" name="<portlet:namespace/><%=Vendor._Fields.SHORTNAME%>"
+                                            <label for="vendorShortname"><liferay-ui:message key="short.name" /></label>
+                                            <input id="vendorShortname" type="text" required class="form-control" placeholder="<liferay-ui:message key="enter.vendor.short.name" />" name="<portlet:namespace/><%=Vendor._Fields.SHORTNAME%>"
                                                 value="<sw360:out value="${vendor.shortname}"/>" />
                                             <div class="invalid-feedback">
-                                                Please enter a short name!
+                                                <liferay-ui:message key="please.enter.a.short.name" />
                                             </div>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="form-group">
-                                            <label for="vendorURL">URL</label>
-                                            <input id="vendorURL" type="text" required class="form-control" placeholder="Enter vendor url" name="<portlet:namespace/><%=Vendor._Fields.URL%>"
+                                            <label for="vendorURL"><liferay-ui:message key="url" /></label>
+                                            <input id="vendorURL" type="text" required class="form-control" placeholder="<liferay-ui:message key="enter.vendor.url" />" name="<portlet:namespace/><%=Vendor._Fields.URL%>"
                                                 value="<sw360:out value="${vendor.url}"/>" />
                                             <div class="invalid-feedback">
-                                                Please enter an url!
+                                                <liferay-ui:message key="please.enter.an.url" />
                                             </div>
                                         </div>
                                     </td>
@@ -116,7 +116,7 @@
             <div class="row">
                 <div class="col">
                     <core_rt:if test="${releaseList.size() > 0}" >
-                        <h4 class="mt-4">Used by the following release(s)</h4>
+                        <h4 class="mt-4"><liferay-ui:message key="used.by.the.following.releases" /></h4>
                         <table class="table bordered-table">
                             <tbody>
                                 <tr>
@@ -163,9 +163,9 @@
             dialog.confirm(
                 'danger',
                 'question-circle',
-                'Delete Vendor?',
-                '<p>Do you really want to delete the vendor <b data-name="name"></b>?</p>',
-                'Delete Vendor',
+                '<liferay-ui:message key="delete.vendor" />?',
+                '<p><liferay-ui:message key="do.you.really.want.to.delete.the.vendor.x" />?</p>',
+                '<liferay-ui:message key="delete.vendor" />',
                 {
                     name: data.vendorName,
                 },

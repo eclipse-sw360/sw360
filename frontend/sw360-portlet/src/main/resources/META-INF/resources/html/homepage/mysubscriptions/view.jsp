@@ -21,11 +21,11 @@
 <jsp:useBean id="releaseList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.components.Release>"
              class="java.util.ArrayList" scope="request"/>
 
-<h4>My Subscriptions</h4>
+<h4><liferay-ui:message key="my.subscriptions" /></h4>
 <core_rt:if test="${componentList.size() > 0}">
     <div class="row">
         <div class="col">
-            <h6>Components</h6>
+            <h6><liferay-ui:message key="components" /></h6>
             <core_rt:forEach var="component" items="${componentList}">
                 <li>
                     <sw360:DisplayComponentLink component="${component}"/><br>
@@ -38,7 +38,7 @@
 <core_rt:if test="${releaseList.size() > 0}">
     <div class="row">
         <div class="col">
-            <h6>Releases</h6>
+            <h6><liferay-ui:message key="releases" /></h6>
             <ul>
                 <core_rt:forEach var="release" items="${releaseList}">
                     <li>
@@ -52,6 +52,6 @@
 
 <core_rt:if test="${componentList.size() == 0  and releaseList.size() == 0}">
     <div class="alert alert-info">
-        No subscriptions available.
+        <liferay-ui:message key="no.subscriptions.available" />
     </div>
 </core_rt:if>

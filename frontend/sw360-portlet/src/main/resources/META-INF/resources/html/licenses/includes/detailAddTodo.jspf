@@ -21,24 +21,24 @@
     <div>
         <div class="row">
             <div class="col">
-                <h5>Todo Details</h5>
+                <h5><liferay-ui:message key="todo.details" /></h5>
             </div>
         </div>
         <div class="row">
             <div class="col-8">
                 <div class="form-group">
                     <textarea name="<portlet:namespace/>todoText" rows="5" class="form-control"
-                                required placeholder="Enter the Todo-Text here..."></textarea>
+                                required placeholder="<liferay-ui:message key="enter.the.todo.text.here" />"></textarea>
                 </div>
             </div>
             <div class="col-4">
                 <div class="form-check">
                     <input type="checkbox" class="form-check-input" name="<portlet:namespace/>bools" id="developmentCheckbox" value="development"/>
-                    <label class="form-check-label" for="developmentCheckbox">Applies to development</label>
+                    <label class="form-check-label" for="developmentCheckbox"><liferay-ui:message key="applies.to.development" /></label>
                 </div>
                 <div class="form-check">
                     <input type="checkbox" class="form-check-input" name="<portlet:namespace/>bools" id="distributionCheckbox" value="distribution" />
-                    <label class="form-check-label" for="distributionCheckbox">Applies to distribution</label>
+                    <label class="form-check-label" for="distributionCheckbox"><liferay-ui:message key="applies.to.distribution" /></label>
                 </div>
             </div>
         </div>
@@ -52,7 +52,7 @@
                     <thead>
                         <tr>
                             <th></th>
-                            <th>Obligations</th>
+                            <th><liferay-ui:message key="obligations" /></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -70,7 +70,7 @@
                         </core_rt:forEach>
                     </tbody>
                 </table>
-                <button type="button" class="btn btn-primary mt-3" id="submitTodo">Add Todo</button>
+                <button type="button" class="btn btn-primary mt-3" id="submitTodo"><liferay-ui:message key="add.todo" /></button>
             </div>
         </div>
     </div>
@@ -88,7 +88,15 @@
                 [1, 'asc']
             ],
             language: {
-                emptyTable: 'No obligations found.'
+                paginate: {
+                    previous: "<liferay-ui:message key="previous" />",
+                    next: "<liferay-ui:message key="next" />"
+            },
+                emptyTable: '<liferay-ui:message key="no.obligations.found" />',
+                info: "<liferay-ui:message key="showing" />",
+                infoEmpty: "<liferay-ui:message key="infoempty" />",
+                processing: "<liferay-ui:message key="processing" />",
+                loadingRecords: "<liferay-ui:message key="loading" />"
             },
             select: 'shift + multi',
         }, undefined, [0]);
@@ -118,14 +126,14 @@
             $dialog = dialog.confirm(
                 null,
                 'pencil',
-                'Create moderation request',
+                '<liferay-ui:message key="create.moderation.request" />',
                 '<form>' +
                     '<div class="form-group">' +
-                        '<label for="moderationRequestCommentField">Please comment your changes</label>' +
-                        '<textarea form="AddTodoModal" name="<portlet:namespace/><%=PortalConstants.MODERATION_REQUEST_COMMENT%>" id="moderationRequestCommentField" class="form-control" placeholder="Leave a comment on your request" data-name="comment" autofocus></textarea>' +
+                        '<label for="moderationRequestCommentField"><liferay-ui:message key="please.comment.your.changes" /></label>' +
+                        '<textarea form="AddTodoModal" name="<portlet:namespace/><%=PortalConstants.MODERATION_REQUEST_COMMENT%>" id="moderationRequestCommentField" class="form-control" placeholder="<liferay-ui:message key="leave.a.comment.on.your.request" />" data-name="comment" autofocus></textarea>' +
                     '</div>' +
                 '</form>',
-                'Send moderation request',
+                '<liferay-ui:message key="send.moderation.request" />',
                 {
                     comment: ''
                 },

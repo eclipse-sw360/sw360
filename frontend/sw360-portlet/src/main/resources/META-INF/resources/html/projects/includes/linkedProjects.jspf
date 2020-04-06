@@ -31,19 +31,19 @@
     >
     <thead>
     <tr>
-        <th>Name</th>
-        <th>Project state</th>
-        <th>Relation</th>
-        <th>Type</th>
-        <th>Clearing State</th>
-        <th>Main Licenses</th>
+        <th><liferay-ui:message key="name" /></th>
+        <th><liferay-ui:message key="project.state" /></th>
+        <th><liferay-ui:message key="relation" /></th>
+        <th><liferay-ui:message key="type" /></th>
+        <th><liferay-ui:message key="clearing.state" /></th>
+        <th><liferay-ui:message key="main.licenses" /></th>
     </tr>
     </thead>
     <tbody>
         <%@include file="/html/utils/ajax/linkedProjectsRows.jspf"%>
         <core_rt:if test="${projectList.size() == 1 and empty projectList.get(0).linkedReleases}">
             <tr>
-                <td colspan="5">No linked releases or projects</td>
+                <td colspan="5"><liferay-ui:message key="no.linked.releases.or.projects" /></td>
             </tr>
         </core_rt:if>
     </tbody>

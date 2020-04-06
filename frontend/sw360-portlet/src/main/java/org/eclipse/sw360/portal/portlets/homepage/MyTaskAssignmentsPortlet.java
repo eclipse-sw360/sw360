@@ -41,7 +41,7 @@ import org.osgi.service.component.annotations.ConfigurationPolicy;
         "javax.portlet.display-name=My Task Assignments",
         "javax.portlet.info.short-title=My Task Assignments",
         "javax.portlet.info.title=My Task Assignments",
-
+        "javax.portlet.resource-bundle=content.Language",
         "javax.portlet.init-param.view-template=/html/homepage/mytaskassignments/view.jsp",
     },
     service = Portlet.class,

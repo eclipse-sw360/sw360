@@ -45,15 +45,15 @@
 				<div class="col-auto">
 					<div class="btn-toolbar" role="toolbar">
 						<div class="btn-group" role="group">
-							<button type="button" class="btn btn-primary" onclick="window.location.href='<%=addLicenseURL%>'">Add License</button>
+							<button type="button" class="btn btn-primary" onclick="window.location.href='<%=addLicenseURL%>'"><liferay-ui:message key="add.license" /></button>
 						</div>
 						<div class="btn-group" role="group">
-							<button type="button" class="btn btn-secondary" onclick="window.location.href='<%=exportLicensesURL%>'">Export Spreadsheet</button>
+							<button type="button" class="btn btn-secondary" onclick="window.location.href='<%=exportLicensesURL%>'"><liferay-ui:message key="export.spreadsheet" /></button>
 						</div>
 					</div>
 				</div>
-                <div class="col portlet-title text-truncate" title="Licenses (${licenseList.size()})">
-					Licenses (${licenseList.size()})
+                <div class="col portlet-title text-truncate" title="<liferay-ui:message key="licenses" /> (${licenseList.size()})">
+					<liferay-ui:message key="licenses" /> (${licenseList.size()})
 				</div>
             </div>
 
@@ -111,11 +111,15 @@
                 searching: true,
                 data: result,
                 columns: [
-                    { "title": "License Shortname" },
-                    { "title": "License Fullname" },
-                    { "title": "Is checked?", className: 'text-center' },
-                    { "title": "License Type" }
+                    { "title": "<liferay-ui:message key="license.shortname" />" },
+                    { "title": "<liferay-ui:message key="license.fullname" />" },
+                    { "title": "<liferay-ui:message key="is.checked" />?", className: 'text-center' },
+                    { "title": "<liferay-ui:message key="license.type" />" }
                 ],
+                language: {
+                    url: "<liferay-ui:message key="datatables.lang" />",
+                    loadingRecords: "<liferay-ui:message key="loading" />"
+                },
                 initComplete: datatables.showPageContainer
             }, [0, 1, 2, 3]);
 

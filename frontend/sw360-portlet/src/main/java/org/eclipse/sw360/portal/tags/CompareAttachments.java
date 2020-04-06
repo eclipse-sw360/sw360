@@ -13,15 +13,20 @@ import com.google.common.base.Strings;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
+
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.apache.thrift.meta_data.FieldMetaData;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.ResourceBundle;
 import java.util.Set;
 
 import static com.google.common.collect.ImmutableList.copyOf;
@@ -80,6 +85,8 @@ public class CompareAttachments extends ContextAwareTag {
 
         JspWriter jspWriter = pageContext.getOut();
         StringBuilder display = new StringBuilder();
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
 
         try {
             renderAttachments(jspWriter, actual, additions, deletions, contextType, contextId);
@@ -87,7 +94,7 @@ public class CompareAttachments extends ContextAwareTag {
             String renderString = display.toString();
 
             if (Strings.isNullOrEmpty(renderString)) {
-                renderString = "<div class=\"alert alert-info\">No changes in attachments</div>";
+                renderString = "<div class=\"alert alert-info\">"+ LanguageUtil.get(resourceBundle,"no.changes.in.attachments")+"</div>";
             }
 
             jspWriter.print(renderString);
@@ -176,19 +183,23 @@ public class CompareAttachments extends ContextAwareTag {
                     addedAttachmentsById.get(commonAttachmentId));
         }
         String changedAttachmentTable = candidate.toString();
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         if (!changedAttachmentTable.isEmpty()) {
-            jspWriter.write("<h4>Changed Attachments</h4>");
+            jspWriter.write("<h4>"+LanguageUtil.get(resourceBundle,"changed.attachments")+"</h4>");
             jspWriter.write(changedAttachmentTable);
         }
     }
 
     private void renderCompareAttachment(StringBuilder display, Attachment old, Attachment deleted, Attachment added) {
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
 
         if (old.equals(added)) return;
         display.append(String.format("<table class=\"%s\" id=\"%schanges%s\" >", tableClasses, idPrefix, old.getAttachmentContentId()));
         display.append(String.format("<thead><tr><th colspan=\"4\"> Changes for Attachment %s </th></tr>", old.getFilename()));
         display.append(String.format("<tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr></thead><tbody>",
-                FIELD_NAME, CURRENT_VAL, DELETED_VAL, SUGGESTED_VAL));
+        LanguageUtil.get(resourceBundle,"field.name"), LanguageUtil.get(resourceBundle,"current.value"), LanguageUtil.get(resourceBundle,"former.value"), LanguageUtil.get(resourceBundle,"suggested.value")));
 
         for (Attachment._Fields field : RELEVANT_FIELDS) {
 
