@@ -453,6 +453,7 @@
         <id>ci</id>
         <properties>
             <!-- second of two places for version setting: minor version -->
+            <!--suppress UnresolvedMavenProperty -->
             <patchlevel>0.${count}</patchlevel>
         </properties>
         </profile>

@@ -50,6 +50,7 @@
                  scope="request"/>
     <jsp:useBean id="allUsingProjectsCount" type="java.lang.Integer" scope="request"/>
     <jsp:useBean id="usingComponents" type="java.util.Set<org.eclipse.sw360.datahandler.thrift.components.Component>" scope="request"/>
+    <jsp:useBean id="customFields" type="java.util.List<org.eclipse.sw360.portal.common.customfields.CustomField>" scope="request"/>
 
     <core_rt:set var="programmingLanguages" value='<%=PortalConstants.PROGRAMMING_LANGUAGES%>'/>
     <core_rt:set var="operatingSystemsAutoC" value='<%=PortalConstants.OPERATING_SYSTEMS%>'/>

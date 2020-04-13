@@ -34,6 +34,8 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
+import org.eclipse.sw360.portal.common.customfields.CustomField;
+import org.eclipse.sw360.portal.common.customfields.CustomFieldPageIdentifier;
 import org.eclipse.sw360.portal.common.datatables.data.PaginationParameters;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 
@@ -353,6 +355,9 @@ public class PortletUtils {
                 LOGGER.error("Empty map key found");
             } else {
                 String value = request.getParameter(mapValue + parameterId);
+                if (value == null) {
+                    value = "";
+                }
                 if(!customMap.containsKey(key)){
                     customMap.put(key, new HashSet<>());
                 }
@@ -416,5 +421,58 @@ public class PortletUtils {
                     CommonUtils.loadResource(PortletUtils.class, TEMPLATE_FILE).orElse(new byte[0]));
         }
         request.setAttribute("welcomePageGuideLine", welcomePageGuideLine);
+    }
+
+    public static void setCustomFieldsDisplay(RenderRequest request, User user, Component component) {
+        Map<String, CustomField> customFieldMap = CustomFieldHelper.getCustomFields(request, user, CustomFieldPageIdentifier.COMPONENT);
+        setCustomFieldsDisplay(customFieldMap, component.getAdditionalData());
+    }
+
+    public static void setCustomFieldsDisplay(RenderRequest request, User user, Release release) {
+        Map<String, CustomField> customFieldMap = CustomFieldHelper.getCustomFields(request, user, CustomFieldPageIdentifier.RELEASE);
+        setCustomFieldsDisplay(customFieldMap, release.getAdditionalData());
+    }
+
+    private static void setCustomFieldsDisplay(Map<String, CustomField> customFieldMap, Map<String, String> additionalData) {
+        if (customFieldMap == null) {
+            return;
+        }
+        if (additionalData == null) {
+            additionalData = new HashMap<>();
+        }
+        for (Map.Entry<String, CustomField> entry : customFieldMap.entrySet()) {
+            if (additionalData.containsKey(entry.getKey()) && entry.getValue().isHidden()) {
+                additionalData.remove(entry.getKey());
+            }
+            if (!additionalData.containsKey(entry.getKey()) && !entry.getValue().isHidden()) {
+                additionalData.put(entry.getKey(), "");
+            }
+        }
+    }
+
+    public static void setCustomFieldsEdit(RenderRequest request, User user, Component component) {
+        Map<String, CustomField> customFieldMap = CustomFieldHelper.getCustomFields(request, user, CustomFieldPageIdentifier.COMPONENT);
+        setCustomFieldsEdit(request, customFieldMap, component.getAdditionalData());
+    }
+
+    public static void setCustomFieldsEdit(RenderRequest request, User user, Release release) {
+        Map<String, CustomField> customFieldMap = CustomFieldHelper.getCustomFields(request, user, CustomFieldPageIdentifier.RELEASE);
+        setCustomFieldsEdit(request, customFieldMap, release.getAdditionalData());
+    }
+
+    private static void setCustomFieldsEdit(RenderRequest request, Map<String, CustomField> customFieldMap, Map<String, String> additionalData) {
+        if (additionalData != null && !customFieldMap.isEmpty()) {
+            Iterator<Map.Entry<String, String>> iter = additionalData.entrySet().iterator();
+            while (iter.hasNext()) {
+                Map.Entry<String, String> entry = iter.next();
+                if (customFieldMap.containsKey(entry.getKey())) {
+                    customFieldMap.get(entry.getKey()).setValue(entry.getValue());
+                    iter.remove();
+                }
+            }
+        }
+        List<CustomField> customFields = new ArrayList<>(customFieldMap.values());
+        customFields.sort(Comparator.comparing(CustomField::getFieldId));
+        request.setAttribute("customFields", customFields);
     }
 }
