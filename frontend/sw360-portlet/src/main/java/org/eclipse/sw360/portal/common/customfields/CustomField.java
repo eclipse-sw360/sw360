@@ -1,3 +1,12 @@
+/*
+ * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+ *
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
 package org.eclipse.sw360.portal.common.customfields;
 
 import java.util.ArrayList;
@@ -9,8 +18,10 @@ public class CustomField{
     private String fieldLabel;
     private int fieldId;
     private CustomFieldType fieldType;
+    private String fieldPattern;
     private String value;
     private List<String> options;
+    private boolean isHidden;
 
     public String getFieldKey() {
         return fieldKey;
@@ -44,6 +55,14 @@ public class CustomField{
         this.fieldType = fieldType;
     }
 
+    public String getFieldPattern() {
+        return fieldPattern;
+    }
+
+    public void setFieldPattern(String fieldPattern) {
+        this.fieldPattern = fieldPattern;
+    }
+
     public String getValue() {
         return value;
     }
@@ -65,6 +84,14 @@ public class CustomField{
             this.options = new ArrayList<>();
         }
         this.options.add(option);
+    }
+
+    public boolean isHidden() {
+        return isHidden;
+    }
+
+    public void setHidden(boolean hidden) {
+        isHidden = hidden;
     }
 
     public static class Comparators {

@@ -15,7 +15,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
@@ -72,7 +71,6 @@ import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.apache.commons.lang.StringUtils;
 
 import javax.portlet.*;
-import javax.portlet.filter.ResourceRequestWrapper;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -650,22 +648,14 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     private void prepareComponentEdit(RenderRequest request) {
         String id = request.getParameter(COMPONENT_ID);
         final User user = UserCacheHolder.getUserFromRequest(request);
-
-        Map<String, CustomField> customFieldMap = CustomFieldHelper.getCustomFields(request, user, CustomFieldPageIdentifier.COMPONENT);
         request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_COMPONENT);
         if (id != null) {
             try {
                 ComponentService.Iface client = thriftClients.makeComponentClient();
                 Component component = client.getComponentByIdForEdit(id, user);
-                Map<String, String> additionalData = component.getAdditionalData();
-                Iterator<Map.Entry<String,String>> iter = additionalData.entrySet().iterator();
-                while(iter.hasNext()) {
-                    Map.Entry<String, String> entry = iter.next();
-                    if(customFieldMap.containsKey(entry.getKey())){
-                        customFieldMap.get(entry.getKey()).setValue(entry.getValue());
-                        iter.remove();
-                    }
-                }
+
+                PortletUtils.setCustomFieldsEdit(request, user, component);
+
                 request.setAttribute(COMPONENT, component);
                 request.setAttribute(DOCUMENT_ID, id);
 
@@ -684,14 +674,12 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             if(request.getAttribute(COMPONENT) == null) {
                 Component component = new Component();
                 request.setAttribute(COMPONENT, component);
+                PortletUtils.setCustomFieldsEdit(request, user, component);
                 setUsingDocs(request, user, null, component.getReleaseIds());
                 setAttachmentsInRequest(request, component);
                 SessionMessages.add(request, "request_processed", "New Component");
             }
         }
-        List<CustomField> customFields = new ArrayList<>(customFieldMap.values());
-        customFields.sort(Comparator.comparing(CustomField::getFieldId));
-        request.setAttribute("customFields", customFields);
     }
 
     private void prepareReleaseEdit(RenderRequest request, RenderResponse response) throws PortletException {
@@ -705,7 +693,6 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             throw new PortletException("Component or Release ID not set!");
         }
 
-        Map<String, CustomField> customFieldMap = CustomFieldHelper.getCustomFields(request, user, CustomFieldPageIdentifier.RELEASE);
         try {
             ComponentService.Iface client = thriftClients.makeComponentClient();
             Component component;
@@ -713,15 +700,6 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
             if (!isNullOrEmpty(releaseId)) {
                 release = client.getReleaseByIdForEdit(releaseId, user);
-                Map<String, String> additionalData = release.getAdditionalData();
-                Iterator<Map.Entry<String,String>> iter = additionalData.entrySet().iterator();
-                while(iter.hasNext()) {
-                    Map.Entry<String, String> entry = iter.next();
-                    if(customFieldMap.containsKey(entry.getKey())){
-                        customFieldMap.get(entry.getKey()).setValue(entry.getValue());
-                        iter.remove();
-                    }
-                }
                 request.setAttribute(RELEASE, release);
                 request.setAttribute(DOCUMENT_ID, releaseId);
                 setAttachmentsInRequest(request, release);
@@ -754,7 +732,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 }
             }
 
-
+            PortletUtils.setCustomFieldsEdit(request, user, release);
             addComponentBreadcrumb(request, response, component);
             if (!isNullOrEmpty(release.getId())) { //Otherwise the link is meaningless
                 addReleaseBreadcrumb(request, response, release);
@@ -767,9 +745,6 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 request.setAttribute(COMPONENT_PURL, "");
             }
 
-            List<CustomField> customFields = new ArrayList<>(customFieldMap.values());
-            customFields.sort(Comparator.comparing(CustomField::getFieldId));
-            request.setAttribute("customFields", customFields);
             request.setAttribute(COMPONENT, component);
             request.setAttribute(IS_USER_AT_LEAST_ECC_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.ECC_ADMIN, user) ? "Yes" : "No");
 
@@ -791,29 +766,18 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         }
 
         try {
-            Map<String, CustomField> customFieldMap = CustomFieldHelper.getCustomFields(request, user, CustomFieldPageIdentifier.RELEASE);
             ComponentService.Iface client = thriftClients.makeComponentClient();
             String emailFromRequest = LifeRayUserSession.getEmailFromRequest(request);
 
             Release release = PortletUtils.cloneRelease(emailFromRequest, client.getReleaseById(releaseId, user));
 
-            Map<String, String> additionalData = release.getAdditionalData();
-            Iterator<Map.Entry<String,String>> iter = additionalData.entrySet().iterator();
-            while(iter.hasNext()) {
-                Map.Entry<String, String> entry = iter.next();
-                if(customFieldMap.containsKey(entry.getKey())){
-                    customFieldMap.get(entry.getKey()).setValue(entry.getValue());
-                    iter.remove();
-                }
-            }
+            PortletUtils.setCustomFieldsEdit(request, user, release);
+
             if (isNullOrEmpty(id)) {
                 id = release.getComponentId();
             }
             Component component = client.getComponentById(id, user);
             addComponentBreadcrumb(request, response, component);
-            List<CustomField> customFields = new ArrayList<>(customFieldMap.values());
-            customFields.sort(Comparator.comparing(CustomField::getFieldId));
-            request.setAttribute("customFields", customFields);
             request.setAttribute(COMPONENT, component);
             request.setAttribute(RELEASE_LIST, Collections.emptyList());
             setUsingDocs(request, null, user, client);
@@ -1212,6 +1176,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 ComponentService.Iface client = thriftClients.makeComponentClient();
                 Component component = client.getComponentById(id, user);
 
+                PortletUtils.setCustomFieldsDisplay(request, user, component);
                 request.setAttribute(COMPONENT, component);
                 request.setAttribute(DOCUMENT_ID, id);
                 request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_COMPONENT);
@@ -1282,6 +1247,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                     fossologyJobsViewLink = createFossologyJobViewLink(processStep, configKeyToValues,
                             fossologyJobsViewLink);
                 }
+
+                PortletUtils.setCustomFieldsDisplay(request, user, release);
 
                 request.setAttribute(FOSSOLOGY_JOB_VIEW_LINK, fossologyJobsViewLink);
                 request.setAttribute(RELEASE_ID, releaseId);

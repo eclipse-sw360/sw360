@@ -121,9 +121,15 @@ public class CustomFieldHelper {
                 customFieldsMap.put(fieldProperties[2], customField);
                 UnicodeProperties unicodeProperties = exp.getAttributeProperties(key);
                 unicodeProperties.forEach((propertyKey, propertyValue) -> {
-                    if (propertyKey != null && propertyKey.equals(CustomFieldPropertyKey.DISPLAY_TYPE.getKey())) {
+
+                    if (propertyKey == null) {
+                        return;
+                    }
+
+                    if (propertyKey.equals(CustomFieldPropertyKey.DISPLAY_TYPE.getKey())) {
                         customField.setFieldType(CustomFieldType.getType(propertyValue));
 
+                        // Set options
                         if (CustomFieldType.isOptionRequiredType(customField.getFieldType())) {
                             Serializable defaultValue = exp.getAttributeDefault(key);
                             if (defaultValue == null) {
@@ -135,6 +141,14 @@ public class CustomFieldHelper {
                                 customField.addOption(option);
                             }
                         }
+
+                        if (CustomFieldType.getType(propertyValue) == CustomFieldType.TEXTFIELD) {
+                            customField.setFieldPattern(value.toString());
+                        }
+                    }
+
+                    if (propertyKey.equals(CustomFieldPropertyKey.HIDDEN.getKey())) {
+                        customField.setHidden(Boolean.parseBoolean(propertyValue));
                     }
                 });
             });
