@@ -166,7 +166,10 @@
                     url: "<liferay-ui:message key="datatables.lang" />"
                 },
             });
-            datatables.enableCheckboxForSelection(table, 0);
+
+            $("#vendorSourcesTable").on('init.dt', function() {
+                datatables.enableCheckboxForSelection(table, 0);
+            });
         }
 
         function submitChosenVendor($stepElement) {

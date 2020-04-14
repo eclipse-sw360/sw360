@@ -170,7 +170,10 @@
                 },
                 order: [ [ 1, 'asc' ] ],
             }, undefined, [0], true);
-            datatables.enableCheckboxForSelection(table, 0);
+
+            $("#releaseSourcesTable").on('init.dt', function() {
+                datatables.enableCheckboxForSelection(table, 0);
+            });
         }
 
         function submitChosenRelease($stepElement) {

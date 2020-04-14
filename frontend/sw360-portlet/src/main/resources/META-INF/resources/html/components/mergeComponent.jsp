@@ -172,7 +172,10 @@
                 order: [ [ 1, 'asc' ] ],
                 select: 'single'
             }, undefined, [0], true);
-            datatables.enableCheckboxForSelection(table, 0);
+
+            $("#componentSourcesTable").on('init.dt', function() {
+                datatables.enableCheckboxForSelection(table, 0);
+            });
         }
 
         function submitChosenComponent($stepElement) {
