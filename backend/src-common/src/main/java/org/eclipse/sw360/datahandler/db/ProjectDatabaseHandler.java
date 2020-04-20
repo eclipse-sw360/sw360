@@ -83,7 +83,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private final ProjectModerator moderator;
     private final AttachmentConnector attachmentConnector;
     private final ComponentDatabaseHandler componentDatabaseHandler;
-    private final ReleaseRelationsUsageRepository relUsageRepository;
+    private final RelationsUsageRepository relUsageRepository;
     private final ReleaseRepository releaseRepository;
     private final VendorRepository vendorRepository;
     private final MailUtil mailUtil = new MailUtil();
@@ -132,7 +132,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         repository = new ProjectRepository(db);
         pvrRepository = new ProjectVulnerabilityRatingRepository(db);
         obligationRepository = new ProjectObligationRepository(db);
-        relUsageRepository = new ReleaseRelationsUsageRepository(db);
+        relUsageRepository = new RelationsUsageRepository(db);
         vendorRepository = new VendorRepository(db);
         releaseRepository = new ReleaseRepository(db, vendorRepository);
 

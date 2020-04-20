@@ -201,6 +201,7 @@ struct UsedReleaseRelations {
     3: optional string type = "usedReleaseRelation",
     4: required string projectId,
     5: optional set<ReleaseRelationship> usedReleaseRelations = [],
+    6: optional set<ProjectRelationship> usedProjectRelations,
 }
 
 struct ClearingRequest {

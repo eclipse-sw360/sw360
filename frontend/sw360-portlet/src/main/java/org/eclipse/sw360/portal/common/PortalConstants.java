@@ -251,6 +251,10 @@ public class PortalConstants {
     public static final String PROJECT_RELEASE_TO_RELATION = "projectReleaseToRelation";
     public static final String PROJECT_USED_RELEASE_RELATIONS = "usedProjectReleaseRelations";
     public static final String SELECTED_PROJECT_RELEASE_RELATIONS = "selectedProjectReleaseRelations";
+    public static final String LINKED_PROJECT_RELATION = "linkedProjectRelation";
+    public static final String USED_LINKED_PROJECT_RELATION = "usedLinkedProjectRelation";
+    public static final String SELECTED_PROJECT_RELATIONS = "selectedProjectRelations";
+    public static final String IS_LINKED_PROJECT_PRESENT = "isLinkedProjectPresent";
     public static final String PROJECT_URL = "projectUrl";
 
 

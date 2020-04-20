@@ -90,6 +90,23 @@
                             </c:forEach>
                         </div>
                     </c:if>
+                    <c:if test="${not empty linkedProjectRelation}">
+                        <div class="form-group form-check">
+                            <label for="projectRelation"
+                                class="font-weight-bold h3">Uncheck Linked Project
+                                Relationships to be excluded:</label>
+                            <c:forEach var="projectRelation" items="${linkedProjectRelation}">
+                                <div class="checkbox form-check">
+                                    <label> <input name="projectRelationSelection" type="checkbox"
+                                        <c:if test = "${usedLinkedProjectRelation == null}">checked="checked"</c:if>
+                                        <c:if test = "${usedLinkedProjectRelation != null and (fn:contains(usedLinkedProjectRelation, projectRelation))}">checked="checked"</c:if>
+                                        value="${projectRelation}">
+                                        <sw360:DisplayEnum value='${projectRelation}' bare="true" /> </input>
+                                    </label>
+                                </div>
+                            </c:forEach>
+                        </div>
+                    </c:if>
 						<c:if test="${not empty externalIds}">
 								<div class="form-group form-check">
 									<label for="externalIdLabel" class="font-weight-bold h3"><liferay-ui:message key="select.the.external.ids" />:</label>
@@ -128,6 +145,7 @@ require(['jquery', 'modules/dialog'], function($, dialog) {
         var licenseInfoSelectedOutputFormat = $('input[name="outputFormat"]:checked').val();
         var externalIds = [];
         var releaseRelations = [];
+        var selectedProjectRelations = [];
         $.each($("input[name='externalIdsSelection']:checked"), function(){
             externalIds.push($(this).val());
         });
@@ -138,13 +156,23 @@ require(['jquery', 'modules/dialog'], function($, dialog) {
         });
         var releaseRelationsHidden = releaseRelations.join();
 
+        $.each($("input[name='projectRelationSelection']:checked"), function(){
+            selectedProjectRelations.push($(this).val());
+        });
+        var selectedProjectRelationsHidden = selectedProjectRelations.join();
+
         $('#downloadLicenseInfoForm').append('<input id="extIdHidden" type="hidden" name="<portlet:namespace/><%=PortalConstants.EXTERNAL_ID_SELECTED_KEYS%>"/>');
         $('#downloadLicenseInfoForm').append('<input id="licensInfoFileFormat" type="hidden" name="<portlet:namespace/><%=PortalConstants.LICENSE_INFO_SELECTED_OUTPUT_FORMAT%>"/>');
         $('#downloadLicenseInfoForm').append('<input id="releaseRelationship" type="hidden" name="<portlet:namespace/><%=PortalConstants.SELECTED_PROJECT_RELEASE_RELATIONS%>"/>');
+        $('#downloadLicenseInfoForm').append('<input id="selectedProjectRelations" type="hidden" name="<portlet:namespace/><%=PortalConstants.SELECTED_PROJECT_RELATIONS%>"/>');
+        $('#downloadLicenseInfoForm').append('<input id="isSubProjPresent" type="hidden" name="<portlet:namespace/><%=PortalConstants.IS_LINKED_PROJECT_PRESENT%>"/>');
+
 
         $("#extIdHidden").val(extIdsHidden);
         $("#licensInfoFileFormat").val(licenseInfoSelectedOutputFormat);
         $("#releaseRelationship").val(releaseRelationsHidden);
+        $("#selectedProjectRelations").val(selectedProjectRelationsHidden);
+        $("#isSubProjPresent").val(${not empty linkedProjectRelation});
 
         $('#downloadLicenseInfoForm').submit();
     }
