@@ -209,6 +209,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             }
             request.setAttribute(CLEARING_REQUEST, clearingRequest);
             request.setAttribute(WRITE_ACCESS_USER, false);
+            request.setAttribute(IS_CLEARING_EXPERT, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_EXPERT, user));
 
             if (CommonUtils.isNotNullEmptyOrWhitespace(clearingRequest.getProjectId()) ) {
                 ProjectService.Iface projectClient = thriftClients.makeProjectClient();

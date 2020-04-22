@@ -26,6 +26,7 @@
 <jsp:useBean id="clearingRequest" class="org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest" scope="request"/>
 <jsp:useBean id="project" class="java.lang.String" scope="request"/>
 <jsp:useBean id="writeAccessUser" type="java.lang.Boolean" scope="request"/>
+<jsp:useBean id="isClearingExpert" type="java.lang.Boolean" scope="request"/>
 <jsp:useBean id="printDate" class="java.util.Date"/>
 
 <core_rt:if test="${not empty clearingRequest.id}">
@@ -53,7 +54,7 @@
 <core_rt:set var="pageName"  value="<%= request.getParameter("pagename") %>" />
 <core_rt:set var="user" value="<%=themeDisplay.getUser()%>"/>
 <core_rt:set var="isRequestingUser" value='${clearingRequest.requestingUser eq user.emailAddress}'/>
-<core_rt:set var="isClearingTeam" value='${clearingRequest.clearingTeam eq user.emailAddress}'/>
+<core_rt:set var="isClearingTeam" value='${clearingRequest.clearingTeam eq user.emailAddress or isClearingExpert}'/>
 <core_rt:set var="isClosedOrRejected" value="${clearingRequest.clearingState eq 'CLOSED' or clearingRequest.clearingState eq 'REJECTED' or empty project}"/>
 <core_rt:set var="isEditableForClearingTeam" value="${isClearingTeam and not isClosedOrRejected and pageName eq 'editClearingRequest'}"/>
 
