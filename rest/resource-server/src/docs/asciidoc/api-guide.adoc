@@ -17,6 +17,10 @@ Documentation; Version {project-version}
 :toclevels: 3
 :sectlinks:
 :numbered:
+:iconfont-remote!:
+:stylesdir: fontawesome-5.13.0-web/css
+:iconfont-name: fontawesome.min
+:highlightjsdir: highlight
 
 [[overview]]
 == Overview
