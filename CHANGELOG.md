@@ -4,6 +4,23 @@ This is the changelog file of the sw360 project. It starts with the first releas
 
 https://github.com/sw360/sw360portal/releases
 
+## sw360-8.2.0-M2
+
+Although there are only few commits listed below for this release, the change from 8.1 to 8.2 is huge: sw360 supports now an UI which can be extended with different languages.
+
+With the initial pull request, the English and Vietnamese languages is supported. More languages can be supported. For this, a translation file must be added. Please see `README_LANG.md` in the root level of the project directory for more details.
+
+Many thanks to the colleagues at Toshiba for providing this big feature to the community.
+
+### Features
+
+* `8bd91be` feat: SW360 support multi-language update after review                                                  
+* `994ad5c` feat: SW360 support multi-language                                                  
+
+### Corrections
+
+* `ae45236` fix(mergeUI): Provided fix for error message on merge component, release, vendor.
+
 ## sw360-8.1.0-M1
 
 A version upgrade is justified, because of a number of new features have been integrated: FOSSology scans can be now triggered over the SW360 REST API. By this feature, an upload, for example from sw360antenna, could also trigger the FOSSology scan right away. It requires FOSSology being integrated with sw360.
