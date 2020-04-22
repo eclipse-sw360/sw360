@@ -15,6 +15,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
+import org.osgi.service.component.*;
 import org.osgi.service.component.annotations.*;
 
 import java.util.Hashtable;
@@ -31,16 +32,16 @@ public class DynamicComponentManager extends LoggingComponent {
     private List<Configuration> activatedConfigurations = Lists.newArrayList();
 
     @Activate
-    protected synchronized void activate() {
+    protected synchronized void activate(ComponentContext compContext) {
         super.activate();
 
         Properties properties = CommonUtils.loadProperties(DynamicComponentManager.class, PROPERTIES_FILE_PATH);
 
         String components = properties.getProperty("components.activate");
-        activateComponents(components.split("\\s*,\\s*"));
+        activateComponents(components.split("\\s*,\\s*"), compContext);
 
         String portlets = properties.getProperty("portlets.activate");
-        activateComponents(portlets.split("\\s*,\\s*"));
+        activateComponents(portlets.split("\\s*,\\s*"), compContext);
     }
 
     @Deactivate
@@ -49,7 +50,7 @@ public class DynamicComponentManager extends LoggingComponent {
         super.deactivate();
     }
 
-    private void activateComponents(String[] components) {
+    private void activateComponents(String[] components, ComponentContext compContext) {
         for (String component : components) {
             if(component.trim().isEmpty()) {
                 continue;
@@ -62,6 +63,7 @@ public class DynamicComponentManager extends LoggingComponent {
                     Hashtable<String, Object> componentProperties = new Hashtable<>();
                     componentProperties.put("enabled", true);
                     configuration.update(componentProperties);
+                    compContext.enableComponent(component);
 
                     activatedConfigurations.add(configuration);
                 } else {
