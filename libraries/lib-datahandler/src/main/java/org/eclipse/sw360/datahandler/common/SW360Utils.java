@@ -387,6 +387,28 @@ public class SW360Utils {
         return result;
     }
 
+    public static Collection<ProjectLink> getLinkedProjectsAsFlatList(Project project, boolean deep,
+            ThriftClients thriftClients, Logger log, User user,
+            Set<ProjectRelationship> selectedProjectRelationAsList) {
+        Collection<ProjectLink> linkedProjects = getLinkedProjects(project, deep, thriftClients, log, user);
+        if (CommonUtils.isNotEmpty(linkedProjects)) {
+            filteredListOfLinkedProject(linkedProjects.iterator().next().getSubprojects(),
+                    selectedProjectRelationAsList);
+        }
+        return flattenProjectLinkTree(linkedProjects);
+    }
+
+    public static void filteredListOfLinkedProject(Collection<ProjectLink> linkedProjects,
+            Set<ProjectRelationship> selectedProjectRelationAsList) {
+        if (CommonUtils.isNotEmpty(linkedProjects)) {
+            Collection<ProjectLink> linkedProjectsFiltered=linkedProjects.stream()
+                    .filter(projectLink -> selectedProjectRelationAsList.contains(projectLink.getRelation())).collect(Collectors.toSet());
+            linkedProjects.retainAll(linkedProjectsFiltered);
+            linkedProjects.forEach(projectLink -> filteredListOfLinkedProject(projectLink.getSubprojects(),
+                            selectedProjectRelationAsList));
+        }
+    }
+
     public static List<ReleaseLink> getLinkedReleases(Project project, ThriftClients thriftClients, Logger log) {
         if (project != null && project.getReleaseIdToUsage() != null) {
             try {
