@@ -295,7 +295,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             jsonGenerator.writeStartObject();
             jsonGenerator.writeStringField(RESULT, requestSummary.getRequestStatus().toString());
             if (AddDocumentRequestStatus.FAILURE.equals(requestSummary.getRequestStatus())) {
-                jsonGenerator.writeStringField("message", requestSummary.getMessage());
+                ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+                jsonGenerator.writeStringField("message", LanguageUtil.get(resourceBundle, requestSummary.getMessage().replace(' ','.').toLowerCase()));
             } else {
                 jsonGenerator.writeStringField(CLEARING_REQUEST_ID, requestSummary.getId());
             }
@@ -642,15 +643,12 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
             JSONArray jsonResponse = createJSONArray();
             ThriftJsonSerializer thriftJsonSerializer = new ThriftJsonSerializer();
-            final boolean isNotClearingAdmin = !PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user);
             for (Project project : projects) {
                 try {
                     JSONObject row = createJSONObject();
                     row.put("id", project.getId());
                     row.put("clearing", JsonHelpers.toJson(project.getReleaseClearingStateSummary(), thriftJsonSerializer));
-                    if (isNotClearingAdmin) {
-                        row.put(WRITE_ACCESS_USER, PermissionUtils.makePermission(project, user).isActionAllowed(RequestedAction.WRITE));
-                    }
+                    row.put(WRITE_ACCESS_USER, PermissionUtils.makePermission(project, user).isActionAllowed(RequestedAction.WRITE));
                     ProjectClearingState clearingState = project.getClearingState();
                     if (clearingState == null) {
                         row.put("clearingstate", "Unknown");
@@ -1013,7 +1011,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         List<Organization> organizations = UserUtils.getOrganizations(request);
         request.setAttribute(PortalConstants.ORGANIZATIONS, organizations);
         request.setAttribute(IS_USER_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user) ? "Yes" : "No");
-        request.setAttribute(IS_USER_AT_LEAST_CLEARING_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user));
         for (Project._Fields filteredField : projectFilteredFields) {
             String parameter = request.getParameter(filteredField.toString());
             request.setAttribute(filteredField.getFieldName(), nullToEmpty(parameter));

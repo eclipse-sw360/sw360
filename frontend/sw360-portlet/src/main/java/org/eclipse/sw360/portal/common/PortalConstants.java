@@ -125,6 +125,7 @@ public class PortalConstants {
     public static final String PAGENAME_EDIT_CLEARING_REQUEST = "editClearingRequest";
     public static final String ADD_COMMENT = "addComment";
     public static final String CLEARING_REQUEST_COMMENT = "clearingRequestComment";
+    public static final String RE_OPEN_REQUEST = "reOpenRequest";
 
 
     //! Specialized keys for components
