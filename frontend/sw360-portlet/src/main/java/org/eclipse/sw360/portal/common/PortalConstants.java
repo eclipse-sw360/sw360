@@ -438,6 +438,8 @@ public class PortalConstants {
     public static final String LOAD_SOURCE_PACKAGE_ATTACHMENT_USAGE = "LoadSourcePackageAttachmentUsage";
     public static final String LOAD_PROJECT_LIST = "load_project_list";
     public static final String REMOVE_ORPHAN_OBLIGATION = "RemoveOrphanObligation";
+    public static final String LIST_CLEARING_STATUS = "listClearingStatus";
+    public static final String CLEARING_STATUS_ON_LOAD = "clearingStatusOnLoad";
 
     //component actions
     public static final String ADD_VENDOR = "add_vendor";

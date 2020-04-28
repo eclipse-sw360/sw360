@@ -11,7 +11,10 @@ package org.eclipse.sw360.portal.portlets;
 
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
+import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -31,7 +34,9 @@ import javax.portlet.ResourceResponse;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -40,6 +45,7 @@ import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyString;
+import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.portal.common.PortalConstants.PARENT_BRANCH_ID;
 import static org.eclipse.sw360.portal.common.PortalConstants.PROJECT_LIST;
 import static org.eclipse.sw360.portal.common.PortalConstants.RELEASE_LIST;
@@ -52,7 +58,6 @@ import static org.eclipse.sw360.portal.common.PortalConstants.RELEASE_LIST;
 public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAwarePortlet {
 
     private static final Logger log = Logger.getLogger(LinkedReleasesAndProjectsAwarePortlet.class);
-
     protected LinkedReleasesAndProjectsAwarePortlet() {
         this(new ThriftClients());
     }
@@ -82,6 +87,13 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
 
     protected void dealWithLinkedObjects(ResourceRequest request, ResourceResponse response, String action) throws PortletException, IOException {
         if (PortalConstants.LOAD_LINKED_PROJECTS_ROWS.equals(action)) {
+            boolean overrideToRelease = Boolean.parseBoolean(request.getParameter("overrideToRelease"));
+            if (overrideToRelease) {
+                loadLinkedReleasesRows(request, response);
+                include("/html/utils/ajax/linkedReleasesClearingStatusRows.jsp", request, response,
+                        PortletRequest.RESOURCE_PHASE);
+                return;
+            }
             serveLoadLinkedProjectsRows(request, response);
         } else if (PortalConstants.LOAD_LINKED_RELEASES_ROWS.equals(action)) {
             serveLoadLinkedReleasesRows(request, response);
@@ -165,9 +177,15 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         } else {
             project = new Project();
         }
-
+        ComponentService.Iface compClient = thriftClients.makeComponentClient();
         List<ProjectLink> mappedProjectLinks = createLinkedProjects(project, user);
+
+        Set<String> releaseIds = mappedProjectLinks.stream().map(ProjectLink::getLinkedReleases)
+                .filter(CommonUtils::isNotEmpty).flatMap(rList -> rList.stream()).filter(Objects::nonNull)
+                .map(ReleaseLink::getId).collect(Collectors.toSet());
         request.setAttribute(PROJECT_LIST, mappedProjectLinks);
+        request.setAttribute("projectReleaseRelation", project.getReleaseIdToUsage());
+        request.setAttribute("relMainLineState", fillMainLineState(releaseIds, compClient, user));
         request.setAttribute(PortalConstants.PARENT_SCOPE_GROUP_ID, request.getParameter(PortalConstants.PARENT_SCOPE_GROUP_ID));
     }
 
@@ -177,13 +195,19 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
     }
 
     protected void serveLoadLinkedReleasesRows(ResourceRequest request, ResourceResponse response) throws PortletException, IOException {
+        loadLinkedReleasesRows(request, response);
+        include("/html/utils/ajax/linkedReleasesRows.jsp", request, response, PortletRequest.RESOURCE_PHASE);
+    }
+
+    private void loadLinkedReleasesRows(ResourceRequest request, ResourceResponse response)
+            throws PortletException, IOException {
         final User user = UserCacheHolder.getUserFromRequest(request);
         String branchId = request.getParameter(PARENT_BRANCH_ID);
         request.setAttribute(PARENT_BRANCH_ID, branchId);
+        ComponentService.Iface client = thriftClients.makeComponentClient();
         if (branchId != null) {
             String id = branchId.split("_")[0];
             try {
-                ComponentService.Iface client = thriftClients.makeComponentClient();
                 Release release = client.getReleaseById(id, user);
                 putDirectlyLinkedReleaseRelationsInRequest(request, release);
             } catch (TException e) {
@@ -193,8 +217,18 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         } else {
             putDirectlyLinkedReleaseRelationsInRequest(request, new Release());
         }
-
+        List<ReleaseLink> releaseLinkList = (List<ReleaseLink>) request.getAttribute(RELEASE_LIST);
+        Set<String> releaseIds = releaseLinkList.stream().map(ReleaseLink::getId).collect(Collectors.toSet());
+        request.setAttribute("relMainLineState", fillMainLineState(releaseIds, client, user));
         request.setAttribute(PortalConstants.PARENT_SCOPE_GROUP_ID, request.getParameter(PortalConstants.PARENT_SCOPE_GROUP_ID));
-        include("/html/utils/ajax/linkedReleasesRows.jsp", request, response, PortletRequest.RESOURCE_PHASE);
+    }
+
+    public Map<String, String> fillMainLineState(Set<String> releaseIds, ComponentService.Iface client, User user) {
+        Map<String, String> relMainLineState = new HashMap<>();
+        releaseIds.stream().forEach(releaseId -> wrapTException(() -> {
+            MainlineState releaseMainlineState = client.getReleaseById(releaseId, user).getMainlineState();
+            relMainLineState.put(releaseId, ThriftEnumUtils.enumToString(releaseMainlineState));
+        }));
+        return relMainLineState;
     }
 }
