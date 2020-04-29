@@ -392,6 +392,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         // check for MainlineState change
         setMainlineState(release, user, null);
+        if (release.getClearingState() == null) {
+            release.setClearingState(ClearingState.NEW_CLEARING);
+        }
         // Add release to database
         releaseRepository.add(release);
         final String id = release.getId();
@@ -842,6 +845,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 deleteAttachmentUsagesOfUnlinkedReleases(release, actual);
                 // check for MainlineState change
                 setMainlineState(release, user, actual);
+                if (release.getClearingState() == null) {
+                    release.setClearingState(ClearingState.NEW_CLEARING);
+                }
                 releaseRepository.update(release);
                 updateReleaseDependentFieldsForComponentId(release.getComponentId());
                 // clean up attachments in database
