@@ -648,7 +648,7 @@
                 portletURL.setParameter('<%=Project._Fields.TYPE%>', $('#project_type').val());
                 portletURL.setParameter('<%=Project._Fields.PROJECT_RESPONSIBLE%>', $('#project_responsible').val());
                 portletURL.setParameter('<%=Project._Fields.BUSINESS_UNIT%>', $('#group').val());
-                portletURL.setParameter('<%=Project._Fields.STATE%>', $('#state').val());
+                portletURL.setParameter('<%=Project._Fields.STATE%>', $('#project_state').val());
                 portletURL.setParameter('<%=Project._Fields.TAG%>', $('#tag').val());
                 portletURL.setParameter('<%=PortalConstants.EXTENDED_EXCEL_EXPORT%>', type === 'projectWithReleases' ? 'true' : 'false');
 
