@@ -18,6 +18,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.portal.common.PortalConstants;
@@ -33,6 +34,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -107,6 +109,14 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
     protected List<ProjectLink> createLinkedProjects(Project project, Function<ProjectLink, ProjectLink> projectLinkMapper, boolean deep,
             User user) {
         final Collection<ProjectLink> linkedProjects = SW360Utils.getLinkedProjectsAsFlatList(project, deep, thriftClients, log, user);
+        return linkedProjects.stream().map(projectLinkMapper).collect(Collectors.toList());
+    }
+
+    protected List<ProjectLink> createLinkedProjects(Project project,
+            Function<ProjectLink, ProjectLink> projectLinkMapper, boolean deep, User user,
+            Set<ProjectRelationship> selectedProjectRelationAsList) {
+        final Collection<ProjectLink> linkedProjects = SW360Utils.getLinkedProjectsAsFlatList(project, deep,
+                thriftClients, log, user, selectedProjectRelationAsList);
         return linkedProjects.stream().map(projectLinkMapper).collect(Collectors.toList());
     }
 

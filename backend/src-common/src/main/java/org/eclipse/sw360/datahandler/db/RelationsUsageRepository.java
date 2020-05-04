@@ -18,16 +18,16 @@ import org.ektorp.ViewQuery;
 import org.ektorp.support.View;
 
 /**
- * CRUD access for the ReleaseRelationsUsageRepository class
+ * CRUD access for the RelationsUsageRepository class
  *
  * @author smruti.sahoo@siemens.com
  *
  */
 
 @View(name = "all", map = "function(doc) { if (doc.type == 'usedReleaseRelation') emit(null, doc._id); }")
-public class ReleaseRelationsUsageRepository extends DatabaseRepository<UsedReleaseRelations> {
+public class RelationsUsageRepository extends DatabaseRepository<UsedReleaseRelations> {
 
-    public ReleaseRelationsUsageRepository(DatabaseConnector db) {
+    public RelationsUsageRepository(DatabaseConnector db) {
         super(UsedReleaseRelations.class, db);
         initStandardDesignDocument();
     }

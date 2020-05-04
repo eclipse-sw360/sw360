@@ -30,7 +30,8 @@ import javax.servlet.http.HttpServletResponse;
         "key=servlet.service.events.pre"
     },
     service = LifecycleAction.class,
-    configurationPolicy = ConfigurationPolicy.REQUIRE
+    configurationPolicy = ConfigurationPolicy.REQUIRE,
+    enabled = false
 )
 public class FossologyCheckConnectionOnStartupHook extends Action {
     protected final Logger log = Logger.getLogger(getClass());
@@ -48,7 +49,7 @@ public class FossologyCheckConnectionOnStartupHook extends Action {
 		}
 	}
 
-	@Activate
+    @Activate
     protected void activate() {
         log.info("Component [" + getClass().getCanonicalName() + "] has been ENABLED.");
     }

@@ -26,6 +26,7 @@
 <jsp:useBean id="clearingRequest" class="org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest" scope="request"/>
 <jsp:useBean id="project" class="java.lang.String" scope="request"/>
 <jsp:useBean id="writeAccessUser" type="java.lang.Boolean" scope="request"/>
+<jsp:useBean id="isClearingExpert" type="java.lang.Boolean" scope="request"/>
 <jsp:useBean id="printDate" class="java.util.Date"/>
 
 <core_rt:if test="${not empty clearingRequest.id}">
@@ -37,7 +38,8 @@
 </portlet:actionURL>
 
 <portlet:renderURL var="cancelURL">
-    <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_VIEW%>" />
+    <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_DETAIL_CLEARING_REQUEST%>" />
+    <portlet:param name="<%=PortalConstants.CLEARING_REQUEST_ID%>" value="${clearingRequestId}"/>
 </portlet:renderURL>
 
 <portlet:renderURL var="editlURL">
@@ -52,8 +54,9 @@
 
 <core_rt:set var="pageName"  value="<%= request.getParameter("pagename") %>" />
 <core_rt:set var="user" value="<%=themeDisplay.getUser()%>"/>
+<core_rt:set var="isProjectPresent" value='${not empty project}'/>
 <core_rt:set var="isRequestingUser" value='${clearingRequest.requestingUser eq user.emailAddress}'/>
-<core_rt:set var="isClearingTeam" value='${clearingRequest.clearingTeam eq user.emailAddress}'/>
+<core_rt:set var="isClearingTeam" value='${clearingRequest.clearingTeam eq user.emailAddress or isClearingExpert}'/>
 <core_rt:set var="isClosedOrRejected" value="${clearingRequest.clearingState eq 'CLOSED' or clearingRequest.clearingState eq 'REJECTED' or empty project}"/>
 <core_rt:set var="isEditableForClearingTeam" value="${isClearingTeam and not isClosedOrRejected and pageName eq 'editClearingRequest'}"/>
 
@@ -61,17 +64,22 @@
 <div class="row portlet-toolbar">
     <div class="col-auto">
         <div class="btn-toolbar" role="toolbar">
-            <core_rt:if test="${pageName eq 'detailClearingRequest' and not empty project and isClearingTeam and not isClosedOrRejected}">
+            <core_rt:if test="${pageName eq 'detailClearingRequest' and isProjectPresent and isClearingTeam and not isClosedOrRejected}">
                 <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-primary" onclick="window.location.href='<%=editlURL%>' + window.location.hash">Edit Request</button>
+                    <button type="button" class="btn btn-primary" onclick="window.location.href='<%=editlURL%>' + window.location.hash"><liferay-ui:message key="edit.request" /></button>
+                </div>
+            </core_rt:if>
+            <core_rt:if test="${isProjectPresent and isClosedOrRejected and writeAccessUser}">
+                <div class="btn-group" role="group">
+                    <button type="button" id="reOpenRequest" class="btn btn-primary"><liferay-ui:message key="reopen.request" /></button>
                 </div>
             </core_rt:if>
             <core_rt:if test="${isEditableForClearingTeam}">
 	           <div class="btn-group" role="group">
-	               <button type="button" id="formSubmit" class="btn btn-primary">Update Request</button>
+	               <button type="button" id="formSubmit" class="btn btn-primary"><liferay-ui:message key="update.request" /></button>
 	           </div>
 	           <div class="btn-group" role="group">
-                   <button type="button" class="btn btn-light" onclick="window.location.href='<%=cancelURL%>' + window.location.hash">Cancel</button>
+                   <button type="button" class="btn btn-light" onclick="window.location.href='<%=cancelURL%>' + window.location.hash"><liferay-ui:message key="cancel" /></button>
                </div>
 	        </core_rt:if>
         </div>
@@ -91,11 +99,11 @@
                             <button class="btn btn-secondary btn-block" type="button" data-toggle="collapse" data-target="#clearing-header" aria-expanded="true" aria-controls="clearing-header">
                                 <svg class="lexicon-icon"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle"/></svg>
                                 <core_rt:choose>
-                                    <core_rt:when test="${not empty project}">
-                                        Clearing request information for project: <a href="<sw360:DisplayProjectLink projectId="${clearingRequest.projectId}" bare="true" />"><sw360:out value="${project}" maxChar="50"/></a>
+                                    <core_rt:when test="${isProjectPresent}">
+                                        <liferay-ui:message key="clearing.request.information.for.project" />: <a href="<sw360:DisplayProjectLink projectId="${clearingRequest.projectId}" bare="true" />"><sw360:out value="${project}" maxChar="50"/></a>
                                     </core_rt:when>
                                     <core_rt:otherwise>
-                                        Clearing request information for DELETED project:
+                                        <liferay-ui:message key="clearing.request.information.for.deleted.project" />:
                                     </core_rt:otherwise>
                                 </core_rt:choose>
                             </button>
@@ -108,31 +116,31 @@
                                     <table class="table label-value-table mt-2" id="clearingRequestData">
                                         <thead>
                                             <tr>
-                                                <th colspan="2">Clearing Request</th>
+                                                <th colspan="2"><liferay-ui:message key="clearing.request" /></th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <tr>
-                                                <td><label class="form-group">Requesting user:</label></td>
+                                                <td><label class="form-group"><liferay-ui:message key="requesting.user" />:</label></td>
                                                 <td><sw360:DisplayUserEmail email="${clearingRequest.requestingUser}" /></td>
                                             </tr>
                                             <tr>
-                                                <td><label class="form-group">Request submitted on:</label></td>
+                                                <td><label class="form-group"><liferay-ui:message key="request.submitted.on" />:</label></td>
                                                 <td>
                                                     <jsp:setProperty name="printDate" property="time" value="${clearingRequest.timestamp}"/>
                                                     <fmt:formatDate value="${printDate}" pattern="yyyy-MM-dd"/>
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td><label class="form-group">Requested clearing date:</label></td>
+                                                <td><label class="form-group"><liferay-ui:message key="requested.clearing.date" />:</label></td>
                                                 <td><sw360:out value="${clearingRequest.requestedClearingDate}" bare="true"/></td>
                                             </tr>
                                             <tr>
-                                                <td><label class="form-group">Project BU:</label></td>
+                                                <td><label class="form-group"><liferay-ui:message key="project.bu" />:</label></td>
                                                 <td><sw360:out value="${clearingRequest.projectBU}" bare="true"/></td>
                                             </tr>
                                             <tr>
-                                                <td><label class="form-group">Requester comment:</label></td>
+                                                <td><label class="form-group"><liferay-ui:message key="requester.comment" />:</label></td>
                                                 <td><sw360:out value="${clearingRequest.requestingUserComment}" bare="true"/></td>
                                             </tr>
                                         </tbody>
@@ -142,12 +150,12 @@
                                     <table class="table label-value-table mt-2" id="clearingDecisionData">
                                         <thead>
                                             <tr>
-                                                <th colspan="2">Clearing Decision</th>
+                                                <th colspan="2"><liferay-ui:message key="clearing.decision" /></th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <tr>
-                                                <td><label class="form-group">Status:</label></td>
+                                                <td><label class="form-group"><liferay-ui:message key="request.status" />:</label></td>
                                                 <td>
                                                 <core_rt:choose>
                                                     <core_rt:when test="${isEditableForClearingTeam}">
@@ -157,7 +165,7 @@
                                                         </select>
                                                         <small class="form-text">
                                                             <sw360:DisplayEnumInfo type="<%=ClearingRequestState.class%>"/>
-                                                            Learn more about clearing request status.
+                                                            <liferay-ui:message key="learn.more.about.clearing.request.status" />
                                                         </small>
                                                     </core_rt:when>
                                                     <core_rt:otherwise>
@@ -167,19 +175,19 @@
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td><label class="form-group">Clearing team:</label></td>
+                                                <td><label class="form-group"><liferay-ui:message key="clearing.team" />:</label></td>
                                                 <td><sw360:DisplayUserEmail email="${clearingRequest.clearingTeam}" /></td>
                                             </tr>
                                             <tr>
                                                 <td>
-                                                    <label class="form-group <core_rt:if test='${isEditableForClearingTeam}'> mandatory</core_rt:if>">Agreed clearing date:</label>
+                                                    <label class="form-group <core_rt:if test='${isEditableForClearingTeam}'> mandatory</core_rt:if>"><liferay-ui:message key="agreed.clearing.date" />:</label>
                                                 </td>
                                                 <td>
                                                 <core_rt:choose>
                                                     <core_rt:when test="${isEditableForClearingTeam}">
                                                         <input class="form-control datepicker" required
                                                             name="<portlet:namespace/><%=ClearingRequest._Fields.AGREED_CLEARING_DATE%>" type="text" pattern="\d{4}-\d{2}-\d{2}"
-                                                            value="<sw360:out value="${clearingRequest.agreedClearingDate}"/>" placeholder="Agreed clearing date YYYY-MM-DD"/>
+                                                            value="<sw360:out value="${clearingRequest.agreedClearingDate}"/>" placeholder="<liferay-ui:message key='agreed.clearing.date.yyyy.mm.dd' />" />
                                                     </core_rt:when>
                                                     <core_rt:otherwise>
                                                         <sw360:out value="${clearingRequest.agreedClearingDate}" bare="true"/>
@@ -189,7 +197,7 @@
                                             </tr>
                                             <core_rt:if test="${clearingRequest.isSetTimestampOfDecision()}">
                                                 <tr>
-                                                    <td><label class="form-group">Request closed on:</label></td>
+                                                    <td><label class="form-group"><liferay-ui:message key="request.closed.on" />:</label></td>
                                                     <td>
                                                         <jsp:setProperty name="printDate" property="time" value="${clearingRequest.timestampOfDecision}"/>
                                                         <fmt:formatDate value="${printDate}" pattern="yyyy-MM-dd"/>
@@ -199,13 +207,14 @@
                                             <tr>
                                                 <td>
                                                     <label class="form-group">
-                                                        Comment on clearing decision:
+                                                        <liferay-ui:message key="comment.on.clearing.decision" />:
                                                     </label>
                                                 </td>
                                                 <td>
                                                 <core_rt:choose>
                                                     <core_rt:when test="${isEditableForClearingTeam and empty clearingRequest.clearingTeamComment}">
-                                                        <textarea name="<portlet:namespace/><%=ClearingRequest._Fields.CLEARING_TEAM_COMMENT%>" placeholder="Comment your decision..."
+                                                        <textarea name="<portlet:namespace/><%=ClearingRequest._Fields.CLEARING_TEAM_COMMENT%>"
+                                                            placeholder="<liferay-ui:message key='comment.your.decision' />"
                                                             class="form-control"><sw360:out value="${clearingRequest.clearingTeamComment}" /></textarea>
                                                     </core_rt:when>
                                                     <core_rt:otherwise>
@@ -227,7 +236,7 @@
                     <h2 class="mb-0">
                         <button class="btn btn-secondary btn-block" type="button" data-toggle="collapse" data-target="#clearing-comments" aria-expanded="false" aria-controls="clearing-comments">
                             <svg class="lexicon-icon"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#comments"/></svg>
-                                Clearing request comments: <span id="commentCount" class="badge badge-light text-dark"><sw360:out default="(0)" value="(${not empty clearingRequest.comments ? clearingRequest.comments.size() : '0'})"/></span>
+                                <liferay-ui:message key="clearing.request.comments" />: <span id="commentCount" class="badge badge-light text-dark"><sw360:out default="(0)" value="(${not empty clearingRequest.comments ? clearingRequest.comments.size() : '0'})"/></span>
                         </button>
                     </h2>
                 </div>
@@ -236,7 +245,7 @@
                         <div class="m-auto">
                             <table class="table label-value-table mt-2" id="clearingCommentsTable">
                                 <thead>
-                                    <tr><th>Comments</th></tr>
+                                    <tr><th><liferay-ui:message key="comments" /></th></tr>
                                 <thead>
                                 <tbody>
                                     <core_rt:forEach items="${clearingRequest.comments}" var="comment" varStatus="loop">
@@ -257,8 +266,8 @@
                                                 <div class="m-auto row">
                                                     <div class="col-0 user-icon user-icon-info text-uppercase"><span>${iconText}</span></div>
                                                     <div class="col-11">
-                                                        <div class="comment-text"><sw360:out value="${comment.text}" stripNewlines="false" bare="true"/></div>
-                                                            <footer class="blockquote-footer">by <cite><b><sw360:DisplayUserEmail email="${by}"/></b></cite> on <cite>
+                                                        <div class="comment-text"><core_rt:if test="${comment.autoGenerated}"> <liferay-ui:message key="this.is.auto.generated.comment" /></core_rt:if>${comment.text}</div>
+                                                            <footer class="blockquote-footer"><liferay-ui:message key="by" /> <cite><b><sw360:DisplayUserEmail email="${by}"/></b></cite> <liferay-ui:message key="on" /> <cite>
                                                                 <b><fmt:formatDate value="${printDate}" pattern="yyyy-MM-dd HH:mm"/></b></cite>
                                                             </footer>
                                                     </div>
@@ -268,12 +277,12 @@
                                         </core_rt:forEach>
                                         <tr>
                                             <td>
-                                                <core_rt:if test="${not empty project and (isClearingTeam or writeAccessUser)}">
-	                                                <textarea id="clearingRequestComment" placeholder="Enter comment..." class="h-25 form-control"></textarea>
-	                                                <div class="mt-3 btn-group" role="group">
-	                                                    <button id="addComment" type="button" class="btn btn-success">Add comment</button>
+                                                <core_rt:if test="${isProjectPresent and (isClearingTeam or writeAccessUser)}">
+	                                                <textarea id="clearingRequestComment" placeholder="<liferay-ui:message key='enter.comment' />..." class="h-25 form-control"></textarea>
+	                                                <div class="my-2 btn-group" role="group">
+	                                                    <button id="addComment" type="button" class="btn btn-success"><liferay-ui:message key='add.comment' /></button>
 	                                                </div>
-	                                                <span id="addCommentStatusMessage" class="my-0 mb-0 alert alert-danger" style="display: none;"></span>
+	                                                <span id="addCommentStatusMessage" class="py-2 my-2 alert alert-danger" style="display: none;"></span>
                                                 </core_rt:if>
                                             </td>
                                         </tr>
@@ -345,17 +354,33 @@ require(['jquery', 'modules/dialog', 'modules/validation', 'bridges/jquery-ui' ]
                                     +'<div class="m-auto row">'
                                     +'<div class="col-0 user-icon user-icon-info text-uppercase"><span>'+iconText+'</span></div>'
                                     +'<div class="col-11">'
-                                    +'<div class="comment-text">' + comment +'<footer class="blockquote-footer">by <cite><b>'+by+'</b></cite> on <cite><b>'+on+'</b></cite></footer></div>'
+                                    +'<div class="comment-text">' + comment +'<footer class="blockquote-footer">'
+                                    +'<liferay-ui:message key="by" /> <cite><b>' + by + '</b></cite>'
+                                    +'<liferay-ui:message key="on" /> <cite><b>' + on + '</b></cite></footer></div>'
                                     +'</div></div>'
                                 +'</td></tr>');
                 }
                 else {
-                    displayErrorMessage('Failed to add comment!');
+                    displayErrorMessage('<liferay-ui:message key="failed.to.add.comment" />');
                 }
             },
             error: function () {
-                displayErrorMessage('Error addimng comment to clearing request!');
+                displayErrorMessage('<liferay-ui:message key="error.adding.comment.to.clearing.request" />!');
             }
+        });
+    });
+
+    /* Add event listener for re opening the CR */
+    $("#reOpenRequest").on("click", function (event) {
+        $dialog = dialog.confirm('info',
+                    'question-circle',
+                    '<liferay-ui:message key="reopen.clearing.request" />?',
+                    '<p><liferay-ui:message key="clearing.request.will.be.reopened.in.new.state" /></p>',
+                    '<liferay-ui:message key="reopen.clearing.request" />',
+                    {},
+                function(submit, callback) {
+                    $('#updateCRForm').append('<input type="hidden" value="true" name="<portlet:namespace/><%=PortalConstants.RE_OPEN_REQUEST%>"/>');
+                    $('#updateCRForm').submit();
         });
     });
 

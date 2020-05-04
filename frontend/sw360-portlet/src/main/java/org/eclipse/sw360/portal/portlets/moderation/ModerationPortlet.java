@@ -209,6 +209,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             }
             request.setAttribute(CLEARING_REQUEST, clearingRequest);
             request.setAttribute(WRITE_ACCESS_USER, false);
+            request.setAttribute(IS_CLEARING_EXPERT, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_EXPERT, user));
 
             if (CommonUtils.isNotNullEmptyOrWhitespace(clearingRequest.getProjectId()) ) {
                 ProjectService.Iface projectClient = thriftClients.makeProjectClient();
@@ -226,6 +227,10 @@ public class ModerationPortlet extends FossologyAwarePortlet {
     @UsedAsLiferayAction
     public void updateClearingRequest(ActionRequest request, ActionResponse response) throws PortletException, IOException {
         RequestStatus requestStatus = requestStatus = ModerationPortletUtils.updateClearingRequest(request, log);
+        if (RequestStatus.SUCCESS.equals(requestStatus)) {
+            response.setRenderParameter(CLEARING_REQUEST_ID, request.getParameter(CLEARING_REQUEST_ID));
+            response.setRenderParameter(PAGENAME, PAGENAME_DETAIL_CLEARING_REQUEST);
+        }
         ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         setSessionMessage(request, requestStatus, LanguageUtil.get(resourceBundle,"clearing.request"), "update");
     }
@@ -385,6 +390,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
 
         try {
             Set<ClearingRequest> clearingRequestsSet = client.getMyClearingRequests(user);
+            clearingRequestsSet.addAll(client.getClearingRequestsByBU(user.getDepartment()));
 
             Map<Boolean, List<ClearingRequest>> partitionedClearingRequests = clearingRequestsSet
                     .stream().collect(Collectors.groupingBy(ModerationPortletUtils::isClosedClearingRequest));

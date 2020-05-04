@@ -37,7 +37,11 @@ public class PermissionUtils {
     }
 
     public static boolean isClearingAdmin(User user) {
-        return isInGroup(user, UserGroup.CLEARING_ADMIN);
+        return isInGroup(user, UserGroup.CLEARING_ADMIN) || isInGroup(user, UserGroup.CLEARING_EXPERT);
+    }
+
+    public static boolean isClearingExpert(User user) {
+        return isInGroup(user, UserGroup.CLEARING_EXPERT);
     }
 
     public static boolean isEccAdmin(User user) {
@@ -58,6 +62,8 @@ public class PermissionUtils {
                 return isNormalUser(user) || isAdmin(user) || isClearingAdmin(user) || isEccAdmin(user) || isSecurityAdmin(user);
             case CLEARING_ADMIN:
                 return isClearingAdmin(user) || isAdmin(user);
+            case CLEARING_EXPERT:
+                return isClearingExpert(user) || isAdmin(user);
             case ECC_ADMIN:
                 return isEccAdmin(user) || isAdmin(user);
             case SECURITY_ADMIN:
