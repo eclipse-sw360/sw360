@@ -29,6 +29,7 @@ public class DatabaseSettings {
     public static final String COUCH_DB_URL;
     public static final String COUCH_DB_DATABASE;
     public static final String COUCH_DB_ATTACHMENTS;
+    public static final String COUCH_DB_CHANGE_LOGS;
     public static final String COUCH_DB_CONFIG;
     public static final String COUCH_DB_USERS;
     public static final String COUCH_DB_VM;
@@ -47,6 +48,7 @@ public class DatabaseSettings {
         COUCH_DB_USERNAME = props.getProperty("couchdb.user", "");
         COUCH_DB_PASSWORD = props.getProperty("couchdb.password", "");
         COUCH_DB_ATTACHMENTS = props.getProperty("couchdb.attachments", "sw360attachments");
+        COUCH_DB_CHANGE_LOGS = props.getProperty("couchdb.change_logs", "sw360changelogs");
         COUCH_DB_CONFIG = props.getProperty("couchdb.config", "sw360config");
         COUCH_DB_USERS = props.getProperty("couchdb.usersdb", "sw360users");
         COUCH_DB_VM = props.getProperty("couchdb.vulnerability_management", "sw360vm");

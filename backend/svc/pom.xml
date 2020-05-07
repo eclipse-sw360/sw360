@@ -39,6 +39,7 @@
         <module>svc-licenseinfo</module>
         <module>svc-schedule</module>
         <module>svc-wsimport</module>
+        <module>svc-changelogs</module>
     </modules>
 
     <build>
