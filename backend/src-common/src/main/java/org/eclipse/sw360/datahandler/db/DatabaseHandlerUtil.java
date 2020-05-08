@@ -39,6 +39,7 @@ import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.COTSDetai
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ClearingInformationMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.EccInformationMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ObligationStatusInfoMixin;
+import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.RepositoryMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.VendorMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -53,6 +54,7 @@ import org.eclipse.sw360.datahandler.thrift.components.ClearingInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.Repository;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -537,7 +539,7 @@ public class DatabaseHandlerUtil {
             Number actualValueNumber = (Number) actualValue;
             Number newValueNumber = (Number) newValue;
             return !actualValueNumber.equals(newValueNumber);
-        } else if (actualValue instanceof TBase && newValue instanceof TBase) {
+        } else if (actualValue != null && newValue != null) {
             return !actualValue.equals(newValue);
         }
 
@@ -680,6 +682,7 @@ public class DatabaseHandlerUtil {
             mapper.addMixInAnnotations(COTSDetails.class, COTSDetailsMixin.class);
             mapper.addMixInAnnotations(EccInformation.class, EccInformationMixin.class);
             mapper.addMixInAnnotations(Vendor.class, VendorMixin.class);
+            mapper.addMixInAnnotations(Repository.class, RepositoryMixin.class);
         }
         return mapper;
     }
