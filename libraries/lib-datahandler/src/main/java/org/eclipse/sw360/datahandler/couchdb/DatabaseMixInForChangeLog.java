@@ -16,6 +16,7 @@ import org.eclipse.sw360.datahandler.thrift.changelogs.ReferenceDocData;
 import org.eclipse.sw360.datahandler.thrift.components.COTSDetails;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingInformation;
 import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
+import org.eclipse.sw360.datahandler.thrift.components.Repository;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 
@@ -66,7 +67,7 @@ public class DatabaseMixInForChangeLog {
     })
     public static abstract class ChangedFieldsMixin extends ChangedFields {
     }
-    
+
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonIgnoreProperties({
         "setRefDocOperation",
@@ -77,7 +78,7 @@ public class DatabaseMixInForChangeLog {
     })
     public static abstract class ReferenceDocDataMixin extends ReferenceDocData {
     }
-    
+
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonIgnoreProperties({
         "setCheckStatus",
@@ -106,7 +107,7 @@ public class DatabaseMixInForChangeLog {
     })
     public static abstract class AttachmentMixin extends Attachment {
     }
-    
+
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonIgnoreProperties({
         "releasesSize",
@@ -201,5 +202,13 @@ public class DatabaseMixInForChangeLog {
         "setPermissions"
     })
     public static abstract class VendorMixin extends Vendor {
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties({
+        "setUrl",
+        "setRepositorytype"
+    })
+    public static abstract class RepositoryMixin extends Repository {
     }
 }
