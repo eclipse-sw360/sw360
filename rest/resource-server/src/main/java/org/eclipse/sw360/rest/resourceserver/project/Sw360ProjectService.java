@@ -14,9 +14,9 @@ package org.eclipse.sw360.rest.resourceserver.project;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -72,11 +72,10 @@ import java.util.stream.Collectors;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 
 @Service
-@Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
-    private static final Logger log = Logger.getLogger(Sw360ProjectService.class);
+    private static final Logger log = LogManager.getLogger(Sw360ProjectService.class);
 
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;

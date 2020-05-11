@@ -13,13 +13,12 @@ package org.eclipse.sw360.schedule.timer;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
-
-import static org.apache.log4j.Logger.getLogger;
 
 /**
  * creates new {@link TimerTask} which will be executed on the next valid time
@@ -27,7 +26,7 @@ import static org.apache.log4j.Logger.getLogger;
  * @author stefan.jaeger@evosoft.com
  */
 public class Scheduler {
-    private static final Logger log = getLogger(Scheduler.class);
+    private static final Logger log = LogManager.getLogger(Scheduler.class);
     private static Date nextSync = null;
     private static final ConcurrentHashMap<String, SW360Task> scheduledJobs = new ConcurrentHashMap<>();
 

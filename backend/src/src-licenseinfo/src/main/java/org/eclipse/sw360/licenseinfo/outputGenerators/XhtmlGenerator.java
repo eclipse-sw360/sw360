@@ -13,7 +13,8 @@
 package org.eclipse.sw360.licenseinfo.outputGenerators;
 
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationParsingResult;
@@ -26,7 +27,7 @@ import java.util.Collection;
 import java.util.Map;
 
 public class XhtmlGenerator extends OutputGenerator<String> {
-    private static final Logger LOGGER = Logger.getLogger(XhtmlGenerator.class);
+    private static final Logger LOGGER = LogManager.getLogger(XhtmlGenerator.class);
 
     private static final String XHTML_TEMPLATE_FILE = "xhtmlLicenseInfoFile.vm";
     private static final String XHTML_MIME_TYPE = "application/xhtml+xml";

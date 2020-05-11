@@ -9,10 +9,11 @@
  */
 package org.eclipse.sw360.rest.authserver.security;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.authserver.client.service.Sw360ClientDetailsService;
 
-import org.apache.log4j.Logger;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -29,7 +30,7 @@ import org.springframework.security.oauth2.provider.ClientRegistrationException;
  */
 public class Sw360UserDetailsService implements UserDetailsService {
 
-    private final Logger log = Logger.getLogger(this.getClass());
+    private final Logger log = LogManager.getLogger(this.getClass());
 
     private Sw360UserDetailsProvider userProvider;
 

@@ -10,6 +10,7 @@
 
 package org.eclipse.sw360.attachments.db;
 
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
@@ -17,7 +18,6 @@ import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.db.AttachmentContentRepository;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.apache.log4j.Logger;
 import org.ektorp.http.HttpClient;
 
 import java.io.IOException;
@@ -27,10 +27,9 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+import static org.apache.logging.log4j.LogManager.getLogger;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.closeQuietly;
 import static org.eclipse.sw360.datahandler.common.Duration.durationOf;
-import static java.lang.String.format;
-import static org.apache.log4j.Logger.getLogger;
 
 /**
  * Utility to retrieve remote attachments
@@ -50,36 +49,36 @@ public class RemoteAttachmentDownloader {
         AttachmentContentRepository attachmentContentRepository = new AttachmentContentRepository(new DatabaseConnector(httpClient, dbAttachments));
 
         List<AttachmentContent> remoteAttachments = attachmentContentRepository.getOnlyRemoteAttachments();
-        log.info(format("we have %d remote attachments to retrieve", remoteAttachments.size()));
+        log.info("we have {} remote attachments to retrieve", remoteAttachments.size());
 
         int count = 0;
 
         for (AttachmentContent attachmentContent : remoteAttachments) {
             if (!attachmentContent.isOnlyRemote()) {
-                log.info(format("skipping attachment (%s), which should already be available", attachmentContent.getId()));
+                log.info("skipping attachment ({}), which should already be available", attachmentContent.getId());
                 continue;
             }
 
             String attachmentContentId = attachmentContent.getId();
-            log.info(format("retrieving attachment (%s) {filename=%s}", attachmentContentId, attachmentContent.getFilename()));
-            log.debug("url is " + attachmentContent.getRemoteUrl());
+            log.info("retrieving attachment ({}, filename={})", attachmentContentId, attachmentContent.getFilename());
+            log.debug("url is {}", attachmentContent.getRemoteUrl());
 
             InputStream content = null;
             try {
                 content = attachmentConnector.unsafeGetAttachmentStream(attachmentContent);
                 if (content == null) {
-                    log.error("null content retrieving attachment " + attachmentContentId);
+                    log.error("null content retrieving attachment {}", attachmentContentId);
                     continue;
                 }
                 try {
                     long length = length(content);
-                    log.info(format("retrieved attachment (%s), it was %d bytes long", attachmentContentId, length));
+                    log.info("retrieved attachment ({}), it was {} bytes long", attachmentContentId, length);
                     count++;
                 } catch (IOException e) {
-                    log.error("attachment was downloaded but somehow not available in database " + attachmentContentId, e);
+                    log.error("attachment was downloaded but somehow not available in database {}", attachmentContentId, e);
                 }
             } catch (SW360Exception e) {
-                log.error("cannot retrieve attachment " + attachmentContentId, e);
+                log.error("cannot retrieve attachment {}", attachmentContentId, e);
             } finally {
                 closeQuietly(content, log);
             }

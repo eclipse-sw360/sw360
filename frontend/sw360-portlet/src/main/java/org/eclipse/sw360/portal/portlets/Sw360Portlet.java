@@ -38,7 +38,8 @@ import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Deactivate;
@@ -55,7 +56,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 abstract public class Sw360Portlet extends MVCPortlet {
     private static final int MAX_LENGTH_USERS_IN_DISPLAY = 100;
 
-    protected final Logger log = Logger.getLogger(this.getClass());
+    protected final Logger log = LogManager.getLogger(this.getClass());
     protected final ThriftClients thriftClients;
 
     protected Sw360Portlet() {

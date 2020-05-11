@@ -12,7 +12,8 @@ package org.eclipse.sw360.cvesearch.datasource;
 
 import org.eclipse.sw360.cvesearch.datasource.matcher.ListMatcher;
 import org.eclipse.sw360.cvesearch.datasource.matcher.Match;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.util.*;
@@ -28,7 +29,7 @@ public class CveSearchGuesser {
     private int productThreshold = 0;
     private int cutoff = Integer.MAX_VALUE;
 
-    private Logger log = Logger.getLogger(CveSearchGuesser.class);
+    private Logger log = LogManager.getLogger(CveSearchGuesser.class);
 
     public CveSearchGuesser(CveSearchApi cveSearchApi) {
         this.cveSearchApi=cveSearchApi;

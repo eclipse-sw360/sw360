@@ -38,7 +38,8 @@ import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
 import org.eclipse.sw360.mail.MailConstants;
 import org.eclipse.sw360.mail.MailUtil;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.spdx.SpdxBOMImporter;
 import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
@@ -77,7 +78,7 @@ import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePerm
  */
 public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
-    private static final Logger log = Logger.getLogger(ProjectDatabaseHandler.class);
+    private static final Logger log = LogManager.getLogger(ProjectDatabaseHandler.class);
     private static final int DELETION_SANITY_CHECK_THRESHOLD = 5;
     private static final String DUMMY_NEW_PROJECT_ID = "newproject";
 

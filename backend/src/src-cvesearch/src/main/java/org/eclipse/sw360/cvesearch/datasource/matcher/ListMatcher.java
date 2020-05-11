@@ -10,8 +10,6 @@
  */
 package org.eclipse.sw360.cvesearch.datasource.matcher;
 
-import org.apache.log4j.Logger;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,7 +18,6 @@ import static org.eclipse.sw360.cvesearch.datasource.matcher.ModifiedLevenshtein
 
 public class ListMatcher {
     private Collection<String> needleList;
-    Logger log = Logger.getLogger(ListMatcher.class);
 
     public ListMatcher(Collection<String> needleList){
         this.needleList = needleList;

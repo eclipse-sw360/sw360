@@ -9,7 +9,8 @@
  */
 package org.eclipse.sw360.rest.authserver.security.customheaderauth;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.savedrequest.Enumerator;
 
@@ -36,7 +37,7 @@ import java.util.*;
  */
 public class Sw360CustomHeaderServletRequestWrapper extends HttpServletRequestWrapper {
 
-    private final Logger log = Logger.getLogger(this.getClass());
+    private final Logger log = LogManager.getLogger(this.getClass());
 
     private final Map<String, String[]> addableParameterMap;
 

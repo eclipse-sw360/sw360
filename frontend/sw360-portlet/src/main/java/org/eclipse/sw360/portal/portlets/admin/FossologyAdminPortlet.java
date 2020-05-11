@@ -17,7 +17,8 @@ import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 
@@ -52,7 +53,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.FOSSOLOGY_PORTLET_
 )
 public class FossologyAdminPortlet extends Sw360Portlet {
 
-    private final Logger log = Logger.getLogger(this.getClass());
+    private final Logger log = LogManager.getLogger(this.getClass());
 
     // duplicated from org.eclipse.sw360.fossology.config.FossologyRestConfig
     // because only interfaces are visible from backend services

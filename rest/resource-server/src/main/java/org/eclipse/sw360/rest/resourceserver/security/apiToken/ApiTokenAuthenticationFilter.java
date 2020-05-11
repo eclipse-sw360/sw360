@@ -10,7 +10,8 @@
 
 package org.eclipse.sw360.rest.resourceserver.security.apiToken;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -29,7 +30,7 @@ import java.util.stream.Collectors;
 @Profile("!SECURITY_MOCK")
 public class ApiTokenAuthenticationFilter implements Filter {
 
-    private static final Logger log = Logger.getLogger(ApiTokenAuthenticationFilter.class);
+    private static final Logger log = LogManager.getLogger(ApiTokenAuthenticationFilter.class);
     private static final String AUTHENTICATION_TOKEN_PARAMETER = "authorization";
 
     @Override

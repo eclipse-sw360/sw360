@@ -14,7 +14,8 @@ package org.eclipse.sw360.cvesearch.datasource.heuristics;
 import org.eclipse.sw360.cvesearch.datasource.CveSearchApi;
 import org.eclipse.sw360.cvesearch.datasource.CveSearchData;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,7 +28,7 @@ public class Heuristic {
     private final SearchLevels searchLevels;
     private final CveSearchApi cveSearchApi;
     private final int maxDepth;
-    private Logger log = Logger.getLogger(Heuristic.class);
+    private Logger log = LogManager.getLogger(Heuristic.class);
 
     public Heuristic(SearchLevels searchLevels, CveSearchApi cveSearchApi) {
         this.searchLevels = searchLevels;

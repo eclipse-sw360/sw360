@@ -14,7 +14,8 @@ package org.eclipse.sw360.rest.resourceserver.project;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
 import org.apache.thrift.protocol.TSimpleJSONProtocol;
@@ -92,7 +93,7 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 public class ProjectController implements ResourceProcessor<RepositoryLinksResource> {
     public static final String PROJECTS_URL = "/projects";
     public static final String SW360_ATTACHMENT_USAGES = "sw360:attachmentUsages";
-    private static final Logger log = Logger.getLogger(ProjectController.class);
+    private static final Logger log = LogManager.getLogger(ProjectController.class);
     private static final TSerializer THRIFT_JSON_SERIALIZER = new TSerializer(new TSimpleJSONProtocol.Factory());
     private static final ImmutableMap<Project._Fields, String> mapOfFieldsTobeEmbedded = ImmutableMap.<Project._Fields, String>builder()
             .put(Project._Fields.CLEARING_TEAM, "clearingTeam")

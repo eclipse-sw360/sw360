@@ -10,7 +10,8 @@
  */
 package org.eclipse.sw360.commonIO;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.Duration;
@@ -32,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 
 public class AttachmentFrontendUtils {
 
-    private static final Logger log = Logger.getLogger(AttachmentFrontendUtils.class);
+    private static final Logger log = LogManager.getLogger(AttachmentFrontendUtils.class);
 
     private AttachmentStreamConnector connector;
     // TODO add Config class and DI

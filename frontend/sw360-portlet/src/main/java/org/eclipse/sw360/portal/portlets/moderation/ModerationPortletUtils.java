@@ -9,7 +9,8 @@
  */
 package org.eclipse.sw360.portal.portlets.moderation;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
@@ -41,7 +42,7 @@ import javax.portlet.PortletRequest;
  * @author: alex.borodin@evosoft.com
  */
 public class ModerationPortletUtils {
-    private static final Logger log = Logger.getLogger(ModerationPortletUtils.class);
+    private static final Logger log = LogManager.getLogger(ModerationPortletUtils.class);
 
     private ModerationPortletUtils() {
         // Utility class with only static functions

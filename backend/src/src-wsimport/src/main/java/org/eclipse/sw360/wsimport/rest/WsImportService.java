@@ -12,7 +12,8 @@ package org.eclipse.sw360.wsimport.rest;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import org.apache.http.HttpException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.projectimport.TokenCredentials;
 import org.eclipse.sw360.wsimport.domain.*;
 import org.eclipse.sw360.wsimport.utility.WsTokenType;
@@ -28,7 +29,7 @@ import static org.eclipse.sw360.wsimport.utility.TranslationConstants.GET_ORGANI
  */
 public class WsImportService {
 
-    private static final Logger LOGGER = Logger.getLogger(WsImportService.class);
+    private static final Logger LOGGER = LogManager.getLogger(WsImportService.class);
     private static final WsRestClient restClient = new WsRestClient();
     private static final Gson gson = new Gson();
 

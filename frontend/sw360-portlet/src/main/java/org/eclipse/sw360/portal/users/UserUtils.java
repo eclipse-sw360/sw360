@@ -29,7 +29,8 @@ import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.portal.common.PortalConstants;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.jetbrains.annotations.NotNull;
 
@@ -52,7 +53,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Constants.TYPE_USER;
  */
 public class UserUtils {
 
-    private static final Logger log = Logger.getLogger(UserUtils.class);
+    private static final Logger log = LogManager.getLogger(UserUtils.class);
     private final ThriftClients thriftClients;
 
     public UserUtils(ThriftClients thriftClients) {

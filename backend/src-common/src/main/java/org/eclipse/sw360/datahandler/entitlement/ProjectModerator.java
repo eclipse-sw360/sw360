@@ -18,7 +18,8 @@ import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 
 /**
@@ -30,7 +31,7 @@ import org.apache.thrift.TException;
  */
 public class ProjectModerator extends Moderator<Project._Fields, Project> {
 
-    private static final Logger log = Logger.getLogger(ProjectModerator.class);
+    private static final Logger log = LogManager.getLogger(ProjectModerator.class);
 
 
     public ProjectModerator(ThriftClients thriftClients) {

@@ -13,7 +13,8 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.authserver.security.Sw360UserDetailsProvider;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -67,7 +68,7 @@ import java.io.IOException;
  */
 public class Sw360CustomHeaderAuthenticationFilter extends GenericFilterBean {
 
-    private final Logger log = Logger.getLogger(this.getClass());
+    private final Logger log = LogManager.getLogger(this.getClass());
 
     /**
      * Has to match username extraction in

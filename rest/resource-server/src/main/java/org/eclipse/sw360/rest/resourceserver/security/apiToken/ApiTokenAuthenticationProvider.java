@@ -12,7 +12,8 @@ package org.eclipse.sw360.rest.resourceserver.security.apiToken;
 
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -44,7 +45,7 @@ import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.*;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
 
-    private static final Logger log = Logger.getLogger(ApiTokenAuthenticationProvider.class);
+    private static final Logger log = LogManager.getLogger(ApiTokenAuthenticationProvider.class);
 
     @NotNull
     private final Sw360UserService userService;

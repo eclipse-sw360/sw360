@@ -17,7 +17,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.function.Supplier;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
@@ -33,7 +34,7 @@ public class ChangeLogsDatabaseHandler {
     private final DatabaseConnector db;
     private final ChangeLogsRepository changeLogsRepository;
 
-    private static final Logger log = Logger.getLogger(ChangeLogsDatabaseHandler.class);
+    private static final Logger log = LogManager.getLogger(ChangeLogsDatabaseHandler.class);
 
     public ChangeLogsDatabaseHandler(Supplier<HttpClient> httpClient, String dbName) throws MalformedURLException {
         db = new DatabaseConnector(httpClient, dbName);

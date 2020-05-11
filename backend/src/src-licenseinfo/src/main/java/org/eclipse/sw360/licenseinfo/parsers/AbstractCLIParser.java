@@ -12,7 +12,8 @@ package org.eclipse.sw360.licenseinfo.parsers;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -58,7 +59,7 @@ public abstract class AbstractCLIParser extends LicenseInfoParser {
     private static final String TYPE_ATTRIBUTE_NAME = "type";
     private static final String TYPE_UNKNOWN = "Type unknown";
     private static final String OBLIGATION_TEXT_UNKNOWN = "Obligation text unknown";
-    private static final Logger log = Logger.getLogger(CLIParser.class);
+    private static final Logger log = LogManager.getLogger(CLIParser.class);
     private static final String SPDX_IDENTIFIER_UNKNOWN = "SPDX identifier unknown";
 
     private static final String OBLIGATION_TOPIC_ELEMENT_NAME = "Topic";

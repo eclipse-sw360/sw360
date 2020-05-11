@@ -37,7 +37,8 @@ import org.eclipse.sw360.licenseinfo.outputGenerators.*;
 import org.eclipse.sw360.licenseinfo.parsers.*;
 import org.eclipse.sw360.licenseinfo.util.LicenseNameWithTextUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 
 import java.net.MalformedURLException;
@@ -57,7 +58,7 @@ import static org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVaria
  * Implementation of the Thrift service
  */
 public class LicenseInfoHandler implements LicenseInfoService.Iface {
-    private static final Logger LOGGER = Logger.getLogger(LicenseInfoHandler.class);
+    private static final Logger LOGGER = LogManager.getLogger(LicenseInfoHandler.class);
     private static final int CACHE_TIMEOUT_MINUTES = 15;
     private static final int CACHE_MAX_ITEMS = 100;
     private static final String DEFAULT_LICENSE_INFO_HEADER_FILE = "/DefaultLicenseInfoHeader.txt";

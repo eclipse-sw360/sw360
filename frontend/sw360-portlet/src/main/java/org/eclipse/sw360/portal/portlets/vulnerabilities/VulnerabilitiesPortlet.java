@@ -22,7 +22,8 @@ import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 
@@ -59,7 +60,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.*;
 )
 public class VulnerabilitiesPortlet extends Sw360Portlet {
 
-    private static final Logger log = Logger.getLogger(VulnerabilitiesPortlet.class);
+    private static final Logger log = LogManager.getLogger(VulnerabilitiesPortlet.class);
     private static final String YEAR_MONTH_DAY_REGEX = "\\d\\d\\d\\d-\\d\\d-\\d\\d.*";
 
     private static final String EXTERNAL_ID = Vulnerability._Fields.EXTERNAL_ID.toString();

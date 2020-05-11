@@ -17,13 +17,14 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 
 import java.util.List;
 
 public class ProjectSearchUtils {
-    protected final Logger logger = Logger.getLogger(this.getClass());
+    protected final Logger logger = LogManager.getLogger(this.getClass());
 
     private final ThriftClients thriftClients;
 

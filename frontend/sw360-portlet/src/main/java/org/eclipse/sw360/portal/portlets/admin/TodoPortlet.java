@@ -9,7 +9,8 @@
  */
 package org.eclipse.sw360.portal.portlets.admin;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -50,7 +51,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.*;
 )
 public class TodoPortlet extends Sw360Portlet {
 
-    private static final Logger log = Logger.getLogger(TodoPortlet.class);
+    private static final Logger log = LogManager.getLogger(TodoPortlet.class);
 
 
     //! Serve resource and helpers

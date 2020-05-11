@@ -14,7 +14,8 @@ import org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthoritiesCalcula
 import org.eclipse.sw360.rest.authserver.security.Sw360UserDetailsProvider;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -47,7 +48,7 @@ import java.util.Optional;
  */
 public class Sw360LiferayAuthenticationProvider implements AuthenticationProvider {
 
-    private final Logger log = Logger.getLogger(this.getClass());
+    private final Logger log = LogManager.getLogger(this.getClass());
 
     private static final String SUPPORTED_GRANT_TYPE = "password";
 

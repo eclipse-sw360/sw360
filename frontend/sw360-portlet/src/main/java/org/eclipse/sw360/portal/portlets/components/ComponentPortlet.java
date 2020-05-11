@@ -63,7 +63,8 @@ import org.eclipse.sw360.portal.common.datatables.data.PaginationParameters;
 import org.eclipse.sw360.portal.portlets.FossologyAwarePortlet;
 import org.eclipse.sw360.portal.users.LifeRayUserSession;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TEnum;
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
@@ -118,7 +119,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
     private static final String QUERY_PARAMS_FOSSOLOGY = "?mod=showjobs&upload=";
 
-    private static final Logger log = Logger.getLogger(ComponentPortlet.class);
+    private static final Logger log = LogManager.getLogger(ComponentPortlet.class);
 
     private static final JsonFactory JSON_FACTORY = new JsonFactory();
     private static final TSerializer JSON_THRIFT_SERIALIZER = new TSerializer(new TSimpleJSONProtocol.Factory());

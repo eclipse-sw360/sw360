@@ -34,7 +34,8 @@ import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.vendor.VendorController;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -70,7 +71,7 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 public class ComponentController implements ResourceProcessor<RepositoryLinksResource> {
 
     public static final String COMPONENTS_URL = "/components";
-    private static final Logger log = Logger.getLogger(ComponentController.class);
+    private static final Logger log = LogManager.getLogger(ComponentController.class);
 
     @NonNull
     private final Sw360ComponentService componentService;

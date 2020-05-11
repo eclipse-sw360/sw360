@@ -12,7 +12,8 @@ package org.eclipse.sw360.rest.authserver;
 
 import java.util.Properties;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.common.PropertyUtils;
@@ -26,7 +27,7 @@ import org.springframework.context.annotation.Import;
 @Import(Sw360CORSFilter.class)
 public class Sw360AuthorizationServer extends SpringBootServletInitializer {
 
-    private static final Logger log = Logger.getLogger(Sw360AuthorizationServer.class);
+    private static final Logger log = LogManager.getLogger(Sw360AuthorizationServer.class);
 
     private static final String SW360_PROPERTIES_FILE_PATH = "/sw360.properties";
     private static final String DEFAULT_WRITE_ACCESS_USERGROUP = UserGroup.SW360_ADMIN.name();

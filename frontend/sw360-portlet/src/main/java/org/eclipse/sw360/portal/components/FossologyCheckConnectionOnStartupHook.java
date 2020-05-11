@@ -15,7 +15,8 @@ import com.liferay.portal.kernel.events.LifecycleAction;
 
 import org.eclipse.sw360.portal.common.FossologyConnectionHelper;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.osgi.service.component.annotations.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -34,7 +35,7 @@ import javax.servlet.http.HttpServletResponse;
     enabled = false
 )
 public class FossologyCheckConnectionOnStartupHook extends Action {
-    protected final Logger log = Logger.getLogger(getClass());
+    protected final Logger log = LogManager.getLogger(getClass());
 
 	private static boolean calledOnServerstartUp;
 

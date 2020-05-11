@@ -9,7 +9,8 @@
  */
 package org.eclipse.sw360.projects;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TProcessor;
 import org.apache.thrift.protocol.TProtocolFactory;
 import org.apache.thrift.server.TServlet;
@@ -19,13 +20,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-import static org.apache.log4j.Logger.getLogger;
-
 /**
  * @author Andreas.Reichel@tngtech.com
  */
 public class Sw360ThriftServlet extends TServlet {
-    private static final Logger log = getLogger(Sw360ThriftServlet.class);
+    private static final Logger log = LogManager.getLogger(Sw360ThriftServlet.class);
 
     public Sw360ThriftServlet(TProcessor processor, TProtocolFactory protocolFactory) {
         super(processor, protocolFactory);

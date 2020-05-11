@@ -10,7 +10,8 @@
 
 package org.eclipse.sw360.rest.resourceserver.security.keycloak;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.JwtAccessTokenConverterConfigurer;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.ResourceServerProperties;
@@ -28,7 +29,7 @@ import java.util.Map;
 @Component
 public class KeycloakAccessTokenConverter extends DefaultAccessTokenConverter implements JwtAccessTokenConverterConfigurer {
 
-    private static final Logger log = Logger.getLogger(KeycloakAccessTokenConverter.class);
+    private static final Logger log = LogManager.getLogger(KeycloakAccessTokenConverter.class);
 
     private static final String JWT_RESOURCE_ACCESS = "resource_access";
     private static final String JWT_ROLES = "roles";

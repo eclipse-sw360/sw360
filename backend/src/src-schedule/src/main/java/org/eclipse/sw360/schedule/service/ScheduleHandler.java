@@ -20,7 +20,8 @@ import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.schedule.ScheduleService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 
 import java.util.Date;
@@ -34,7 +35,7 @@ public class ScheduleHandler implements ScheduleService.Iface {
 
     public ScheduleHandler() {
         thriftClients = new ThriftClients();
-        log = Logger.getLogger(ScheduleHandler.class);
+        log = LogManager.getLogger(ScheduleHandler.class);
     }
 
     @FunctionalInterface

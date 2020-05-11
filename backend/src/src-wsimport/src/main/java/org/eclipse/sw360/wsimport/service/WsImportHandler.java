@@ -11,7 +11,8 @@
 package org.eclipse.sw360.wsimport.service;
 
 import com.google.gson.JsonSyntaxException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.wsimport.domain.WsProject;
 import org.eclipse.sw360.wsimport.rest.WsImportService;
 import org.eclipse.sw360.wsimport.thrift.ThriftUploader;
@@ -32,7 +33,7 @@ import java.util.stream.Collectors;
  */
 public class WsImportHandler implements ProjectImportService.Iface {
 
-    private static final Logger LOGGER = Logger.getLogger(WsImportHandler.class);
+    private static final Logger LOGGER = LogManager.getLogger(WsImportHandler.class);
 
     @Override
     public synchronized ImportStatus importData(List<String> projectTokens, User user, TokenCredentials tokenCredentials) throws TException, JsonSyntaxException {

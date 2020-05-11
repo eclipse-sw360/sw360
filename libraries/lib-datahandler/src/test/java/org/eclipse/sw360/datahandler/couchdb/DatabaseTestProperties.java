@@ -11,7 +11,6 @@
 package org.eclipse.sw360.datahandler.couchdb;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.apache.log4j.Logger;
 import org.ektorp.http.HttpClient;
 import org.ektorp.http.StdHttpClient;
 

@@ -10,9 +10,7 @@
 package org.eclipse.sw360.search.common;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.apache.log4j.Logger;
 
-import java.io.IOException;
 import java.util.Properties;
 
 /**

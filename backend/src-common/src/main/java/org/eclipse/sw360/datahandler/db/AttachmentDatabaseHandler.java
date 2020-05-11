@@ -21,7 +21,8 @@ import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 import org.ektorp.BulkDeleteDocument;
 import org.ektorp.DocumentOperationResult;
@@ -53,7 +54,7 @@ public class AttachmentDatabaseHandler {
     private final AttachmentOwnerRepository attachmentOwnerRepository;
 
 
-    private static final Logger log = Logger.getLogger(AttachmentDatabaseHandler.class);
+    private static final Logger log = LogManager.getLogger(AttachmentDatabaseHandler.class);
 
     public AttachmentDatabaseHandler(Supplier<HttpClient> httpClient, String dbName, String attachmentDbName) throws MalformedURLException {
         db = new DatabaseConnector(httpClient, attachmentDbName);

@@ -14,15 +14,16 @@ import org.eclipse.sw360.cvesearch.datasource.heuristics.Heuristic;
 import org.eclipse.sw360.cvesearch.datasource.heuristics.SearchLevels;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
-import org.apache.log4j.Logger;
-
 public class CveSearchWrapper {
 
-    private static final Logger log = Logger.getLogger(CveSearchWrapper.class);
+    private static final Logger log = LogManager.getLogger(CveSearchWrapper.class);
 
     private final Heuristic heuristic;
 

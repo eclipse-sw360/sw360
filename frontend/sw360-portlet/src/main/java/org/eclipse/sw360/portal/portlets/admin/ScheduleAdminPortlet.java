@@ -19,7 +19,8 @@ import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 
@@ -49,7 +50,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.SCHEDULE_ADMIN_POR
 )
 public class ScheduleAdminPortlet extends Sw360Portlet {
 
-    private static final Logger log = Logger.getLogger(ScheduleAdminPortlet.class);
+    private static final Logger log = LogManager.getLogger(ScheduleAdminPortlet.class);
 
 
     @Override

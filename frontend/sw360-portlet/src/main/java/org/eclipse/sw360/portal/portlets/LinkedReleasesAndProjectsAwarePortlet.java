@@ -9,7 +9,8 @@
  */
 package org.eclipse.sw360.portal.portlets;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -60,7 +61,8 @@ import static org.eclipse.sw360.portal.common.PortalConstants.RELEASE_LIST;
  */
 public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAwarePortlet {
 
-    private static final Logger log = Logger.getLogger(LinkedReleasesAndProjectsAwarePortlet.class);
+    private static final Logger log = LogManager.getLogger(LinkedReleasesAndProjectsAwarePortlet.class);
+
     protected LinkedReleasesAndProjectsAwarePortlet() {
         this(new ThriftClients());
     }

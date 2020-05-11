@@ -13,7 +13,8 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneSearchView;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.ektorp.http.HttpClient;
 
 import java.io.IOException;
@@ -30,7 +31,7 @@ import java.util.function.Supplier;
  */
 public class ComponentSearchHandler {
 
-    private static final Logger log = Logger.getLogger(ComponentSearchHandler.class);
+    private static final Logger log = LogManager.getLogger(ComponentSearchHandler.class);
 
     private static final LuceneSearchView luceneSearchView = new LuceneSearchView("lucene", "components",
             "function(doc) {" +

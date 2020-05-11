@@ -11,7 +11,8 @@ package org.eclipse.sw360.licenseinfo.parsers;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -47,7 +48,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.closeQuietly;
  */
 public class CLIParser extends AbstractCLIParser {
 
-    private static final Logger log = Logger.getLogger(CLIParser.class);
+    private static final Logger log = LogManager.getLogger(CLIParser.class);
     private static final String COPYRIGHTS_XPATH = "/ComponentLicenseInformation/Copyright/Content";
     private static final String LICENSES_XPATH = "/ComponentLicenseInformation/License";
     private static final String OBLIGATIONS_XPATH = "/ComponentLicenseInformation/Obligation";

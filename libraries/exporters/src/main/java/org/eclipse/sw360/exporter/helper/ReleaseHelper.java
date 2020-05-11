@@ -9,7 +9,8 @@
  */
 package org.eclipse.sw360.exporter.helper;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.common.WrappedException.WrappedSW360Exception;
@@ -33,7 +34,7 @@ import static org.eclipse.sw360.exporter.ReleaseExporter.*;
 
 public class ReleaseHelper implements ExporterHelper<Release> {
 
-    private static final Logger log = Logger.getLogger(ReleaseHelper.class);
+    private static final Logger log = LogManager.getLogger(ReleaseHelper.class);
 
     private final ComponentService.Iface cClient;
     private final User user;

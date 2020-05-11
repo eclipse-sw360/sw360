@@ -14,7 +14,8 @@ import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.wsimport.utility.TranslationConstants;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
@@ -40,7 +41,7 @@ import static org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus.SUCC
  */
 public class ThriftExchange {
 
-    private static final Logger LOGGER = Logger.getLogger(ThriftExchange.class);
+    private static final Logger LOGGER = LogManager.getLogger(ThriftExchange.class);
     private static ThriftClients thriftClients = new ThriftClients();
 
     //public ThriftExchange(ThriftClients thriftClients) {

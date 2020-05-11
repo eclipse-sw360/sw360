@@ -9,7 +9,8 @@
  */
 package org.eclipse.sw360.users;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -30,7 +31,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
  */
 public class UserHandler implements UserService.Iface {
 
-    private static final Logger log = Logger.getLogger(UserHandler.class);
+    private static final Logger log = LogManager.getLogger(UserHandler.class);
 
     private UserDatabaseHandler db;
 

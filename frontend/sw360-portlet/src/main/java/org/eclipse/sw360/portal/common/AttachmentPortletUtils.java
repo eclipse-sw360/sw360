@@ -28,7 +28,8 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.ektorp.DocumentNotFoundException;
 
@@ -58,7 +59,7 @@ public class AttachmentPortletUtils extends AttachmentFrontendUtils {
 
     public static final String DEFAULT_ATTACHMENT_BUNDLE_NAME = "AttachmentBundle.zip";
 
-    private static final Logger log = Logger.getLogger(AttachmentPortletUtils.class);
+    private static final Logger log = LogManager.getLogger(AttachmentPortletUtils.class);
     private final ProjectService.Iface projectClient;
     private final ComponentService.Iface componentClient;
 

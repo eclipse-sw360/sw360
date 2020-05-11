@@ -15,7 +15,8 @@ import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.tags.urlutils.UrlWriter;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.servlet.jsp.JspException;
 
@@ -26,7 +27,7 @@ import static org.eclipse.sw360.portal.tags.TagUtils.escapeAttributeValue;
  * further information.
  */
 public class DisplayDownloadApprovedClearingReport extends DisplayDownloadAbstract {
-    private static final Logger LOGGER = Logger.getLogger(DisplayDownloadApprovedClearingReport.class);
+    private static final Logger LOGGER = LogManager.getLogger(DisplayDownloadApprovedClearingReport.class);
 
     private Attachment attachment;
 

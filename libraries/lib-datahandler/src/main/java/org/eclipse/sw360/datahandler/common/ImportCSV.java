@@ -11,7 +11,8 @@ package org.eclipse.sw360.datahandler.common;
 
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,7 +30,7 @@ import java.util.List;
  */
 public class ImportCSV {
 
-    private static final Logger log = Logger.getLogger(ImportCSV.class.getName());
+    private static final Logger log = LogManager.getLogger(ImportCSV.class.getName());
 
     private ImportCSV() {
         // Utility class with only static functions
