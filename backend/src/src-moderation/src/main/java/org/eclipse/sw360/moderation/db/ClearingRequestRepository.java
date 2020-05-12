@@ -51,6 +51,12 @@ public class ClearingRequestRepository extends DatabaseRepository<ClearingReques
             "    }" +
             "}";
 
+    private static final String BY_BUSINESS_UNIT = "function(doc) { " +
+            "  if (doc.type == 'clearingRequest') {" +
+            "    emit(doc.projectBU, doc);" +
+            "    }" +
+            "}";
+
     public ClearingRequestRepository(DatabaseConnector db) {
         super(ClearingRequest.class, db);
 
@@ -62,9 +68,7 @@ public class ClearingRequestRepository extends DatabaseRepository<ClearingReques
         List<ClearingRequest> requests = queryView("byProjectId", projectId);
         if (CommonUtils.isNotEmpty(requests)) {
             ClearingRequest request = requests.stream()
-                    .filter(r -> !ClearingRequestState.REJECTED.equals(r.getClearingState()))
-                    .sorted(Comparator.comparingLong(ClearingRequest::getTimestamp).reversed()).findFirst()
-                    .orElse(null);
+                    .findFirst().orElse(null);
             return request;
         }
         return null;
@@ -73,5 +77,10 @@ public class ClearingRequestRepository extends DatabaseRepository<ClearingReques
     @View(name = "myClearingRequests", map = MY_CLEARING_REQUESTS)
     public Set<ClearingRequest> getMyClearingRequests(String user) {
         return new HashSet<ClearingRequest>(queryView("myClearingRequests", user));
+    }
+
+    @View(name = "byBusinessUnit", map = BY_BUSINESS_UNIT)
+    public Set<ClearingRequest> getClearingRequestsByBU(String businessUnit) {
+        return new HashSet<ClearingRequest>(queryView("byBusinessUnit", businessUnit));
     }
 }

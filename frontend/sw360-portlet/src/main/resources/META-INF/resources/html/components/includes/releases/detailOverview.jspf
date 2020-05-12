@@ -25,6 +25,8 @@
     <portlet:param name="<%=PortalConstants.RELEASE_ID%>" value="${release.id}"/>
 </portlet:resourceURL>
 
+<core_rt:set var = "docid" scope = "request" value = "${release.id}"/>
+
 <div class="container" style="display: none;">
 	<div class="row">
 		<div class="col-3 sidebar">
@@ -49,6 +51,7 @@
                 <core_rt:if test="${inReleaseDetailsContext}">
 				<%@include file="/html/utils/includes/vulnerabilityTab.jspf" %>
 			</core_rt:if>
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ChangeLogs'}">active</core_rt:if>" href="#tab-ChangeLogs" data-toggle="list" role="tab"><liferay-ui:message key="change.log" /></a>
 		    </div>
 	    </div>
 	    <div class="col">
@@ -116,6 +119,14 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="list-group-companion" data-belong-to="tab-ChangeLogs">
+                                <div class="nav nav-pills justify-content-center bg-light font-weight-bold" id="pills-tab" role="tablist">
+                                    <a class="nav-item nav-link active" id="pills-changelogs-list-tab" data-toggle="pill" href="#pills-changelogslist" role="tab" aria-controls="pills-changeloglist" aria-selected="true">
+                                    <liferay-ui:message key="change.log" /></a>
+                                    <a class="nav-item nav-link" id="pills-changelogs-view-tab" href="#pills-changelogsView" role="tab" aria-controls="pills-changelogsView" aria-selected="false">
+                                    <liferay-ui:message key="changes" /></a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="col portlet-title text-truncate" title="<sw360:out value="${release.name}"/> <sw360:out value="${release.version}"/>">
@@ -157,6 +168,9 @@
 			                    <%@include file="/html/components/includes/components/vulnerabilities.jspf" %>
 			                </div>
 		                </core_rt:if>
+		                <div id="tab-ChangeLogs" class="tab-pane <core_rt:if test="${selectedTab == 'tab-ChangeLogs'}">active show</core_rt:if>">
+		                    <jsp:include page="/html/changelogs/elementView.jsp" />
+		                </div>
 		            </div>
 		        </div>
 		    </div>

@@ -39,6 +39,7 @@
         <module>src-cvesearch</module>
         <module>src-schedule</module>
         <module>src-wsimport</module>
+        <module>src-changelogs</module>
     </modules>
 
     <dependencies>

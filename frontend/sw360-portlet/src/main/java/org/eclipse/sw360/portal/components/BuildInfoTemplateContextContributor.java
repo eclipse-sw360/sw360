@@ -33,7 +33,8 @@ import javax.servlet.http.HttpServletRequest;
         "type=" + TemplateContextContributor.TYPE_THEME
     },
     service = TemplateContextContributor.class,
-    configurationPolicy = ConfigurationPolicy.REQUIRE
+    configurationPolicy = ConfigurationPolicy.REQUIRE,
+    enabled = false
 )
 public class BuildInfoTemplateContextContributor extends LoggingComponent implements TemplateContextContributor {
     private static final String BUILD_INFO_PROPERTIES_FILE = "/buildInfo.properties";

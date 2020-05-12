@@ -218,6 +218,11 @@ service ModerationService {
     set<ClearingRequest> getMyClearingRequests(1: User user);
 
     /**
+     * get list of clearing requests where user is requesting user or clearing team
+     **/
+    set<ClearingRequest> getClearingRequestsByBU(1: string businessUnit);
+
+    /**
      * get clearing request by project Id
      **/
     ClearingRequest getClearingRequestByProjectId(1: string projectId);

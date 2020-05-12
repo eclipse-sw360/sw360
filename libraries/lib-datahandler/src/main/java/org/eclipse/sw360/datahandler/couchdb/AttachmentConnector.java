@@ -85,7 +85,7 @@ public class AttachmentConnector extends AttachmentStreamConnector {
         connector.deleteIds(attachmentContentIds, AttachmentContent.class);
     }
 
-    private Set<String> getAttachmentContentIds(Collection<Attachment> attachments) {
+    public Set<String> getAttachmentContentIds(Collection<Attachment> attachments) {
         return nullToEmptyCollection(attachments).stream()
                 .map(Attachment::getAttachmentContentId)
                 .collect(Collectors.toSet());
@@ -96,8 +96,15 @@ public class AttachmentConnector extends AttachmentStreamConnector {
         // otherwise, when `attachmentsAfter` contains the same attachment (with the same id), but with one field changed (e.g. sha1),
         // then they are considered unequal and the set difference will contain this attachment and therefore
         // deleteAttachments(Collection<Attachment>) will delete an attachment that is present in `attachmentsAfter`
-        Set<Attachment> nonAcceptedAttachmentsBefore = nullToEmptySet(attachmentsBefore).stream().filter(a -> a.getCheckStatus() != CheckStatus.ACCEPTED).collect(Collectors.toSet());
-        deleteAttachmentsByIds(Sets.difference(getAttachmentContentIds(nonAcceptedAttachmentsBefore), getAttachmentContentIds(attachmentsAfter)));
+        deleteAttachmentsByIds(getAttachentContentIdsToBeDeleted(attachmentsBefore,attachmentsAfter));
+    }
+
+    public Set<String> getAttachentContentIdsToBeDeleted(Set<Attachment> attachmentsBefore,
+            Set<Attachment> attachmentsAfter) {
+        Set<Attachment> nonAcceptedAttachmentsBefore = nullToEmptySet(attachmentsBefore).stream()
+                .filter(a -> a.getCheckStatus() != CheckStatus.ACCEPTED).collect(Collectors.toSet());
+        return Sets.difference(getAttachmentContentIds(nonAcceptedAttachmentsBefore),
+                getAttachmentContentIds(attachmentsAfter));
     }
 
     public String getSha1FromAttachmentContentId(String attachmentContentId) {

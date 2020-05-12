@@ -68,6 +68,7 @@ Import-Package: \
 	org.eclipse.sw360.importer.*, \
 	org.ektorp.*, \
 	org.osgi.service.cm, \
+	org.osgi.service.component.*, \
 	org.slf4j
 
 Conditional-Package: \

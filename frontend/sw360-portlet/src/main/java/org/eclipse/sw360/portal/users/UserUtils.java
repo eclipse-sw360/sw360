@@ -15,12 +15,15 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.model.*;
 import com.liferay.portal.kernel.service.OrganizationLocalServiceUtil;
+import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
 import com.liferay.portal.kernel.service.ServiceContextFactory;
+import com.liferay.portal.kernel.service.UserGroupRoleLocalServiceUtil;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
@@ -231,10 +234,25 @@ public class UserUtils {
                     .map(Role::getName)
                     .collect(Collectors.toList());
 
+            List<com.liferay.portal.kernel.model.UserGroupRole> userGroupRoleList = UserGroupRoleLocalServiceUtil
+                    .getUserGroupRoles(user.getUserId());
+            if (CommonUtils.isNotEmpty(userGroupRoleList)) {
+                userGroupRoleList.forEach(e -> {
+                    /* Get Role object based on userGroupRole */
+                    try {
+                        roleNames.add(e.getRole().getName());
+                    } catch (PortalException e1) {
+                        log.error("Problem retrievig Site / Org roles", e1);
+                    }
+                });
+            }
+
             if (roleNames.contains(PortalConstants.ROLENAME_ADMIN)) {
                 return UserGroup.ADMIN;
             } else if (roleNames.contains(PortalConstants.ROLENAME_SW360_ADMIN)) {
                 return UserGroup.SW360_ADMIN;
+            } else if (roleNames.contains(PortalConstants.ROLENAME_CLEARING_EXPERT)) {
+                return UserGroup.CLEARING_EXPERT;
             } else if (roleNames.contains(PortalConstants.ROLENAME_CLEARING_ADMIN)) {
                 return UserGroup.CLEARING_ADMIN;
             } else if (roleNames.contains(PortalConstants.ROLENAME_ECC_ADMIN)) {
@@ -269,6 +287,8 @@ public class UserUtils {
                 return RoleConstants.ADMINISTRATOR;
             case SW360_ADMIN:
                 return PortalConstants.ROLENAME_SW360_ADMIN;
+            case CLEARING_EXPERT:
+                return PortalConstants.ROLENAME_CLEARING_EXPERT;
             case CLEARING_ADMIN:
                 return PortalConstants.ROLENAME_CLEARING_ADMIN;
             case ECC_ADMIN:

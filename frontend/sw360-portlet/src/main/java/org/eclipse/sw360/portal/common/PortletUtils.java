@@ -14,6 +14,13 @@ import com.google.common.collect.Sets;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.model.Layout;
+import com.liferay.portal.kernel.model.Portlet;
+import com.liferay.portal.kernel.portlet.LiferayPortletURL;
+import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
+import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
+import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
+
 import org.apache.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
@@ -64,6 +71,7 @@ public class PortletUtils {
 
     private static final Logger LOGGER = Logger.getLogger(PortletUtils.class);
     private static final String TEMPLATE_FILE = "/welcomePageGuideline.html";
+    private static ChangeLogsPortletUtils changeLogsPortletUtils = null;
 
     private PortletUtils() {
         // Utility class with only static functions
@@ -474,5 +482,12 @@ public class PortletUtils {
         List<CustomField> customFields = new ArrayList<>(customFieldMap.values());
         customFields.sort(Comparator.comparing(CustomField::getFieldId));
         request.setAttribute("customFields", customFields);
+    }
+  
+    public static ChangeLogsPortletUtils getChangeLogsPortletUtils(ThriftClients clients) {
+        if (changeLogsPortletUtils == null) {
+            changeLogsPortletUtils = new ChangeLogsPortletUtils(clients);
+        }
+        return changeLogsPortletUtils;
     }
 }

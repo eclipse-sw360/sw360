@@ -10,6 +10,7 @@
 package org.eclipse.sw360.portal.portlets.moderation;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Organization;
 import com.liferay.portal.kernel.servlet.SessionMessages;
@@ -41,8 +42,10 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
+import org.eclipse.sw360.portal.common.ChangeLogsPortletUtils;
 import org.eclipse.sw360.portal.common.ErrorMessages;
 import org.eclipse.sw360.portal.common.PortalConstants;
+import org.eclipse.sw360.portal.common.PortletUtils;
 import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
 import org.eclipse.sw360.portal.portlets.FossologyAwarePortlet;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
@@ -96,6 +99,12 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             addCommentToClearingRequest(request, response);
         } else if (isGenericAction(action)) {
             dealWithGenericAction(request, response, action);
+        } else if (PortalConstants.LOAD_CHANGE_LOGS.equals(action) || PortalConstants.VIEW_CHANGE_LOGS.equals(action)) {
+            ChangeLogsPortletUtils changeLogsPortletUtilsPortletUtils = PortletUtils
+                    .getChangeLogsPortletUtils(thriftClients);
+            JSONObject dataForChangeLogs = changeLogsPortletUtilsPortletUtils.serveResourceForChangeLogs(request,
+                    response, action);
+            writeJSON(request, response, dataForChangeLogs);
         }
     }
 
@@ -209,6 +218,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             }
             request.setAttribute(CLEARING_REQUEST, clearingRequest);
             request.setAttribute(WRITE_ACCESS_USER, false);
+            request.setAttribute(IS_CLEARING_EXPERT, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_EXPERT, user));
 
             if (CommonUtils.isNotNullEmptyOrWhitespace(clearingRequest.getProjectId()) ) {
                 ProjectService.Iface projectClient = thriftClients.makeProjectClient();
@@ -226,6 +236,10 @@ public class ModerationPortlet extends FossologyAwarePortlet {
     @UsedAsLiferayAction
     public void updateClearingRequest(ActionRequest request, ActionResponse response) throws PortletException, IOException {
         RequestStatus requestStatus = requestStatus = ModerationPortletUtils.updateClearingRequest(request, log);
+        if (RequestStatus.SUCCESS.equals(requestStatus)) {
+            response.setRenderParameter(CLEARING_REQUEST_ID, request.getParameter(CLEARING_REQUEST_ID));
+            response.setRenderParameter(PAGENAME, PAGENAME_DETAIL_CLEARING_REQUEST);
+        }
         ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         setSessionMessage(request, requestStatus, LanguageUtil.get(resourceBundle,"clearing.request"), "update");
     }
@@ -385,6 +399,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
 
         try {
             Set<ClearingRequest> clearingRequestsSet = client.getMyClearingRequests(user);
+            clearingRequestsSet.addAll(client.getClearingRequestsByBU(user.getDepartment()));
 
             Map<Boolean, List<ClearingRequest>> partitionedClearingRequests = clearingRequestsSet
                     .stream().collect(Collectors.groupingBy(ModerationPortletUtils::isClosedClearingRequest));
