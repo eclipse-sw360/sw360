@@ -28,7 +28,8 @@ import javax.portlet.ResourceRequest;
 import javax.portlet.ResourceResponse;
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ChangeLogsMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ChangedFieldsMixin;
@@ -63,7 +64,7 @@ import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 
 public class ChangeLogsPortletUtils {
-    private static final Logger log = Logger.getLogger(ChangeLogsPortletUtils.class);
+    private static final Logger log = LogManager.getLogger(ChangeLogsPortletUtils.class);
 
     private static final int CHANGELOGS_NO_SORT = -1;
     private static ObjectMapper mapper = initAndGetObjectMapper();

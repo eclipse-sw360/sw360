@@ -10,7 +10,6 @@
  */
 package org.eclipse.sw360.portal.portlets.homepage;
 
-import static org.apache.log4j.Logger.getLogger;
 import static org.eclipse.sw360.portal.common.PortalConstants.MY_COMPONENTS_PORTLET_NAME;
 
 import java.io.IOException;
@@ -27,7 +26,6 @@ import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
