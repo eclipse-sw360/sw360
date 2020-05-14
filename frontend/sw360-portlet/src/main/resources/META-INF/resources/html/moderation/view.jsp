@@ -37,6 +37,7 @@
              scope="request"/>
 <jsp:useBean id="closedClearingRequests" type="java.util.List<org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest>"
              scope="request"/>
+<jsp:useBean id="isClearingExpert" type="java.lang.Boolean" scope="request"/>
 <core_rt:set var="user" value="<%=themeDisplay.getUser()%>"/>
 
 <div class="container" style="display: none;">
@@ -156,6 +157,18 @@ AUI().use('liferay-portlet-url', function () {
                 e.preventDefault();
                 moderationsDataTable.buttons('.custom-print-button').trigger();
             }
+        });
+
+        $('.list-group-item').on('click', function(e) {
+                let ref = $(this).attr('href');
+                if (ref === '#tab-OpenCR' || ref === '#tab-ClosedCR') {
+                    let msg = '<liferay-ui:message key="clearing" /> (${clearingRequests.size()}/${closedClearingRequests.size()})';
+                    $('.portlet-title').attr('title', msg);
+                    $('.portlet-title').html(msg);
+                } else {
+                    $('.portlet-title').attr('title', '<liferay-ui:message key="moderations" /> (${moderationRequests.size()}/${closedModerationRequests.size()})');
+                    $('.portlet-title').html('<liferay-ui:message key="moderations" /> (${moderationRequests.size()}/<span id="requestCounter">${closedModerationRequests.size()}</span>)');
+                }
         });
 
         function prepareModerationsData() {
@@ -282,7 +295,7 @@ AUI().use('liferay-portlet-url', function () {
                     {title: "Actions", render: {display: renderClearingRequestAction}, className: 'one action'}
                 ],
                 language: {
-                    emptyTable: "No clearing requests are found."
+                    emptyTable: "<liferay-ui:message key='no.clearing.request.found'/>"
                 },
                 "order": [[2, 'asc']],
                 initComplete: datatables.showPageContainer
@@ -290,15 +303,15 @@ AUI().use('liferay-portlet-url', function () {
         }
 
         function renderClearingRequestAction(tableData, type, row) {
-            let status = $(row[3]).text();
-            if (status === 'Closed' || status === 'Rejected' || !row[10] || $(row[6]).attr('href').replace('mailto:', '') !== '${user.emailAddress}') {
+            if (row[10] && ($(row[6]).attr('href').replace('mailto:', '') === '${user.emailAddress}' || ${isClearingExpert})) {
+                return render.linkTo(
+                        makeClearingRequestUrl(row.DT_RowId, '<%=PortalConstants.PAGENAME_EDIT_CLEARING_REQUEST%>'),
+                        "",
+                        '<div class="actions"><svg class="edit lexicon-icon"><title>Edit</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg></div>'
+                        );
+            } else {
                 return '';
             }
-            return render.linkTo(
-                    makeClearingRequestUrl(row.DT_RowId, '<%=PortalConstants.PAGENAME_EDIT_CLEARING_REQUEST%>'),
-                    "",
-                    '<div class="actions"><svg class="edit lexicon-icon"><title>Edit</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg></div>'
-                    );
         }
 
         // helper functions

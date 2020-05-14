@@ -76,7 +76,6 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
         </core_rt:if>
 
         obligationJSON.push({
-            "DT_RowId": "${entry.key}",
             "obligation": '${entry.key}',
             "lIds": licenseIds.join(', <br>'),
             "rIds": releaseIds,
@@ -129,6 +128,12 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
                     } else if (status === 'To be fulfilled by parent project') {
                         $(td).addClass('text-info');
                     }
+                }
+            },
+            {
+                "targets": 5,
+                "createdCell": function (td, cellData, rowData, row, col) {
+                    $(td).css('max-width', '15rem');
                 }
             }
         ],
@@ -195,15 +200,5 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
         render.toggleAllChildRows($(this), table);
     });
 
-    /*
-     * Define function for child row creation, which will contain additional data for a clicked table row
-     */
-    function createChildRow(rowData) {
-        var childHtmlString = '' +
-            '<div>' +
-            '<span>' + rowData.text + '</span>' +
-            '</div>';
-        return childHtmlString;
-    }
 });
 </script>

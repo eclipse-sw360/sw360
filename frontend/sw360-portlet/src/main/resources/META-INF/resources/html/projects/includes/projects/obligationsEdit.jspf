@@ -130,6 +130,7 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
                 "createdCell": function (td, cellData, rowData, row, col) {
                     $.fn.dataTable.render.inputText.updateTitle(td);
                     $.fn.dataTable.render.inputText.useInputDialog(td, "<liferay-ui:message key="enter.obligation.comment" />");
+                    $(td).css('max-width', '15rem');
                 }
             }
         ],
@@ -290,17 +291,6 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
     $('#editObligationsTable thead').on('click', 'th.more-info', function() {
         render.toggleAllChildRows($(this), table);
     });
-
-    /*
-     * Define function for child row creation, which will contain obligation text for a clicked table row
-     */
-    function createChildRow(rowData) {
-        let childHtmlString = '' +
-            '<div>' +
-            '<span>' + rowData.text + '</span>' +
-            '</div>';
-        return childHtmlString;
-    }
 
     /* collect all the obligation status */
     function updateObligations(event, data, node, config) {

@@ -89,7 +89,7 @@ public abstract class AbstractCLIParser extends LicenseInfoParser {
 
     protected Optional<Node> findNamedSubelement(Node node, String name) {
         NodeList childNodes = node.getChildNodes();
-        return streamFromNodeList(childNodes).filter(n -> n.getNodeName().equals(name)).findFirst();
+        return streamFromNodeList(childNodes).filter(n -> n.getNodeName().equalsIgnoreCase(name)).findFirst();
     }
 
     private Stream<Node> streamFromNodeList(NodeList nodes) {
