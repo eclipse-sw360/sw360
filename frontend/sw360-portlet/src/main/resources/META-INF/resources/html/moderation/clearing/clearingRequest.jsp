@@ -56,7 +56,7 @@
 <core_rt:set var="user" value="<%=themeDisplay.getUser()%>"/>
 <core_rt:set var="isProjectPresent" value='${not empty project}'/>
 <core_rt:set var="isRequestingUser" value='${clearingRequest.requestingUser eq user.emailAddress}'/>
-<core_rt:set var="isClearingTeam" value='${clearingRequest.clearingTeam eq user.emailAddress or isClearingExpert}'/>
+<core_rt:set var="isClearingTeam" value='${clearingRequest.clearingTeam eq user.emailAddress or (isClearingExpert and writeAccessUser)}'/>
 <core_rt:set var="isClosedOrRejected" value="${clearingRequest.clearingState eq 'CLOSED' or clearingRequest.clearingState eq 'REJECTED' or empty project}"/>
 <core_rt:set var="isEditableForClearingTeam" value="${isClearingTeam and not isClosedOrRejected and pageName eq 'editClearingRequest'}"/>
 
@@ -69,7 +69,7 @@
                     <button type="button" class="btn btn-primary" onclick="window.location.href='<%=editlURL%>' + window.location.hash"><liferay-ui:message key="edit.request" /></button>
                 </div>
             </core_rt:if>
-            <core_rt:if test="${isProjectPresent and isClosedOrRejected and writeAccessUser}">
+            <core_rt:if test="${isProjectPresent and isClosedOrRejected and isClearingTeam}">
                 <div class="btn-group" role="group">
                     <button type="button" id="reOpenRequest" class="btn btn-primary"><liferay-ui:message key="reopen.request" /></button>
                 </div>
@@ -277,7 +277,7 @@
                                         </core_rt:forEach>
                                         <tr>
                                             <td>
-                                                <core_rt:if test="${isProjectPresent and (isClearingTeam or writeAccessUser)}">
+                                                <core_rt:if test="${isProjectPresent and isClearingTeam}">
 	                                                <textarea id="clearingRequestComment" placeholder="<liferay-ui:message key='enter.comment' />..." class="h-25 form-control"></textarea>
 	                                                <div class="my-2 btn-group" role="group">
 	                                                    <button id="addComment" type="button" class="btn btn-success"><liferay-ui:message key='add.comment' /></button>
@@ -355,8 +355,8 @@ require(['jquery', 'modules/dialog', 'modules/validation', 'bridges/jquery-ui' ]
                                     +'<div class="col-0 user-icon user-icon-info text-uppercase"><span>'+iconText+'</span></div>'
                                     +'<div class="col-11">'
                                     +'<div class="comment-text">' + comment +'<footer class="blockquote-footer">'
-                                    +'<liferay-ui:message key="by" /> <cite><b>' + by + '</b></cite>'
-                                    +'<liferay-ui:message key="on" /> <cite><b>' + on + '</b></cite></footer></div>'
+                                    +' <liferay-ui:message key="by" /> <cite><b>' + by + '</b></cite>'
+                                    +' <liferay-ui:message key="on" /> <cite><b>' + on + '</b></cite></footer></div>'
                                     +'</div></div>'
                                 +'</td></tr>');
                 }

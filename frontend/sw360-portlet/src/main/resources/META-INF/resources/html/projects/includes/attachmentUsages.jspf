@@ -114,7 +114,7 @@
                 alert.success($form, '<liferay-ui:message key="saved.attachment.usages" />', 4);
                 button.finish('#saveAttachmentUsagesButton');
             }).fail(function(xhr, status, error){
-                alert.danger($form, '<liferay-ui:message key="couldnt.save.attachment.usages" />' + xhr.responseText, 6);
+                alert.danger($form, "<liferay-ui:message key="couldnt.save.attachment.usages" />" + xhr.responseText, 6);
                 button.finish('#saveAttachmentUsagesButton');
             });
         }
