@@ -433,6 +433,24 @@ public class SW360Utils {
         return Collections.emptyList();
     }
 
+    public static List<ReleaseLink> getLinkedReleaseRelations(String releaseId, ThriftClients thriftClients, User user,
+            Logger log) {
+        ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        Release release = null;
+        if (CommonUtils.isNotNullEmptyOrWhitespace(releaseId)) {
+            try {
+                release = componentClient.getReleaseById(releaseId, user);
+                if (release != null && release.getReleaseIdToRelationship() != null) {
+                    return componentClient.getLinkedReleaseRelations(release.getReleaseIdToRelationship());
+                }
+            } catch (TException e) {
+                log.error("Could not get linked releases", e);
+            }
+        }
+
+        return Collections.emptyList();
+    }
+
     public static Predicate<String> startsWith(final String prefix) {
         return new Predicate<String>() {
             @Override

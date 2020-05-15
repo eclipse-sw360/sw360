@@ -724,7 +724,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 .flatMap(Set::stream)
                 .collect(Collectors.toSet());
 
-        return ThriftUtils.getIdMap(componentDatabaseHandler.getFullReleases(releaseIdsToLoad));
+        return ThriftUtils.getIdMap(componentDatabaseHandler.getDetailedReleasesForExport(releaseIdsToLoad));
     }
 
     public List<ProjectLink> getLinkedProjects(Map<String, ProjectRelationship> relations) {

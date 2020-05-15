@@ -215,6 +215,10 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             createClearingRequest(request, response);
         } else if (PortalConstants.VIEW_CLEARING_REQUEST.equals(action)) {
             showClearingRequest(request, response);
+        } else if (PortalConstants.LIST_CLEARING_STATUS.equals(action)) {
+            serveClearingStatusList(request, response);
+        }  else if (PortalConstants.CLEARING_STATUS_ON_LOAD.equals(action)) {
+            serveClearingStatusonLoad(request, response);
         } else if (isGenericAction(action)) {
             dealWithGenericAction(request, response, action);
         } else if (PortalConstants.LOAD_CHANGE_LOGS.equals(action) || PortalConstants.VIEW_CHANGE_LOGS.equals(action)) {
@@ -1986,6 +1990,201 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                     .filter(obligation -> ObligationStatus.FULFILLED.equals(obligation.getStatus())).count());
         }
         return 0;
+    }
+
+    private void serveClearingStatusonLoad(ResourceRequest request, ResourceResponse response)
+            throws IOException, PortletException {
+        User user = UserCacheHolder.getUserFromRequest(request);
+        String id = request.getParameter(PROJECT_ID);
+        ComponentService.Iface compClient = thriftClients.makeComponentClient();
+        ProjectService.Iface client = thriftClients.makeProjectClient();
+        Project project = null;
+        try {
+
+            project = client.getProjectById(id, user);
+            project = getWithFilledClearingStateSummary(project, user);
+        } catch (TException exp) {
+            log.error("Error while fetching Project id : " + id, exp);
+            return;
+        }
+
+        List<ProjectLink> mappedProjectLinks = createLinkedProjects(project, user);
+        request.setAttribute(PROJECT_LIST, mappedProjectLinks);
+        request.setAttribute("projectReleaseRelation", project.getReleaseIdToUsage());
+        Set<String> releaseIds = mappedProjectLinks.stream().map(ProjectLink::getLinkedReleases)
+                .filter(CommonUtils::isNotEmpty).flatMap(rList -> rList.stream()).filter(Objects::nonNull)
+                .map(ReleaseLink::getId).collect(Collectors.toSet());
+        request.setAttribute("relMainLineState", fillMainLineState(releaseIds, compClient, user));
+        include("/html/utils/ajax/linkedProjectsRows.jsp", request, response, PortletRequest.RESOURCE_PHASE);
+    }
+
+    private void serveClearingStatusList(ResourceRequest request, ResourceResponse response) {
+        List<Map<String, String>> clearingStatusList = getClearingStatusList(request);
+
+        JSONArray clearingStatusData = createJSONArray();
+        for (int i = 0; i < clearingStatusList.size(); i++) {
+            JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+            clearingStatusList.get(i).entrySet().parallelStream()
+                    .forEach(entry -> jsonObject.put(entry.getKey(), entry.getValue()));
+            clearingStatusData.put(jsonObject);
+        }
+        JSONObject jsonResult = createJSONObject();
+        jsonResult.put("data", clearingStatusData);
+
+        try {
+            writeJSON(request, response, jsonResult);
+        } catch (IOException e) {
+            log.error("Problem rendering Clearing Status", e);
+        }
+    }
+
+    private void flattenClearingStatus(Collection<ProjectLink> linkedProjects,
+            LinkedHashMap<String, String> projectOrigin, LinkedHashMap<String, String> releaseOrigin,
+            List<Map<String, String>> clearingStatusList, LiferayPortletURL projPortletUrl,
+            LiferayPortletURL releasePortletUrl, LiferayPortletURL licPortletUrl, User user,
+            ProjectService.Iface client) {
+
+        linkedProjects.stream().forEach(pl -> wrapTException(() -> {
+            String projName = pl.getName();
+            String projId = pl.getId();
+            if (projectOrigin.containsKey(projId))
+                return;
+            projectOrigin.put(projId, projName);
+            Map<String, String> row = createProjectLinkRow(pl, clearingStatusList, projPortletUrl);
+            List<ReleaseLink> linkedReleases = pl.getLinkedReleases();
+            List<ProjectLink> subprojects = pl.getSubprojects();
+
+            if (CommonUtils.isNotEmpty(linkedReleases)) {
+                Project projectById = client.getProjectById(projId, user);
+                flattenClearingStatusForReleases(linkedReleases, projectOrigin, releaseOrigin, clearingStatusList,
+                        projectById.getReleaseIdToUsage(), projPortletUrl, releasePortletUrl, licPortletUrl, user);
+            }
+
+            if (CommonUtils.isNotEmpty(subprojects)) {
+                flattenClearingStatus(subprojects, projectOrigin, releaseOrigin, clearingStatusList, projPortletUrl,
+                        releasePortletUrl, licPortletUrl, user, client);
+            }
+
+            projectOrigin.remove(projId);
+            row.put("projectOrigin", String.join(" -> ", projectOrigin.values()));
+        }));
+    }
+
+    private void flattenClearingStatusForReleases(Collection<ReleaseLink> linkedReleases,
+            LinkedHashMap<String, String> projectOrigin, LinkedHashMap<String, String> releaseOrigin,
+            List<Map<String, String>> clearingStatusList, Map<String, ProjectReleaseRelationship> releaseIdToUsage,
+            LiferayPortletURL projPortletUrl, LiferayPortletURL releasePortletUrl, LiferayPortletURL licPortletUrl,
+            User user) {
+
+        linkedReleases.stream().forEach(rl -> wrapTException(() -> {
+            String releaseName = rl.getName();
+            String releaseId = rl.getId();
+            if (releaseOrigin.containsKey(releaseId))
+                return;
+            releaseOrigin.put(releaseId, releaseName);
+            Map<String, String> row = createReleaseLinkRow(rl, clearingStatusList, releasePortletUrl, licPortletUrl);
+            if (rl.hasSubreleases) {
+                List<ReleaseLink> linkedReleaseRelations = SW360Utils.getLinkedReleaseRelations(releaseId,
+                        thriftClients, user, log);
+                flattenClearingStatusForReleases(linkedReleaseRelations, projectOrigin, releaseOrigin,
+                        clearingStatusList, null, projPortletUrl, releasePortletUrl, licPortletUrl, user);
+            }
+            releaseOrigin.remove(releaseId);
+            row.put("projectOrigin", String.join(" -> ", projectOrigin.values()));
+            row.put("releaseOrigin", String.join(" -> ", releaseOrigin.values()));
+
+            Release release = thriftClients.makeComponentClient().getReleaseById(releaseId, user);
+            row.put("releaseMainlineState", ThriftEnumUtils.enumToString(release.getMainlineState()));
+            if (releaseIdToUsage != null && !releaseIdToUsage.isEmpty() && releaseIdToUsage.containsKey(releaseId)) {
+                row.put("projectMainlineState",
+                        ThriftEnumUtils.enumToString(releaseIdToUsage.get(releaseId).getMainlineState()));
+            }
+        }));
+    }
+
+    private Map<String, String> createProjectLinkRow(ProjectLink pl, List<Map<String, String>> clearingStatusList,
+            LiferayPortletURL projPortletUrl) {
+        String projectId = pl.getId();
+        Map<String, String> row = new HashMap<>();
+        row.put("id", projectId);
+        projPortletUrl.setParameter(PortalConstants.PROJECT_ID, projectId);
+        StringBuilder idBuilder = new StringBuilder("<a href=\"");
+        idBuilder.append(projPortletUrl.toString());
+        idBuilder.append("\">");
+        idBuilder.append(pl.getName());
+        idBuilder.append("</a>");
+
+        row.put("name", idBuilder.toString());
+        row.put("type", ThriftEnumUtils.enumToString(pl.getProjectType()));
+        row.put("relation", ThriftEnumUtils.enumToString(pl.getRelation()));
+        row.put("isRelease", "false");
+        row.put("clearingState", ThriftEnumUtils.enumToString(pl.getClearingState()));
+        row.put("projectState", ThriftEnumUtils.enumToString(pl.getState()));
+;
+        clearingStatusList.add(row);
+        return row;
+    }
+
+    private Map<String, String> createReleaseLinkRow(ReleaseLink rl, List<Map<String, String>> clearingStatusList,
+            LiferayPortletURL releasePortletUrl, LiferayPortletURL licPortletUrl) {
+        Map<String, String> row = new HashMap<>();
+        String releaseId = rl.getId();
+        String releaseName = rl.getName();
+        releasePortletUrl.setParameter(PortalConstants.RELEASE_ID, releaseId);
+        row.put("id", releaseId);
+        StringBuilder idBuilder = new StringBuilder("<a href=\"");
+        idBuilder.append(releasePortletUrl.toString());
+        idBuilder.append("\">");
+        idBuilder.append(releaseName);
+        idBuilder.append("</a>");
+
+        row.put("name", idBuilder.toString());
+        row.put("type", ThriftEnumUtils.enumToString(rl.getComponentType()));
+        Set<String> collectedLicIds = rl.getLicenseIds().stream().map(licId -> {
+            licPortletUrl.setParameter(PortalConstants.LICENSE_ID, licId);
+            StringBuilder licIdBuilder = new StringBuilder("<a href=\"");
+            licIdBuilder.append(licPortletUrl.toString());
+            licIdBuilder.append("\">");
+            licIdBuilder.append(licId);
+            licIdBuilder.append("</a>");
+            return licIdBuilder.toString();
+        }).collect(Collectors.toSet());
+        row.put("relation", ThriftEnumUtils.enumToString(rl.getReleaseRelationship()));
+        row.put("mainLicenses", String.join(", ", collectedLicIds));
+        row.put("isRelease", "true");
+        row.put("releaseMainlineState", ThriftEnumUtils.enumToString(rl.getMainlineState()));
+        row.put("clearingState", ThriftEnumUtils.enumToString(rl.getClearingState()));
+        clearingStatusList.add(row);
+        return row;
+    }
+
+    private List<Map<String, String>> getClearingStatusList(ResourceRequest request) {
+        ProjectService.Iface client = thriftClients.makeProjectClient();
+        User user = UserCacheHolder.getUserFromRequest(request);
+        String projectId = request.getParameter(DOCUMENT_ID);
+        List<Map<String, String>> clearingStatusList = new ArrayList<Map<String, String>>();
+        Collection<ProjectLink> linkedProjects = SW360Utils.getLinkedProjects(projectId, true, thriftClients, log,
+                user);
+
+        LiferayPortletURL projPortletUrl = PortletUtils.getPortletUrl(request, PortalConstants.PROJECT_PORTLET_NAME,
+                "/projects", PortletRequest.RENDER_PHASE);
+        projPortletUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_DETAIL);
+
+        LiferayPortletURL relPortletUrl = PortletUtils.getPortletUrl(request, PortalConstants.COMPONENT_PORTLET_NAME,
+                "/components", PortletRequest.RENDER_PHASE);
+        relPortletUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_RELEASE_DETAIL);
+
+        LiferayPortletURL licPortletUrl = PortletUtils.getPortletUrl(request, PortalConstants.LICENSES_PORTLET_NAME,
+                "/licenses", PortletRequest.RENDER_PHASE);
+        licPortletUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_DETAIL);
+
+        LinkedHashMap<String, String> projectOrigin = new LinkedHashMap<>();
+        LinkedHashMap<String, String> releaseOrigin = new LinkedHashMap<>();
+        flattenClearingStatus(linkedProjects, projectOrigin, releaseOrigin, clearingStatusList, projPortletUrl,
+                relPortletUrl, licPortletUrl, user, client);
+
+        clearingStatusList.removeIf(cs -> cs.get("id").equals(projectId));
+        return clearingStatusList;
     }
 
     private void serveProjectList(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {

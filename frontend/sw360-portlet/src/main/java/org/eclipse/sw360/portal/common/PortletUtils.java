@@ -490,4 +490,17 @@ public class PortletUtils {
         }
         return changeLogsPortletUtils;
     }
+
+    public static LiferayPortletURL getPortletUrl(PortletRequest request, String portletId, String friendlyUrl,
+            String phase) {
+        Portlet portlet = PortletLocalServiceUtil.getPortletById(portletId);
+        Optional<Layout> layout = LayoutLocalServiceUtil.getLayouts(portlet.getCompanyId()).stream()
+                .filter(l -> (friendlyUrl).equals(l.getFriendlyURL())).findFirst();
+        if (layout.isPresent()) {
+            long plId = layout.get().getPlid();
+            LiferayPortletURL portUrl = PortletURLFactoryUtil.create(request, portletId, plId, phase);
+            return portUrl;
+        }
+        return null;
+    }
 }
