@@ -356,4 +356,10 @@ public class ProjectHandler implements ProjectService.Iface {
         assertNotNull(projectId);
         return handler.getUsedReleaseRelationsByProjectId(projectId);
     }
+
+    @Override
+    public List<Map<String, String>> getClearingStateInformationForListView(String projectId,User user) throws SW360Exception {
+        assertNotNull(projectId);
+        return handler.getClearingStateInformationForListView(projectId,user);
+    }
 }

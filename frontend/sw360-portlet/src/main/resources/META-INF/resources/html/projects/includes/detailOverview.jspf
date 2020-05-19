@@ -84,10 +84,10 @@
 								</button>
 							</div>
 							<div class="list-group-companion" data-belong-to="tab-clearingStatus">
-								<div class="nav nav-pills justify-content-center bg-light font-weight-bold d-inline" id="pills-tab" role="tablist">
-									<a class="nav-item nav-link active d-inline" id="pills-tree-tab" data-toggle="pill" href="#pills-treeView" role="tab" aria-controls="pills-treeView" aria-selected="true">
+								<div class="nav nav-pills justify-content-center bg-light font-weight-bold d-inline-flex" id="pills-tab" role="tablist">
+									<a class="nav-item nav-link active" id="pills-tree-tab" data-toggle="pill" href="#pills-treeView" role="tab" aria-controls="pills-treeView" aria-selected="true">
 									<liferay-ui:message key="tree.view" /></a>
-									<a class="nav-item nav-link d-inline" id="pills-list-tab" data-toggle="pill" href="#pills-listView" role="tab" aria-controls="pills-listView" aria-selected="false">
+									<a class="nav-item nav-link" id="pills-list-tab" data-toggle="pill" href="#pills-listView" role="tab" aria-controls="pills-listView" aria-selected="false">
 									<liferay-ui:message key="list.view" /></a>
 								</div>
 								<div id="btnExportGroup" class="btn-group" role="group">

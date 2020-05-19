@@ -14,12 +14,6 @@ import com.google.common.collect.Sets;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
-import com.liferay.portal.kernel.model.Layout;
-import com.liferay.portal.kernel.model.Portlet;
-import com.liferay.portal.kernel.portlet.LiferayPortletURL;
-import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
-import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
-import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
 
 import org.apache.log4j.Logger;
 import org.apache.thrift.TBase;
@@ -489,18 +483,5 @@ public class PortletUtils {
             changeLogsPortletUtils = new ChangeLogsPortletUtils(clients);
         }
         return changeLogsPortletUtils;
-    }
-
-    public static LiferayPortletURL getPortletUrl(PortletRequest request, String portletId, String friendlyUrl,
-            String phase) {
-        Portlet portlet = PortletLocalServiceUtil.getPortletById(portletId);
-        Optional<Layout> layout = LayoutLocalServiceUtil.getLayouts(portlet.getCompanyId()).stream()
-                .filter(l -> (friendlyUrl).equals(l.getFriendlyURL())).findFirst();
-        if (layout.isPresent()) {
-            long plId = layout.get().getPlid();
-            LiferayPortletURL portUrl = PortletURLFactoryUtil.create(request, portletId, plId, phase);
-            return portUrl;
-        }
-        return null;
     }
 }
