@@ -56,9 +56,10 @@
     <jsp:useBean id="defaultLicenseInfoHeaderText" class="java.lang.String" scope="request" />
     <jsp:useBean id="defaultObligationsText" class="java.lang.String" scope="request" />
     <jsp:useBean id="isUserAtLeastClearingAdmin" type="java.lang.Boolean" scope="request" />
+    <jsp:useBean id="customFields" type="java.util.List<org.eclipse.sw360.portal.common.customfields.CustomField>" scope="request"/>
 
-    <core_rt:set  var="addMode"  value="${empty project.id}" />
-    <core_rt:set  var="pageName"  value="<%= request.getParameter("pagename") %>" />
+    <core_rt:set var="addMode"  value="${empty project.id}" />
+    <core_rt:set var="pageName"  value="<%= request.getParameter("pagename") %>" />
     <core_rt:set var="isProjectObligationsEnabled" value='<%=PortalConstants.IS_PROJECT_OBLIGATIONS_ENABLED%>'/>
 </c:catch>
 

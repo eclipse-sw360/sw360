@@ -10,6 +10,7 @@
 package org.eclipse.sw360.portal.common.customfields;
 
 public enum CustomFieldPageIdentifier {
+    PROJECT("project-"),
     COMPONENT("component-"),
     RELEASE("release-");
     private String value;

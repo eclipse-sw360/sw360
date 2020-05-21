@@ -1158,7 +1158,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 request.setAttribute(
                         WRITE_ACCESS_USER,
                         PermissionUtils.makePermission(project, user).isActionAllowed(RequestedAction.WRITE));
-
+                PortletUtils.setCustomFieldsDisplay(request, user, project);
                 addProjectBreadcrumb(request, response, project);
                 request.setAttribute(PROJECT_OBLIGATIONS, SW360Utils.getProjectObligations(project));
                 request.setAttribute(IS_USER_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user) ? "Yes" : "No");
@@ -1511,7 +1511,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 setSW360SessionError(request, ErrorMessages.ERROR_GETTING_PROJECT);
                 return;
             }
-
+            PortletUtils.setCustomFieldsEdit(request, user, project);
             request.setAttribute(PROJECT, project);
             request.setAttribute(DOCUMENT_ID, id);
             request.setAttribute(PROJECT_OBLIGATIONS, SW360Utils.getProjectObligations(project));
@@ -1524,7 +1524,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 log.error("Could not fetch linked projects or linked releases in projects view.", e);
                 return;
             }
-
             if (PortalConstants.IS_PROJECT_OBLIGATIONS_ENABLED && project.getReleaseIdToUsageSize() > 0
                     && PermissionUtils.makePermission(project, user).isActionAllowed(RequestedAction.WRITE)) {
                 request.setAttribute(OBLIGATION_DATA, loadLinkedObligations(request, project));
@@ -1540,6 +1539,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 project = new Project();
                 project.setBusinessUnit(user.getDepartment());
                 request.setAttribute(PROJECT, project);
+                PortletUtils.setCustomFieldsEdit(request, user, project);
                 setAttachmentsInRequest(request, project);
                 try {
                     putDirectlyLinkedProjectsInRequest(request, project, user);
@@ -1571,6 +1571,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
                 Project newProject = PortletUtils.cloneProject(emailFromRequest, department, client.getProjectById(id, user));
                 setAttachmentsInRequest(request, newProject);
+                PortletUtils.setCustomFieldsEdit(request, user, newProject);
                 request.setAttribute(PROJECT, newProject);
                 putDirectlyLinkedProjectsInRequest(request, newProject, user);
                 putDirectlyLinkedReleasesInRequest(request, newProject);
@@ -1583,6 +1584,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 setAttachmentsInRequest(request, project);
 
                 request.setAttribute(PROJECT, project);
+                PortletUtils.setCustomFieldsEdit(request, user, project);
                 putDirectlyLinkedProjectsInRequest(request, project, user);
                 putDirectlyLinkedReleasesInRequest(request, project);
 

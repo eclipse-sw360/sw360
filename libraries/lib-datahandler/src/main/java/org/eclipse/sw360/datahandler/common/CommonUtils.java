@@ -211,6 +211,10 @@ public class CommonUtils {
         return collection == null || collection.isEmpty();
     }
 
+    public static boolean isNullOrEmptyMap(Map map) {
+        return map == null || map.isEmpty();
+    }
+
     public static boolean isNotEmpty(Collection collection) {
         return !isNullOrEmptyCollection(collection);
     }
