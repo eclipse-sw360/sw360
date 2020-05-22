@@ -65,6 +65,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.fail;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getBUFromOrganisation;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getCreatedOn;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
+import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 
 /**
@@ -1281,5 +1282,136 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         project.setAdditionalData(DatabaseHandlerUtil.trimMapOfStringKeyStringValue(project.getAdditionalData()));
 
         project.setRoles(DatabaseHandlerUtil.trimMapOfStringKeySetValue(project.getRoles()));
+    }
+
+    public List<Map<String, String>> getClearingStateInformationForListView(String projectId, User user)
+            throws SW360Exception {
+        Project projectById = getProjectById(projectId, user);
+        List<Map<String, String>> clearingStatusList = new ArrayList<Map<String, String>>();
+        LinkedHashMap<String, String> projectOrigin = new LinkedHashMap<>();
+        projectOrigin.put(projectId, SW360Utils.printName(projectById));
+        LinkedHashMap<String, String> releaseOrigin = new LinkedHashMap<>();
+        Map<String, ProjectRelationship> linkedProjects = projectById.getLinkedProjects();
+        Map<String, ProjectReleaseRelationship> releaseIdToUsage = projectById.getReleaseIdToUsage();
+        if (linkedProjects != null && !linkedProjects.isEmpty()) {
+            flattenClearingStatusForLinkedProject(linkedProjects, projectOrigin, releaseOrigin, clearingStatusList,
+                    user);
+        }
+        if (releaseIdToUsage != null && !releaseIdToUsage.isEmpty()) {
+            flattenClearingStatusForReleases(releaseIdToUsage, projectOrigin, releaseOrigin, clearingStatusList, user);
+        }
+
+        return clearingStatusList;
+    }
+
+    private void flattenClearingStatusForLinkedProject(Map<String, ProjectRelationship> linkedProjects,
+            LinkedHashMap<String, String> projectOrigin, LinkedHashMap<String, String> releaseOrigin,
+            List<Map<String, String>> clearingStatusList, User user) {
+
+        linkedProjects.entrySet().stream().forEach(lp -> wrapTException(() -> {
+            String projId = lp.getKey();
+            String relation = ThriftEnumUtils.enumToString(lp.getValue());
+            if (projectOrigin.containsKey(projId))
+                return;
+            Project linkedProjectById = getProjectById(projId, user);
+            projectOrigin.put(projId, SW360Utils.printName(linkedProjectById));
+            Map<String, String> row = createProjectCSRow(relation, linkedProjectById, clearingStatusList);
+            Map<String, ProjectRelationship> subprojects = linkedProjectById.getLinkedProjects();
+            Map<String, ProjectReleaseRelationship> linkedReleases = linkedProjectById.getReleaseIdToUsage();
+
+            if (linkedReleases != null && !linkedReleases.isEmpty()) {
+                flattenClearingStatusForReleases(linkedReleases, projectOrigin, releaseOrigin, clearingStatusList,
+                        user);
+            }
+
+            if (subprojects != null && !subprojects.isEmpty()) {
+                flattenClearingStatusForLinkedProject(subprojects, projectOrigin, releaseOrigin, clearingStatusList,
+                        user);
+            }
+
+            projectOrigin.remove(projId);
+            row.put("projectOrigin", String.join(" -> ", projectOrigin.values()));
+        }));
+    }
+
+    private void flattenClearingStatusForReleases(Map<String, ProjectReleaseRelationship> linkedReleases,
+            LinkedHashMap<String, String> projectOrigin, LinkedHashMap<String, String> releaseOrigin,
+            List<Map<String, String>> clearingStatusList, User user) {
+
+        linkedReleases.entrySet().stream().forEach(rl -> wrapTException(() -> {
+            String relation = ThriftEnumUtils.enumToString(rl.getValue().getReleaseRelation());
+            String projectMailLineState = ThriftEnumUtils.enumToString(rl.getValue().getMainlineState());
+            String releaseId = rl.getKey();
+            if (releaseOrigin.containsKey(releaseId))
+                return;
+            Release rel = componentDatabaseHandler.getRelease(releaseId, user);
+            Map<String, ReleaseRelationship> releaseIdToRelationship = rel.getReleaseIdToRelationship();
+            releaseOrigin.put(releaseId, SW360Utils.printName(rel));
+            Map<String, String> row = createReleaseCSRow(relation, projectMailLineState, rel, clearingStatusList, user);
+            if (releaseIdToRelationship != null && !releaseIdToRelationship.isEmpty()) {
+                flattenlinkedReleaseOfRelease(releaseIdToRelationship, projectOrigin, releaseOrigin, clearingStatusList,
+                        user);
+            }
+            releaseOrigin.remove(releaseId);
+            row.put("projectOrigin", String.join(" -> ", projectOrigin.values()));
+            row.put("releaseOrigin", String.join(" -> ", releaseOrigin.values()));
+        }));
+    }
+
+    private void flattenlinkedReleaseOfRelease(Map<String, ReleaseRelationship> releaseIdToRelationship,
+            LinkedHashMap<String, String> projectOrigin, LinkedHashMap<String, String> releaseOrigin,
+            List<Map<String, String>> clearingStatusList, User user) {
+        releaseIdToRelationship.entrySet().stream().forEach(rl -> wrapTException(() -> {
+            String relation = ThriftEnumUtils.enumToString(rl.getValue());
+            String projectMailLineState = "";
+            String releaseId = rl.getKey();
+            if (releaseOrigin.containsKey(releaseId))
+                return;
+            Release rel = componentDatabaseHandler.getRelease(releaseId, user);
+            Map<String, ReleaseRelationship> subReleaseIdToRelationship = rel.getReleaseIdToRelationship();
+            releaseOrigin.put(releaseId, SW360Utils.printName(rel));
+            Map<String, String> row = createReleaseCSRow(relation, projectMailLineState, rel, clearingStatusList, user);
+            if (subReleaseIdToRelationship != null && !subReleaseIdToRelationship.isEmpty()) {
+                flattenlinkedReleaseOfRelease(subReleaseIdToRelationship, projectOrigin, releaseOrigin,
+                        clearingStatusList, user);
+            }
+            releaseOrigin.remove(releaseId);
+            row.put("projectOrigin", String.join(" -> ", projectOrigin.values()));
+            row.put("releaseOrigin", String.join(" -> ", releaseOrigin.values()));
+        }));
+    }
+
+    private Map<String, String> createProjectCSRow(String relation, Project prj,
+            List<Map<String, String>> clearingStatusList) {
+        String projectId = prj.getId();
+        Map<String, String> row = new HashMap<>();
+        row.put("id", projectId);
+        row.put("name", SW360Utils.printName(prj));
+        row.put("type", ThriftEnumUtils.enumToString(prj.getProjectType()));
+        row.put("relation", relation);
+        row.put("isRelease", "false");
+        row.put("clearingState", ThriftEnumUtils.enumToString(prj.getClearingState()));
+        row.put("projectState", ThriftEnumUtils.enumToString(prj.getState()));
+        clearingStatusList.add(row);
+        return row;
+    }
+
+    private Map<String, String> createReleaseCSRow(String relation, String projectMailLineState, Release rl,
+            List<Map<String, String>> clearingStatusList, User user) throws SW360Exception {
+        Map<String, String> row = new HashMap<>();
+        Component component = componentDatabaseHandler.getComponent(rl.getComponentId(), user);
+        String releaseId = rl.getId();
+        row.put("id", releaseId);
+        row.put("name", SW360Utils.printName(rl));
+        row.put("type", ThriftEnumUtils.enumToString(component.getComponentType()));
+        Set<String> collectedLicIds = CommonUtils.nullToEmptySet(rl.getMainLicenseIds());
+        row.put("relation", relation);
+        row.put("mainLicenses", String.join(",", collectedLicIds));
+        row.put("isRelease", "true");
+        row.put("releaseMainlineState", ThriftEnumUtils.enumToString(rl.getMainlineState()));
+        row.put("clearingState", ThriftEnumUtils.enumToString(rl.getClearingState()));
+        row.put("projectMainlineState", projectMailLineState);
+        clearingStatusList.add(row);
+        return row;
     }
 }

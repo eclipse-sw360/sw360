@@ -76,23 +76,26 @@ AUI().use('liferay-portlet-url', function () {
     var PortletURL = Liferay.PortletURL;
     require(['jquery', 'modules/ajax-treetable', 'utils/render', 'bridges/datatables'], function($, ajaxTreeTable, render, datatables) {
         var clearingStatuslisturl= '<%=clearingStatuslisturl%>';
-        $.ajax({url: clearingStatuslisturl, success: function(result){
+        $.ajax({url: clearingStatuslisturl,
+                type: 'GET',
+                dataType: 'json'
+               }).done(function(result){
             createClearingStatusTable(result);
             $("#clearingStatusSpinner").addClass("d-none");
             $("#clearingStatusTable").removeClass("d-none");
-          }});
+          });
 
         function createClearingStatusTable(clearingStatusJsonData) {
             var clearingStatusTable;
             clearingStatusTable = datatables.create('#clearingStatusTable', {
                 data: clearingStatusJsonData.data,
                 columns: [
-                    {title: "<liferay-ui:message key="name" />", data : "name", "defaultContent": ""},
+                    {title: "<liferay-ui:message key="name" />", data : "name", "defaultContent": "", render: {display: detailUrl}},
                     {title: "<liferay-ui:message key="type" />", data : "type", "defaultContent": ""},
                     {title: "<liferay-ui:message key="project.path" />", data : "projectOrigin", "defaultContent": ""},
                     {title: "<liferay-ui:message key="release.path" />", data : "releaseOrigin", "defaultContent": ""},
                     {title: "<liferay-ui:message key="relation" />", data : "relation", "defaultContent": ""},
-                    {title: "<liferay-ui:message key="main.licenses" />", data : "mainLicenses", "defaultContent": ""},
+                    {title: "<liferay-ui:message key="main.licenses" />", data : "mainLicenses", "defaultContent": "", render: {display: mainLicenseUrl}},
                     {title: "<liferay-ui:message key="state" />", data: "isRelease", render: {display: renderState}, "defaultContent": ""},
                     {title: "<liferay-ui:message key="release.mainline.state" />", data : "releaseMainlineState", "defaultContent": ""},
                     {title: "<liferay-ui:message key="project.mainline.state" />", data : "projectMainlineState", "defaultContent": ""},
@@ -109,6 +112,33 @@ AUI().use('liferay-portlet-url', function () {
         }
 
         var homeUrl = themeDisplay.getURLHome().replace(/\/web\//, '/group/');
+
+        function detailUrl(name, type, row)
+        {
+            let url;
+            if(row.isRelease === "true"){
+                url = makeReleaseViewUrl(row.id);
+            }
+            else {
+                url = makeProjectViewUrl(row.id);
+            }
+            let viewUrl = $("<a></a>").attr("href",url).html(name);
+            return viewUrl[0].outerHTML;
+        }
+
+        function mainLicenseUrl(mainLicenses, type, row)
+        {
+            if(mainLicenses !== null && mainLicenses !== undefined) {
+                let licArr = mainLicenses.split(",");
+                let licLinkArr = new Array();
+                for(let i=0;i<licArr.length;i++){
+                    let licLink=$("<a></a>").attr("href", makeLicenseViewUrl(licArr[i])).html(licArr[i]);
+                    licLinkArr.push(licLink[0].outerHTML);
+                }
+                return licLinkArr.join(", ");
+            }
+            return "";
+        }
 
         function renderActions(id, type, row)
         {
@@ -154,7 +184,7 @@ AUI().use('liferay-portlet-url', function () {
 
             var $csBox = $('<div>', {
                 'class': 'stateBox capsuleRight ' + getClearingStateBackgroundColour(cStateVal)
-            }).text('CS').attr("title", "Project clearing state: " + stateVal);
+            }).text('CS').attr("title", "Project clearing state: " + cStateVal);
 
             $state.append($psBox,$csBox);
             return $state[0].outerHTML;
@@ -201,6 +231,18 @@ AUI().use('liferay-portlet-url', function () {
 
         function makeReleaseUrl(releaseId) {
             return homeUrl + '/components/-/component/release/editRelease/' + releaseId;
+        }
+
+        function makeReleaseViewUrl(releaseId) {
+            return homeUrl + '/components/-/component/release/detailRelease/' + releaseId;
+        }
+
+        function makeProjectViewUrl(projectId) {
+            return homeUrl + '/projects/-/project/detail/' + projectId;
+        }
+
+        function makeLicenseViewUrl(licenseId) {
+            return homeUrl + '/licenses/-/license/detail/' + licenseId;
         }
 
         function makeProjectUrl(projectId) {
