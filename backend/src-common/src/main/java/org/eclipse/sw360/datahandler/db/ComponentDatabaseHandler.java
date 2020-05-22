@@ -658,10 +658,12 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         Component mergeSource = getComponent(mergeSourceId, sessionUser);
         Component mergeTargetOriginal = mergeTarget.deepCopy();
 
-        Set<String> releaseIds = Stream.concat(
-            nullToEmptyList(mergeSource.getReleases()).stream(), 
-            nullToEmptyList(mergeTarget.getReleases()).stream()
-        ).map(Release::getId).collect(Collectors.toSet());
+        Set<String> srcComponentReleaseIds = nullToEmptyList(mergeSource.getReleases()).stream().map(Release::getId)
+                .collect(Collectors.toSet());
+        Set<String> targetComponentReleaseIds = nullToEmptyList(mergeTarget.getReleases()).stream().map(Release::getId)
+                .collect(Collectors.toSet());
+        Set<String> releaseIds = Stream.concat(targetComponentReleaseIds.stream(), srcComponentReleaseIds.stream())
+                .collect(Collectors.toSet());
 
         if (!makePermission(mergeTarget, sessionUser).isActionAllowed(RequestedAction.WRITE)
                 || !makePermission(mergeSource, sessionUser).isActionAllowed(RequestedAction.WRITE)
@@ -686,10 +688,10 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             // now, update source (before deletion so that attachments and releases and
             // stuff that has been migrated will not be deleted by component deletion!)
             updateComponentCompletely(mergeSource, sessionUser);
-
             // now update some release fields related to the component (e.g. id and name)
-            updateReleasesAfterMerge(releaseIds, mergeSelection, mergeTarget, sessionUser);
-        
+            updateReleasesAfterMerge(targetComponentReleaseIds, srcComponentReleaseIds, mergeSelection, mergeTarget,
+                    sessionUser);
+
             // Finally we can delete the source component
             deleteComponent(mergeSourceId, sessionUser);
 
@@ -804,14 +806,24 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         releaseIds.forEach(mergeTarget::addToReleaseIds);
     }
 
-    private void updateReleasesAfterMerge(Set<String> releaseIds, Component mergeSelection, Component mergeTarget, User sessionUser) throws SW360Exception {
+    private void updateReleasesAfterMerge(Set<String> targetComponentReleaseIds, Set<String> srcComponentReleaseIds,
+            Component mergeSelection, Component mergeTarget, User sessionUser) throws SW360Exception {
         // Change release name if appropriate
-        List<Release> releases = getReleasesForClearingStateSummary(releaseIds);
+        List<Release> targetComponentReleases = getReleasesForClearingStateSummary(targetComponentReleaseIds);
+        List<Release> srcComponentReleases = getReleasesForClearingStateSummary(srcComponentReleaseIds);
+        Set<String> targetComponentReleaseVersions = targetComponentReleases.stream().map(Release::getVersion)
+                .collect(Collectors.toSet());
+        Set<Release> releases = Stream.concat(targetComponentReleases.stream(), srcComponentReleases.stream())
+                .collect(Collectors.toSet());
+
         List<Release> releasesToUpdate = releases.stream()
             .filter( r -> {
                 return !(r.getComponentId().equals(mergeTarget.getId()) && r.getName().equals(mergeSelection.getName()));
             }).map(r -> {
                 Release releaseBefore = r.deepCopy();
+                if (srcComponentReleases.contains(r) && targetComponentReleaseVersions.contains(r.getVersion())) {
+                        r.setVersion(r.getVersion() + "_conflict (" + r.getId() + ")");
+                }
                 r.setComponentId(mergeTarget.getId());
                 r.setName(mergeSelection.getName());
                 DatabaseHandlerUtil.addChangeLogs(r, releaseBefore, sessionUser.getEmail(), Operation.UPDATE,
