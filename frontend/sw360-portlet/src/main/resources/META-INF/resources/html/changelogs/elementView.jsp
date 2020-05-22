@@ -71,7 +71,19 @@
     </tr>
 </table>
 
-
+<table id="basicInfoTemplateTable" cellspacing="10" class="d-none table"
+    style="width: 100%;table-layout: fixed;">
+    <tr id="templateRow">
+        <td class="text-justify align-top w-50 p-3">
+        </td>
+        <td class="text-justify align-top w-50 p-3 border-right">
+        </td>
+        <td class="text-justify align-top w-50 p-3">
+        </td>
+        <td class="text-justify align-top w-50 p-3">
+        </td>
+    </tr>
+</table>
 <script>
     AUI().use('liferay-portlet-url', function () {
         require(['jquery', 'modules/autocomplete', 'modules/dialog', 'modules/validation', 'bridges/datatables', 'utils/render', 'bridges/jquery-ui'], function($, autocomplete, dialog, validation, datatables, render) {
@@ -135,40 +147,48 @@
 
                 basicInfo.find("h3").html('<liferay-ui:message key="basic.info"/>').parent().attr("id","heading-"+cardId)
                 .attr("aria-controls","collapse-"+cardId).attr("data-target","#collapse-"+cardId);
-                let basicInfoTable=$("#templateTable").clone(true,true).removeClass("d-none").removeAttr("id");
-                basicInfoTable.find("td:eq(0)").removeClass("text-danger").addClass("text-success").css({"background-color":"#e6ffed",
-                   "border": "1px solid green"})
-                         .html('<liferay-ui:message key="document.id"/> : ' + result.documentId);
-                basicInfoTable.find("td:eq(1)")
-                         .html('<liferay-ui:message key="document.type"/> : ' + result.documentType);
+                let basicInfoTable=$("#basicInfoTemplateTable").clone(true,true).removeClass("d-none").removeAttr("id");
+                basicInfoTable.find("td:eq(0)").html('<liferay-ui:message key="user"/> : ');
+                basicInfoTable.find("td:eq(1)").html(result.userEdited);
+                basicInfoTable.find("td:eq(2)").html('<liferay-ui:message key="document.id"/> : ');
+                basicInfoTable.find("td:eq(3)").html(result.documentId);
 
                 basicInfoTableTr1= basicInfoTable.find("tr").clone(true,true);
-                basicInfoTableTr1.find("td:eq(0)").html('<liferay-ui:message key="date"/> : ' + result.changeTimestamp);
-                basicInfoTableTr1.find("td:eq(1)").html('<liferay-ui:message key="user"/> : ' + result.userEdited);
+                basicInfoTableTr1.find("td:eq(0)").html('<liferay-ui:message key="date"/> : ');
+                basicInfoTableTr1.find("td:eq(1)").html(result.changeTimestamp);
+                basicInfoTableTr1.find("td:eq(2)").html('<liferay-ui:message key="document.type"/> : ');
+                basicInfoTableTr1.find("td:eq(3)").html(result.documentType);
 
                 basicInfoTableTr2= basicInfoTable.find("tr").clone(true,true);
-                basicInfoTableTr2.find("td:eq(0)").html('<liferay-ui:message key="operation"/> : ' + result.operation);
-
+                basicInfoTableTr2.find("td:eq(0)").html('<liferay-ui:message key="operation"/> : ');
+                basicInfoTableTr2.find("td:eq(1)").html(result.operation);
                 let basicInfoTableTr3 = null;
-                let secondRowSecondCol = basicInfoTableTr2.find("td:eq(1)");
+                let secondRowThirdCol = basicInfoTableTr2.find("td:eq(2)");
+                let secondRowFourthCol = basicInfoTableTr2.find("td:eq(3)");
                 if(isNullOrUndefined(result.referenceDoc)&&isNullOrUndefined(result.info))
                 {
-                    secondRowSecondCol.addClass("d-none")
+                    secondRowThirdCol.addClass("d-none");
+                    secondRowFourthCol.addClass("d-none");
                 }
                 else if(isNullOrUndefined(result.info))
                 {
-                    secondRowSecondCol.html('<liferay-ui:message key="reference.doc"/> : ' + getJsonArrPrettyFormat(result.referenceDoc));
+                    secondRowThirdCol.html('<liferay-ui:message key="reference.doc"/> : ');
+                    secondRowFourthCol.html(getJsonArrPrettyFormat(result.referenceDoc));
                 }
                 else if(isNullOrUndefined(result.referenceDoc))
                 {
-                    secondRowSecondCol.html('<liferay-ui:message key="info"/> : ' + getFieldValueInPrettyFormat(result.info,"text-success"));
+                    secondRowThirdCol.html('<liferay-ui:message key="info"/> : ');
+                    secondRowFourthCol.html(getFieldValueInPrettyFormat(result.info,""));
                 }
                 else
                 {
-                    secondRowSecondCol.html('<liferay-ui:message key="info"/> : ' + getFieldValueInPrettyFormat(result.info,"text-success"));
+                    secondRowThirdCol.html('<liferay-ui:message key="info"/> : ');
+                    secondRowFourthCol.html(getFieldValueInPrettyFormat(result.info,""));
                     basicInfoTableTr3= basicInfoTable.find("tr").clone(true,true);
-                    basicInfoTableTr3.find("td:eq(0)").html('<liferay-ui:message key="reference.doc"/> : ' + getJsonArrPrettyFormat(result.referenceDoc));
-                    basicInfoTableTr3.find("td:eq(1)").addClass("d-none");
+                    basicInfoTableTr3.find("td:eq(0)").html('<liferay-ui:message key="reference.doc"/> : ');
+                    basicInfoTableTr3.find("td:eq(1)").html(getJsonArrPrettyFormat(result.referenceDoc));
+                    basicInfoTableTr3.find("td:eq(2)").addClass("d-none");
+                    basicInfoTableTr3.find("td:eq(3)").addClass("d-none");
                 }
 
                 basicInfoTable.append(basicInfoTableTr1);
@@ -197,7 +217,7 @@
                 let jsonStr = JSON.stringify(referenceDoc, undefined, 5);
                 if(referenceDoc !== null && referenceDoc !== undefined && referenceDoc.length>0)
                 {
-                    jsonStr = '<pre class="text-success" style="white-space: pre-wrap;word-break: break-all;">' + jsonStr + '</pre>';
+                    jsonStr = '<pre style="white-space: pre-wrap;word-break: break-all;">' + jsonStr + '</pre>';
                 }
                 return jsonStr;
             }
@@ -254,21 +274,20 @@
                         'data-changelogid': data.id
                     });
 
-                $viewAction.append($('<span class="glyphicon glyphicon-open-file" style="font-size: 20px;color: green;" title="<liferay-ui:message key="view.change.logs" />"></span>'));
+                $viewAction.append($('<span class="glyphicon glyphicon-open-file" style="font-size: 20px;" title="<liferay-ui:message key="view.change.logs" />"></span>'));
                 $actions.append($viewAction);
 
                 let moderationUrl = data.moderationUrl
                 if(moderationUrl !== null && moderationUrl !== undefined)
                 {
                     $modAction=$('<a>', {
-                        'class': 'view',
                         'href': moderationUrl
                     });
 
                     $modSpan=$('<span>', {
-                        'class': 'font-weight-bold text-white bg-warning',
+                        'class': 'font-weight-bold text-white bg-secondary rounded',
                         'href': moderationUrl,
-                        'style': 'padding: 2px;font-size: initial;border: 1px solid #f7941e;border-radius: 5px;',
+                        'style': 'padding: 2px;font-size: initial;',
                         'title': '<liferay-ui:message key="moderation.request" />'
                     });
                     $modSpan.append("M");
@@ -279,10 +298,10 @@
             }
 
             function renderChangeType(documentData, type, row) {
-                let changeType = '<span class="text-info"><liferay-ui:message key="reference.doc"/> <liferay-ui:message key="changes" />  : ' + documentData.documentType + '</span>';
+                let changeType = '<span><liferay-ui:message key="reference.doc"/> <liferay-ui:message key="changes" />  : ' + documentData.documentType + '</span>';
                 if(documentData.documentId === '<core_rt:out value = "${docid}"/>')
                 {
-                    changeType = '<span class="text-success"><liferay-ui:message key="attribute.changes"/></span>'
+                    changeType = '<span"><liferay-ui:message key="attribute.changes"/></span>'
                 }
                 return changeType;
             }
