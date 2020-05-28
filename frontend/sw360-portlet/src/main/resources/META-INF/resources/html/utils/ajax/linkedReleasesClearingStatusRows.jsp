@@ -29,7 +29,7 @@
         <core_rt:if test="${empty parent_branch_id and not empty releaseLink.parentNodeId}">data-tt-parent-id="${releaseLink.parentNodeId}"</core_rt:if>>
         <td style="white-space: nowrap">
             <a href="<sw360:DisplayReleaseLink releaseId="${releaseLink.id}" bare="true" scopeGroupId="${concludedScopeGroupId}" />">
-                <sw360:out value="${releaseLink.name} ${releaseLink.version}" maxChar="20" />
+                <sw360:out value="${releaseLink.name} ${releaseLink.version}" maxChar="60" />
             </a>
         </td>
         <td>

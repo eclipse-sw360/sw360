@@ -96,20 +96,31 @@ AUI().use('liferay-portlet-url', function () {
                     {title: "<liferay-ui:message key="release.path" />", data : "releaseOrigin", "defaultContent": ""},
                     {title: "<liferay-ui:message key="relation" />", data : "relation", "defaultContent": ""},
                     {title: "<liferay-ui:message key="main.licenses" />", data : "mainLicenses", "defaultContent": "", render: {display: mainLicenseUrl}},
-                    {title: "<liferay-ui:message key="state" />", data: "isRelease", render: {display: renderState}, "defaultContent": ""},
+                    {title: "<liferay-ui:message key="state" />", "data": function(row) {
+                        let ps=row.projectState;
+                        let cs=row.clearingState;
+                        if(ps === null || ps === undefined) ps="0";
+                        if(cs === null || cs === undefined) cs="0";
+                        return ps + priorityOfClearingState(cs) + cs;
+                    }, render: {display: renderState}, "defaultContent": ""},
                     {title: "<liferay-ui:message key="release.mainline.state" />", data : "releaseMainlineState", "defaultContent": ""},
                     {title: "<liferay-ui:message key="project.mainline.state" />", data : "projectMainlineState", "defaultContent": ""},
                     {title: "<liferay-ui:message key="actions" />",  data: "id", "orderable": false, "defaultContent": "", render: {display: renderActions}, className: "two actions" }
                 ],
                 "order": [[ 0, "asc" ]],
                 fnDrawCallback: datatables.showPageContainer,
-
             language: {
                 url: "<liferay-ui:message key="datatables.lang" />",
                 loadingRecords: "<liferay-ui:message key="loading" />"
-            }}, [0, 1, 2, 3, 4,5,6,7,8], 8);
+            }}, [0, 1, 2, 3, 4, 5, 6, 7, 8], undefined, true);
             return clearingStatusTable;
         }
+
+        $("#clearingStatusTable").on('init.dt', function() {
+            $('#pills-listView input').on('keyup change clear', function () {
+                $("#clearingStatusTable").DataTable().search($(this).val(), false, true).draw();
+            });
+        });
 
         var homeUrl = themeDisplay.getURLHome().replace(/\/web\//, '/group/');
 
@@ -122,7 +133,7 @@ AUI().use('liferay-portlet-url', function () {
             else {
                 url = makeProjectViewUrl(row.id);
             }
-            let viewUrl = $("<a></a>").attr("href",url).html(name);
+            let viewUrl = $("<a></a>").attr("href",url).css("word-break","break-word").html(name);
             return viewUrl[0].outerHTML;
         }
 
@@ -167,8 +178,8 @@ AUI().use('liferay-portlet-url', function () {
             return $actions[0].outerHTML;
         }
 
-        function renderState(isRelease, type, row) {
-            if(isRelease==="true") {
+        function renderState(data, type, row) {
+            if(row.isRelease==="true") {
                 return renderClearingStateBox(row.clearingState);
             }
             return renderProjectStateBox(row.projectState,row.clearingState)
@@ -227,6 +238,25 @@ AUI().use('liferay-portlet-url', function () {
                         return 'bg-primary';
                 }
             return '<%=PortalConstants.CLEARING_STATE_UNKNOWN__CSS%>';
+        }
+
+        function priorityOfClearingState(cState) {
+            switch (cState) {
+                case 'Report approved':
+                case 'Closed':
+                    return '1';
+                case 'Report available':
+                    return '2';
+                case 'In Progress':
+                case 'Under clearing':
+                    return '3';
+                case 'Sent to clearing tool':
+                    return '4';
+                case 'Open':
+                case 'New':
+                    return '5';
+            }
+            return '6';
         }
 
         function makeReleaseUrl(releaseId) {
