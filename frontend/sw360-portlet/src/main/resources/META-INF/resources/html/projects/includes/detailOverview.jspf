@@ -122,6 +122,15 @@
 										</div>
 									</div>
 								</div>
+								<div class="btn-group" role="group" id="clearingRequest">
+									<button id="createClearingRequestBtn" type="button" class="btn btn-secondary <core_rt:if test="${not empty project.clearingRequestId}">d-none</core_rt:if>">
+										<liferay-ui:message key="create.clearing.request" />
+									</button>
+									<button id="viewClearingRequestBtn" type="button" class="btn btn-secondary <core_rt:if test="${empty project.clearingRequestId}">d-none</core_rt:if>"
+										data-clearing-request-id="${project.clearingRequestId}">
+										<liferay-ui:message key="view.clearing.request" />
+									</button>
+								</div>
 							</div>
 							<div class="list-group-companion" data-belong-to="tab-attachmentUsages">
 								<core_rt:if test="${writeAccessUser}">
@@ -191,7 +200,7 @@
 		                    <%@include file="/html/projects/includes/projects/administration.jspf" %>
 		                </div>
 		                <div id="tab-clearingStatus" class="tab-pane <core_rt:if test="${selectedTab == 'tab-clearingStatus'}">active show</core_rt:if>">
-		                    <%@include file="/html/projects/includes/projects/clearingStatus.jspf" %>
+		                    <jsp:include page="/html/projects/includes/projects/clearingStatus.jsp" />
 		                </div>
 		                <core_rt:if test="${inProjectDetailsContext}">
 			                <div id="tab-attachmentUsages" class="tab-pane <core_rt:if test="${selectedTab == 'tab-attachmentUsages'}">active show</core_rt:if>">
