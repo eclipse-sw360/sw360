@@ -11,13 +11,13 @@
 package org.eclipse.sw360.moderation.db;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
-import org.eclipse.sw360.datahandler.db.ChangeLogsRepository;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
@@ -602,10 +602,12 @@ public class ModerationDatabaseHandler {
 
     private void sendMailForNewCommentInCR(ClearingRequest cr, Comment comment, User user) throws SW360Exception {
         Project project = projectDatabaseHandler.getProjectById(cr.getProjectId(), user);
-        Set<String> recipients = Sets.newHashSet(cr.getRequestingUser(), cr.getClearingTeam());
-        mailUtil.sendClearingMail(ClearingRequestEmailTemplate.NEW_COMMENT, recipients, MailConstants.SUBJECT_FOR_CLEARING_REQUEST_COMMENT,
-                new StringBuilder(CommonUtils.nullToEmptyString(user.getUserGroup())).append(MailConstants.DASH).append(SW360Utils.printFullname(user)).toString(),
-                CommonUtils.nullToEmptyString(cr.getId()), SW360Utils.printName(project), CommonUtils.nullToEmptyString(comment.getText()));
+        Map<String, String> recipients = Maps.newHashMap();
+        recipients.put(ClearingRequest._Fields.REQUESTING_USER.toString(), cr.getRequestingUser());
+        recipients.put(ClearingRequest._Fields.CLEARING_TEAM.toString(), cr.getClearingTeam());
+        String userDetails = new StringBuilder(CommonUtils.nullToEmptyString(user.getUserGroup())).append(MailConstants.DASH).append(SW360Utils.printFullname(user)).toString();
+        mailUtil.sendClearingMail(ClearingRequestEmailTemplate.NEW_COMMENT, MailConstants.SUBJECT_FOR_CLEARING_REQUEST_COMMENT, "", recipients,
+            userDetails, CommonUtils.nullToEmptyString(cr.getId()), SW360Utils.printName(project), CommonUtils.nullToEmptyString(comment.getText()));
     }
 
     private void sendMailNotificationsForNewRequest(ModerationRequest request, String userEmail){

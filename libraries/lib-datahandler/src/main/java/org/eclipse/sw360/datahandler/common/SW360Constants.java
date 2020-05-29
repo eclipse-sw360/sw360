@@ -17,7 +17,9 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
+import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 
 import java.util.*;
 import java.util.function.Function;
@@ -83,6 +85,7 @@ public class SW360Constants {
 
     public static final String NOTIFICATION_CLASS_RELEASE = "release";
     public static final String NOTIFICATION_CLASS_MODERATION_REQUEST = "moderation";
+    public static final String NOTIFICATION_CLASS_CLEARING_REQUEST = "clearing";
     public static final String NOTIFICATION_CLASS_COMPONENT = "component";
     public static final String NOTIFICATION_CLASS_PROJECT = "project";
     public static final Map<String, List<Map.Entry<String, String>>> NOTIFIABLE_ROLES_BY_OBJECT_TYPE = ImmutableMap.<String, List<Map.Entry<String, String>>>builder()
@@ -112,6 +115,9 @@ public class SW360Constants {
             .put(NOTIFICATION_CLASS_MODERATION_REQUEST, ImmutableList.<Map.Entry<String, String>>builder()
                     .add(pair(ModerationRequest._Fields.REQUESTING_USER, "Requesting User"),
                             pair(ModerationRequest._Fields.MODERATORS, "Moderator"))
+                    .build())
+            .put(NOTIFICATION_CLASS_CLEARING_REQUEST, ImmutableList.<Map.Entry<String, String>>builder()
+                    .add(pair(ClearingRequest._Fields.REQUESTING_USER, "Requesting User"))
                     .build())
             .build();
     public static final List<String> NOTIFICATION_EVENTS_KEYS = NOTIFIABLE_ROLES_BY_OBJECT_TYPE.entrySet()

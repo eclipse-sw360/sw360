@@ -13,9 +13,12 @@ import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.common.utils.BackendUtils;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestEmailTemplate;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import javax.mail.*;
@@ -24,6 +27,7 @@ import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.IllegalFormatException;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.*;
@@ -113,10 +117,21 @@ public class MailUtil extends BackendUtils {
         }
     }
 
-    public void sendClearingMail(ClearingRequestEmailTemplate template, Set<String> recipients, String subjectNameInPropertiesFile, String... textParameters) {
-        MimeMessage messageWithSubjectAndText = makeHtmlMessageWithSubjectAndText(template, subjectNameInPropertiesFile, textParameters);
-        for (String recipient : nullToEmptySet(recipients)) {
-            sendMailWithSubjectAndText(recipient, messageWithSubjectAndText);
+    public void sendClearingMail(ClearingRequestEmailTemplate template, String subjectNameInPropertiesFile, String textNameInPropertiesFile, Map<String, String> recipients, String... textParameters) {
+        MimeMessage messageWithSubjectAndText;
+        if (null != template && CommonUtils.isNullEmptyOrWhitespace(textNameInPropertiesFile)) {
+            messageWithSubjectAndText = makeHtmlMessageWithSubjectAndText(template, subjectNameInPropertiesFile, textParameters);
+        } else {
+            messageWithSubjectAndText = makeMessageWithSubjectAndText(subjectNameInPropertiesFile, textNameInPropertiesFile, textParameters);
+	    }
+        if (!CommonUtils.isNullOrEmptyMap(recipients)) {
+            String requestingUser = recipients.get(ClearingRequest._Fields.REQUESTING_USER.toString());
+            if (isMailWantedBy(requestingUser, SW360Utils.notificationPreferenceKey(SW360Constants.NOTIFICATION_CLASS_CLEARING_REQUEST, ClearingRequest._Fields.REQUESTING_USER.toString()))
+                && CommonUtils.isNotNullEmptyOrWhitespace(requestingUser)) {
+                sendMailWithSubjectAndText(String.join(",", recipients.values()), messageWithSubjectAndText);
+            } else {
+                sendMailWithSubjectAndText(recipients.get(ClearingRequest._Fields.CLEARING_TEAM.toString()), messageWithSubjectAndText);
+            }
         }
     }
 
@@ -246,7 +261,11 @@ public class MailUtil extends BackendUtils {
     private void sendMailWithSubjectAndText(String recipient, MimeMessage message) {
         try {
             message.setFrom(new InternetAddress(from));
-            message.setRecipient(Message.RecipientType.TO, new InternetAddress(recipient));
+            if (recipient.indexOf(",") > 0) {
+                message.setRecipients(Message.RecipientType.TO, recipient);
+            } else {
+                message.setRecipient(Message.RecipientType.TO, new InternetAddress(recipient));
+            }
             if (isMailingEnabledAndValid()) {
                 sendMailAsync(message);
             } else {
