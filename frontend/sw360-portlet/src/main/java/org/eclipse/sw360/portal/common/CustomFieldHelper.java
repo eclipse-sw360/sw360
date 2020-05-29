@@ -22,6 +22,8 @@ import com.liferay.portal.kernel.service.ResourcePermissionLocalServiceUtil;
 import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
 
 import com.liferay.portal.kernel.util.UnicodeProperties;
+
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.portal.common.customfields.CustomField;
 import org.eclipse.sw360.portal.common.customfields.CustomFieldPageIdentifier;
@@ -143,7 +145,7 @@ public class CustomFieldHelper {
                         }
 
                         if (CustomFieldType.getType(propertyValue) == CustomFieldType.TEXTFIELD) {
-                            customField.setFieldPattern(value.toString());
+                            customField.setFieldPattern(CommonUtils.nullToEmptyString(value));
                         }
                     }
 

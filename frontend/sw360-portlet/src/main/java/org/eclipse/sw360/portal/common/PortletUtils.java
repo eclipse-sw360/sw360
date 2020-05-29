@@ -425,6 +425,11 @@ public class PortletUtils {
         request.setAttribute("welcomePageGuideLine", welcomePageGuideLine);
     }
 
+    public static void setCustomFieldsDisplay(RenderRequest request, User user, Project project) {
+        Map<String, CustomField> customFieldMap = CustomFieldHelper.getCustomFields(request, user, CustomFieldPageIdentifier.PROJECT);
+        setCustomFieldsDisplay(customFieldMap, project.getAdditionalData());
+    }
+
     public static void setCustomFieldsDisplay(RenderRequest request, User user, Component component) {
         Map<String, CustomField> customFieldMap = CustomFieldHelper.getCustomFields(request, user, CustomFieldPageIdentifier.COMPONENT);
         setCustomFieldsDisplay(customFieldMap, component.getAdditionalData());
@@ -436,20 +441,19 @@ public class PortletUtils {
     }
 
     private static void setCustomFieldsDisplay(Map<String, CustomField> customFieldMap, Map<String, String> additionalData) {
-        if (customFieldMap == null) {
+        if (CommonUtils.isNullOrEmptyMap(customFieldMap) || CommonUtils.isNullOrEmptyMap(additionalData)) {
             return;
-        }
-        if (additionalData == null) {
-            additionalData = new HashMap<>();
         }
         for (Map.Entry<String, CustomField> entry : customFieldMap.entrySet()) {
             if (additionalData.containsKey(entry.getKey()) && entry.getValue().isHidden()) {
                 additionalData.remove(entry.getKey());
             }
-            if (!additionalData.containsKey(entry.getKey()) && !entry.getValue().isHidden()) {
-                additionalData.put(entry.getKey(), "");
-            }
         }
+    }
+
+    public static void setCustomFieldsEdit(RenderRequest request, User user, Project project) {
+        Map<String, CustomField> customFieldMap = CustomFieldHelper.getCustomFields(request, user, CustomFieldPageIdentifier.PROJECT);
+        setCustomFieldsEdit(request, customFieldMap, project.getAdditionalData());
     }
 
     public static void setCustomFieldsEdit(RenderRequest request, User user, Component component) {
@@ -463,7 +467,7 @@ public class PortletUtils {
     }
 
     private static void setCustomFieldsEdit(RenderRequest request, Map<String, CustomField> customFieldMap, Map<String, String> additionalData) {
-        if (additionalData != null && !customFieldMap.isEmpty()) {
+        if (!(CommonUtils.isNullOrEmptyMap(additionalData) || CommonUtils.isNullOrEmptyMap(customFieldMap))) {
             Iterator<Map.Entry<String, String>> iter = additionalData.entrySet().iterator();
             while (iter.hasNext()) {
                 Map.Entry<String, String> entry = iter.next();
@@ -473,11 +477,11 @@ public class PortletUtils {
                 }
             }
         }
-        List<CustomField> customFields = new ArrayList<>(customFieldMap.values());
+        List<CustomField> customFields = new ArrayList<>(CommonUtils.nullToEmptyMap(customFieldMap).values());
         customFields.sort(Comparator.comparing(CustomField::getFieldId));
         request.setAttribute("customFields", customFields);
     }
-  
+
     public static ChangeLogsPortletUtils getChangeLogsPortletUtils(ThriftClients clients) {
         if (changeLogsPortletUtils == null) {
             changeLogsPortletUtils = new ChangeLogsPortletUtils(clients);
