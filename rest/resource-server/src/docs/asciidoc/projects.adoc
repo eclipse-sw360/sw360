@@ -32,6 +32,25 @@ include::{snippets}/should_document_get_projects/http-response.adoc[]
 include::{snippets}/should_document_get_projects/links.adoc[]
 
 
+[[resources-projects-list-all-details]]
+==== Listing projects with all details
+
+A `GET` request will list all of the service's projects. +
+Please set the request parameter `&allDetails=<true|false>`, to get projects with all Details.
+
+===== Response structure
+include::{snippets}/should_document_get_projects_with_all_details/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_projects_with_all_details/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_projects_with_all_details/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_projects_with_all_details/links.adoc[]
+
+
 [[resources-projects-list-by-name]]
 ==== Listing by name
 

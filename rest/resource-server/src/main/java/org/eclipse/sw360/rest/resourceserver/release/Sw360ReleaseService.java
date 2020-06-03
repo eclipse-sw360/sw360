@@ -89,7 +89,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
     public List<Release> getReleasesForUser(User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        return sw360ComponentClient.getReleaseSummary(sw360User);
+        return sw360ComponentClient.getAllReleasesForUser(sw360User);
     }
 
     public Release getReleaseForUserById(String releaseId, User sw360User) throws TException {

@@ -32,6 +32,25 @@ include::{snippets}/should_document_get_releases/http-response.adoc[]
 include::{snippets}/should_document_get_releases/links.adoc[]
 
 
+[[resources-releases-list-all-details]]
+==== Listing releases with all details
+
+A `GET` request will list all of the service's releases with all details. +
+Please set the request parameter `&allDetails=<true|false>`, to get projects with all Details.
+
+===== Response structure
+include::{snippets}/should_document_get_release_all_details/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_release_all_details/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_release_all_details/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_release_all_details/links.adoc[]
+
+
 [[resources-releases-list-with-fields]]
 ==== Listing releases with fields
 
