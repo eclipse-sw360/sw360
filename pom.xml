@@ -131,6 +131,11 @@
                 <scope>runtime</scope>
             </dependency>
             <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-1.2-api</artifactId>
+                <version>${log4j2.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-csv</artifactId>
                 <version>1.4</version>
