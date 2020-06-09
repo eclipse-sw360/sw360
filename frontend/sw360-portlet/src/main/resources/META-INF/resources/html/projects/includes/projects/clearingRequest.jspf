@@ -120,10 +120,6 @@
                                 <td><span data-name="agreedDate"></span></td>
                             </tr>
                             <tr>
-                                <th><liferay-ui:message key="clearing.team.comment" />:</th>
-                                <td data-name="ctComment"></td>
-                            </tr>
-                            <tr>
                                 <th><liferay-ui:message key="request.status" />:</th>
                                 <td><span data-name="status"></span></td>
                             </tr>
@@ -318,7 +314,6 @@
                             requestedDate: resultData.requestedClearingDate,
                             requesterComment: resultData.requestingUserComment,
                             clearingTeam: resultData.clearingTeam,
-                            ctComment: resultData.clearingTeamComment,
                             agreedDate: resultData.agreedClearingDate,
                             status: resultData.clearingState,
                             submittedOn: resultData.timestamp,

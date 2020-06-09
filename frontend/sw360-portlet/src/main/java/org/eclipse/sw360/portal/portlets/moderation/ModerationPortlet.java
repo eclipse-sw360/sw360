@@ -10,6 +10,7 @@
 package org.eclipse.sw360.portal.portlets.moderation;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.google.common.collect.Lists;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Organization;
@@ -216,6 +217,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             } else {
                 clearingRequest = client.getClearingRequestById(clearingId, user);
             }
+            clearingRequest.setComments(Lists.reverse(CommonUtils.nullToEmptyList(clearingRequest.getComments())));
             request.setAttribute(CLEARING_REQUEST, clearingRequest);
             request.setAttribute(WRITE_ACCESS_USER, false);
             request.setAttribute(IS_CLEARING_EXPERT, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_EXPERT, user));

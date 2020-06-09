@@ -251,8 +251,7 @@ AUI().use('liferay-portlet-url', function () {
                     "6": '<sw360:DisplayUserEmail email="${request.clearingTeam}" />',
                     "7": '<sw360:out value="${request.agreedClearingDate}"/>',
                     "8": '<sw360:out value="${request.requestingUserComment}" maxChar="150" jsQuoting="true" />',
-                    "9": '<sw360:out value="${request.clearingTeamComment}" maxChar="150" jsQuoting="true" />',
-                    "10": '${request.projectId}'
+                    "9": '${request.projectId}'
                 });
             </core_rt:forEach>
             return result;
@@ -272,8 +271,7 @@ AUI().use('liferay-portlet-url', function () {
                     "6": '<sw360:DisplayUserEmail email="${request.clearingTeam}" />',
                     "7": '<sw360:out value="${request.agreedClearingDate}"/>',
                     "8": '<sw360:out value="${request.requestingUserComment}" maxChar="150" jsQuoting="true" />',
-                    "9": '<sw360:out value="${request.clearingTeamComment}" maxChar="150" jsQuoting="true" />',
-                    "10": '${request.projectId}'
+                    "9": '${request.projectId}'
                 });
             </core_rt:forEach>
             return result;
@@ -303,7 +301,7 @@ AUI().use('liferay-portlet-url', function () {
         }
 
         function renderClearingRequestAction(tableData, type, row) {
-            if (row[10] && ($(row[6]).attr('href').replace('mailto:', '') === '${user.emailAddress}' || ${isClearingExpert})) {
+            if (row[9] && ($(row[6]).attr('href').replace('mailto:', '') === '${user.emailAddress}' || ${isClearingExpert})) {
                 return render.linkTo(
                         makeClearingRequestUrl(row.DT_RowId, '<%=PortalConstants.PAGENAME_EDIT_CLEARING_REQUEST%>'),
                         "",
@@ -375,10 +373,6 @@ AUI().use('liferay-portlet-url', function () {
 			            '<tr>'+
 			                '<td>Requesting User Comment:</td>'+
 			                '<td>'+requesterComment+'</td>'+
-			            '</tr>'+
-			            '<tr>'+
-			                '<td>Clearing Team Comment:</td>'+
-			                '<td>'+approverComment+'</td>'+
 			            '</tr>'+
 			        '</table>';
         }

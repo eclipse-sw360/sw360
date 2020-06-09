@@ -120,7 +120,6 @@ public class PortalConstants {
     public static final String CREATE_CLEARING_REQUEST = "create_clearing_request";
     public static final String VIEW_CLEARING_REQUEST = "view_clearing_request";
     public static final String AGREED_CLEARING_DATE = "agreedClearingDate";
-    public static final String CLEARING_TEAM_COMMENT = "clearingTeamComment";
     public static final String PAGENAME_DETAIL_CLEARING_REQUEST = "detailClearingRequest";
     public static final String PAGENAME_EDIT_CLEARING_REQUEST = "editClearingRequest";
     public static final String ADD_COMMENT = "addComment";
