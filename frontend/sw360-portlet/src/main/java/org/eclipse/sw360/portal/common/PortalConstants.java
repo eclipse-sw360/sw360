@@ -140,10 +140,13 @@ public class PortalConstants {
     public static final String COMPONENT_CATEGORIES;
     public static final String COMPONENT_ROLES;
     public static final String PAGENAME_MERGE_COMPONENT = "mergeComponent";
+    public static final String PAGENAME_SPLIT_COMPONENT = "splitComponent";
     public static final String COMPONENT_SELECTION = "componentSelection";
     public static final String COMPONENT_SOURCE_ID = "componentSourceId";
     public static final String COMPONENT_TARGET_ID = "componentTargetId";
     public static final Set<String> COMPONENT_EXTERNAL_ID_KEYS;
+    public static final String SOURCE_COMPONENT = "srcComponent";
+    public static final String TARGET_COMPONENT = "targetComponent";
 
     //! Specialized keys for releases
     public static final String RELEASE_ID = "releaseId";

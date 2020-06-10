@@ -38,24 +38,38 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
     };
 
     mergeWizard.createSingleMergeLine = function createSingleMergeLine(propName, target, source, detailFormatter) {
-        var line;
+        var line = createSingleLine(propName, target, source, detailFormatter);
+        return $(line).append(createSingleMergeContent(target, source, 0, detailFormatter));
+    };
 
+    mergeWizard.createSingleSplitLine = function createSingleSplitLine(propName, target, source, detailFormatter) {
+        let line = createSingleLine(propName, target, source, detailFormatter);
+
+        return $(line).append(createSingleSplitContent(target, source, 0, detailFormatter, true, ''));
+    };
+
+    function createSingleLine(propName, target, source, detailFormatter) {
         target = target == null ? '' : target;
         source = source == null ? '' : source;
         detailFormatter = detailFormatter || function(element) { return element; };
 
-        line = $.parseHTML('<fieldset id="' + normalizePropName(propName) + '" class="merge line">' +
+        return $.parseHTML('<fieldset id="' + normalizePropName(propName) + '" class="merge line">' +
                            '    <h5>' + propName + '</h5>' +
                            '</fieldset>');
-
-        return $(line).append(createSingleMergeContent(target, source, 0, detailFormatter));
-    };
+    }
 
     mergeWizard.createMultiMergeLine = function createMultiMergeLine(propName, target, source, detailFormatter) {
+        return createMultiLine(propName, target, source, detailFormatter, false, '');
+    };
+
+    mergeWizard.createMultiSplitLine = function createMultiMergeLine(propName, target, source, detailFormatter, midElement) {
+        return createMultiLine(propName, target, source, detailFormatter, true, midElement);
+    };
+
+    function createMultiLine(propName, target, source, detailFormatter, split, midElement) {
         var result,
             rowIndex = 0,
             existInBoth = [];
-
         target = target == null ? [] : target;
         source = source == null ? [] : source;
         detailFormatter = detailFormatter || function(element) { return element; };
@@ -67,20 +81,20 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         $.each(target, function(index, value) {
             var foundIndex = -1;
             if ((foundIndex = $.inArray(value, source)) === -1) {
-                result.append(createSingleMergeContent(value, '', rowIndex++, detailFormatter));
+                result.append(split?createSingleSplitContent(value, '', rowIndex++, detailFormatter, false, midElement) : createSingleMergeContent(value, '', rowIndex++, detailFormatter));
             } else {
-                result.append(createSingleMergeContent(value, source[foundIndex], rowIndex++, detailFormatter));
+                result.append(split?createSingleSplitContent(value, source[foundIndex], rowIndex++, detailFormatter, true, '') : createSingleMergeContent(value, source[foundIndex], rowIndex++, detailFormatter));
                 existInBoth.push(foundIndex);
             }
         });
         $.each(source, function(index, value) {
             if ($.inArray(index, existInBoth) === -1) {
-                result.append(createSingleMergeContent('', value, rowIndex++, detailFormatter));
+                result.append(split?createSingleSplitContent('', value, rowIndex++, detailFormatter, true, '') : createSingleMergeContent('', value, rowIndex++, detailFormatter));
             }
         });
 
         return result;
-    };
+    }
 
     mergeWizard.createMapMergeLine = function createMapMergeLine(propName, target, source, detailFormatter) {
         var result,
@@ -178,7 +192,16 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         return propName.replace(/[\s\.]/g, '_');
     }
 
+    function createSingleSplitContent(target, source, rowIndex, detailFormatter, locked, midElement) {
+        return createSingleLineContent(target, source, rowIndex, detailFormatter, locked, midElement);
+    }
+
     function createSingleMergeContent(target, source, rowIndex, detailFormatter, locked) {
+        let midElement = (target === source ? '<span class="text-success">&#10003;</span>' : '<input class="btn btn-secondary" type="button" value="&#8656;" />');
+        return createSingleLineContent(target, source, rowIndex, detailFormatter, locked, midElement);
+    }
+
+    function createSingleLineContent(target, source, rowIndex, detailFormatter, locked, midElement) {
         var row,
             left,
             mid,
@@ -192,7 +215,7 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
                             '            <span>' + detailFormatter(target) + '</span>' +
                             '        </div>');
         mid =   $.parseHTML('        <div class="merge single mid col-2" data-row-index="' + rowIndex + '">' +
-                            (target === source ? '<span class="text-success">&#10003;</span>' : '<input class="btn btn-secondary" type="button" value="&#8656;" />') +
+                                         midElement +
                             '        </div>');
         right = $.parseHTML('        <div class="merge single right col-5" data-row-index="' + rowIndex + '">' +
                             '            <span>' + detailFormatter(source) + '</span>' +
@@ -392,6 +415,13 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         return getFinalValue(targetNode);
     };
 
+    mergeWizard.getFinalSingleValueTarget = function getFinalSingleValueTarget(propName) {
+        var $fieldset = $('#' + normalizePropName(propName)),
+            targetNode = $('.right[data-row-index="0"]', $fieldset);
+
+        return getFinalValue(targetNode);
+    };
+
     mergeWizard.getEnhancedFinalSingleValue = function getEnhancedFinalSingleValue(propName) {
         var $fieldset = $('#' + normalizePropName(propName)),
             targetNode = $('.left[data-row-index="0"]', $fieldset);
@@ -402,6 +432,22 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
     mergeWizard.getFinalMultiValue = function getFinalMultiValue(propName) {
         var $fieldset = $('#' + normalizePropName(propName)),
             targetNodes = $('.left', $fieldset),
+            result = [],
+            finalVal;
+
+        targetNodes.each(function(index, value) {
+            finalVal = getFinalValue($(value));
+            if (finalVal !== undefined) {
+                result.push(finalVal);
+            }
+        });
+
+        return result;
+    };
+
+    mergeWizard.getFinalMultiValueTarget = function getFinalMultiValueTarget(propName) {
+        var $fieldset = $('#' + normalizePropName(propName)),
+            targetNodes = $('.right', $fieldset),
             result = [],
             finalVal;
 
