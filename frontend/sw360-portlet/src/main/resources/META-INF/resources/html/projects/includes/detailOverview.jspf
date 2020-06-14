@@ -123,7 +123,11 @@
 									</div>
 								</div>
 								<div class="btn-group" role="group" id="clearingRequest">
-									<button id="createClearingRequestBtn" type="button" class="btn btn-secondary <core_rt:if test="${not empty project.clearingRequestId}">d-none</core_rt:if>">
+									<button id="createClearingRequestBtn" type="button" class="btn btn-secondary <core_rt:if test="${not empty project.clearingRequestId}">d-none</core_rt:if>"
+									    <core_rt:if test = "${(project.clearingState eq 'CLOSED') || !writeAccessUser}">
+											disabled="disabled"
+										</core_rt:if>
+										>
 										<liferay-ui:message key="create.clearing.request" />
 									</button>
 									<button id="viewClearingRequestBtn" type="button" class="btn btn-secondary <core_rt:if test="${empty project.clearingRequestId}">d-none</core_rt:if>"

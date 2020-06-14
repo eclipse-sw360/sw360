@@ -205,7 +205,7 @@ public class ModerationDatabaseHandler {
             request.addToComments(comment);
             request.setModifiedOn(System.currentTimeMillis());
             clearingRequestRepository.update(request);
-            projectDatabaseHandler.updateProjectForClearingRequestUpdate(request, projectUrl, user);
+            projectDatabaseHandler.sendEmailForClearingRequestUpdate(request, projectUrl, user);
             return RequestStatus.SUCCESS;
         } catch (SW360Exception e) {
             log.error("Failed to update clearing request: " + request.getId(), e);
