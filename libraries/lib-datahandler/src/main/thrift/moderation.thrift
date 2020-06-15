@@ -27,7 +27,7 @@ typedef components.Release Release
 typedef projects.Project Project
 typedef users.User User
 typedef licenses.License License
-typedef licenses.Todo Todo
+typedef licenses.Obligations Obligations
 typedef components.ComponentType ComponentType
 typedef projects.ClearingRequest ClearingRequest
 
@@ -65,7 +65,7 @@ struct ModerationRequest {
     20: optional Component componentAdditions,
     21: optional Release releaseAdditions,
     22: optional Project projectAdditions,
-    23: optional License licenseAdditions,//only moderation of todos is supported
+    23: optional License licenseAdditions,//only moderation of obligations is supported
     24: optional User user,
 
     30: optional Component componentDeletions,
@@ -108,7 +108,7 @@ service ModerationService {
 
     /**
       * write moderation request for license to database,
-      * only todos and whitelists can be moderated, so license todos are compared with corresponding todos in database,
+      * only obligations and whitelists can be moderated, so license obligations are compared with corresponding obligations in database,
       * differences are written as additions and deletions to moderation request,
       * set requestingUser of moderation request to user
       **/

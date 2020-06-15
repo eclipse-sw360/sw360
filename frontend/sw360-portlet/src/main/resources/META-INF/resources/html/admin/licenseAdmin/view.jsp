@@ -164,7 +164,7 @@ require(['jquery', 'modules/dialog', 'modules/validation'], function($, dialog, 
             'question-circle',
             '<liferay-ui:message key="delete.all.licenses" />?',
             '<div class="alert alert-warning"><liferay-ui:message key="note.other.documents.might.use.the.licenses" /></div>' +
-            '<p><liferay-ui:message key="do.you.really.want.to.delete.all.licenses.license.types.todos.obligations.risks.risk.categories.and.todo.custom.properties.from.the.database" />' +
+            '<p><liferay-ui:message key="do.you.really.want.to.delete.all.licenses.license.types.obligations.obligations.risks.risk.categories.and.oblig.custom.properties.from.the.database" />' +
             '<div class="alert alert-info"><liferay-ui:message key="this.function.is.meant.to.be.followed.by.a.new.license.import" /></div>',
             '<liferay-ui:message key="delete.all.license.information" />',
             {},

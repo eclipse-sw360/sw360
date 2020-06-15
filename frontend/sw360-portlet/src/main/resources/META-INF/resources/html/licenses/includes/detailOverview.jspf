@@ -20,9 +20,9 @@
                 <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Details'}">active</core_rt:if>" href="#tab-Details" data-toggle="list" role="tab"><liferay-ui:message key="details" /></a>
                 <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-LicenseText'}">active</core_rt:if>" href="#tab-LicenseText" data-toggle="list" role="tab"><liferay-ui:message key="text" /></a>
                 <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Risks'}">active</core_rt:if>" href="#tab-Risks" data-toggle="list" role="tab"><liferay-ui:message key="risks" /></a>
-                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-TodosAndObligations'}">active</core_rt:if>" href="#tab-TodosAndObligations" data-toggle="list" role="tab"><liferay-ui:message key="todos.and.obligations" /></a>
+                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-TodosAndObligations'}">active</core_rt:if>" href="#tab-TodosAndObligations" data-toggle="list" role="tab"><liferay-ui:message key="obligations.and.obligations" /></a>
                 <core_rt:if test="${editMode}">
-                    <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-AddTodo'}">active</core_rt:if>" href="#tab-AddTodo" data-toggle="list" role="tab"><liferay-ui:message key="add.todo" /></a>
+                    <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-AddTodo'}">active</core_rt:if>" href="#tab-AddTodo" data-toggle="list" role="tab"><liferay-ui:message key="add.obligation" /></a>
                 </core_rt:if>
             </div>
         </div>
@@ -30,13 +30,13 @@
             <div class="row portlet-toolbar">
                 <div class="col-auto">
                     <div class="btn-toolbar" role="toolbar">
-                        <section name="todos">
+                        <section name="obligations">
                             <core_rt:if test="${isUserAtLeastClearingAdmin == 'Yes' || licenseDetail.checked == false}">
                                 <div class="btn-group" role="group">
                                     <button type="button" class="btn btn-primary" id="edit" onclick="window.location.href='<%=editLicenseURL%>' + window.location.hash"><liferay-ui:message key="edit.license" /></button>
                                 </div>
                             </core_rt:if>
-                            <core_rt:if test="${not empty licenseDetail.todos || not empty added_todos_from_moderation_request}">
+                            <core_rt:if test="${not empty licenseDetail.obligations || not empty added_obligations_from_moderation_request}">
                                 <div class="list-group-companion" data-belong-to="tab-TodosAndObligations">
                                     <div class="btn-group" role="group">
                                         <button id="EditWhitelist" class="btn btn-secondary" type="button"><liferay-ui:message key="edit.whitelist" /></button>

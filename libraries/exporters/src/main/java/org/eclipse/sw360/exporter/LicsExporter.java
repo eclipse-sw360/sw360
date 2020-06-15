@@ -59,16 +59,16 @@ public class LicsExporter {
         fileNameToStreams.put(LicsArchive.RISK_CATEGORY_FILE, getCsvStream(serialize(licenseClient.getRiskCategories(), riskCategorySerializer())));
 
         fileNameToStreams.put(LicsArchive.RISK_FILE, getCsvStream(serialize(licenseClient.getRisks(), riskSerializer())));
-        fileNameToStreams.put(LicsArchive.OBLIGATION_FILE, getCsvStream(serialize(licenseClient.getObligations(), obligationSerializer())));
+        fileNameToStreams.put(LicsArchive.OBLIGATION_FILE, getCsvStream(serialize(licenseClient.getListOfobligation(), obligationSerializer())));
 
-        final List<Todo> todos = licenseClient.getTodos();
+        final List<Obligations> obligations = licenseClient.getObligations();
         List<ConvertRecord.PropertyWithValueAndId> customProperties = new ArrayList<>();
-        SetMultimap<String, Integer> todoCustomPropertyMap = HashMultimap.create();
-        ConvertRecord.fillTodoCustomPropertyInfo(todos, customProperties, todoCustomPropertyMap);
-        fileNameToStreams.put(LicsArchive.TODO_CUSTOM_PROPERTIES_FILE, getCsvStream(serialize(todoCustomPropertyMap, ImmutableList.of("T_ID", "P_ID"))));
+        SetMultimap<String, Integer> obligCustomPropertyMap = HashMultimap.create();
+        ConvertRecord.fillTodoCustomPropertyInfo(obligations, customProperties, obligCustomPropertyMap);
+        fileNameToStreams.put(LicsArchive.TODO_CUSTOM_PROPERTIES_FILE, getCsvStream(serialize(obligCustomPropertyMap, ImmutableList.of("T_ID", "P_ID"))));
         fileNameToStreams.put(LicsArchive.CUSTOM_PROPERTIES_FILE, getCsvStream(serialize(customProperties, customPropertiesSerializer())));
-        fileNameToStreams.put(LicsArchive.OBLIGATION_TODO_FILE, getCsvStream(serialize(getTodoToObligationMap(todos), ImmutableList.of("O_ID", "T_ID"))));
-        fileNameToStreams.put(LicsArchive.TODO_FILE, getCsvStream(serialize(todos, todoSerializer())));
+        fileNameToStreams.put(LicsArchive.OBLIGATION_TODO_FILE, getCsvStream(serialize(getTodoToObligationMap(obligations), ImmutableList.of("O_ID", "T_ID"))));
+        fileNameToStreams.put(LicsArchive.TODO_FILE, getCsvStream(serialize(obligations, obligSerializer())));
 
         fileNameToStreams.put(LicsArchive.LICENSETYPE_FILE, getCsvStream(serialize(licenseClient.getLicenseTypes(), licenseTypeSerializer())));
 

@@ -24,6 +24,26 @@ table.table.label-value-table {
 	}
 }
 
+table.table.label-value-table-obligations {
+	border: 1px solid;
+
+	th:first-child, td:first-child {
+		width: 40%;
+	}
+
+	th:nth-child(2), td:nth-child(2) {
+		width: 5%;
+	}
+
+	th:nth-child(3), td:nth-child(3) {
+		width: 15%;
+	}
+
+	th:nth-child(4), td:nth-child(4) {
+		width: 40%;
+	}
+}
+
 table.edit-table {
 
 	&.two-columns td {

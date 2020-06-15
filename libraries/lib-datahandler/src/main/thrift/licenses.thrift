@@ -22,23 +22,29 @@ typedef sw360.CustomProperties CustomProperties
 typedef sw360.RequestSummary RequestSummary
 typedef sw360.Ternary Ternary
 
-struct Obligation {
+struct LicenseObligation {
 	1: optional string id,
     2: optional string revision
-    3: optional string type = "obligation",
+    3: optional string type = "licenseObligation",
     5: required string name,
     6: required i32 obligationId,
 }
 
-struct Todo {
+enum ObligationType {
+    ORGANISATION_OBLIGATION = 0,
+    PRODUCT_OBLIGATION = 1,
+    COMPONENT_OBLIGATION = 2,
+}
+
+struct Obligations {
     1: optional string id,
     2: optional string revision,
-    3: optional string type = "todo",
+    3: optional string type = "obligations",
     4: required string text,
     5: optional set<string> whitelist,
     6: optional bool development,
     7: optional bool distribution,
-    8: optional list<Obligation> obligations,
+    8: optional list<LicenseObligation> listOfobligation,
     9: optional set<string> obligationDatabaseIds,
     10: optional string title,
     11: optional map<string, string> customPropertyToValue,
@@ -49,10 +55,12 @@ struct Todo {
 
     // information from external data sources
     19: optional map<string, string> externalIds,
-    300: optional map<string, string> additionalData,
-
     // is valid for Projects
     20: optional bool validForProject,
+    21: optional string comments,
+    22: optional ObligationType obligationType,
+    300: optional map<string, string> additionalData,
+
 }
 
 struct RiskCategory {
@@ -103,8 +111,8 @@ struct License {
 	15: optional Ternary GPLv2Compat = sw360.Ternary.UNDEFINED,
 	16: optional Ternary GPLv3Compat = sw360.Ternary.UNDEFINED,
 
-    20: optional list<Todo> todos,
-    21: optional set<string> todoDatabaseIds,
+    20: optional list<Obligations> obligations,
+    21: optional set<string> obligationDatabaseIds,
 	22: optional list<Risk> risks,
 	23: optional set<string> riskDatabaseIds,
     25: optional string text,
@@ -119,33 +127,33 @@ struct License {
 service LicenseService {
 
     /**
-     * Get a single license by providing its ID, filled with license type, risks and todos containing obligations and whitelists
+     * Get a single license by providing its ID, filled with license type, risks and obligations containing obligations and whitelists
      * filtered for the given organisation
      **/
     License getByID(1:string id, 2: string organisation);
 
     /**
-      * Get a single license by providing its ID, filled with license type and todos containing obligations and whitelists
+      * Get a single license by providing its ID, filled with license type and obligations containing obligations and whitelists
       * filtered for the given organisation, risks are not set,
       * user's moderation request with status pending or in progress applied
       **/
     License getByIDWithOwnModerationRequests(1:string id, 2: string organisation, 3: User user);
 
     /**
-     * get licenses for ids filled with license types, risks and todos containing obligations
+     * get licenses for ids filled with license types, risks and obligations containing obligations
      * whitelists filtered for organisation
      **/
     list<License> getByIds(1:set<string> ids, 2: string organisation);
 
     /**
-     * Add a new todo object to database, return id
+     * Add a new obligation object to database, return id
      **/
-    string addTodo(1:Todo todo, 2: User user);
+    string addObligations(1:Obligations obligations, 2: User user);
 
     /**
-    * Add an existing todo to a license or generate moderation request if user has no permission
+    * Add an existing obligation to a license or generate moderation request if user has no permission
     **/
-    RequestStatus addTodoToLicense(1: Todo todo, 2: string licenseId, 3: User user);
+    RequestStatus addObligationsToLicense(1: Obligations obligations, 2: string licenseId, 3: User user);
 
     /**
      * Update given license,
@@ -160,9 +168,9 @@ service LicenseService {
     RequestStatus updateLicenseFromModerationRequest(1: License additions, 2: License deletions, 3: User user, 4: User requestingUser);
 
     /**
-     * Update the whitelisted todos for an organisation, generate moderation request if user has no permissions
+     * Update the whitelisted obligations for an organisation, generate moderation request if user has no permissions
      **/
-    RequestStatus updateWhitelist(1: string licenseId, 2: set<string> todoDatabaseIds, 3: User user);
+    RequestStatus updateWhitelist(1: string licenseId, 2: set<string> obligationsDatabaseIds, 3: User user);
 
     /**
      * delete license from database if user has permissions,
@@ -181,14 +189,14 @@ service LicenseService {
     list<License> getLicenseSummaryForExport();
 
     /**
-     * get a list of all full license documents filled with todos, risks and license types,
-     * todos and risks themselves are not filled
+     * get a list of all full license documents filled with obligations, risks and license types,
+     * obligations and risks themselves are not filled
      **/
     list<License> getDetailedLicenseSummaryForExport(1: string organisation);
 
     /**
-      * get a list of full documents with ids in identifiers, filled with todos, risks and license types,
-      * todos and risks themselves are also filled, todo whitelists are filtered for organisation
+      * get a list of full documents with ids in identifiers, filled with obligations, risks and license types,
+      * obligations and risks themselves are also filled, obligation whitelists are filtered for organisation
       **/
     list<License> getDetailedLicenseSummary(1: string organisation, 2: list<string> identifiers);
 
@@ -205,7 +213,7 @@ service LicenseService {
     /**
      * bulk add for import of license archive, returns input obligations if successful, null otherwise
      **/
-    list<Obligation> addObligations(1: list <Obligation> obligations, 2: User user);
+    list<LicenseObligation> addListOfobligation(1: list <LicenseObligation> obligations, 2: User user);
 
     /**
      * bulk add for import of license archive, returns input license types if successful, null otherwise
@@ -223,9 +231,9 @@ service LicenseService {
     list<License> addOrOverwriteLicenses(1: list <License> licenses, 2: User user);
 
     /**
-     * bulk add for import of license archive, returns input todos if successful, null otherwise
+     * bulk add for import of license archive, returns input obligations if successful, null otherwise
      **/
-    list<Todo> addTodos(1: list <Todo> todos, 2: User user);
+    list<Obligations> addListOfObligations(1: list <Obligations> obligations, 2: User user);
 
     /**
      * get complete list of risk categories
@@ -248,14 +256,14 @@ service LicenseService {
     list<License> getLicenses();
 
     /**
-     * get complete list of filled todos
+     * get complete list of filled obligations
      **/
-    list<Todo> getTodos();
+    list<Obligations> getObligations();
 
     /**
      * get complete list of obligations
      **/
-    list<Obligation> getObligations();
+    list<LicenseObligation> getListOfobligation();
 
     /**
     * get filled risks with id in ids
@@ -270,7 +278,7 @@ service LicenseService {
     /**
      * get obligations with id in ids
      **/
-    list<Obligation> getObligationsByIds( 1: list<string> ids);
+    list<LicenseObligation> getListOfobligationByIds( 1: list<string> ids);
 
     /**
      * get license types with id in ids
@@ -278,9 +286,9 @@ service LicenseService {
     list<LicenseType> getLicenseTypesByIds( 1: list<string> ids);
 
     /**
-     * get filled todos with id in ids
+     * get filled obligations with id in ids
      **/
-    list<Todo> getTodosByIds( 1: list<string> ids);
+    list<Obligations> getObligationsByIds( 1: list<string> ids);
 
     /**
      * return filled risk
@@ -288,26 +296,26 @@ service LicenseService {
     Risk getRiskById( 1: string id);
 
     RiskCategory getRiskCategoryById( 1: string id);
-    Obligation getObligationById( 1: string id);
+    LicenseObligation getObligationById( 1: string id);
     LicenseType getLicenseTypeById( 1: string id);
 
     /**
-     * return filled todo
+     * return filled obligation
      **/
-    Todo getTodoById( 1: string id);
+    Obligations getObligationsById( 1: string id);
 
     list<CustomProperties> getCustomProperties(1: string documentType);
 
     RequestStatus updateCustomProperties(1: CustomProperties customProperties, 2: User user );
 
    /**
-    * removes all licenses, license types, todos, obligations, risks, risk categories from db
+    * removes all licenses, license types, obligations, obligations, risks, risk categories from db
     **/
     RequestSummary deleteAllLicenseInformation(1: User user);
 
     RequestSummary importAllSpdxLicenses(1: User user);
     /**
-     * delete todo from database if user has permissions
+     * delete obligation from database if user has permissions
      **/
-    RequestStatus deleteTodo(1: string id, 2: User user);
+    RequestStatus deleteObligations(1: string id, 2: User user);
 }

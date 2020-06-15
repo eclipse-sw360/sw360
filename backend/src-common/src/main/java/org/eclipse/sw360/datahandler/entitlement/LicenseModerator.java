@@ -14,7 +14,7 @@ import org.eclipse.sw360.datahandler.common.Moderator;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
-import org.eclipse.sw360.datahandler.thrift.licenses.Todo;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligations;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.apache.log4j.Logger;
@@ -61,20 +61,20 @@ public class LicenseModerator extends Moderator<License._Fields, License> {
                                                       License licenseAdditions,
                                                       License licenseDeletions,
                                                       String department) {
-        Map<String, Todo> actualTodoMap = Maps.uniqueIndex(nullToEmptyList(license.getTodos()), Todo::getId);
+        Map<String, Obligations> actualTodoMap = Maps.uniqueIndex(nullToEmptyList(license.getObligations()), Obligations::getId);
 
-        for (Todo added : nullToEmptyList(licenseAdditions.getTodos())) {
+        for (Obligations added : nullToEmptyList(licenseAdditions.getObligations())) {
             if (!added.isSetId()) {
-                log.error("Todo id not set in licenseAdditions.");
+                log.error("Obligations id not set in licenseAdditions.");
                 continue;
             }
             if (isTemporaryTodo(added)) {
-                if(!license.isSetTodos()){
-                    license.setTodos(new ArrayList<>());
+                if(!license.isSetObligations()){
+                    license.setObligations(new ArrayList<>());
                 }
-                license.getTodos().add(added);
+                license.getObligations().add(added);
             } else {
-                Todo actual = actualTodoMap.get(added.getId());
+                Obligations actual = actualTodoMap.get(added.getId());
                 if (added.isSetWhitelist() && added.getWhitelist().contains(department)) {
                     if(!actual.isSetWhitelist()){
                         actual.setWhitelist(new HashSet<>());
@@ -83,14 +83,14 @@ public class LicenseModerator extends Moderator<License._Fields, License> {
                 }
             }
         }
-        for (Todo deleted : nullToEmptyList(licenseDeletions.getTodos())) {
+        for (Obligations deleted : nullToEmptyList(licenseDeletions.getObligations())) {
             if (!deleted.isSetId()) {
-                log.error("Todo id is not set in licenseDeletions.");
+                log.error("Obligations id is not set in licenseDeletions.");
                 continue;
             }
-            Todo actual = actualTodoMap.get(deleted.getId());
+            Obligations actual = actualTodoMap.get(deleted.getId());
             if (actual == null) {
-                log.info("Todo from licenseDeletions does not exist (any more) in license.");
+                log.info("Obligations from licenseDeletions does not exist (any more) in license.");
                 continue;
             }
             if (deleted.isSetWhitelist() && deleted.getWhitelist().contains(department)) {

@@ -19,11 +19,12 @@
 
 <%@ page import="javax.portlet.PortletRequest" %>
 <%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
-<%@ page import="org.eclipse.sw360.datahandler.thrift.licenses.Todo" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.licenses.Obligations" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.licenses.ObligationType" %>
 
-<jsp:useBean id="todo" class="org.eclipse.sw360.datahandler.thrift.licenses.Todo" scope="request" />
+<jsp:useBean id="todo" class="org.eclipse.sw360.datahandler.thrift.licenses.Obligations" scope="request" />
 
-<portlet:actionURL var="addURL" name="addTodo">
+<portlet:actionURL var="addURL" name="addObligations">
 </portlet:actionURL>
 
 <div class="container">
@@ -33,7 +34,7 @@
 				<div class="col-auto">
 					<div class="btn-toolbar" role="toolbar">
                         <div class="btn-group">
-                            <button type="button" class="btn btn-primary" data-action="save"><liferay-ui:message key="create.todo" /></button>
+                            <button type="button" class="btn btn-primary" data-action="save"><liferay-ui:message key="create.obligation" /></button>
                         </div>
                         <div class="btn-group">
                             <button type="button" class="btn btn-light" data-action="cancel"><liferay-ui:message key="cancel" /></button>
@@ -48,7 +49,7 @@
                         <table id="todoAddTable" class="table edit-table three-columns">
                             <thead>
                                 <tr>
-                                    <th colspan="3"><liferay-ui:message key="add.todo" /></th>
+                                    <th colspan="3"><liferay-ui:message key="add.obligation" /></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -56,7 +57,7 @@
                                     <td>
                                         <div class="form-group">
                                             <label for="todoTitle"><liferay-ui:message key="title" /></label>
-                                            <input id="todoTitle" type="text" required class="form-control" placeholder="<liferay-ui:message key="enter.title" />" name="<portlet:namespace/><%=Todo._Fields.TITLE%>"/>
+                                            <input id="todoTitle" type="text" required class="form-control" placeholder="<liferay-ui:message key="enter.title" />" name="<portlet:namespace/><%=Obligations._Fields.TITLE%>"/>
                                             <div class="invalid-feedback">
                                                 <liferay-ui:message key="please.enter.a.title" />
                                             </div>
@@ -64,8 +65,8 @@
                                     </td>
                                     <td colspan="2">
                                         <div class="form-group">
-                                            <label for="todoText"><liferay-ui:message key="text" /></label>
-                                            <input id="todoText" type="text" required class="form-control" placeholder="<liferay-ui:message key="enter.text" />" name="<portlet:namespace/><%=Todo._Fields.TEXT%>"/>
+                                            <label for="obligsText"><liferay-ui:message key="text" /></label>
+                                            <input id="obligsText" type="text" required class="form-control" placeholder="<liferay-ui:message key="enter.text" />" name="<portlet:namespace/><%=Obligations._Fields.TEXT%>"/>
                                             <div class="invalid-feedback">
                                                 <liferay-ui:message key="please.enter.a.text" />
                                             </div>
@@ -75,12 +76,20 @@
                                 <tr>
                                     <td>
                                         <div class="form-check">
-                                            <input id="todoValidForProject" type="checkbox" class="form-check-input" name="<portlet:namespace/><%=Todo._Fields.VALID_FOR_PROJECT%>"/>
+                                            <input id="todoValidForProject" type="checkbox" class="form-check-input" name="<portlet:namespace/><%=Obligations._Fields.VALID_FOR_PROJECT%>"/>
                                             <label for="todoValidForProject" class="form-check-label"><liferay-ui:message key="valid.for.projects" /></label>
                                         </div>
                                     </td>
-                                    <td></td>
-                                    <td></td>
+                                    <td>
+                                    <div class="form-group">
+                                        <label for="obligationType"><liferay-ui:message key="obligation.type" /></label>
+                                        <select class="form-control" id="obligationType" name="<portlet:namespace/><%=Obligations._Fields.OBLIGATION_TYPE%>">
+                                            <sw360:DisplayEnumOptions type="<%=ObligationType.class%>" selected="${todo.obligationType}"/>
+                                        </select>
+                                     </div>
+                                    </td>
+                                    <td>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>

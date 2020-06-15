@@ -11,20 +11,20 @@ package org.eclipse.sw360.licenses.db;
 
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
-import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.thrift.licenses.LicenseObligation;
 import org.ektorp.support.View;
 
 /**
- * CRUD access for the Obligation class
+ * CRUD access for the LicenseObligation class
  *
  * @author cedric.bodet@tngtech.com
  * @author Johannes.Najjar@tngtech.com
  */
-@View(name = "all", map = "function(doc) { if (doc.type == 'obligation') emit(null, doc._id) }")
-public class ObligationRepository extends DatabaseRepository<Obligation> {
+@View(name = "all", map = "function(doc) { if (doc.type == 'licenseObligation') emit(null, doc._id) }")
+public class ObligationRepository extends DatabaseRepository<LicenseObligation> {
 
     public ObligationRepository(DatabaseConnector db) {
-        super(Obligation.class, db);
+        super(LicenseObligation.class, db);
 
         initStandardDesignDocument();
     }

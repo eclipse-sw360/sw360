@@ -49,8 +49,8 @@ public class LicenseHandler implements LicenseService.Iface {
      * Get a list of all obligations
      */
     @Override
-    public List<Obligation> getObligations() throws TException {
-        return handler.getObligations();
+    public List<LicenseObligation> getListOfobligation() throws TException {
+        return handler.getListOfobligation();
     }
 
     /**
@@ -90,8 +90,8 @@ public class LicenseHandler implements LicenseService.Iface {
     }
 
     @Override
-    public List<Obligation> addObligations(List<Obligation> obligations, User user) throws TException {
-        return handler.addObligations(obligations, user);
+    public List<LicenseObligation> addListOfobligation(List<LicenseObligation> obligations, User user) throws TException {
+        return handler.addListOfobligation(obligations, user);
 
     }
 
@@ -111,8 +111,8 @@ public class LicenseHandler implements LicenseService.Iface {
     }
 
     @Override
-    public List<Todo> addTodos(List<Todo> todos, User user) throws TException {
-        return handler.addTodos(todos, user);
+    public List<Obligations> addListOfObligations(List<Obligations> ListOfObligations, User user) throws TException {
+        return handler.addListOfObligations(ListOfObligations, user);
 
     }
 
@@ -137,8 +137,8 @@ public class LicenseHandler implements LicenseService.Iface {
     }
 
     @Override
-    public List<Todo> getTodos() throws TException {
-        return handler.getTodos();
+    public List<Obligations> getObligations() throws TException {
+        return handler.getObligations();
     }
 
     @Override
@@ -154,9 +154,9 @@ public class LicenseHandler implements LicenseService.Iface {
     }
 
     @Override
-    public List<Obligation> getObligationsByIds(List<String> ids) throws TException {
+    public List<LicenseObligation> getListOfobligationByIds(List<String> ids) throws TException {
         assertNotEmpty(ids);
-        return handler.getObligationsByIds(ids);
+        return handler.getListOfobligationByIds(ids);
     }
 
     @Override
@@ -166,9 +166,9 @@ public class LicenseHandler implements LicenseService.Iface {
     }
 
     @Override
-    public List<Todo> getTodosByIds(List<String> ids) throws TException {
+    public List<Obligations> getObligationsByIds(List<String> ids) throws TException {
         assertNotEmpty(ids);
-        return handler.getTodosByIds(ids);
+        return handler.getObligationsByIds(ids);
     }
 
 
@@ -178,7 +178,7 @@ public class LicenseHandler implements LicenseService.Iface {
     ////////////////////////////
 
     /**
-     * Get a single license by providing its ID, with todos filtered for the given organisation
+     * Get a single license by providing its ID, with obligations filtered for the given organisation
      */
     @Override
     public License getByID(String id, String organisation) throws TException {
@@ -218,7 +218,7 @@ public class LicenseHandler implements LicenseService.Iface {
     }
 
     @Override
-    public Obligation getObligationById(String id) throws TException {
+    public LicenseObligation getObligationById(String id) throws TException {
         assertNotEmpty(id);
         return handler.getObligationById(id);
     }
@@ -230,9 +230,9 @@ public class LicenseHandler implements LicenseService.Iface {
     }
 
     @Override
-    public Todo getTodoById(String id) throws TException {
+    public Obligations getObligationsById(String id) throws TException {
         assertNotEmpty(id);
-        return handler.getTodoById(id);
+        return handler.getObligationsById(id);
     }
 
     ////////////////////
@@ -240,23 +240,23 @@ public class LicenseHandler implements LicenseService.Iface {
     ////////////////////
 
     /**
-     * Add a new todo object
+     * Add a new obligation object
      */
     @Override
-    public String addTodo(Todo todo, User user) throws TException {
-        assertNotNull(todo);
-        assertIdUnset(todo.getId());
+    public String addObligations(Obligations obligs, User user) throws TException {
+        assertNotNull(obligs);
+        assertIdUnset(obligs.getId());
 
-        return handler.addTodo(todo, user);
+        return handler.addObligations(obligs, user);
     }
 
     /**
-     * Add an existing todo to a license
+     * Add an existing oblig to a license
      */
     @Override
-    public RequestStatus addTodoToLicense(Todo todo, String licenseId, User user) throws TException {
+    public RequestStatus addObligationsToLicense(Obligations obligs, String licenseId, User user) throws TException {
         assertNotEmpty(licenseId);
-       return  handler.addTodoToLicense(todo, licenseId, user);
+       return  handler.addObligationsToLicense(obligs, licenseId, user);
     }
 
     @Override
@@ -319,10 +319,10 @@ public class LicenseHandler implements LicenseService.Iface {
     }
 
     @Override
-    public RequestStatus deleteTodo(String id, User user) throws TException {
+    public RequestStatus deleteObligations(String id, User user) throws TException {
         assertId(id);
         assertUser(user);
-        return handler.deleteTodo(id, user);
+        return handler.deleteObligations(id, user);
     }
 
 }

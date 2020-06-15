@@ -192,12 +192,12 @@ public class LicensesPortlet extends Sw360Portlet {
                 LicenseService.Iface client = thriftClients.makeLicenseClient();
                 License moderationLicense = client.getByIDWithOwnModerationRequests(id, user.getDepartment(), user);
 
-                List<Todo> allTodos = nullToEmptyList(moderationLicense.getTodos());
-                List<Todo> addedTodos = allTodos
+                List<Obligations> allTodos = nullToEmptyList(moderationLicense.getObligations());
+                List<Obligations> addedTodos = allTodos
                         .stream()
                         .filter(CommonUtils::isTemporaryTodo)
                         .collect(Collectors.toList());
-                List<Todo> currentTodos = allTodos
+                List<Obligations> currentTodos = allTodos
                         .stream()
                         .filter(t -> !CommonUtils.isTemporaryTodo(t))
                         .collect(Collectors.toList());
@@ -210,7 +210,7 @@ public class LicensesPortlet extends Sw360Portlet {
                 License dbLicense = client.getByID(id, user.getDepartment());
                 request.setAttribute(KEY_LICENSE_DETAIL, dbLicense);
 
-                List<Obligation> obligations = client.getObligations();
+                List<LicenseObligation> obligations = client.getListOfobligation();
                 request.setAttribute(KEY_OBLIGATION_LIST, obligations);
 
                 addLicenseBreadcrumb(request, response, moderationLicense);
@@ -349,7 +349,7 @@ public class LicensesPortlet extends Sw360Portlet {
     @UsedAsLiferayAction
     public void updateWhiteList(ActionRequest request, ActionResponse response) throws PortletException, IOException {
 
-        // we get a list of todoDatabaseIds and Booleans and we have to update the whiteList of each todo if it changed
+        // we get a list of obligationDatabaseIds and Booleans and we have to update the whiteList of each oblig if it changed
         String licenseId = request.getParameter(LICENSE_ID);
         String[] whiteList = request.getParameterValues("whiteList");
         if (whiteList == null) whiteList = new String[0]; // As empty arrays are not passed as parameters
@@ -400,27 +400,27 @@ public class LicensesPortlet extends Sw360Portlet {
     }
 
     @UsedAsLiferayAction
-    public void addTodo(ActionRequest request, ActionResponse response) throws PortletException, IOException {
+    public void addObligations(ActionRequest request, ActionResponse response) throws PortletException, IOException {
         String licenseID = request.getParameter(LICENSE_ID);
         String[] obligationIds = request.getParameterValues("obligations");
-        String todoText = request.getParameter("todoText");
+        String obligsText = request.getParameter("obligsText");
         String[] bools = request.getParameterValues("bools");
 
 
-        Todo todo = new Todo();
+        Obligations oblig = new Obligations();
         //add temporary id
-        todo.setId(TMP_TODO_ID_PREFIX + UUID.randomUUID().toString());
+        oblig.setId(TMP_TODO_ID_PREFIX + UUID.randomUUID().toString());
         if (obligationIds != null) {
             for (String obligationId : obligationIds) {
                 if (obligationId != null && !obligationId.isEmpty()) {
-                    todo.addToObligationDatabaseIds(obligationId);
+                    oblig.addToObligationDatabaseIds(obligationId);
                 }
             }
         } else {
-            todo.setObligationDatabaseIds(Collections.emptySet());
+            oblig.setObligationDatabaseIds(Collections.emptySet());
         }
-        todo.setText(todoText);
-        todo.setTitle(StringUtils.EMPTY);
+        oblig.setText(obligsText);
+        oblig.setTitle(StringUtils.EMPTY);
 
         User user = UserCacheHolder.getUserFromRequest(request);
         String moderationComment = request.getParameter(PortalConstants.MODERATION_REQUEST_COMMENT);
@@ -428,19 +428,19 @@ public class LicensesPortlet extends Sw360Portlet {
             user.setCommentMadeDuringModerationRequest(moderationComment);
         }
 
-        todo.addToWhitelist(user.getDepartment());
+        oblig.addToWhitelist(user.getDepartment());
 
         if (bools != null) {
             List<String> theBools = Arrays.asList(bools);
-            todo.setDevelopment(theBools.contains("development"));
-            todo.setDistribution(theBools.contains("distribution"));
+            oblig.setDevelopment(theBools.contains("development"));
+            oblig.setDistribution(theBools.contains("distribution"));
         } else {
-            todo.setDevelopment(false);
-            todo.setDistribution(false);
+            oblig.setDevelopment(false);
+            oblig.setDistribution(false);
         }
         try {
             LicenseService.Iface client = thriftClients.makeLicenseClient();
-            RequestStatus requestStatus = client.addTodoToLicense(todo, licenseID, user);
+            RequestStatus requestStatus = client.addObligationsToLicense(oblig, licenseID, user);
 
             setSessionMessage(request, requestStatus, "License", "update");
 

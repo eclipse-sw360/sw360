@@ -30,6 +30,8 @@ import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.cvesearch.UpdateType;
 import org.eclipse.sw360.datahandler.thrift.cvesearch.VulnerabilityUpdateStatus;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligations;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
@@ -123,6 +125,10 @@ public class PortletUtils {
         return  ECCStatus.findByValue(parseInt(enumNumber));
     }
 
+    public static ObligationType getObligationTypeFromString(String enumNumber) {
+        return  ObligationType.findByValue(parseInt(enumNumber));
+    }
+
     public static <U extends TFieldIdEnum, T extends TBase<T, U>> void setFieldValue(PortletRequest request, T instance, U field, FieldMetaData fieldMetaData, String prefix) {
 
         String value = request.getParameter(prefix + field.toString());
@@ -172,6 +178,8 @@ public class PortletUtils {
             return getUserGroupFromString(value);
         else if (field == EccInformation._Fields.ECC_STATUS)
             return getEccStatusFromString(value);
+        else if (field == Obligations._Fields.OBLIGATION_TYPE)
+            return getObligationTypeFromString(value);
         else {
             LOGGER.error("Missing case in enumFromString, unknown field was " + field.toString());
             return null;

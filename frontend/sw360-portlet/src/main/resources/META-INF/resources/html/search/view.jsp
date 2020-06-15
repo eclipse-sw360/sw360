@@ -57,8 +57,8 @@
                                 <label for="keyword-search-releases" class="form-check-label"><sw360:icon title="releases" icon="release" className="type-icon type-icon-release"/> <liferay-ui:message key="releases" /></label>
                             </div>
                             <div class="form-check">
-                                <input id="keyword-search-todos" type="checkbox" class="form-check-input" value="<%=SW360Constants.TYPE_TODO%>" name="<portlet:namespace/><%=PortalConstants.TYPE_MASK%>"   <core_rt:if test="<%=typeMask.contains(SW360Constants.TYPE_TODO)%>">   checked="" </core_rt:if> >
-                                <label for="keyword-search-todos" class="form-check-label"><sw360:icon title="todos" icon="todo" className="type-icon type-icon-todo"/> <liferay-ui:message key="todos" /></label>
+                                <input id="keyword-search-obligations" type="checkbox" class="form-check-input" value="<%=SW360Constants.TYPE_OBLIGATIONS%>" name="<portlet:namespace/><%=PortalConstants.TYPE_MASK%>"   <core_rt:if test="<%=typeMask.contains(SW360Constants.TYPE_OBLIGATIONS)%>">   checked="" </core_rt:if> >
+                                <label for="keyword-search-obligations" class="form-check-label"><sw360:icon title="obligations" icon="oblig" className="type-icon type-icon-oblig"/> <liferay-ui:message key="obligations" /></label>
                             </div>
                             <div class="form-check">
                                 <input id="keyword-search-users" type="checkbox" class="form-check-input" value="<%=SW360Constants.TYPE_USER%>" name="<portlet:namespace/><%=PortalConstants.TYPE_MASK%>"      <core_rt:if test="<%=typeMask.contains(SW360Constants.TYPE_USER)%>">      checked="" </core_rt:if> >
@@ -131,8 +131,8 @@
                     return '<svg class="lexicon-icon type-icon type-icon-license"><title><liferay-ui:message key="license" /></title><use href="<%=request.getContextPath()%>/images/icons.svg#license"/></svg>';
                 } else if (data === '<%=SW360Constants.TYPE_RELEASE%>') {
                     return '<svg class="lexicon-icon type-icon type-icon-release"><title><liferay-ui:message key="release" /></title><use href="<%=request.getContextPath()%>/images/icons.svg#release"/></svg>';
-                } else if (data === '<%=SW360Constants.TYPE_TODO%>') {
-                    return '<svg class="lexicon-icon type-icon type-icon-todo"><title>ToDo</title><use href="<%=request.getContextPath()%>/images/icons.svg#todo"/></svg>';
+                } else if (data === '<%=SW360Constants.TYPE_OBLIGATIONS%>') {
+                    return '<svg class="lexicon-icon type-icon type-icon-oblig"><title>ToDo</title><use href="<%=request.getContextPath()%>/images/icons.svg#oblig"/></svg>';
                 } else if (data === '<%=SW360Constants.TYPE_USER%>') {
                     return '<svg class="lexicon-icon type-icon type-icon-user"><title><liferay-ui:message key="user" /></title><use href="<%=request.getContextPath()%>/images/icons.svg#user"/></svg>'
                 } else if (data === '<%=SW360Constants.TYPE_VENDOR%>') {

@@ -12,6 +12,7 @@ package org.eclipse.sw360.portal.portlets.projects;
 import com.google.common.collect.*;
 
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.common.SW360Utils.TodoInfo;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
@@ -28,6 +29,7 @@ import org.eclipse.sw360.portal.common.CustomFieldHelper;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.common.PortletUtils;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligations;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
@@ -109,9 +111,10 @@ public class ProjectPortletUtils {
                     break;
                 case ADDITIONAL_DATA:
                     project.setAdditionalData(PortletUtils.getAdditionalDataMapFromRequest(request));
+                    break;
                 case TODOS:
                     String userId = UserCacheHolder.getUserFromRequest(request).getId();
-                    updateProjectTodosFromRequest(request.getParameterValues(field.toString()), userId, project);
+                    updateProjectTodosFromRequest(request, field, userId, project);
                     break;
                 default:
                     setFieldValue(request, project, field);
@@ -119,17 +122,36 @@ public class ProjectPortletUtils {
         }
     }
 
-    private static void updateProjectTodosFromRequest(String[] ids, String userId, Project project) {
+    private static void updateProjectTodosFromRequest(PortletRequest request, Project._Fields field, String userId, Project project) {
+        String ids[] = request.getParameterValues(field.toString());
         Set<String> idSet = ids != null ? Arrays.stream(ids).collect(Collectors.toSet()) : Collections.emptySet();
         Set<ProjectTodo> currentTodos = project.getTodosSize() > 0 ? project.getTodos() : Collections.emptySet();
         String updated = SW360Utils.getCreatedOnTime();
 
-        // assemble set of project todos
+        final PortletRequest finalrequest = request;
+        Map<Obligations, TodoInfo> projectObligation = SW360Utils.getProjectObligations(project);
+        Set<Obligations> todoSets = projectObligation.keySet();
+        Set<String> totalTodoIds = todoSets.stream().map(td -> td.getId()).collect(Collectors.toSet());
+        Set<String> nonFulFulfilledProjectTodoIds = Sets.difference(totalTodoIds, idSet);
+        List<ProjectTodo> listOfNotFulfilledProjectIds = new ArrayList<ProjectTodo>();
+
+        for (String id : nonFulFulfilledProjectTodoIds) {
+            ProjectTodo pt = new ProjectTodo();
+            pt.setTodoId(id);
+            pt.setUserId(userId);
+            pt.setUpdated(updated);
+            pt.setFulfilled(false);
+            pt.setComments(getCommentsByTodoId(finalrequest, id));
+            listOfNotFulfilledProjectIds.add(pt);
+        }
+
         Set<ProjectTodo> projectTodos = idSet.stream()
+                // assemble set of project todos
                 .map(id -> currentTodos.stream()
                         .filter(pt -> pt.getTodoId().equals(id))
                         .findAny()
-                        .orElseGet(() -> new ProjectTodo(id, userId, updated, true)))
+                        .orElseGet(() -> new ProjectTodo(id, userId, updated, true))
+                        .setComments(getCommentsByTodoId(request, id)))
                 .collect(Collectors.toSet());
 
         // update changed to fulfilled
@@ -139,6 +161,7 @@ public class ProjectPortletUtils {
                             projectTodo.fulfilled = true;
                             projectTodo.setUserId(userId);
                             projectTodo.setUpdated(updated);
+                            projectTodo.setComments(getCommentsByTodoId(request, projectTodo.todoId));
                         });
 
         // update changed to not fulfilled
@@ -148,12 +171,18 @@ public class ProjectPortletUtils {
                     projectTodo.fulfilled = false;
                     projectTodo.setUserId(userId);
                     projectTodo.setUpdated(updated);
+                    projectTodo.setComments(getCommentsByTodoId(request, projectTodo.todoId));
                     return projectTodo;
                 })
                 .collect(Collectors.toSet());
 
         projectTodos.addAll(changedToNotFulfilled);
+        projectTodos.addAll(listOfNotFulfilledProjectIds);
         project.setTodos(projectTodos);
+    }
+
+    public static String getCommentsByTodoId(PortletRequest request, String id) {
+        return request.getParameter("projectobligation:" + id);
     }
 
     private static void updateLinkedReleasesFromRequest(PortletRequest request, Map<String, ProjectReleaseRelationship> releaseUsage) {
