@@ -80,10 +80,17 @@ import static com.google.common.base.Strings.isNullOrEmpty;
                 map = "function(doc) {" +
                         "  if (doc.type == 'release') {" +
                         "    for (var externalId in doc.externalIds) {" +
-                        "       emit( [externalId, doc.externalIds[externalId]] , doc._id);" +
+                        "      try {" +
+                        "            var values = JSON.parse(doc.externalIds[externalId]);" +
+                        "            for (var idx in values) {" +
+                        "              emit( [externalId, values[idx]], doc._id);" +
+                        "            }" +
+                        "      } catch(error) {" +
+                        "          emit( [externalId, doc.externalIds[externalId]], doc._id);" +
+                        "      }" +
                         "    }" +
                         "  }" +
-                        "}")
+                        "}"),
 
 })
 public class ReleaseRepository extends SummaryAwareRepository<Release> {

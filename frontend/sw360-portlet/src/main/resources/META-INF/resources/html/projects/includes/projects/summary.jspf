@@ -63,7 +63,7 @@
     </tr>
     <tr>
         <td><liferay-ui:message key="external.ids" />:</td>
-        <td><sw360:DisplayMap value="${project.externalIds}"/></td>
+        <td><sw360:DisplayMapOfExternalIdsString value="${project.externalIds}"/></td>
     </tr>
     <tr>
         <td><liferay-ui:message key="additional.data" />:</td>
