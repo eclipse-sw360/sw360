@@ -16,9 +16,6 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TCompactProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.commonIO.AttachmentFrontendUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
@@ -28,6 +25,7 @@ import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.core.ThriftServiceProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
@@ -61,6 +59,9 @@ public class Sw360AttachmentService {
 
     @NonNull
     private final RestControllerHelper restControllerHelper;
+
+    @NonNull
+    private final ThriftServiceProvider<AttachmentService.Iface> thriftAttachmentServiceProvider;
 
     private static final Logger log = Logger.getLogger(Sw360AttachmentService.class);
     private final Duration downloadTimeout = Duration.durationOf(30, TimeUnit.SECONDS);
@@ -191,9 +192,7 @@ public class Sw360AttachmentService {
     }
 
     private AttachmentService.Iface getThriftAttachmentClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/attachments/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new AttachmentService.Client(protocol);
+        return thriftAttachmentServiceProvider.getService(thriftServerUrl);
     }
 
     public Resources<Resource<Attachment>> getResourcesFromList(Set<Attachment> attachmentList) {
