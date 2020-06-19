@@ -195,7 +195,7 @@
                                                 </core_rt:choose>
                                                 </td>
                                             </tr>
-                                            <core_rt:if test="${clearingRequest.isSetTimestampOfDecision()}">
+                                            <core_rt:if test="${clearingRequest.isSetTimestampOfDecision() and clearingRequest.timestampOfDecision gt 0}">
                                                 <tr>
                                                     <td><label class="form-group"><liferay-ui:message key="request.closed.on" />:</label></td>
                                                     <td>
@@ -277,7 +277,7 @@
                                         </core_rt:forEach>
                                         <tr>
                                             <td>
-                                                <core_rt:if test="${isProjectPresent and isClearingTeam}">
+                                                <core_rt:if test="${isProjectPresent and (isClearingTeam or isRequestingUser)}">
 	                                                <textarea id="clearingRequestComment" placeholder="<liferay-ui:message key='enter.comment' />..." class="h-25 form-control"></textarea>
 	                                                <div class="my-2 btn-group" role="group">
 	                                                    <button id="addComment" type="button" class="btn btn-success"><liferay-ui:message key='add.comment' /></button>

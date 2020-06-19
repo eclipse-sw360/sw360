@@ -144,6 +144,8 @@ AUI().use('liferay-portlet-url', function () {
 
         quickfilter.addTable(moderationsDataTable);
         quickfilter.addTable(closedModerationsDataTable);
+        quickfilter.addTable(clearingRequestsDataTable);
+        quickfilter.addTable(closedClearingRequestsDataTable);
 
         $('.TogglerModeratorsList').on('click', toggleModeratorsList );
         $('#closedModerationsTable').on('click', 'svg.delete', function(event) {
@@ -297,6 +299,12 @@ AUI().use('liferay-portlet-url', function () {
                 language: {
                     emptyTable: "<liferay-ui:message key='no.clearing.request.found'/>"
                 },
+                columnDefs: [
+                    {
+                        targets: [2],
+                        type: 'natural'
+                    },
+                ],
                 "order": [[2, 'asc']],
                 initComplete: datatables.showPageContainer
             }, [1,2,3,4,5,6,7], [0,8]);
