@@ -11,6 +11,17 @@
 server:
   port: 8091
 
+management:
+  security:
+    enabled: false
+#  health:
+#    default:
+#      enabled: false
+
+endpoints:
+  health:
+    sensitive: false
+
 spring:
   http:
     multipart:
