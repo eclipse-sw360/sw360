@@ -17,6 +17,7 @@ import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -295,6 +296,25 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Release release = releaseService.getReleaseForUserById(releaseId, sw360User);
         attachmentService.downloadAttachmentWithContext(release, attachmentId, response, sw360User);
+    }
+
+    @DeleteMapping(RELEASES_URL + "/{releaseId}/attachments/{attachmentIds}")
+    public ResponseEntity<HalResource<Release>> deleteAttachmentsFromRelease(
+            @PathVariable("releaseId") String releaseId,
+            @PathVariable("attachmentIds") List<String> attachmentIds) throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        Release release = releaseService.getReleaseForUserById(releaseId, user);
+
+        Set<Attachment> attachmentsToDelete = attachmentService.filterAttachmentsToRemove(Source.releaseId(releaseId),
+                release.getAttachments(), attachmentIds);
+        if (attachmentsToDelete.isEmpty()) {
+            // let the whole action fail if nothing can be deleted
+            throw new RuntimeException("Could not delete attachments " + attachmentIds + " from release " + releaseId);
+        }
+        log.debug("Deleting the following attachments from release " + releaseId + ": " + attachmentsToDelete);
+        release.getAttachments().removeAll(attachmentsToDelete);
+        releaseService.updateRelease(release, user);
+        return new ResponseEntity<>(createHalReleaseResource(release, true), HttpStatus.OK);
     }
 
     @RequestMapping(value = RELEASES_URL + "/{id}/checkFossologyProcessStatus", method = RequestMethod.GET)
