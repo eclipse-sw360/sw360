@@ -35,6 +35,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.Resources;
+import org.springframework.restdocs.mockmvc.RestDocumentationResultHandler;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
@@ -42,6 +43,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
@@ -87,10 +89,15 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         attachment.setSha1("da373e491d3863477568896089ee9457bc316783");
         attachmentList.add(attachment);
         attachmentResources.add(new Resource<>(attachment));
+        Attachment attachment2 = new Attachment("1231231255", "spring-mvc-4.3.4.RELEASE.jar");
+        attachment2.setSha1("da373e491d3863477568896089ee9457bc316784");
+        attachmentList.add(attachment2);
+        attachmentResources.add(new Resource<>(attachment2));
 
         given(this.attachmentServiceMock.getAttachmentContent(anyObject())).willReturn(new AttachmentContent().setId("1231231254").setFilename("spring-core-4.3.4.RELEASE.jar").setContentType("binary"));
         given(this.attachmentServiceMock.getResourcesFromList(anyObject())).willReturn(new Resources<>(attachmentResources));
         given(this.attachmentServiceMock.uploadAttachment(anyObject(), anyObject(), anyObject())).willReturn(attachment);
+        given(this.attachmentServiceMock.filterAttachmentsToRemove(any(), any(), any())).willReturn(Collections.singleton(attachment));
         Map<String, Set<String>> externalIds = new HashMap<>();
         externalIds.put("component-id-key", ImmutableSet.of("1831A3", "c77321"));
 
@@ -476,33 +483,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                 .header("Authorization", "Bearer " + accessToken)
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
-                .andDo(this.documentationHandler.document(
-                        links(
-                                linkWithRel("self").description("The <<resources-components,Component resource>>")
-                        ),
-                        responseFields(
-                                fieldWithPath("name").description("The name of the component"),
-                                fieldWithPath("componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
-                                fieldWithPath("description").description("The component description"),
-                                fieldWithPath("createdOn").description("The date the component was created"),
-                                fieldWithPath("componentOwner").description("The owner name of the component"),
-                                fieldWithPath("ownerAccountingUnit").description("The owner accounting unit of the component"),
-                                fieldWithPath("ownerGroup").description("The owner group of the component"),
-                                fieldWithPath("ownerCountry").description("The owner country of the component"),
-                                fieldWithPath("externalIds").description("When projects are imported from other tools, the external ids can be stored here"),
-                                fieldWithPath("additionalData").description("A place to store additional data used by external tools"),
-                                fieldWithPath("categories").description("The component categories"),
-                                fieldWithPath("languages").description("The language of the component"),
-                                fieldWithPath("mailinglist").description("Component mailing lists"),
-                                fieldWithPath("operatingSystems").description("The OS on which the component operates"),
-                                fieldWithPath("homepage").description("The homepage url of the component"),
-                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
-                                fieldWithPath("_embedded.createdBy").description("The user who created this component"),
-                                fieldWithPath("_embedded.sw360:releases").description("An array of all component releases with version and link to their <<resources-releases,Releases resource>>"),
-                                fieldWithPath("_embedded.sw360:moderators").description("An array of all component moderators with email and link to their <<resources-user-get,User resource>>"),
-                                fieldWithPath("_embedded.sw360:vendors").description("An array of all component vendors with ful name and link to their <<resources-vendor-get,Vendor resource>>"),
-                                fieldWithPath("_embedded.sw360:attachments").description("An array of all component attachments and link to their <<resources-attachment-get,Attachment resource>>")
-                        )));
+                .andDo(documentComponentProperties());
     }
 
     @Test
@@ -565,5 +546,45 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_upload_attachment_to_component() throws Exception {
         testAttachmentUpload("/api/components/", angularComponent.getId());
+    }
+
+    @Test
+    public void should_document_delete_component_attachment() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(delete("/api/components/" + angularComponent.getId() + "/attachments/" + attachment.getAttachmentContentId())
+                .header("Authorization", "Bearer " + accessToken)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(documentComponentProperties());
+    }
+
+    private RestDocumentationResultHandler documentComponentProperties() {
+        return this.documentationHandler.document(
+                links(
+                        linkWithRel("self").description("The <<resources-components,Component resource>>")
+                ),
+                responseFields(
+                        fieldWithPath("name").description("The name of the component"),
+                        fieldWithPath("componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
+                        fieldWithPath("description").description("The component description"),
+                        fieldWithPath("createdOn").description("The date the component was created"),
+                        fieldWithPath("componentOwner").description("The owner name of the component"),
+                        fieldWithPath("ownerAccountingUnit").description("The owner accounting unit of the component"),
+                        fieldWithPath("ownerGroup").description("The owner group of the component"),
+                        fieldWithPath("ownerCountry").description("The owner country of the component"),
+                        fieldWithPath("externalIds").description("When projects are imported from other tools, the external ids can be stored here"),
+                        fieldWithPath("additionalData").description("A place to store additional data used by external tools"),
+                        fieldWithPath("categories").description("The component categories"),
+                        fieldWithPath("languages").description("The language of the component"),
+                        fieldWithPath("mailinglist").description("Component mailing lists"),
+                        fieldWithPath("operatingSystems").description("The OS on which the component operates"),
+                        fieldWithPath("homepage").description("The homepage url of the component"),
+                        fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                        fieldWithPath("_embedded.createdBy").description("The user who created this component"),
+                        fieldWithPath("_embedded.sw360:releases").description("An array of all component releases with version and link to their <<resources-releases,Releases resource>>"),
+                        fieldWithPath("_embedded.sw360:moderators").description("An array of all component moderators with email and link to their <<resources-user-get,User resource>>"),
+                        fieldWithPath("_embedded.sw360:vendors").description("An array of all component vendors with ful name and link to their <<resources-vendor-get,Vendor resource>>"),
+                        fieldWithPath("_embedded.sw360:attachments").description("An array of all component attachments and link to their <<resources-attachment-get,Attachment resource>>")
+                ));
     }
 }

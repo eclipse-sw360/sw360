@@ -195,6 +195,29 @@ include::{snippets}/should_document_get_release_attachment/curl-request.adoc[]
 ===== Example response
 include::{snippets}/should_document_get_release_attachment/http-response.adoc[]
 
+[[resources-release-attachment-delete]]
+==== Delete attachments
+
+With a `DELETE` request one or multiple attachments can be deleted from a release.
+To delete multiple attachments at once, just specify a comma-separated list of
+attachment IDs.
+
+Note that attachments can only be deleted if they are not used by a project.
+Requests that cannot delete any of the attachments specified fail with response
+status 500.
+
+===== Example request
+include::{snippets}/should_document_delete_release_attachment/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_delete_release_attachment/http-response.adoc[]
+
+The response contains the updated release. Here the set of attachments is especially
+relevant. If multiple attachments were to be deleted, but the deletion failed for
+some of them, those can still be found in the set. So callers should inspect
+the set of attachments in the result to find out whether all delete operations
+have been successful.
+
 [[resources-trigger_fossology_process-get]]
 ==== Trigger FOSSology process
 
