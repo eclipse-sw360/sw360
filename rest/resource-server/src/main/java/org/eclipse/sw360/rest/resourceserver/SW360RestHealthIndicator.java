@@ -12,8 +12,12 @@ package org.eclipse.sw360.rest.resourceserver;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseInstance;
+import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.datahandler.thrift.health.HealthService;
+import org.eclipse.sw360.datahandler.thrift.health.Status;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Component;
@@ -25,7 +29,7 @@ import java.util.List;
 @Component
 public class SW360RestHealthIndicator implements HealthIndicator {
      @JsonIgnore
-    List<Throwable> throwables = new ArrayList<>();
+     private List<Throwable> throwables = new ArrayList<>();
 
     @Override
     public Health health() {
@@ -56,6 +60,9 @@ public class SW360RestHealthIndicator implements HealthIndicator {
     private boolean isDbReachable() throws MalformedURLException {
         final DatabaseInstance databaseInstance = new DatabaseInstance(DatabaseSettings.getConfiguredHttpClient().get());
         try {
+            /*
+             *
+             */
             return databaseInstance.checkIfDbExists(DatabaseSettings.COUCH_DB_ATTACHMENTS);
         } catch (Exception e) {
             throwables.add(e);
@@ -64,7 +71,21 @@ public class SW360RestHealthIndicator implements HealthIndicator {
     }
 
     private boolean isThriftReachable() {
-        return true;
+        final HealthService.Iface healthClient = new ThriftClients().makeHealthClient();
+        try {
+            final org.eclipse.sw360.datahandler.thrift.health.Health health = healthClient.getHealth();
+            if (health.getStatus().equals(Status.UP)) {
+                return true;
+            } else {
+                throwables.add(
+                        new Exception(health.getStatus().toString(),
+                                new Throwable(health.getDetails().toString())));
+                return false;
+            }
+        } catch (TException e) {
+            throwables.add(e);
+            return false;
+        }
     }
 
     class RestState {

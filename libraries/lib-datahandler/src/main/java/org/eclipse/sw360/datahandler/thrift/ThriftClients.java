@@ -17,26 +17,28 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.thrift.protocol.TCompactProtocol;
+import org.apache.thrift.protocol.TProtocol;
+import org.apache.thrift.transport.THttpClient;
+import org.apache.thrift.transport.TTransportException;
+
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogsService;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.cvesearch.CveSearchService;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
+import org.eclipse.sw360.datahandler.thrift.health.HealthService;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projectimport.ProjectImportService;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.schedule.ScheduleService;
 import org.eclipse.sw360.datahandler.thrift.search.SearchService;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
-import org.apache.thrift.protocol.TCompactProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.THttpClient;
-import org.apache.thrift.transport.TTransportException;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -76,6 +78,7 @@ public class ThriftClients {
     private static final String SCHEDULE_SERVICE_URL = "/schedule/thrift";
     private static final String WSIMPORT_SERVICE_URL = "/wsimport/thrift";
     private static final String CHANGELOGS_SERVICE_URL = "/changelogs/thrift";
+    private static final String HEALTH_SERVICE_URL = "/health";
 
     // A service which has to be scheduled by the scheduler should be registered here!
     // names of services that can be scheduled by the schedule service, i.e. that have an "update" method
@@ -188,5 +191,9 @@ public class ThriftClients {
 
     public ChangeLogsService.Iface makeChangeLogsClient() {
         return new ChangeLogsService.Client(makeProtocol(BACKEND_URL, CHANGELOGS_SERVICE_URL));
+    }
+
+    public HealthService.Iface makeHealthClient() {
+        return new HealthService.Client(makeProtocol(BACKEND_URL, HEALTH_SERVICE_URL));
     }
 }
