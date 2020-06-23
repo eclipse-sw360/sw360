@@ -34,6 +34,7 @@ public class ReleaseSearchHandler {
                     "      var ret = new Document();" +
                     "      ret.add(doc.name);  " +
                     "      ret.add(doc.version);  " +
+                    "      ret.add(doc._id);  " +
                     "      return ret;" +
                     "  }" +
                     "}");

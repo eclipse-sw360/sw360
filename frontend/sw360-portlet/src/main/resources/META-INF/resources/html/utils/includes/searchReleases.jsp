@@ -53,8 +53,8 @@
                                     <tr>
                                         <th></th>
                                         <th><liferay-ui:message key="vendor" /></th>
-                                        <th><liferay-ui:message key="release.name" /></th>
-                                        <th><liferay-ui:message key="version" /></th>
+                                        <th><liferay-ui:message key="component.name" /></th>
+                                        <th><liferay-ui:message key="release.version" /></th>
                                         <th><liferay-ui:message key="clearing.state" /></th>
                                         <th><liferay-ui:message key="mainline.state" /></th>
                                     </tr>
@@ -81,6 +81,8 @@
 
         keyboard.bindkeyPressToClick('searchrelease', 'searchbuttonrelease');
 
+        var homeUrl = themeDisplay.getURLHome().replace(/\/web\//, '/group/');
+
         $('#addLinkedReleasesToReleaseButton').on('click', showReleaseDialog);
         $('#searchbuttonrelease').on('click', function() {
             releaseContentFromAjax('<%=PortalConstants.RELEASE_SEARCH%>', $('#searchrelease').val(), function(data) {
@@ -88,6 +90,7 @@
                     $dataTable.destroy();
                 }
                 $('#releaseSearchResultsTable tbody').html(data);
+                addLinkToReleaseNameAndVersion();
                 makeReleaseDataTable();
             });
         });
@@ -97,6 +100,7 @@
                     $dataTable.destroy();
                 }
                 $('#releaseSearchResultsTable tbody').html(data);
+                addLinkToReleaseNameAndVersion();
                 makeReleaseDataTable();
             });
         });
@@ -177,5 +181,31 @@
             });
         }
 
+        function makeReleaseViewUrl(releaseId) {
+            return homeUrl + '/components/-/component/release/detailRelease/' + releaseId;
+        }
+
+        function makeComponentViewUrl(componentId) {
+            return homeUrl + '/components/-/component/detail/' + componentId;
+        }
+
+        function detailUrl(name, url)
+        {
+            let viewUrl = $("<a></a>").attr("href",url).attr("target","_blank").css("word-break","break-word").html(name);
+            return viewUrl[0].outerHTML;
+        }
+
+        function addLinkToReleaseNameAndVersion() {
+            $('#releaseSearchResultsTable > tbody  > tr').each(function() {
+                let $releasId = $('td:eq(0)', this).find("input[type='checkbox']").val();
+                let $componentId = $('td:eq(0)', this).find("input[type='hidden']").val();
+                let $relName = $('td:eq(2)', this);
+                let $relVersion = $('td:eq(3)', this);
+                let linkOnRelName = detailUrl($relName.text(), makeComponentViewUrl($componentId));
+                let linkOnRelVersion = detailUrl($relVersion.text(), makeReleaseViewUrl($releasId));
+                $relName.html(linkOnRelName);
+                $relVersion.html(linkOnRelVersion);
+         });
+        }
     });
 </script>
