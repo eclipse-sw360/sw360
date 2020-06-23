@@ -1,6 +1,7 @@
 /*
  * Copyright Siemens AG, 2014-2016, 2019. Part of the SW360 Portal Project.
  * With modifications by Bosch Software Innovations GmbH, 2016.
+ * With modifications by Bosch.IO GmbH, 2020.
  * With modifications by Verifa Oy, 2018.
  *
  * This program and the accompanying materials are made
@@ -78,7 +79,7 @@ public class ThriftClients {
     private static final String SCHEDULE_SERVICE_URL = "/schedule/thrift";
     private static final String WSIMPORT_SERVICE_URL = "/wsimport/thrift";
     private static final String CHANGELOGS_SERVICE_URL = "/changelogs/thrift";
-    private static final String HEALTH_SERVICE_URL = "/health";
+    private static final String HEALTH_SERVICE_URL = "/health/thrift";
 
     // A service which has to be scheduled by the scheduler should be registered here!
     // names of services that can be scheduled by the schedule service, i.e. that have an "update" method
