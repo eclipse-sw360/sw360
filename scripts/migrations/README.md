@@ -42,6 +42,9 @@ To migrate it is recommended to do this in the following order:
 ### 7.0.1-M1 -> 7.1.0
 - `016_update_byExternalIds_component_view.py`
 
+### 8.2.0 -> 9.0.0
+- `017_update_empty_release_clearing_state_to_default_NEW_CLEARING.py`
+
 ## Optional usage
 - `009_overwrite_release_name_with_component_name.py`
 - `010_repair_missing_vendorId_links_in_releases.py`
