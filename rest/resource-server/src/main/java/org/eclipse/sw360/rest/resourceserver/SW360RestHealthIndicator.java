@@ -22,6 +22,7 @@ import org.eclipse.sw360.datahandler.couchdb.DatabaseInstance;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.health.HealthService;
 import org.eclipse.sw360.datahandler.thrift.health.Status;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
@@ -39,11 +40,17 @@ public class SW360RestHealthIndicator implements HealthIndicator {
     @JsonIgnore
     private List<Throwable> throwables = new ArrayList<>();
 
+    private HealthService.Iface healthClient;
+
+    private DatabaseInstance databaseInstance;
+
+    public void setHealthClient(HealthService.Iface healthClient) {
+        this.healthClient = healthClient;
+    }
+
     public void setDatabaseInstance(DatabaseInstance databaseInstance) {
         this.databaseInstance = databaseInstance;
     }
-
-    private DatabaseInstance databaseInstance;
 
     @Override
     public Health health() {
@@ -70,12 +77,11 @@ public class SW360RestHealthIndicator implements HealthIndicator {
         } catch (MalformedURLException e) {
             restState.isDbReachable = false;
         }
-        restState.isThriftReachable = true;
-/*        try {
+        try {
             restState.isThriftReachable = isThriftReachable();
         } catch (TTransportException e) {
             restState.isThriftReachable = false;
-        }*/
+        }
         return restState;
     }
 
@@ -92,9 +98,9 @@ public class SW360RestHealthIndicator implements HealthIndicator {
     }
 
     private boolean isThriftReachable() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/health/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        final HealthService.Iface healthClient = new HealthService.Client(protocol);
+        if (healthClient == null) {
+            healthClient = makeHealthClient();
+        }
         try {
             final org.eclipse.sw360.datahandler.thrift.health.Health health = healthClient.getHealth();
             if (health.getStatus().equals(Status.UP)) {
@@ -109,6 +115,12 @@ public class SW360RestHealthIndicator implements HealthIndicator {
             throwables.add(e);
             return false;
         }
+    }
+
+    private HealthService.Iface makeHealthClient() throws TTransportException {
+        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/health");
+        TProtocol protocol = new TCompactProtocol(thriftClient);
+        return new HealthService.Client(protocol);
     }
 
     class RestState {
