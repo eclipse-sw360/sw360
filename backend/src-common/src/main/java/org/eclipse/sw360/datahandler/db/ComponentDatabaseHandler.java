@@ -1874,6 +1874,74 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return releaseRepository.getReferencingReleases(releaseId);
     }
 
+    public RequestStatus splitComponent(Component srcComponent, Component targetComponent, User user)
+            throws TException {
+        Component srcComponentFromDB = getComponent(srcComponent.getId(), user);
+        Component targetComponentFromDB = getComponent(targetComponent.getId(), user);
+
+        if (!makePermission(targetComponentFromDB, user).isActionAllowed(RequestedAction.WRITE)
+                || !makePermission(srcComponentFromDB, user).isActionAllowed(RequestedAction.WRITE)) {
+            return RequestStatus.ACCESS_DENIED;
+        }
+
+        if (isComponentUnderModeration(targetComponent.getId()) || isComponentUnderModeration(srcComponent.getId())) {
+            return RequestStatus.IN_USE;
+        }
+
+        Component srcComponentFromDBOriginal = srcComponentFromDB.deepCopy();
+        Component targetComponentFromDBOriginal = targetComponentFromDB.deepCopy();
+
+        boolean isAttachmentsModified = moveAttachmentFromSrcComponentToTargetComponent(srcComponent, targetComponent,
+                srcComponentFromDB, targetComponentFromDB);
+        boolean isUpdated = false;
+        try {
+            Set<String> srcComponentReleaseIdsAfter = nullToEmptyList(srcComponent.getReleases()).stream().map(Release::getId)
+                    .collect(Collectors.toSet());
+            Set<String> targetComponentReleaseIdsAfter = nullToEmptyList(targetComponent.getReleases()).stream().map(Release::getId)
+                    .collect(Collectors.toSet());
+
+            Set<String> targetComponentReleaseIdsBefore = nullToEmptyList(targetComponentFromDB.getReleases()).stream().map(Release::getId)
+                    .collect(Collectors.toSet());
+            Set<String> srcComponentReleaseIdsBefore = nullToEmptyList(srcComponentFromDB.getReleases()).stream().map(Release::getId)
+                    .collect(Collectors.toSet());
+            srcComponentFromDBOriginal.setReleaseIds(srcComponentReleaseIdsBefore);
+            targetComponentFromDBOriginal.setReleaseIds(targetComponentReleaseIdsBefore);
+
+            Set<String> srcComponentReleaseIdsMovedFromSrc = new HashSet<>(srcComponentReleaseIdsBefore);
+            srcComponentReleaseIdsMovedFromSrc.removeAll(srcComponentReleaseIdsAfter);
+
+            if (isAttachmentsModified || CommonUtils.isNotEmpty(srcComponentReleaseIdsMovedFromSrc)) {
+                targetComponentFromDB.setReleaseIds(targetComponentReleaseIdsAfter);
+                srcComponentFromDB.setReleaseIds(srcComponentReleaseIdsAfter);
+
+                recomputeReleaseDependentFields(targetComponentFromDB, null);
+                recomputeReleaseDependentFields(srcComponentFromDB, null);
+                componentRepository.update(targetComponentFromDB);
+
+                componentRepository.update(srcComponentFromDB);
+
+                updateReleaseAfterComponentSplit(srcComponentFromDBOriginal, targetComponentFromDBOriginal,
+                        srcComponentReleaseIdsMovedFromSrc, targetComponentReleaseIdsBefore, user);
+                isUpdated = true;
+            }
+
+        } catch (Exception e) {
+            log.error("Cannot split component [" + srcComponent.getId() + "] into [" + targetComponent.getId() + "]",
+                    e);
+            return RequestStatus.FAILURE;
+        }
+        if (isUpdated) {
+            sendMailNotificationsForComponentUpdate(targetComponentFromDB, user.getEmail());
+            sendMailNotificationsForComponentUpdate(srcComponentFromDB, user.getEmail());
+            DatabaseHandlerUtil.addChangeLogs(srcComponentFromDB, srcComponentFromDBOriginal, user.getEmail(),
+                    Operation.UPDATE, null, Lists.newArrayList(), null, Operation.SPLIT_COMPONENT);
+            DatabaseHandlerUtil.addChangeLogs(targetComponentFromDB, targetComponentFromDBOriginal, user.getEmail(),
+                    Operation.UPDATE, null, Lists.newArrayList(), null,
+                    Operation.SPLIT_COMPONENT);
+        }
+        return RequestStatus.SUCCESS;
+    }
+
     private void sendMailNotificationsForNewComponent(Component component, String user) {
         mailUtil.sendMail(component.getComponentOwner(),
                 MailConstants.SUBJECT_FOR_NEW_COMPONENT,
@@ -2054,5 +2122,56 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         component.setLanguages(DatabaseHandlerUtil.trimSetOfString(component.getLanguages()));
 
         component.setOperatingSystems(DatabaseHandlerUtil.trimSetOfString(component.getOperatingSystems()));
+    }
+
+    private boolean moveAttachmentFromSrcComponentToTargetComponent(Component srcComponent, Component targetComponent,
+            Component srcComponentFromDB, Component targetComponentFromDB) {
+        Set<String> srcComponentAttachmentIdsAfter = nullToEmptySet(srcComponent.getAttachments()).stream()
+                .map(Attachment::getAttachmentContentId).collect(Collectors.toSet());
+        Set<String> targetComponentAttachmentIdsAfter = nullToEmptySet(targetComponent.getAttachments()).stream()
+                .map(Attachment::getAttachmentContentId).collect(Collectors.toSet());
+        Map<String, Attachment> srcComponentAttachmentsMapBefore = nullToEmptySet(srcComponentFromDB.getAttachments())
+                .stream().collect(Collectors.toMap(Attachment::getAttachmentContentId, Function.identity()));
+
+        Set<Attachment> targetComponentAttachmentBefore = nullToEmptySet(targetComponentFromDB.getAttachments());
+        Set<String> targetComponentAttachmentIdsBefore = targetComponentAttachmentBefore.stream()
+                .map(Attachment::getAttachmentContentId).collect(Collectors.toSet());
+
+        targetComponentAttachmentIdsAfter.removeAll(targetComponentAttachmentIdsBefore);
+        if (CommonUtils.isNotEmpty(targetComponentAttachmentIdsAfter)) {
+            targetComponentAttachmentIdsAfter.stream().forEach(movedAttachmentId -> targetComponentAttachmentBefore
+                    .add(srcComponentAttachmentsMapBefore.get(movedAttachmentId)));
+            targetComponentFromDB.setAttachments(targetComponentAttachmentBefore);
+
+            Set<Attachment> srcComponentAttachmentFinal = srcComponentAttachmentsMapBefore.values().stream()
+                    .filter(attachment -> srcComponentAttachmentIdsAfter.contains(attachment.getAttachmentContentId()))
+                    .collect(Collectors.toSet());
+            srcComponentFromDB.setAttachments(srcComponentAttachmentFinal);
+            return true;
+        }
+        return false;
+    }
+
+    private void updateReleaseAfterComponentSplit(Component srcComponentFromDB, Component targetComponentFromDB,
+            Set<String> srcComponentReleaseIdsMovedFromSrc, Set<String> targetComponentReleaseIdsBefore, User user) throws SW360Exception {
+        List<Release> targetComponentReleases = getReleasesForClearingStateSummary(targetComponentReleaseIdsBefore);
+        List<Release> srcComponentReleasesMoved = getReleasesForClearingStateSummary(srcComponentReleaseIdsMovedFromSrc);
+        Set<String> targetComponentReleaseVersions = targetComponentReleases.stream().map(Release::getVersion)
+                .collect(Collectors.toSet());
+
+        List<Release> releasesToUpdate = srcComponentReleasesMoved.stream().map(r -> {
+            Release releaseBefore = r.deepCopy();
+            if (targetComponentReleaseVersions.contains(r.getVersion())) {
+                StringBuilder conflictVersionBuilder = new StringBuilder(r.getVersion()).append("_conflict (")
+                        .append(r.getId()).append(")");
+                r.setVersion(conflictVersionBuilder.toString());
+            }
+            r.setComponentId(targetComponentFromDB.getId());
+            r.setName(targetComponentFromDB.getName());
+            DatabaseHandlerUtil.addChangeLogs(r, releaseBefore, user.getEmail(), Operation.UPDATE, attachmentConnector,
+                    Lists.newArrayList(), srcComponentFromDB.getId(), Operation.SPLIT_COMPONENT);
+            return r;
+        }).collect(Collectors.toList());
+        updateReleases(releasesToUpdate, user);
     }
 }
