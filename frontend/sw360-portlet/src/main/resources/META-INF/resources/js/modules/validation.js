@@ -133,6 +133,14 @@ define('modules/validation', [ 'jquery' ], function($) {
 		            return false; // not greater then mentioned days
 		    }
 		    return selectedDate.toISOString().slice(0, 10) === dateString;
+		},
+
+		isValidEmail: function(emailId) {
+		    if (!emailId) {
+		        return false;
+		    }
+		    const mailformat = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+		    return emailId.match(mailformat) ? true : false;
 		}
 	};
 });
