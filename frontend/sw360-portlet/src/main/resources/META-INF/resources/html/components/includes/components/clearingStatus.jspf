@@ -218,7 +218,7 @@ require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProje
                 '</form>',
             '<liferay-ui:message key="delete.release" />',
             {
-                name: name,
+                name: $("<span></span>").html(name).text(),
                 releases: linkedReleasesSize,
                 hasNoReleases: linkedReleasesSize == 0,
                 attachments: attachmentsSize,

@@ -12,6 +12,9 @@ package org.eclipse.sw360.portal.tags;
 
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.SimpleTagSupport;
+
+import org.apache.commons.lang.StringEscapeUtils;
+
 import java.io.IOException;
 import java.util.Map;
 
@@ -53,9 +56,9 @@ public class DisplayMap extends SimpleTagSupport {
         sb.append("<ul class=\"mapDisplayRootItem\">");
         map.entrySet().stream().forEach(e -> sb.append(
                 "<li><span class=\"mapDisplayChildItemLeft\">"
-                        + e.getKey()
+                        + StringEscapeUtils.escapeXml(e.getKey())
                         + "</span><span class=\"mapDisplayChildItemRight\"> "
-                        + e.getValue()
+                        + StringEscapeUtils.escapeXml(e.getValue())
                         + "</span></li>"
         ));
         sb.append("</ul>");

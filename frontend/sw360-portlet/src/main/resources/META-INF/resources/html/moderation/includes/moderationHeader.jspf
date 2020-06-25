@@ -39,7 +39,7 @@
         </core_rt:if>
     </div>
     <div class="col portlet-title text-truncate" title="${moderationTitle}">
-        ${moderationTitle}
+        <sw360:out value="${moderationTitle}"/>
     </div>
 </div>
 

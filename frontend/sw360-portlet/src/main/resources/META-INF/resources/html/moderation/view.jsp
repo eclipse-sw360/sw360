@@ -202,7 +202,7 @@ AUI().use('liferay-portlet-url', function () {
                     "5": '<sw360:DisplayUserEmailCollection value="${moderation.moderators}" bare="true"/>',
                     "6": "<sw360:DisplayEnum value="${moderation.moderationState}"/>",
                     <core_rt:if test="${isUserAtLeastClearingAdmin == 'Yes'}">
-                        "7": '<div class="actions"><svg class="delete lexicon-icon" data-moderation-request="<sw360:out value="${moderation.id}"/>" data-document-name="${moderation.documentName}"><title><liferay-ui:message key="delete" /></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/></svg></div>'
+                        "7": '<div class="actions"><svg class="delete lexicon-icon" data-moderation-request="<sw360:out value="${moderation.id}"/>" data-document-name="<sw360:out value="${moderation.documentName}"/>"><title><liferay-ui:message key="delete" /></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/></svg></div>'
                     </core_rt:if>
                     <core_rt:if test="${isUserAtLeastClearingAdmin != 'Yes'}">
                         "7": '<span class="badge badge-success">READY</span>'

@@ -9,6 +9,7 @@
   --%>
 
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 
 <%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
 <%@ page import="javax.portlet.PortletRequest" %>
@@ -27,7 +28,7 @@
 <%@ include file="/html/utils/includes/errorKeyToMessage.jspf"%>
 
 
-<liferay-ui:error key="custom_error" message="${cyclicError}" embed="false"/>
+<liferay-ui:error key="custom_error" message="${fn:escapeXml(cyclicError)}" embed="false"/>
 <portlet:defineObjects />
 <liferay-theme:defineObjects />
 
@@ -258,7 +259,7 @@
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
 require(['jquery', 'modules/dialog', 'modules/listgroup', 'modules/validation', 'bridges/jquery-ui' ], function($, dialog, listgroup, validation) {
-    document.title = "${project.name} - " + document.title;
+    document.title = $("<span></span>").html("<sw360:ProjectName project="${project}"/> - " + document.title).text();
 
     listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
 
