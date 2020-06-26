@@ -26,6 +26,7 @@ import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectTodo;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -83,10 +84,8 @@ class JacksonCustomizations {
                 "revision",
                 "attachments",
                 "createdBy",
-                "state",
                 "visbility",
                 "clearingTeam",
-                "phaseOutSince",
                 "homepage",
                 "wiki",
                 "documentState",
@@ -213,6 +212,10 @@ class JacksonCustomizations {
             @Override
             @JsonIgnore
             abstract public boolean isEnableVulnerabilitiesDisplay();
+
+            @Override
+            @JsonIgnore
+            abstract public ProjectState getState();
 	}
 
         @JsonInclude(JsonInclude.Include.NON_NULL)

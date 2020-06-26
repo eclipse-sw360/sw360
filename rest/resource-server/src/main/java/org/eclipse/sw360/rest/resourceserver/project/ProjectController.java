@@ -95,8 +95,6 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
     private static final Logger log = Logger.getLogger(ProjectController.class);
     private static final TSerializer THRIFT_JSON_SERIALIZER = new TSerializer(new TSimpleJSONProtocol.Factory());
     private static final ImmutableMap<Project._Fields, String> mapOfFieldsTobeEmbedded = ImmutableMap.<Project._Fields, String>builder()
-            .put(Project._Fields.STATE, "state")
-            .put(Project._Fields.PHASE_OUT_SINCE, "phaseOutSince")
             .put(Project._Fields.CLEARING_TEAM, "clearingTeam")
             .put(Project._Fields.HOMEPAGE, "homepage")
             .put(Project._Fields.WIKI, "wiki")
