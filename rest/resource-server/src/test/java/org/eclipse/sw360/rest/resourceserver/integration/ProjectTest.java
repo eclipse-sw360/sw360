@@ -27,7 +27,9 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.BDDMockito.given;
@@ -47,7 +49,7 @@ public class ProjectTest extends TestIntegrationBase {
 
     @Before
     public void before() throws TException {
-        List<Project> projectList = new ArrayList<>();
+        Set<Project> projectList = new HashSet<>();
         Project project = new Project();
         project.setName("Project name");
         project.setDescription("Project description");

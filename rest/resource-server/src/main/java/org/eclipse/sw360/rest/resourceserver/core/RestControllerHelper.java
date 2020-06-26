@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.core;
 
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.resourcelists.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
@@ -571,6 +572,24 @@ public class RestControllerHelper<T> {
             } else if (element instanceof Release) {
                 throw new HttpMessageNotReadableException("Cyclic linked Release : " + cyclicLinkedElementPath);
             }
+        }
+    }
+
+    public void addEmbeddedFields(String relation,Object value,HalResource<? extends TBase> halResource) {
+        if (value instanceof String) {
+            if (CommonUtils.isNotNullEmptyOrWhitespace((String) value)) {
+                halResource.addEmbeddedResource(relation, value);
+            }
+        } else if (value instanceof Set) {
+            if (CommonUtils.isNotEmpty((Set) value)) {
+                halResource.addEmbeddedResource(relation, value);
+            }
+        } else if (value instanceof Map) {
+            if (!CommonUtils.isNullOrEmptyMap((Map) value)) {
+                halResource.addEmbeddedResource(relation, value);
+            }
+        } else if (value != null) {
+            halResource.addEmbeddedResource(relation, value);
         }
     }
 }

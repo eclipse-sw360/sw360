@@ -99,7 +99,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     private Sw360LicenseInfoService licenseInfoMockService;
 
     private Project project;
-    private List<Project> projectList = new ArrayList<>();
+    private Set<Project> projectList = new HashSet<>();
     private Attachment attachment;
 
 
@@ -209,6 +209,11 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         linkedReleases.put("5578999", projectReleaseRelationship);
         project2.setReleaseIdToUsage(linkedReleases);
         project2.setExternalIds(externalIds2);
+        project2.setWiki("http://test_wiki_url.com");
+        project2.setHomepage("http://test_homepage_url.com");
+        project2.setPhaseOutSince("2020-06-02");
+        project2.setClearingTeam("Unknown");
+        project2.setContributors(new HashSet<>(Arrays.asList("admin@sw360.org", "jane@sw360.org")));
 
         projectList.add(project2);
 
@@ -381,6 +386,63 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 "The hierarchy of project in which attachment is used. Ex: projectId1:subProjectId1:subProjectId2"),
                         fieldWithPath("sw360:attachmentUsages").description(
                                 "An array of <<resources-project-get-attachmentusage, AttachmentUsages resources>>"))));
+    }
+
+    @Test
+    public void should_document_get_projects_with_all_details() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/projects?allDetails=true")
+                .header("Authorization", "Bearer " + accessToken)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation")
+                        ),
+                        responseFields(
+                                fieldWithPath("_embedded.sw360:projects[]name").description("The name of the project"),
+                                fieldWithPath("_embedded.sw360:projects[]version").description("The project version"),
+                                fieldWithPath("_embedded.sw360:projects[]createdOn").description("The date the project was created"),
+                                fieldWithPath("_embedded.sw360:projects[]description").description("The project description"),
+                                fieldWithPath("_embedded.sw360:projects[]projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
+                                fieldWithPath("_embedded.sw360:projects[]domain").description("The domain, possible values are:"  + Sw360ResourceServer.DOMAIN.toString()),
+                                fieldWithPath("_embedded.sw360:projects[]visibility").description("The project visibility, possible values are: " + Arrays.asList(Visibility.values())),
+                                fieldWithPath("_embedded.sw360:projects[]businessUnit").description("The business unit this project belongs to"),
+                                fieldWithPath("_embedded.sw360:projects[]externalIds").description("When projects are imported from other tools, the external ids can be stored here"),
+                                fieldWithPath("_embedded.sw360:projects[]additionalData").description("A place to store additional data used by external tools"),
+                                fieldWithPath("_embedded.sw360:projects[]ownerAccountingUnit").description("The owner accounting unit of the project"),
+                                fieldWithPath("_embedded.sw360:projects[]ownerGroup").description("The owner group of the project"),
+                                fieldWithPath("_embedded.sw360:projects[]ownerCountry").description("The owner country of the project"),
+                                fieldWithPath("_embedded.sw360:projects[]obligationsText").description("The obligations text of the project"),
+                                fieldWithPath("_embedded.sw360:projects[]clearingSummary").description("The clearing summary text of the project"),
+                                fieldWithPath("_embedded.sw360:projects[]specialRisksOSS").description("The special risks OSS text of the project"),
+                                fieldWithPath("_embedded.sw360:projects[]generalRisks3rdParty").description("The general risks 3rd party text of the project"),
+                                fieldWithPath("_embedded.sw360:projects[]specialRisks3rdParty").description("The special risks 3rd party text of the project"),
+                                fieldWithPath("_embedded.sw360:projects[]deliveryChannels").description("The sales and delivery channels text of the project"),
+                                fieldWithPath("_embedded.sw360:projects[]remarksAdditionalRequirements").description("The remark additional requirements text of the project"),
+                                fieldWithPath("_embedded.sw360:projects[]tag").description("The project tag"),
+                                fieldWithPath("_embedded.sw360:projects[]deliveryStart").description("The project delivery start date"),
+                                fieldWithPath("_embedded.sw360:projects[]preevaluationDeadline").description("The project preevaluation deadline"),
+                                fieldWithPath("_embedded.sw360:projects[]systemTestStart").description("Date of the project system begin phase"),
+                                fieldWithPath("_embedded.sw360:projects[]systemTestEnd").description("Date of the project system end phase"),
+                                fieldWithPath("_embedded.sw360:projects[]linkedProjects").description("The relationship between linked projects of the project"),
+                                fieldWithPath("_embedded.sw360:projects[]linkedReleases").description("The relationship between linked releases of the project"),
+                                fieldWithPath("_embedded.sw360:projects[]securityResponsibles").description("An array of users responsible for security of the project."),
+                                fieldWithPath("_embedded.sw360:projects[]projectResponsible").description("A user who is responsible for the project."),
+                                fieldWithPath("_embedded.sw360:projects[]enableSvm").description("Security vulnerability monitoring flag"),
+                                fieldWithPath("_embedded.sw360:projects[]enableVulnerabilitiesDisplay").description("Displaying vulnerabilities flag."),
+                                fieldWithPath("_embedded.sw360:projects[]_links").description("Self <<resources-index-links,Links>> to Project resource"),
+                                fieldWithPath("_embedded.sw360:projects[]_embedded.createdBy").description("The user who created this project"),
+                                fieldWithPath("_embedded.sw360:projects[]_embedded.clearingTeam").description("The clearingTeam of the project"),
+                                fieldWithPath("_embedded.sw360:projects[]_embedded.state").description("The state of the project"),
+                                fieldWithPath("_embedded.sw360:projects[]_embedded.phaseOutSince").description("Phase Out Since information"),
+                                fieldWithPath("_embedded.sw360:projects[]_embedded.homepage").description("The homepage url of the project"),
+                                fieldWithPath("_embedded.sw360:projects[]_embedded.wiki").description("The user who created this project"),
+                                fieldWithPath("_embedded.sw360:projects[]_embedded.sw360:moderators").description("An array of all project moderators with email"),
+                                fieldWithPath("_embedded.sw360:projects[]_embedded.sw360:contributors").description("An array of all project contributors with email"),
+                                fieldWithPath("_embedded.sw360:projects[]_embedded.sw360:attachments").description("An array of all project attachments"),
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
     }
 
     @Test

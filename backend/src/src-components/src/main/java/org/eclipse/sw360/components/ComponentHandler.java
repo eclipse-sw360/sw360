@@ -514,4 +514,9 @@ public class ComponentHandler implements ComponentService.Iface {
         assertUser(user);
         return handler.splitComponent(srcComponent, targetComponent, user);
     }
+
+    public List<Release> getAllReleasesForUser(User user) throws TException {
+        assertUser(user);
+        return handler.getAllReleases();
+    }
 }

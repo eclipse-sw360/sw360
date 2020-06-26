@@ -720,4 +720,9 @@ service ComponentService {
      * split data like releases and attachments from source component to target component.
      **/
     RequestStatus splitComponent(1: Component srcComponent,  2: Component targetComponent, 3: User user);
+
+    /**
+     * Gets all releases with complete details
+     */
+    list<Release> getAllReleasesForUser(1: User user);
 }
