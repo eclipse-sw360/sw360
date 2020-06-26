@@ -87,16 +87,12 @@ public class ModerationPortletUtils {
             return reOpenClearingRequest(id, request, user);
         }
         String agreedDate = request.getParameter(ClearingRequest._Fields.AGREED_CLEARING_DATE.toString());
-        String clearingTeamComment = request.getParameter(ClearingRequest._Fields.CLEARING_TEAM_COMMENT.toString());
         String status = request.getParameter(ClearingRequest._Fields.CLEARING_STATE.toString());
         if (null != id && null != agreedDate) {
             try {
                 ModerationService.Iface client = new ThriftClients().makeModerationClient();
                 ClearingRequest clearingRequest = client.getClearingRequestByIdForEdit(id, user);
                 clearingRequest.setAgreedClearingDate(agreedDate);
-                if (CommonUtils.isNotNullEmptyOrWhitespace(clearingTeamComment)) {
-                    clearingRequest.setClearingTeamComment(clearingTeamComment);
-                }
                 clearingRequest.setClearingState(ClearingRequestState.findByValue(parseInt(status)));
                 LiferayPortletURL projectUrl = getProjectPortletUrl(request, clearingRequest.getProjectId());
                 return client.updateClearingRequest(clearingRequest, user, CommonUtils.nullToEmptyString(projectUrl));

@@ -218,11 +218,11 @@ struct ClearingRequest {
     9: optional string projectBU,
     10: optional string requestingUserComment,
     11: required string clearingTeam,
-    12: optional string clearingTeamComment,
     13: optional string agreedClearingDate,
     14: required i64 timestamp,
     15: optional i64 timestampOfDecision,
-    16: optional list<Comment> comments
+    16: optional list<Comment> comments,
+    17: optional i64 modifiedOn
 }
 
 service ProjectService {
