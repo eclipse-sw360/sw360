@@ -111,6 +111,11 @@ public class ProjectModerator extends Moderator<Project._Fields, Project> {
                 continue;
             }
 
+            if (field == Project._Fields.VISBILITY && projectAdditions != null && projectDeletions != null
+                    && projectAdditions.getVisbility() == projectDeletions.getVisbility()) {
+                continue;
+            }
+
             switch (field) {
                 case LINKED_PROJECTS:
                     project = updateEnumMap(
