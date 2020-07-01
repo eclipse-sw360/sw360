@@ -12,12 +12,15 @@
 package org.eclipse.sw360.portal.tags;
 
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
 
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 import javax.servlet.jsp.tagext.SimpleTagSupport;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 /**
  * @author birgit.heydenreich@tngtech.com
@@ -26,6 +29,7 @@ public class DisplayOutputFormats extends SimpleTagSupport {
 
     private Collection<OutputFormatInfo> options;
     private String selected;
+    private OutputFormatVariant variantToSkip;
 
     public void setOptions(Collection<OutputFormatInfo> options) throws JspException {
         this.options = options;
@@ -35,6 +39,10 @@ public class DisplayOutputFormats extends SimpleTagSupport {
         this.selected = selected;
     }
 
+    public void setVariantToSkip(OutputFormatVariant variantToSkip) {
+        this.variantToSkip = variantToSkip;
+    }
+
     public void doTag() throws JspException, IOException {
         writeOptions(options);
     }
@@ -42,6 +50,7 @@ public class DisplayOutputFormats extends SimpleTagSupport {
     private void writeOptions(Collection<OutputFormatInfo> options) throws IOException {
         JspWriter jspWriter = getJspContext().getOut();
         boolean isChecked=true;
+        options = options.stream().filter(ofInfo -> !ofInfo.getVariant().equals(variantToSkip)).collect(Collectors.toCollection(ArrayList::new));
         for (OutputFormatInfo option : options) {
             String optionDescription = option.getDescription();
             String optionValue = option.getGeneratorClassName() + "::" + option.getVariant();

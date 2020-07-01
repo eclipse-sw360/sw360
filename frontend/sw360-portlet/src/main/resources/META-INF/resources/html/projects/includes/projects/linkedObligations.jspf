@@ -73,3 +73,23 @@
     </div>
 </div>
 </core_rt:if>
+
+<script>
+AUI().use('liferay-portlet-url', function () {
+    var PortletURL = Liferay.PortletURL;
+    $('#downloadLicenseInfoObl a.dropdown-item').on('click', function(event) {
+        var type=$(event.currentTarget).data('type');
+        downloadLicenseInfo(type);
+    });
+
+    function downloadLicenseInfo(type) {
+        var portletURL = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>');
+        portletURL.setParameter('<%=PortalConstants.PROJECT_ID%>', '${project.id}');
+        portletURL.setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_LICENSE_INFO%>');
+        portletURL.setParameter('<%=PortalConstants.PROJECT_WITH_SUBPROJECT%>', type === 'projectWithSubProject' ? 'true' : 'false');
+        portletURL.setParameter('<%=PortalConstants.PREPARE_LICENSEINFO_OBL_TAB%>', 'true');
+
+        window.location.href = portletURL.toString();
+    }
+});
+</script>
