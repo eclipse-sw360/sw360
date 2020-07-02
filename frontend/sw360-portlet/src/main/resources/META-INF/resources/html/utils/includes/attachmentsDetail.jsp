@@ -125,9 +125,15 @@
                         { "data": "fileName" },
                         { "data": "size" },
                         { "data": "type" },
-                        { "data": "uploadedTeam" },
+                        { "data": function(row) {
+                                      return $('<span></span>').html(row.uploadedTeam).text();
+                                  }
+                        },
                         { "data": "uploadedBy" },
-                        { "data": "checkedTeam" },
+                        { "data": function(row) {
+                                      return $('<span></span>').html(row.checkedTeam).text();
+                                  }
+                        },
                         { "data": "checkedBy" },
                         { "data": "usage", "render": renderAttachmentUsages, orderable: false, className: 'text-center' },
                         { "data": "actions", className: "one action", orderable: false }

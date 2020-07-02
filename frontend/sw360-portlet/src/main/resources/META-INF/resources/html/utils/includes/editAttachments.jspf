@@ -107,7 +107,10 @@
               /*  0 */ { data: "filename", render: renderFilename, className: 'content-middle' },
               /*  1 */ { data: "attachmentType", render: $.fn.dataTable.render.inputSelect('attachmentTypes', config.inputTypeName, 'attachmentType toplabelledInput', 'textlabel stackedLabel') },
               /*  2 */ { data: "createdComment", defaultContent: "", render: $.fn.dataTable.render.inputText(config.inputCreatedCommentName, 'toplabelledInput', 'Enter comments') },
-              /*  3 */ { data: "createdTeam", defaultContent: "", render: $.fn.dataTable.render.ellipsis, className: 'content-middle' },
+              /*  3 */ { data: function(row) {
+                                   return $('<span></span>').html(row.createdTeam).text();
+                               }, defaultContent: "", render: $.fn.dataTable.render.ellipsis, className: 'content-middle'
+                       },
               /*  4 */ { data: "createdBy", defaultContent: "", render: $.fn.dataTable.render.ellipsis, className: 'content-middle'  },
               /*  5 */ { data: "createdOn", defaultContent: "", className: 'content-middle' },
               /*  6 */ { data: "checkStatus", render: $.fn.dataTable.render.inputSelect('checkStatuses', config.inputCheckStatusName, 'toplabelledInput', 'textlabel stackedLabel') },
@@ -118,7 +121,10 @@
                                                           }
                                                       })
                          },
-              /*  8 */ { data: "checkedTeam", defaultContent: "", render: $.fn.dataTable.render.ellipsis, className: 'content-middle' },
+              /*  8 */ { data: function(row) {
+                                   return $('<span></span>').html(row.checkedTeam).text();
+                               }, defaultContent: "", render: $.fn.dataTable.render.ellipsis, className: 'content-middle'
+                       },
               /*  9 */ { data: "checkedBy", defaultContent: "", render: $.fn.dataTable.render.ellipsis, className: 'content-middle' },
               /* 10 */ { data: "checkedOn", defaultContent: "", className: 'content-middle' },
               /* 11 */ { data: "actions", orderable: false, render: $.fn.dataTable.render.actions( [{ key: 'attachmentContentId', 'class': 'delete-attachment', icon: 'trash', title: '<liferay-ui:message key="delete.attachment" />', approvalKey: 'checkStatus', usageCountsKey: 'usageCounts'}] ), className: "content-middle one action" }
