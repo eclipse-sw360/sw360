@@ -122,6 +122,13 @@ enum ClearingRequestEmailTemplate {
     NEW_COMMENT = 3
 }
 
+enum DateRange {
+    EQUAL = 0,
+    LESS_THAN_OR_EQUAL_TO = 1,
+    GREATER_THAN_OR_EQUAL_TO = 2,
+    BETWEEN = 3
+}
+
 struct ConfigContainer {
     1: optional string id,
     2: optional string revision,

@@ -31,6 +31,7 @@ import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.language.LanguageUtil;
 
+import org.eclipse.sw360.commonIO.SampleOptions;
 import org.eclipse.sw360.datahandler.common.*;
 import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
@@ -79,6 +80,7 @@ import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -165,7 +167,9 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             Component._Fields.OPERATING_SYSTEMS,
             Component._Fields.VENDOR_NAMES,
             Component._Fields.COMPONENT_TYPE,
-            Component._Fields.MAIN_LICENSE_IDS);
+            Component._Fields.MAIN_LICENSE_IDS,
+            Component._Fields.CREATED_BY,
+            Component._Fields.CREATED_ON);
 
     private static final String CONFIG_KEY_URL = "url";
 
@@ -1555,6 +1559,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             String parameter = request.getParameter(filteredField.toString());
             request.setAttribute(filteredField.getFieldName(), nullToEmpty(parameter));
         }
+        request.setAttribute(PortalConstants.DATE_RANGE, nullToEmpty(request.getParameter(PortalConstants.DATE_RANGE)));
+        request.setAttribute(PortalConstants.END_DATE, nullToEmpty(request.getParameter(PortalConstants.END_DATE)));
         try {
             final User user = UserCacheHolder.getUserFromRequest(request);
             ComponentService.Iface componentClient = thriftClients.makeComponentClient();
@@ -1570,10 +1576,36 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             String parameter = request.getParameter(filteredField.toString());
             if (!isNullOrEmpty(parameter) && !(filteredField.equals(Component._Fields.COMPONENT_TYPE)
                     && parameter.equals(PortalConstants.NO_FILTER))) {
+
+                if (filteredField.equals(Component._Fields.CREATED_ON) && isNotNullEmptyOrWhitespace(request.getParameter(PortalConstants.DATE_RANGE))) {
+                    Date date = new Date();
+                    String upperLimit = new SimpleDateFormat(SampleOptions.DATE_OPTION).format(date);
+                    String dateRange = request.getParameter(PortalConstants.DATE_RANGE);
+                    String query = new StringBuilder("[%s ").append(PortalConstants.TO).append(" %s]").toString();
+                    DateRange range = ThriftEnumUtils.stringToEnum(dateRange, DateRange.class);
+                    switch (range) {
+                    case EQUAL:
+                        break;
+                    case LESS_THAN_OR_EQUAL_TO:
+                        parameter = String.format(query, PortalConstants.EPOCH_DATE, parameter);
+                        break;
+                    case GREATER_THAN_OR_EQUAL_TO:
+                        parameter = String.format(query, parameter, upperLimit);
+                        break;
+                    case BETWEEN:
+                        String endDate = request.getParameter(PortalConstants.END_DATE);
+                        if (isNullEmptyOrWhitespace(endDate)) {
+                            endDate = upperLimit;
+                        }
+                        parameter = String.format(query, parameter, endDate);
+                        break;
+                    }
+                }
                 Set<String> values = CommonUtils.splitToSet(parameter);
                 if (filteredField.equals(Component._Fields.NAME)) {
                     values = values.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
                 }
+
                 filterMap.put(filteredField.getFieldName(), values);
             }
         }
@@ -1833,6 +1865,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         for (Component._Fields componentFilteredField : componentFilteredFields) {
             response.setRenderParameter(componentFilteredField.toString(), nullToEmpty(request.getParameter(componentFilteredField.toString())));
         }
+        response.setRenderParameter(PortalConstants.DATE_RANGE, nullToEmpty(request.getParameter(PortalConstants.DATE_RANGE)));
+        response.setRenderParameter(PortalConstants.END_DATE, nullToEmpty(request.getParameter(PortalConstants.END_DATE)));
     }
 
     private void updateVulnerabilitiesRelease(ResourceRequest request, ResourceResponse response) throws PortletException, IOException {

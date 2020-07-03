@@ -186,8 +186,10 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
 
     private static String formatSubquery(Set<String> filterSet, final String fieldName) {
         final Function<String, String> addType = input -> {
-            if (fieldName.equals("businessUnit") || fieldName.equals("tag") || fieldName.equals("projectResponsible")) {
+            if (fieldName.equals("businessUnit") || fieldName.equals("tag") || fieldName.equals("projectResponsible") || fieldName.equals("createdBy")) {
                 return fieldName + ":\"" + input + "\"";
+            } if (fieldName.equals("createdOn")) {
+                return fieldName + "<date>:" + input;
             } else {
                 return fieldName + ":" + input;
             }

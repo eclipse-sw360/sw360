@@ -58,6 +58,12 @@ public class ThriftEnumUtils {
             Ternary.NO, "no",
             Ternary.YES, "yes");
 
+    private static final ImmutableMap<DateRange, String> MAP_DATE_RANGE_STRING = ImmutableMap.of(
+            DateRange.EQUAL, "=",
+            DateRange.LESS_THAN_OR_EQUAL_TO, "<=",
+            DateRange.GREATER_THAN_OR_EQUAL_TO, ">=",
+            DateRange.BETWEEN, "Between");
+
     private static final ImmutableMap<ProjectType, String> MAP_PROJECT_TYPE_STRING = ImmutableMap.of(
             ProjectType.CUSTOMER, "Customer Project" ,
             ProjectType.INTERNAL, "Internal Project" ,
@@ -271,6 +277,7 @@ public class ThriftEnumUtils {
             MAP_ENUMTYPE_MAP = ImmutableMap.<Class<? extends TEnum>, Map<? extends TEnum, String>>builder()
             .put(ComponentType.class, MAP_COMPONENT_TYPE_STRING)
             .put(Ternary.class, MAP_TERNARY_STRING)
+            .put(DateRange.class, MAP_DATE_RANGE_STRING)
             .put(ProjectType.class, MAP_PROJECT_TYPE_STRING)
             .put(AttachmentType.class, MAP_ATTACHMENT_TYPE_STRING)
             .put(ClearingState.class, MAP_CLEARING_STATUS_STRING)

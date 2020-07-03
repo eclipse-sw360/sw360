@@ -82,6 +82,10 @@ public class PortalConstants {
     public static final String VIEW_SIZE = "viewSize";
     public static final String TOTAL_ROWS = "totalRows";
     public static final String RESULT = "result";
+    public static final String DATE_RANGE = "dateRange";
+    public static final String END_DATE = "endDate";
+    public static final String EPOCH_DATE = "1970-01-01";
+    public static final String TO = "TO";
 
     public static final String IS_USER_AT_LEAST_CLEARING_ADMIN = "isUserAtLeastClearingAdmin";
     public static final String IS_USER_AT_LEAST_ECC_ADMIN = "isUserAtLeastECCAdmin";
