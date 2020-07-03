@@ -193,6 +193,7 @@
 		            <div class="tab-content">
 		                <div id="tab-Summary" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Summary'}">active show</core_rt:if>" >
 		                    <%@include file="/html/projects/includes/projects/summary.jspf" %>
+		                    <core_rt:set var="documentName"><sw360:ProjectName project="${project}"/></core_rt:set>
 		                    <%@include file="/html/utils/includes/usingProjectsTable.jspf" %>
 		                    <%@include file="/html/utils/includes/usingComponentsTable.jspf"%>
 		                </div>
@@ -239,7 +240,7 @@
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-	document.title = "<sw360:ProjectName project="${project}"/> - " + document.title;
+	document.title = $("<span></span>").html("<sw360:ProjectName project="${project}"/> - " + document.title).text();
 
 	require(['jquery', 'modules/listgroup'], function($, listgroup) {
 		listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');

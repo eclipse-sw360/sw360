@@ -10,7 +10,7 @@
 --%>
 
 <core_rt:if test="${usingComponents != null  && usingComponents.size()>0}">
-    <h4><sw360:out value="${documentName}"/> <liferay-ui:message key="is.used.by.the.following.components" /></h4>
+    <h4>${documentName} <liferay-ui:message key="is.used.by.the.following.components" /></h4>
 
     <table class="table table-bordered">
         <colgroup>

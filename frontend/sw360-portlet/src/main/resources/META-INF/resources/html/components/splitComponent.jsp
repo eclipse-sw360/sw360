@@ -23,7 +23,7 @@
 <div id="componentSplitWizard" class="container" data-step-id="0" data-component-source-id="${component.id}">
     <div class="row portlet-toolbar">
         <div class="col portlet-title text-truncate" title="<liferay-ui:message key="split.into" /> ${sw360:printComponentName(component)}">
-            <liferay-ui:message key="split.into" /> ${sw360:printComponentName(component)}
+            <liferay-ui:message key="split.into" /> <sw360:out value="${sw360:printComponentName(component)}"/>
         </div>
     </div>
     <div class="row">
@@ -159,7 +159,7 @@
                 data: data.components,
                 columns: [
                     { data: "id", render: $.fn.dataTable.render.inputRadio('componentChooser') },
-                    { data: "name" },
+                    { data: "name", render: $.fn.dataTable.render.text()  },
                     { data: "createdBy" },
                     { data: "releases" }
                 ],
@@ -227,8 +227,8 @@
                     $row.removeClass('modified');
                     buttonNode.removeClass('undo');
                     targetNode.removeData('newVal');
-                    targetNode.find('span:first').html($row.data('detailFormatter')(targetNode.data('origVal')));
-                    sourceNode.find('span:first').html($row.data('detailFormatter')(sourceNode.data('origVal')));
+                    targetNode.find('span:first').text($row.data('detailFormatter')(targetNode.data('origVal')));
+                    sourceNode.find('span:first').text($row.data('detailFormatter')(sourceNode.data('origVal')));
                     sourceNode.data('newVal', sourceNode.data('origVal'));
                     buttonNode.val($('<div/>').html('&Longrightarrow;').text());
                 } else {
@@ -238,8 +238,8 @@
                     buttonNode.addClass('undo');
                     targetNode.data('newVal', sourceNode.data('origVal'));
                     sourceNode.data('newVal', '');
-                    targetNode.find('span:first').html($row.data('detailFormatter')(sourceNode.data('origVal')));
-                    sourceNode.find('span:first').html("");
+                    targetNode.find('span:first').text($row.data('detailFormatter')(sourceNode.data('origVal')));
+                    sourceNode.find('span:first').text("");
                 }
                });
             });
@@ -263,7 +263,7 @@
             srcReleases = wizard.getFinalMultiValue('Releases');
             srcComponent.releases = [];
             $.each(srcReleases, function(index, value) {
-                srcComponent.releases.push(JSON.parse('{ "id": "' + value.id + '", "name": "' + value.name + '", "version": "' + value.version + '", "componentId": "' + value.componentId + '"}'));
+                srcComponent.releases.push({ "id": value.id , "name": value.name , "version": value.version , "componentId": value.componentId });
             });
             srcAttachments = wizard.getFinalMultiValue('<liferay-ui:message key="attachments" />');
             srcComponent.attachments = [];
@@ -278,7 +278,7 @@
             targetReleases = wizard.getFinalMultiValueTarget('Releases');
             targetComponent.releases = [];
             $.each(targetReleases, function(index, value) {
-                targetComponent.releases.push(JSON.parse('{ "id": "' + value.id + '", "name": "' + value.name + '", "version": "' + value.version + '", "componentId": "' + value.componentId + '"}'));
+                targetComponent.releases.push({ "id": value.id , "name": value.name , "version": value.version , "componentId": value.componentId });
             });
             targetAttachments = wizard.getFinalMultiValueTarget('<liferay-ui:message key="attachments" />');
             targetComponent.attachments = [];

@@ -42,6 +42,20 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         return $(line).append(createSingleMergeContent(target, source, 0, detailFormatter));
     };
 
+    mergeWizard.createSingleMergeLineForHtml = function createSingleMergeLineForHtml(propName, target, source, detailFormatter) {
+        let line = createSingleLine(propName, target, source, detailFormatter);
+        let content = createSingleMergeContent(target, source, 0, detailFormatter);
+        let txt= $(content).find(".left span").text();
+        $(content).find(".left span").text("");
+        $(content).find(".left span").html(txt);
+
+        txt= $(content).find(".right span").text();
+        $(content).find(".right span").text("");
+        $(content).find(".right span").html(txt);
+
+        return $(line).append(content);
+    };
+
     mergeWizard.createSingleSplitLine = function createSingleSplitLine(propName, target, source, detailFormatter) {
         let line = createSingleLine(propName, target, source, detailFormatter);
 
@@ -53,9 +67,11 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         source = source == null ? '' : source;
         detailFormatter = detailFormatter || function(element) { return element; };
 
-        return $.parseHTML('<fieldset id="' + normalizePropName(propName) + '" class="merge line">' +
-                           '    <h5>' + propName + '</h5>' +
+        let singleLine = $.parseHTML('<fieldset id="' + normalizePropName(propName) + '" class="merge line">' +
+                           '    <h5></h5>' +
                            '</fieldset>');
+        $(singleLine).find("h5:eq(0)").text(propName);
+        return singleLine;
     }
 
     mergeWizard.createMultiMergeLine = function createMultiMergeLine(propName, target, source, detailFormatter) {
@@ -111,16 +127,22 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
 
         $.each(target, function(key, value) {
             if (!source[key]) {
-                result.append(mergeWizard.createSingleMergeLine(key, value, '', detailFormatter));
+                let lineSrcEmpty = mergeWizard.createSingleMergeLine(key, value, '', detailFormatter);
+                $(lineSrcEmpty).attr("id", normalizePropName(propName+key));
+                result.append(lineSrcEmpty);
             } else {
-                result.append(mergeWizard.createSingleMergeLine(key, value, source[key], detailFormatter));
+                let lineSrcNotEmpty = mergeWizard.createSingleMergeLine(key, value, source[key], detailFormatter);
+                $(lineSrcNotEmpty).attr("id", normalizePropName(propName+key));
+                result.append(lineSrcNotEmpty);
                 existInBoth.push(key);
             }
             keys.push(key);
         });
         $.each(source, function(key, value) {
             if ($.inArray(key, existInBoth) === -1) {
-                result.append(mergeWizard.createSingleMergeLine(key, '', value, detailFormatter));
+                let lineNotExistInBoth = mergeWizard.createSingleMergeLine(key, '', value, detailFormatter);
+                $(lineNotExistInBoth).attr("id", normalizePropName(propName+key))
+                result.append(lineNotExistInBoth);
                 keys.push(key);
             }
         });
@@ -189,7 +211,7 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
     // private
 
     function normalizePropName(propName) {
-        return propName.replace(/[\s\.]/g, '_');
+        return propName.replace(/[^a-zA-Z\d]/g, '_');
     }
 
     function createSingleSplitContent(target, source, rowIndex, detailFormatter, locked, midElement) {
@@ -206,21 +228,22 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
             left,
             mid,
             right;
-
         detailFormatter = detailFormatter || function(element) { return element; };
 
         row =   $.parseHTML('        <div class="row"></div>');
 
         left =  $.parseHTML('        <div class="merge single left col-5" data-row-index="' + rowIndex + '">' +
-                            '            <span>' + detailFormatter(target) + '</span>' +
+                            '            <span></span>' +
                             '        </div>');
         mid =   $.parseHTML('        <div class="merge single mid col-2" data-row-index="' + rowIndex + '">' +
                                          midElement +
                             '        </div>');
         right = $.parseHTML('        <div class="merge single right col-5" data-row-index="' + rowIndex + '">' +
-                            '            <span>' + detailFormatter(source) + '</span>' +
+                            '            <span></span>' +
                             '        </div>');
 
+        $(left).find("span:eq(0)").text(detailFormatter(target));
+        $(right).find("span:eq(0)").text(detailFormatter(source));
         $(row).data('detailFormatter', detailFormatter);
         $(left).data('origVal', target);
         $(right).data('origVal', source);
@@ -245,10 +268,23 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         detailFormatter = detailFormatter || function(element) { return element; };
 
         line = $.parseHTML('<fieldset id="' + normalizePropName(propName) + '" class="display line">' +
-                           '    <h5>' + propName + '</h5>' +
+                           '    <h5></h5>' +
                            '</fieldset>');
-
+        $(line).find("h5:eq(0)").text(propName);
         return $(line).append(createSingleDisplayContent(value, detailFormatter));
+    };
+
+    mergeWizard.createSingleDisplayLineForHtml = function createSingleDisplayLineForHtml(propName, value, detailFormatter) {
+        var line;
+
+        value = value == null ? '' : value;
+        detailFormatter = detailFormatter || function(element) { return element; };
+
+        line = $.parseHTML('<fieldset id="' + normalizePropName(propName) + '" class="display line">' +
+                           '    <h5></h5>' +
+                           '</fieldset>');
+        $(line).find("h5:eq(0)").text(propName);
+        return $(line).append(createSingleDisplayContentHtml(value, detailFormatter));
     };
 
     mergeWizard.createMultiDisplayLine = function createMultiDisplayLine(propName, values, detailFormatter) {
@@ -305,11 +341,20 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
     // private
 
     function createSingleDisplayContent(value, detailFormatter) {
-        return $.parseHTML('        <div class="displayRow">' +
-                           '            <span>' + detailFormatter(value) + '</span>' +
+        let displayElement = $.parseHTML('        <div class="displayRow">' +
+                           '            <span></span>' +
                            '        </div>');
+        $(displayElement).find("span:eq(0)").text(detailFormatter(value));
+        return displayElement;
     }
 
+    function createSingleDisplayContentHtml(value, detailFormatter) {
+        let displayElement = $.parseHTML('        <div class="displayRow">' +
+                           '            <span></span>' +
+                           '        </div>');
+        $(displayElement).find("span:eq(0)").html(detailFormatter(value));
+        return displayElement;
+    }
     /* ******************** *********************
      * event handler methods
      ********************* ******************** */
@@ -343,9 +388,20 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         });
     };
 
+    mergeWizard.registerClickHandlersForIcons = function registerClickHandlersForIcons(propNameMap, callback) {
+        propNameMap = propNameMap || {};
+
+        wizardRoot.find('fieldset div.mid input').each(function(index, element) {
+            var propName = $(element).parents('fieldset').attr('id');
+            if(propNameMap[propName]) {
+                registerCopyClickHandler($(element), null, true);
+            }
+        });
+    };
+
     // private
 
-    function registerCopyClickHandler(element, callback) {
+    function registerCopyClickHandler(element, callback, html) {
         element.off('click.merge');
         element.on('click.merge', function(event) {
             var propName = element.parent().parent().parent().attr('id'),
@@ -355,12 +411,12 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
                 targetNode = $('.left[data-row-index="' + rowIndex + '"]', $fieldset);
 
             if($(event.currentTarget).hasClass('undo')) {
-                undoCopySourceToTarget(propName, rowIndex);
+                undoCopySourceToTarget(propName, rowIndex, html);
                 if(callback) {
                     callback(propName, false, targetNode.data('origVal'), sourceNode.data('origVal'));
                 }
             } else {
-                copySourceToTarget(propName, rowIndex);
+                copySourceToTarget(propName, rowIndex, html);
                 if(callback) {
                     callback(propName, true, targetNode.data('origVal'), sourceNode.data('origVal'));
                 }
@@ -368,7 +424,7 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         });
     }
 
-    function copySourceToTarget(propName, rowIndex) {
+    function copySourceToTarget(propName, rowIndex, html) {
         var $fieldset = $('#' + propName),
             sourceNode = $('.right[data-row-index="' + rowIndex + '"]', $fieldset),
             buttonNode = $('.mid[data-row-index="' + rowIndex + '"] input', $fieldset),
@@ -382,10 +438,15 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         buttonNode.addClass('undo');
 
         targetNode.data('newVal', sourceNode.data('origVal'));
-        targetNode.find('span:first').html($row.data('detailFormatter')(sourceNode.data('origVal')));
+        if(html){
+            targetNode.find('span:first').html($row.data('detailFormatter')(sourceNode.data('origVal')));
+        }
+        else {
+            targetNode.find('span:first').text($row.data('detailFormatter')(sourceNode.data('origVal')));
+        }
     }
 
-    function undoCopySourceToTarget(propName, rowIndex) {
+    function undoCopySourceToTarget(propName, rowIndex, html) {
         var $fieldset = $('#' + propName),
             sourceNode = $('.right[data-row-index="' + rowIndex + '"]', $fieldset),
             buttonNode = $('.mid[data-row-index="' + rowIndex + '"] input', $fieldset),
@@ -399,7 +460,12 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         buttonNode.removeClass('undo');
 
         targetNode.removeData('newVal');
-        targetNode.find('span:first').html($row.data('detailFormatter')(targetNode.data('origVal')));
+        if(html){
+            targetNode.find('span:first').html($row.data('detailFormatter')(targetNode.data('origVal')));
+        }
+        else {
+            targetNode.find('span:first').text($row.data('detailFormatter')(targetNode.data('origVal')));
+        }
     }
 
     /* ******************** *********************
@@ -484,7 +550,7 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
             finalVal;
 
         $.each(keys, function(index, value) {
-            finalVal = mergeWizard.getFinalSingleValue(value);
+            finalVal = mergeWizard.getFinalSingleValue(propName + value);
             if (finalVal !== undefined) {
                 result[value] = finalVal;
             }

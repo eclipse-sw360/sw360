@@ -237,7 +237,7 @@
                     }
                 }
                 let jsonStr = JSON.stringify(fieldJsonObj, undefined, 5);
-                jsonStr =' <pre class="' + textclass + '" style="white-space: pre-wrap;word-break: break-all;">' + jsonStr + '</pre>';
+                jsonStr = $($.parseHTML('<pre class="' + textclass + '" style="white-space: pre-wrap;word-break: break-all;"></pre>')).text(jsonStr)[0].outerHTML;
                 return jsonStr;
             }
 

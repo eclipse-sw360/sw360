@@ -66,7 +66,7 @@
                                     <core_rt:if test="${release.clearingState.value == 1}"><span class="badge badge-circle badge-danger"></span></core_rt:if>
                                     <core_rt:if test="${release.clearingState.value == 2}"><span class="badge badge-circle badge-warning"></span></core_rt:if>
                                     <core_rt:if test="${release.clearingState.value == 3}"><span class="badge badge-circle badge-warning"></span></core_rt:if>
-                                    <liferay-ui:message key="version" /> ${release.version}
+                                    <liferay-ui:message key="version" /> <sw360:out value="${release.version}"/>
                                     <clay:icon symbol="caret-bottom" />
                                 </button>
                                 <div class="dropdown-menu" aria-labelledby="changeReleaseButton">
@@ -77,7 +77,7 @@
                                             <core_rt:if test="${releaseItr.clearingState.value == 1}"><span class="badge badge-circle badge-danger"></span></core_rt:if>
                                             <core_rt:if test="${releaseItr.clearingState.value == 2}"><span class="badge badge-circle badge-warning"></span></core_rt:if>
                                             <core_rt:if test="${releaseItr.clearingState.value == 3}"><span class="badge badge-circle badge-warning"></span></core_rt:if>
-                                            <liferay-ui:message key="version" /> ${releaseItr.version}
+                                            <liferay-ui:message key="version" /> <sw360:out value="${releaseItr.version}"/>
                                         </a>
                                     </core_rt:forEach>
                                 </div>
@@ -186,7 +186,7 @@
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-	document.title = "${component.name} - " + document.title;
+	document.title = $("<span></span>").html("<sw360:out value='${component.name}'/> - " + document.title).text();
 
     require(['jquery', 'components/includes/releases/linkProject', 'modules/button', 'modules/listgroup'], function($, linkProject, button, listgroup) {
         linkProject.initialize();

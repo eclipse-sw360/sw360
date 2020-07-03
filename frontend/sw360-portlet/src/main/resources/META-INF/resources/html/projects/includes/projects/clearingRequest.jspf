@@ -162,7 +162,7 @@
             <core_rt:when test="${pageName eq 'detail'}" >
                 var $dialog,
                     projectId = "${project.id}",
-                    name = "${sw360:printProjectName(project)}";
+                    name = $("<span></span>").html("<sw360:out value="${sw360:printProjectName(project)}"/>").text();
             </core_rt:when>
             <core_rt:otherwise>
                 var $dialog,
@@ -279,10 +279,10 @@
             var clearingRequestId = $(thisObj).attr('data-clearing-request-id');
             <core_rt:choose>
             <core_rt:when test="${pageName eq 'detail'}" >
-                var projectName = "${sw360:printProjectName(project)}";
+                var projectName = "<sw360:out value="${sw360:printProjectName(project)}"/>";
             </core_rt:when>
             <core_rt:otherwise>
-                var projectName = viewBtnData.projectName;
+                var projectName = document.createTextNode(viewBtnData.projectName);
             </core_rt:otherwise>
             </core_rt:choose>
 
@@ -312,7 +312,7 @@
                             projectName: projectName,
                             requestingUser: resultData.requestingUser,
                             requestedDate: resultData.requestedClearingDate,
-                            requesterComment: resultData.requestingUserComment,
+                            requesterComment: document.createTextNode(resultData.requestingUserComment),
                             clearingTeam: resultData.clearingTeam,
                             agreedDate: resultData.agreedClearingDate,
                             status: resultData.clearingState,

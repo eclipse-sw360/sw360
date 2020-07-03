@@ -177,13 +177,16 @@
         var PortletURL = Liferay.PortletURL;
 
         require(['jquery', 'modules/autocomplete', 'modules/dialog', 'bridges/datatables', 'utils/render' ], function($, autocomplete, dialog, datatables, render) {
-            var componentsTable;
-
+            var componentsTable,
+                vendorNames = new Array();
+            <core_rt:forEach items="${vendorList}" var="vendorName">
+                vendorNames.push("<sw360:out value='${vendorName}'/>");
+             </core_rt:forEach >
             // initializing
             autocomplete.prepareForMultipleHits('languages', ${programmingLanguages});
             autocomplete.prepareForMultipleHits('software_platforms', ${softwarePlatformsAutoC});
             autocomplete.prepareForMultipleHits('operating_systems', ${operatingSystemsAutoC});
-            autocomplete.prepareForMultipleHits('vendor_names', ${vendorList});
+            autocomplete.prepareForMultipleHits('vendor_names', vendorNames);
             componentsTable = createComponentsTable();
 
             // catch ctrl+p and print dataTable
@@ -224,7 +227,7 @@
             // create and render data table
             function createComponentsTable() {
                 let columns = [
-                    {"title": "<liferay-ui:message key="vendor" />", data: "vndrs"},
+                    {"title": "<liferay-ui:message key="vendor" />", data: "vndrs", render: {display: renderVendorNames}},
                     {"title": "<liferay-ui:message key="component.name" />", data: "name", render: {display: renderComponentNameLink}},
                     {"title": "<liferay-ui:message key="main.licenses" />", data: "lics", render: {display: renderLicenseLink}},
                     {"title": "<liferay-ui:message key="component.type" />", data: "cType"},
@@ -249,6 +252,10 @@
                 }, printColumns);
 
                 return componentsTable;
+            }
+
+            function renderVendorNames(name) {
+                    return $("<span></span>").text(name)[0].outerHTML;
             }
 
             function renderComponentActions(id, type, row) {

@@ -191,7 +191,7 @@
 
         function detailUrl(name, url)
         {
-            let viewUrl = $("<a></a>").attr("href",url).attr("target","_blank").css("word-break","break-word").html(name);
+            let viewUrl = $("<a></a>").attr("href",url).attr("target","_blank").css("word-break","break-word").text(name);
             return viewUrl[0].outerHTML;
         }
 

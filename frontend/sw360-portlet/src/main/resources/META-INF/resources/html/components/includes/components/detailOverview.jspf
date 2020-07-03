@@ -132,7 +132,7 @@
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-    document.title = "${component.name} - " + document.title;
+    document.title = $("<span></span>").html("<sw360:out value='${component.name}'/> - " + document.title).text();
 
     require(['jquery', 'modules/button', 'modules/listgroup'], function($, button, listgroup) {
         listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');

@@ -421,7 +421,7 @@
 
             function renderDescription(description, type, row) {
                 if (description) {
-                    return render.truncate(description, 140);
+                    return $("<span></span>").text(render.truncate(description, 140))[0].outerHTML;
                 } else {
                     return "";
                 }

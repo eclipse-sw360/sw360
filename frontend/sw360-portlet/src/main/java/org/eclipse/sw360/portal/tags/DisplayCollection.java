@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.portal.tags;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 
 import javax.servlet.jsp.JspException;
@@ -18,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * This displays a list
@@ -50,6 +52,8 @@ public class DisplayCollection extends SimpleTagSupport {
         if (null != fullValue && !fullValue.isEmpty()) {
             List<String> valueList = new ArrayList<>(fullValue);
             Collections.sort(valueList, String.CASE_INSENSITIVE_ORDER);
+            valueList = valueList.stream().map(StringEscapeUtils::escapeXml)
+                    .collect(Collectors.toList());
             getJspContext().getOut().print(CommonUtils.COMMA_JOINER.join(valueList));
         }
     }
