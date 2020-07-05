@@ -52,6 +52,11 @@
                                     <button type="button" data-component-id="${component.id}" id="mergeButton" class="btn btn-secondary"><liferay-ui:message key="merge" /></button>
                                 </div>
                             </core_rt:if>
+                            <core_rt:if test="${isUserAllowedToMerge && (not empty component.releases || not empty component.attachments)}">
+                                <div class="btn-group" role="group">
+                                    <button type="button" data-component-id="${component.id}" id="splitButton" class="btn btn-secondary"><liferay-ui:message key="split" /></button>
+                                </div>
+                            </core_rt:if>
                             <div class="btn-group" role="group">
                                 <sw360:DisplaySubscribeButton email="<%=themeDisplay.getUser().getEmailAddress()%>" object="${component}"
                                         id="SubscribeButton" />
@@ -127,7 +132,7 @@
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-    document.title = "${component.name} - " + document.title;
+    document.title = $("<span></span>").html("<sw360:out value='${component.name}'/> - " + document.title).text();
 
     require(['jquery', 'modules/button', 'modules/listgroup'], function($, button, listgroup) {
         listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
@@ -138,6 +143,15 @@
                 portletURL = Liferay.PortletURL.createURL(baseUrl)
                                                .setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_MERGE_COMPONENT%>')
                                                .setParameter('<%=PortalConstants.COMPONENT_ID%>', componentId);
+            window.location = portletURL.toString();
+        });
+
+        $('#splitButton').on('click', function(event) {
+            let splitComponentId = $(event.currentTarget).data().componentId;
+            var baseUrlForSplitComponent = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>',
+                portletURL = Liferay.PortletURL.createURL(baseUrlForSplitComponent)
+                                               .setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_SPLIT_COMPONENT%>')
+                                               .setParameter('<%=PortalConstants.COMPONENT_ID%>', splitComponentId);
             window.location = portletURL.toString();
         });
 

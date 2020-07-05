@@ -68,7 +68,7 @@
                         </div>
                         <div id="moderation-changes" class="collapse p-3" aria-labelledby="moderation-changes-heading" data-parent="#moderation-wizard">
                             <div class="alert alert-danger mb-0">
-                                The release ${sw360:printReleaseName(release)} is requested to be deleted.
+                                The release <sw360:out value='${sw360:printReleaseName(release)}'/> is requested to be deleted.
                             </div>
                         </div>
                     </div>

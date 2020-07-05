@@ -25,6 +25,8 @@ import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectTodo;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -64,6 +66,10 @@ class JacksonCustomizations {
             setMixInAnnotation(EmbeddedProject.class, Sw360Module.EmbeddedProjectMixin.class);
             setMixInAnnotation(ExternalToolProcess.class, Sw360Module.ExternalToolProcessMixin.class);
             setMixInAnnotation(ExternalToolProcessStep.class, Sw360Module.ExternalToolProcessStepMixin.class);
+            setMixInAnnotation(COTSDetails.class, Sw360Module.COTSDetailsMixin.class);
+            setMixInAnnotation(ClearingInformation.class, Sw360Module.ClearingInformationMixin.class);
+            setMixInAnnotation(Repository.class, Sw360Module.RepositoryMixin.class);
+            setMixInAnnotation(ProjectTodo.class, Sw360Module.ProjectTodoMixin.class);
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -78,10 +84,8 @@ class JacksonCustomizations {
                 "revision",
                 "attachments",
                 "createdBy",
-                "state",
                 "visbility",
                 "clearingTeam",
-                "phaseOutSince",
                 "homepage",
                 "wiki",
                 "documentState",
@@ -160,7 +164,8 @@ class JacksonCustomizations {
                 "setLinkedObligationId",
                 "linkedObligationId",
                 "clearingRequestId",
-                "setClearingRequestId"
+                "setClearingRequestId",
+                "todosIterator"
         })
         static abstract class ProjectMixin extends Project {
 
@@ -207,6 +212,10 @@ class JacksonCustomizations {
             @Override
             @JsonIgnore
             abstract public boolean isEnableVulnerabilitiesDisplay();
+
+            @Override
+            @JsonIgnore
+            abstract public ProjectState getState();
 	}
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -406,6 +415,7 @@ class JacksonCustomizations {
                 "softwarePlatformsIterator",
                 "additionalDataSize",
                 "setAdditionalData",
+                "mainLicenseIdsIterator"
         })
         static abstract class ReleaseMixin extends Release {
             @Override
@@ -732,6 +742,72 @@ class JacksonCustomizations {
             "setResult"
         })
         static abstract class ExternalToolProcessStepMixin extends ExternalToolProcessStep {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+            "setExternalSupplierID",
+            "setAdditionalRequestInfo",
+            "setEvaluated",
+            "setProcStart",
+            "setRequestID",
+            "setClearingTeam",
+            "setRequestorPerson",
+            "setBinariesOriginalFromCommunity",
+            "setBinariesSelfMade",
+            "setComponentLicenseInformation",
+            "setSourceCodeDelivery",
+            "setSourceCodeOriginalFromCommunity",
+            "setSourceCodeToolMade",
+            "setSourceCodeSelfMade",
+            "setSourceCodeCotsAvailable",
+            "setScreenshotOfWebSite",
+            "setFinalizedLicenseScanReport",
+            "setLicenseScanReportResult",
+            "setLegalEvaluation",
+            "setLicenseAgreement",
+            "setScanned",
+            "setComponentClearingReport",
+            "setClearingStandard",
+            "setReadmeOssAvailable",
+            "setCountOfSecurityVn",
+            "setExternalUrl",
+            "setComment"
+        })
+        public static abstract class ClearingInformationMixin extends ClearingInformation {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+            "setUsedLicense",
+            "setLicenseClearingReportURL",
+            "setContainsOSS",
+            "setOssContractSigned",
+            "setOssInformationURL",
+            "setUsageRightAvailable",
+            "setCotsResponsible",
+            "setClearingDeadline",
+            "setSourceCodeAvailable"
+        })
+        public static abstract class COTSDetailsMixin extends COTSDetails {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+            "setUrl",
+            "setRepositorytype"
+        })
+        public static abstract class RepositoryMixin extends Repository {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+            "setTodoId",
+            "setUserId",
+            "setUpdated",
+            "setFulfilled"
+        })
+        public static abstract class ProjectTodoMixin extends ProjectTodo {
         }
     }
 }

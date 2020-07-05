@@ -20,6 +20,7 @@
 <%@ include file="/html/init.jsp" %>
 <%-- the following is needed by liferay to display error messages--%>
 <%@ include file="/html/utils/includes/errorKeyToMessage.jspf"%>
+<%@include file="/html/projects/includes/projects/clearingRequest.jspf" %>
 
 <portlet:defineObjects/>
 <liferay-theme:defineObjects/>
@@ -36,6 +37,7 @@
 <core_rt:set var="stateAutoC" value='<%=PortalConstants.STATE%>'/>
 <core_rt:set var="projectTypeAutoC" value='<%=PortalConstants.PROJECT_TYPE%>'/>
 <core_rt:set var="FOSSOLOGY_CONNECTION_ENABLED" value="<%=FossologyConnectionHelper.getInstance().isFossologyConnectionEnabled()%>"/>
+<core_rt:set var="pageName"  value="<%= request.getParameter("pagename") %>" />
 
 <portlet:resourceURL var="exportProjectsURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.EXPORT_TO_EXCEL%>"/>
@@ -43,14 +45,6 @@
 
 <portlet:resourceURL var="deleteAjaxURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.REMOVE_PROJECT%>'/>
-</portlet:resourceURL>
-
-<portlet:resourceURL var="createClearingRequestURL">
-    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CREATE_CLEARING_REQUEST%>'/>
-</portlet:resourceURL>
-
-<portlet:resourceURL var="viewClearingRequestURL">
-    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.VIEW_CLEARING_REQUEST%>'/>
 </portlet:resourceURL>
 
 <portlet:renderURL var="impProjectURL">
@@ -65,11 +59,6 @@
     <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>"/>
     <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>"/>
 </portlet:renderURL>
-
-<liferay-portlet:renderURL var="friendlyClearingRequestURL" portletName="sw360_portlet_moderations">
-    <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>"/>
-    <portlet:param name="<%=PortalConstants.CLEARING_REQUEST_ID%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>"/>
-</liferay-portlet:renderURL>
 
 <portlet:actionURL var="applyFiltersURL" name="applyFilters">
 </portlet:actionURL>
@@ -221,112 +210,6 @@
             </div>
         </div>
     </div>
-
-    <div id="createClearingRequestDialog" class="modal fade" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-info" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <clay:icon symbol="check-square" />
-                        <liferay-ui:message key="create.clearing.request" />?
-                    </h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <p><liferay-ui:message key="fill.the.form.to.create.clearing.request.for.project.x" /></p>
-                     <div data-hide="hasNoDependencies">
-                        <p>
-                        <liferay-ui:message key="this.project.contains" />:
-                        </p>
-                        <ul>
-                            <li data-hide="hasNoLinkedProjects"><span data-name="linkedProjects"></span> <liferay-ui:message key="linked.projects" /></li>
-                            <li data-hide="hasNoLinkedReleases"><span data-name="linkedReleases"></span> <liferay-ui:message key="linked.releases" /></li>
-                            <li><span data-name="clearingStatus"></span></li>
-                        </ul>
-                    </div>
-                    <hr/>
-                    <form id="createClearingRequestForm">
-                        <div class="form-group">
-                            <label for="clearingTeamEmail" class="mandatory"><liferay-ui:message key="please.enter.the.clearing.team.email.id" />:</label>
-                            <input id="clearingTeamEmail" type="email" class="form-control" data-name="comment" rows="4" placeholder="<liferay-ui:message key='enter.clearing.team.email' />" required/>
-                            <div class="invalid-feedback">
-                                <liferay-ui:message key="email.should.be.in.valid.format" />
-                            </div>
-                        </div>
-						<div class="form-group">
-							<label for="requestedClearingDate" class="mandatory"><liferay-ui:message key="requested.clearing.date" />:</label>
-							<input class="datepicker form-control" id="requestedClearingDate" type="text" pattern="\d{4}-\d{2}-\d{2}" placeholder="<liferay-ui:message key='requested.clearing.date.yyyy.mm.dd' />" required/>
-							<div class="invalid-feedback">
-                                <liferay-ui:message key="date.should.be.in.valid.format" /> & <liferay-ui:message key="greater.than.7.days.from.today" />
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="clearingRequestComment"><liferay-ui:message key="please.comment.your.request" />:</label>
-                            <textarea id="clearingRequestComment" class="form-control" data-name="comment" rows="4" placeholder="<liferay-ui:message key='comment.your.request' />"></textarea>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="close" /></button>
-                    <button type="button" id="createClearingrequestButton" class="btn btn-primary"><liferay-ui:message key="create.request" /></button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="viewClearingRequestDialog" class="modal" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-info" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <clay:icon symbol="check-square" />
-                        <liferay-ui:message key="view.clearing.request" />:
-                    </h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <p><liferay-ui:message key="clearing.request.x.details.for.the.project.x" /></p>
-                        <table class="table table-bordered aligned-top">
-                            <tr>
-                                <th style="width: 30%;"><liferay-ui:message key="requesting.user" />:</th>
-                                <td><span data-name="requestingUser"></span></td>
-                            </tr>
-                            <tr>
-                                <th><liferay-ui:message key="requester.comment" />:</th>
-                                <td><span data-name="requesterComment"></span></td>
-                            </tr>
-                            <tr>
-                                <th><liferay-ui:message key="requested.clearing.date" />:</th>
-                                <td><span data-name="requestedDate"></span></td>
-                            </tr>
-                            <tr>
-                                <th><liferay-ui:message key="clearing.team" />:</th>
-                                <td><span data-name="clearingTeam"></span></td>
-                            </tr>
-                            <tr>
-                                <th><liferay-ui:message key="agreed.clearing.date" />:</th>
-                                <td><span data-name="agreedDate"></span></td>
-                            </tr>
-                            <tr>
-                                <th><liferay-ui:message key="clearing.team.comment" />:</th>
-                                <td data-name="ctComment"></td>
-                            </tr>
-                            <tr>
-                                <th><liferay-ui:message key="request.status" />:</th>
-                                <td><span data-name="status"></span></td>
-                            </tr>
-                        </table>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="close" /></button>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
 
@@ -375,14 +258,7 @@
                     );
                 }
             });
-            $('#projectsTable').on('click', 'svg.createClearingRequest', function(event) {
-                var createBtnData = $(event.currentTarget).data();
-                createClearingRequest(createBtnData, $(this));
-            });
-            $('#projectsTable').on('click', 'svg.viewClearingRequest', function(event) {
-                var viewBtnData = $(event.currentTarget).data();
-                viewClearingRequest(viewBtnData, $(this));
-            });
+
             $('#projectsTable').on('click', 'svg.clearing', function(event) {
                 openSelectClearingDialog($(event.currentTarget).data('projectId'));
             });
@@ -545,7 +421,7 @@
 
             function renderDescription(description, type, row) {
                 if (description) {
-                    return render.truncate(description, 140);
+                    return $("<span></span>").text(render.truncate(description, 140))[0].outerHTML;
                 } else {
                     return "";
                 }
@@ -703,138 +579,6 @@
                     hasNoAttachments: attachmentsSize == 0
                 }, function(submit, callback) {
                     deleteProjectInternal(callback);
-                });
-            }
-
-            // clearing request action
-            function createClearingRequest(cBtnData, thisObj) {
-                var $dialog,
-                    projectId = cBtnData.projectId,
-	                name = cBtnData.projectName,
-	                linkedProjectsSize = cBtnData.linkedProjectsCount,
-	                linkedReleasesSize = cBtnData.linkedReleasesCount,
-                    clearingStatus = $(thisObj).closest('tr').find('td span.clearingstate').attr("title"),
-                    clearingSvg = thisObj;
-
-                function createClearingRequestInternal(callback) {
-                    let dataObj = {},
-                        name = "<portlet:namespace/><%=PortalConstants.CLEARING_REQUEST%>",
-                        crData = {
-                            projectId : projectId,
-                            requestedClearingDate : $("#requestedClearingDate").val(),
-                            clearingTeam : $("#clearingTeamEmail").val(),
-                            requestingUserComment : $("#clearingRequestComment").val()
-                        };
-                    dataObj[name] = JSON.stringify(crData);
-                    jQuery.ajax({
-                        type: 'POST',
-                        url: '<%=createClearingRequestURL%>',
-                        cache: false,
-                        data: dataObj,
-                        success: function (status) {
-                            callback();
-                            $('#createClearingRequestDialog #createClearingrequestButton').prop("disabled", true).hide();
-                            if (!status || status.length == 0 || Object.getOwnPropertyNames(status).length == 0) {
-                                $dialog.alert("<liferay-ui:message key='failed.to.create.clearing.request' />");
-                            } else {
-                                var statusData = JSON.parse(status);
-                                if (statusData.result == "SUCCESS") {
-                                    $dialog.success("<liferay-ui:message key='clearing.request' /> <b>"
-                                            + statusData.clearingId + "</b> <liferay-ui:message key='created.successfully' />! <br><liferay-ui:message key='clearing.team.will.confirm.on.the.agreed.clearing.date' />.");
-                                    setTimeout(function(){
-                                        $dialog.close();
-                                        }, 7000);
-                                    $(thisObj).removeClass('createClearingRequest').addClass('viewClearingRequest text-warning').attr('data-clearing-request-id', statusData.clearingId).attr('title','<liferay-ui:message key="view.clearing.request" />');
-                                } else if (statusData.result == "FAILURE") {
-                                    $dialog.alert(statusData.message);
-                                } else {
-                                    $dialog.alert("<liferay-ui:message key='failed.to.create.clearing.request' />");
-                                }
-                            }
-                        },
-                        error: function () {
-                            callback();
-                            $('#createClearingRequestDialog #createClearingrequestButton').prop("disabled", true).hide();
-                            $dialog.alert("<liferay-ui:message key='error.creating.clearing.request' />");
-                        }
-                    });
-                }
-
-                $('.datepicker').datepicker({
-                    minDate: 7,
-                    changeMonth: true,
-                    changeYear: true,
-                    dateFormat: "yy-mm-dd"
-                });
-
-                $dialog = dialog.open('#createClearingRequestDialog', {
-                    name: name,
-                    linkedProjects: linkedProjectsSize,
-                    linkedReleases: linkedReleasesSize,
-                    hasNoDependencies: linkedProjectsSize == 0 && linkedReleasesSize == 0,
-                    hasNoLinkedProjects: linkedProjectsSize == 0,
-                    hasNoLinkedReleases: linkedReleasesSize == 0,
-                    clearingStatus: clearingStatus
-                }, function(submit, callback) {
-                    let selectedDate = $("#requestedClearingDate").val();
-                    if (!validation.isValidDate(selectedDate, 7)) {
-                        $dialog.alert("<liferay-ui:message key='date.should.be.in.valid.format' /> & <liferay-ui:message key='greater.than.7.days.from.today' />");
-                        callback();
-                        setTimeout(function() {
-                            $("#createClearingRequestDialog .alert-danger").hide();
-                        }, 5000);
-                    } else if (validation.validate('#createClearingRequestForm')) {
-                        createClearingRequestInternal(callback);
-                    } else {
-                        callback();
-                    }
-                }, function() {
-                    $('#createClearingRequestDialog #createClearingRequestForm').removeClass('was-validated');
-                });
-            }
-
-            function viewClearingRequest(viewBtnData, thisObj) {
-	            var projectName = viewBtnData.projectName,
-	                clearingRequestId = $(thisObj).attr('data-clearing-request-id');
-
-                jQuery.ajax({
-                    type: 'POST',
-                    url: '<%=viewClearingRequestURL%>',
-                    cache: false,
-                    data: {
-                        "<portlet:namespace/><%=PortalConstants.CLEARING_REQUEST_ID%>": clearingRequestId
-                    },
-                    success: function (result) {
-                        if (!result || result.length == 0 || Object.getOwnPropertyNames(result).length == 0) {
-                            dialog.warn(
-                                    '<liferay-ui:message key="view.clearing.request.failure.message" />',
-                                    {
-                                        projectName: projectName,
-                                        crId: clearingRequestId
-                                    }
-                               );
-                        }
-                        else {
-                            let resultData = JSON.parse(JSON.parse(result).clearingRequest),
-                                requestPortletURL = '<%=friendlyClearingRequestURL%>'.replace(/projects/g, "moderation"),
-                                clearingRequestUrl =  render.linkTo(replaceFriendlyUrlParameter(requestPortletURL.toString(), clearingRequestId, '<%=PortalConstants.PAGENAME_DETAIL_CLEARING_REQUEST%>'), clearingRequestId);
-                            $dialog = dialog.open('#viewClearingRequestDialog', {
-                                clearingRequestId: $(clearingRequestUrl).attr("target", "_blank"),
-                                projectName: projectName,
-                                requestingUser: resultData.requestingUser,
-                                requestedDate: resultData.requestedClearingDate,
-                                requesterComment: resultData.requestingUserComment,
-                                clearingTeam: resultData.clearingTeam,
-                                ctComment: resultData.clearingTeamComment,
-                                agreedDate: resultData.agreedClearingDate,
-                                status: resultData.clearingState,
-                                submittedOn: resultData.timestamp,
-                            }, undefined, undefined, undefined, true);
-                        }
-                    },
-                    error: function () {
-                        dialog.warn("<liferay-ui:message key='failed.to.fetch.clearing.request.from.db' />");
-                    }
                 });
             }
         });

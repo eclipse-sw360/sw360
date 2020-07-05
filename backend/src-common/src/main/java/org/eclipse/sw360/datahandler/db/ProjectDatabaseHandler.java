@@ -380,7 +380,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return RequestStatus.FAILED_SANITY_CHECK;
         } else if (!isDependenciesExists(project, user)) {
             return RequestStatus.INVALID_INPUT;
-        } else if (isWriteActionAllowedOnProject(project, user)) {
+        } else if (isWriteActionAllowedOnProject(actual, user)) {
             copyImmutableFields(project,actual);
             project.setAttachments( getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), project.getAttachments()) );
             setReleaseRelations(project, user, actual);
@@ -811,6 +811,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         List<ModerationRequest> moderationRequestsForDocumentId = moderator.getModerationRequestsForDocumentId(id);
 
         Project project = getProjectById(id,user);
+        Visibility actualVisbility = project.getVisbility();
         DocumentState documentState;
         if (moderationRequestsForDocumentId.isEmpty()) {
             documentState = CommonUtils.getOriginalDocumentState();
@@ -823,6 +824,12 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 project = moderator.updateProjectFromModerationRequest(project,
                         moderationRequest.getProjectAdditions(),
                         moderationRequest.getProjectDeletions());
+
+                if (moderationRequest.getProjectAdditions() != null && moderationRequest.getProjectDeletions() != null
+                        && moderationRequest.getProjectAdditions().getVisbility() == moderationRequest
+                                .getProjectDeletions().getVisbility()) {
+                    project.setVisbility(actualVisbility);
+                }
                 documentState = CommonUtils.getModeratedDocumentState(moderationRequest);
             } else {
                 documentState = new DocumentState().setIsOriginalDocument(true).setModerationState(moderationRequestsForDocumentId.get(0).getModerationState());

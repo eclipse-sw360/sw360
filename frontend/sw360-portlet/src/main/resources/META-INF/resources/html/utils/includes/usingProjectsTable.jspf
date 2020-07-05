@@ -11,7 +11,7 @@
 
 <core_rt:if test="${usingProjects != null && allUsingProjectsCount > 0}">
     <div class="alert alert-info mt-default">
-        <sw360:out value="${documentName}"/> is used by a total of ${allUsingProjectsCount}
+        ${documentName} is used by a total of ${allUsingProjectsCount}
                         (${usingProjects.size()} visible / ${allUsingProjectsCount - usingProjects.size()} restricted) projects.
     </div>
 

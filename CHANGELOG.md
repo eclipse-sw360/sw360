@@ -4,6 +4,46 @@ This is the changelog file of the sw360 project. It starts with the first releas
 
 https://github.com/sw360/sw360portal/releases
 
+## sw360-9.0.0-M1
+
+This release brings new features which also change the data model. Therefore, a major version step is justified. Major new features are:
+
+* Support for custom field layout using the referring Liferay mechanism, fully transparent with the REST API using additional data fields
+* Changelog for changed data for projects, components and releases
+* Reordered sections in detail view
+* A completely new view *Clearing Status* offering tree and list view
+
+Besides bug fixes and features correct bugs so far. In order to fix a bug with the REST API, note that a migration script should be executed. It corrects a missing value for the status of the release which is also now automatically set when creating releases using the REST API (and not only in the Web user interface).
+
+### Features
+
+* `a2e65103` feat(PreferenceUI): Enabled Email notification for CR
+* `49311164` feat(ProjectUI): Custom Field for Additional data in Project
+* `1d3423cb` feat(ReadmeOss): Filter linked project from ReadmeOss based on selection
+* `03000401` feat(ProjectUI): Unified view of Linked Project and Releases, Clearing status, Linked Release Hierarchy. View includes tree view and list view
+* `89714248` feat: Support custom fields in additionalData group in Component and Release page
+* `04b57fd1` feat(ChangeLogs): Revision history of Document
+
+### Corrections
+
+* `fb09ccee` fix(MigrationScript): Update releases with empty clearingState to default value - NEW_CLEARING
+* `7bbd4235` fix(ClearingStatus): Tree View Release name getting truncated, Sort for Project mainline state and Clearing State in List View fixed , added search filter
+* `4c7b0e72` fix(ClearingStatusView): Fixed uneven button height, console error related to createVulnerabilityTable, takes lot of time to load Clearing status list view for large dataset.
+* `d1c3731f` fix(ChangelogBasicInfoUI): Applied generic style and reordered the metadatas for Basic Info.
+* `78bff1ba` fix(UI): Clearing Request and Obligations fixes
+* `79f5c9d4` fix(mergeComponent): Prevent multiple releases with same name and version for a component, which may occur during merge component
+* `a4b44107` fix: Resolve conflict
+* `cd4cba10` fix(Changelog): Fixed missing fields like componentType in Changelog history
+* `3ee65c9b` fix(REST): Added default value(NEW_CLEARING) for Clearing status while create and update Release
+* `67875856` fix(spreadsheet-export): Project spreadsheet export returns blank spreadsheet
+* `b91b9e2d` fix(ui): Release overview from component details
+* `cd29922a` fix(UI): Clearing Request bug fix and improvements
+
+### Infrastructure
+
+* `79850290` chore(deps): Bump spring-security-core in /frontend/sw360-portlet
+* `e1aabab1` chore(deps-dev): Bump dom4j in /backend/src/src-licenseinfo
+
 ## sw360-8.2.0-M2
 
 Although there are only few commits listed below for this release, the change from 8.1 to 8.2 is huge: sw360 supports now an UI which can be extended with different languages.

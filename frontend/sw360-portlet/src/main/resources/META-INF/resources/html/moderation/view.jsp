@@ -202,7 +202,7 @@ AUI().use('liferay-portlet-url', function () {
                     "5": '<sw360:DisplayUserEmailCollection value="${moderation.moderators}" bare="true"/>',
                     "6": "<sw360:DisplayEnum value="${moderation.moderationState}"/>",
                     <core_rt:if test="${isUserAtLeastClearingAdmin == 'Yes'}">
-                        "7": '<div class="actions"><svg class="delete lexicon-icon" data-moderation-request="<sw360:out value="${moderation.id}"/>" data-document-name="${moderation.documentName}"><title><liferay-ui:message key="delete" /></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/></svg></div>'
+                        "7": '<div class="actions"><svg class="delete lexicon-icon" data-moderation-request="<sw360:out value="${moderation.id}"/>" data-document-name="<sw360:out value="${moderation.documentName}"/>"><title><liferay-ui:message key="delete" /></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/></svg></div>'
                     </core_rt:if>
                     <core_rt:if test="${isUserAtLeastClearingAdmin != 'Yes'}">
                         "7": '<span class="badge badge-success">READY</span>'
@@ -251,8 +251,7 @@ AUI().use('liferay-portlet-url', function () {
                     "6": '<sw360:DisplayUserEmail email="${request.clearingTeam}" />',
                     "7": '<sw360:out value="${request.agreedClearingDate}"/>',
                     "8": '<sw360:out value="${request.requestingUserComment}" maxChar="150" jsQuoting="true" />',
-                    "9": '<sw360:out value="${request.clearingTeamComment}" maxChar="150" jsQuoting="true" />',
-                    "10": '${request.projectId}'
+                    "9": '${request.projectId}'
                 });
             </core_rt:forEach>
             return result;
@@ -272,8 +271,7 @@ AUI().use('liferay-portlet-url', function () {
                     "6": '<sw360:DisplayUserEmail email="${request.clearingTeam}" />',
                     "7": '<sw360:out value="${request.agreedClearingDate}"/>',
                     "8": '<sw360:out value="${request.requestingUserComment}" maxChar="150" jsQuoting="true" />',
-                    "9": '<sw360:out value="${request.clearingTeamComment}" maxChar="150" jsQuoting="true" />',
-                    "10": '${request.projectId}'
+                    "9": '${request.projectId}'
                 });
             </core_rt:forEach>
             return result;
@@ -303,7 +301,7 @@ AUI().use('liferay-portlet-url', function () {
         }
 
         function renderClearingRequestAction(tableData, type, row) {
-            if (row[10] && ($(row[6]).attr('href').replace('mailto:', '') === '${user.emailAddress}' || ${isClearingExpert})) {
+            if (row[9] && ($(row[6]).attr('href').replace('mailto:', '') === '${user.emailAddress}' || ${isClearingExpert})) {
                 return render.linkTo(
                         makeClearingRequestUrl(row.DT_RowId, '<%=PortalConstants.PAGENAME_EDIT_CLEARING_REQUEST%>'),
                         "",
@@ -375,10 +373,6 @@ AUI().use('liferay-portlet-url', function () {
 			            '<tr>'+
 			                '<td>Requesting User Comment:</td>'+
 			                '<td>'+requesterComment+'</td>'+
-			            '</tr>'+
-			            '<tr>'+
-			                '<td>Clearing Team Comment:</td>'+
-			                '<td>'+approverComment+'</td>'+
 			            '</tr>'+
 			        '</table>';
         }

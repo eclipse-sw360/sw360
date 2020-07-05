@@ -22,8 +22,8 @@
 
 <div id="componentMergeWizard" class="container" data-step-id="0" data-component-target-id="${component.id}">
     <div class="row portlet-toolbar">
-        <div class="col portlet-title text-truncate" title="<liferay-ui:message key="merge.into" /> ${sw360:printComponentName(component)}">
-            <liferay-ui:message key="merge.into" /> ${sw360:printComponentName(component)}
+        <div class="col portlet-title text-truncate" title="<liferay-ui:message key="merge.into" />${sw360:printComponentName(component)}">
+            <liferay-ui:message key="merge.into" />  <sw360:out value="${sw360:printComponentName(component)}"/>
         </div>
     </div>
     <div class="row">
@@ -161,7 +161,7 @@
                 data: data.components,
                 columns: [
                     { data: "id", render: $.fn.dataTable.render.inputRadio('componentChooser') },
-                    { data: "name" },
+                    { data: "name", render: $.fn.dataTable.render.text() },
                     { data: "createdBy" },
                     { data: "releases" }
                 ],
@@ -304,7 +304,7 @@
             componentSelection.releases = [];
             $.each(releases, function(index, value) {
                 /* add just required fields for easy identification */
-                componentSelection.releases.push(JSON.parse('{ "id": "' + value.id + '", "name": "' + value.name + '", "version": "' + value.version + '", "componentId": "' + value.componentId + '"}'));
+                componentSelection.releases.push({ "id": value.id , "name": value.name , "version": value.version , "componentId": value.componentId });
             });
 
             if ((componentSelection.releases.length || 0) < $stepElement.data('releaseCount')) {

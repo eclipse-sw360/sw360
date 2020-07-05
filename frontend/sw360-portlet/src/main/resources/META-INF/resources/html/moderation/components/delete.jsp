@@ -30,10 +30,10 @@
 <div class="container" id="moderation-request-merge" data-document-type="<%=DocumentType.COMPONENT%>">
 
     <core_rt:if test="${empty moderationRequest.componentType}">
-        <core_rt:set var="moderationTitle" value="Delete ${sw360:printComponentName(component)} (no type)" scope="request" />
+        <core_rt:set var="moderationTitle" value="Delete <sw360:out value='${sw360:printComponentName(component)}'/> (no type)" scope="request" />
     </core_rt:if>
     <core_rt:if test="${not empty moderationRequest.componentType}">
-        <core_rt:set var="moderationTitle" value="Delete ${sw360:printComponentName(component)} (${sw360:enumToString(moderationRequest.componentType)})" scope="request" />
+        <core_rt:set var="moderationTitle" value="Delete <sw360:out value='${sw360:printComponentName(component)}'/> (${sw360:enumToString(moderationRequest.componentType)})" scope="request" />
     </core_rt:if>
     <%@include file="/html/moderation/includes/moderationHeader.jspf"%>
 
@@ -65,7 +65,7 @@
                         </div>
                         <div id="moderation-changes" class="collapse p-3" aria-labelledby="moderation-changes-heading" data-parent="#moderation-wizard">
                             <div class="alert alert-danger mb-0">
-                                The component ${sw360:printComponentName(component)} is requested to be deleted.
+                                The component <sw360:out value='${sw360:printComponentName(component)}'/> is requested to be deleted.
                             </div>
                         </div>
                     </div>

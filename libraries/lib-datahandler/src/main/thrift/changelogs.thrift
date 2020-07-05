@@ -29,7 +29,8 @@ enum Operation {
     MERGE_COMPONENT = 9,
     MERGE_RELEASE = 10,
     OBLIGATION_UPDATE = 11,
-    OBLIGATION_ADD = 12
+    OBLIGATION_ADD = 12,
+    SPLIT_COMPONENT = 13
 }
 
 struct ChangeLogs {

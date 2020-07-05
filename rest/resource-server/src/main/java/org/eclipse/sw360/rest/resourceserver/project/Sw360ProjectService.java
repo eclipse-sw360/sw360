@@ -84,9 +84,9 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     @NonNull
     private RestControllerHelper rch;
 
-    public List<Project> getProjectsForUser(User sw360User) throws TException {
+    public Set<Project> getProjectsForUser(User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        return sw360ProjectClient.getAccessibleProjectsSummary(sw360User);
+        return sw360ProjectClient.getAccessibleProjects(sw360User);
     }
 
     public Project getProjectForUserById(String projectId, User sw360User) throws TException {

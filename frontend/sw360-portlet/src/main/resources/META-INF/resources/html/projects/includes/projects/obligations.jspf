@@ -65,24 +65,24 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
         releaseNames = [];
 
         <core_rt:forEach items="${projectObligations.licenseIds}" var="licenseId">
-            licenseIds.push("${licenseId}");
+            licenseIds.push("<sw360:out value='${licenseId}'/>");
         </core_rt:forEach >
 
         <core_rt:if test="${not empty projectObligations.releases}">
             <core_rt:forEach items="${projectObligations.releases}" var="release">
                 releaseIds.push("${release.id}");
-                releaseNames.push("${release.name} (${release.version})");
+                releaseNames.push("<sw360:out value='${release.name}'/> (<sw360:out value='${release.version}'/>)");
             </core_rt:forEach >
         </core_rt:if>
 
         obligationJSON.push({
-            "obligation": '${entry.key}',
+            "obligation": "<sw360:out value='${entry.key}'/>",
             "lIds": licenseIds.join(', <br>'),
             "rIds": releaseIds,
             "rNames": releaseNames.join(', <br>'),
             "status": "<sw360:DisplayEnum value='${projectObligations.status}'/>",
             /* "action": '${projectObligations.action}', */
-            "comment": '${projectObligations.comment}',
+            "comment": "<sw360:out value='${projectObligations.comment}'/>",
             "text": '<sw360:out value="${projectObligations.text}" maxChar="200" />',
             "modifiedBy": '${projectObligations.modifiedBy}',
             "modifiedOn": '${projectObligations.modifiedOn}'
@@ -99,12 +99,18 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
                 "data": null,
                 "defaultContent": '&#x25BA'
             },
-            { "data": "obligation", render: $.fn.dataTable.render.ellipsis },
+            { "data":  function(row) {
+                           return $('<span></span>').html(row.obligation).text();
+                       }, render: $.fn.dataTable.render.ellipsis
+            },
             { "data": "lIds", "render": { display: renderLicenseLink } },
             { "data": "rNames", "render": { display: renderReleaseLink } },
             { "data": "status", className: 'text-center' },
            /*  { "data": "action" }, */
-            { "data": "comment", render: $.fn.dataTable.render.ellipsis },
+            { "data": function(row) {
+                            return $('<span></span>').html(row.comment).text();
+                      }, render: $.fn.dataTable.render.ellipsis
+            },
         ],
         "columnDefs": [
             {
