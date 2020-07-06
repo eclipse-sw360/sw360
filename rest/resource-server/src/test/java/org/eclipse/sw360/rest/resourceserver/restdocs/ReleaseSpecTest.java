@@ -19,7 +19,6 @@ import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.components.COTSDetails;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingInformation;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
@@ -43,14 +42,13 @@ import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.Resources;
+import org.springframework.restdocs.mockmvc.RestDocumentationResultHandler;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.web.servlet.ResultHandler;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -60,9 +58,8 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
@@ -135,6 +132,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         given(this.attachmentServiceMock.getAttachmentContent(anyObject())).willReturn(new AttachmentContent().setId("1231231254").setFilename("spring-core-4.3.4.RELEASE.jar").setContentType("binary"));
         given(this.attachmentServiceMock.getResourcesFromList(anyObject())).willReturn(new Resources<>(attachmentResources));
         given(this.attachmentServiceMock.uploadAttachment(anyObject(), anyObject(), anyObject())).willReturn(attachment);
+        given(this.attachmentServiceMock.filterAttachmentsToRemove(any(), any(), any())).willReturn(Collections.singleton(attachment));
 
         Map<String, Set<String>> externalIds = new HashMap<>();
         externalIds.put("mainline-id-component", new HashSet<>(Arrays.asList("1432", "4876")));
@@ -480,34 +478,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                 .header("Authorization", "Bearer" + accessToken)
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
-                .andDo(this.documentationHandler.document(
-                        links(
-                                linkWithRel("self").description("The <<resources-release,Release resource>>"),
-                                linkWithRel("sw360:component").description("The link to the corresponding component"),
-                                linkWithRel("curies").description("The curies for documentation")
-                        ),
-                        responseFields(
-                                fieldWithPath("name").description("The name of the release, optional"),
-                                fieldWithPath("version").description("The version of the release"),
-                                fieldWithPath("createdBy").description("Email of the release creator"),
-                                fieldWithPath("cpeId").description("CpeId of the release"),
-                                fieldWithPath("clearingState").description("The clearing of the release, possible values are " + Arrays.asList(ClearingState.values())),
-                                fieldWithPath("cpeId").description("The CPE id"),
-                                fieldWithPath("releaseDate").description("The date of this release"),
-                                fieldWithPath("createdOn").description("The creation date of the internal sw360 release"),
-                                fieldWithPath("mainlineState").description("the mainline state of the release, possible values are: " + Arrays.asList(MainlineState.values())),
-                                fieldWithPath("downloadurl").description("the download url of the release"),
-                                fieldWithPath("externalIds").description("When releases are imported from other tools, the external ids can be stored here"),
-                                fieldWithPath("additionalData").description("A place to store additional data used by external tools"),
-                                fieldWithPath("languages").description("The language of the component"),
-                                fieldWithPath("_embedded.sw360:licenses").description("An array of all main licenses with their fullName and link to their <<resources-license-get,License resource>>"),
-                                fieldWithPath("operatingSystems").description("The OS on which the release operates"),
-                                fieldWithPath("softwarePlatforms").description("The software platforms of the component"),
-                                fieldWithPath("_embedded.sw360:moderators").description("An array of all release moderators with email and link to their <<resources-user-get,User resource>>"),
-                                fieldWithPath("_embedded.sw360:attachments").description("An array of all release attachments and link to their <<resources-attachment-get,Attachment resource>>"),
-                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
-                        )
-                ));
+                .andDo(documentReleaseProperties());
     }
 
     @Test
@@ -649,5 +620,46 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("_embedded.sw360:releases").description(
                                         "The collection of <<resources-releases,Releases resources>>. In most cases the result should contain either one element or an empty response. If the same binary file is uploaded and attached to multiple sw360 resources, the collection will contain all the releases that have attachments with matching sha1 hash."))))
                 .andReturn();
+    }
+
+    @Test
+    public void should_document_delete_release_attachment() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(delete("/api/releases/" + release.getId() + "/attachments/" + attachment.getAttachmentContentId())
+                .header("Authorization", "Bearer " + accessToken)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(documentReleaseProperties());
+    }
+
+    private RestDocumentationResultHandler documentReleaseProperties() {
+        return this.documentationHandler.document(
+                links(
+                        linkWithRel("self").description("The <<resources-release,Release resource>>"),
+                        linkWithRel("sw360:component").description("The link to the corresponding component"),
+                        linkWithRel("curies").description("The curies for documentation")
+                ),
+                responseFields(
+                        fieldWithPath("name").description("The name of the release, optional"),
+                        fieldWithPath("version").description("The version of the release"),
+                        fieldWithPath("createdBy").description("Email of the release creator"),
+                        fieldWithPath("cpeId").description("CpeId of the release"),
+                        fieldWithPath("clearingState").description("The clearing of the release, possible values are " + Arrays.asList(ClearingState.values())),
+                        fieldWithPath("cpeId").description("The CPE id"),
+                        fieldWithPath("releaseDate").description("The date of this release"),
+                        fieldWithPath("createdOn").description("The creation date of the internal sw360 release"),
+                        fieldWithPath("mainlineState").description("the mainline state of the release, possible values are: " + Arrays.asList(MainlineState.values())),
+                        fieldWithPath("downloadurl").description("the download url of the release"),
+                        fieldWithPath("externalIds").description("When releases are imported from other tools, the external ids can be stored here"),
+                        fieldWithPath("additionalData").description("A place to store additional data used by external tools"),
+                        fieldWithPath("languages").description("The language of the component"),
+                        fieldWithPath("_embedded.sw360:licenses").description("An array of all main licenses with their fullName and link to their <<resources-license-get,License resource>>"),
+                        fieldWithPath("operatingSystems").description("The OS on which the release operates"),
+                        fieldWithPath("softwarePlatforms").description("The software platforms of the component"),
+                        fieldWithPath("_embedded.sw360:moderators").description("An array of all release moderators with email and link to their <<resources-user-get,User resource>>"),
+                        fieldWithPath("_embedded.sw360:attachments").description("An array of all release attachments and link to their <<resources-attachment-get,Attachment resource>>"),
+                        fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                )
+        );
     }
 }

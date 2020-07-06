@@ -12,22 +12,28 @@
 
 package org.eclipse.sw360.rest.resourceserver.attachment;
 
+import com.google.common.collect.Sets;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TCompactProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.commonIO.AttachmentFrontendUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.Source;
-import org.eclipse.sw360.datahandler.thrift.attachments.*;
+import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
+import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
+import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
+import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.core.ThriftServiceProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
@@ -37,18 +43,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.google.common.collect.Sets;
-
 import javax.servlet.http.HttpServletResponse;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -61,6 +68,9 @@ public class Sw360AttachmentService {
 
     @NonNull
     private final RestControllerHelper restControllerHelper;
+
+    @NonNull
+    private final ThriftServiceProvider<AttachmentService.Iface> thriftAttachmentServiceProvider;
 
     private static final Logger log = Logger.getLogger(Sw360AttachmentService.class);
     private final Duration downloadTimeout = Duration.durationOf(30, TimeUnit.SECONDS);
@@ -85,6 +95,54 @@ public class Sw360AttachmentService {
         AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
         List<Attachment> attachments = attachmentClient.getAttachmentsBySha1s(Collections.singleton(sha1));
         return createAttachmentInfos(attachmentClient, attachments);
+    }
+
+    /**
+     * Filters the attachments that can be actually removed before a delete
+     * attachments operation. This method can be called by controllers to
+     * handle a request to delete attachments. For each attachment to be
+     * deleted, it checks whether all criteria are fulfilled: The attachment
+     * must belong to the given owner, it must not be in use by a project, and
+     * its checked status must not be ACCEPTED. The resulting set contains all
+     * the attachments that are safe to be removed.
+     *
+     * @param owner          the {@code Source} referencing the attachment owner
+     * @param allAttachments the full set of attachments of the owner
+     * @param idsToDelete    collection with the IDs of the attachments to delete
+     * @return the filtered set with attachments that can be removed
+     */
+    public Set<Attachment> filterAttachmentsToRemove(Source owner, Set<Attachment> allAttachments,
+                                                     Collection<String> idsToDelete) throws TException {
+        Map<String, Attachment> knownAttachmentIds = allAttachments.stream()
+                .collect(Collectors.toMap(Attachment::getAttachmentContentId, v -> v));
+        AttachmentService.Iface attachmentService = getThriftAttachmentClient();
+
+        return idsToDelete.stream()
+                .map(knownAttachmentIds::get)
+                .filter(Objects::nonNull)
+                .filter(attachment -> canDeleteAttachment(attachmentService, owner, attachment))
+                .collect(Collectors.toSet());
+    }
+
+    private static boolean canDeleteAttachment(AttachmentService.Iface attachmentService, Source owner,
+                                               Attachment attachment) {
+        String id = attachment.getAttachmentContentId();
+        if (attachment.getCheckStatus() == CheckStatus.ACCEPTED) {
+            log.warn("Attachment " + id + " must not be deleted as it is in status checked.");
+            return false;
+        }
+
+        try {
+            List<AttachmentUsage> usages = attachmentService.getAttachmentUsages(owner, id, null);
+            if (usages.stream().anyMatch(usage -> usage.usedBy.isSetProjectId())) {
+                log.warn("Attachment " + id + " must not be deleted as it is used by a project.");
+                return false;
+            }
+            return true;
+        } catch (TException e) {
+            log.error("Could not check attachment usage for " + id);
+            return false;
+        }
     }
 
     private AttachmentInfo createAttachmentInfo(AttachmentService.Iface attachmentClient, Attachment attachment)
@@ -174,6 +232,21 @@ public class Sw360AttachmentService {
         }
     }
 
+    public Resources<Resource<Attachment>> getResourcesFromList(Set<Attachment> attachmentList) {
+        final List<Resource<Attachment>> attachmentResources = new ArrayList<>();
+        for (final Attachment attachment : attachmentList) {
+            final Attachment embeddedAttachment = restControllerHelper.convertToEmbeddedAttachment(attachment);
+            final Resource<Attachment> attachmentResource = new Resource<>(embeddedAttachment);
+            attachmentResources.add(attachmentResource);
+        }
+        return new Resources<>(attachmentResources);
+    }
+
+    public List<AttachmentUsage> getAllAttachmentUsage(String projectId) throws TException {
+        AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
+        return attachmentClient.getUsedAttachments(Source.projectId(projectId), null);
+    }
+
     private AttachmentConnector getConnector() throws TException {
         if (attachmentConnector == null) makeConnector();
         return attachmentConnector;
@@ -191,23 +264,6 @@ public class Sw360AttachmentService {
     }
 
     private AttachmentService.Iface getThriftAttachmentClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/attachments/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new AttachmentService.Client(protocol);
-    }
-
-    public Resources<Resource<Attachment>> getResourcesFromList(Set<Attachment> attachmentList) {
-        final List<Resource<Attachment>> attachmentResources = new ArrayList<>();
-        for (final Attachment attachment : attachmentList) {
-            final Attachment embeddedAttachment = restControllerHelper.convertToEmbeddedAttachment(attachment);
-            final Resource<Attachment> attachmentResource = new Resource<>(embeddedAttachment);
-            attachmentResources.add(attachmentResource);
-        }
-        return new Resources<>(attachmentResources);
-    }
-
-    public List<AttachmentUsage> getAllAttachmentUsage(String projectId) throws TException {
-        AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
-        return attachmentClient.getUsedAttachments(Source.projectId(projectId), null);
+        return thriftAttachmentServiceProvider.getService(thriftServerUrl);
     }
 }

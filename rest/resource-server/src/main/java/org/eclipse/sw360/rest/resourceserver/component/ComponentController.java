@@ -17,6 +17,7 @@ import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -264,6 +265,25 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Component component = componentService.getComponentForUserById(componentId, sw360User);
         attachmentService.downloadAttachmentWithContext(component, attachmentId, response, sw360User);
+    }
+
+    @DeleteMapping(COMPONENTS_URL + "/{componentId}/attachments/{attachmentIds}")
+    public ResponseEntity<HalResource<Component>> deleteAttachmentsFromComponent(
+            @PathVariable("componentId") String componentId,
+            @PathVariable("attachmentIds") List<String> attachmentIds) throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        Component component = componentService.getComponentForUserById(componentId, user);
+
+        Set<Attachment> attachmentsToDelete = attachmentService.filterAttachmentsToRemove(Source.componentId(componentId),
+                component.getAttachments(), attachmentIds);
+        if (attachmentsToDelete.isEmpty()) {
+            // let the whole action fail if nothing can be deleted
+            throw new RuntimeException("Could not delete attachments " + attachmentIds + " from component " + componentId);
+        }
+        log.debug("Deleting the following attachments from component " + componentId + ": " + attachmentsToDelete);
+        component.getAttachments().removeAll(attachmentsToDelete);
+        componentService.updateComponent(component, user);
+        return new ResponseEntity<>(createHalComponent(component, user), HttpStatus.OK);
     }
 
     @Override

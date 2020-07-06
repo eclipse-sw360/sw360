@@ -34,17 +34,25 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.*;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
-import org.eclipse.sw360.datahandler.thrift.MainlineState;
+import static org.mockito.Mockito.never;
+
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
-import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 
@@ -77,11 +85,7 @@ public class ReleaseTest extends TestIntegrationBase {
         given(this.attachmentServiceMock.getAttachmentsBySha1(eq(attachmentShaInvalid)))
                 .willReturn(emptyAttachmentInfos);
 
-        User user = new User();
-        user.setId("123456789");
-        user.setEmail("admin@sw360.org");
-        user.setFullname("John Doe");
-
+        User user = TestHelper.getTestUser();
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
 
         given(this.releaseServiceMock.getReleaseForUserById(eq(TestHelper.getDummyReleaseListForTest().get(0).getId()),eq(user))).willReturn(TestHelper.getDummyReleaseListForTest().get(0));
@@ -209,4 +213,68 @@ public class ReleaseTest extends TestIntegrationBase {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         TestHelper.checkResponse(response.getBody(), "releases", 2);
     }
+
+    @Test
+    public void should_delete_attachments_successfully() throws TException, IOException {
+        Release release = new Release(TestHelper.getDummyReleaseListForTest().get(0));
+        final AtomicReference<Release> refUpdatedRelease = new AtomicReference<>();
+        List<Attachment> attachments = TestHelper.getDummyAttachmentsListForTest();
+        List<String> attachmentIds = Arrays.asList(attachments.get(0).attachmentContentId, "otherAttachmentId");
+        String strIds = String.join(",", attachmentIds);
+        release.setAttachments(new HashSet<>(attachments));
+        given(releaseServiceMock.getReleaseForUserById(release.id, TestHelper.getTestUser())).willReturn(release);
+        given(releaseServiceMock.updateRelease(any(), eq(TestHelper.getTestUser())))
+                .will(invocationOnMock -> {
+                    refUpdatedRelease.set(new Release((Release) invocationOnMock.getArguments()[0]));
+                    return RequestStatus.SUCCESS;
+                });
+        given(attachmentServiceMock.filterAttachmentsToRemove(Source.releaseId(release.getId()),
+                release.getAttachments(), attachmentIds))
+                .willReturn(Collections.singleton(attachments.get(1)));
+
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/releases/" +
+                                TestHelper.release1Id + "/attachments/" + strIds,
+                        HttpMethod.DELETE,
+                        new HttpEntity<>(null, getHeaders(port)),
+                        String.class);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        JsonNode jsonResponse = new ObjectMapper().readTree(response.getBody());
+        JsonNode jsonAttachments = jsonResponse.get("_embedded").get("sw360:attachments");
+        assertTrue(jsonAttachments.isArray());
+        Set<String> attachmentFileNames = StreamSupport.stream(jsonAttachments.spliterator(), false)
+                .map(node -> node.get("filename").textValue())
+                .collect(Collectors.toSet());
+        assertThat(attachmentFileNames, hasSize(1));
+        assertThat(attachmentFileNames, hasItem(attachments.get(0).getFilename()));
+
+        Release updatedRelease = refUpdatedRelease.get();
+        assertThat(updatedRelease, is(notNullValue()));
+        assertThat(updatedRelease.getAttachments(), hasSize(1));
+        assertThat(updatedRelease.getAttachments(), hasItem(attachments.get(0)));
     }
+
+    @Test
+    public void should_delete_attachments_with_failure_handling() throws TException, IOException {
+        Release release = new Release(TestHelper.getDummyReleaseListForTest().get(0));
+        String attachmentId = TestHelper.getDummyAttachmentInfoListForTest().get(0).getAttachment()
+                .getAttachmentContentId();
+        Set<Attachment> attachments = new HashSet<>(TestHelper.getDummyAttachmentsListForTest());
+        release.setAttachments(attachments);
+        given(releaseServiceMock.getReleaseForUserById(release.id, TestHelper.getTestUser())).willReturn(release);
+        given(attachmentServiceMock.filterAttachmentsToRemove(Source.releaseId(release.getId()),
+                release.getAttachments(), Collections.singletonList(attachmentId)))
+                .willReturn(Collections.emptySet());
+
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/releases/" +
+                                TestHelper.release1Id + "/attachments/" + attachmentId,
+                        HttpMethod.DELETE,
+                        new HttpEntity<>(null, getHeaders(port)),
+                        String.class);
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        then(releaseServiceMock)
+                .should(never())
+                .updateRelease(any(), any());
+    }
+}
