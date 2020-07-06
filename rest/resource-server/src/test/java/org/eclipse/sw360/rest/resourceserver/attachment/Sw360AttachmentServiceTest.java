@@ -16,6 +16,7 @@ import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
+import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.core.ThriftServiceProvider;
 import org.junit.Before;
@@ -35,6 +36,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
@@ -133,6 +135,21 @@ public class Sw360AttachmentServiceTest {
         Set<Attachment> filtered = attachmentService.filterAttachmentsToRemove(owner, allAttachments,
                 Arrays.asList(attachmentId(1), attachmentId(2)));
         assertThat(filtered).containsOnly(createAttachment(2));
+    }
+
+    @Test
+    public void testFilterAttachmentsToRemoveEvaluatesCheckStatus() throws TException {
+        Source owner = createSource();
+        Attachment attachment1 = createAttachment(1);
+        Attachment attachment2 = createAttachment(2);
+        attachment2.setCheckStatus(CheckStatus.ACCEPTED);
+        Set<Attachment> attachments = new HashSet<>(Arrays.asList(attachment1, attachment2));
+        when(thriftService.getAttachmentUsages(any(), anyString(), any()))
+                .thenReturn(Collections.emptyList());
+
+        Set<Attachment> filtered = attachmentService.filterAttachmentsToRemove(owner, attachments,
+                Arrays.asList(attachmentId(1), attachmentId(2)));
+        assertThat(filtered).containsOnly(attachment1);
     }
 
     @Test

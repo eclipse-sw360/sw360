@@ -52,6 +52,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -101,9 +102,9 @@ public class Sw360AttachmentService {
      * attachments operation. This method can be called by controllers to
      * handle a request to delete attachments. For each attachment to be
      * deleted, it checks whether all criteria are fulfilled: The attachment
-     * must belong to the given owner, and it must not be in use by a project.
-     * The resulting set contains all the attachments that are safe to be
-     * removed.
+     * must belong to the given owner, it must not be in use by a project, and
+     * its checked status must not be ACCEPTED. The resulting set contains all
+     * the attachments that are safe to be removed.
      *
      * @param owner          the {@code Source} referencing the attachment owner
      * @param allAttachments the full set of attachments of the owner
@@ -117,13 +118,20 @@ public class Sw360AttachmentService {
         AttachmentService.Iface attachmentService = getThriftAttachmentClient();
 
         return idsToDelete.stream()
-                .filter(knownAttachmentIds::containsKey)
-                .filter(id -> canDeleteAttachment(attachmentService, owner, id))
                 .map(knownAttachmentIds::get)
+                .filter(Objects::nonNull)
+                .filter(attachment -> canDeleteAttachment(attachmentService, owner, attachment))
                 .collect(Collectors.toSet());
     }
 
-    private static boolean canDeleteAttachment(AttachmentService.Iface attachmentService, Source owner, String id) {
+    private static boolean canDeleteAttachment(AttachmentService.Iface attachmentService, Source owner,
+                                               Attachment attachment) {
+        String id = attachment.getAttachmentContentId();
+        if (attachment.getCheckStatus() == CheckStatus.ACCEPTED) {
+            log.warn("Attachment " + id + " must not be deleted as it is in status checked.");
+            return false;
+        }
+
         try {
             List<AttachmentUsage> usages = attachmentService.getAttachmentUsages(owner, id, null);
             if (usages.stream().anyMatch(usage -> usage.usedBy.isSetProjectId())) {
