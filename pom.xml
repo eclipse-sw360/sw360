@@ -63,6 +63,7 @@
         <junit-dataprovider.version>1.12.0</junit-dataprovider.version>
 
         <junit.version>4.12</junit.version>
+        <jgiven.version>0.17.0</jgiven.version>
         <hamcrest.version>1.3</hamcrest.version>
         <mockito.version>1.10.19</mockito.version>
         <project-lombok.version>1.18.2</project-lombok.version>
@@ -70,6 +71,8 @@
         <maven-source-plugin.version>2.4</maven-source-plugin.version>
         <maven-jar-plugin.version>2.4</maven-jar-plugin.version>
 
+        <jakarta-xml-bind.version>2.3.2</jakarta-xml-bind.version>
+        <glassfish-jaxb.version>2.3.2</glassfish-jaxb.version>
         <javax-annotation.version>1.3.2</javax-annotation.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -149,6 +152,20 @@
                 <artifactId>commons-csv</artifactId>
                 <version>1.4</version>
             </dependency>
+            <!-- API, java.xml.bind module: java 11 compatibility -->
+            <dependency>
+                <groupId>jakarta.xml.bind</groupId>
+                <artifactId>jakarta.xml.bind-api</artifactId>
+                <version>${jakarta-xml-bind.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <!-- Runtime, com.sun.xml.bind module: java 11 compatibility  -->
+            <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>jaxb-runtime</artifactId>
+                <version>${glassfish-jaxb.version}</version>
+                <scope>test</scope>
+            </dependency>
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
@@ -182,7 +199,7 @@
             <dependency>
                 <groupId>com.tngtech.jgiven</groupId>
                 <artifactId>jgiven-junit</artifactId>
-                <version>0.15.1</version>
+                <version>${jgiven.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -200,7 +217,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.7.2.201409121644</version>
+                    <version>0.8.4</version>
                     <executions>
                         <execution>
                             <goals>
