@@ -64,8 +64,8 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="requestedClearingDate" class="mandatory"><liferay-ui:message key="requested.clearing.date" />:</label>
-                            <input class="datepicker form-control" id="requestedClearingDate" type="text" pattern="\d{4}-\d{2}-\d{2}" placeholder="<liferay-ui:message key='requested.clearing.date.yyyy.mm.dd' />" required/>
+                            <label for="requestedClearingDate" class="mandatory"><liferay-ui:message key="preferred.clearing.date" />:</label>
+                            <input class="datepicker form-control" id="requestedClearingDate" type="text" pattern="\d{4}-\d{2}-\d{2}" placeholder="<liferay-ui:message key='preferred.clearing.date.yyyy.mm.dd' />" required/>
                             <div class="invalid-feedback">
                                 <liferay-ui:message key="date.should.be.in.valid.format" /> & <liferay-ui:message key="greater.than.7.days.from.today" />
                             </div>
@@ -108,7 +108,11 @@
                                 <td><span data-name="requesterComment"></span></td>
                             </tr>
                             <tr>
-                                <th><liferay-ui:message key="requested.clearing.date" />:</th>
+                                <th><liferay-ui:message key="created.on" />:</th>
+                                <td><span data-name="submittedOn"></span></td>
+                            </tr>
+                            <tr>
+                                <th><liferay-ui:message key="preferred.clearing.date" />:</th>
                                 <td><span data-name="requestedDate"></span></td>
                             </tr>
                             <tr>
@@ -316,7 +320,7 @@
                             clearingTeam: resultData.clearingTeam,
                             agreedDate: resultData.agreedClearingDate,
                             status: resultData.clearingState,
-                            submittedOn: resultData.timestamp,
+                            submittedOn: render.renderTimestamp(resultData.timestamp),
                         }, undefined, undefined, undefined, true);
                     }
                 },

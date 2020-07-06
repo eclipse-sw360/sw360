@@ -171,6 +171,11 @@ define('utils/render', [
         }
     }
 
+    function renderTimeToReadableFormat(timeInSeconds) {
+        var date = new Date(Number(timeInSeconds));
+        return date.toISOString().substring(0,10);
+    }
+
     return {
 		linkTo: renderLinkTo,
 		userEmail: renderUserEmail,
@@ -179,6 +184,7 @@ define('utils/render', [
 		renderExpandableUrls: renderExpandableUrls,
 		toggleExpandableList: toggleExpandableList,
 		toggleChildRow: toggleChildRow,
-		toggleAllChildRows: toggleAllChildRows
+		toggleAllChildRows: toggleAllChildRows,
+		renderTimestamp: renderTimeToReadableFormat
 	};
 });

@@ -11,6 +11,8 @@ package org.eclipse.sw360.portal.portlets.moderation;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.google.common.collect.Lists;
+import com.liferay.portal.kernel.json.JSONArray;
+import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Organization;
@@ -45,8 +47,10 @@ import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.eclipse.sw360.portal.common.ChangeLogsPortletUtils;
 import org.eclipse.sw360.portal.common.ErrorMessages;
+import org.eclipse.sw360.portal.common.JsonHelpers;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.common.PortletUtils;
+import org.eclipse.sw360.portal.common.ThriftJsonSerializer;
 import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
 import org.eclipse.sw360.portal.portlets.FossologyAwarePortlet;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
@@ -62,6 +66,8 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.liferay.portal.kernel.json.JSONFactoryUtil.createJSONArray;
+import static com.liferay.portal.kernel.json.JSONFactoryUtil.createJSONObject;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
@@ -98,6 +104,8 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             serveDeleteModerationRequest(request, response);
         } else if (PortalConstants.ADD_COMMENT.equals(action)) {
             addCommentToClearingRequest(request, response);
+        } else if (PortalConstants.LOAD_PROJECT_INFO.equals(action)) {
+            getProjectDetailsForCR(request, response);
         } else if (isGenericAction(action)) {
             dealWithGenericAction(request, response, action);
         } else if (PortalConstants.LOAD_CHANGE_LOGS.equals(action) || PortalConstants.VIEW_CHANGE_LOGS.equals(action)) {
@@ -119,6 +127,53 @@ public class ModerationPortlet extends FossologyAwarePortlet {
         RequestStatus requestStatus = ModerationPortletUtils.addCommentToClearingRequest(request, log);
         ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         serveRequestStatus(request, response, requestStatus, LanguageUtil.get(resourceBundle,"error.adding.comment.to.clearing.request"), log);
+    }
+
+    private void getProjectDetailsForCR(ResourceRequest request, ResourceResponse response) throws PortletException, IOException {
+        User user = UserCacheHolder.getUserFromRequest(request);
+        List<Project> projects;
+        String ids[] = request.getParameterValues("projectIds[]");
+        if (ids == null || ids.length == 0) {
+            JSONArray jsonResponse = createJSONArray();
+            writeJSON(request, response, jsonResponse);
+        } else {
+            ProjectService.Iface client = thriftClients.makeProjectClient();
+            try {
+                projects = client.getProjectsById(Arrays.asList(ids), user);
+            } catch (TException e) {
+                log.error("Could not fetch project summary from backend!", e);
+                projects = Collections.emptyList();
+            }
+
+            projects = getWithFilledClearingStateSummary(client, projects, user);
+
+            JSONArray jsonResponse = createJSONArray();
+            ThriftJsonSerializer thriftJsonSerializer = new ThriftJsonSerializer();
+            for (Project project : projects) {
+                try {
+                    JSONObject row = createJSONObject();
+                    row.put("id", project.getId());
+                    row.put("crId", project.getClearingRequestId());
+                    row.put("name", SW360Utils.printName(project));
+                    row.put("clearing", JsonHelpers.toJson(project.getReleaseClearingStateSummary(), thriftJsonSerializer));
+                    String babl = project.getAdditionalData().get("BA BL");
+                    row.put("bu", CommonUtils.isNotNullEmptyOrWhitespace(babl) ? babl : CommonUtils.nullToEmptyString(project.getBusinessUnit()));
+                    jsonResponse.put(row);
+                } catch (JSONException e) {
+                    log.error("cannot serialize json", e);
+                }
+            }
+            writeJSON(request, response, jsonResponse);
+        }
+    }
+
+    private List<Project> getWithFilledClearingStateSummary(ProjectService.Iface client, List<Project> projects, User user) {
+        try {
+            return client.fillClearingStateSummary(projects, user);
+        } catch (TException e) {
+            log.error("Could not get summary of release clearing states for projects!", e);
+            return projects;
+        }
     }
 
     private void removeMeFromModerators(ResourceRequest request, ResourceResponse response){
@@ -225,7 +280,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             if (CommonUtils.isNotNullEmptyOrWhitespace(clearingRequest.getProjectId()) ) {
                 ProjectService.Iface projectClient = thriftClients.makeProjectClient();
                 Project project = projectClient.getProjectById(clearingRequest.getProjectId(), UserCacheHolder.getUserFromRequest(request));
-                request.setAttribute(PROJECT, SW360Utils.printName(project));
+                request.setAttribute(PROJECT, project);
                 request.setAttribute(WRITE_ACCESS_USER, makePermission(project, user).isActionAllowed(RequestedAction.WRITE));
             }
             addClearingBreadcrumb(request, response, clearingId);
