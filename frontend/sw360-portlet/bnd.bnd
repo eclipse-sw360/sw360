@@ -61,6 +61,7 @@ Import-Package: \
 	org.apache.commons.csv.*, \
 	org.apache.commons.lang.*, \
 	org.apache.logging.log4j, \
+	org.apache.log4j, \
 	org.apache.thrift.*, \
 	org.eclipse.sw360.commonIO.*, \
 	org.eclipse.sw360.datahandler.*, \
