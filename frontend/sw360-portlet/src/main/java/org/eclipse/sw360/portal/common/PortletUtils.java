@@ -68,6 +68,7 @@ public class PortletUtils {
     private static final Logger LOGGER = Logger.getLogger(PortletUtils.class);
     private static final String TEMPLATE_FILE = "/welcomePageGuideline.html";
     private static ChangeLogsPortletUtils changeLogsPortletUtils = null;
+    private static ObjectMapper objectMapper = null;
 
     private PortletUtils() {
         // Utility class with only static functions
@@ -382,8 +383,7 @@ public class PortletUtils {
                                             .findFirst()
                                             .orElse("");
                                 }
-                                ObjectMapper mapper = new ObjectMapper();
-                                return mapper.writeValueAsString(e.getValue());
+                                return getObjectMapper().writeValueAsString(e.getValue());
                             } catch (JsonProcessingException ex) {
                                 return e.getValue().stream()
                                         .findFirst()
@@ -510,5 +510,12 @@ public class PortletUtils {
             changeLogsPortletUtils = new ChangeLogsPortletUtils(clients);
         }
         return changeLogsPortletUtils;
+    }
+
+    public static ObjectMapper getObjectMapper() {
+        if (objectMapper == null) {
+            objectMapper = new ObjectMapper();
+        }
+        return objectMapper;
     }
 }
