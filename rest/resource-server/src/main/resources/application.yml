@@ -15,12 +15,18 @@ server:
 management:
   security:
     enabled: false
+  #context-path: /rest
 #  health:
 #    default:
 #      enabled: false
 
 endpoints:
+  enabled: false
+  info:
+    enabled: true
+    sensitive: false
   health:
+    enabled: true
     sensitive: false
 
 spring:
