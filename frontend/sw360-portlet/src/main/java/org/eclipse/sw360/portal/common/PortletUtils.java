@@ -67,8 +67,8 @@ public class PortletUtils {
 
     private static final Logger LOGGER = Logger.getLogger(PortletUtils.class);
     private static final String TEMPLATE_FILE = "/welcomePageGuideline.html";
+    private static final ObjectMapper objectMapper = new ObjectMapper();
     private static ChangeLogsPortletUtils changeLogsPortletUtils = null;
-    private static ObjectMapper objectMapper = null;
 
     private PortletUtils() {
         // Utility class with only static functions
@@ -513,9 +513,6 @@ public class PortletUtils {
     }
 
     public static ObjectMapper getObjectMapper() {
-        if (objectMapper == null) {
-            objectMapper = new ObjectMapper();
-        }
         return objectMapper;
     }
 }
