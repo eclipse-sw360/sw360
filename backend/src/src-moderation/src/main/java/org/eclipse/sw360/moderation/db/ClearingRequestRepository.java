@@ -10,7 +10,6 @@
 
 package org.eclipse.sw360.moderation.db;
 
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -18,7 +17,6 @@ import java.util.Set;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
-import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.ektorp.support.View;
 

@@ -163,7 +163,6 @@ class JacksonCustomizations {
                 "setAdditionalData",
                 "setLinkedObligationId",
                 "linkedObligationId",
-                "clearingRequestId",
                 "setClearingRequestId",
                 "todosIterator"
         })
@@ -202,6 +201,10 @@ class JacksonCustomizations {
             @Override
             @JsonProperty(access = Access.WRITE_ONLY)
             abstract public String getLeadArchitect();
+
+            @Override
+            @JsonProperty(access = Access.READ_ONLY)
+            abstract public String getClearingRequestId();
         }
 
 	static abstract class EmbeddedProjectMixin extends ProjectMixin {
