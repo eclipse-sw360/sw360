@@ -28,12 +28,6 @@
     <tr id="releaseLinkRow${uuid}" >
         <td>
             <div class="form-group">
-                <input id="releaseVendor" type="text" placeholder="<liferay-ui:message key="no.vendor" />" class="form-control"
-                    value="<sw360:out value="${releaseLink.vendor}"/>" readonly/>
-            </div>
-        </td>
-        <td>
-            <div class="form-group">
                 <input type="hidden" value="${releaseLink.id}" name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ReleaseLink._Fields.ID%>">
                 <input id="releaseName" type="text" placeholder="<liferay-ui:message key="enter.release" />" class="form-control"
                     value="<sw360:out value="${releaseLink.name}"/>" readonly/>
