@@ -1,8 +1,43 @@
-# Changelog
+characters# Changelog
 
 This is the changelog file of the sw360 project. It starts with the first release being provided at eclipse/sw360. For older releases, please refer to the first project location:
 
 https://github.com/sw360/sw360portal/releases
+
+## sw360-10.0.0-M1
+
+Again, another data model change, new major version. Please see the script `018_remove_unwanted_field_from_clearing_request.py` in the directory `scripts/migrations` to change the data model accordingly. The script is necessary for existing clearing request records; not executing the script will lead to malfunction of the sw360 application.
+
+The update improves also runtime stability, because the escaping when displaying quotes has been improved: previously, special characters such as quotes have compromised the rendering of the page. Now, the content is rendered in a correct way.
+
+Further improvements include:
+
+* The ability to split releases from a component and assign this release to another component. This is the opposite case of merging components. On one hand it can undo mistaken component merges. On the other hand, user input, creating a release at the wrong component, can be corrected now.
+* a new REST endpoint to request all details from a larger list in one REST call.
+* a new REST endpoint to delete attachments from the REST API
+
+More features include the ability to search for IDs when linking releases to projects or enhancements to the clearing request structures.
+
+### Features
+
+* `ef6170e1` feat(attachments): Evaluate check status before deletion.
+* `ea6d31ad` feat(CRUI): Modifications in Clearing Request table in moderation tab.
+* `90dbdb52` feat(attachments): Updated REST documentation.
+* `220f991f` feat(attachments): ComponentController can now delete attachments.
+* `5f504aef` feat(attachments): ReleaseController now supports deleting attachments.
+* `2930cea5` feat(attachments): Added function to prepare deleting attachments.
+* `8adb9147` feat(attachments): Implemented ThriftAttachmentServiceProvider.
+* `daa3b3fb` feat(attachments): Introduced ThriftServiceProvider interface.
+* `5783cc3b` feat(rest): Whitelisting project 'state' and 'phaseOutSince' field.
+* `fc0c7e43` feat(ui/search): Search using rel. id and added link to the release in the search result.
+* `2ec0e6d9` feat(REST): Added new allDetails Parameter to List Projects and List Releases API to fetch records with all details.
+* `c0bf7132` feat(CRView): Clearing Request Comments enhancements.
+* `8528ecfe` feat(SplitComponentUI): Move Component data like releases and attachments from Source Component to Target Component.
+
+### Corrections
+
+* `9c01170b` fix(escapeXML): Added missing escapeXML, to prevent js script execution and rendering break due to single or double quotes, Added missing escapeXml to merge-split Component, merge releases, license details view, list-details-edit view of project, component and release.
+* `887533ba` fix(ProjectModeration): Fixed isWriteActionAllowedOnProject check for project update, Fixed incorrect value for Visibility in Edit Project view which has existing moderation request.
 
 ## sw360-9.0.0-M1
 
