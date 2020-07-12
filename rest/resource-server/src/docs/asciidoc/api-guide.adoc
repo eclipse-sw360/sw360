@@ -27,7 +27,7 @@ Documentation; Version {project-version}
 
 [[overview-introduction]]
 === Introduction
-This guide provides you with a detailed description how to use the RESTful sw360 services.
+This guide provides you with a detailed description how to use the RESTful sw360 services. For actual changes and additions to the REST API, please refer to the change log of your deployed sw360 version https://github.com/eclipse/sw360/blob/master/CHANGELOG.md
 
 [[overview-http-verbs]]
 === HTTP verbs
