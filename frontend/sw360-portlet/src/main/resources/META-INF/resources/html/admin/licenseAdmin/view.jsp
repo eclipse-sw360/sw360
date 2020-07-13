@@ -115,9 +115,9 @@ require(['jquery', 'modules/dialog', 'modules/validation'], function($, dialog, 
                 callback();
             }).done(function (data) {
                 if (data.result == 'SUCCESS') {
-                    $dialog.success(<liferay-ui:message key="i.imported.x.out.of.y.spdx.licenses.z" />, true);
+                    $dialog.success('<liferay-ui:message key="i.imported.x.out.of.y.spdx.licenses.z" />', true);
                 }else {
-                    $dialog.alert("<liferay-ui:message key="i.could.not.import.all.spdx.license.information" />");
+                    $dialog.alert('<liferay-ui:message key="i.could.not.import.all.spdx.license.information" />');
                 }
             }).fail(function(){
                 $dialog.alert('<liferay-ui:message key="something.went.wrong" />');
@@ -150,9 +150,9 @@ require(['jquery', 'modules/dialog', 'modules/validation'], function($, dialog, 
                callback();
             }).done(function (data) {
                 if (data.result == 'SUCCESS') {
-                    $dialog.success("<liferay-ui:message key="i.deleted.x.out.of.y.documents.in.the.database" />", true);
+                    $dialog.success('<liferay-ui:message key="i.deleted.x.out.of.y.documents.in.the.database" />', true);
                 }else {
-                    $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.license.information" />");
+                    $dialog.alert('<liferay-ui:message key="i.could.not.delete.the.license.information" />');
                 }
             }).fail(function(){
                 $dialog.alert('<liferay-ui:message key="something.went.wrong" />');
