@@ -1,4 +1,4 @@
-characters# Changelog
+# Changelog
 
 This is the changelog file of the sw360 project. It starts with the first release being provided at eclipse/sw360. For older releases, please refer to the first project location:
 
