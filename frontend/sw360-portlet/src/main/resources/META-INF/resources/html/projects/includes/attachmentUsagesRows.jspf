@@ -77,10 +77,7 @@
         <core_rt:forEach items="${releaseLink.attachments}" var="attachment" varStatus="attachmentloop">
             <tr data-tt-id="${releaseLink.nodeId}_${attachment.attachmentContentId}" data-tt-branch="false"
                 data-tt-parent-id="${releaseLink.nodeId}"
-                title="<liferay-ui:message key="created.on" />: ${attachment.createdOn} &#10; Status: ${attachment.checkStatus}
-                <core_rt:if test="${attachment.checkStatus != 'NOTCHECKED'}">
-			&#10; Checked By: ${attachment.checkedBy} &#10; Checked On: ${attachment.checkedOn}
-                </core_rt:if>"
+                title="<liferay-ui:message key="created.on" />: ${attachment.createdOn}&#10;Status: ${attachment.checkStatus} <core_rt:if test="${attachment.checkStatus != 'NOTCHECKED'}">&#10;Checked By: ${attachment.checkedBy}&#10;Checked On: ${attachment.checkedOn}</core_rt:if>"
             >
                 <td>
                     <sw360:out value="${attachment.filename}" maxChar="60"/>
