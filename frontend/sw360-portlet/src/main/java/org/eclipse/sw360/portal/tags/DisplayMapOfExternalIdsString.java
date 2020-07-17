@@ -11,6 +11,7 @@
 package org.eclipse.sw360.portal.tags;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang.StringEscapeUtils;
 
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.SimpleTagSupport;
@@ -69,9 +70,9 @@ public class DisplayMapOfExternalIdsString extends SimpleTagSupport {
         }
         externalIdValueSet.forEach( e ->
                 sb.append("<li><span class=\"mapDisplayChildItemLeft\">")
-                  .append(externalIdKey)
+                  .append(StringEscapeUtils.escapeXml(externalIdKey))
                   .append("</span><span class=\"mapDisplayChildItemRight\"> ")
-                  .append(e)
+                  .append(StringEscapeUtils.escapeXml(e))
                   .append("</span></li>")
         );
         return sb.toString();

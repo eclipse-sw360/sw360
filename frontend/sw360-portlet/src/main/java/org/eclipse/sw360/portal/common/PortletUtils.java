@@ -378,7 +378,7 @@ public class PortletUtils {
                 .collect(Collectors.toMap(Map.Entry::getKey,
                         e -> {
                             try {
-                                if(!isNotEmpty(e.getValue()) && e.getValue().size() == 1) {
+                                if(isNotEmpty(e.getValue()) && e.getValue().size() == 1) {
                                     return e.getValue().stream()
                                             .findFirst()
                                             .orElse("");
