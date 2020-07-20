@@ -124,6 +124,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         Map<String, String> externalIds = new HashMap<>();
         externalIds.put("portal-id", "13319-XX3");
         externalIds.put("project-ext", "515432");
+        externalIds.put("ws-project-token", "[\"490389ac-0269-4719-9cbf-fb5e299c8415\",\"3892f1db-4361-4e83-a89d-d28a262d65b9\"]");
 
         Map<String, String> additionalData = new HashMap<>();
         additionalData.put("OSPO-Comment", "Some Comment");
@@ -414,7 +415,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("_embedded.sw360:projects[]domain").description("The domain, possible values are:"  + Sw360ResourceServer.DOMAIN.toString()),
                                 fieldWithPath("_embedded.sw360:projects[]visibility").description("The project visibility, possible values are: " + Arrays.asList(Visibility.values())),
                                 fieldWithPath("_embedded.sw360:projects[]businessUnit").description("The business unit this project belongs to"),
-                                fieldWithPath("_embedded.sw360:projects[]externalIds").description("When projects are imported from other tools, the external ids can be stored here"),
+                                fieldWithPath("_embedded.sw360:projects[]externalIds").description("When projects are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
                                 fieldWithPath("_embedded.sw360:projects[]additionalData").description("A place to store additional data used by external tools"),
                                 fieldWithPath("_embedded.sw360:projects[]ownerAccountingUnit").description("The owner accounting unit of the project"),
                                 fieldWithPath("_embedded.sw360:projects[]ownerGroup").description("The owner group of the project"),
@@ -472,7 +473,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("domain").description("The domain, possible values are:"  + Sw360ResourceServer.DOMAIN.toString()),
                                 fieldWithPath("visibility").description("The project visibility, possible values are: " + Arrays.asList(Visibility.values())),
                                 fieldWithPath("businessUnit").description("The business unit this project belongs to"),
-                                fieldWithPath("externalIds").description("When projects are imported from other tools, the external ids can be stored here"),
+                                fieldWithPath("externalIds").description("When projects are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
                                 fieldWithPath("additionalData").description("A place to store additional data used by external tools"),
                                 fieldWithPath("ownerAccountingUnit").description("The owner accounting unit of the project"),
                                 fieldWithPath("ownerGroup").description("The owner group of the project"),
@@ -615,7 +616,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         responseFields(
                                 fieldWithPath("_embedded.sw360:projects[]name").description("The name of the project"),
                                 fieldWithPath("_embedded.sw360:projects[]version").description("The project version"),
-                                fieldWithPath("_embedded.sw360:projects[]externalIds").description("External Ids of the project"),
+                                fieldWithPath("_embedded.sw360:projects[]externalIds").description("External Ids of the project. Return as 'Single String' when single value, or 'Array of String' when multi-values"),
                                 fieldWithPath("_embedded.sw360:projects[]projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
                                 fieldWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
@@ -800,7 +801,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 + Arrays.asList(Visibility.values())),
                         fieldWithPath("businessUnit").description("The business unit this project belongs to"),
                         fieldWithPath("externalIds").description(
-                                "When projects are imported from other tools, the external ids can be stored here"),
+                                "When projects are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
                         fieldWithPath("additionalData").description("A place to store additional data used by external tools"),
                         fieldWithPath("ownerAccountingUnit")
                                 .description("The owner accounting unit of the project"),
