@@ -18,7 +18,7 @@
 
 import time
 import couchdb
-import jsonß
+import json
 
 # ---------------------------------------
 # constants
