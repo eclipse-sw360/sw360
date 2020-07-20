@@ -213,39 +213,34 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return makePermission(project, user).isActionAllowed(RequestedAction.WRITE);
     }
 
-    public RequestStatus updateProjectForClearingRequestUpdate(ClearingRequest clearingRequest, String projectUrl, User user) throws SW360Exception {
+    public RequestStatus sendEmailForClearingRequestUpdate(ClearingRequest clearingRequest, String projectUrl, User user) throws SW360Exception {
         Project project = getProjectById(clearingRequest.getProjectId(), user);
         if (CommonUtils.isNotNullEmptyOrWhitespace(project.getClearingRequestId())) {
             switch (clearingRequest.getClearingState()) {
             case IN_PROGRESS:
             case IN_QUEUE:
             case ACCEPTED:
-                project.setClearingState(ProjectClearingState.IN_PROGRESS);
                 sendMailForUpdatedCR(project, projectUrl, clearingRequest, user);
                 break;
 
             case CLOSED:
-                project.setClearingState(ProjectClearingState.CLOSED);
                 sendMailForClosedOrRejectedCR(project, clearingRequest, user, true);
                 break;
 
             case NEW:
-                project.setClearingState(ProjectClearingState.OPEN);
                 sendMailForUpdatedCR(project, projectUrl, clearingRequest, user);
                 break;
 
             case REJECTED:
-                project.setClearingState(ProjectClearingState.OPEN);
                 sendMailForClosedOrRejectedCR(project, clearingRequest, user, false);
                 break;
 
             default:
                 break;
             }
-            repository.update(project);
             return RequestStatus.SUCCESS;
         }
-        log.error("Failed to update project for change in clearing request, projectId: " + project.getId());
+        log.error("Failed to send email for change in clearing request, projectId: " + project.getId());
         return RequestStatus.FAILURE;
     }
 
@@ -380,7 +375,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return RequestStatus.FAILED_SANITY_CHECK;
         } else if (!isDependenciesExists(project, user)) {
             return RequestStatus.INVALID_INPUT;
-        } else if (isWriteActionAllowedOnProject(project, user)) {
+        } else if (isWriteActionAllowedOnProject(actual, user)) {
             copyImmutableFields(project,actual);
             project.setAttachments( getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), project.getAttachments()) );
             setReleaseRelations(project, user, actual);
@@ -811,6 +806,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         List<ModerationRequest> moderationRequestsForDocumentId = moderator.getModerationRequestsForDocumentId(id);
 
         Project project = getProjectById(id,user);
+        Visibility actualVisbility = project.getVisbility();
         DocumentState documentState;
         if (moderationRequestsForDocumentId.isEmpty()) {
             documentState = CommonUtils.getOriginalDocumentState();
@@ -823,6 +819,12 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 project = moderator.updateProjectFromModerationRequest(project,
                         moderationRequest.getProjectAdditions(),
                         moderationRequest.getProjectDeletions());
+
+                if (moderationRequest.getProjectAdditions() != null && moderationRequest.getProjectDeletions() != null
+                        && moderationRequest.getProjectAdditions().getVisbility() == moderationRequest
+                                .getProjectDeletions().getVisbility()) {
+                    project.setVisbility(actualVisbility);
+                }
                 documentState = CommonUtils.getModeratedDocumentState(moderationRequest);
             } else {
                 documentState = new DocumentState().setIsOriginalDocument(true).setModerationState(moderationRequestsForDocumentId.get(0).getModerationState());

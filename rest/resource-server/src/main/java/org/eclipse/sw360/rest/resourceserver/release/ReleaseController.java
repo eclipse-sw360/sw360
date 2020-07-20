@@ -17,6 +17,7 @@ import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -46,6 +47,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.google.common.collect.ImmutableMap;
+
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
@@ -57,6 +60,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
@@ -70,7 +74,12 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
     public static final String RELEASES_URL = "/releases";
     private static final Logger log = Logger.getLogger(ReleaseController.class);
     private static final Map<String, ReentrantLock> mapOfLocks = new HashMap<String, ReentrantLock>();
-
+    private static final ImmutableMap<Release._Fields,String> mapOfFieldsTobeEmbedded = ImmutableMap.of(
+            Release._Fields.MODERATORS, "sw360:moderators",
+            Release._Fields.ATTACHMENTS, "sw360:attachments",
+            Release._Fields.COTS_DETAILS, "sw360:cotsDetails",
+            Release._Fields.RELEASE_ID_TO_RELATIONSHIP,"sw360:releaseIdToRelationship",
+            Release._Fields.CLEARING_INFORMATION, "sw360:clearingInformation");
     @NonNull
     private Sw360ReleaseService releaseService;
 
@@ -84,7 +93,8 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
     public ResponseEntity<Resources<Resource>> getReleasesForUser(
             @RequestParam(value = "sha1", required = false) String sha1,
             @RequestParam(value = "fields", required = false) List<String> fields,
-            @RequestParam(value = "name", required = false) String name) throws TException {
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "allDetails", required = false) boolean allDetails) throws TException {
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<Release> sw360Releases = new ArrayList<>();
@@ -101,8 +111,14 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
 
         List<Resource> releaseResources = new ArrayList<>();
         for (Release sw360Release : sw360Releases) {
-            Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(sw360Release, fields);
-            Resource<Release> releaseResource = new Resource<>(embeddedRelease);
+            Resource<Release> releaseResource = null;
+            if (!allDetails) {
+                Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(sw360Release, fields);
+                releaseResource = new Resource<>(embeddedRelease);
+            } else {
+                releaseResource = createHalReleaseResourceWithAllDetails(sw360Release);
+            }
+
             releaseResources.add(releaseResource);
         }
 
@@ -282,6 +298,25 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
         attachmentService.downloadAttachmentWithContext(release, attachmentId, response, sw360User);
     }
 
+    @DeleteMapping(RELEASES_URL + "/{releaseId}/attachments/{attachmentIds}")
+    public ResponseEntity<HalResource<Release>> deleteAttachmentsFromRelease(
+            @PathVariable("releaseId") String releaseId,
+            @PathVariable("attachmentIds") List<String> attachmentIds) throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        Release release = releaseService.getReleaseForUserById(releaseId, user);
+
+        Set<Attachment> attachmentsToDelete = attachmentService.filterAttachmentsToRemove(Source.releaseId(releaseId),
+                release.getAttachments(), attachmentIds);
+        if (attachmentsToDelete.isEmpty()) {
+            // let the whole action fail if nothing can be deleted
+            throw new RuntimeException("Could not delete attachments " + attachmentIds + " from release " + releaseId);
+        }
+        log.debug("Deleting the following attachments from release " + releaseId + ": " + attachmentsToDelete);
+        release.getAttachments().removeAll(attachmentsToDelete);
+        releaseService.updateRelease(release, user);
+        return new ResponseEntity<>(createHalReleaseResource(release, true), HttpStatus.OK);
+    }
+
     @RequestMapping(value = RELEASES_URL + "/{id}/checkFossologyProcessStatus", method = RequestMethod.GET)
     public ResponseEntity<Map<String, Object>> checkFossologyProcessStatus(@PathVariable("id") String releaseId)
             throws TException {
@@ -371,6 +406,20 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
                 restControllerHelper.addEmbeddedLicenses(halRelease, release.getMainLicenseIds());
                 release.setMainLicenseIds(null);
             }
+        }
+        return halRelease;
+    }
+
+    private HalResource<Release> createHalReleaseResourceWithAllDetails(Release release) {
+        HalResource<Release> halRelease = new HalResource<>(release);
+        Link componentLink = linkTo(ReleaseController.class)
+                .slash("api" + ComponentController.COMPONENTS_URL + "/" + release.getComponentId())
+                .withRel("component");
+        halRelease.add(componentLink);
+        release.setComponentId(null);
+
+        for (Entry<Release._Fields, String> field : mapOfFieldsTobeEmbedded.entrySet()) {
+            restControllerHelper.addEmbeddedFields(field.getValue(), release.getFieldValue(field.getKey()), halRelease);
         }
         return halRelease;
     }

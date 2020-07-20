@@ -210,7 +210,7 @@ public class TagUtils {
                     StringBuilder sb = new StringBuilder();
                     sb.append("<ul>");
                     for (Object o : ((List<Object>) fieldValue)) {
-                        sb.append("<li>" + o.toString() + "</li>");
+                        sb.append("<li>" + StringEscapeUtils.escapeXml(o.toString()) + "</li>");
                     }
                     sb.append("</ul>");
                     fieldDisplay = sb.toString();
@@ -221,7 +221,7 @@ public class TagUtils {
                     StringBuilder sb = new StringBuilder();
                     sb.append("<ul>");
                     for (Object o : ((Set<Object>) fieldValue)) {
-                        sb.append("<li>" + o.toString() + "</li>");
+                        sb.append("<li>" + StringEscapeUtils.escapeXml(o.toString()) + "</li>");
                     }
                     sb.append("</ul>");
                     fieldDisplay = sb.toString();
@@ -236,7 +236,7 @@ public class TagUtils {
                 fieldDisplay = DisplayMap.getMapAsString(stringMapValue);
                 break;
             default:
-                fieldDisplay = fieldValue == null ? "" : fieldValue.toString();
+                fieldDisplay = fieldValue == null ? "" : StringEscapeUtils.escapeXml(fieldValue.toString());
         }
         return fieldDisplay;
     }

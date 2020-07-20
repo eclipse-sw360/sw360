@@ -4,6 +4,81 @@ This is the changelog file of the sw360 project. It starts with the first releas
 
 https://github.com/sw360/sw360portal/releases
 
+## sw360-10.0.0-M1
+
+Again, another data model change, new major version. Please see the script `018_remove_unwanted_field_from_clearing_request.py` in the directory `scripts/migrations` to change the data model accordingly. The script is necessary for existing clearing request records; not executing the script will lead to malfunction of the sw360 application.
+
+The update improves also runtime stability, because the escaping when displaying quotes has been improved: previously, special characters such as quotes have compromised the rendering of the page. Now, the content is rendered in a correct way.
+
+Further improvements include:
+
+* The ability to split releases from a component and assign this release to another component. This is the opposite case of merging components. On one hand it can undo mistaken component merges. On the other hand, user input, creating a release at the wrong component, can be corrected now.
+* a new REST endpoint to request all details from a larger list in one REST call.
+* a new REST endpoint to delete attachments from the REST API
+
+More features include the ability to search for IDs when linking releases to projects or enhancements to the clearing request structures.
+
+### Features
+
+* `ef6170e1` feat(attachments): Evaluate check status before deletion.
+* `ea6d31ad` feat(CRUI): Modifications in Clearing Request table in moderation tab.
+* `90dbdb52` feat(attachments): Updated REST documentation.
+* `220f991f` feat(attachments): ComponentController can now delete attachments.
+* `5f504aef` feat(attachments): ReleaseController now supports deleting attachments.
+* `2930cea5` feat(attachments): Added function to prepare deleting attachments.
+* `8adb9147` feat(attachments): Implemented ThriftAttachmentServiceProvider.
+* `daa3b3fb` feat(attachments): Introduced ThriftServiceProvider interface.
+* `5783cc3b` feat(rest): Whitelisting project 'state' and 'phaseOutSince' field.
+* `fc0c7e43` feat(ui/search): Search using rel. id and added link to the release in the search result.
+* `2ec0e6d9` feat(REST): Added new allDetails Parameter to List Projects and List Releases API to fetch records with all details.
+* `c0bf7132` feat(CRView): Clearing Request Comments enhancements.
+* `8528ecfe` feat(SplitComponentUI): Move Component data like releases and attachments from Source Component to Target Component.
+
+### Corrections
+
+* `9c01170b` fix(escapeXML): Added missing escapeXML, to prevent js script execution and rendering break due to single or double quotes, Added missing escapeXml to merge-split Component, merge releases, license details view, list-details-edit view of project, component and release.
+* `887533ba` fix(ProjectModeration): Fixed isWriteActionAllowedOnProject check for project update, Fixed incorrect value for Visibility in Edit Project view which has existing moderation request.
+
+## sw360-9.0.0-M1
+
+This release brings new features which also change the data model. Therefore, a major version step is justified. Major new features are:
+
+* Support for custom field layout using the referring Liferay mechanism, fully transparent with the REST API using additional data fields
+* Changelog for changed data for projects, components and releases
+* Reordered sections in detail view
+* A completely new view *Clearing Status* offering tree and list view
+
+Besides bug fixes and features correct bugs so far. In order to fix a bug with the REST API, note that a migration script should be executed. It corrects a missing value for the status of the release which is also now automatically set when creating releases using the REST API (and not only in the Web user interface).
+
+### Features
+
+* `a2e65103` feat(PreferenceUI): Enabled Email notification for CR
+* `49311164` feat(ProjectUI): Custom Field for Additional data in Project
+* `1d3423cb` feat(ReadmeOss): Filter linked project from ReadmeOss based on selection
+* `03000401` feat(ProjectUI): Unified view of Linked Project and Releases, Clearing status, Linked Release Hierarchy. View includes tree view and list view
+* `89714248` feat: Support custom fields in additionalData group in Component and Release page
+* `04b57fd1` feat(ChangeLogs): Revision history of Document
+
+### Corrections
+
+* `fb09ccee` fix(MigrationScript): Update releases with empty clearingState to default value - NEW_CLEARING
+* `7bbd4235` fix(ClearingStatus): Tree View Release name getting truncated, Sort for Project mainline state and Clearing State in List View fixed , added search filter
+* `4c7b0e72` fix(ClearingStatusView): Fixed uneven button height, console error related to createVulnerabilityTable, takes lot of time to load Clearing status list view for large dataset.
+* `d1c3731f` fix(ChangelogBasicInfoUI): Applied generic style and reordered the metadatas for Basic Info.
+* `78bff1ba` fix(UI): Clearing Request and Obligations fixes
+* `79f5c9d4` fix(mergeComponent): Prevent multiple releases with same name and version for a component, which may occur during merge component
+* `a4b44107` fix: Resolve conflict
+* `cd4cba10` fix(Changelog): Fixed missing fields like componentType in Changelog history
+* `3ee65c9b` fix(REST): Added default value(NEW_CLEARING) for Clearing status while create and update Release
+* `67875856` fix(spreadsheet-export): Project spreadsheet export returns blank spreadsheet
+* `b91b9e2d` fix(ui): Release overview from component details
+* `cd29922a` fix(UI): Clearing Request bug fix and improvements
+
+### Infrastructure
+
+* `79850290` chore(deps): Bump spring-security-core in /frontend/sw360-portlet
+* `e1aabab1` chore(deps-dev): Bump dom4j in /backend/src/src-licenseinfo
+
 ## sw360-8.2.0-M2
 
 Although there are only few commits listed below for this release, the change from 8.1 to 8.2 is huge: sw360 supports now an UI which can be extended with different languages.

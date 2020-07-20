@@ -15,13 +15,13 @@
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.users.RequestedAction" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus" %>
-
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%@ include file="/html/init.jsp" %>
 <%-- the following is needed by liferay to display error messages--%>
 <%@ include file="/html/utils/includes/errorKeyToMessage.jspf"%>
-<liferay-ui:error key="custom_error" message="${cyclicError}" embed="false"/>
+<liferay-ui:error key="custom_error" message="${fn:escapeXml(cyclicError)}" embed="false"/>
 <%-- use require js on this page --%>
 <%@include file="/html/utils/includes/requirejs.jspf" %>
 
@@ -67,7 +67,6 @@
 <c:set var="WRITE" value="<%=RequestedAction.WRITE%>"/>
 <c:set var="DELETE" value="<%=RequestedAction.DELETE%>"/>
 <c:set var="hasWritePermissions" value="${release.permissions[WRITE]}"/>
-
 <%@include file="/html/utils/includes/logError.jspf" %>
 
 <core_rt:if test="${empty attributeNotFoundException}">
@@ -232,7 +231,7 @@
 
 <script>
     require(['jquery', 'components/includes/vendors/searchVendor', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup', 'modules/validation' ], function($, vendorsearch, autocomplete, dialog, listgroup, validation) {
-        document.title = "${component.name} - " + document.title;
+        document.title = $("<span></span>").html("<sw360:out value='${component.name}'/> - " + document.title).text();
 
         listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
 

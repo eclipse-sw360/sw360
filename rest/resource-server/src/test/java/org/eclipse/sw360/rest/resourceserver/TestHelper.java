@@ -20,6 +20,7 @@ import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.Source;
+import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.springframework.http.HttpStatus;
@@ -179,6 +180,14 @@ public class TestHelper {
         attachmentInfos.add(attachmentInfo2);
 
         return attachmentInfos;
+    }
+
+    public static User getTestUser() {
+        User user = new User();
+        user.setId("123456789");
+        user.setEmail("admin@sw360.org");
+        user.setFullname("John Doe");
+        return user;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

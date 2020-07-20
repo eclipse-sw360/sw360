@@ -23,6 +23,7 @@
             <td>
                 <div class="form-check">
                     <input type="checkbox" class="form-check-input" name="<portlet:namespace/>releaseid" value="${entry.id}">
+                    <input type="hidden" value="${entry.componentId}">
                 </div>
             </td>
             <td><sw360:out value="${entry.vendor.fullname}"/></td>

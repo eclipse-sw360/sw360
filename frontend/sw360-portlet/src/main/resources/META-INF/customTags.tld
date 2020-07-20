@@ -258,6 +258,12 @@
             <type>java.lang.String</type>
             <rtexprvalue>true</rtexprvalue>
         </attribute>
+        <attribute>
+            <name>variantToSkip</name>
+            <required>false</required>
+            <type>org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
     </tag>
     <tag>
         <name>DisplayUser</name>

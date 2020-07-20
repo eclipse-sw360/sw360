@@ -120,12 +120,12 @@ public class PortalConstants {
     public static final String CREATE_CLEARING_REQUEST = "create_clearing_request";
     public static final String VIEW_CLEARING_REQUEST = "view_clearing_request";
     public static final String AGREED_CLEARING_DATE = "agreedClearingDate";
-    public static final String CLEARING_TEAM_COMMENT = "clearingTeamComment";
     public static final String PAGENAME_DETAIL_CLEARING_REQUEST = "detailClearingRequest";
     public static final String PAGENAME_EDIT_CLEARING_REQUEST = "editClearingRequest";
     public static final String ADD_COMMENT = "addComment";
     public static final String CLEARING_REQUEST_COMMENT = "clearingRequestComment";
     public static final String RE_OPEN_REQUEST = "reOpenRequest";
+    public static final String LOAD_PROJECT_INFO = "loadProjectInfo";
 
 
     //! Specialized keys for components
@@ -140,10 +140,13 @@ public class PortalConstants {
     public static final String COMPONENT_CATEGORIES;
     public static final String COMPONENT_ROLES;
     public static final String PAGENAME_MERGE_COMPONENT = "mergeComponent";
+    public static final String PAGENAME_SPLIT_COMPONENT = "splitComponent";
     public static final String COMPONENT_SELECTION = "componentSelection";
     public static final String COMPONENT_SOURCE_ID = "componentSourceId";
     public static final String COMPONENT_TARGET_ID = "componentTargetId";
     public static final Set<String> COMPONENT_EXTERNAL_ID_KEYS;
+    public static final String SOURCE_COMPONENT = "srcComponent";
+    public static final String TARGET_COMPONENT = "targetComponent";
 
     //! Specialized keys for releases
     public static final String RELEASE_ID = "releaseId";
@@ -230,6 +233,7 @@ public class PortalConstants {
     public static final String PROJECT_TYPE;
     public static final String EXTENDED_EXCEL_EXPORT = "extendedExcelExport";
     public static final String PROJECT_WITH_SUBPROJECT = "projectWithSubproject";
+    public static final String PREPARE_LICENSEINFO_OBL_TAB = "prepareLicenseinfoOblTab";
     public static final String PROJECT_NOT_FOUND = "projectNotFound";
     public static final String PAGENAME_LICENSE_INFO = "generateLicenseInfo";
     public static final String PAGENAME_SOURCE_CODE_BUNDLE = "generateSourceCodeBundle";

@@ -1184,6 +1184,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         request.setAttribute(PortalConstants.SW360_USER, user);
         request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_PROJECT);
         request.setAttribute(PROJECT_LINK_TABLE_MODE, PROJECT_LINK_TABLE_MODE_LICENSE_INFO);
+        request.setAttribute("onlyClearingReport", request.getParameter(PortalConstants.PREPARE_LICENSEINFO_OBL_TAB));
 
         if (id != null) {
             try {

@@ -504,4 +504,19 @@ public class ComponentHandler implements ComponentService.Iface {
         assertUser(user);
         return handler.importBomFromAttachmentContent(user, attachmentContentId);
     }
+
+    @Override
+    public RequestStatus splitComponent(Component srcComponent, Component targetComponent, User user) throws TException {
+        assertNotNull(srcComponent);
+        assertId(srcComponent.getId());
+        assertNotNull(targetComponent);
+        assertId(targetComponent.getId());
+        assertUser(user);
+        return handler.splitComponent(srcComponent, targetComponent, user);
+    }
+
+    public List<Release> getAllReleasesForUser(User user) throws TException {
+        assertUser(user);
+        return handler.getAllReleases();
+    }
 }

@@ -122,6 +122,19 @@
 										</div>
 									</div>
 								</div>
+								<div class="btn-group" role="group" id="clearingRequest">
+									<button id="createClearingRequestBtn" type="button" class="btn btn-secondary <core_rt:if test="${not empty project.clearingRequestId}">d-none</core_rt:if>"
+									    <core_rt:if test = "${(project.clearingState eq 'CLOSED') || !writeAccessUser}">
+											disabled="disabled"
+										</core_rt:if>
+										>
+										<liferay-ui:message key="create.clearing.request" />
+									</button>
+									<button id="viewClearingRequestBtn" type="button" class="btn btn-secondary <core_rt:if test="${empty project.clearingRequestId}">d-none</core_rt:if>"
+										data-clearing-request-id="${project.clearingRequestId}">
+										<liferay-ui:message key="view.clearing.request" />
+									</button>
+								</div>
 							</div>
 							<div class="list-group-companion" data-belong-to="tab-attachmentUsages">
 								<core_rt:if test="${writeAccessUser}">
@@ -137,13 +150,25 @@
 							</div>
 							<div class="list-group-companion" data-belong-to="tab-Obligations">
 								<core_rt:if test="${isProjectObligationsEnabled and isObligationPresent}">
-									<div class="nav nav-pills justify-content-center bg-light font-weight-bold" id="pills-tab" role="tablist">
-										<a class="nav-item nav-link active" id="pills-obligations-tab" data-toggle="pill" href="#pills-obligationsView" role="tab" aria-controls="pills-obligationsView" aria-selected="true">
-										<liferay-ui:message key="obligations.view" /></a>
-										<a class="nav-item nav-link" id="pills-releases-tab" data-toggle="pill" href="#pills-releasesView" role="tab" aria-controls="pills-releasesView" aria-selected="false">
-										<liferay-ui:message key="release.view" /></a>
-									</div>
+                                <div class="btn-group" role="group">
+								    <div class="nav nav-pills justify-content-center bg-light font-weight-bold" id="pills-tab" role="tablist">
+									    <a class="nav-item nav-link active" id="pills-obligations-tab" data-toggle="pill" href="#pills-obligationsView" role="tab" aria-controls="pills-obligationsView" aria-selected="true">
+								        <liferay-ui:message key="obligations.view" /></a>
+                                        <a class="nav-item nav-link" id="pills-releases-tab" data-toggle="pill" href="#pills-releasesView" role="tab" aria-controls="pills-releasesView" aria-selected="false">
+                                        <liferay-ui:message key="release.view" /></a>
+                                    </div>
+                                </div>
 								</core_rt:if>
+                                <div class="btn-group" role="group" id="downloadLicenseInfoObl">
+                                    <button id="downloadLicenseInfoButton" type="button" data-toggle="dropdown" class="btn btn-primary dropdown-toggle">
+                                        <liferay-ui:message key="create.product.clearing.report" />
+                                        <clay:icon symbol="caret-bottom" />
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a class="dropdown-item" data-type="projectOnly"><liferay-ui:message key="project.only" /></a>
+                                        <a class="dropdown-item" data-type="projectWithSubProject"><liferay-ui:message key="project.with.sub.project" /></a>
+                                    </div>
+                                </div>
 							</div>
 							<div class="list-group-companion" data-belong-to="tab-Vulnerabilities">
 								<div class="btn-group" role="group">
@@ -184,6 +209,7 @@
 		            <div class="tab-content">
 		                <div id="tab-Summary" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Summary'}">active show</core_rt:if>" >
 		                    <%@include file="/html/projects/includes/projects/summary.jspf" %>
+		                    <core_rt:set var="documentName"><sw360:ProjectName project="${project}"/></core_rt:set>
 		                    <%@include file="/html/utils/includes/usingProjectsTable.jspf" %>
 		                    <%@include file="/html/utils/includes/usingComponentsTable.jspf"%>
 		                </div>
@@ -191,7 +217,7 @@
 		                    <%@include file="/html/projects/includes/projects/administration.jspf" %>
 		                </div>
 		                <div id="tab-clearingStatus" class="tab-pane <core_rt:if test="${selectedTab == 'tab-clearingStatus'}">active show</core_rt:if>">
-		                    <%@include file="/html/projects/includes/projects/clearingStatus.jspf" %>
+		                    <jsp:include page="/html/projects/includes/projects/clearingStatus.jsp" />
 		                </div>
 		                <core_rt:if test="${inProjectDetailsContext}">
 			                <div id="tab-attachmentUsages" class="tab-pane <core_rt:if test="${selectedTab == 'tab-attachmentUsages'}">active show</core_rt:if>">
@@ -230,7 +256,7 @@
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-	document.title = "<sw360:ProjectName project="${project}"/> - " + document.title;
+	document.title = $("<span></span>").html("<sw360:ProjectName project="${project}"/> - " + document.title).text();
 
 	require(['jquery', 'modules/listgroup'], function($, listgroup) {
 		listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');

@@ -643,8 +643,11 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             prepareReleaseDuplicate(request, response);
             include("/html/components/editRelease.jsp", request, response);
         } else if (PAGENAME_MERGE_COMPONENT.equals(pageName)) {
-            prepareComponentMerge(request, response);
+            prepareComponentForMergeOrSplit(request, response, PortalConstants.PAGENAME_MERGE_COMPONENT);
             include("/html/components/mergeComponent.jsp", request, response);
+        } else if (PAGENAME_SPLIT_COMPONENT.equals(pageName)) {
+            prepareComponentForMergeOrSplit(request, response, PortalConstants.PAGENAME_SPLIT_COMPONENT);
+            include("/html/components/splitComponent.jsp", request, response);
         } else if (PAGENAME_MERGE_RELEASE.equals(pageName)) {
             prepareReleaseMerge(request, response);
             include("/html/components/mergeRelease.jsp", request, response);
@@ -802,7 +805,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         }
     }
 
-    private void prepareComponentMerge(RenderRequest request, RenderResponse response) throws PortletException {
+    private void prepareComponentForMergeOrSplit(RenderRequest request, RenderResponse response, String pageName) throws PortletException {
         final User user = UserCacheHolder.getUserFromRequest(request);
         String componentId = request.getParameter(COMPONENT_ID);
 
@@ -817,11 +820,15 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             request.setAttribute(COMPONENT, component);
 
             addComponentBreadcrumb(request, response, component);
-
-            PortletURL mergeUrl = response.createRenderURL();
-            mergeUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_MERGE_COMPONENT);
-            mergeUrl.setParameter(PortalConstants.COMPONENT_ID, componentId);
-            addBreadcrumbEntry(request, "Merge", mergeUrl);
+            PortletURL mergeOrSplitUrl = response.createRenderURL();
+            mergeOrSplitUrl.setParameter(PortalConstants.COMPONENT_ID, componentId);
+            if (PortalConstants.PAGENAME_MERGE_COMPONENT.equals(pageName)) {
+                mergeOrSplitUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_MERGE_COMPONENT);
+                addBreadcrumbEntry(request, "Merge", mergeOrSplitUrl);
+            } else {
+                mergeOrSplitUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_SPLIT_COMPONENT);
+                addBreadcrumbEntry(request, "Split", mergeOrSplitUrl);
+            }
         } catch (TException e) {
             log.error("Error fetching component from backend!", e);
         }
@@ -855,16 +862,45 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         }
     }
 
+    @UsedAsLiferayAction
+    public void componentSplitWizardStep(ActionRequest request, ActionResponse response)
+            throws IOException, PortletException {
+        int stepId = Integer.parseInt(request.getParameter("stepId"));
+        try {
+            HttpServletResponse httpServletResponse = PortalUtil.getHttpServletResponse(response);
+            httpServletResponse.setContentType(ContentTypes.APPLICATION_JSON);
+            JsonGenerator jsonGenerator = JSON_FACTORY.createGenerator(httpServletResponse.getWriter());
+
+            if (stepId == 0) {
+                generateComponentMergeWizardStep0Response(request, jsonGenerator);
+            } else if (stepId == 1) {
+                generateComponentMergeWizardStep1Response(request, jsonGenerator);
+            } else if (stepId == 2) {
+                generateComponentSplitWizardStep2Response(request, jsonGenerator);
+            } else if (stepId == 3) {
+                generateComponentSplitWizardStep3Response(request, jsonGenerator);
+            } else {
+                throw new SW360Exception("Step with id <" + stepId + "> not supported!");
+            }
+
+            jsonGenerator.close();
+        } catch (Exception e) {
+            log.error("An error occurred while generating a response to component split wizard", e);
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE,
+                    Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+        }
+    }
+
     private void generateComponentMergeWizardStep0Response(ActionRequest request, JsonGenerator jsonGenerator) throws IOException, TException {
         User sessionUser = UserCacheHolder.getUserFromRequest(request);
-        String targetId = request.getParameter(COMPONENT_TARGET_ID);
+        String srcId = request.getParameter(COMPONENT_SOURCE_ID);
         ComponentService.Iface cClient = thriftClients.makeComponentClient();
         List<Component> componentSummary = cClient.getComponentSummary(sessionUser);
 
         jsonGenerator.writeStartObject();
 
         jsonGenerator.writeArrayFieldStart("components");
-        componentSummary.stream().filter( component -> !component.getId().equals(targetId)).forEach(component -> {
+        componentSummary.stream().filter( component -> !component.getId().equals(srcId)).forEach(component -> {
             try {
                 jsonGenerator.writeStartObject();
                 jsonGenerator.writeStringField("id", component.getId());
@@ -938,6 +974,44 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         jsonGenerator.writeStringField("redirectUrl", componentUrl.toString());
         if (status == RequestStatus.IN_USE){
             jsonGenerator.writeStringField("error", "Cannot merge when one of the components has an active moderation request.");
+        } else if (status == RequestStatus.ACCESS_DENIED) {
+            jsonGenerator.writeStringField("error", "You do not have sufficient permissions.");
+        } else if (status == RequestStatus.FAILURE) {
+            jsonGenerator.writeStringField("error", "An unknown error occurred during merge.");
+        }
+        jsonGenerator.writeEndObject();
+    }
+
+    private void generateComponentSplitWizardStep2Response(ActionRequest request, JsonGenerator jsonGenerator)
+            throws IOException, TException {
+        Component srcComponent = OBJECT_MAPPER.readValue(request.getParameter(SOURCE_COMPONENT), Component.class);
+        Component targetComponent = OBJECT_MAPPER.readValue(request.getParameter(TARGET_COMPONENT), Component.class);
+        jsonGenerator.writeStartObject();
+        jsonGenerator.writeRaw("\"" + SOURCE_COMPONENT + "\":" + JSON_THRIFT_SERIALIZER.toString(srcComponent) + ",");
+        jsonGenerator.writeRaw("\"" + TARGET_COMPONENT + "\":" + JSON_THRIFT_SERIALIZER.toString(targetComponent));
+        jsonGenerator.writeEndObject();
+    }
+
+    private void generateComponentSplitWizardStep3Response(ActionRequest request, JsonGenerator jsonGenerator)
+            throws IOException, TException {
+        ComponentService.Iface cClient = thriftClients.makeComponentClient();
+
+        // extract request data
+        User sessionUser = UserCacheHolder.getUserFromRequest(request);
+        Component srcComponent = OBJECT_MAPPER.readValue(request.getParameter(SOURCE_COMPONENT), Component.class);
+        Component targetComponent = OBJECT_MAPPER.readValue(request.getParameter(TARGET_COMPONENT), Component.class);
+        RequestStatus status = cClient.splitComponent(srcComponent, targetComponent, sessionUser);
+
+        // generate redirect url
+        LiferayPortletURL componentUrl = createDetailLinkTemplate(request);
+        componentUrl.setParameter(PortalConstants.COMPONENT_ID, srcComponent.getId());
+
+        // write response JSON
+        jsonGenerator.writeStartObject();
+        jsonGenerator.writeStringField("redirectUrl", componentUrl.toString());
+        if (status == RequestStatus.IN_USE) {
+            jsonGenerator.writeStringField("error",
+                    "Cannot split when one of the components has an active moderation request.");
         } else if (status == RequestStatus.ACCESS_DENIED) {
             jsonGenerator.writeStringField("error", "You do not have sufficient permissions.");
         } else if (status == RequestStatus.FAILURE) {

@@ -9,6 +9,7 @@
   --%>
 <%@ page import="java.util.Map"%>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant" %>
 
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
@@ -107,21 +108,23 @@
                             </c:forEach>
                         </div>
                     </c:if>
-						<c:if test="${not empty externalIds}">
-								<div class="form-group form-check">
-									<label for="externalIdLabel" class="font-weight-bold h3"><liferay-ui:message key="select.the.external.ids" />:</label>
+                    <c:if test="${not onlyClearingReport}">
+					    <c:if test="${not empty externalIds}">
+					        <div class="form-group form-check">
+						        <label for="externalIdLabel" class="font-weight-bold h3"><liferay-ui:message key="select.the.external.ids" />:</label>
 							        <c:forEach var="extId" items="${externalIds}">
-									   <div class="checkbox form-check">
-										  <label><input id="<%=PortalConstants.EXTERNAL_ID_SELECTED_KEYS%>" name="externalIdsSelection" type="checkbox" value="${extId}">
-									      <c:out value="${extId}" /></input></label>
+									    <div class="checkbox form-check">
+										    <label><input id="<%=PortalConstants.EXTERNAL_ID_SELECTED_KEYS%>" name="externalIdsSelection" type="checkbox" value="${extId}">
+									        <c:out value="${extId}" /></input></label>
 									   </div>
 							        </c:forEach>
-								</div>
-						</c:if>
-					<div class="form-group form-check">
-						<label for="outputFormatLabel" class="licenseInfoOpFormat font-weight-bold h3"><liferay-ui:message key="select.output.format.and.variant" />:</label>
-						<sw360:DisplayOutputFormats options='${licenseInfoOutputFormats}' />
-					</div>
+					       </div>
+					    </c:if>
+					    <div class="form-group form-check">
+						    <label for="outputFormatLabel" class="licenseInfoOpFormat font-weight-bold h3"><liferay-ui:message key="select.output.format" />:</label>
+						    <sw360:DisplayOutputFormats options='${licenseInfoOutputFormats}' variantToSkip="<%=OutputFormatVariant.REPORT%>"/>
+					    </div>
+                    </c:if>
 	  </div>
       <div class="modal-footer">
         <button id="downloadFileModal" type="button" value="Download" class="btn btn-primary"><liferay-ui:message key="download" /></button>
@@ -134,13 +137,19 @@
 
 <script>
 require(['jquery', 'modules/dialog'], function($, dialog) {
+    let onlyClearingReport = '${onlyClearingReport}';
     $('#selectVariantAndDownload').on('click', selectVariantAndSubmit);
     function selectVariantAndSubmit(){
         dialog.open('#downloadLicenseInfoDialog','',function(submit, callback) {
             callback(true);
         });
     }
-    $('#downloadFileModal').on('click', downloadFile);
+    if(onlyClearingReport == 'true') {
+        $('#downloadFileModal').on('click', downloadClearingReportOnly);
+    } else {
+        $('#downloadFileModal').on('click', downloadFile);
+    }
+
     function downloadFile(){
         var licenseInfoSelectedOutputFormat = $('input[name="outputFormat"]:checked').val();
         var externalIds = [];
@@ -174,6 +183,28 @@ require(['jquery', 'modules/dialog'], function($, dialog) {
         $("#selectedProjectRelations").val(selectedProjectRelationsHidden);
         $("#isSubProjPresent").val(${not empty linkedProjectRelation});
 
+        $('#downloadLicenseInfoForm').submit();
+    }
+
+    function downloadClearingReportOnly() {
+        let releaseRelations = [];
+        let selectedProjectRelations = [];
+        $.each($("input[name='releaseRelationSelection']:checked"), function(){
+            releaseRelations.push($(this).val());
+        });
+        let releaseRelationsHidden = releaseRelations.join();
+
+        $.each($("input[name='projectRelationSelection']:checked"), function(){
+            selectedProjectRelations.push($(this).val());
+        });
+        var selectedProjectRelationsHidden = selectedProjectRelations.join();
+        $('#downloadLicenseInfoForm').append('<input id="licensInfoFileFormat" type="hidden" value="DocxGenerator::REPORT" name="<portlet:namespace/><%=PortalConstants.LICENSE_INFO_SELECTED_OUTPUT_FORMAT%>" />');
+        $('#downloadLicenseInfoForm').append('<input id="isSubProjPresent" type="hidden" name="<portlet:namespace/><%=PortalConstants.IS_LINKED_PROJECT_PRESENT%>"/>');
+        $('#downloadLicenseInfoForm').append('<input id="releaseRelationship" type="hidden" name="<portlet:namespace/><%=PortalConstants.SELECTED_PROJECT_RELEASE_RELATIONS%>"/>');
+        $('#downloadLicenseInfoForm').append('<input id="selectedProjectRelations" type="hidden" name="<portlet:namespace/><%=PortalConstants.SELECTED_PROJECT_RELATIONS%>"/>');
+        $("#isSubProjPresent").val(${not empty linkedProjectRelation});
+        $("#releaseRelationship").val(releaseRelationsHidden);
+        $("#selectedProjectRelations").val(selectedProjectRelationsHidden);
         $('#downloadLicenseInfoForm').submit();
     }
 });

@@ -19,7 +19,7 @@
     <tr>
         <td>
             <pre style="white-space: pre-line;">
-                ${licenseDetail.text}
+                <sw360:out value="${licenseDetail.text}"/>
             </pre>
         </td>
     </tr>

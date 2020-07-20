@@ -56,7 +56,7 @@
                         </div>
                         <div id="moderation-changes" class="collapse p-3" aria-labelledby="moderation-changes-heading" data-parent="#moderation-wizard">
                             <div class="alert alert-danger mb-0">
-                                The project ${sw360:printProjectName(project)} is requested to be deleted.
+                                The project <sw360:out value='${sw360:printProjectName(project)}'/> is requested to be deleted.
                             </div>
                         </div>
                     </div>

@@ -7,11 +7,16 @@
   ~
   ~ SPDX-License-Identifier: EPL-2.0
 --%>
+
+<%@include file="/html/init.jsp" %>
+
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="tags" tagdir="/WEB-INF/tags" %>
+
 <%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.projects.Project" %>
 <%@ page import="javax.portlet.PortletRequest" %>
-
-<%@include file="/html/init.jsp" %>
+<%@ page import="org.eclipse.sw360.portal.common.PortalConstants"%>
 
 <portlet:defineObjects/>
 <liferay-theme:defineObjects/>
@@ -30,6 +35,10 @@
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.CLEARING_STATUS_ON_LOAD%>"/>
     <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${docid}"/>
 </portlet:resourceURL>
+
+<c:set var="pageName" value="<%= request.getParameter("pagename") %>" />
+
+<%@include file="/html/projects/includes/projects/clearingRequest.jspf" %>
 
 <jsp:useBean id="projectList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.projects.ProjectLink>"
              scope="request"/>
@@ -92,8 +101,8 @@ AUI().use('liferay-portlet-url', function () {
                 columns: [
                     {title: "<liferay-ui:message key="name" />", data : "name", "defaultContent": "", render: {display: detailUrl}},
                     {title: "<liferay-ui:message key="type" />", data : "type", "defaultContent": ""},
-                    {title: "<liferay-ui:message key="project.path" />", data : "projectOrigin", "defaultContent": ""},
-                    {title: "<liferay-ui:message key="release.path" />", data : "releaseOrigin", "defaultContent": ""},
+                    {title: "<liferay-ui:message key="project.path" />", data : "projectOrigin", "defaultContent": "", render: $.fn.dataTable.render.text() },
+                    {title: "<liferay-ui:message key="release.path" />", data : "releaseOrigin", "defaultContent": "", render: $.fn.dataTable.render.text() },
                     {title: "<liferay-ui:message key="relation" />", data : "relation", "defaultContent": ""},
                     {title: "<liferay-ui:message key="main.licenses" />", data : "mainLicenses", "defaultContent": "", render: {display: mainLicenseUrl}},
                     {title: "<liferay-ui:message key="state" />", "data": function(row) {
@@ -133,7 +142,7 @@ AUI().use('liferay-portlet-url', function () {
             else {
                 url = makeProjectViewUrl(row.id);
             }
-            let viewUrl = $("<a></a>").attr("href",url).css("word-break","break-word").html(name);
+            let viewUrl = $("<a></a>").attr("href",url).css("word-break","break-word").text(name);
             return viewUrl[0].outerHTML;
         }
 
@@ -143,7 +152,7 @@ AUI().use('liferay-portlet-url', function () {
                 let licArr = mainLicenses.split(",");
                 let licLinkArr = new Array();
                 for(let i=0;i<licArr.length;i++){
-                    let licLink=$("<a></a>").attr("href", makeLicenseViewUrl(licArr[i])).html(licArr[i]);
+                    let licLink=$("<a></a>").attr("href", makeLicenseViewUrl(licArr[i])).text(licArr[i]);
                     licLinkArr.push(licLink[0].outerHTML);
                 }
                 return licLinkArr.join(", ");

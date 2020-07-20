@@ -18,7 +18,6 @@
 <%@ page import="org.eclipse.sw360.portal.common.page.PortletReleasePage" %>
 
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-
 <%@ include file="/html/init.jsp" %>
 <%-- the following is needed by liferay to display error messages--%>
 <%@ include file="/html/utils/includes/errorKeyToMessage.jspf"%>
@@ -145,8 +144,8 @@
                                         <tbody>
                                             <core_rt:forEach items="${component.releases}" var="myRelease">
                                                 <tr>
-                                                    <td>${myRelease.name}</td>
-                                                    <td><sw360:DisplayReleaseLink showName="false" page="<%=PortletReleasePage.EDIT%>" release="${myRelease}">${myRelease.version}</sw360:DisplayReleaseLink></td>
+                                                    <td><sw360:out value="${myRelease.name}"/></td>
+                                                    <td><sw360:DisplayReleaseLink showName="false" page="<%=PortletReleasePage.EDIT%>" release="${myRelease}"><sw360:out value="${myRelease.version}"/></sw360:DisplayReleaseLink></td>
                                                 </tr>
                                             </core_rt:forEach>
                                         </tbody>
@@ -211,7 +210,7 @@
 
     <script>
     require(['jquery', 'components/includes/vendors/searchVendor', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup', 'modules/validation' ], function($, vendorsearch, autocomplete, dialog, listgroup, validation) {
-        document.title = "${component.name} - " + document.title;
+        document.title = $("<span></span>").html("<sw360:out value='${component.name}'/> - " + document.title).text();
 
         listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
 

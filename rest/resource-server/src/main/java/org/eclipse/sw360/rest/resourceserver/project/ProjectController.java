@@ -18,6 +18,7 @@ import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
 import org.apache.thrift.protocol.TSimpleJSONProtocol;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
@@ -70,12 +71,14 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import javax.servlet.http.HttpServletResponse;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -91,6 +94,13 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
     public static final String SW360_ATTACHMENT_USAGES = "sw360:attachmentUsages";
     private static final Logger log = Logger.getLogger(ProjectController.class);
     private static final TSerializer THRIFT_JSON_SERIALIZER = new TSerializer(new TSimpleJSONProtocol.Factory());
+    private static final ImmutableMap<Project._Fields, String> mapOfFieldsTobeEmbedded = ImmutableMap.<Project._Fields, String>builder()
+            .put(Project._Fields.CLEARING_TEAM, "clearingTeam")
+            .put(Project._Fields.HOMEPAGE, "homepage")
+            .put(Project._Fields.WIKI, "wiki")
+            .put(Project._Fields.MODERATORS, "sw360:moderators")
+            .put(Project._Fields.CONTRIBUTORS,"sw360:contributors")
+            .put(Project._Fields.ATTACHMENTS,"sw360:attachments").build();
 
     @NonNull
     private final Sw360ProjectService projectService;
@@ -124,24 +134,36 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
             @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "type", required = false) String projectType,
             @RequestParam(value = "group", required = false) String group,
-            @RequestParam(value = "tag", required = false) String tag) throws TException {
+            @RequestParam(value = "tag", required = false) String tag,
+            @RequestParam(value = "allDetails", required = false) boolean allDetails) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Map<String, Project> mapOfProjects = new HashMap<>();
+        boolean isSearchByName = name != null && !name.isEmpty();
         List<Project> sw360Projects = new ArrayList<>();
-        if (name != null && !name.isEmpty()) {
+        if (isSearchByName) {
             sw360Projects.addAll(projectService.searchProjectByName(name, sw360User));
         } else {
             sw360Projects.addAll(projectService.getProjectsForUser(sw360User));
         }
-
+        sw360Projects.stream().forEach(prj -> mapOfProjects.put(prj.getId(), prj));
         List<Resource<Project>> projectResources = new ArrayList<>();
         sw360Projects.stream()
                 .filter(project -> projectType == null || projectType.equals(project.projectType.name()))
                 .filter(project -> group == null || group.isEmpty() || group.equals(project.getBusinessUnit()))
                 .filter(project -> tag == null || tag.isEmpty() || tag.equals(project.getTag()))
                 .forEach(p -> {
-                    Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
-                    embeddedProject.setVisbility(p.getVisbility());
-                    projectResources.add(new Resource<>(embeddedProject));
+                    Resource<Project> embeddedProjectResource = null;
+                    if (!allDetails) {
+                        Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
+                        embeddedProjectResource = new Resource<>(embeddedProject);
+                    } else {
+                        embeddedProjectResource = createHalProjectResourceWithAllDetails(p, sw360User, mapOfProjects,
+                                !isSearchByName);
+                        if (embeddedProjectResource == null) {
+                            return;
+                        }
+                    }
+                    projectResources.add(embeddedProjectResource);
                 });
 
         Resources<Resource<Project>> resources = restControllerHelper.createResources(projectResources);
@@ -557,5 +579,44 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         }
         project.setReleaseIdToUsage(releaseIdToUsage);
         projectService.updateProject(project, sw360User);
+    }
+
+    private HalResource<Project> createHalProjectResourceWithAllDetails(Project sw360Project, User sw360User,
+            Map<String, Project> mapOfProjects, boolean isAllAccessibleProjectFetched) {
+        Map<String, ProjectRelationship> linkedProjects = sw360Project.getLinkedProjects();
+        if (!isLinkedProjectsVisible(linkedProjects, sw360User, mapOfProjects, isAllAccessibleProjectFetched)) {
+            return null;
+        }
+        HalResource<Project> halProject = new HalResource<>(sw360Project);
+        halProject.addEmbeddedResource("createdBy", sw360Project.getCreatedBy());
+
+        for (Entry<Project._Fields, String> field : mapOfFieldsTobeEmbedded.entrySet()) {
+            restControllerHelper.addEmbeddedFields(field.getValue(), sw360Project.getFieldValue(field.getKey()),
+                    halProject);
+        }
+
+        return halProject;
+    }
+
+    private boolean isLinkedProjectsVisible(Map<String, ProjectRelationship> linkedProjects, User sw360User,
+            Map<String, Project> mapOfProjects, boolean isAllAccessibleProjectFetched) {
+        if (isAllAccessibleProjectFetched && !CommonUtils.isNullOrEmptyMap(linkedProjects)) {
+            for (String linkedProjectId : linkedProjects.keySet()) {
+                if (!mapOfProjects.containsKey(linkedProjectId)) {
+                    return false;
+                }
+            }
+        } else if (!CommonUtils.isNullOrEmptyMap(linkedProjects)) {
+            for (String linkedProjectId : linkedProjects.keySet()) {
+                if (!mapOfProjects.containsKey(linkedProjectId)) {
+                    try {
+                        projectService.getProjectForUserById(linkedProjectId, sw360User);
+                    } catch (TException exp) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
     }
 }
