@@ -14,6 +14,7 @@ Bundle-Version: 1.0.0
 
 -check: all
 -sources: false
+-noee: true
 
 Export-Package: \
 	com.github.ldriscoll.ektorplucene.*, \
