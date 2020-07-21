@@ -62,6 +62,18 @@
             });
         });
 
+        function addRowsToExternalIdsTable(key, values, rowId) {
+			try {
+        		var valueArray = JSON.parse($('<div />').html(values).text()).sort()
+				for (var i = 0, length = valueArray.length; i < length; i++) {
+					var value = valueArray[i];
+					addRowToExternalIdsTable(key, value, rowId + i)
+				}
+			} catch(error) {
+				addRowToExternalIdsTable(key, values, rowId)
+			}
+		}
+
         function addRowToExternalIdsTable(key, value, rowId) {
             if (!rowId) {
                 rowId = "externalIdsTableRow" + Date.now();
@@ -100,9 +112,15 @@
 
         function createExternalIdsTable() {
             <core_rt:forEach items="${externalIdsSet}" var="tableEntry" varStatus="loop">
-            addRowToExternalIdsTable('<sw360:out value="${tableEntry.key}"/>', '<sw360:out value="${tableEntry.value}"/>', 'externalIdsTableRow${loop.count}');
+			addRowsToExternalIdsTable('<sw360:out value="${tableEntry.key}"/>', '<sw360:out value="${tableEntry.value}"/>', 'externalIdsTableRow${loop.count}');
             </core_rt:forEach>
         }
+
+		function decodeHTMLentities(str) {
+			return str.replace(/&#(\d+);/g, function(match, dec) {
+				return String.fromCharCode(dec);
+			});
+		}
     });
 
 </script>

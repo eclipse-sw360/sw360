@@ -104,6 +104,9 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         List<Component> componentList = new ArrayList<>();
         Set<Component> usedByComponent = new HashSet<>();
         List<Component> componentListByName = new ArrayList<>();
+        Map<String, String> angularComponentExternalIds = new HashMap<>();
+        angularComponentExternalIds.put("component-id-key", "1831A3");
+        angularComponentExternalIds.put("ws-component-id", "[\"123\",\"598752\"]");
         angularComponent = new Component();
         angularComponent.setId("17653524");
         angularComponent.setName("Angular");
@@ -121,7 +124,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         angularComponent.setLanguages(ImmutableSet.of("EN", "DE"));
         angularComponent.setOperatingSystems(ImmutableSet.of("Windows", "Linux"));
         angularComponent.setAttachments(attachmentList);
-        angularComponent.setExternalIds(Collections.singletonMap("component-id-key", "1831A3"));
+        angularComponent.setExternalIds(angularComponentExternalIds);
         angularComponent.setMailinglist("test@liferay.com");
         angularComponent.setAdditionalData(Collections.singletonMap("Key", "Value"));
         angularComponent.setHomepage("https://angular.io");
@@ -129,6 +132,10 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         componentListByName.add(angularComponent);
 
         Component springComponent = new Component();
+        Map<String, String> springComponentExternalIds = new HashMap<>();
+        springComponentExternalIds.put("component-id-key", "c77321");
+        springComponentExternalIds.put("ws-component-id", "[\"125\",\"698452\"]");
+
         springComponent.setId("678dstzd8");
         springComponent.setName("Spring Framework");
         springComponent.setComponentOwner("Jane");
@@ -144,7 +151,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         springComponent.setCategories(ImmutableSet.of("jdbc", "java"));
         springComponent.setLanguages(ImmutableSet.of("EN", "DE"));
         springComponent.setOperatingSystems(ImmutableSet.of("Windows", "Linux"));
-        springComponent.setExternalIds(Collections.singletonMap("component-id-key", "c77321"));
+        springComponent.setExternalIds(springComponentExternalIds);
         springComponent.setMailinglist("test@liferay.com");
         componentList.add(springComponent);
         usedByComponent.add(springComponent);
@@ -354,7 +361,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("ownerCountry").description("The owner country of the component"),
                                 fieldWithPath("categories").description("The component categories"),
                                 fieldWithPath("languages").description("The language of the component"),
-                                fieldWithPath("externalIds").description("When projects are imported from other tools, the external ids can be stored here"),
+                                fieldWithPath("externalIds").description("When components are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
                                 fieldWithPath("additionalData").description("A place to store additional data used by external tools"),
                                 fieldWithPath("operatingSystems").description("The OS on which the component operates"),
                                 fieldWithPath("mailinglist").description("Component mailing lists"),
@@ -538,7 +545,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("_embedded.sw360:components").description("An array of <<resources-components, Components resources>>"),
                                 fieldWithPath("_embedded.sw360:components[]componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
                                 fieldWithPath("_embedded.sw360:components[]name").description("The name of the component, optional"),
-                                fieldWithPath("_embedded.sw360:components[]externalIds").description("External Ids of the component"),
+                                fieldWithPath("_embedded.sw360:components[]externalIds").description("External Ids of the component. Return as 'Single String' when single value, or 'Array of String' when multi-values"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
@@ -572,7 +579,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                         fieldWithPath("ownerAccountingUnit").description("The owner accounting unit of the component"),
                         fieldWithPath("ownerGroup").description("The owner group of the component"),
                         fieldWithPath("ownerCountry").description("The owner country of the component"),
-                        fieldWithPath("externalIds").description("When projects are imported from other tools, the external ids can be stored here"),
+                        fieldWithPath("externalIds").description("When projects are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
                         fieldWithPath("additionalData").description("A place to store additional data used by external tools"),
                         fieldWithPath("categories").description("The component categories"),
                         fieldWithPath("languages").description("The language of the component"),

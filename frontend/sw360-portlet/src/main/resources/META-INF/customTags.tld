@@ -90,6 +90,23 @@
         </attribute>
     </tag>
     <tag>
+        <name>DisplayMapOfExternalIdsString</name>
+        <tag-class>org.eclipse.sw360.portal.tags.DisplayMapOfExternalIdsString</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <name>value</name>
+            <required>true</required>
+            <type>java.util.Map</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>autoFillValue</name>
+            <required>false</required>
+            <type>java.util.Map</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
+    <tag>
         <name>DisplayMapOfEmailSets</name>
         <tag-class>org.eclipse.sw360.portal.tags.DisplayMapOfEmailStringSets</tag-class>
         <body-content>empty</body-content>

@@ -156,6 +156,10 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
         List<Release> releaseList = new ArrayList<>();
         release = new Release();
+        Map<String, String> releaseExternalIds = new HashMap<>();
+        releaseExternalIds.put("mainline-id-component", "1432");
+        releaseExternalIds.put("ws-component-id", "[\"2365\",\"5487923\"]");
+
         release.setId(releaseId);
         owner.setReleaseId(release.getId());
         release.setName("Spring Core 4.3.4");
@@ -170,7 +174,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         release.setComponentId(component.getId());
         release.setClearingState(ClearingState.APPROVED);
         release.setMainlineState(MainlineState.SPECIFIC);
-        release.setExternalIds(Collections.singletonMap("mainline-id-component", "1432"));
+        release.setExternalIds(releaseExternalIds);
         release.setAdditionalData(Collections.singletonMap("Key", "Value"));
         release.setAttachments(attachments);
         release.setLanguages(new HashSet<>(Arrays.asList("C++", "Java")));
@@ -180,6 +184,9 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         releaseList.add(release);
 
         Release release2 = new Release();
+        Map<String, String> release2ExternalIds = new HashMap<>();
+        release2ExternalIds.put("mainline-id-component", "4876");
+        release2ExternalIds.put("ws-component-id", "[\"589211\",\"987135\"]");
         release2.setId("3765276512");
         release2.setName("Angular");
         release2.setCpeid("cpe:/a:Google:Angular:2.3.1:");
@@ -192,7 +199,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         release2.setComponentId(component.getId());
         release2.setClearingState(ClearingState.APPROVED);
         release2.setMainlineState(MainlineState.MAINLINE);
-        release2.setExternalIds(Collections.singletonMap("mainline-id-component", "4876"));
+        release2.setExternalIds(release2ExternalIds);
         release2.setLanguages(new HashSet<>(Arrays.asList("C++", "Java")));
         release2.setOperatingSystems(ImmutableSet.of("Windows", "Linux"));
         release2.setSoftwarePlatforms(new HashSet<>(Arrays.asList("Java SE", ".NET")));
@@ -335,7 +342,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("_embedded.sw360:releases[]createdOn").description("The creation date of the internal sw360 release"),
                                 fieldWithPath("_embedded.sw360:releases[]mainlineState").description("the mainline state of the release, possible values are: " + Arrays.asList(MainlineState.values())),
                                 fieldWithPath("_embedded.sw360:releases[]downloadurl").description("the download url of the release"),
-                                fieldWithPath("_embedded.sw360:releases[]externalIds").description("When releases are imported from other tools, the external ids can be stored here"),
+                                fieldWithPath("_embedded.sw360:releases[]externalIds").description("When releases are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
                                 fieldWithPath("_embedded.sw360:releases[]additionalData").description("A place to store additional data used by external tools"),
                                 fieldWithPath("_embedded.sw360:releases[]languages").description("The language of the component"),
                                 fieldWithPath("_embedded.sw360:releases[]contributors").description("An array of all project contributors with email"),
@@ -417,7 +424,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("createdOn").description("The creation date of the internal sw360 release"),
                                 fieldWithPath("mainlineState").description("the mainline state of the release, possible values are: " + Arrays.asList(MainlineState.values())),
                                 fieldWithPath("downloadurl").description("the download url of the release"),
-                                fieldWithPath("externalIds").description("When releases are imported from other tools, the external ids can be stored here"),
+                                fieldWithPath("externalIds").description("When releases are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
                                 fieldWithPath("additionalData").description("A place to store additional data used by external tools"),
                                 fieldWithPath("languages").description("The language of the component"),
                                 fieldWithPath("_embedded.sw360:licenses").description("An array of all main licenses with their fullName and link to their <<resources-license-get,License resource>>"),
@@ -519,7 +526,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("_embedded.sw360:releases").description("An array of <<resources-releases, Releases resources>>"),
                                 fieldWithPath("_embedded.sw360:releases[]name").description("The name of the release, optional"),
                                 fieldWithPath("_embedded.sw360:releases[]version").description("The version of the release"),
-                                fieldWithPath("_embedded.sw360:releases[]externalIds").description("External Ids of the release"),
+                                fieldWithPath("_embedded.sw360:releases[]externalIds").description("External Ids of the release. Return as 'Single String' when single value, or 'Array of String' when multi-values"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
@@ -650,7 +657,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                         fieldWithPath("createdOn").description("The creation date of the internal sw360 release"),
                         fieldWithPath("mainlineState").description("the mainline state of the release, possible values are: " + Arrays.asList(MainlineState.values())),
                         fieldWithPath("downloadurl").description("the download url of the release"),
-                        fieldWithPath("externalIds").description("When releases are imported from other tools, the external ids can be stored here"),
+                        fieldWithPath("externalIds").description("When releases are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
                         fieldWithPath("additionalData").description("A place to store additional data used by external tools"),
                         fieldWithPath("languages").description("The language of the component"),
                         fieldWithPath("_embedded.sw360:licenses").description("An array of all main licenses with their fullName and link to their <<resources-license-get,License resource>>"),
