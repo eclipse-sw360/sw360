@@ -74,6 +74,12 @@ public class ComponentSearchHandler {
                     "    if(doc.name !== undefined && doc.name != null && doc.name.length >0) {  "+
                     "      ret.add(doc.name, {\"field\": \"name\"} );" +
                     "    }" +
+                    "    if(doc.createdBy && doc.createdBy.length) {  "+
+                    "      ret.add(doc.createdBy, {\"field\": \"createdBy\"} );" +
+                    "    }" +
+                    "    if(doc.createdOn && doc.createdOn.length) {  "+
+                    "      ret.add(doc.createdOn, {\"field\": \"createdOn\", \"type\": \"date\"} );" +
+                    "    }" +
                     "    return ret;" +
                     "}");
 

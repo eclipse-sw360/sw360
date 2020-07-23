@@ -12,6 +12,7 @@
 <%@ page import="javax.portlet.PortletRequest" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.components.Component" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.components.ComponentType" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.DateRange" %>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 
 <%@ taglib prefix="tags" tagdir="/WEB-INF/tags" %>
@@ -119,6 +120,28 @@
                                     name="<portlet:namespace/><%=Component._Fields.MAIN_LICENSE_IDS%>"
                                     value="<sw360:out value="${mainLicenseIds}"/>" id="main_licenses">
                             </div>
+                            <div class="form-group">
+                                <label for="created_by"><liferay-ui:message key="created.by.email" /></label>
+                                <input type="text" class="form-control form-control-sm"
+                                    name="<portlet:namespace/><%=Component._Fields.CREATED_BY%>"
+                                    value="<sw360:out value="${createdBy}"/>" id="created_by">
+                            </div>
+                            <div class="form-group">
+                                <span class="d-flex align-items-center mb-2">
+                                    <label class="mb-0 mr-4" for="created_on"><liferay-ui:message key="created.on" /></label>
+                                    <select class="form-control form-control-sm w-50" id="dateRange" name="<portlet:namespace/><%=PortalConstants.DATE_RANGE%>">
+                                        <option value="<%=PortalConstants.NO_FILTER%>" class="textlabel stackedLabel"></option>
+                                        <sw360:DisplayEnumOptions type="<%=DateRange.class%>" selectedName="${dateRange}" useStringValues="true"/>
+                                    </select>
+                                </span>
+                                <input id="created_on" class="datepicker form-control form-control-sm" autocomplete="off"
+                                    name="<portlet:namespace/><%=Component._Fields.CREATED_ON%>" <core_rt:if test="${empty createdOn}"> style="display: none;" </core_rt:if>
+                                    type="text" pattern="\d{4}-\d{2}-\d{2}" value="<sw360:out value="${createdOn}"/>" />
+                                <label id="toLabel" <core_rt:if test="${empty endDate}"> style="display: none;" </core_rt:if> ><liferay-ui:message key="to" /></label>
+                                <input type="text" id="endDate" class="datepicker form-control form-control-sm ml-0" autocomplete="off"
+                                    name="<portlet:namespace/><%=PortalConstants.END_DATE%>" <core_rt:if test="${empty endDate}"> style="display: none;" </core_rt:if>
+                                    value="<sw360:out value="${endDate}"/>" pattern="\d{4}-\d{2}-\d{2}" />
+                            </div>
                             <button type="submit" class="btn btn-primary btn-sm btn-block"><liferay-ui:message key="search" /></button>
 				        </form>
 					</div>
@@ -188,6 +211,39 @@
             autocomplete.prepareForMultipleHits('operating_systems', ${operatingSystemsAutoC});
             autocomplete.prepareForMultipleHits('vendor_names', vendorNames);
             componentsTable = createComponentsTable();
+
+            $('.datepicker').datepicker({changeMonth:true,changeYear:true,dateFormat: "yy-mm-dd", maxDate: new Date()}).change(dateChanged).on('changeDate', dateChanged);
+
+            function dateChanged(ev) {
+                let id = $(this).attr("id"),
+                    dt = $(this).val();
+                if (id === "created_on") {
+                    $('#endDate').datepicker('option', 'minDate', dt);
+                } else if (id === "endDate") {
+                    $('#created_on').datepicker('option', 'maxDate', dt ? dt : new Date());
+                }
+            }
+
+            $('#dateRange').on('change', function (e) {
+                let selected = $("#dateRange option:selected").text(),
+                    $datePkr = $(".datepicker"),
+                    $toLabel = $("#toLabel");
+
+                if (!selected) {
+                    $datePkr.hide().val("");
+                    $toLabel.hide();
+                    return;
+                }
+
+                if (selected === 'Between') {
+                    $datePkr.show();
+                    $toLabel.show();
+                } else {
+                    $("#created_on").show();
+                    $toLabel.hide();
+                    $("#endDate").hide().val("");
+                }
+            });
 
             // catch ctrl+p and print dataTable
             $(document).on('keydown', function(e){
