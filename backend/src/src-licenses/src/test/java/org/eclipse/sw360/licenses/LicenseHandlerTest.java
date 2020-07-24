@@ -39,14 +39,14 @@ public class LicenseHandlerTest {
     private User user;
 
     private Map<String, License> licenses;
-    private Map<String, Todo> todos;
-    private Map<String, Obligation> obligations;
+    private Map<String, Obligations> obligs;
+    private Map<String, LicenseObligation> obligations;
 
-    public static Todo getById(String id, Collection<Todo> todos) {
-        if (id != null && todos != null) {
-            for (Todo todo : todos) {
-                if (id.equals(todo.getId()))
-                    return todo;
+    public static Obligations getById(String id, Collection<Obligations> obligs) {
+        if (id != null && obligs != null) {
+            for (Obligations oblig : obligs) {
+                if (id.equals(oblig.getId()))
+                    return oblig;
             }
         }
         return null;
@@ -84,8 +84,8 @@ public class LicenseHandlerTest {
             assertNotNull(license.id);
             assertNotNull(license.fullname);
             // The rest should not be set
-            assertFalse(license.isSetTodoDatabaseIds());
-            assertFalse(license.isSetTodos());
+            assertFalse(license.isSetObligationDatabaseIds());
+            assertFalse(license.isSetObligations());
             assertFalse(license.isSetReviewdate());
         }
     }
@@ -97,17 +97,17 @@ public class LicenseHandlerTest {
 
         assertEquals(expLicense.getId(), actLicense.getId());
         assertEquals(expLicense.getFullname(), actLicense.getFullname());
-        assertEquals(expLicense.getTodoDatabaseIdsSize(), actLicense.getTodosSize());
+        assertEquals(expLicense.getObligationDatabaseIdsSize(), actLicense.getObligationsSize());
 
         // Check obligations
-        for (String id : expLicense.getTodoDatabaseIds()) {
-            Todo actTodo = getById(id, actLicense.getTodos());
-            Todo expTodo = getById(id, todos.values());
+        for (String id : expLicense.getObligationDatabaseIds()) {
+            Obligations actTodo = getById(id, actLicense.getObligations());
+            Obligations expTodo = getById(id, obligs.values());
 
             // Now check equals
             assertEquals(expTodo.getId(), actTodo.getId());
             assertEquals(expTodo.getText(), actTodo.getText());
-            assertEquals(expTodo.getObligationDatabaseIdsSize(), actTodo.getObligationsSize());
+            assertEquals(expTodo.getObligationDatabaseIdsSize(), actTodo.getListOfobligationSize());
             assertEquals(expTodo.getRevision(), actTodo.getRevision());
         }
     }
@@ -122,13 +122,13 @@ public class LicenseHandlerTest {
     @Test(expected = SW360Exception.class)
     public void testGetLicense3() throws Exception {
         // Test existing ID, but that is not a license
-        License license = handler.getByID(todos.values().iterator().next().getId(), user.getDepartment());
+        License license = handler.getByID(obligs.values().iterator().next().getId(), user.getDepartment());
         assertNull(license);
     }
 
     @Test
     public void testGetObligations() throws Exception {
-        List<Obligation> actualObligations = handler.getObligations();
+        List<LicenseObligation> actualObligations = handler.getListOfobligation();
         assertEquals(obligations.size(), actualObligations.size());
     }
 
@@ -176,7 +176,7 @@ public class LicenseHandlerTest {
     public void createTestEntries() throws MalformedURLException {
         // List of test objects
         licenses = new HashMap<>();
-        todos = new HashMap<>();
+        obligs = new HashMap<>();
         obligations = new HashMap<>();
 
         License license1 = new License();
@@ -187,9 +187,9 @@ public class LicenseHandlerTest {
         license1.addToRisks(new Risk().setRiskId(123123).setText("If Siemens uses this contractor pattern a long text follows here for reading and display... this might be long.").setCategory(new RiskCategory().setRiskCategoryId(32).setText("Beige")));
         license1.addToRisks(new Risk().setRiskId(1223).setText("Apache 1.1 is noy so risky").setCategory(new RiskCategory().setRiskCategoryId(3123).setText("Green")));
         license1.setReviewdate("10.10.2010");
-        license1.addToTodoDatabaseIds("T1");
-        license1.addToTodoDatabaseIds("T2");
-        license1.addToTodoDatabaseIds("T5");
+        license1.addToObligationDatabaseIds("T1");
+        license1.addToObligationDatabaseIds("T2");
+        license1.addToObligationDatabaseIds("T5");
         licenses.put(license1.id, license1);
 
         License license2 = new License();
@@ -197,43 +197,43 @@ public class LicenseHandlerTest {
         license2.setId("Apache-2.0");
         license2.setFullname("The Apache Software License, Version 2.0");
         license2.setReviewdate("12.12.2012");
-        license2.addToTodoDatabaseIds("T3");
-        license2.addToTodoDatabaseIds("T4");
+        license2.addToObligationDatabaseIds("T3");
+        license2.addToObligationDatabaseIds("T4");
         licenses.put(license2.id, license2);
 
-        Todo todo1 = new Todo().setId("T1").setText("You must include the acknowledgement as part of the documentation for the end user. An example looks as following:  This product includes software developed by the Apache Software Foundation (http://www.apache.org/).");
-        todo1.addToObligationDatabaseIds("O1");
-        todo1.addToObligationDatabaseIds("O2");
-        Todo todo2 = new Todo().setId("T2").setText("You must not names listed in in the license at paragraph 4 (for example Apache and Apache Software Foundation) neither in the documentation nor for ads or marketing.");
-        todo2.addToObligationDatabaseIds("O3");
-        Todo todo3 = new Todo().setId("T3").setText("Then you must add the following sentence in the header of any modified/added file: 'Code modifications by Siemens AG are under Siemens license conditions'");
-        Todo todo4 = new Todo().setId("T4").setText("You must include a prominent notice in the header of all modified files in the following form: © Siemens AG, [year]");
-        todo4.addToObligationDatabaseIds("O1");
-        todo4.addToObligationDatabaseIds("O4");
-        Todo todo5 = new Todo().setId("T5").setText("With the Apache License 2.0,no copyleft effect for proprietary code exists. For proprietary Siemens modifications you can choose the license (meaning applying the Apache 2.0 license or any other license)");
-        todo5.addToObligationDatabaseIds("O4");
+        Obligations oblig1 = new Obligations().setId("T1").setText("You must include the acknowledgement as part of the documentation for the end user. An example looks as following:  This product includes software developed by the Apache Software Foundation (http://www.apache.org/).");
+        oblig1.addToObligationDatabaseIds("O1");
+        oblig1.addToObligationDatabaseIds("O2");
+        Obligations oblig2 = new Obligations().setId("T2").setText("You must not names listed in in the license at paragraph 4 (for example Apache and Apache Software Foundation) neither in the documentation nor for ads or marketing.");
+        oblig2.addToObligationDatabaseIds("O3");
+        Obligations oblig3 = new Obligations().setId("T3").setText("Then you must add the following sentence in the header of any modified/added file: 'Code modifications by Siemens AG are under Siemens license conditions'");
+        Obligations oblig4 = new Obligations().setId("T4").setText("You must include a prominent notice in the header of all modified files in the following form: © Siemens AG, [year]");
+        oblig4.addToObligationDatabaseIds("O1");
+        oblig4.addToObligationDatabaseIds("O4");
+        Obligations oblig5 = new Obligations().setId("T5").setText("With the Apache License 2.0,no copyleft effect for proprietary code exists. For proprietary Siemens modifications you can choose the license (meaning applying the Apache 2.0 license or any other license)");
+        oblig5.addToObligationDatabaseIds("O4");
 
-        todos.put("T1", todo1);
-        todos.put("T2", todo2);
-        todos.put("T3", todo3);
-        todos.put("T4", todo4);
-        todos.put("T5", todo5);
+        obligs.put("T1", oblig1);
+        obligs.put("T2", oblig2);
+        obligs.put("T3", oblig3);
+        obligs.put("T4", oblig4);
+        obligs.put("T5", oblig5);
 
-        obligations.put("O1", new Obligation().setId("O1").setName("Provide acknowledgements in documentation"));
-        obligations.put("O2", new Obligation().setId("O2").setName("Advertising materials are restricted subject to limitations"));
-        obligations.put("O3", new Obligation().setId("O3").setName("Documentation that represent additional requirements in case of modifications (for example notice file with author's name)"));
-        obligations.put("O4", new Obligation().setId("O4").setName("Apache Copyleft effect"));
+        obligations.put("O1", new LicenseObligation().setId("O1").setName("Provide acknowledgements in documentation"));
+        obligations.put("O2", new LicenseObligation().setId("O2").setName("Advertising materials are restricted subject to limitations"));
+        obligations.put("O3", new LicenseObligation().setId("O3").setName("Documentation that represent additional requirements in case of modifications (for example notice file with author's name)"));
+        obligations.put("O4", new LicenseObligation().setId("O4").setName("Apache Copyleft effect"));
 
         DatabaseConnector db = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), dbName);
 
         // Add obligations to database
-        for (Obligation obligation : obligations.values()) {
+        for (LicenseObligation obligation : obligations.values()) {
             db.add(obligation);
         }
 
-        // Add todos to database
-        for (Todo todo : todos.values()) {
-            db.add(todo);
+        // Add obligations to database
+        for (Obligations oblig : obligs.values()) {
+            db.add(oblig);
         }
 
         // Finally, add the licenses to the database

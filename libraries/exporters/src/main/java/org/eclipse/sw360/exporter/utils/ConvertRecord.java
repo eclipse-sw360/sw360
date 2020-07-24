@@ -165,13 +165,13 @@ public class ConvertRecord {
         return true;
     }
 
-    public static void fillTodoCustomPropertyInfo(List<Todo> todos, List<PropertyWithValueAndId> customProperties, SetMultimap<String, Integer> todoCustomPropertyMap) {
+    public static void fillTodoCustomPropertyInfo(List<Obligations> obligations, List<PropertyWithValueAndId> customProperties, SetMultimap<String, Integer> obligCustomPropertyMap) {
         int nextPropertyId = 0;
-        for(Todo todo : todos){
-            if(todo.isSetCustomPropertyToValue()){
-                for(Map.Entry<String, String> entry : todo.getCustomPropertyToValue().entrySet()){
+        for(Obligations oblig : obligations){
+            if(oblig.isSetCustomPropertyToValue()){
+                for(Map.Entry<String, String> entry : oblig.getCustomPropertyToValue().entrySet()){
                     customProperties.add(new PropertyWithValueAndId(nextPropertyId, entry.getKey(), entry.getValue()));
-                    todoCustomPropertyMap.put(todo.getId(), nextPropertyId);
+                    obligCustomPropertyMap.put(oblig.getId(), nextPropertyId);
                     nextPropertyId++;
                 }
             }
@@ -201,8 +201,8 @@ public class ConvertRecord {
         };
     }
 
-    public static List<Todo> convertTodos(List<CSVRecord> records) {
-        List<Todo> list = new ArrayList<>(records.size());
+    public static List<Obligations> convertTodos(List<CSVRecord> records) {
+        List<Obligations> list = new ArrayList<>(records.size());
 
         for (CSVRecord record : records) {
             if (record.size() < 2) break;
@@ -210,49 +210,49 @@ public class ConvertRecord {
             String title = record.get(0);
             String text = record.get(1);
 
-            Todo todo = new Todo();
-            todo.setTitle(title);
-            todo.setText(text);
+            Obligations oblig = new Obligations();
+            oblig.setTitle(title);
+            oblig.setText(text);
 
             // Parse boolean values
 
             String developmentString = record.get(2);
             if (!"NULL".equals(developmentString)) {
                 boolean development = parseBoolean(developmentString);
-                todo.setDevelopment(development);
+                oblig.setDevelopment(development);
             }
 
             String distributionString = record.get(3);
             if (!"NULL".equals(distributionString)) {
                 boolean distribution = parseBoolean(distributionString);
-                todo.setDistribution(distribution);
+                oblig.setDistribution(distribution);
             }
 
             if(record.size() >= 5) {
                 Optional.ofNullable(record.get(4))
                         .filter(json -> ! "NULL".equals(json))
                         .map(json -> (Map<String, String>) gson.fromJson(json, new TypeToken<Map<String, String>>() { }.getType()))
-                        .ifPresent(todo::setExternalIds);
+                        .ifPresent(oblig::setExternalIds);
             }
 
-            list.add(todo);
+            list.add(oblig);
         }
         return list;
     }
 
-    public static Serializer<Todo> todoSerializer() {
-        return new Serializer<Todo>() {
+    public static Serializer<Obligations> obligSerializer() {
+        return new Serializer<Obligations>() {
             @Override
-            public Function<Todo, List<String>> transformer() {
-                return todo -> {
+            public Function<Obligations, List<String>> transformer() {
+                return oblig -> {
 
                     final ArrayList<String> out = new ArrayList<>(5);
 
-                    out.add(todo.getTitle());
-                    out.add(todo.getText());
-                    out.add(((Boolean) todo.isDevelopment()).toString());
-                    out.add(((Boolean) todo.isDistribution()).toString());
-                    out.add(Optional.ofNullable(todo.getExternalIds())
+                    out.add(oblig.getTitle());
+                    out.add(oblig.getText());
+                    out.add(((Boolean) oblig.isDevelopment()).toString());
+                    out.add(((Boolean) oblig.isDistribution()).toString());
+                    out.add(Optional.ofNullable(oblig.getExternalIds())
                             .map(gson::toJson)
                             .map(Object::toString)
                             .orElse("{}"));
@@ -267,25 +267,25 @@ public class ConvertRecord {
         };
     }
 
-   public static List<Obligation> convertObligation(List<CSVRecord> records) {
-        List<Obligation> list = new ArrayList<>(records.size());
+   public static List<LicenseObligation> convertObligation(List<CSVRecord> records) {
+        List<LicenseObligation> list = new ArrayList<>(records.size());
 
         for (CSVRecord record : records) {
             if (record.size() < 2) break;
             String id = record.get(0);
             String name = record.get(1);
 
-            Obligation obligation = new Obligation().setObligationId(Integer.parseInt(id)).setName(name);
+            LicenseObligation obligation = new LicenseObligation().setObligationId(Integer.parseInt(id)).setName(name);
             list.add(obligation);
         }
 
         return list;
     }
 
-    public static Serializer<Obligation> obligationSerializer() {
-        return new Serializer<Obligation>() {
+    public static Serializer<LicenseObligation> obligationSerializer() {
+        return new Serializer<LicenseObligation>() {
             @Override
-            public Function<Obligation, List<String>> transformer() {
+            public Function<LicenseObligation, List<String>> transformer() {
                 return obligation -> {
                         final ArrayList<String> out = new ArrayList<>(2);
 
@@ -303,26 +303,26 @@ public class ConvertRecord {
     }
 
 
-    public static void putToTodos(Map<Integer, Obligation> obligations, Map<Integer, Todo> todos, Map<Integer, Set<Integer>> obligationTodo) {
-        Map<Integer, Set<Integer>> todoObligation = invertRelation(obligationTodo);
+    public static void putToTodos(Map<Integer, LicenseObligation> obligations, Map<Integer, Obligations> obligs, Map<Integer, Set<Integer>> obligationTodo) {
+        Map<Integer, Set<Integer>> obligObligation = invertRelation(obligationTodo);
 
 
-        for (Map.Entry<Integer, Set<Integer>> entry : todoObligation.entrySet()) {
-            Todo todo = todos.get(entry.getKey());
+        for (Map.Entry<Integer, Set<Integer>> entry : obligObligation.entrySet()) {
+            Obligations oblig = obligs.get(entry.getKey());
 
-            if (todo != null) {
-                fillTodo(obligations, entry.getValue(), todo);
+            if (oblig != null) {
+                fillTodo(obligations, entry.getValue(), oblig);
             }
 
         }
     }
 
-    private static void fillTodo(Map<Integer, Obligation> obligations, Set<Integer> values, Todo todo) {
+    private static void fillTodo(Map<Integer, LicenseObligation> obligations, Set<Integer> values, Obligations oblig) {
         for (int obligationId : values) {
-            Obligation obligation = obligations.get(obligationId);
+            LicenseObligation obligation = obligations.get(obligationId);
 
             if (obligation != null) {
-                todo.addToObligations(obligation);
+                oblig.addToListOfobligation(obligation);
             }
         }
     }
@@ -362,7 +362,7 @@ public class ConvertRecord {
     }
 
 
-    public static List<License> fillLicenses(List<CSVRecord> records, Map<Integer, LicenseType> licenseTypeMap, Map<Integer, Todo> todoMap, Map<Integer, Risk> riskMap, Map<String, Set<Integer>> licenseTodo, Map<String, Set<Integer>> licenseRisk) {
+    public static List<License> fillLicenses(List<CSVRecord> records, Map<Integer, LicenseType> licenseTypeMap, Map<Integer, Obligations> obligMap, Map<Integer, Risk> riskMap, Map<String, Set<Integer>> licenseTodo, Map<String, Set<Integer>> licenseRisk) {
         List<License> licenses = new ArrayList<>(records.size());
 
         for (CSVRecord record : records) {
@@ -421,13 +421,13 @@ public class ConvertRecord {
                 }
             }
 
-            // Add all todos
-            Set<Integer> todoIds = licenseTodo.get(identifier);
-            if (todoIds != null) {
-                for (int todoId : todoIds) {
-                    Todo todo = todoMap.get(todoId);
-                    if (todo != null) {
-                        license.addToTodoDatabaseIds(todo.getId());
+            // Add all obligations
+            Set<Integer> obligIds = licenseTodo.get(identifier);
+            if (obligIds != null) {
+                for (int obligId : obligIds) {
+                    Obligations oblig = obligMap.get(obligId);
+                    if (oblig != null) {
+                        license.addToObligationDatabaseIds(oblig.getId());
                     }
                 }
             }
@@ -502,22 +502,22 @@ public class ConvertRecord {
 
 
     private static Map<Integer, Set<Integer>> invertRelation(Map<Integer, Set<Integer>> obligationTodo) {
-        Map<Integer, Set<Integer>> todoObligation = new HashMap<>();
+        Map<Integer, Set<Integer>> obligObligation = new HashMap<>();
 
         for (Map.Entry<Integer, Set<Integer>> entry : obligationTodo.entrySet()) {
             int obligationId = entry.getKey();
-            for (int todoId : entry.getValue()) {
-                if (todoObligation.containsKey(todoId)) {
-                    todoObligation.get(todoId).add(obligationId);
+            for (int obligId : entry.getValue()) {
+                if (obligObligation.containsKey(obligId)) {
+                    obligObligation.get(obligId).add(obligationId);
                 } else {
                     Set<Integer> obligationIds = new HashSet<>();
                     obligationIds.add(obligationId);
-                    todoObligation.put(todoId, obligationIds);
+                    obligObligation.put(obligId, obligationIds);
                 }
             }
         }
 
-        return todoObligation;
+        return obligObligation;
     }
 
 
@@ -540,13 +540,13 @@ public class ConvertRecord {
     }
 
     @NotNull
-    public static SetMultimap<Integer, String> getTodoToObligationMap(List<Todo> todos) {
+    public static SetMultimap<Integer, String> getTodoToObligationMap(List<Obligations> obligations) {
         SetMultimap<Integer, String> obligationTodo = HashMultimap.create();
 
-        for (Todo todo : todos) {
-            if (todo.isSetObligations()) {
-                for (Obligation obligation : todo.getObligations()) {
-                    obligationTodo.put(obligation.getObligationId(), todo.getId());
+        for (Obligations oblig : obligations) {
+            if (oblig.isSetListOfobligation()) {
+                for (LicenseObligation obligation : oblig.getListOfobligation()) {
+                    obligationTodo.put(obligation.getObligationId(), oblig.getId());
                 }
             }
         }
@@ -558,9 +558,9 @@ public class ConvertRecord {
         SetMultimap<String, String> licenseToTodo = HashMultimap.create();
 
         for (License license : licenses) {
-            if (license.isSetTodos()) {
-                for (Todo todo : license.getTodos()) {
-                    licenseToTodo.put(license.getId(), todo.getId());
+            if (license.isSetObligations()) {
+                for (Obligations oblig : license.getObligations()) {
+                    licenseToTodo.put(license.getId(), oblig.getId());
                 }
             }
         }

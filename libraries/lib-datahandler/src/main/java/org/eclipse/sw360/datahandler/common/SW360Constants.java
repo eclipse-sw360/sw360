@@ -48,7 +48,7 @@ public class SW360Constants {
     public static final String OBLIGATION_TOPIC_UNKNOWN = "Obligation topic unknown";
     // Proper values of the "type" member to deserialize to CouchDB
     public static final String TYPE_OBLIGATION = "obligation";
-    public static final String TYPE_TODO = "todo";
+    public static final String TYPE_OBLIGATIONS = "obligations";
     public static final String TYPE_RISKCATEGORY = "riskCategory";
     public static final String TYPE_RISK = "risk";
     public static final String TYPE_LICENSETYPE = "licenseType";
@@ -70,7 +70,7 @@ public class SW360Constants {
     public static final Map<String, String> MAP_FULLTEXT_SEARCH_NAME =
             ImmutableMap.<String, String>builder()
                     .put(TYPE_LICENSE, "fullname")
-                    .put(TYPE_TODO, "text")
+                    .put(TYPE_OBLIGATIONS, "text")
                     .put(TYPE_OBLIGATION, "name")
                     .put(TYPE_USER, "email")
                     .put(TYPE_VENDOR, "fullname")

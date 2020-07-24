@@ -13,7 +13,7 @@
 <%--This variable is used as a trick to allow referencing enum value in EL expression below--%>
 <c:set var="WRITE" value="<%=RequestedAction.WRITE%>"/>
 
-<portlet:actionURL var="addLicenseTodoURL" name="addTodo">
+<portlet:actionURL var="addLicenseTodoURL" name="addObligations">
     <portlet:param name="<%=PortalConstants.LICENSE_ID%>" value="${licenseDetail.id}"/>
 </portlet:actionURL>
 
@@ -21,14 +21,14 @@
     <div>
         <div class="row">
             <div class="col">
-                <h5><liferay-ui:message key="todo.details" /></h5>
+                <h5><liferay-ui:message key="obligation.details" /></h5>
             </div>
         </div>
         <div class="row">
             <div class="col-8">
                 <div class="form-group">
-                    <textarea name="<portlet:namespace/>todoText" rows="5" class="form-control"
-                                required placeholder="<liferay-ui:message key="enter.the.todo.text.here" />"></textarea>
+                    <textarea name="<portlet:namespace/>obligText" rows="5" class="form-control"
+                                required placeholder="<liferay-ui:message key="enter.the.oblig.text.here" />"></textarea>
                 </div>
             </div>
             <div class="col-4">
@@ -70,7 +70,7 @@
                         </core_rt:forEach>
                     </tbody>
                 </table>
-                <button type="button" class="btn btn-primary mt-3" id="submitTodo"><liferay-ui:message key="add.todo" /></button>
+                <button type="button" class="btn btn-primary mt-3" id="submitTodo"><liferay-ui:message key="add.obligation" /></button>
             </div>
         </div>
     </div>

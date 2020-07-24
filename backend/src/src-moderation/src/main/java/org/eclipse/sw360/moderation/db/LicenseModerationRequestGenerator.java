@@ -13,7 +13,7 @@ package org.eclipse.sw360.moderation.db;
 
 import com.google.common.collect.Maps;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
-import org.eclipse.sw360.datahandler.thrift.licenses.Todo;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligations;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 
 import java.util.*;
@@ -44,29 +44,29 @@ public class LicenseModerationRequestGenerator extends ModerationRequestGenerato
         documentDeletions.setFullname(actualLicense.getFullname());
         documentDeletions.setId(actualLicense.getId());
 
-        Map<String, Todo> actualTodos = Maps.uniqueIndex(nullToEmptyList(actualLicense.getTodos()), Todo::getId);
+        Map<String, Obligations> actualTodos = Maps.uniqueIndex(nullToEmptyList(actualLicense.getObligations()), Obligations::getId);
 
-        for (Todo updateTodo : updateLicense.getTodos()) {
+        for (Obligations updateTodo : updateLicense.getObligations()) {
             if(!actualTodos.containsKey(updateTodo.getId())){
-                if(!documentAdditions.isSetTodos()) {
-                    documentAdditions.setTodos(new ArrayList<>());
+                if(!documentAdditions.isSetObligations()) {
+                    documentAdditions.setObligations(new ArrayList<>());
                 }
-                documentAdditions.getTodos().add(updateTodo);
+                documentAdditions.getObligations().add(updateTodo);
             } else {
-                Todo actualTodo = actualTodos.get(updateTodo.getId());
+                Obligations actualTodo = actualTodos.get(updateTodo.getId());
                 Set<String> actualWhitelist = actualTodo.whitelist != null ? actualTodo.whitelist : new HashSet<String>();
                 Set<String> updateWhitelist = updateTodo.whitelist != null ? updateTodo.whitelist : new HashSet<String>();
                 String departement = request.getRequestingUserDepartment();
                 if(updateWhitelist.contains(departement) && !actualWhitelist.contains(departement)){
-                    if(!documentAdditions.isSetTodos()) {
-                        documentAdditions.setTodos(new ArrayList<>());
+                    if(!documentAdditions.isSetObligations()) {
+                        documentAdditions.setObligations(new ArrayList<>());
                     }
-                    documentAdditions.getTodos().add(updateTodo);
+                    documentAdditions.getObligations().add(updateTodo);
                 } else if (!updateWhitelist.contains(departement) && actualWhitelist.contains(departement)) {
-                    if(!documentDeletions.isSetTodos()) {
-                        documentDeletions.setTodos(new ArrayList<>());
+                    if(!documentDeletions.isSetObligations()) {
+                        documentDeletions.setObligations(new ArrayList<>());
                     }
-                    documentDeletions.getTodos().add(actualTodo);
+                    documentDeletions.getObligations().add(actualTodo);
                 }
             }
         }

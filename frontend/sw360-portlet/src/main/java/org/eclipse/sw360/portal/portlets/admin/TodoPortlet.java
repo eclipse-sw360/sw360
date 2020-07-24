@@ -14,7 +14,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
-import org.eclipse.sw360.datahandler.thrift.licenses.Todo;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligations;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
@@ -39,11 +39,11 @@ import static org.eclipse.sw360.portal.common.PortalConstants.*;
     property = {
         "javax.portlet.name=" + TODOS_PORTLET_NAME,
 
-        "javax.portlet.display-name=ToDos",
-        "javax.portlet.info.short-title=ToDos",
-        "javax.portlet.info.title=ToDos",
+        "javax.portlet.display-name=Obligations",
+        "javax.portlet.info.short-title=Obligations",
+        "javax.portlet.info.title=Obligations",
         "javax.portlet.resource-bundle=content.Language",
-        "javax.portlet.init-param.view-template=/html/admin/todos/view.jsp",
+        "javax.portlet.init-param.view-template=/html/admin/obligations/view.jsp",
     },
     service = Portlet.class,
     configurationPolicy = ConfigurationPolicy.REQUIRE
@@ -64,10 +64,10 @@ public class TodoPortlet extends Sw360Portlet {
 
 
         try {
-            RequestStatus status = licenseClient.deleteTodo(id, user);
+            RequestStatus status = licenseClient.deleteObligations(id, user);
             renderRequestStatus(request,response, status);
         } catch (TException e) {
-            log.error("Error deleting todo", e);
+            log.error("Error deleting oblig", e);
             renderRequestStatus(request,response, RequestStatus.FAILURE);
         }
     }
@@ -80,7 +80,7 @@ public class TodoPortlet extends Sw360Portlet {
 
         String pageName = request.getParameter(PAGENAME);
         if (PAGENAME_ADD.equals(pageName)) {
-            include("/html/admin/todos/add.jsp", request, response);
+            include("/html/admin/obligations/add.jsp", request, response);
         } else {
             prepareStandardView(request);
             super.doView(request, response);
@@ -88,34 +88,34 @@ public class TodoPortlet extends Sw360Portlet {
     }
 
     private void prepareStandardView(RenderRequest request) {
-        List<Todo> todoList;
+        List<Obligations> obligList;
         try {
             final User user = UserCacheHolder.getUserFromRequest(request);
             LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
 
-            todoList = licenseClient.getTodos();
+            obligList = licenseClient.getObligations();
 
         } catch (TException e) {
-            log.error("Could not get Todos from backend ", e);
-            todoList = Collections.emptyList();
+            log.error("Could not get Obligations from backend ", e);
+            obligList = Collections.emptyList();
         }
 
-        request.setAttribute(TODO_LIST, todoList);
+        request.setAttribute(TODO_LIST, obligList);
     }
 
     @UsedAsLiferayAction
-    public void addTodo(ActionRequest request, ActionResponse response) {
+    public void addObligations(ActionRequest request, ActionResponse response) {
 
-        final Todo todo = new Todo();
-        ComponentPortletUtils.updateTodoFromRequest(request, todo);
+        final Obligations oblig = new Obligations();
+        ComponentPortletUtils.updateTodoFromRequest(request, oblig);
 
         try {
             LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
             final User user = UserCacheHolder.getUserFromRequest(request);
 
-            licenseClient.addTodo(todo, user);
+            licenseClient.addObligations(oblig, user);
         } catch (TException e) {
-            log.error("Error adding todo", e);
+            log.error("Error adding oblig", e);
         }
     }
 }

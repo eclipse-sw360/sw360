@@ -29,7 +29,8 @@ import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
-import org.eclipse.sw360.datahandler.thrift.licenses.Todo;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligations;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
@@ -83,6 +84,11 @@ public class SW360Utils {
         public final boolean fulfilled;
         public final String timestamp;
         public final String user;
+        public final String comments;
+
+        public String getComments() {
+            return comments;
+        }
 
         public TodoInfo(ProjectTodo projectTodo) {
             final UserService.Iface userClient = new ThriftClients().makeUserClient();
@@ -104,6 +110,7 @@ public class SW360Utils {
             this.user = userString;
             this.fulfilled = projectTodo.fulfilled;
             this.timestamp = Strings.nullToEmpty(projectTodo.updated);
+            this.comments = Strings.nullToEmpty(projectTodo.comments);
         }
 
         public String getModificationHint() {
@@ -270,13 +277,15 @@ public class SW360Utils {
         return getReleaseFullname(vendorName, release.getName(), release.getVersion());
     }
 
-    public static Map<Todo, TodoInfo> getProjectObligations(Project project) {
+    public static Map<Obligations, TodoInfo> getProjectObligations(Project project) {
         final LicenseService.Iface licenseClient = new ThriftClients().makeLicenseClient();
 
         Set<ProjectTodo> projectTodos = project.getTodosSize() > 0 ? project.getTodos() : Collections.emptySet();
         try {
-            return licenseClient.getTodos().stream()
+            return licenseClient.getObligations().stream()
                     .filter(o -> o.isValidForProject())
+                    .filter(o -> Objects.nonNull(o.getObligationType()))
+                    .filter(o->o.getObligationType().equals(ObligationType.PRODUCT_OBLIGATION))
                     .collect(Collectors.toMap(
                             todo -> todo,
                             todo -> new TodoInfo(projectTodos.stream()
@@ -286,6 +295,53 @@ public class SW360Utils {
                             )
                     );
         } catch (TException te) {
+            log.error("ERROR getting project obligations", te);
+            return Collections.emptyMap();
+        }
+    }
+
+    public static Map<Obligations, TodoInfo> getComponentObligations(Project project) {
+        final LicenseService.Iface licenseClient = new ThriftClients().makeLicenseClient();
+
+        Set<ProjectTodo> projectTodos = project.getTodosSize() > 0 ? project.getTodos() : Collections.emptySet();
+        try {
+            return licenseClient.getObligations().stream()
+                    .filter(o -> o.isValidForProject())
+                    .filter(o -> Objects.nonNull(o.getObligationType()))
+                    .filter(o->o.getObligationType().equals(ObligationType.COMPONENT_OBLIGATION))
+                    .collect(Collectors.toMap(
+                            todo -> todo,
+                            todo -> new TodoInfo(projectTodos.stream()
+                                        .filter(projectTodo -> projectTodo.getTodoId().equals(todo.getId()))
+                                        .findFirst()
+                                        .orElseGet(ProjectTodo::new))
+                            )
+                    );
+        } catch (TException te) {
+            log.error("ERROR getting component obligations", te);
+            return Collections.emptyMap();
+        }
+    }
+
+    public static Map<Obligations, TodoInfo> getOrganisationObligations(Project project) {
+        final LicenseService.Iface licenseClient = new ThriftClients().makeLicenseClient();
+
+        Set<ProjectTodo> projectTodos = project.getTodosSize() > 0 ? project.getTodos() : Collections.emptySet();
+        try {
+            return licenseClient.getObligations().stream()
+                    .filter(o -> o.isValidForProject())
+                    .filter(o -> Objects.nonNull(o.getObligationType()))
+                    .filter(o->o.getObligationType().equals(ObligationType.ORGANISATION_OBLIGATION))
+                    .collect(Collectors.toMap(
+                            todo -> todo,
+                            todo -> new TodoInfo(projectTodos.stream()
+                                        .filter(projectTodo -> projectTodo.getTodoId().equals(todo.getId()))
+                                        .findFirst()
+                                        .orElseGet(ProjectTodo::new))
+                            )
+                    );
+        } catch (TException te) {
+            log.error("ERROR getting organisation obligations", te);
             return Collections.emptyMap();
         }
     }

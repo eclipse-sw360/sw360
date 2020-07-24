@@ -37,8 +37,8 @@
                     <clay:icon symbol="document"/> <liferay-ui:message key="licenses" />
                 </a>
 
-                <a class="btn btn-secondary" href="${baseUrl}/../todos">
-                    <clay:icon symbol="list"/> <liferay-ui:message key="todos" />
+                <a class="btn btn-secondary" href="${baseUrl}/../obligations">
+                    <clay:icon symbol="list"/> <liferay-ui:message key="obligations" />
                 </a>
 
                 <a class="btn btn-secondary" href="${baseUrl}/../schedule">

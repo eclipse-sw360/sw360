@@ -21,14 +21,14 @@ public class LicsArchive {
     public static final String RISK_CATEGORY_FILE = "dbo.Riskcategory.csv";
     public static final String RISK_FILE = "dbo.Risk.csv";
     public static final String OBLIGATION_FILE = "dbo.Obligation.csv";
-    public static final String OBLIGATION_TODO_FILE = "dbo.obligationtodo.csv";
-    public static final String TODO_FILE = "dbo.Todo.csv";
+    public static final String OBLIGATION_TODO_FILE = "dbo.obligationoblig.csv";
+    public static final String TODO_FILE = "dbo.Obligations.csv";
     public static final String LICENSETYPE_FILE = "dbo.Licensetype.csv";
-    public static final String LICENSE_TODO_FILE = "dbo.licensetodo.csv";
+    public static final String LICENSE_TODO_FILE = "dbo.licenseoblig.csv";
     public static final String LICENSE_RISK_FILE = "dbo.licenserisk.csv";
     public static final String LICENSE_FILE = "dbo.License.csv";
     public static final String CUSTOM_PROPERTIES_FILE = "dbo.customProperties.csv";
-    public static final String TODO_CUSTOM_PROPERTIES_FILE = "dbo.todoCustomProperties.csv";
+    public static final String TODO_CUSTOM_PROPERTIES_FILE = "dbo.obligCustomProperties.csv";
     public static final Set<String> requiredLicenseFileNames = ImmutableSet.<String>builder()
             .add(RISK_CATEGORY_FILE).add(RISK_FILE)
             .add(OBLIGATION_FILE).add(OBLIGATION_TODO_FILE)

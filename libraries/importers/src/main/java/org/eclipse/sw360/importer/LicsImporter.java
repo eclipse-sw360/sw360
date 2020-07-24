@@ -61,16 +61,16 @@ public class LicsImporter {
         return getIntegerRiskMap(licenseClient, riskCategoryMap, inputMap.get(RISK_FILE), user);
     }
 
-    private Map<Integer, Todo> parseLicsTodoMap(User user, Map<String, InputStream> inputMap) throws TException {
+    private Map<Integer, Obligations> parseLicsTodoMap(User user, Map<String, InputStream> inputMap) throws TException {
         log.debug("Parsing obligations ...");
-        Map<Integer, Obligation> obligationMap = getIdentifierToTypeMapAndWriteMissingToDatabase(licenseClient,
-                inputMap.get(OBLIGATION_FILE), Obligation.class, Integer.class, user);
+        Map<Integer, LicenseObligation> obligationMap = getIdentifierToTypeMapAndWriteMissingToDatabase(licenseClient,
+                inputMap.get(OBLIGATION_FILE), LicenseObligation.class, Integer.class, user);
 
-        log.debug("Parsing obligation todos ...");
+        log.debug("Parsing obligation obligations ...");
         List<CSVRecord> obligationTodoRecords = readAsCSVRecords(inputMap.get(OBLIGATION_TODO_FILE));
         Map<Integer, Set<Integer>> obligationTodoMapping = ConvertRecord.convertRelationalTableWithIntegerKeys(obligationTodoRecords);
 
-        log.debug("Parsing todos ...");
+        log.debug("Parsing obligations ...");
         return getTodoMapAndWriteMissingToDatabase(licenseClient, obligationMap, obligationTodoMapping, inputMap.get(TODO_FILE), user);
     }
 
@@ -81,7 +81,7 @@ public class LicsImporter {
     }
 
     private Map<String, Set<Integer>> parseLicsTodoToLicenseMap(Map<String, InputStream> inputMap) {
-        log.debug("Parsing license todos ...");
+        log.debug("Parsing license obligations ...");
         List<CSVRecord> licenseTodoRecord = readAsCSVRecords(inputMap.get(LICENSE_TODO_FILE));
         return ConvertRecord.convertRelationalTable(licenseTodoRecord);
     }
@@ -93,19 +93,19 @@ public class LicsImporter {
         return ConvertRecord.convertRelationalTable(licenseRiskRecord);
     }
 
-    private Map<Integer, Todo> enhanceLicsTodosWithCustomProperties(User user, Map<String, InputStream> inputMap, Map<Integer, Todo> todoMap) throws TException {
+    private Map<Integer, Obligations> enhanceLicsTodosWithCustomProperties(User user, Map<String, InputStream> inputMap, Map<Integer, Obligations> obligMap) throws TException {
         if(inputMap.containsKey(CUSTOM_PROPERTIES_FILE)) {
             log.debug("Parsing custom properties ...");
             Map<Integer, ConvertRecord.PropertyWithValue> customPropertiesMap =
                     getCustomPropertiesWithValuesByIdAndWriteMissingToDatabase(licenseClient, inputMap.get(CUSTOM_PROPERTIES_FILE), user);
 
-            log.debug("Parsing todo custom properties relation ...");
-            List<CSVRecord> todoPropertiesRecord = readAsCSVRecords(inputMap.get(TODO_CUSTOM_PROPERTIES_FILE));
-            Map<Integer, Set<Integer>> todoPropertiesMap = ConvertRecord.convertRelationalTableWithIntegerKeys(todoPropertiesRecord);
+            log.debug("Parsing oblig custom properties relation ...");
+            List<CSVRecord> obligPropertiesRecord = readAsCSVRecords(inputMap.get(TODO_CUSTOM_PROPERTIES_FILE));
+            Map<Integer, Set<Integer>> obligPropertiesMap = ConvertRecord.convertRelationalTableWithIntegerKeys(obligPropertiesRecord);
 
-            return updateTodoMapWithCustomPropertiesAndWriteToDatabase(licenseClient, todoMap, customPropertiesMap, todoPropertiesMap, user);
+            return updateTodoMapWithCustomPropertiesAndWriteToDatabase(licenseClient, obligMap, customPropertiesMap, obligPropertiesMap, user);
         }
-        return todoMap;
+        return obligMap;
     }
 
     private List<License> parseLics(User user, Map<String, InputStream> inputMap) throws TException {
@@ -115,15 +115,15 @@ public class LicsImporter {
 
         Map<Integer, Risk> riskMap = parseLicsRiskMap(user, inputMap);
         Map<Integer, LicenseType> licenseTypeMap = parseLicsLicenseTypeMap(user, inputMap);
-        Map<Integer, Todo> todoMap = parseLicsTodoMap(user, inputMap);
-        todoMap = enhanceLicsTodosWithCustomProperties(user, inputMap, todoMap);
+        Map<Integer, Obligations> obligMap = parseLicsTodoMap(user, inputMap);
+        obligMap = enhanceLicsTodosWithCustomProperties(user, inputMap, obligMap);
         Map<String, Set<Integer>> licenseTodoMap = parseLicsTodoToLicenseMap(inputMap);
         Map<String, Set<Integer>> licenseRiskMap = parseLicsLicenseRiskMap(inputMap);
 
         log.debug("Parsing licenses ...");
         List<CSVRecord> licenseRecord = readAsCSVRecords(inputMap.get(LICENSE_FILE));
 
-        return ConvertRecord.fillLicenses(licenseRecord, licenseTypeMap, todoMap, riskMap, licenseTodoMap, licenseRiskMap);
+        return ConvertRecord.fillLicenses(licenseRecord, licenseTypeMap, obligMap, riskMap, licenseTodoMap, licenseRiskMap);
     }
 
     private Map<String,Map<String,Set<String>>> genExternalIdToIdLookupMap(List<License> licenses) {

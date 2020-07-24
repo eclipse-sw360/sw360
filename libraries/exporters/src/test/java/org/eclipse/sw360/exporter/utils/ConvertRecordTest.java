@@ -13,7 +13,7 @@ package org.eclipse.sw360.exporter.utils;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import org.eclipse.sw360.datahandler.common.ImportCSV;
-import org.eclipse.sw360.datahandler.thrift.licenses.Todo;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligations;
 import org.apache.commons.csv.CSVRecord;
 import org.hamcrest.Matchers;
 import org.junit.Before;
@@ -41,7 +41,7 @@ public class ConvertRecordTest {
     private List<CSVRecord> whitePropRecord;
     private List<CSVRecord> emptyValRecord;
     private List<CSVRecord> whiteValRecord;
-    private List<Todo> todos;
+    private List<Obligations> obligations;
     private List<CSVRecord> fullTodoRecord;
 
     @Before
@@ -72,14 +72,14 @@ public class ConvertRecordTest {
         String fullTodo = "header \n 'title1','text1','true','true' \n 'title2','text2','false','false', '{\"key\": \"value\"}'";
         fullTodoRecord = readToRecord(fullTodo);
 
-        Map<String, String> todoCustomProperties1 = new HashMap<>();
-        todoCustomProperties1.put("A", "A1");
-        Todo todo1 = new Todo().setId("1").setCustomPropertyToValue(todoCustomProperties1);
-        Map<String, String> todoCustomProperties2 = new HashMap<>();
-        todoCustomProperties2.put("A", "A2");
-        todoCustomProperties2.put("C", "C2");
-        Todo todo2 = new Todo().setId("2").setCustomPropertyToValue(todoCustomProperties2);
-        todos = Arrays.asList(todo1, todo2);
+        Map<String, String> obligCustomProperties1 = new HashMap<>();
+        obligCustomProperties1.put("A", "A1");
+        Obligations oblig1 = new Obligations().setId("1").setCustomPropertyToValue(obligCustomProperties1);
+        Map<String, String> obligCustomProperties2 = new HashMap<>();
+        obligCustomProperties2.put("A", "A2");
+        obligCustomProperties2.put("C", "C2");
+        Obligations oblig2 = new Obligations().setId("2").setCustomPropertyToValue(obligCustomProperties2);
+        obligations = Arrays.asList(oblig1, oblig2);
     }
 
     public List<CSVRecord> readToRecord(String string) {
@@ -178,42 +178,42 @@ public class ConvertRecordTest {
     @Test
     public void testFillTodoCustomPropertyInfoEmpty() throws Exception {
         List<ConvertRecord.PropertyWithValueAndId> customProperties = new ArrayList<>();
-        SetMultimap<String, Integer> todoCustomPropertyMap = HashMultimap.create();
-        fillTodoCustomPropertyInfo(Collections.EMPTY_LIST, customProperties, todoCustomPropertyMap);
+        SetMultimap<String, Integer> obligCustomPropertyMap = HashMultimap.create();
+        fillTodoCustomPropertyInfo(Collections.EMPTY_LIST, customProperties, obligCustomPropertyMap);
         assertThat(customProperties.size(), is(0));
-        assertThat(todoCustomPropertyMap.size(), is(0));
+        assertThat(obligCustomPropertyMap.size(), is(0));
     }
 
     @Test
     public void testFillTodoCustomPropertyInfoFull() throws Exception {
         List<ConvertRecord.PropertyWithValueAndId> customProperties = new ArrayList<>();
-        SetMultimap<String, Integer> todoCustomPropertyMap = HashMultimap.create();
-        fillTodoCustomPropertyInfo(todos, customProperties, todoCustomPropertyMap);
+        SetMultimap<String, Integer> obligCustomPropertyMap = HashMultimap.create();
+        fillTodoCustomPropertyInfo(obligations, customProperties, obligCustomPropertyMap);
         assertThat(customProperties.size(), is(3));
-        assertThat(todoCustomPropertyMap.size(), is(3));
-        int id = todoCustomPropertyMap.get("1").stream().findFirst().get();
+        assertThat(obligCustomPropertyMap.size(), is(3));
+        int id = obligCustomPropertyMap.get("1").stream().findFirst().get();
         assertThat(customProperties.get(id).getProperty(), is("A"));
         assertThat(customProperties.get(id).getValue(), is("A1"));
     }
 
     @Test
     public void testConvertTodosEmpty() throws Exception {
-        List<Todo> todos = convertTodos(emptyRecord);
-        assertThat(todos.size(), is(0));
+        List<Obligations> obligations = convertTodos(emptyRecord);
+        assertThat(obligations.size(), is(0));
     }
 
     @Test
     public void testConvertTodosFull() throws Exception {
-        List<Todo> todos = convertTodos(fullTodoRecord);
-        assertThat(todos.size(), is(2));
-        assertThat(todos.get(0).getText(), is("text1"));
-        assertThat(todos.get(0).isDevelopment(), is(true));
-        assertThat(todos.get(0).isDistribution(), is(true));
-        assertThat(todos.get(1).getText(), is("text2"));
-        assertThat(todos.get(1).isDevelopment(), is(false));
-        assertThat(todos.get(1).isDistribution(), is(false));
-        assertThat(todos.get(1).getExternalIds().size(), is(1));
-        assertThat(todos.get(1).getExternalIds().get("key"), is("value"));
+        List<Obligations> obligations = convertTodos(fullTodoRecord);
+        assertThat(obligations.size(), is(2));
+        assertThat(obligations.get(0).getText(), is("text1"));
+        assertThat(obligations.get(0).isDevelopment(), is(true));
+        assertThat(obligations.get(0).isDistribution(), is(true));
+        assertThat(obligations.get(1).getText(), is("text2"));
+        assertThat(obligations.get(1).isDevelopment(), is(false));
+        assertThat(obligations.get(1).isDistribution(), is(false));
+        assertThat(obligations.get(1).getExternalIds().size(), is(1));
+        assertThat(obligations.get(1).getExternalIds().get("key"), is("value"));
     }
 
 

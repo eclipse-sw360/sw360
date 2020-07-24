@@ -61,7 +61,7 @@ public class LicenseDatabaseHandler {
      */
     private final LicenseRepository licenseRepository;
     private final ObligationRepository obligationRepository;
-    private final TodoRepository todoRepository;
+    private final TodoRepository obligRepository;
     private final RiskRepository riskRepository;
     private final RiskCategoryRepository riskCategoryRepository;
     private final LicenseTypeRepository licenseTypeRepository;
@@ -78,7 +78,7 @@ public class LicenseDatabaseHandler {
         // Create the repository
         licenseRepository = new LicenseRepository(db);
         obligationRepository = new ObligationRepository(db);
-        todoRepository = new TodoRepository(db);
+        obligRepository = new TodoRepository(db);
         riskRepository = new RiskRepository(db);
         riskCategoryRepository = new RiskCategoryRepository(db);
         licenseTypeRepository = new LicenseTypeRepository(db);
@@ -87,7 +87,7 @@ public class LicenseDatabaseHandler {
         repositories = new DatabaseRepository[]{
                 licenseRepository,
                 licenseTypeRepository,
-                todoRepository,
+                obligRepository,
                 obligationRepository,
                 riskRepository,
                 riskCategoryRepository,
@@ -105,7 +105,7 @@ public class LicenseDatabaseHandler {
     /**
      * Get all obligations from database
      */
-    public List<Obligation> getObligations() {
+    public List<LicenseObligation> getListOfobligation() {
         return obligationRepository.getAll();
     }
 
@@ -169,9 +169,9 @@ public class LicenseDatabaseHandler {
                         moderationRequest.getLicenseDeletions(),
                         organisation);
 
-                for (Todo todo : license.getTodos()) {
-                    //remove other organisations from whitelist of todo
-                    todo.setWhitelist(SW360Utils.filterBUSet(organisation, todo.whitelist));
+                for (Obligations oblig : license.getObligations()) {
+                    //remove other organisations from whitelist of oblig
+                    oblig.setWhitelist(SW360Utils.filterBUSet(organisation, oblig.whitelist));
                 }
 
                 documentState = CommonUtils.getModeratedDocumentState(moderationRequest);
@@ -185,16 +185,16 @@ public class LicenseDatabaseHandler {
     }
 
     private void fillLicenseForOrganisation(String organisation, License license) {
-        if (license.isSetTodoDatabaseIds()) {
-            license.setTodos(getTodosByIds(license.todoDatabaseIds));
+        if (license.isSetObligationDatabaseIds()) {
+            license.setObligations(getObligationsByIds(license.obligationDatabaseIds));
         }
 
-        if (license.isSetTodos()) {
-            for (Todo todo : license.getTodos()) {
-                //remove other organisations from whitelist of todo
-                todo.setWhitelist(SW360Utils.filterBUSet(organisation, todo.whitelist));
-                if(todo.isSetObligationDatabaseIds()) {
-                    todo.setObligations(getObligationsByIds(todo.obligationDatabaseIds));
+        if (license.isSetObligations()) {
+            for (Obligations oblig : license.getObligations()) {
+                //remove other organisations from whitelist of oblig
+                oblig.setWhitelist(SW360Utils.filterBUSet(organisation, oblig.whitelist));
+                if(oblig.isSetObligationDatabaseIds()) {
+                    oblig.setListOfobligation(getListOfobligationByIds(oblig.obligationDatabaseIds));
                 }
             }
         }
@@ -216,51 +216,51 @@ public class LicenseDatabaseHandler {
     ////////////////////
 
     /**
-     * Adds a new todo to the database.
+     * Adds a new obligation to the database.
      *
-     * @return ID of the added todo.
+     * @return ID of the added obligations.
      */
-    public String addTodo(@NotNull Todo todo, User user) throws SW360Exception {
+    public String addObligations(@NotNull Obligations obligs, User user) throws SW360Exception {
         if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)){
             return null;
         }
-        prepareTodo(todo);
-        todoRepository.add(todo);
+        prepareTodo(obligs);
+        obligRepository.add(obligs);
 
-        return todo.getId();
+        return obligs.getId();
     }
 
     /**
-     * Add todo id to a given license
+     * Add oblig id to a given license
      */
-    public RequestStatus addTodoToLicense(Todo todo, String licenseId, User user) throws SW360Exception {
-        assertNotNull(todo);
+    public RequestStatus addObligationsToLicense(Obligations oblig, String licenseId, User user) throws SW360Exception {
+        assertNotNull(oblig);
         License license = licenseRepository.get(licenseId);
         if (makePermission(license, user).isActionAllowed(RequestedAction.WRITE)) {
             assertNotNull(license);
-            if(isTemporaryTodo(todo)){
-                todo.unsetId();
+            if(isTemporaryTodo(oblig)){
+                oblig.unsetId();
             }
-            todo.unsetObligations();
-            String todoId = addTodo(todo, user);
-            license.addToTodoDatabaseIds(todoId);
+            oblig.unsetListOfobligation();
+            String obligId = addObligations(oblig, user);
+            license.addToObligationDatabaseIds(obligId);
             licenseRepository.update(license);
             return RequestStatus.SUCCESS;
         } else {
             License licenseForModerationRequest = getLicenseForOrganisationWithOwnModerationRequests(licenseId, user.getDepartment(),user);
             assertNotNull(licenseForModerationRequest);
-            if(todo.isSetObligationDatabaseIds()){
-                for(String obligationDatabaseId: todo.obligationDatabaseIds){
-                    todo.addToObligations(obligationRepository.get(obligationDatabaseId));
+            if(oblig.isSetObligationDatabaseIds()){
+                for(String obligationDatabaseId: oblig.obligationDatabaseIds){
+                    oblig.addToListOfobligation(obligationRepository.get(obligationDatabaseId));
                 }
             }
-            licenseForModerationRequest.addToTodos(todo);
+            licenseForModerationRequest.addToObligations(oblig);
             return moderator.updateLicense(licenseForModerationRequest, user); // Only moderators can change licenses!
         }
     }
 
     /**
-     * Update the whitelisted todos for an organisation
+     * Update the whitelisted obligations for an organisation
      */
     public RequestStatus updateWhitelist(String licenseId, Set<String> whitelistTodos, User user) throws SW360Exception {
         License license = licenseRepository.get(licenseId);
@@ -271,40 +271,40 @@ public class LicenseDatabaseHandler {
 
         if (makePermission(license, user).isActionAllowed(RequestedAction.WRITE)) {
 
-            List<Todo> todos = todoRepository.get(license.todoDatabaseIds);
-            for (Todo todo : todos) {
-                String todoId = todo.getId();
-                Set<String> currentWhitelist = todo.whitelist != null ? todo.whitelist : new HashSet<>();
+            List<Obligations> obligations = obligRepository.get(license.obligationDatabaseIds);
+            for (Obligations oblig : obligations) {
+                String obligId = oblig.getId();
+                Set<String> currentWhitelist = oblig.whitelist != null ? oblig.whitelist : new HashSet<>();
 
                 // Add to whitelist if necessary
-                if (whitelistTodos.contains(todoId) && !currentWhitelist.contains(businessUnit)) {
-                    todo.addToWhitelist(businessUnit);
-                    todoRepository.update(todo);
+                if (whitelistTodos.contains(obligId) && !currentWhitelist.contains(businessUnit)) {
+                    oblig.addToWhitelist(businessUnit);
+                    obligRepository.update(oblig);
                 }
 
                 // Remove from whitelist if necessary
-                if (!whitelistTodos.contains(todoId) && currentWhitelist.contains(businessUnit)) {
+                if (!whitelistTodos.contains(obligId) && currentWhitelist.contains(businessUnit)) {
                     currentWhitelist.remove(businessUnit);
-                    todoRepository.update(todo);
+                    obligRepository.update(oblig);
                 }
 
             }
             return RequestStatus.SUCCESS;
         } else {
-            //add updated whitelists to todos in moderation request, not yet in database
+            //add updated whitelists to obligations in moderation request, not yet in database
             License licenseForModerationRequest = getLicenseForOrganisationWithOwnModerationRequests(licenseId, user.getDepartment(),user);
-            List<Todo> todos = licenseForModerationRequest.getTodos();
-            for (Todo todo : todos) {
-                String todoId = todo.getId();
-                Set<String> currentWhitelist = todo.whitelist != null ? todo.whitelist : new HashSet<>();
+            List<Obligations> obligations = licenseForModerationRequest.getObligations();
+            for (Obligations oblig : obligations) {
+                String obligId = oblig.getId();
+                Set<String> currentWhitelist = oblig.whitelist != null ? oblig.whitelist : new HashSet<>();
 
                 // Add to whitelist if necessary
-                if (whitelistTodos.contains(todoId) && !currentWhitelist.contains(businessUnit)) {
-                    todo.addToWhitelist(businessUnit);
+                if (whitelistTodos.contains(obligId) && !currentWhitelist.contains(businessUnit)) {
+                    oblig.addToWhitelist(businessUnit);
                 }
 
                 // Remove from whitelist if necessary
-                if (!whitelistTodos.contains(todoId) && currentWhitelist.contains(businessUnit)) {
+                if (!whitelistTodos.contains(obligId) && currentWhitelist.contains(businessUnit)) {
                     currentWhitelist.remove(businessUnit);
                 }
 
@@ -315,26 +315,26 @@ public class LicenseDatabaseHandler {
 
     public List<License> getLicenses(Set<String> ids, String organisation) {
         final List<License> licenses = licenseRepository.get(ids);
-        final List<Todo> todosFromLicenses = getTodosFromLicenses(licenses);
+        final List<Obligations> obligationsFromLicenses = getTodosFromLicenses(licenses);
         final List<LicenseType> licenseTypes = getLicenseTypesFromLicenses(licenses);
         final List<Risk> risks = getRisksFromLicenses(licenses);
-        filterTodoWhiteListAndFillTodosRisksAndLicenseTypeInLicense(organisation, licenses, todosFromLicenses, risks, licenseTypes);
+        filterTodoWhiteListAndFillTodosRisksAndLicenseTypeInLicense(organisation, licenses, obligationsFromLicenses, risks, licenseTypes);
         return licenses;
     }
 
     public List<License> getDetailedLicenseSummaryForExport(String organisation) {
 
         final List<License> licenses = licenseRepository.getAll();
-        final List<Todo> todos = todoRepository.getAll();
+        final List<Obligations> obligations = obligRepository.getAll();
         final List<LicenseType> licenseTypes = licenseTypeRepository.getAll();
         final List<Risk> risks = riskRepository.getAll();
-        return filterTodoWhiteListAndFillTodosRisksAndLicenseTypeInLicense(organisation, licenses, todos, risks, licenseTypes);
+        return filterTodoWhiteListAndFillTodosRisksAndLicenseTypeInLicense(organisation, licenses, obligations, risks, licenseTypes);
     }
 
     @NotNull
-    private List<License> filterTodoWhiteListAndFillTodosRisksAndLicenseTypeInLicense(String organisation, List<License> licenses, List<Todo> todos, List<Risk> risks, List<LicenseType> licenseTypes) {
-        filterTodoWhiteList(organisation, todos);
-        fillTodosRisksAndLicenseTypes(licenses, todos, risks, licenseTypes);
+    private List<License> filterTodoWhiteListAndFillTodosRisksAndLicenseTypeInLicense(String organisation, List<License> licenses, List<Obligations> obligations, List<Risk> risks, List<LicenseType> licenseTypes) {
+        filterTodoWhiteList(organisation, obligations);
+        fillTodosRisksAndLicenseTypes(licenses, obligations, risks, licenseTypes);
         return licenses;
     }
 
@@ -347,12 +347,12 @@ public class LicenseDatabaseHandler {
         }
     }
 
-    private void putTodosInLicenses(List<License> licenses, List<Todo> todos) {
-        final Map<String, Todo> todosById = ThriftUtils.getIdMap(todos);
+    private void putTodosInLicenses(List<License> licenses, List<Obligations> obligations) {
+        final Map<String, Obligations> obligationsById = ThriftUtils.getIdMap(obligations);
 
         for (License license : licenses) {
-            license.setTodos(getEntriesFromIds(todosById, CommonUtils.nullToEmptySet(license.getTodoDatabaseIds())));
-            license.unsetTodoDatabaseIds();
+            license.setObligations(getEntriesFromIds(obligationsById, CommonUtils.nullToEmptySet(license.getObligationDatabaseIds())));
+            license.unsetObligationDatabaseIds();
         }
     }
 
@@ -365,9 +365,9 @@ public class LicenseDatabaseHandler {
         }
     }
 
-    private void filterTodoWhiteList(String organisation, List<Todo> todos) {
-        for (Todo todo : todos) {
-            todo.setWhitelist(SW360Utils.filterBUSet(organisation, todo.getWhitelist()));
+    private void filterTodoWhiteList(String organisation, List<Obligations> obligations) {
+        for (Obligations oblig : obligations) {
+            oblig.setWhitelist(SW360Utils.filterBUSet(organisation, oblig.getWhitelist()));
         }
     }
 
@@ -419,25 +419,25 @@ public class LicenseDatabaseHandler {
 
     private License updateLicenseFromInputLicense(Optional<License> oldLicense, License inputLicense, String businessUnit, User user){
         License license = oldLicense.orElse(new License());
-        if(inputLicense.isSetTodos()) {
-            for (Todo todo : inputLicense.getTodos()) {
-                if (isTemporaryTodo(todo)) {
-                    todo.unsetId();
+        if(inputLicense.isSetObligations()) {
+            for (Obligations oblig : inputLicense.getObligations()) {
+                if (isTemporaryTodo(oblig)) {
+                    oblig.unsetId();
                     try {
-                        String todoDatabaseId = addTodo(todo, user);
-                        license.addToTodoDatabaseIds(todoDatabaseId);
+                        String obligDatabaseId = addObligations(oblig, user);
+                        license.addToObligationDatabaseIds(obligDatabaseId);
                     } catch (SW360Exception e) {
-                        log.error("Error adding todo to database.");
+                        log.error("Error adding oblig to database.");
                     }
-                } else if (todo.isSetId()) {
-                    Todo dbTodo = todoRepository.get(todo.id);
-                    if (todo.whitelist.contains(businessUnit) && !dbTodo.whitelist.contains(businessUnit)) {
+                } else if (oblig.isSetId()) {
+                    Obligations dbTodo = obligRepository.get(oblig.id);
+                    if (oblig.whitelist.contains(businessUnit) && !dbTodo.whitelist.contains(businessUnit)) {
                         dbTodo.addToWhitelist(businessUnit);
-                        todoRepository.update(dbTodo);
+                        obligRepository.update(dbTodo);
                     }
-                    if (!todo.whitelist.contains(businessUnit) && dbTodo.whitelist.contains(businessUnit)) {
+                    if (!oblig.whitelist.contains(businessUnit) && dbTodo.whitelist.contains(businessUnit)) {
                         dbTodo.whitelist.remove(businessUnit);
-                        todoRepository.update(dbTodo);
+                        obligRepository.update(dbTodo);
                     }
                 }
             }
@@ -478,25 +478,25 @@ public class LicenseDatabaseHandler {
 
     public List<License> getDetailedLicenseSummaryForExport(String organisation, List<String> identifiers) {
         final List<License> licenses = CommonUtils.nullToEmptyList(licenseRepository.searchByShortName(identifiers));
-        List<Todo> todos = getTodosFromLicenses(licenses);
+        List<Obligations> obligations = getTodosFromLicenses(licenses);
         final List<LicenseType> licenseTypes = getLicenseTypesFromLicenses(licenses);
         final List<Risk> risks = getRisksFromLicenses(licenses);
-        return filterTodoWhiteListAndFillTodosRisksAndLicenseTypeInLicense(organisation, licenses, todos, risks, licenseTypes);
+        return filterTodoWhiteListAndFillTodosRisksAndLicenseTypeInLicense(organisation, licenses, obligations, risks, licenseTypes);
     }
 
-    private List<Todo> getTodosFromLicenses(List<License> licenses) {
-        List<Todo> todos;
-        final Set<String> todoIds = new HashSet<>();
+    private List<Obligations> getTodosFromLicenses(List<License> licenses) {
+        List<Obligations> obligations;
+        final Set<String> obligIds = new HashSet<>();
         for (License license : licenses) {
-            todoIds.addAll(CommonUtils.nullToEmptySet(license.getTodoDatabaseIds()));
+            obligIds.addAll(CommonUtils.nullToEmptySet(license.getObligationDatabaseIds()));
         }
 
-        if (todoIds.isEmpty()) {
-            todos = Collections.emptyList();
+        if (obligIds.isEmpty()) {
+            obligations = Collections.emptyList();
         } else {
-            todos = CommonUtils.nullToEmptyList(getTodosByIds(todoIds));
+            obligations = CommonUtils.nullToEmptyList(getObligationsByIds(obligIds));
         }
-        return todos;
+        return obligations;
     }
 
     private List<Risk> getRisksFromLicenses(List<License> licenses) {
@@ -603,11 +603,11 @@ public class LicenseDatabaseHandler {
         }
     }
 
-    public List<Obligation> addObligations(List<Obligation> obligations, User user) throws SW360Exception {
+    public List<LicenseObligation> addListOfobligation(List<LicenseObligation> obligations, User user) throws SW360Exception {
         if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)){
             return null;
         }
-        for (Obligation obligation : obligations) {
+        for (LicenseObligation obligation : obligations) {
             prepareObligation(obligation);
         }
 
@@ -617,17 +617,17 @@ public class LicenseDatabaseHandler {
         } else return null;
     }
 
-    public List<Todo> addTodos(List<Todo> todos, User user) throws SW360Exception {
+    public List<Obligations> addListOfObligations(List<Obligations> listOfObligations, User user) throws SW360Exception {
         if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)){
             return null;
         }
-        for (Todo todo : todos) {
-            prepareTodo(todo);
+        for (Obligations Oblig : listOfObligations) {
+            prepareTodo(Oblig);
         }
 
-        final List<DocumentOperationResult> documentOperationResults = todoRepository.executeBulk(todos);
+        final List<DocumentOperationResult> documentOperationResults = obligRepository.executeBulk(listOfObligations);
         if (documentOperationResults.isEmpty()) {
-            return todos;
+            return listOfObligations;
         } else return null;
     }
 
@@ -636,15 +636,15 @@ public class LicenseDatabaseHandler {
         if (licenses == null) {
             return Collections.emptyList();
         }
-        final List<Todo> todos = getTodosFromLicenses(licenses);
+        final List<Obligations> obligations = getTodosFromLicenses(licenses);
         final List<LicenseType> licenseTypes = getLicenseTypesFromLicenses(licenses);
         final List<Risk> risks = getRisksFromLicenses(licenses);
-        fillTodosRisksAndLicenseTypes(licenses, todos, risks, licenseTypes);
+        fillTodosRisksAndLicenseTypes(licenses, obligations, risks, licenseTypes);
         return licenses;
     }
 
-    private void fillTodosRisksAndLicenseTypes(List<License> licenses, List<Todo> todos, List<Risk> risks, List<LicenseType> licenseTypes) {
-        putTodosInLicenses(licenses, todos);
+    private void fillTodosRisksAndLicenseTypes(List<License> licenses, List<Obligations> obligations, List<Risk> risks, List<LicenseType> licenseTypes) {
+        putTodosInLicenses(licenses, obligations);
         putRisksInLicenses(licenses, risks);
         putLicenseTypesInLicenses(licenses, licenseTypes);
     }
@@ -664,10 +664,10 @@ public class LicenseDatabaseHandler {
     }
 
 
-    public List<Todo> getTodos() {
-        final List<Todo> todos = todoRepository.getAll();
-        fillTodos(todos);
-        return todos;
+    public List<Obligations> getObligations() {
+        final List<Obligations> obligations = obligRepository.getAll();
+        fillTodos(obligations);
+        return obligations;
     }
 
     public List<Risk> getRisksByIds(Collection<String> ids) {
@@ -695,7 +695,7 @@ public class LicenseDatabaseHandler {
         return riskCategoryRepository.get(ids);
     }
 
-    public List<Obligation> getObligationsByIds(Collection<String> ids) {
+    public List<LicenseObligation> getListOfobligationByIds(Collection<String> ids) {
         return obligationRepository.get(ids);
     }
 
@@ -703,21 +703,21 @@ public class LicenseDatabaseHandler {
         return licenseTypeRepository.get(ids);
     }
 
-    public List<Todo> getTodosByIds(Collection<String> ids) {
-        final List<Todo> todos = todoRepository.get(ids);
-        fillTodos(todos);
-        return todos;
+    public List<Obligations> getObligationsByIds(Collection<String> ids) {
+        final List<Obligations> obligations = obligRepository.get(ids);
+        fillTodos(obligations);
+        return obligations;
     }
 
-    private void fillTodos(List<Todo> todos) {
+    private void fillTodos(List<Obligations> obligs) {
         Set<String> obligationIdsToFetch = new HashSet<>();
-        for (Todo todo : todos) {
-            obligationIdsToFetch.addAll(CommonUtils.nullToEmptySet(todo.getObligationDatabaseIds()));
+        for (Obligations oblig : obligs) {
+            obligationIdsToFetch.addAll(CommonUtils.nullToEmptySet(oblig.getObligationDatabaseIds()));
         }
 
-        Map<String, Obligation> obligationIdMap = null;
+        Map<String, LicenseObligation> obligationIdMap = null;
         if (!obligationIdsToFetch.isEmpty()) {
-            List<Obligation> obligations = getObligationsByIds(obligationIdsToFetch);
+            List<LicenseObligation> obligations = getListOfobligationByIds(obligationIdsToFetch);
             if (obligations != null && !obligations.isEmpty()) {
                 obligationIdMap = ThriftUtils.getIdMap(obligations);
             }
@@ -726,23 +726,23 @@ public class LicenseDatabaseHandler {
             obligationIdMap = Collections.emptyMap();
         }
 
-        for (Todo todo : todos) {
-            if (todo.isSetObligationDatabaseIds()) {
-                for (String id : todo.getObligationDatabaseIds()) {
-                    final Obligation obligation = obligationIdMap.get(id);
+        for (Obligations oblig : obligs) {
+            if (oblig.isSetObligationDatabaseIds()) {
+                for (String id : oblig.getObligationDatabaseIds()) {
+                    final LicenseObligation obligation = obligationIdMap.get(id);
                     if (obligation != null) {
-                        todo.addToObligations(obligation);
+                        oblig.addToListOfobligation(obligation);
                     }
                 }
             }
-            todo.setDevelopmentString(todo.isDevelopment()?"True":"False");
-            todo.setDistributionString(todo.isDistribution()?"True":"False");
-            todo.unsetObligationDatabaseIds();
+            oblig.setDevelopmentString(oblig.isDevelopment()?"True":"False");
+            oblig.setDistributionString(oblig.isDistribution()?"True":"False");
+            oblig.unsetObligationDatabaseIds();
         }
 
-        for (Todo todo : todos) {
-            if(! todo.isSetWhitelist()){
-                todo.setWhitelist(Collections.emptySet());
+        for (Obligations oblig : obligs) {
+            if(! oblig.isSetWhitelist()){
+                oblig.setWhitelist(Collections.emptySet());
             }
         }
     }
@@ -765,7 +765,7 @@ public class LicenseDatabaseHandler {
         return riskCategoryRepository.get(id);
     }
 
-    public Obligation getObligationById(String id) {
+    public LicenseObligation getObligationById(String id) {
         return obligationRepository.get(id);
     }
 
@@ -773,22 +773,22 @@ public class LicenseDatabaseHandler {
         return licenseTypeRepository.get(id);
     }
 
-    public Todo getTodoById(String id) {
-        final Todo todo = todoRepository.get(id);
+    public Obligations getObligationsById(String id) {
+        final Obligations oblig = obligRepository.get(id);
 
-        fillTodo(todo);
+        fillTodo(oblig);
 
-        return todo;
+        return oblig;
     }
 
-    private void fillTodo(Todo todo) {
-        if (todo.isSetObligationDatabaseIds()) {
-            final List<Obligation> obligations = obligationRepository.get(todo.getObligationDatabaseIds());
-            todo.setObligations(obligations);
-            todo.unsetObligationDatabaseIds();
+    private void fillTodo(Obligations oblig) {
+        if (oblig.isSetObligationDatabaseIds()) {
+            final List<LicenseObligation> obligations = obligationRepository.get(oblig.getObligationDatabaseIds());
+            oblig.setListOfobligation(obligations);
+            oblig.unsetObligationDatabaseIds();
 
-            todo.setDevelopmentString(todo.isDevelopment()?"True":"False");
-            todo.setDistributionString(todo.isDistribution()?"True":"False");
+            oblig.setDevelopmentString(oblig.isDevelopment()?"True":"False");
+            oblig.setDistributionString(oblig.isDistribution()?"True":"False");
         }
     }
 
@@ -897,16 +897,16 @@ public class LicenseDatabaseHandler {
                 .setRequestStatus(RequestStatus.SUCCESS);
     }
 
-    public RequestStatus deleteTodo(String id, User user) throws SW360Exception {
-        Todo todo = todoRepository.get(id);
-        assertNotNull(todo);
+    public RequestStatus deleteObligations(String id, User user) throws SW360Exception {
+        Obligations oblig = obligRepository.get(id);
+        assertNotNull(oblig);
 
         // Remove the license if the user is allowed to do it by himself
         if (PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user)) {
-            todoRepository.remove(todo);
+            obligRepository.remove(oblig);
             return RequestStatus.SUCCESS;
         } else {
-            log.error(user + " does not have the permission to delete todo.");
+            log.error(user + " does not have the permission to delete oblig.");
             return RequestStatus.ACCESS_DENIED;
         }
     }

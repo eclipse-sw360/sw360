@@ -45,7 +45,7 @@ public class ThriftValidate {
         // Utility class with only static functions
     }
 
-    public static void prepareObligation(Obligation obligation) throws SW360Exception {
+    public static void prepareObligation(LicenseObligation obligation) throws SW360Exception {
         // Check required fields
         assertNotNull(obligation);
         assertNotEmpty(obligation.getName());
@@ -55,29 +55,29 @@ public class ThriftValidate {
         obligation.setType(TYPE_OBLIGATION);
     }
 
-    public static void prepareTodo(Todo todo) throws SW360Exception {
+    public static void prepareTodo(Obligations oblig) throws SW360Exception {
         // Check required fields
-        assertNotNull(todo);
-        assertNotEmpty(todo.getText());
-        assertNotNull(todo.getTitle());
+        assertNotNull(oblig);
+        assertNotEmpty(oblig.getText());
+        assertNotNull(oblig.getTitle());
 
-        if (todo.isSetObligations() && !todo.isSetObligationDatabaseIds()) {
-            for (Obligation obligation : todo.getObligations()) {
-                todo.addToObligationDatabaseIds(obligation.getId());
+        if (oblig.isSetListOfobligation() && !oblig.isSetObligationDatabaseIds()) {
+            for (LicenseObligation obligation : oblig.getListOfobligation()) {
+                oblig.addToObligationDatabaseIds(obligation.getId());
             }
         }
 
-        if (todo.obligations == null) {
-            todo.setObligations(Collections.emptyList());
+        if (oblig.listOfobligation == null) {
+            oblig.setListOfobligation(Collections.emptyList());
         }
 
-        if (todo.whitelist == null) {
-            todo.setWhitelist(Collections.emptySet());
+        if (oblig.whitelist == null) {
+            oblig.setWhitelist(Collections.emptySet());
         }
 
-        todo.unsetObligations();
+        oblig.unsetListOfobligation();
         // Check type
-        todo.setType(TYPE_TODO);
+        oblig.setType(TYPE_OBLIGATIONS);
     }
 
     public static void prepareRiskCategory(RiskCategory riskCategory) throws SW360Exception {
@@ -117,12 +117,12 @@ public class ThriftValidate {
         }
         license.unsetLicenseType();
 
-        if (license.isSetTodos() && license.isSetTodoDatabaseIds()) {
-            for (Todo todo : license.getTodos()) {
-                license.addToTodoDatabaseIds(todo.getId());
+        if (license.isSetObligations() && license.isSetObligationDatabaseIds()) {
+            for (Obligations oblig : license.getObligations()) {
+                license.addToObligationDatabaseIds(oblig.getId());
             }
         }
-        license.unsetTodos();
+        license.unsetObligations();
 
         if (license.isSetRisks() && !license.isSetRiskDatabaseIds()) {
             for (Risk risk : license.getRisks()) {

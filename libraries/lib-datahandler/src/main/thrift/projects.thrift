@@ -37,7 +37,7 @@ typedef attachments.Attachment Attachment
 typedef components.ReleaseLink ReleaseLink
 typedef components.ReleaseClearingStatusData ReleaseClearingStatusData
 typedef sw360.AddDocumentRequestSummary AddDocumentRequestSummary
-typedef licenses.Todo Todo
+typedef licenses.Obligations Obligations
 
 const string CLEARING_TEAM_UNKNOWN = "Unknown"
 
@@ -173,6 +173,7 @@ struct ProjectTodo {
     2: required string userId;
     3: required string updated;
     4: required bool fulfilled;
+    5: optional string comments;
 }
 
 struct ProjectObligation {

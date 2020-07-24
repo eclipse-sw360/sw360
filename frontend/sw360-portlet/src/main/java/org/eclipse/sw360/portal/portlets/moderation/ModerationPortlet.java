@@ -33,7 +33,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
-import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.thrift.licenses.LicenseObligation;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
@@ -718,7 +718,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             LicenseService.Iface client = thriftClients.makeLicenseClient();
             actual_license = client.getByID(moderationRequest.getDocumentId(),requestingUser.getDepartment());
             request.setAttribute(KEY_LICENSE_DETAIL, actual_license);
-            List<Obligation> obligations = client.getObligations();
+            List<LicenseObligation> obligations = client.getListOfobligation();
             request.setAttribute(KEY_OBLIGATION_LIST, obligations);
         } catch (TException e) {
             log.error("Could not retrieve license", e);

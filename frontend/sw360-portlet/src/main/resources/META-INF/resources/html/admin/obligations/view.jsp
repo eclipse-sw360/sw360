@@ -21,11 +21,11 @@
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.REMOVE_TODO%>'/>
 </portlet:resourceURL>
 
-<portlet:renderURL var="addTodoURL">
+<portlet:renderURL var="addObligationsURL">
     <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_ADD%>" />
 </portlet:renderURL>
 
-<jsp:useBean id="todoList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenses.Todo>" scope="request"/>
+<jsp:useBean id="obligList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenses.Obligations>" scope="request"/>
 
 <div class="container">
 	<div class="row">
@@ -39,12 +39,12 @@
 				<div class="col-auto">
 					<div class="btn-toolbar" role="toolbar">
 						<div class="btn-group" role="group">
-							<button type="button" class="btn btn-primary" onclick="window.location.href='<%=addTodoURL%>'"><liferay-ui:message key="add.todo" /></button>
+							<button type="button" class="btn btn-primary" onclick="window.location.href='<%=addObligationsURL%>'"><liferay-ui:message key="add.obligation" /></button>
 						</div>
 					</div>
 				</div>
-                <div class="col portlet-title text-truncate" title="<liferay-ui:message key="todos" /> (${todoList.size()})">
-					<liferay-ui:message key="todos" /> (${todoList.size()})
+                <div class="col portlet-title text-truncate" title="<liferay-ui:message key="obligations" /> (${obligList.size()})">
+					<liferay-ui:message key="obligations" /> (${obligList.size()})
 				</div>
             </div>
 
@@ -78,20 +78,21 @@
         // register event handlers
         $('#todoTable').on('click', 'svg.delete', function (event) {
             var data = $(event.currentTarget).data();
-            deleteTodo(data.id, data.title);
+            deleteObligations(data.id, data.title);
         });
 
         function createTodoTable() {
             var todosTbl,
                 result = [];
 
-            <core_rt:forEach items="${todoList}" var="todo">
+            <core_rt:forEach items="${obligList}" var="oblig">
                 result.push({
-                    DT_RowId: "${todo.id}",
-                    id: "${todo.id}",
-                    title: "${todo.title}",
-                    text: "${todo.text}",
-                    projectValidity: ${todo.validForProject},
+                    DT_RowId: "${oblig.id}",
+                    id: "${oblig.id}",
+                    title: "<sw360:out value='${oblig.title}'/>",
+                    text: "<sw360:out value='${oblig.text}'/>",
+                    projectValidity: "${oblig.validForProject}",
+                    obligationType: "<sw360:DisplayEnum value="${oblig.obligationType}"/>"
                 });
             </core_rt:forEach>
 
@@ -102,6 +103,7 @@
                     {"title": "<liferay-ui:message key="title" />", data: 'title' },
                     {"title": "<liferay-ui:message key="text" />", data: 'text' },
                     {"title": "<liferay-ui:message key="valid.for.projects" />", data: 'projectValidity', className: 'text-center', render: $.fn.dataTable.render.inputCheckbox('project-validity', '', false, checkboxHook) },
+                    {"title": "<liferay-ui:message key="obligation.type" />", data: 'obligationType'},
                     {"title": "<liferay-ui:message key="actions" />", data: 'id', render: renderActions }
                 ],
                 language: {
@@ -109,7 +111,7 @@
                     loadingRecords: "<liferay-ui:message key="loading" />"
                 },
                 initComplete: datatables.showPageContainer
-            }, [0, 1, 2], [3]);
+            }, [0, 1, 2], [4]);
 
             return todosTbl;
         }
@@ -117,7 +119,7 @@
         function checkboxHook(value) {
             var $input = this;
 
-            if(value) {
+            if(value == 'true') {
                 $input.attr('checked', 'checked');
             }
             $input.prop('disabled', true);
@@ -144,7 +146,7 @@
             }
         }
 
-        function deleteTodo(id, title) {
+        function deleteObligations(id, title) {
             var $dialog;
 
             function deleteTodoInternal(callback) {
@@ -162,14 +164,14 @@
                             todoTable.row('#' + id).remove().draw(false);
                             $dialog.close();
                         } else if(data.result == 'ACCESS_DENIED') {
-                            $dialog.alert("<liferay-ui:message key="only.admin.users.can.delete.todos" />");
+                            $dialog.alert('<liferay-ui:message key="do.you.really.want.to.delete.the.obligation.x" />');
                         } else {
-                            $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.todo" />");
+                            $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.obligation" />");
                         }
                     },
                     error: function () {
                         callback();
-                        $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.todo" />");
+                        $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.obligation" />");
                     }
                 });
             }
@@ -177,9 +179,9 @@
             $dialog = dialog.confirm(
                 'danger',
                 'question-circle',
-                '<liferay-ui:message key="delete.todo" />?',
-                '<p><liferay-ui:message key="do.you.really.want.to.delete.the.todo.x" />?</p>',
-                '<liferay-ui:message key="delete.todo" />',
+                '<liferay-ui:message key="delete.obligation" />?',
+                '<p><liferay-ui:message key="do.you.really.want.to.delete.the.obligation.x" />?</p>',
+                '<liferay-ui:message key="delete.obligation" />',
                 {
                     title: title,
                 },

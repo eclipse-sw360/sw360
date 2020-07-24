@@ -11,7 +11,7 @@ package org.eclipse.sw360.licenses.db;
 
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
-import org.eclipse.sw360.datahandler.thrift.licenses.Todo;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligations;
 import org.ektorp.support.View;
 
 /**
@@ -20,11 +20,11 @@ import org.ektorp.support.View;
  * @author cedric.bodet@tngtech.com
  * @author Johannes.Najjar@tngtech.com
  */
-@View(name = "all", map = "function(doc) { if (doc.type == 'todo') emit(null, doc._id) }")
-public class TodoRepository extends DatabaseRepository<Todo> {
+@View(name = "all", map = "function(doc) { if (doc.type == 'obligations') emit(null, doc._id) }")
+public class TodoRepository extends DatabaseRepository<Obligations> {
 
     public TodoRepository(DatabaseConnector db) {
-        super(Todo.class, db);
+        super(Obligations.class, db);
 
         initStandardDesignDocument();
     }

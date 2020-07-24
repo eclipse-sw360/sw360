@@ -23,7 +23,7 @@
 <jsp:useBean id="moderationRequest" class="org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest" scope="request"/>
 <jsp:useBean id="licenseDetail" class="org.eclipse.sw360.datahandler.thrift.licenses.License" scope="request" />
 <jsp:useBean id="isAdminUser" class="java.lang.String" scope="request" />
-<jsp:useBean id="obligationList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenses.Obligation>" scope="request"/>
+<jsp:useBean id="obligationList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenses.LicenseObligation>" scope="request"/>
 
 <core_rt:set var="license" value="${licenseDetail}" scope="request"/>
 
@@ -60,11 +60,11 @@
                         </div>
                         <div id="moderation-changes" class="collapse" aria-labelledby="moderation-changes-heading" data-parent="#moderation-wizard">
                             <div class="card-body">
-                                <h4 class="mt-2"><liferay-ui:message key="todos" /></h4>
+                                <h4 class="mt-2"><liferay-ui:message key="obligations" /></h4>
                                 <sw360:CompareTodos
-                                    old="${licenseDetail.todos}"
-                                    update="${moderationRequest.licenseAdditions.todos}"
-                                    delete="${moderationRequest.licenseDeletions.todos}"
+                                    old="${licenseDetail.obligations}"
+                                    update="${moderationRequest.licenseAdditions.obligations}"
+                                    delete="${moderationRequest.licenseDeletions.obligations}"
                                     department="${moderationRequest.requestingUserDepartment}"
                                     idPrefix=""
                                     tableClasses="table table-bordered" />
