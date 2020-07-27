@@ -34,7 +34,13 @@
         >
         <thead>
         <tr>
-            <th colspan="7" class="headlabel"><liferay-ui:message key="linked.releases.and.projects" /></th>
+            <th colspan="7" class="headlabel"><liferay-ui:message key="linked.releases.and.projects" />
+            <core_rt:if test="${projectList.size() > 1 or (projectList.size() == 1 and not empty projectList.get(0).linkedReleases)}">
+                (<a href="#" id="expandAll" class="text-primary"><liferay-ui:message key="expand.all" /> </a>|
+                <a href="#" id="collapseAll" class="text-primary"> <liferay-ui:message key="collapse.all" /></a>)
+                <input id="nameSearch" type="input" placeholder="<liferay-ui:message key="search" />" class="float-right">
+            </core_rt:if>
+            </th>
         </tr>
         <tr>
             <th rowspan="2"><liferay-ui:message key="name" /></th>
@@ -55,14 +61,6 @@
                 <tr>
                     <td colspan="7"><liferay-ui:message key="no.linked.releases.or.projects" /></td>
                 </tr>
-                </thead>
-                <tbody>
-                    <%@include file="/html/projects/includes/attachmentUsagesRows.jspf"%>
-                    <core_rt:if test="${projectList.size() == 1 and empty projectList.get(0).linkedReleases}">
-                        <tr>
-                            <td colspan="7"><liferay-ui:message key="no.linked.releases.or.projects" /></td>
-                        </tr>
-                    </core_rt:if>
             </core_rt:if>
         </tbody>
     </table>
@@ -92,6 +90,41 @@
             attachCheckboxEventHandlers();
 
             $('#saveAttachmentUsagesButton').click(saveAttachmentUsages);
+        });
+
+        $("#nameSearch").on("keyup", function(event) {
+            let value = this.value.toLowerCase().trim(),
+                table = $("#AttachmentUsagesInfo");
+            if (!value) {
+                $("#AttachmentUsagesInfo tbody").find('tr').each(function(index) {
+                    let data = $(this).data();
+                    if (!data.ttParentId) {
+                        $(this).show();
+                        table.treetable("collapseNode", data.ttId);
+                    }
+                });
+                return;
+            }
+            $("#AttachmentUsagesInfo tbody tr").each(function(index) {
+                let data = $(this).data();
+                if (!data.ttParentId) {
+                    let text = $(this).find("td").first().text().trim().toLowerCase();
+                        isMatch = text.indexOf(value) !== -1;
+                    if (isMatch) {
+                        $(this).show();
+                        table.treetable("expandNode", data.ttId);
+                    } else {
+                        table.treetable("collapseNode", data.ttId);
+                        $(this).hide();
+                    }
+                }
+            });
+        });
+
+        $('a[href="#"]').click(function(e) {
+            e.preventDefault();
+            $('#AttachmentUsagesInfo').treetable(e.target.id);
+            return false;
         });
 
         function attachCheckboxEventHandlers(){
