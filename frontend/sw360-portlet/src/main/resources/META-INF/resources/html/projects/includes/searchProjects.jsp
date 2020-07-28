@@ -70,14 +70,49 @@
 	</div>
 </div>
 
+<div class="dialogs">
+    <div id="commentsmodDialog" data-title="<liferay-ui:message key="create.moderation.request" />" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+            <div class="modal-body container">
+
+                    <form>
+                        <div class="form-group">
+                            <label for="moderationComment"><liferay-ui:message key="please.comment.your.changes" /></label>
+                            <textarea name="<portlet:namespace/><%=PortalConstants.MODERATION_REQUEST_COMMENT%>" id="moderationRequestCommentField" class="form-control" placeholder="<liferay-ui:message key="leave.a.comment.on.your.request" />" data-name="comment"></textarea>'
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="close" /></button>
+                    <button id="linkProjectsButton" type="button" class="btn btn-primary" title="<liferay-ui:message key="send.moderation.request" />"><liferay-ui:message key="send.moderation.request" /></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-    require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard', /* jquery-plugins */ 'jquery-ui' ], function($, dialog, datatables, keyboard) {
+    require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard', /* jquery-plugins,  'jquery-ui',*/ 'utils/link'], function($, dialog, datatables, keyboard, link) {
        var $dataTable,
             $dialog;
 
         keyboard.bindkeyPressToClick('searchproject', 'searchbuttonproject');
 
+        $('[data-dismiss=modal]').on('click', function (e) {
+            var $t = $(this),
+            target = $t[0].href || $t.data("target") || $t.parents('.modal') || [];
+
+        $(target)
+           .find("input,textarea,select")
+               .val('')
+               .end()
+           .find("input[type=checkbox], input[type=radio]")
+               .prop("checked", "")
+               .end();
+        })
         $('#addLinkedProjectButton').on('click', showProjectDialog);
+        $('#linkToProjectButton').on('click', showProjectDialogForLinkToProj);
         $('#searchbuttonproject').on('click', function() {
             projectContentFromAjax('<%=PortalConstants.PROJECT_SEARCH%>', $('#searchproject').val(), function(data) {
                 if($dataTable) {
@@ -116,6 +151,103 @@
                 this.$.find('#searchproject').val('');
                 this.enablePrimaryButtons(false);
             });
+        }
+
+        function showProjectDialogForLinkToProj() {
+            if($dataTable) {
+                $dataTable.destroy();
+                $dataTable = undefined;
+            }
+
+            $dialog = dialog.open('#searchProjectsDialog', {
+            }, function(submit, callback) {
+                var projectIds = [];
+
+                $('#projectSearchResultstable').find(':checked').each(function () {
+                    projectIds.push(this.value);
+                });
+
+                projectContentFromAjax('<%=PortalConstants.PROJECT_LINK_TO_PROJECT%>', projectIds, function(data) {
+                    callback();
+                    $.each(data, function(index, res) {
+                        if(res.success) {
+                            alertSuccessMessage(res);
+                        } else if(typeof res.writeAccess !== 'undefined' && !res.writeAccess) {
+                            alertModerationRequest(res);
+                        } else {
+                            alertFailureMessage(res);
+                        }
+                    });
+                });
+            }, function() {
+                this.$.find('.spinner').hide();
+                this.$.find('#projectSearchResultstable').hide();
+                this.$.find('#searchproject').val('');
+                this.enablePrimaryButtons(false);
+            });
+
+        }
+
+        function alertModerationRequest(data){
+            var $result = $('<div id= '+data.destnProjectName+'></div>');
+            var $p2 = $('<p/>');
+            $p2.append('Click ');
+            $('<a/>', {
+              style: 'text-decoration: underline; font-weight: bold;',
+              id: 'openModDialog'
+            }).on('click', function(e) {
+                e.preventDefault();
+                openModerationRequestDialog(data);
+                $('#'+data.destnProjectName+'').parent("div").hide();
+            }).text('here').appendTo($p2);
+            $p2.append(' to raise moderation request to update project '+ data.destnProjectName);
+            $p2.appendTo($result);
+            $p2.addClass('mb-0');
+            $dialog.alert($result, false);
+        }
+
+        function openModerationRequestDialog(data) {
+                let $dialog1 = dialog.open('#commentsmodDialog', {
+                }, function(submit, callback) {
+                    var comment = $('#moderationRequestCommentField').val();
+                    var projToComment =  data.destProjectId+":"+comment;
+                    projectContentFromAjax('<%=PortalConstants.PROECT_MODERATION_REQUEST%>', projToComment, function(data) {
+                        if(data.success) {
+                            $dialog1.success(data.message, true);
+                        } else {
+                            $dialog1.alert(data.message, true);
+                        }
+                    });
+                });
+        }
+
+        function alertSuccessMessage(data) {
+            var $result = $('<div></div>');
+            var $p1 = $('<p/>');
+                $p1.append('The project ');
+            $('<b/>').text(data.srcProjectName).appendTo($p1);
+            $p1.append(' has been successfully linked to project ');
+            $('<b/>').text(data.destnProjectName).appendTo($p1);
+            $p1.appendTo($result);
+
+            var $p2 = $('<p/>');
+            $p2.append('Click ');
+            $('<a/>', {
+              href: link.to('project', 'edit', data.destProjectId) + '#/tab-linkedProjects',
+              style: 'text-decoration: underline;'
+            }).on('click', function(event) {
+                $dialog.close();
+                window.location.href = $(event.currentTarget).attr('href');
+            }).text('here').appendTo($p2);
+            $p2.append(' to edit the project relation.');
+            $p2.appendTo($result);
+            $p2.addClass('mb-0');
+            $dialog.success($result);
+        }
+
+        function alertFailureMessage(data) {
+            var $result = $('<div></div>').text(data.errorMsg);
+            $dialog.alert($result);
         }
 
         function makeProjectsDataTable() {

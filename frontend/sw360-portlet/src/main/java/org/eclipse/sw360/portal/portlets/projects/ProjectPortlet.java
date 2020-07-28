@@ -804,6 +804,12 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         } else if (PortalConstants.PROJECT_SEARCH.equals(what)) {
             String where = request.getParameter(PortalConstants.WHERE);
             serveProjectSearchResults(request, response, where);
+        } else if (PortalConstants.PROJECT_LINK_TO_PROJECT.equals(what)) {
+            String[] where = request.getParameterValues(PortalConstants.WHERE_ARRAY);
+            linkProjectsToProject(request, response, where);
+        } else if (PortalConstants.PROECT_MODERATION_REQUEST.equals(what)) {
+            String where = request.getParameter(PortalConstants.WHERE);
+            createModRequest(request, response, where);
         }
     }
 
@@ -2139,5 +2145,126 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         Comparator<Project> comparator = Comparator.comparing(
                 p -> nullToEmptyString(p.getState()));
         return isAscending ? comparator : comparator.reversed();
+    }
+
+    private void linkProjectsToProject(ResourceRequest request, ResourceResponse response, String[] projectIds)
+            throws IOException {
+        User user = UserCacheHolder.getUserFromRequest(request);
+        String sourceProjectId = request.getParameter(PortalConstants.PROJECT_ID);
+        ProjectService.Iface client = thriftClients.makeProjectClient();
+        JSONArray jsonResponse = createJSONArray();
+
+        try {
+            Project srcProject = null;
+            for (String linkedId : projectIds) {
+                log.debug("Link project [" + sourceProjectId + "] to project [" + linkedId + "]");
+                JSONObject jsonObject = createJSONObject();
+                Project project = null;
+                try {
+                    srcProject = client.getProjectById(sourceProjectId, user);
+                    project = client.getProjectByIdForEdit(linkedId, user);
+                    if (!PermissionUtils.makePermission(project, user).isActionAllowed(RequestedAction.WRITE)) {
+                        jsonObject = buildResponse(srcProject, project, null, false, false);
+                        jsonResponse.put(jsonObject);
+                        continue;
+                    }
+
+                    if (project.isSetLinkedProjects() && project.getLinkedProjects().keySet().contains(sourceProjectId)) {
+                        jsonObject = buildResponse(srcProject, project, "The project " + srcProject.getName()
+                                + " is already linked to project " + project.getName(), false, true);
+                        jsonResponse.put(jsonObject);
+                        continue;
+                    }
+
+                    project.putToLinkedProjects(sourceProjectId, ProjectRelationship.CONTAINED);
+                    String cyclicLinkedProjectPath = client.getCyclicLinkedProjectPath(project, user);
+                    if (!isNullEmptyOrWhitespace(cyclicLinkedProjectPath)) {
+                        jsonObject = buildResponse(srcProject, project, CYCLIC_LINKED_PROJECT + cyclicLinkedProjectPath,
+                                false, true);
+                        jsonResponse.put(jsonObject);
+                        continue;
+                    }
+
+                    RequestStatus status = client.updateProject(project, user);
+                    if (RequestStatus.SUCCESS.equals(status)) {
+                        jsonObject = buildResponse(srcProject, project, null, true, true);
+                    } else {
+                        jsonObject = buildResponse(srcProject, project, srcProject.getName() + " can not be linked to " + project.getName(), false, true);
+                    }
+                } catch (SW360Exception sw360Exp) {
+                    if (sw360Exp.getErrorCode() == 403) {
+                        jsonObject = buildResponse(srcProject, project,
+                                "Error fetching project. Project or its Linked Projects are not accessible.", false,
+                                true);
+                    } else if (sw360Exp.getErrorCode() == 404) {
+                        jsonObject = buildResponse(srcProject, project,
+                                "Error fetching project. Project or its dependencies are not found.", false, true);
+                    } else {
+                        log.error("Cannot link project", sw360Exp);
+                        String errMsg = "Cannot link to project with id " + linkedId;
+                        jsonObject = buildResponse(srcProject, project, errMsg, false, true);
+                    }
+                    jsonResponse.put(jsonObject);
+                    continue;
+                }
+                jsonResponse.put(jsonObject);
+            }
+            writeJSON(request, response, jsonResponse);
+        } catch (TException exception) {
+            log.error("Cannot link project", exception);
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "500");
+        }
+    }
+
+    private JSONObject buildResponse(Project srcProject, Project destnProj, String errorMsg, boolean successFlag,
+            boolean writeAcess) {
+        JSONObject jsonObject = createJSONObject();
+        jsonObject.put("success", successFlag);
+        jsonObject.put("writeAccess", writeAcess);
+        jsonObject.put("srcProjectId", srcProject.getId());
+        if (destnProj != null) {
+            jsonObject.put("destProjectId", destnProj.getId());
+            jsonObject.put("destnProjectName", destnProj.getName());
+        }
+        jsonObject.put("srcProjectName", srcProject.getName());
+        if (null != errorMsg) {
+            jsonObject.put("errorMsg", errorMsg);
+        }
+        return jsonObject;
+    }
+
+    private void createModRequest(ResourceRequest request, ResourceResponse response, String projectIdToComment) {
+        User user = UserCacheHolder.getUserFromRequest(request);
+        ProjectService.Iface client = thriftClients.makeProjectClient();
+        JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+        RequestStatus status = null;
+        String sourceProjectId = request.getParameter(PortalConstants.PROJECT_ID);
+        String[] projIdToCmnt = projectIdToComment.split(":");
+        String projectId = null;
+        String comment = "";
+        if (projIdToCmnt.length == 2) {
+            projectId = projIdToCmnt[0];
+            comment = projIdToCmnt[1];
+        } else {
+            projectId = projIdToCmnt[0];
+        }
+
+        try {
+            user.setCommentMadeDuringModerationRequest(comment);
+            Project project = client.getProjectByIdForEdit(projectId, user);
+            project.putToLinkedProjects(sourceProjectId, ProjectRelationship.CONTAINED);
+            status = client.updateProject(project, user);
+            if (RequestStatus.SENT_TO_MODERATOR.equals(status)) {
+                jsonObject.put("success", true);
+                jsonObject.put("message", "Moderation request was sent to update the Project " + project.getName());
+            } else {
+                jsonObject.put("success", false);
+                jsonObject.put("message", "Moderation request sending failed to update the Project " + project.getName());
+            }
+            writeJSON(request, response, jsonObject);
+        } catch (Exception exception) {
+            log.error("Cannot create moderation request", exception);
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "500");
+        }
     }
 }

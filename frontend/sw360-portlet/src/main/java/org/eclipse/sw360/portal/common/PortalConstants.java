@@ -220,6 +220,7 @@ public class PortalConstants {
     public static final String PROJECT_BDPIMPORT_PORTLET_NAME = PORTLET_NAME_PREFIX + "projectbdpimport";
     public static final String PROJECT_WSIMPORT_PORTLET_NAME = PORTLET_NAME_PREFIX + "projectwsimport";
     public static final String PROJECT_ID = "projectid";
+    public static final String PROJECT_LINK_TO_PROJECT = "projectLinkToProject";
     public static final String LINKED_PROJECT_ID = "linkedProjectId";
     public static final String PROJECT = "project";
     public static final String ACTUAL_PROJECT = "actual_project";
@@ -271,6 +272,7 @@ public class PortalConstants {
     public static final String SELECTED_PROJECT_RELATIONS = "selectedProjectRelations";
     public static final String IS_LINKED_PROJECT_PRESENT = "isLinkedProjectPresent";
     public static final String PROJECT_URL = "projectUrl";
+    public static final String PROECT_MODERATION_REQUEST = "projModReq";
 
 
     public static final String FOSSOLOGY_PORTLET_NAME = PORTLET_NAME_PREFIX + "fossology";
