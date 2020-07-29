@@ -161,7 +161,7 @@
 								</core_rt:if>
                                 <div class="btn-group" role="group" id="downloadLicenseInfoObl">
                                     <button id="downloadLicenseInfoButton" type="button" data-toggle="dropdown" class="btn btn-primary dropdown-toggle">
-                                        <liferay-ui:message key="create.product.clearing.report" />
+                                        <liferay-ui:message key="create.project.clearing.report" />
                                         <clay:icon symbol="caret-bottom" />
                                     </button>
                                     <div class="dropdown-menu">

@@ -46,7 +46,7 @@
                         <td><sw360:DisplayBoolean value="${oblig.development}" defined="${oblig.setDevelopment}"/></td>
                         <td><sw360:DisplayBoolean value="${oblig.distribution}" defined="${oblig.setDistribution}"/></td>
                         <td><sw360:DisplayMap value="${oblig.customPropertyToValue}"/></td>
-                        <core_rt:if test="${oblig.obligationsSize > 0}">
+                        <core_rt:if test="${oblig.listOfobligationSize > 0}">
                             <td>
                                 <ul>
                                     <core_rt:forEach var="ob" varStatus="status" items="${oblig.obligations}">
@@ -95,7 +95,7 @@
                     <td><sw360:DisplayBoolean value="${oblig.development}" defined="${oblig.setDevelopment}"/></td>
                     <td><sw360:DisplayBoolean value="${oblig.distribution}" defined="${oblig.setDistribution}"/></td>
                     <td><sw360:DisplayMap value="${oblig.customPropertyToValue}"/></td>
-                    <core_rt:if test="${oblig.obligationsSize > 0}">
+                    <core_rt:if test="${oblig.listOfobligationSize > 0}">
                         <td>
                             <ul>
                                 <core_rt:forEach var="ob" varStatus="status" items="${oblig.obligations}">
@@ -143,7 +143,7 @@
                         <td><sw360:DisplayBoolean value="${oblig.development}" defined="${oblig.setDevelopment}"/></td>
                         <td><sw360:DisplayBoolean value="${oblig.distribution}" defined="${oblig.setDistribution}"/></td>
                         <td><sw360:DisplayMap value="${oblig.customPropertyToValue}"/></td>
-                        <core_rt:if test="${oblig.obligationsSize > 0}">
+                        <core_rt:if test="${oblig.listOfobligationSize > 0}">
                             <td colspan="1">
                                 <ul>
                                     <core_rt:forEach var="ob" varStatus="status" items="${oblig.obligations}">
