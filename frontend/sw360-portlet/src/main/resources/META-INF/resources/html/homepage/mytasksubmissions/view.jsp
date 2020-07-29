@@ -140,12 +140,12 @@
                         }
                         else {
                             callback();
-                            $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.moderation.request" />");
+                            $dialog.alert('<liferay-ui:message key="i.could.not.delete.the.moderation.request" />');
                         }
                     },
                     error: function () {
                         callback();
-                        $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.moderation.request" />");
+                        $dialog.alert('<liferay-ui:message key="i.could.not.delete.the.moderation.request" />');
                     }
                 });
             }

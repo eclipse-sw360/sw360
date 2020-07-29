@@ -197,11 +197,11 @@
                         callback();
                         $('#createClearingRequestDialog #createClearingrequestButton').prop("disabled", true).hide();
                         if (!status || status.length == 0 || Object.getOwnPropertyNames(status).length == 0) {
-                            $dialog.alert("<liferay-ui:message key='failed.to.create.clearing.request' />");
+                            $dialog.alert('<liferay-ui:message key="failed.to.create.clearing.request" />');
                         } else {
                             var statusData = JSON.parse(status);
                             if (statusData.result == "SUCCESS") {
-                                $dialog.success("<liferay-ui:message key='clearing.request' /> <b>"
+                                $dialog.success('<liferay-ui:message key="clearing.request" /> <b>'
                                         + statusData.clearingId + "</b> <liferay-ui:message key='created.successfully' />! <br><liferay-ui:message key='clearing.team.will.confirm.on.the.agreed.clearing.date' />.");
                                 <core_rt:choose>
                                 <core_rt:when test="${pageName eq 'detail'}" >
@@ -215,14 +215,14 @@
                             } else if (statusData.result == "FAILURE") {
                                 $dialog.alert(statusData.message);
                             } else {
-                                $dialog.alert("<liferay-ui:message key='failed.to.create.clearing.request' />");
+                                $dialog.alert('<liferay-ui:message key="failed.to.create.clearing.request" />');
                             }
                         }
                     },
                     error: function () {
                         callback();
                         $('#createClearingRequestDialog #createClearingrequestButton').prop("disabled", true).hide();
-                        $dialog.alert("<liferay-ui:message key='error.creating.clearing.request' />");
+                        $dialog.alert('<liferay-ui:message key="error.creating.clearing.request" />');
                     }
                 });
             }
@@ -258,14 +258,14 @@
                 $form.removeClass('was-validated');
                 if (!validation.isValidEmail(emailId)) {
                     $form.addClass('was-validated');
-                    $dialog.alert("<liferay-ui:message key='email.should.be.in.valid.format' />");
+                    $dialog.alert('<liferay-ui:message key="email.should.be.in.valid.format" />');
                     callback();
                     setTimeout(function() {
                         $("#createClearingRequestDialog .alert-danger").hide();
                     }, 5000);
                 } else if (!validation.isValidDate(selectedDate, 7)) {
                     $form.addClass('was-validated');
-                    $dialog.alert("<liferay-ui:message key='date.should.be.in.valid.format' /> & <liferay-ui:message key='greater.than.7.days.from.today' />");
+                    $dialog.alert('<liferay-ui:message key="date.should.be.in.valid.format" /> & <liferay-ui:message key="greater.than.7.days.from.today" />');
                     callback();
                     setTimeout(function() {
                         $("#createClearingRequestDialog .alert-danger").hide();
@@ -325,7 +325,7 @@
                     }
                 },
                 error: function () {
-                    dialog.warn("<liferay-ui:message key='failed.to.fetch.clearing.request.from.db' />");
+                    dialog.warn('<liferay-ui:message key="failed.to.fetch.clearing.request.from.db" />');
                 }
             });
         }

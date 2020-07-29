@@ -58,14 +58,14 @@
                         callback();
 
                         if(data.result == 'SUCCESS')
-                            $dialog.success("<liferay-ui:message key="i.deleted.x.out.of.y.attachments.in.the.database" />", true);
+                            $dialog.success(`<liferay-ui:message key="i.deleted.x.out.of.y.attachments.in.the.database" />`, true);
                         else {
-                            $dialog.alert("<liferay-ui:message key="i.could.not.cleanup.the.attachments" />");
+                            $dialog.alert('<liferay-ui:message key="i.could.not.cleanup.the.attachments" />');
                         }
                     },
                     error: function () {
                         callback();
-                        $dialog.alert("<liferay-ui:message key="i.could.not.cleanup.the.attachments" />");
+                        $dialog.alert('<liferay-ui:message key="i.could.not.cleanup.the.attachments" />');
                     }
                 });
             }

@@ -261,12 +261,12 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
                         $('#detailTab #obligtionsCount').html(fulfilled + ' / ' + total);
                     }
                     else {
-                        $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.obligation" />");
+                        $dialog.alert('<liferay-ui:message key="i.could.not.delete.the.obligation" />');
                     }
                 },
                 error: function () {
                     callback();
-                    $dialog.alert("<liferay-ui:message key="failed.to.delete.the.obligation" />");
+                    $dialog.alert('<liferay-ui:message key="failed.to.delete.the.obligation" />');
                 }
             });
         }

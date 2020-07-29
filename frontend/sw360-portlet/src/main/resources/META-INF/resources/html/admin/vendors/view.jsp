@@ -177,12 +177,12 @@
                                 $('#vendorCounter').parent().attr('title', $('#vendorCounter').parent().text());
                                 $dialog.close();
                             } else {
-                                $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.vendor" />");
+                                $dialog.alert('<liferay-ui:message key="i.could.not.delete.the.vendor" />');
                             }
                         },
                         error: function () {
                             callback();
-                            $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.vendor" />");
+                            $dialog.alert('<liferay-ui:message key="i.could.not.delete.the.vendor" />');
                         }
                     });
                 }

@@ -452,7 +452,7 @@
                         if (tableData[idx]) {
                             pageIds.push(tableData[idx].id);
                             cell = projectsTable.cell(idx, clearingSummaryColumnIndex);
-                            cell.data("<liferay-ui:message key='loading' />");
+                            cell.data('<liferay-ui:message key="loading" />');
                         } else {
                             break;
                         }
@@ -552,17 +552,17 @@
                                 $dialog.close();
                             }
                             else if (data.result == 'SENT_TO_MODERATOR') {
-                                $dialog.info("<liferay-ui:message key="you.may.not.delete.the.project.but.a.request.was.sent.to.a.moderator" />", true);
+                                $dialog.info('<liferay-ui:message key="you.may.not.delete.the.project.but.a.request.was.sent.to.a.moderator" />', true);
                             } else if (data.result == 'IN_USE') {
-                                $dialog.warning("<liferay-ui:message key="the.project.cannot.be.deleted.since.it.is.used.by.another.project" />");
+                                $dialog.warning('<liferay-ui:message key="the.project.cannot.be.deleted.since.it.is.used.by.another.project" />');
                             }
                             else {
-                                $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.project" />");
+                                $dialog.alert('<liferay-ui:message key="i.could.not.delete.the.project" />');
                             }
                         },
                         error: function () {
                             callback();
-                            $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.project" />");
+                            $dialog.alert('<liferay-ui:message key="i.could.not.delete.the.project" />');
                         }
                     });
 
