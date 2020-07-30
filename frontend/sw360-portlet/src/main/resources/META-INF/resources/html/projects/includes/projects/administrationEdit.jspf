@@ -148,7 +148,7 @@
 </table>
 <table class="table edit-table three-columns" id="prod_obligations">
     <thead>
-        <tr><th><liferay-ui:message key="product.obligation" /></th><th><liferay-ui:message key="fulfilled" /></th><th>Comments</th></tr>
+        <tr><th><liferay-ui:message key="project.obligation" /></th><th><liferay-ui:message key="fulfilled" /></th><th>Comments</th></tr>
     </thead>
     <tbody>
         <core_rt:forEach items="${projectObligations}" var="entry">

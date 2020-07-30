@@ -110,7 +110,7 @@
 
 <table class="table label-value-table-obligations table-bordered" id="prodobligations">
     <thead>
-        <tr><th><liferay-ui:message key="product.obligation" /></th><th><liferay-ui:message key="fulfilled" /></th><th><liferay-ui:message key="modified" /></th><th>Comments</th></tr>
+        <tr><th><liferay-ui:message key="project.obligation" /></th><th><liferay-ui:message key="fulfilled" /></th><th><liferay-ui:message key="modified" /></th><th>Comments</th></tr>
     </thead>
     <tbody>
         <core_rt:forEach items="${projectObligations}" var="entry">
