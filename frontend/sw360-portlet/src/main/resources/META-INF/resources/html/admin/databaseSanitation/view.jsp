@@ -80,10 +80,10 @@
 
                     if (data.result == 'SUCCESS') {
                         $result.addClass('alert-success');
-                        $result.text("<liferay-ui:message key="no.duplicate.identifiers.were.found" />");
+                        $result.text('<liferay-ui:message key="no.duplicate.identifiers.were.found" />');
                     } else if (data.result == 'FAILURE') {
                         $result.addClass('alert-danger');
-                        $result.text("<liferay-ui:message key="error.in.looking.for.duplicate.identifiers" />");
+                        $result.text('<liferay-ui:message key="error.in.looking.for.duplicate.identifiers" />');
                     } else {
                         $result.addClass('alert-warning');
                         $result.text('<liferay-ui:message key="the.following.duplicate.identifiers.were.found" />');
@@ -100,7 +100,7 @@
                     $progress.hide();
 
                     $result.addClass('alert-danger');
-                    $result.text("<liferay-ui:message key="error.in.looking.for.duplicate.identifiers" />");
+                    $result.text('<liferay-ui:message key="error.in.looking.for.duplicate.identifiers" />');
                 }
             });
         });

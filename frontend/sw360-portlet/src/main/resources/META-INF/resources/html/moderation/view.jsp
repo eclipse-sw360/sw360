@@ -365,9 +365,9 @@ AUI().use('liferay-portlet-url', function () {
                     $compCell = $(tableId).find('tr#'+value.DT_RowId).find('td:eq('+componentColIndex+')');
                 if (value[10]) {
                     projectIds.push(value[10]);
-                    $buCell.html("<liferay-ui:message key='loading' />");
-                    $projCell.html("<liferay-ui:message key='loading' />");
-                    $compCell.html("<liferay-ui:message key='loading' />");
+                    $buCell.html('<liferay-ui:message key="loading" />');
+                    $projCell.html('<liferay-ui:message key="loading" />');
+                    $compCell.html('<liferay-ui:message key="loading" />');
                     value[10] = "";
                 } else {
                     crIds.push(value.DT_RowId);
@@ -402,16 +402,16 @@ AUI().use('liferay-portlet-url', function () {
                             buCell = table.cell('#'+crId, buColIndex),
                             projCell = table.cell('#'+crId, projectColIndex),
                             compCell = table.cell('#'+crId, componentColIndex);
-                        buCell.data("<liferay-ui:message key='not.available' />");
-                        projCell.data("<liferay-ui:message key='deleted.project' />");
-                        compCell.data("<liferay-ui:message key='not.available' />");
+                        buCell.data('<liferay-ui:message key="not.available" />');
+                        projCell.data('<liferay-ui:message key="deleted.project" />');
+                        compCell.data('<liferay-ui:message key="not.available" />');
                     }
                     quickfilter.addTable(table);
                 },
                 error: function () {
                     for (var i = 0; i < tableData.length; i++) {
-                        $table.find('tr#'+tableData[i].DT_RowId).find('td:eq('+buColIndex+')').html("<liferay-ui:message key='failed.to.load' />");
-                        $table.find('tr#'+tableData[i].DT_RowId).find('td:eq('+projectColIndex+')').html("<liferay-ui:message key='failed.to.load' />");
+                        $table.find('tr#'+tableData[i].DT_RowId).find('td:eq('+buColIndex+')').html('<liferay-ui:message key="failed.to.load" />');
+                        $table.find('tr#'+tableData[i].DT_RowId).find('td:eq('+projectColIndex+')').html('<liferay-ui:message key="failed.to.load" />');
                     }
                 }
             });
@@ -437,12 +437,12 @@ AUI().use('liferay-portlet-url', function () {
                             $('#requestCounter').parent().attr('title', $('#requestCounter').parent().text());
                             $dialog.close();
                         } else {
-                            $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.moderation.request" />");
+                            $dialog.alert('<liferay-ui:message key="i.could.not.delete.the.moderation.request" />');
                         }
                     },
                     error: function () {
                         callback();
-                        $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.moderation.request" />");
+                        $dialog.alert('<liferay-ui:message key="i.could.not.delete.the.moderation.request" />');
                     }
                 });
             }

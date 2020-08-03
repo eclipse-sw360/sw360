@@ -401,17 +401,17 @@
                                 $dialog.close();
                             }
                             else if (data.result == 'SENT_TO_MODERATOR') {
-                                $dialog.info("<liferay-ui:message key="you.may.not.delete.the.component.but.a.request.was.sent.to.a.moderator" />", true);
+                                $dialog.info('<liferay-ui:message key="you.may.not.delete.the.component.but.a.request.was.sent.to.a.moderator" />', true);
                             }
                             else if (data.result == 'IN_USE') {
-                                $dialog.warning("<liferay-ui:message key="i.could.not.delete.the.component.since.it.is.in.use" />");
+                                $dialog.warning('<liferay-ui:message key="i.could.not.delete.the.component.since.it.is.in.use" />');
                             } else {
-                                $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.component" />");
+                                $dialog.alert('<liferay-ui:message key="i.could.not.delete.the.component" />');
                             }
                         },
                         error: function () {
                             callback();
-                            $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.component" />");
+                            $dialog.alert('<liferay-ui:message key="i.could.not.delete.the.component" />');
                         }
                     });
                 }
