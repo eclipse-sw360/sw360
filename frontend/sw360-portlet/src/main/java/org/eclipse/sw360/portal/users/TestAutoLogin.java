@@ -39,7 +39,6 @@ import javax.servlet.http.HttpServletResponse;
     configurationPolicy = ConfigurationPolicy.REQUIRE
 )
 public class TestAutoLogin extends LoggingComponent implements AutoLogin {
-    @Override
     public String[] handleException(HttpServletRequest request, HttpServletResponse response, Exception e) throws AutoLoginException {
         log.error("System exception.", e);
         return new String[]{};

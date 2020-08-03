@@ -32,10 +32,10 @@
         <jquery.treetable.version>3.2.0</jquery.treetable.version>
         <jquery.validation.version>1.19.0</jquery.validation.version>
 
-        <liferay.portal.kernel.version>4.2.5</liferay.portal.kernel.version>
-        <liferay.util.bridges.version>6.0.3</liferay.util.bridges.version>
-        <liferay.util.taglib.version>4.1.1</liferay.util.taglib.version>
-        <liferay.util.java.version>4.0.7</liferay.util.java.version>
+        <liferay.portal.kernel.version>8.1.0</liferay.portal.kernel.version>
+        <liferay.util.bridges.version>7.0.3</liferay.util.bridges.version>
+        <liferay.util.taglib.version>5.1.1</liferay.util.taglib.version>
+        <liferay.util.java.version>5.0.5</liferay.util.java.version>
 
         <require.js.version>2.3.6</require.js.version>
 
