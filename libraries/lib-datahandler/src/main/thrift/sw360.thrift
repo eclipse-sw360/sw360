@@ -65,7 +65,8 @@ enum ClearingRequestState {
     REJECTED = 2,
     IN_QUEUE = 3,
     IN_PROGRESS = 4,
-    CLOSED = 5
+    CLOSED = 5,
+    ON_HOLD = 6
 }
 
 enum Visibility {
@@ -119,7 +120,9 @@ enum ClearingRequestEmailTemplate {
     NEW = 0,
     UPDATED = 1,
     PROJECT_UPDATED = 2,
-    NEW_COMMENT = 3
+    NEW_COMMENT = 3,
+    CLOSED = 4,
+    REJECTED = 5
 }
 
 enum DateRange {

@@ -44,7 +44,7 @@ define('modules/listgroup', [
 
 			// update hash (/ prevents jumping)
 			var end = window.location.href.indexOf('#');
-			window.location.replace((end > 0 ? window.location.href.substring(0, end) : window.location.href) + '#/' + activeId);
+			history.replaceState(undefined, undefined, "#/" + activeId)
 
 			// update belonging sections
 			$('.list-group-companion').hide();

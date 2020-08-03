@@ -225,7 +225,8 @@ struct ClearingRequest {
     14: required i64 timestamp,
     15: optional i64 timestampOfDecision,
     16: optional list<Comment> comments,
-    17: optional i64 modifiedOn
+    17: optional i64 modifiedOn,
+    18: optional list<i64> reOpenOn
 }
 
 service ProjectService {

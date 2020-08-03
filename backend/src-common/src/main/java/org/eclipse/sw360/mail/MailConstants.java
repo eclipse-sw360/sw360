@@ -38,8 +38,8 @@ public class MailConstants {
     public static final String SUBJECT_FOR_NEW_CLEARING_REQUEST = "subjectForNewClearingRequest";
     public static final String SUBJECT_FOR_CLEARING_REQUEST_COMMENT = "subjectForClearingRequestComment";
     public static final String SUBJECT_FOR_UPDATED_CLEARING_REQUEST = "subjectForUpdatedClearingRequest";
-    public static final String SUBJECT_FOR_APPROVED_CLEARING_REQUEST = "subjectForApprovedClearingRequest";
-    public static final String SUBJECT_FOR_DECLINED_CLEARING_REQUEST = "subjectForDeclinedClearingRequest";
+    public static final String SUBJECT_FOR_CLOSED_CLEARING_REQUEST = "subjectForClosedClearingRequest";
+    public static final String SUBJECT_FOR_REJECTED_CLEARING_REQUEST = "subjectForRejectedClearingRequest";
     public static final String SUBJECT_FOR_UPDATED_PROJECT_WITH_CLEARING_REQUEST = "subjectForUpdatedProjectWithClearingRequest";
 
     public static final String TEXT_FOR_NEW_MODERATION_REQUEST = "textForNewModerationRequest";
@@ -53,8 +53,8 @@ public class MailConstants {
     public static final String TEXT_FOR_UPDATE_RELEASE = "textForUpdateRelease";
     public static final String TEXT_FOR_NEW_PROJECT = "textForNewProject";
     public static final String TEXT_FOR_UPDATE_PROJECT = "textForUpdateProject";
-    public static final String TEXT_FOR_APPROVED_CLEARING_REQUEST = "textForApprovedClearingRequest";
-    public static final String TEXT_FOR_DECLINED_CLEARING_REQUEST = "textForDeclinedClearingRequest";
+    public static final String TEXT_FOR_CLOSED_CLEARING_REQUEST = "textForClosedClearingRequest";
+    public static final String TEXT_FOR_REJECTED_CLEARING_REQUEST = "textForRejectedClearingRequest";
 
     private MailConstants() {
         // Utility class with only static functions

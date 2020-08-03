@@ -52,10 +52,12 @@ public class MailUtil extends BackendUtils {
     private static final String UPDATE_CLEARING_REQUEST_EMAIL_TEMPLATE_FILE = "/UpdateClearingRequestEmailTemplate.html";
     private static final String UPDATE_PROJECT_WITH_CR_EMAIL_TEMPLATE_FILE = "/UpdateProjectWithCREmailTemplate.html";
     private static final String NEW_COMMENT_IN_CR_EMAIL_HTML_TEMPLATE_FILE = "/NewCommentInCREmailTemplate.html";
+    private static final String CLOSED_OR_REJECTED_CR_EMAIL_HTML_TEMPLATE_FILE = "/ClosedOrRejectedCREmailTemplate.html";
     private static final String NEW_CR_EMAIL_HTML_TEMPLATE = SW360Utils.dropCommentedLine(MailUtil.class, NEW_CLEARING_REQUEST_EMAIL_TEMPLATE_FILE);
     private static final String UPDATE_CR_EMAIL_HTML_TEMPLATE = SW360Utils.dropCommentedLine(MailUtil.class, UPDATE_CLEARING_REQUEST_EMAIL_TEMPLATE_FILE);
     private static final String UPDATE_PROJECT_WITH_CR_EMAIL_HTML_TEMPLATE = SW360Utils.dropCommentedLine(MailUtil.class, UPDATE_PROJECT_WITH_CR_EMAIL_TEMPLATE_FILE);
     private static final String NEW_COMMENT_IN_CR_EMAIL_HTML_TEMPLATE = SW360Utils.dropCommentedLine(MailUtil.class, NEW_COMMENT_IN_CR_EMAIL_HTML_TEMPLATE_FILE);
+    private static final String CLOSED_OR_REJECTED_CR_EMAIL_HTML_TEMPLATE = SW360Utils.dropCommentedLine(MailUtil.class, CLOSED_OR_REJECTED_CR_EMAIL_HTML_TEMPLATE_FILE);
 
     private static ExecutorService mailExecutor;
     private Session session;
@@ -118,13 +120,9 @@ public class MailUtil extends BackendUtils {
         }
     }
 
-    public void sendClearingMail(ClearingRequestEmailTemplate template, String subjectNameInPropertiesFile, String textNameInPropertiesFile, Map<String, String> recipients, String... textParameters) {
+    public void sendClearingMail(ClearingRequestEmailTemplate template, String subjectNameInPropertiesFile, Map<String, String> recipients, String... textParameters) {
         MimeMessage messageWithSubjectAndText;
-        if (null != template && CommonUtils.isNullEmptyOrWhitespace(textNameInPropertiesFile)) {
-            messageWithSubjectAndText = makeHtmlMessageWithSubjectAndText(template, subjectNameInPropertiesFile, textParameters);
-        } else {
-            messageWithSubjectAndText = makeMessageWithSubjectAndText(subjectNameInPropertiesFile, textNameInPropertiesFile, textParameters);
-	    }
+        messageWithSubjectAndText = makeHtmlMessageWithSubjectAndText(template, subjectNameInPropertiesFile, textParameters);
         if (!CommonUtils.isNullOrEmptyMap(recipients)) {
             String requestingUser = recipients.get(ClearingRequest._Fields.REQUESTING_USER.toString());
             if (isMailWantedBy(requestingUser, SW360Utils.notificationPreferenceKey(SW360Constants.NOTIFICATION_CLASS_CLEARING_REQUEST, ClearingRequest._Fields.REQUESTING_USER.toString()))
@@ -187,27 +185,37 @@ public class MailUtil extends BackendUtils {
     private MimeMessage makeHtmlMessageWithSubjectAndText(ClearingRequestEmailTemplate template, String subjectKeyInPropertiesFile, String ... textParameters) {
         MimeMessage message = new MimeMessage(session);
         String mainContentFormat = "";
+        String subject = loadedProperties.getProperty(subjectKeyInPropertiesFile, "");
         switch (template) {
-        case NEW:
-            mainContentFormat = NEW_CR_EMAIL_HTML_TEMPLATE;
-            break;
-
         case UPDATED:
             mainContentFormat = UPDATE_CR_EMAIL_HTML_TEMPLATE;
+            subject = String.format(subject, textParameters[1], textParameters[3]);
             break;
 
         case PROJECT_UPDATED:
             mainContentFormat = UPDATE_PROJECT_WITH_CR_EMAIL_HTML_TEMPLATE;
+            subject = String.format(subject, textParameters[1], textParameters[2]);
             break;
 
         case NEW_COMMENT:
             mainContentFormat = NEW_COMMENT_IN_CR_EMAIL_HTML_TEMPLATE;
+            subject = String.format(subject, textParameters[1], textParameters[2]);
+            break;
+
+        case REJECTED:
+        case CLOSED:
+            mainContentFormat = CLOSED_OR_REJECTED_CR_EMAIL_HTML_TEMPLATE;
+            subject = String.format(subject, textParameters[0], textParameters[1], textParameters[2]);
+            break;
+
+        case NEW:
+            mainContentFormat = NEW_CR_EMAIL_HTML_TEMPLATE;
+            subject = String.format(subject, textParameters[1], textParameters[3]);
             break;
 
         default:
             break;
         }
-        String subject = loadedProperties.getProperty(subjectKeyInPropertiesFile, "");
 
         StringBuilder text = new StringBuilder();
         try {

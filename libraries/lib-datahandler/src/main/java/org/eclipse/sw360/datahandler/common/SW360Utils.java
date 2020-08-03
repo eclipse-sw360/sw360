@@ -74,7 +74,8 @@ public class SW360Utils {
     private static final ObjectMapper objectMapper;
     private static final String DIGIT_AND_DECIMAL_REGEX = "[^\\d.]";
 
-    private static Joiner spaceJoiner = Joiner.on(" ");
+    public static Joiner spaceJoiner = Joiner.on(" ");
+    public static Joiner commaJoiner = Joiner.on(", ");
 
     private SW360Utils() {
         // Utility class with only static functions
@@ -659,6 +660,11 @@ public class SW360Utils {
                 .stream() //
                 .filter(etp -> !ExternalToolProcessStatus.OUTDATED.equals(etp.getProcessStatus())) //
                 .collect(Collectors.toSet());
+    }
+
+    public static int getTotalReleaseCount(ReleaseClearingStateSummary clearingSummary) {
+        return clearingSummary.getNewRelease() + clearingSummary.getReportAvailable() + clearingSummary.getUnderClearing()
+                + clearingSummary.getSentToClearingTool()+ clearingSummary.getApproved();
     }
 
     /**
