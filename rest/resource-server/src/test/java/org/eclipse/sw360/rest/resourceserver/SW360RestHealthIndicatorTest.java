@@ -25,6 +25,7 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Collections;
@@ -37,6 +38,11 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+/* @DirtiesContext is necessary because the context needs to be reloaded inbetween the tests
+    otherwise the responses of previous tests are taken. NoOpCacheManager through @AutoConfigureCache
+    was not enough to avoid this bug.
+ */
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Sw360ResourceServer.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class SW360RestHealthIndicatorTest {
@@ -123,7 +129,6 @@ public class SW360RestHealthIndicatorTest {
 
     @Test
     public void health_should_return_503_with_unreachable_thrift() throws TException {
-        //TODO
         databaseInstanceMock = mock(DatabaseInstance.class);
         when(databaseInstanceMock.checkIfDbExists(anyString()))
                 .thenReturn(true);
@@ -132,6 +137,8 @@ public class SW360RestHealthIndicatorTest {
         final HealthService.Iface healthClient = mock(HealthService.Iface.class);
         when(healthClient.getHealth())
                 .thenThrow(new TTransportException());
+
+        restHealthIndicatorMock.setHealthClient(healthClient);
 
         ResponseEntity<Map> entity = getMapResponseEntityForHealthEndpointRequest("/health");
 
