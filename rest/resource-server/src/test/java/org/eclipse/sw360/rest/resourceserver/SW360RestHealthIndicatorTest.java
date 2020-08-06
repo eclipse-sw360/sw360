@@ -56,9 +56,10 @@ public class SW360RestHealthIndicatorTest {
     @Autowired
     private TestRestTemplate testRestTemplate;
 
+    private static final String IS_DB_REACHABLE = "isDbReachable";
+    private static final String IS_THRIFT_REACHABLE = "isThriftReachable";
+
     private DatabaseInstance databaseInstanceMock;
-    private String isDbReachable = "isDbReachable";
-    private String isThriftReachable = "isThriftReachable";
 
     /**
      * Makes a request to localhost with the default server port and returns
@@ -95,8 +96,8 @@ public class SW360RestHealthIndicatorTest {
 
         final LinkedHashMap sw360Rest = (LinkedHashMap<String, Object>) entity.getBody().get("SW360Rest");
         final LinkedHashMap restState = (LinkedHashMap<String, Object>) sw360Rest.get("Rest State");
-        assertFalse((boolean) restState.get(isDbReachable));
-        assertTrue((boolean) restState.get(isThriftReachable));
+        assertFalse((boolean) restState.get(IS_DB_REACHABLE));
+        assertTrue((boolean) restState.get(IS_THRIFT_REACHABLE));
     }
 
     @Test
@@ -122,8 +123,8 @@ public class SW360RestHealthIndicatorTest {
 
         final LinkedHashMap sw360Rest = (LinkedHashMap<String, Object>) entity.getBody().get("SW360Rest");
         final LinkedHashMap restState = (LinkedHashMap<String, Object>) sw360Rest.get("Rest State");
-        assertTrue((boolean) restState.get(isDbReachable));
-        assertFalse((boolean) restState.get(isThriftReachable));
+        assertTrue((boolean) restState.get(IS_DB_REACHABLE));
+        assertFalse((boolean) restState.get(IS_THRIFT_REACHABLE));
         assertNotNull(sw360Rest.get("error"));
     }
 
@@ -146,8 +147,8 @@ public class SW360RestHealthIndicatorTest {
 
         final LinkedHashMap sw360Rest = (LinkedHashMap<String, Object>) entity.getBody().get("SW360Rest");
         final LinkedHashMap restState = (LinkedHashMap<String, Object>) sw360Rest.get("Rest State");
-        assertTrue((boolean) restState.get(isDbReachable));
-        assertFalse((boolean) restState.get(isThriftReachable));
+        assertTrue((boolean) restState.get(IS_DB_REACHABLE));
+        assertFalse((boolean) restState.get(IS_THRIFT_REACHABLE));
         assertNotNull(sw360Rest.get("error"));
     }
 
@@ -165,7 +166,7 @@ public class SW360RestHealthIndicatorTest {
 
         final LinkedHashMap sw360Rest = (LinkedHashMap<String, Object>) entity.getBody().get("SW360Rest");
         final LinkedHashMap restState = (LinkedHashMap<String, Object>) sw360Rest.get("Rest State");
-        assertFalse((boolean) restState.get("isDbReachable"));
+        assertFalse((boolean) restState.get(IS_DB_REACHABLE));
         assertNotNull(sw360Rest.get("error"));
     }
 
@@ -190,6 +191,6 @@ public class SW360RestHealthIndicatorTest {
         then(entity.getStatusCode()).isEqualTo(HttpStatus.OK);
         final LinkedHashMap sw360Rest = (LinkedHashMap<String, Object>) entity.getBody().get("SW360Rest");
         final LinkedHashMap restState = (LinkedHashMap<String, Object>) sw360Rest.get("Rest State");
-        assertTrue((boolean) restState.get("isDbReachable"));
+        assertTrue((boolean) restState.get(IS_DB_REACHABLE));
     }
 }
