@@ -12,9 +12,9 @@
 server:
   port: 8091
 
-management:
-  security:
-    enabled: false
+#management:
+#  security:
+#    enabled: false
   # context-path: /<alternative-path-actuator-endpoints-get-mapped-to>
 
 endpoints:
