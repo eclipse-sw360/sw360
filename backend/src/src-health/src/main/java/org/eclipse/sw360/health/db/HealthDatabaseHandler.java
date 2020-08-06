@@ -16,6 +16,7 @@ import org.eclipse.sw360.datahandler.thrift.health.Status;
 import org.ektorp.http.HttpClient;
 
 import java.net.MalformedURLException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -25,12 +26,13 @@ public class HealthDatabaseHandler {
 
     private final DatabaseInstance db;
 
-    public static final Set<String> DATABASES_TO_CHECK = new HashSet<String>() { {
-        add(DatabaseSettings.COUCH_DB_ATTACHMENTS);
-        add(DatabaseSettings.COUCH_DB_DATABASE);
-        add(DatabaseSettings.COUCH_DB_USERS);
-    }
-    };
+    public static final Set<String> DATABASES_TO_CHECK = Collections.unmodifiableSet(new HashSet<String>() {
+        {
+            add(DatabaseSettings.COUCH_DB_ATTACHMENTS);
+            add(DatabaseSettings.COUCH_DB_DATABASE);
+            add(DatabaseSettings.COUCH_DB_USERS);
+        }
+    });
 
     public HealthDatabaseHandler(Supplier<HttpClient> httpClient) throws MalformedURLException {
         db = new DatabaseInstance(httpClient.get());
