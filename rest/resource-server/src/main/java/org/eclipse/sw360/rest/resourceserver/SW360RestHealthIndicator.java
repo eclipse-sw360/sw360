@@ -10,7 +10,6 @@
 
 package org.eclipse.sw360.rest.resourceserver;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
@@ -28,13 +27,10 @@ import java.util.List;
 
 @Component
 public class SW360RestHealthIndicator implements HealthIndicator {
-    @JsonIgnore
-    private List<Throwable> throwables = new ArrayList<>();
 
     private HealthService.Iface healthClient;
 
     private DatabaseInstance databaseInstance;
-
     public void setHealthClient(HealthService.Iface healthClient) {
         this.healthClient = healthClient;
     }
@@ -43,9 +39,12 @@ public class SW360RestHealthIndicator implements HealthIndicator {
         this.databaseInstance = databaseInstance;
     }
 
+
+
     @Override
     public Health health() {
-        RestState restState = check();
+        List<Throwable> throwables = new ArrayList<>();
+        RestState restState = check(throwables);
         final String rest_state_detail = "Rest State";
         if (!restState.isUp()) {
             Health.Builder builderWithDetails = Health.down()
@@ -61,18 +60,19 @@ public class SW360RestHealthIndicator implements HealthIndicator {
                 .build();
     }
 
-    private RestState check() {
+    private RestState check(List<Throwable> throwables) {
         RestState restState = new RestState();
         try {
-            restState.isDbReachable = isDbReachable();
+            restState.isDbReachable = isDbReachable(throwables);
         } catch (MalformedURLException e) {
             restState.isDbReachable = false;
+            throwables.add(e);
         }
-        restState.isThriftReachable = isThriftReachable();
+        restState.isThriftReachable = isThriftReachable(throwables);
         return restState;
     }
 
-    private boolean isDbReachable() throws MalformedURLException {
+    private boolean isDbReachable(List<Throwable> throwables) throws MalformedURLException {
         if (databaseInstance == null) {
             databaseInstance = new DatabaseInstance(DatabaseSettings.getConfiguredHttpClient().get());
         }
@@ -84,7 +84,7 @@ public class SW360RestHealthIndicator implements HealthIndicator {
         }
     }
 
-    private boolean isThriftReachable() {
+    private boolean isThriftReachable(List<Throwable> throwables) {
         if (healthClient == null) {
             healthClient = new ThriftClients().makeHealthClient();
         }
@@ -104,7 +104,7 @@ public class SW360RestHealthIndicator implements HealthIndicator {
         }
     }
 
-    class RestState {
+    static class RestState {
         @JsonInclude
         public boolean isDbReachable;
         @JsonInclude
