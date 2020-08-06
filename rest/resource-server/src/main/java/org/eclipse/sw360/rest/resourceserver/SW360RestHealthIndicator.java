@@ -27,20 +27,6 @@ import java.util.List;
 
 @Component
 public class SW360RestHealthIndicator implements HealthIndicator {
-
-    private HealthService.Iface healthClient;
-
-    private DatabaseInstance databaseInstance;
-    public void setHealthClient(HealthService.Iface healthClient) {
-        this.healthClient = healthClient;
-    }
-
-    public void setDatabaseInstance(DatabaseInstance databaseInstance) {
-        this.databaseInstance = databaseInstance;
-    }
-
-
-
     @Override
     public Health health() {
         List<Throwable> throwables = new ArrayList<>();
@@ -73,9 +59,7 @@ public class SW360RestHealthIndicator implements HealthIndicator {
     }
 
     private boolean isDbReachable(List<Throwable> throwables) throws MalformedURLException {
-        if (databaseInstance == null) {
-            databaseInstance = new DatabaseInstance(DatabaseSettings.getConfiguredHttpClient().get());
-        }
+        DatabaseInstance databaseInstance = makeDatabaseInstance();
         try {
             return databaseInstance.checkIfDbExists(DatabaseSettings.COUCH_DB_ATTACHMENTS);
         } catch (Exception e) {
@@ -85,9 +69,7 @@ public class SW360RestHealthIndicator implements HealthIndicator {
     }
 
     private boolean isThriftReachable(List<Throwable> throwables) {
-        if (healthClient == null) {
-            healthClient = new ThriftClients().makeHealthClient();
-        }
+        HealthService.Iface healthClient = makeHealthClient();
         try {
             final org.eclipse.sw360.datahandler.thrift.health.Health health = healthClient.getHealth();
             if (health.getStatus().equals(Status.UP)) {
@@ -104,12 +86,20 @@ public class SW360RestHealthIndicator implements HealthIndicator {
         }
     }
 
+    protected HealthService.Iface makeHealthClient() {
+        return new ThriftClients().makeHealthClient();
+    }
+
+    protected DatabaseInstance makeDatabaseInstance() throws MalformedURLException {
+        return new DatabaseInstance(DatabaseSettings.getConfiguredHttpClient().get());
+    }
+
     static class RestState {
         @JsonInclude
         public boolean isDbReachable;
+
         @JsonInclude
         public boolean isThriftReachable;
-
         boolean isUp() {
             return isDbReachable && isThriftReachable;
         }

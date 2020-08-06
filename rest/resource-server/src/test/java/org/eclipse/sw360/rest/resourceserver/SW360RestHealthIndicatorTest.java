@@ -28,6 +28,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.net.MalformedURLException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -88,7 +89,8 @@ public class SW360RestHealthIndicatorTest {
         when(healthClient.getHealth())
                 .thenReturn(health);
 
-        restHealthIndicatorMock.setHealthClient(healthClient);
+        when(restHealthIndicatorMock.makeHealthClient())
+                .thenReturn(healthClient);
 
         ResponseEntity<Map> entity = getMapResponseEntityForHealthEndpointRequest("/health");
 
@@ -101,12 +103,14 @@ public class SW360RestHealthIndicatorTest {
     }
 
     @Test
-    public void health_should_return_503_with_unhealthy_thrift() throws TException {
+    public void health_should_return_503_with_unhealthy_thrift() throws TException, MalformedURLException {
         databaseInstanceMock = mock(DatabaseInstance.class);
         when(databaseInstanceMock.checkIfDbExists(anyString()))
                 .thenReturn(true);
 
-        restHealthIndicatorMock.setDatabaseInstance(databaseInstanceMock);
+        when(restHealthIndicatorMock.makeDatabaseInstance())
+                .thenReturn(databaseInstanceMock);
+
         Health health = new Health()
                 .setStatus(Status.DOWN)
                 .setDetails(Collections.singletonMap(DatabaseSettings.COUCH_DB_ATTACHMENTS, new Exception("").getMessage()));
@@ -115,7 +119,8 @@ public class SW360RestHealthIndicatorTest {
         when(healthClient.getHealth())
                 .thenReturn(health);
 
-        restHealthIndicatorMock.setHealthClient(healthClient);
+        when(restHealthIndicatorMock.makeHealthClient())
+                .thenReturn(healthClient);
 
         ResponseEntity<Map> entity = getMapResponseEntityForHealthEndpointRequest("/health");
 
@@ -129,17 +134,19 @@ public class SW360RestHealthIndicatorTest {
     }
 
     @Test
-    public void health_should_return_503_with_unreachable_thrift() throws TException {
+    public void health_should_return_503_with_unreachable_thrift() throws TException, MalformedURLException {
         databaseInstanceMock = mock(DatabaseInstance.class);
         when(databaseInstanceMock.checkIfDbExists(anyString()))
                 .thenReturn(true);
-        restHealthIndicatorMock.setDatabaseInstance(databaseInstanceMock);
+        when(restHealthIndicatorMock.makeDatabaseInstance())
+                .thenReturn(databaseInstanceMock);
 
         final HealthService.Iface healthClient = mock(HealthService.Iface.class);
         when(healthClient.getHealth())
                 .thenThrow(new TTransportException());
 
-        restHealthIndicatorMock.setHealthClient(healthClient);
+        when(restHealthIndicatorMock.makeHealthClient())
+                .thenReturn(healthClient);
 
         ResponseEntity<Map> entity = getMapResponseEntityForHealthEndpointRequest("/health");
 
@@ -153,12 +160,13 @@ public class SW360RestHealthIndicatorTest {
     }
 
     @Test
-    public void health_should_return_503_with_throwable() {
+    public void health_should_return_503_with_throwable() throws MalformedURLException {
         final DatabaseInstance databaseInstanceMock = mock(DatabaseInstance.class);
         when(databaseInstanceMock.checkIfDbExists(anyString()))
                 .thenThrow(new RuntimeException());
 
-        restHealthIndicatorMock.setDatabaseInstance(databaseInstanceMock);
+        when(restHealthIndicatorMock.makeDatabaseInstance())
+                .thenReturn(databaseInstanceMock);
 
         ResponseEntity<Map> entity = getMapResponseEntityForHealthEndpointRequest("/health");
 
@@ -171,12 +179,13 @@ public class SW360RestHealthIndicatorTest {
     }
 
     @Test
-    public void health_should_return_200_when_healthy() throws TException {
+    public void health_should_return_200_when_healthy() throws TException, MalformedURLException {
         databaseInstanceMock = mock(DatabaseInstance.class);
         when(databaseInstanceMock.checkIfDbExists(anyString()))
                 .thenReturn(true);
 
-        restHealthIndicatorMock.setDatabaseInstance(databaseInstanceMock);
+        when(restHealthIndicatorMock.makeDatabaseInstance())
+                .thenReturn(databaseInstanceMock);
 
         Health health = new Health().setStatus(Status.UP);
 
@@ -184,7 +193,8 @@ public class SW360RestHealthIndicatorTest {
         when(healthClient.getHealth())
                 .thenReturn(health);
 
-        restHealthIndicatorMock.setHealthClient(healthClient);
+        when(restHealthIndicatorMock.makeHealthClient())
+                .thenReturn(healthClient);
 
         ResponseEntity<Map> entity = getMapResponseEntityForHealthEndpointRequest("/health");
 
