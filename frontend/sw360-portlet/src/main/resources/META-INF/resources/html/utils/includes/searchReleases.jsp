@@ -23,7 +23,7 @@
 
 <div class="dialogs">
 	<div id="searchReleasesDialog" data-title="<liferay-ui:message key="link.releases" />" class="modal fade" tabindex="-1" role="dialog">
-		<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+		<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable mw-100 w-50" role="document">
 		    <div class="modal-content">
 			<div class="modal-body container">
 

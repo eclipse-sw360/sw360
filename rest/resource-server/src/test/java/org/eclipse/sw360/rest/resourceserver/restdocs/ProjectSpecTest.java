@@ -141,12 +141,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     private SW360ReportService sw360ReportServiceMock;
 
     private Project project;
-    private Project sBOMProject;
     private Set<Project> projectList = new HashSet<>();
     private Attachment attachment;
-    private Attachment sBOMAttachment;
-    private RequestSummary requestSummary = new RequestSummary();
-
 
     @Before
     public void before() throws TException, IOException {
@@ -303,34 +299,58 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         Set<String> releaseIds = new HashSet<>(Collections.singletonList("3765276512"));
         Set<String> releaseIdsTransitive = new HashSet<>(Arrays.asList("3765276512", "5578999"));
 
-        sBOMAttachment = new Attachment("3331231254", "bom.spdx.rdf");
-        sBOMAttachment.setSha1("df903e491d3863477568896089ee9457bc316183");
-        sBOMAttachment.setAttachmentType(AttachmentType.SBOM);
-        Set<Attachment> sbomSet = new HashSet<>();
-        sbomSet.add(sBOMAttachment);
+        Attachment SPDXAttachment = new Attachment("3331231254", "bom.spdx.rdf");
+        SPDXAttachment.setSha1("df903e491d3863477568896089ee9457bc316183");
+        SPDXAttachment.setAttachmentType(AttachmentType.SBOM);
+        Set<Attachment> spdxSet = new HashSet<>();
+        spdxSet.add(SPDXAttachment);
 
-        sBOMProject = new Project();
-        sBOMProject.setId("333655");
-        sBOMProject.setName("Green Web");
-        sBOMProject.setVersion("1.0.1");
-        sBOMProject.setCreatedOn("2022-11-13");
-        sBOMProject.setBusinessUnit("sw360 BA");
-        sBOMProject.setState(ProjectState.ACTIVE);
-        sBOMProject.setClearingState(ProjectClearingState.OPEN);
-        sBOMProject.setProjectType(ProjectType.PRODUCT);
-        sBOMProject.setCreatedBy("admin@sw360.org");
-        sBOMProject.setAttachments(sbomSet);
+        Attachment CycloneDXAttachment = new Attachment("3331111231254", "sampleBOM.xml");
+        CycloneDXAttachment.setSha1("df3e491d3863477568896089ee9457bc316183");
+        CycloneDXAttachment.setAttachmentType(AttachmentType.SBOM);
+        Set<Attachment> cyclonedxSet = new HashSet<>();
+        cyclonedxSet.add(CycloneDXAttachment);
 
-        requestSummary.setMessage(sBOMProject.getId());
-        requestSummary.setRequestStatus(RequestStatus.SUCCESS);
+        Project SPDXProject = new Project();
+        SPDXProject.setId("333655");
+        SPDXProject.setName("Green Web");
+        SPDXProject.setVersion("1.0.1");
+        SPDXProject.setCreatedOn("2022-11-13");
+        SPDXProject.setBusinessUnit("sw360 BA");
+        SPDXProject.setState(ProjectState.ACTIVE);
+        SPDXProject.setClearingState(ProjectClearingState.OPEN);
+        SPDXProject.setProjectType(ProjectType.PRODUCT);
+        SPDXProject.setCreatedBy("admin@sw360.org");
+        SPDXProject.setAttachments(spdxSet);
 
-        given(this.projectServiceMock.importSBOM(any(),any())).willReturn(requestSummary);
+        Project cycloneDXProject = new Project();
+        cycloneDXProject.setId("3336565435");
+        cycloneDXProject.setName("Azure Web");
+        cycloneDXProject.setVersion("1.0.2");
+        cycloneDXProject.setCreatedOn("2022-11-13");
+        cycloneDXProject.setBusinessUnit("sw360 BA");
+        cycloneDXProject.setState(ProjectState.ACTIVE);
+        cycloneDXProject.setClearingState(ProjectClearingState.OPEN);
+        cycloneDXProject.setProjectType(ProjectType.PRODUCT);
+        cycloneDXProject.setCreatedBy("admin@sw360.org");
+        cycloneDXProject.setAttachments(cyclonedxSet);
+
+        RequestSummary requestSummaryForSPDX = new RequestSummary();
+        requestSummaryForSPDX.setMessage(SPDXProject.getId());
+        requestSummaryForSPDX.setRequestStatus(RequestStatus.SUCCESS);
+
+        RequestSummary requestSummaryForCycloneDX = new RequestSummary();
+        requestSummaryForCycloneDX.setMessage("{\"projectId\":\"" + cycloneDXProject.getId() + "\"}");
+
+        given(this.projectServiceMock.importSPDX(any(),any())).willReturn(requestSummaryForSPDX);
+        given(this.projectServiceMock.importCycloneDX(any(),any(),any())).willReturn(requestSummaryForCycloneDX);
         given(this.sw360ReportServiceMock.getProjectBuffer(any(),anyBoolean())).willReturn(ByteBuffer.allocate(10000));
         given(this.projectServiceMock.getProjectsForUser(any(), any())).willReturn(projectList);
         given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), any())).willReturn(project);
         given(this.projectServiceMock.getProjectForUserById(eq(project2.getId()), any())).willReturn(project2);
         given(this.projectServiceMock.getProjectForUserById(eq(projectForAtt.getId()), any())).willReturn(projectForAtt);
-        given(this.projectServiceMock.getProjectForUserById(eq(sBOMProject.getId()), any())).willReturn(sBOMProject);
+        given(this.projectServiceMock.getProjectForUserById(eq(SPDXProject.getId()), any())).willReturn(SPDXProject);
+        given(this.projectServiceMock.getProjectForUserById(eq(cycloneDXProject.getId()), any())).willReturn(cycloneDXProject);
         given(this.projectServiceMock.searchLinkingProjects(eq(project.getId()), any())).willReturn(usedByProjectList);
         given(this.projectServiceMock.searchProjectByName(eq(project.getName()), any())).willReturn(projectListByName);
         given(this.projectServiceMock.searchProjectByTag(any(), any())).willReturn(new ArrayList<Project>(projectList));
@@ -1675,7 +1695,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
-    public void should_document_import_sbom() throws Exception {
+    public void should_document_import_spdx() throws Exception {
         MockMultipartFile file = new MockMultipartFile("file","file=@/bom.spdx.rdf".getBytes());
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post("/api/projects/import/SBOM")
@@ -1700,7 +1720,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                fieldWithPath("count").description("Count of projects for a user.").optional()
                        )));
     }
-    
+
     @Test
     public void should_document_create_summary_administration() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
@@ -1774,7 +1794,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 )
                         ));
     }
-    
+
     @Test
     public void should_document_get_project_report_without_mail_req() throws Exception{
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
@@ -1791,5 +1811,28 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 parameterWithName("mimetype").description("Projects download format. Possible values are `<xls|xlsx>`"),
                                 parameterWithName("mailrequest").description("Downloading project report requirted mail link. Possible values are `<true|false>`")
                         )));
+    }
+
+    @Test
+    public void should_document_import_cyclonedx() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file","file=@/sampleBOM.xml".getBytes());
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post("/api/projects/import/SBOM")
+                .content(file.getBytes())
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .header("Authorization", "Bearer " + accessToken)
+                .queryParam("type", "CycloneDX");
+        this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
+    }
+
+    @Test
+    public void should_document_import_cyclonedx_on_project() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file","file=@/sampleBOM.xml".getBytes());
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post("/api/projects/"+project.getId()+"/import/SBOM")
+                .content(file.getBytes())
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .header("Authorization", "Bearer " + accessToken);
+        this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
     }
 }

@@ -484,14 +484,26 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     }
 
     /**
-     * Import SBOM using the method on the thrift client.
+     * Import SPDX SBOM using the method on the thrift client.
      * @param user                User uploading the SBOM
      * @param attachmentContentId Id of the attachment uploaded
      * @return RequestSummary
      * @throws TException
      */
-    public RequestSummary importSBOM(User user, String attachmentContentId) throws TException {
+    public RequestSummary importSPDX(User user, String attachmentContentId) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         return sw360ProjectClient.importBomFromAttachmentContent(user, attachmentContentId);
+    }
+
+    /**
+     * Import CycloneDX SBOM using the method on the thrift client.
+     * @param user                User uploading the SBOM
+     * @param attachmentContentId Id of the attachment uploaded
+     * @return RequestSummary
+     * @throws TException
+     */
+    public RequestSummary importCycloneDX(User user, String attachmentContentId, String projectId) throws TException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        return sw360ProjectClient.importCycloneDxFromAttachmentContent(user, attachmentContentId, CommonUtils.nullToEmptyString(projectId));
     }
 }

@@ -34,6 +34,7 @@
 <jsp:useBean id="name" class="java.lang.String" scope="request"/>
 <jsp:useBean id="state" class="java.lang.String" scope="request"/>
 <jsp:useBean id="exactMatchCheckBox" class="java.lang.String" scope="request"/>
+<jsp:useBean id="isSbomImportExportAccessUser" type="java.lang.Boolean" scope="request"/>
 
 <core_rt:set var="stateAutoC" value='<%=PortalConstants.STATE%>'/>
 <core_rt:set var="projectTypeAutoC" value='<%=PortalConstants.PROJECT_TYPE%>'/>
@@ -165,7 +166,16 @@
                     <div class="btn-toolbar" role="toolbar">
                         <div class="btn-group" role="group">
                             <button type="button" class="btn btn-primary" onclick="window.location.href='<%=addProjectURL%>'"><liferay-ui:message key="add.project" /></button>
-                            <button type="button" class="btn btn-secondary" data-action="import-spdx-bom"><liferay-ui:message key="import.spdx.bom" /></button>
+                            <core_rt:if test = "${isSbomImportExportAccessUser}">
+                            <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <liferay-ui:message key="import.sbom" />
+                                <clay:icon symbol="caret-bottom" />
+                            </button>
+                            <div class="dropdown-menu" id="importSbom">
+                                <a class="dropdown-item import" href="#" data-type="spdx"><liferay-ui:message key="spdx" /></a>
+                                <a class="dropdown-item import" href="#" data-type="cycloneDx"><liferay-ui:message key="cyclonedx" /></a>
+                            </div>
+                            </core_rt:if>
                         </div>
                         <div id="btnExportGroup" class="btn-group" role="group">
                             <button id="btnExport" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

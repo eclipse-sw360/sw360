@@ -621,9 +621,9 @@ include::{snippets}/should_document_update_project_vulnerabilities/links.adoc[]
 [[resources-import-sbom]]
 ==== Import SBOM
 
-A `POST` request is used to import SBOM in SPDX format.
+A `POST` request is used to import a SBOM. Only SPDX and CycloneDX files are accepted.
 
-[red]#Request parameters#
+[red]#Request parameter#
 |===
 |Parameter |Description
 
@@ -631,7 +631,7 @@ A `POST` request is used to import SBOM in SPDX format.
 |File type of SBOM
 |===
 
-[red]#Request structure#
+[red]#Request body#
 |===
 Type |Description
 
@@ -639,17 +639,46 @@ Type |Description
 |Path of the SBOM file
 |===
 
+[red]#Response structure#
+|===
+|Complete Project will be returned
+|===
+
+===== Example request 1
+include::{snippets}/should_document_import_spdx/curl-request.adoc[]
+
+===== Example response 1
+include::{snippets}/should_document_import_spdx/http-response.adoc[]
+
+===== Example request 2
+include::{snippets}/should_document_import_cyclonedx/curl-request.adoc[]
+
+===== Example response 2
+include::{snippets}/should_document_import_cyclonedx/http-response.adoc[]
+
+[[resources-import-sbom-on-project]]
+==== Import SBOM on project
+
+A `POST` request is used to import a SBOM on a project. Currently only CycloneDX(.xml/.json) files are supported.
+
+[red]#Request body#
+|===
+Type |Description
+
+|file
+|Path of the SBOM file
+|===
 
 [red]#Response structure#
 |===
 |Complete Project will be returned
 |===
 
-===== Example request
-include::{snippets}/should_document_import_sbom/curl-request.adoc[]
+===== Example request 1
+include::{snippets}/should_document_import_cyclonedx_on_project/curl-request.adoc[]
 
-===== Example response
-include::{snippets}/should_document_import_sbom/http-response.adoc[]
+===== Example response 1
+include::{snippets}/should_document_import_cyclonedx_on_project/http-response.adoc[]
 
 [[resources-project-getprojectcount]]
 ==== Get project count of a user

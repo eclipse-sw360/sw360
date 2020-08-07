@@ -66,7 +66,7 @@
 <div class="tab-content" id="pills-clearingStatusTab">
     <div class="tab-pane fade show active" id="pills-treeView" role="tabpanel" aria-labelledby="pills-tree-tab">
     <div class="btn-group mx-1" role="group">
-        <button type="button" class="btn btn-outline-dark" id="addLicenseToRelease"><liferay-ui:message key="add.license.info.to.release" /></button>
+        <button type="button" class="btn btn-sm btn-outline-dark" id="addLicenseToRelease"><liferay-ui:message key="add.license.info.to.release" /></button>
     </div>
     <div class="float-right mx-2">
         <input type="search" id="search_table" class="form-control form-control-sm mb-1 float-right" placeholder="<liferay-ui:message key="search" />">
@@ -91,7 +91,7 @@
                             <core_rt:if test="${projectList.size() > 1 or (projectList.size() == 1 and not empty projectList.get(0).linkedReleases)}">
                             <div id="toggle" class="d-none">
                                 (<a href="#" id="expandAll" class="text-primary"><liferay-ui:message key="expand.next.level" /> </a>|
-                                <a href="#" id="collapseAll" class="text-primary"> <liferay-ui:message key="collapse.all" /></a>)
+                                <a href="#" id="collapseAll" class="text-primary"> <liferay-ui:message key="collapse.all" /></a>)&nbsp;
                             </div>
                             </core_rt:if>
                             <core_rt:if test="${projectList.size() > 1 or releaseList.size() > 0}">

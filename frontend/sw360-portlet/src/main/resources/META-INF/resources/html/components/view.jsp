@@ -184,7 +184,7 @@
           <div class="btn-toolbar" role="toolbar">
                         <div class="btn-group" role="group">
               <button type="button" class="btn btn-primary" onclick="window.location.href='<%=addComponentURL%>'"><liferay-ui:message key="add.component" /></button>
-              <button type="button" class="btn btn-secondary" id="import-spdx-bom" data-action="import-spdx-bom"><liferay-ui:message key="import.spdx.bom" /></button>
+              <button type="button" class="btn btn-secondary" id="import-spdx-bom" data-action="import-spdx-bom"><liferay-ui:message key="import.sbom" /></button>
             </div>
             <div id="btnExportGroup" class="btn-group" role="group">
               <button id="btnExport" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

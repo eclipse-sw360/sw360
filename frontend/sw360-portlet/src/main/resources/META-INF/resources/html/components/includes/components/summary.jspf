@@ -60,6 +60,10 @@
         <td><sw360:DisplayEnum value="${component.componentType}"/></td>
     </tr>
     <tr>
+        <td><liferay-ui:message key="cyclonedx" /> <liferay-ui:message key="component.type" />:</td>
+        <td><sw360:DisplayEnum value="${component.cdxComponentType}"/></td>
+    </tr>
+    <tr>
         <td><liferay-ui:message key="default.vendor" />:</td>
         <td><sw360:out value="${component.defaultVendor.fullname}"/></td>
     </tr>

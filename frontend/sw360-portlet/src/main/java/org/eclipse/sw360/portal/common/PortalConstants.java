@@ -26,6 +26,7 @@ import java.util.Set;
  * @author stefan.jaeger@evosoft.com
  * @author alex.borodin@evosoft.com
  */
+
 public class PortalConstants {
 
     public static final String PROPERTIES_FILE_PATH = "/sw360.properties";
@@ -277,6 +278,7 @@ public class PortalConstants {
     public static final String RELEASE_SEARCH_BY_VENDOR = "releaseSearchByVendor";
     public static final String OBLIGATION_ELEMENT_SEARCH = "obligationElementSearch";
     public static final String OBLIGATION_ELEMENT_ID = "obligationElementId";
+    public static final String LOAD_SBOM_IMPORT_INFO = "loadSbomImportInfo";
 
     public static final String RELEASE_LIST_FROM_LINKED_PROJECTS = "releaseListFromLinkedProjects";
     public static final String STATE;
@@ -552,12 +554,16 @@ public class PortalConstants {
     public static final String PARENT_BRANCH_ID = "parent_branch_id";
     public static final String PARENT_SCOPE_GROUP_ID = "parentScopeGroupId";
 
-    // bom import
+    // bom import / export
     public static final String PREPARE_IMPORT_BOM = "prepareImportBom";
     public static final String IMPORT_BOM = "importBom";
     public static final String IMPORT_BOM_AS_NEW = "importBomAsNew";
     public static final String NEW_RELEASE_VERSION = "newReleaseVersion";
     public static final String RDF_FILE_PATH = "rdfFilePath";
+    public static final String BOM_TYPE = "bomType";
+    public static final String EXPORT_SBOM = "exportSbom";
+    public static final String SBOM_FROMAT = "sbomFormat";
+    public static final String IS_SBOM_IMPORT_EXPORT_ACCESS_USER = "isSbomImportExportAccessUser";
 
     // project actions
     public static final String VIEW_LINKED_PROJECTS = "view_linked_projects";
