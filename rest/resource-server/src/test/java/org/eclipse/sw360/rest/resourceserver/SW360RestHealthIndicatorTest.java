@@ -81,7 +81,10 @@ public class SW360RestHealthIndicatorTest {
     }
 
     @Test
-    public void health_should_return_503_with_missing_db() throws TException {
+    public void health_should_return_503_with_missing_db() throws TException, MalformedURLException {
+        databaseInstanceMock = mock(DatabaseInstance.class);
+        when(databaseInstanceMock.checkIfDbExists(anyString()))
+                .thenReturn(false);
 
         Health health = new Health().setStatus(Status.UP);
 
@@ -91,6 +94,8 @@ public class SW360RestHealthIndicatorTest {
 
         when(restHealthIndicatorMock.makeHealthClient())
                 .thenReturn(healthClient);
+        when(restHealthIndicatorMock.makeDatabaseInstance())
+                .thenReturn(databaseInstanceMock);
 
         ResponseEntity<Map> entity = getMapResponseEntityForHealthEndpointRequest("/health");
 
