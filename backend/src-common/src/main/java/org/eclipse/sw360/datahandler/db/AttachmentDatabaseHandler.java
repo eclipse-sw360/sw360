@@ -80,7 +80,7 @@ public class AttachmentDatabaseHandler {
 
         return attachmentContents.stream().filter(AttachmentContent::isSetId).collect(Collectors.toList());
     }
-    public AttachmentContent getAttachmentContent(String id) throws TException {
+    public AttachmentContent getAttachmentContent(String id) throws SW360Exception {
         AttachmentContent attachment = attachmentContentRepository.get(id);
         assertNotNull(attachment, "Cannot find "+ id + " in database.");
         validateAttachment(attachment);

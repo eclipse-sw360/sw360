@@ -201,6 +201,8 @@ public class PortalConstants {
     public static final String ADDED_ATTACHMENTS = "added_attachments";
     public static final String REMOVED_ATTACHMENTS = "removed_attachments";
     public static final String ATTACHMENT_ID = "attachmentId";
+    public static final String ATTACHMENT_ID_TO_FILENAMES = "attachmentIdToFileNames[]";
+    public static final String SHOW_ATTACHMENT_MISSING_ERROR = "showSessionError";
     public static final String ATTACHMENT_CONTENT_ID = "attachmentContentId";
     public static final String ALL_ATTACHMENTS = "all_attachments";
     public static final String CONTEXT_TYPE = "context_type";
@@ -209,6 +211,7 @@ public class PortalConstants {
     public static final String ATTACHMENT_USAGES = "attachmentUsages";
     public static final String ATTACHMENT_USAGES_RESTRICTED_COUNTS = "attachmentUsagesRestrictedCounts";
     public static final String SPDX_LICENSE_INFO = "spdxLicenseInfo";
+    public static final String SELECTED_ATTACHMENTS_WITH_FULL_PATH = "selectedAttachmentIdsWithFullPath[]";
 
     // ! Specialized keys for changelog
     public static final String LOAD_CHANGE_LOGS = "load_change_logs";
@@ -337,6 +340,7 @@ public class PortalConstants {
     public static final String LICENSE_INFO_OUTPUT_FORMATS = "licenseInfoOutputFormats";
     public static final String LICENSE_INFO_SELECTED_OUTPUT_FORMAT = "licenseInfoSelectedOutputFormat";
     public static final String LICENSE_INFO_RELEASE_TO_ATTACHMENT = "licenseInfoAttachmentSelected";
+    public static final String LICENSE_INFO_EMPTY_FILE = "isEmptyFile";
     public static final String SW360_USER = "sw360User";
 
     //! Serve resource generic keywords
@@ -452,6 +456,7 @@ public class PortalConstants {
     public static final String REMOVE_ORPHAN_OBLIGATION = "RemoveOrphanObligation";
     public static final String LIST_CLEARING_STATUS = "listClearingStatus";
     public static final String CLEARING_STATUS_ON_LOAD = "clearingStatusOnLoad";
+    public static final String PROJECT_CHECK_FOR_ATTACHMENTS = "verifyAttachmentExistance";
 
     //component actions
     public static final String ADD_VENDOR = "add_vendor";
