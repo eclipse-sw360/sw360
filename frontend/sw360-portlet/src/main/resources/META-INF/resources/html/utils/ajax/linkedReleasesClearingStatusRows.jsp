@@ -51,6 +51,8 @@
                 <sw360:DisplayEnum value='${requestScope["projectReleaseRelation"][releaseLink.id]["mainlineState"]}' />
             </core_rt:if>
         </td>
+        <td>
+        </td>
         <td class="editAction" data-releaseid="${releaseLink.id}"></td>
     </tr>
 </core_rt:forEach>

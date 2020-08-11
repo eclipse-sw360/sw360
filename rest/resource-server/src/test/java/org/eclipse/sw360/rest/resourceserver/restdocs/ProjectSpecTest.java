@@ -119,7 +119,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
         Map<String, ProjectReleaseRelationship> linkedReleases = new HashMap<>();
         Map<String, ProjectRelationship> linkedProjects = new HashMap<>();
-        ProjectReleaseRelationship projectReleaseRelationship = new ProjectReleaseRelationship(CONTAINED, MAINLINE);
+        ProjectReleaseRelationship projectReleaseRelationship = new ProjectReleaseRelationship(CONTAINED, MAINLINE)
+                .setComment("Test Comment").setCreatedOn("2020-08-05").setCreatedBy("admin@sw360.org");
 
         Map<String, String> externalIds = new HashMap<>();
         externalIds.put("portal-id", "13319-XX3");

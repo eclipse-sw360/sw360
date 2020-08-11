@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.datahandler.couchdb;
 
+import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangedFields;
@@ -18,6 +19,7 @@ import org.eclipse.sw360.datahandler.thrift.components.ClearingInformation;
 import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Repository;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectTodo;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -210,5 +212,27 @@ public class DatabaseMixInForChangeLog {
         "setRepositorytype"
     })
     public static abstract class RepositoryMixin extends Repository {
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties({
+        "setComment",
+        "setMainlineState",
+        "setReleaseRelation",
+        "setCreatedOn",
+        "setCreatedBy"
+    })
+    public static abstract class ProjectReleaseRelationshipMixin extends ProjectReleaseRelationship {
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties({
+        "setComments",
+        "setTodoId",
+        "setUserId",
+        "setUpdated",
+        "setFulfilled"
+    })
+    public static abstract class ProjectTodoMixin extends ProjectTodo {
     }
 }

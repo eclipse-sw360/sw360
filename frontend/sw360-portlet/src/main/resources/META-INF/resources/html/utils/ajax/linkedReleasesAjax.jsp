@@ -60,6 +60,13 @@
                 </select>
             </div>
         </td>
+        <td>
+            <div class="form-group">
+                <input id="releaseComment" name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.COMMENT%>"
+                type="text" placeholder="<liferay-ui:message key="enter.comment" />" class="form-control"
+                    value="<sw360:out value="${releaseLink.comment}"/>"/>
+            </div>
+        </td>
         <td class="content-middle">
             <svg class="action lexicon-icon" data-row-id="releaseLinkRow${uuid}" data-release-name="<sw360:out value='${releaseLink.longName}' jsQuoting="true"/>">
                 <title><liferay-ui:message key="delete" /></title>

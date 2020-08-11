@@ -597,6 +597,9 @@ public class SW360Utils {
             jgen.writeStartObject();
             jgen.writeObjectField("releaseRelation", value.getReleaseRelation());
             jgen.writeObjectField("mainlineState", value.getMainlineState());
+            jgen.writeObjectField("comment", nullToEmpty(value.getComment()));
+            jgen.writeObjectField("createdBy", nullToEmpty(value.getCreatedBy()));
+            jgen.writeObjectField("createdOn", nullToEmpty(value.getCreatedOn()));
             jgen.writeEndObject();
         }
     }
