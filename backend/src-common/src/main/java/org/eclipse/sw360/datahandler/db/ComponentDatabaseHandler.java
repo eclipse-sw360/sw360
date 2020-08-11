@@ -50,7 +50,8 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityCheckSt
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
 import org.eclipse.sw360.mail.MailConstants;
 import org.eclipse.sw360.mail.MailUtil;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.spdx.SpdxBOMImporter;
 import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
@@ -91,7 +92,7 @@ import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.prepareRelease
  */
 public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
-    private static final Logger log = Logger.getLogger(ComponentDatabaseHandler.class);
+    private static final Logger log = LogManager.getLogger(ComponentDatabaseHandler.class);
     private static final String ECC_AUTOSET_COMMENT = "automatically set";
     private static final String ECC_AUTOSET_VALUE = "N";
 

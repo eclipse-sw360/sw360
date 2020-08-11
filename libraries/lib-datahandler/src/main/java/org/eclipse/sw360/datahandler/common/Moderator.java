@@ -14,7 +14,8 @@ import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TEnum;
 import org.apache.thrift.TException;
@@ -35,7 +36,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
 
     protected final ThriftClients thriftClients;
-    private static final Logger log = Logger.getLogger(Moderator.class);
+    private static final Logger log = LogManager.getLogger(Moderator.class);
 
     public Moderator(ThriftClients thriftClients) {
         this.thriftClients = thriftClients;

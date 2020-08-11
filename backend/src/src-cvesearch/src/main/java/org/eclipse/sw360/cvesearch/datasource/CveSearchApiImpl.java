@@ -16,7 +16,8 @@ import com.google.gson.reflect.TypeToken;
 import org.eclipse.sw360.cvesearch.datasource.json.ListCveSearchJsonParser;
 import org.eclipse.sw360.cvesearch.datasource.json.SingleCveSearchJsonParser;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedReader;
 import java.lang.reflect.Type;
@@ -31,7 +32,7 @@ import java.util.function.Function;
 
 public class CveSearchApiImpl implements CveSearchApi {
 
-    private Logger log = Logger.getLogger(CveSearchApiImpl.class);
+    private Logger log = LogManager.getLogger(CveSearchApiImpl.class);
 
     private String host;
 

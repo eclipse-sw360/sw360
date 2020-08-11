@@ -15,7 +15,8 @@ package org.eclipse.sw360.rest.resourceserver.attachment;
 import com.google.common.collect.Sets;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.commonIO.AttachmentFrontendUtils;
@@ -69,10 +70,11 @@ public class Sw360AttachmentService {
     @NonNull
     private final RestControllerHelper restControllerHelper;
 
+    private static final Logger log = LogManager.getLogger(Sw360AttachmentService.class);
+
     @NonNull
     private final ThriftServiceProvider<AttachmentService.Iface> thriftAttachmentServiceProvider;
 
-    private static final Logger log = Logger.getLogger(Sw360AttachmentService.class);
     private final Duration downloadTimeout = Duration.durationOf(30, TimeUnit.SECONDS);
     private AttachmentConnector attachmentConnector;
 

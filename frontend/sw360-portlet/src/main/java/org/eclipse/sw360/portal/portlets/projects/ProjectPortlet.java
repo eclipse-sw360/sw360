@@ -57,7 +57,8 @@ import org.eclipse.sw360.portal.users.UserCacheHolder;
 import org.eclipse.sw360.portal.users.UserUtils;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
 import org.apache.thrift.protocol.TSimpleJSONProtocol;
@@ -107,7 +108,7 @@ import static org.eclipse.sw360.portal.portlets.projects.ProjectPortletUtils.isU
     configurationPolicy = ConfigurationPolicy.REQUIRE
 )
 public class ProjectPortlet extends FossologyAwarePortlet {
-    private static final Logger log = Logger.getLogger(ProjectPortlet.class);
+    private static final Logger log = LogManager.getLogger(ProjectPortlet.class);
 
     private static final String NOT_CHECKED_YET = "Not checked yet.";
     private static final String EMPTY = "<empty>";

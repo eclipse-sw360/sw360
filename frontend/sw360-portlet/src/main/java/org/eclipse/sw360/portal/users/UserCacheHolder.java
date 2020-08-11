@@ -14,7 +14,8 @@ import com.liferay.portal.kernel.util.WebKeys;
 
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.portlet.PortletRequest;
 import javax.servlet.ServletRequest;
@@ -29,7 +30,7 @@ import java.util.concurrent.ExecutionException;
  * @author alex.borodin@evosoft.com
  */
 public class UserCacheHolder {
-    private static final Logger LOGGER = Logger.getLogger(UserCacheHolder.class);
+    private static final Logger LOGGER = LogManager.getLogger(UserCacheHolder.class);
 
     public static final User EMPTY_USER = new User().setId("").setEmail("").setExternalid("").setDepartment("").setLastname("").setGivenname("");
 

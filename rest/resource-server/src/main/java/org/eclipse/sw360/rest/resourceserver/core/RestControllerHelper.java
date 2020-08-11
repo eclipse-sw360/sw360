@@ -38,7 +38,8 @@ import org.eclipse.sw360.rest.resourceserver.user.UserController;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.vendor.VendorController;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
 import org.apache.thrift.TFieldIdEnum;
@@ -89,7 +90,7 @@ public class RestControllerHelper<T> {
     @NonNull
     private final ResourceListController<T> resourceListController = new ResourceListController<>();
 
-    private static final Logger LOGGER = Logger.getLogger(RestControllerHelper.class);
+    private static final Logger LOGGER = LogManager.getLogger(RestControllerHelper.class);
 
     private static final String PAGINATION_KEY_FIRST = "first";
     private static final String PAGINATION_KEY_PREVIOUS = "previous";

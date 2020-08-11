@@ -18,7 +18,8 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 
 import javax.servlet.http.HttpServletRequest;
@@ -42,7 +43,7 @@ public class DisplayUserEdit extends NameSpaceAwareTag {
     private String description;
     private Boolean multiUsers;
     private Boolean readonly = false;
-    private Logger log = Logger.getLogger(DisplayUserEdit.class);
+    private Logger log = LogManager.getLogger(DisplayUserEdit.class);
 
     public void setMultiUsers(Boolean multiUsers) {
         this.multiUsers = multiUsers;

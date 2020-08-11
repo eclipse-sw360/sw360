@@ -16,7 +16,8 @@ import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 
 /**
@@ -28,7 +29,7 @@ import org.apache.thrift.TException;
  */
 public class ComponentModerator extends Moderator<Component._Fields, Component> {
 
-    private static final Logger log = Logger.getLogger(ComponentModerator.class);
+    private static final Logger log = LogManager.getLogger(ComponentModerator.class);
 
     public ComponentModerator(ThriftClients thriftClients) {
         super(thriftClients);

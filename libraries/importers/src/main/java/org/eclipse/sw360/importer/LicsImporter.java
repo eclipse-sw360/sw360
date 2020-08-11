@@ -12,11 +12,12 @@
 package org.eclipse.sw360.importer;
 
 import org.apache.commons.csv.CSVRecord;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenses.*;
 
-import org.apache.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.exporter.utils.ConvertRecord;
 import org.eclipse.sw360.exporter.utils.LicsArchive;
@@ -30,7 +31,7 @@ import static org.eclipse.sw360.exporter.utils.LicsArchive.*;
 import static org.eclipse.sw360.exporter.utils.TypeMappings.*;
 
 public class LicsImporter {
-    private static final Logger log = Logger.getLogger(LicsImporter.class);
+    private static final Logger log = LogManager.getLogger(LicsImporter.class);
 
     private final boolean overwriteIfExternalIdMatches;
     private final boolean overwriteIfIdMatchesEvenWithoutExternalIdMatch;

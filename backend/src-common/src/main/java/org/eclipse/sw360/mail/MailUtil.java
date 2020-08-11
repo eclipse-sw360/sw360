@@ -10,7 +10,8 @@
 package org.eclipse.sw360.mail;
 
 import com.google.common.collect.Sets;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
@@ -42,7 +43,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
  */
 public class MailUtil extends BackendUtils {
 
-    private static final Logger log = Logger.getLogger(MailUtil.class);
+    private static final Logger log = LogManager.getLogger(MailUtil.class);
 
     // Asynchronous mail service executor options
     private static final int MAIL_ASYNC_SEND_THREAD_LIMIT = 1;

@@ -9,7 +9,9 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.licenses.tools;
-import org.apache.log4j.Logger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.spdx.compare.LicenseCompareHelper;
@@ -26,7 +28,7 @@ import java.util.stream.Collectors;
 
 public class SpdxConnector {
 
-    private static final Logger log = Logger.getLogger(SpdxConnector.class);
+    private static final Logger log = LogManager.getLogger(SpdxConnector.class);
 
     public static List<String> getAllSpdxLicenseIds() {
         return Arrays.asList(LicenseInfoFactory.getSpdxListedLicenseIds());

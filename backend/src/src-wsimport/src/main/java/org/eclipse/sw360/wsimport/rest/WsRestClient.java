@@ -23,7 +23,8 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONObject;
 
 import java.io.IOException;
@@ -33,7 +34,7 @@ import java.io.IOException;
  */
 public class WsRestClient {
 
-    private static final Logger LOGGER = Logger.getLogger(WsRestClient.class);
+    private static final Logger LOGGER = LogManager.getLogger(WsRestClient.class);
 
     WsRestClient() {
     }

@@ -19,7 +19,8 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.spdx.rdfparser.InvalidSPDXAnalysisException;
 import org.spdx.rdfparser.SPDXDocumentFactory;
@@ -44,7 +45,7 @@ public class SPDXParser extends LicenseInfoParser {
     protected static final String FILETYPE_SPDX_INTERNAL = "RDF/XML";
     protected static final String FILETYPE_SPDX_EXTENSION = ".rdf";
 
-    private static final Logger log = Logger.getLogger(SPDXParser.class);
+    private static final Logger log = LogManager.getLogger(SPDXParser.class);
 
     public SPDXParser(AttachmentConnector attachmentConnector, AttachmentContentProvider attachmentContentProvider) {
         super(attachmentConnector, attachmentContentProvider);

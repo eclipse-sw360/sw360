@@ -26,7 +26,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.QuoteMode;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
 import org.apache.thrift.TFieldIdEnum;
@@ -42,7 +42,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static org.apache.log4j.LogManager.getLogger;
+import static org.apache.logging.log4j.LogManager.getLogger;
 
 /**
  * @author Cedric.Bodet@tngtech.com

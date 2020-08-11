@@ -21,7 +21,7 @@ Export-Package: \
 Import-Package: \
 	com.google.common.*, \
 	org.apache.commons.csv.*, \
-	org.apache.log4j, \
+	org.apache.logging.log4j, \
 	org.eclipse.sw360.commonIO.*, \
 	org.eclipse.sw360.datahandler.*, \
 	org.eclipse.sw360.exporter.*, \

@@ -11,7 +11,8 @@ package org.eclipse.sw360.licenseinfo.parsers;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -48,7 +49,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.closeQuietly;
  */
 public class CombinedCLIParser extends AbstractCLIParser{
 
-    private static final Logger log = Logger.getLogger(CombinedCLIParser.class);
+    private static final Logger log = LogManager.getLogger(CombinedCLIParser.class);
     private static final String COPYRIGHTS_XPATH = "/CombinedCLI/Copyright";
     private static final String LICENSES_XPATH = "/CombinedCLI/License";
     private static final String COPYRIGHT_CONTENT_ELEMENT_NAME = "Content";

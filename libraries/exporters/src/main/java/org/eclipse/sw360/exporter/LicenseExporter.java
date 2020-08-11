@@ -12,10 +12,11 @@ package org.eclipse.sw360.exporter;
 
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
-import org.apache.log4j.Logger;
 import org.eclipse.sw360.exporter.helper.ExporterHelper;
 import org.eclipse.sw360.exporter.utils.ConvertRecord;
 import org.eclipse.sw360.exporter.utils.SubTable;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.HashMap;
 import java.util.List;
@@ -31,7 +32,7 @@ import static org.eclipse.sw360.exporter.utils.ConvertRecord.licenseSerializer;
  * @author cedric.bodet@tngtech.com
  */
 public class LicenseExporter extends ExcelExporter<License, LicenseExporter.LicenseHelper> {
-    private static final Logger log = Logger.getLogger(LicenseExporter.class);
+    private static final Logger log = LogManager.getLogger(LicenseExporter.class);
 
     public LicenseExporter(Function<Logger, List<LicenseType>> getLicenseTypes) {
         super(new LicenseHelper(() -> getLicenseTypes.apply(log)));

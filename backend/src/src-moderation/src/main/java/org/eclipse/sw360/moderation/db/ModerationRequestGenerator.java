@@ -15,7 +15,8 @@ import com.google.common.collect.Sets;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TEnum;
 import org.apache.thrift.TFieldIdEnum;
@@ -45,7 +46,7 @@ public abstract class ModerationRequestGenerator<U extends TFieldIdEnum, T exten
     protected T updateDocument;
     protected T actualDocument;
 
-    Logger log = Logger.getLogger(ModerationRequestGenerator.class);
+    Logger log = LogManager.getLogger(ModerationRequestGenerator.class);
 
     public abstract ModerationRequest setAdditionsAndDeletions(ModerationRequest request, T updateDocument, T actualDocument);
 

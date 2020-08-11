@@ -11,11 +11,10 @@
 package org.eclipse.sw360.schedule.timer;
 
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.function.Supplier;
-
-import org.apache.log4j.Logger;
 
 /**
  * creates new {@link java.util.TimerTask} which will be executed on the next scheduled time
@@ -24,7 +23,7 @@ import org.apache.log4j.Logger;
  * @author birgit.heydenreich@tngtech.com
  */
 public class ScheduleSyncTask extends SW360Task {
-    private static final Logger log = Logger.getLogger(ScheduleSyncTask.class);
+    private static final Logger log = LogManager.getLogger(ScheduleSyncTask.class);
     private final Supplier<RequestStatus> body;
 
     public ScheduleSyncTask(Supplier<RequestStatus> body, String name) {

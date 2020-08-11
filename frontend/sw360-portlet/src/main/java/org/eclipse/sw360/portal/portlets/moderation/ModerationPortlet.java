@@ -55,7 +55,8 @@ import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
 import org.eclipse.sw360.portal.portlets.FossologyAwarePortlet;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 import org.eclipse.sw360.portal.users.UserUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.jetbrains.annotations.NotNull;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
@@ -92,7 +93,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.*;
 )
 public class ModerationPortlet extends FossologyAwarePortlet {
 
-    private static final Logger log = Logger.getLogger(ModerationPortlet.class);
+    private static final Logger log = LogManager.getLogger(ModerationPortlet.class);
     private static final JsonFactory JSON_FACTORY = new JsonFactory();
 
     @Override

@@ -23,7 +23,8 @@ import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -42,7 +43,7 @@ public class OrganizationHelper {
     private static boolean matchPrefix = false;
     private static List<Map.Entry<String, String>> sortedOrganizationMappings;
     private static boolean customMappingEnabled = false;
-    private static Logger log = Logger.getLogger(OrganizationHelper.class);
+    private static Logger log = LogManager.getLogger(OrganizationHelper.class);
     private static final String MATCH_PREFIX_KEY = "match.prefix";
     private static final String ENABLE_CUSTOM_MAPPING_KEY = "enable.custom.mapping";
     private static final String PROPERTIES_FILE_PATH = "/orgmapping.properties";

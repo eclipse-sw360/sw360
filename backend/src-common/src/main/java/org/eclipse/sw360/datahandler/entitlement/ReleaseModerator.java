@@ -17,7 +17,8 @@ import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
@@ -31,7 +32,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Utils.newDefaultEccInfor
  */
 public class ReleaseModerator extends Moderator<Release._Fields, Release> {
 
-    private static final Logger log = Logger.getLogger(ReleaseModerator.class);
+    private static final Logger log = LogManager.getLogger(ReleaseModerator.class);
 
     public ReleaseModerator(ThriftClients thriftClients) {
         super(thriftClients);

@@ -11,7 +11,8 @@
  */
 package org.eclipse.sw360.cvesearch.datasource.heuristics;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.cvesearch.datasource.CveSearchApi;
 import org.eclipse.sw360.cvesearch.datasource.CveSearchGuesser;
 import org.eclipse.sw360.cvesearch.datasource.matcher.Match;
@@ -33,7 +34,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyString
 
 public class SearchLevels {
 
-    private static final Logger log = Logger.getLogger(SearchLevels.class);
+    private static final Logger log = LogManager.getLogger(SearchLevels.class);
 
     private static final String CPE_PREFIX = "cpe:2.3:";
     private static final String OLD_CPE_PREFIX = "cpe:/";

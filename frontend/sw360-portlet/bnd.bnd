@@ -60,6 +60,7 @@ Import-Package: \
 	javax.servlet.jsp.*, \
 	org.apache.commons.csv.*, \
 	org.apache.commons.lang.*, \
+	org.apache.logging.log4j, \
 	org.apache.log4j, \
 	org.apache.thrift.*, \
 	org.eclipse.sw360.commonIO.*, \

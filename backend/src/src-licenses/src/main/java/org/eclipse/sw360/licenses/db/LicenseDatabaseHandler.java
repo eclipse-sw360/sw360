@@ -29,7 +29,8 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.licenses.tools.SpdxConnector;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.ektorp.DocumentOperationResult;
 import org.ektorp.http.HttpClient;
 import org.jetbrains.annotations.NotNull;
@@ -69,7 +70,7 @@ public class LicenseDatabaseHandler {
     private final CustomPropertiesRepository customPropertiesRepository;
     private final DatabaseRepository[] repositories;
 
-    private final Logger log = Logger.getLogger(LicenseDatabaseHandler.class);
+    private final Logger log = LogManager.getLogger(LicenseDatabaseHandler.class);
 
     public LicenseDatabaseHandler(Supplier<HttpClient> httpClient, String dbName) throws MalformedURLException {
         // Create the connector

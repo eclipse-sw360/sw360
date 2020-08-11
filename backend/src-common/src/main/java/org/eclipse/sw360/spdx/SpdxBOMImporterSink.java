@@ -15,7 +15,8 @@ import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -24,7 +25,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class SpdxBOMImporterSink {
-    private static final Logger log = Logger.getLogger(SpdxBOMImporterSink.class);
+    private static final Logger log = LogManager.getLogger(SpdxBOMImporterSink.class);
 
     private final ProjectDatabaseHandler projectDatabaseHandler;
     private final ComponentDatabaseHandler componentDatabaseHandler;

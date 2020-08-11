@@ -17,7 +17,8 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.spdx.rdfparser.InvalidSPDXAnalysisException;
 import org.spdx.rdfparser.license.*;
 import org.spdx.rdfparser.model.*;
@@ -30,7 +31,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhit
 
 public class SPDXParserTools {
 
-    private static final Logger log = Logger.getLogger(SPDXParserTools.class);
+    private static final Logger log = LogManager.getLogger(SPDXParserTools.class);
 
     private static final String LICENSE_REF_PREFIX = "LicenseRef-";
 

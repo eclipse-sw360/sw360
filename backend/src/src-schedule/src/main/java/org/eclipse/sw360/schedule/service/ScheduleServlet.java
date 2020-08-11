@@ -13,7 +13,8 @@ package org.eclipse.sw360.schedule.service;
 import org.eclipse.sw360.schedule.timer.ScheduleConstants;
 import org.eclipse.sw360.datahandler.thrift.schedule.ScheduleService;
 import org.eclipse.sw360.projects.Sw360ThriftServlet;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
 
@@ -23,7 +24,7 @@ import java.net.MalformedURLException;
 
 public class ScheduleServlet extends Sw360ThriftServlet {
 
-    Logger log = Logger.getLogger(ScheduleServlet.class);
+    Logger log = LogManager.getLogger(ScheduleServlet.class);
     static ScheduleHandler handler = new ScheduleHandler();
 
     public ScheduleServlet() throws MalformedURLException, FileNotFoundException, TException {

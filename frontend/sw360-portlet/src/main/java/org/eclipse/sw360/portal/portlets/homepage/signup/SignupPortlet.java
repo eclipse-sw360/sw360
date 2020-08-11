@@ -28,7 +28,8 @@ import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.users.UserUtils;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 
@@ -62,7 +63,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.SIGNUP_PORTLET_NAM
 )
 public class SignupPortlet extends Sw360Portlet {
 
-    private static final Logger log = Logger.getLogger(SignupPortlet.class);
+    private static final Logger log = LogManager.getLogger(SignupPortlet.class);
 
     @Override
     public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {

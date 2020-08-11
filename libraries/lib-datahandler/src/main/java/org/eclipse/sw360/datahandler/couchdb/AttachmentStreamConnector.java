@@ -10,7 +10,8 @@
  */
 package org.eclipse.sw360.datahandler.couchdb;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.ConcatClosingInputStream;
@@ -45,7 +46,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
  * @author daniele.fognini@tngtech.com
  */
 public class AttachmentStreamConnector {
-    private static Logger log = Logger.getLogger(AttachmentStreamConnector.class);
+    private static Logger log = LogManager.getLogger(AttachmentStreamConnector.class);
 
     protected final DatabaseConnector connector;
     private final AttachmentContentDownloader attachmentContentDownloader;

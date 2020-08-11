@@ -24,7 +24,8 @@ import org.eclipse.sw360.datahandler.thrift.cvesearch.CveSearchService;
 import org.eclipse.sw360.datahandler.thrift.cvesearch.UpdateType;
 import org.eclipse.sw360.datahandler.thrift.cvesearch.VulnerabilityUpdateStatus;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 
 import java.io.IOException;
@@ -35,7 +36,7 @@ import static org.eclipse.sw360.cvesearch.helper.VulnerabilityUtils.*;
 
 public class CveSearchHandler implements CveSearchService.Iface {
 
-    private static final Logger log = Logger.getLogger(CveSearchHandler.class);
+    private static final Logger log = LogManager.getLogger(CveSearchHandler.class);
 
     public static final String CVESEARCH_HOST_PROPERTY = "cvesearch.host";
     private VulnerabilityConnector vulnerabilityConnector;

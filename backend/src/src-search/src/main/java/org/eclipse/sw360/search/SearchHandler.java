@@ -11,7 +11,8 @@
 package org.eclipse.sw360.search;
 
 import com.google.common.collect.Lists;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
@@ -33,7 +34,7 @@ import java.util.List;
  */
 public class SearchHandler implements SearchService.Iface {
 
-    private static final Logger log = Logger.getLogger(SearchHandler.class);
+    private static final Logger log = LogManager.getLogger(SearchHandler.class);
 
     private final AbstractDatabaseSearchHandler dbSw360db;
     private final AbstractDatabaseSearchHandler dbSw360users;

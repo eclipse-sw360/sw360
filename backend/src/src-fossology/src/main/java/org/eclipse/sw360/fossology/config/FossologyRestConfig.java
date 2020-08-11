@@ -13,7 +13,8 @@ import org.eclipse.sw360.datahandler.db.ConfigContainerRepository;
 import org.eclipse.sw360.datahandler.thrift.ConfigContainer;
 import org.eclipse.sw360.datahandler.thrift.ConfigFor;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -22,15 +23,13 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import static org.apache.log4j.Logger.getLogger;
-
 /**
  * Settings for the fossology rest connection
  */
 @Component
 public class FossologyRestConfig {
 
-    private final Logger log = getLogger(this.getClass());
+    private final Logger log = LogManager.getLogger(this.getClass());
 
     public static final String CONFIG_KEY_URL = "url";
     public static final String CONFIG_KEY_TOKEN = "token";

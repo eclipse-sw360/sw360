@@ -10,6 +10,8 @@
 package org.eclipse.sw360.datahandler.couchdb;
 
 import com.google.common.collect.Sets;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -31,7 +33,6 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotEmpty;
 import static org.apache.commons.codec.digest.DigestUtils.sha1Hex;
 
-import org.apache.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.ektorp.http.HttpClient;
 
@@ -43,7 +44,7 @@ import org.ektorp.http.HttpClient;
  */
 public class AttachmentConnector extends AttachmentStreamConnector {
 
-    private static Logger log = Logger.getLogger(AttachmentConnector.class);
+    private static Logger log = LogManager.getLogger(AttachmentConnector.class);
 
     public AttachmentConnector(DatabaseConnector connector, Duration downloadTimeout) {
         super(connector, downloadTimeout);

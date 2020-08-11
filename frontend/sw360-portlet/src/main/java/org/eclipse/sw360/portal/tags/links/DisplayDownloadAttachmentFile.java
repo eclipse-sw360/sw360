@@ -9,7 +9,8 @@
  */
 package org.eclipse.sw360.portal.tags.links;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.tags.urlutils.UrlWriter;
@@ -22,7 +23,7 @@ import static org.eclipse.sw360.portal.tags.TagUtils.escapeAttributeValue;
  * Displays a download link for a given attachment.
  */
 public class DisplayDownloadAttachmentFile extends DisplayDownloadAbstract {
-    private static final Logger LOGGER = Logger.getLogger(DisplayDownloadAttachmentFile.class);
+    private static final Logger LOGGER = LogManager.getLogger(DisplayDownloadAttachmentFile.class);
 
     private Attachment attachment;
 

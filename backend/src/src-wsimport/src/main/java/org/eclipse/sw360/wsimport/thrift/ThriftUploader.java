@@ -23,7 +23,8 @@ import org.eclipse.sw360.wsimport.entitytranslation.helper.ReleaseRelation;
 import org.eclipse.sw360.wsimport.rest.WsImportService;
 import org.eclipse.sw360.wsimport.thrift.helper.ProjectImportError;
 import org.eclipse.sw360.wsimport.thrift.helper.ProjectImportResult;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -47,7 +48,7 @@ import static org.eclipse.sw360.wsimport.utility.TranslationConstants.UNKNOWN;
  */
 public class ThriftUploader {
 
-    private static final Logger LOGGER = Logger.getLogger(ThriftUploader.class);
+    private static final Logger LOGGER = LogManager.getLogger(ThriftUploader.class);
     private final WsLibraryToSw360ComponentTranslator libraryToComponentTranslator = new WsLibraryToSw360ComponentTranslator();
     private final WsLibraryToSw360ReleaseTranslator libraryToReleaseTranslator = new WsLibraryToSw360ReleaseTranslator();
     private final WsLicenseToSw360LicenseTranslator licenseToLicenseTranslator = new WsLicenseToSw360LicenseTranslator();

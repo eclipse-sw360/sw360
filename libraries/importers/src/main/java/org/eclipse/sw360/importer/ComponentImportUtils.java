@@ -14,7 +14,8 @@ import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.*;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
@@ -50,7 +51,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
  */
 public class ComponentImportUtils {
 
-    private static final Logger log = Logger.getLogger(ComponentImportUtils.class);
+    private static final Logger log = LogManager.getLogger(ComponentImportUtils.class);
 
     private ComponentImportUtils() {
         // Utility class with only static functions

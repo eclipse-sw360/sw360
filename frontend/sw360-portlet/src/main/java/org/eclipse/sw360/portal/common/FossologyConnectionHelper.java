@@ -12,7 +12,8 @@ package org.eclipse.sw360.portal.common;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 
 /**
@@ -23,7 +24,7 @@ import org.apache.thrift.TException;
  */
 public class FossologyConnectionHelper {
 
-    private static final Logger log = Logger.getLogger(FossologyConnectionHelper.class);
+    private static final Logger log = LogManager.getLogger(FossologyConnectionHelper.class);
     private static FossologyConnectionHelper instance;
     private boolean fossologyConnectionEnabled;
 

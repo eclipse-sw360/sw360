@@ -18,7 +18,8 @@ import com.google.common.base.Joiner;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
@@ -48,7 +49,7 @@ import static com.google.common.base.Strings.nullToEmpty;
  */
 public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
 
-    private static final Logger log = Logger.getLogger(LuceneAwareDatabaseConnector.class);
+    private static final Logger log = LogManager.getLogger(LuceneAwareDatabaseConnector.class);
 
     private static final Joiner AND = Joiner.on(" AND ");
     private static final Joiner OR = Joiner.on(" OR ");

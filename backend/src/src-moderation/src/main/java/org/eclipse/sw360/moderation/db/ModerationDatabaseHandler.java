@@ -45,7 +45,8 @@ import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.licenses.db.LicenseDatabaseHandler;
 import org.eclipse.sw360.mail.MailConstants;
 import org.eclipse.sw360.mail.MailUtil;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.ektorp.http.HttpClient;
 import org.jetbrains.annotations.NotNull;
@@ -69,7 +70,7 @@ import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePerm
  */
 public class ModerationDatabaseHandler {
 
-    private static final Logger log = Logger.getLogger(ModerationDatabaseHandler.class);
+    private static final Logger log = LogManager.getLogger(ModerationDatabaseHandler.class);
     private static final String CR = "CR-";
 
     /**

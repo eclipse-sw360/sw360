@@ -17,7 +17,8 @@ import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
 import org.apache.thrift.meta_data.FieldMetaData;
@@ -67,7 +68,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
  */
 public class PortletUtils {
 
-    private static final Logger LOGGER = Logger.getLogger(PortletUtils.class);
+    private static final Logger LOGGER = LogManager.getLogger(PortletUtils.class);
     private static final String TEMPLATE_FILE = "/welcomePageGuideline.html";
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static ChangeLogsPortletUtils changeLogsPortletUtils = null;

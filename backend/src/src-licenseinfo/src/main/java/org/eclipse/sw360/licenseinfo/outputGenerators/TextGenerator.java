@@ -12,7 +12,8 @@
 
 package org.eclipse.sw360.licenseinfo.outputGenerators;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationParsingResult;
@@ -25,7 +26,7 @@ import java.util.Collection;
 import java.util.Map;
 
 public class TextGenerator extends OutputGenerator<String> {
-    private static final Logger LOGGER = Logger.getLogger(TextGenerator.class);
+    private static final Logger LOGGER = LogManager.getLogger(TextGenerator.class);
 
     private static final String TXT_TEMPLATE_FILE = "textLicenseInfoFile.vm";
     private static final String TXT_MIME_TYPE = "text/plain";

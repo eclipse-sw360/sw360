@@ -13,7 +13,8 @@ package org.eclipse.sw360.rest.resourceserver.release;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -72,7 +73,7 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ReleaseController implements ResourceProcessor<RepositoryLinksResource> {
     public static final String RELEASES_URL = "/releases";
-    private static final Logger log = Logger.getLogger(ReleaseController.class);
+    private static final Logger log = LogManager.getLogger(ReleaseController.class);
     private static final Map<String, ReentrantLock> mapOfLocks = new HashMap<String, ReentrantLock>();
     private static final ImmutableMap<Release._Fields,String> mapOfFieldsTobeEmbedded = ImmutableMap.of(
             Release._Fields.MODERATORS, "sw360:moderators",

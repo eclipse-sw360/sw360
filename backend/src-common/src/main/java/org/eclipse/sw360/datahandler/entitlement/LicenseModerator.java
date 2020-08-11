@@ -17,7 +17,8 @@ import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligations;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 
 import java.util.ArrayList;
@@ -34,7 +35,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
  */
 public class LicenseModerator extends Moderator<License._Fields, License> {
 
-    private static final Logger log = Logger.getLogger(LicenseModerator.class);
+    private static final Logger log = LogManager.getLogger(LicenseModerator.class);
 
 
     public LicenseModerator(ThriftClients thriftClients) {

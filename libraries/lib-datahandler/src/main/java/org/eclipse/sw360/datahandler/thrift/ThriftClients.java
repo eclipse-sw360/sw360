@@ -15,6 +15,8 @@ import org.apache.http.HttpHost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogsService;
@@ -31,7 +33,6 @@ import org.eclipse.sw360.datahandler.thrift.search.SearchService;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
-import org.apache.log4j.Logger;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
@@ -41,8 +42,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Properties;
 
-import static org.apache.log4j.Logger.getLogger;
-
 /**
  * Created by bodet on 11/02/15.
  *
@@ -51,7 +50,7 @@ import static org.apache.log4j.Logger.getLogger;
  */
 public class ThriftClients {
 
-    private final static Logger log = getLogger(ThriftClients.class);
+    private final static Logger log = LogManager.getLogger(ThriftClients.class);
 
     public static final String PROPERTIES_FILE_PATH = "/sw360.properties";
 

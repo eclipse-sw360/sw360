@@ -11,7 +11,7 @@ package org.eclipse.sw360.portal.tags;
 
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
 import org.apache.thrift.meta_data.FieldMetaData;
@@ -84,7 +84,7 @@ public class TagUtils {
                         field,
                         prefix);
             } else if(fieldMetaData.valueMetaData.type == TType.MAP &&
-                    CommonUtils.isMapFieldMapOfStringSets(field, oldInstance, additions, deletions, Logger.getLogger(TagUtils.class))) {
+                    CommonUtils.isMapFieldMapOfStringSets(field, oldInstance, additions, deletions, LogManager.getLogger(TagUtils.class))) {
                 displayCustomMap(display,
                         (Map<String, Set<String>>) oldFieldValue,
                         (Map<String, Set<String>>) updateFieldValue,

@@ -21,14 +21,15 @@ import org.spdx.rdfparser.InvalidSPDXAnalysisException;
 import org.spdx.rdfparser.SPDXDocumentFactory;
 import org.spdx.rdfparser.model.*;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.InputStream;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import org.apache.log4j.Logger;
-
 public class SpdxBOMImporter {
-    private static final Logger log = Logger.getLogger(SpdxBOMImporter.class);
+    private static final Logger log = LogManager.getLogger(SpdxBOMImporter.class);
     private final SpdxBOMImporterSink sink;
 
     public SpdxBOMImporter(SpdxBOMImporterSink sink) {

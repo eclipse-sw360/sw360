@@ -21,7 +21,8 @@ import java.util.function.Supplier;
 
 import com.google.common.collect.ImmutableSet;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.ektorp.BulkDeleteDocument;
 import org.ektorp.DbAccessException;
@@ -43,7 +44,7 @@ import org.ektorp.util.Documents;
  */
 public class DatabaseConnector extends StdCouchDbConnector {
 
-    private static final Logger log = Logger.getLogger(DatabaseConnector.class);
+    private static final Logger log = LogManager.getLogger(DatabaseConnector.class);
 
     private final String dbName;
     private final DatabaseInstance instance;
@@ -146,10 +147,10 @@ public class DatabaseConnector extends StdCouchDbConnector {
         try {
             return super.get(type, id);
         } catch (DocumentNotFoundException e) {
-            log.info("Document not found for ID: " + id);
+            log.info("Document not found for ID: {}", id);
             return null;
         } catch (DbAccessException e) {
-            log.error("Document ID " + id + " could not be successfully converted to " + type.getName(), e);
+            log.error("Document ID {} could not be successfully converted to {}", id, type.getName(), e);
             return null;
         }
     }
@@ -200,16 +201,16 @@ public class DatabaseConnector extends StdCouchDbConnector {
         DocumentWrapper wrapper = get(wrapperClass, documentId);
 
         if (wrapper == null || !wrapper.getClass().equals(wrapperClass)) {
-            log.error("document " + documentId + " cannot be wrapped");
+            log.error("document {} cannot be wrapped", documentId);
             return null;
         }
 
         if (!wrapper.getId().equals(documentId)) {
-            log.error("round trip from database is not identity for id " + documentId);
+            log.error("round trip from database is not identity for id {}", documentId);
             return null;
         }
         if (!wrapper.getRevision().equals(Documents.getRevision(document))) {
-            log.error("concurrent access to document " + documentId);
+            log.error("concurrent access to document {}", documentId);
             return null;
         }
 

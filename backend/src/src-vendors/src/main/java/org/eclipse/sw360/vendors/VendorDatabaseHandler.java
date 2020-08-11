@@ -10,7 +10,8 @@
  */
 package org.eclipse.sw360.vendors;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
@@ -43,7 +44,7 @@ import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePerm
 import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.prepareVendor;
 
 public class VendorDatabaseHandler {
-    private static final Logger log = Logger.getLogger(VendorDatabaseHandler.class);
+    private static final Logger log = LogManager.getLogger(VendorDatabaseHandler.class);
     private final VendorRepository repository;
 
     public VendorDatabaseHandler(Supplier<HttpClient> httpClient, String dbName) throws MalformedURLException {

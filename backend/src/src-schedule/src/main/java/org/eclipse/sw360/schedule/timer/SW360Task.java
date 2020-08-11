@@ -11,14 +11,13 @@
 package org.eclipse.sw360.schedule.timer;
 
 import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 
 import java.util.Date;
 import java.util.TimerTask;
 import java.util.UUID;
-
-import static org.apache.log4j.Logger.getLogger;
 
 /**
  * creates new {@link TimerTask} which will be executed on the scheduled execution time
@@ -27,7 +26,7 @@ import static org.apache.log4j.Logger.getLogger;
  * @author birgit.heydenreich@tngtech.com
  */
 public abstract class SW360Task extends TimerTask {
-    private static final Logger log = getLogger(SW360Task.class);
+    private static final Logger log = LogManager.getLogger(SW360Task.class);
 
     private String id = UUID.randomUUID().toString();
     private String name;

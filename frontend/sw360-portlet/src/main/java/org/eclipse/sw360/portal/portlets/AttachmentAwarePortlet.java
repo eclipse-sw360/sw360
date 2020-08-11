@@ -17,7 +17,8 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
 import org.apache.thrift.protocol.TSimpleJSONProtocol;
@@ -60,7 +61,7 @@ public abstract class AttachmentAwarePortlet extends Sw360Portlet {
     private static final Map<String, String> ATTACHMENT_TYPE_MAP = Maps.newHashMap();
     private static final Map<String, String> CHECK_STATUS_MAP = Maps.newHashMap();
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final Logger log = Logger.getLogger(AttachmentAwarePortlet.class);
+    private static final Logger log = LogManager.getLogger(AttachmentAwarePortlet.class);
 
     private static class AttachmentSerializer extends StdSerializer<Attachment> {
         private static final TSerializer JSON_SERIALIZER = new TSerializer(new TSimpleJSONProtocol.Factory());

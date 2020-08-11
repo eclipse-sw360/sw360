@@ -13,7 +13,8 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 
@@ -22,7 +23,6 @@ import java.util.List;
 
 import javax.portlet.*;
 
-import static org.apache.log4j.Logger.getLogger;
 import static org.eclipse.sw360.portal.common.PortalConstants.RECENT_RELEASES_PORTLET_NAME;
 
 
@@ -47,7 +47,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.RECENT_RELEASES_PO
 )
 public class RecentReleasesPortlet extends Sw360Portlet {
 
-    private static final Logger log = getLogger(RecentReleasesPortlet.class);
+    private static final Logger log = LogManager.getLogger(RecentReleasesPortlet.class);
 
     @Override
     public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {

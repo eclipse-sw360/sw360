@@ -37,7 +37,8 @@ import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TEnum;
 import org.apache.thrift.TException;
 import org.jetbrains.annotations.NotNull;
@@ -54,7 +55,6 @@ import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Strings.nullToEmpty;
-import static org.apache.log4j.Logger.getLogger;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyMap;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 
@@ -66,7 +66,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
  */
 public class SW360Utils {
 
-    private final static Logger log = getLogger(SW360Utils.class);
+    private final static Logger log = LogManager.getLogger(SW360Utils.class);
 
     public static final String FORMAT_DATE = "yyyy-MM-dd";
     public static final String FORMAT_DATE_TIME = "yyyy-MM-dd HH:mm:ss";

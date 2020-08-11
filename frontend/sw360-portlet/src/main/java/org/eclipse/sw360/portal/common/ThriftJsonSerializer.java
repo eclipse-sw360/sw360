@@ -14,7 +14,8 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
@@ -29,7 +30,7 @@ import java.io.IOException;
 public class ThriftJsonSerializer {
 
 
-    private static final Logger log = Logger.getLogger(ThriftJsonSerializer.class);
+    private static final Logger log = LogManager.getLogger(ThriftJsonSerializer.class);
 
     ObjectMapper mapper;
 

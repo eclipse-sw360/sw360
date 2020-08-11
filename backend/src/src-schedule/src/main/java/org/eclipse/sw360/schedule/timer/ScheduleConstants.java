@@ -14,20 +14,19 @@ package org.eclipse.sw360.schedule.timer;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.apache.log4j.Logger.getLogger;
-
 /**
  * @author stefan.jaeger@evosoft.com
  */
 public class ScheduleConstants {
-    private static final Logger log = getLogger(ScheduleConstants.class);
+    private static final Logger log = LogManager.getLogger(ScheduleConstants.class);
 
     private ScheduleConstants(){}
 

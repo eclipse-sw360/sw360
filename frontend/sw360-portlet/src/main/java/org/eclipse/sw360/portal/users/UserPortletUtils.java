@@ -22,7 +22,8 @@ import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
 import org.eclipse.sw360.portal.common.ErrorMessages;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.portlet.PortletRequest;
 import javax.servlet.http.HttpServletRequest;
@@ -34,7 +35,7 @@ import java.util.function.Consumer;
  * @author alex.borodin@evosoft.com
  */
 public class UserPortletUtils {
-    private static final Logger log = Logger.getLogger(UserPortletUtils.class);
+    private static final Logger log = LogManager.getLogger(UserPortletUtils.class);
 
     private UserPortletUtils() {
         // Utility class with only static functions

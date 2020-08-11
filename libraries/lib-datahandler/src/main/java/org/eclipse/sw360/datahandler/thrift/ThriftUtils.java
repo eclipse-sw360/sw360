@@ -31,7 +31,8 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
 import org.ektorp.util.Documents;
@@ -47,7 +48,7 @@ import java.util.function.Function;
  * @author cedric.bodet@tngtech.com
  */
 public class ThriftUtils {
-    private static final Logger log = Logger.getLogger(ThriftUtils.class);
+    private static final Logger log = LogManager.getLogger(ThriftUtils.class);
 
     public static final List<Class<?>> THRIFT_CLASSES = ImmutableList.<Class<?>>builder()
             .add(ConfigContainer.class) // general
@@ -152,7 +153,7 @@ public class ThriftUtils {
                 if (clazz.isInstance(fieldValue)) {
                     return clazz.cast(fieldValue);
                 } else {
-                    log.error("field " + field + " of " + input + " cannot be cast to" + clazz.getSimpleName());
+                    log.error("field {} of {} cannot be cast to {}", field, input, clazz.getSimpleName());
                     return null;
                 }
             } else {
