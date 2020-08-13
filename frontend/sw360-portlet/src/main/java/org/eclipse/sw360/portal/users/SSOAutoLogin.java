@@ -83,7 +83,6 @@ public class SSOAutoLogin extends LoggingComponent implements AutoLogin {
                 AUTH_EMAIL_HEADER, AUTH_EXTID_HEADER, AUTH_GIVEN_NAME_HEADER, AUTH_SURNAME_HEADER, AUTH_DEPARTMENT_HEADER));
     }
 
-    @Override
     public String[] handleException(HttpServletRequest request, HttpServletResponse response, Exception e) throws AutoLoginException {
         log.error("System exception during SSOAutologin", e);
         return new String[]{};

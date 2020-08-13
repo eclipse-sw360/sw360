@@ -12,6 +12,8 @@ package org.eclipse.sw360.portal.tags.links;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import com.liferay.portal.kernel.util.PortalClassLoaderUtil;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspWriter;
 import javax.servlet.jsp.PageContext;
@@ -30,7 +32,7 @@ public class DisplayDownloadAbstractTest {
         PageContext pageContext = Mockito.mock(PageContext.class);
         when(pageContext.getOut()).thenReturn(jspWriter);
         when(pageContext.getRequest()).thenReturn(servletRequest);
-
+        PortalClassLoaderUtil.setClassLoader(this.getClass().getClassLoader());
         DisplayDownloadAbstract displayDownloadAbstractAttachment = Mockito
                 .spy(DisplayDownloadAbstract.class);
         displayDownloadAbstractAttachment.setPageContext(pageContext);

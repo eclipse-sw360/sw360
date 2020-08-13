@@ -118,6 +118,12 @@ public class TestUtils {
             instance.deleteDatabase(dbName);
 
         DatabaseInstanceTracker.destroy();
+
+        // Giving 500ms Delay between Deleting and Creating test Db
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+        }
     }
 
     public static void createDatabase(Supplier<HttpClient> httpClient, String dbName) throws MalformedURLException {

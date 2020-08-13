@@ -8,7 +8,7 @@
 
 A software component catalogue application - designed to work with FOSSology.
 
-SW360 is a server with a REST interface and a liferay portal application
+SW360 is a server with a REST interface and a liferay CE portal application
 to maintain your projects / products and the software components within.
 
 It can manage SPDX files for checking the license conditions and maintain
@@ -23,8 +23,7 @@ It is comprised of one frontend (portal) part, backend (services) part and addit
 * Database: we store software components and metadata about them in couchdb.
 * Rest: this REST API provides access to project resources for external integration.
 
-The reference platform is the Ubuntu server 16.04 (which is a LTS version). However, it
-runs well on other OSes (see below).
+The reference platform is the Ubuntu server 18.04 (which is a LTS version). However, it runs well on other OSes (see below).
 
 ### Project structure
 
@@ -38,7 +37,7 @@ This is a multi module maven file. please consider that we have the following mo
 
 ### Required software
 
-* Java 1.8.X
+* Java 11
 * CouchDB, at least 1.5
 * Liferay Portal CE 7.2.0 GA1
 * Apache Tomcat 9.0.X
@@ -61,21 +60,13 @@ In order to build you will need:
 
 * A git client
 * Apache Maven 3.6.X
-* Apache Thrift 0.11.0
+* Apache Thrift 0.13.0
 
 http://maven.apache.org/download.html#Installation
 
 Then, you must install Apache Tomcat, CouchDB. And, Java of course.
 
-The software is tested with
-
-* Maven 3.6.1
-* Apache Tomcat 9.0.17
-* Liferay 7.2.1 GA1
-* CouchDB 1.5 / 1.5.1
-* Java 1.8.X
-* Tested with debian 8, debian 9, ubuntu 16.04, macosx 10.8 - 10.14
-* We run Liferay with PostgreSQL 9.X/10.X, as the Liferay requires, but HSQL (as of the bundle) runs also OK.
+The software is tested with with debian 8, debian 9, ubuntu 16.04, ubuntu 18.04, macosx 10.8 - 10.14. We run Liferay with PostgreSQL 9.X or 10 as the Liferax requires, but HSQL (provided with the liferay bundle) runs also OK.
 
 ### PROBLEMS
 
@@ -92,6 +83,10 @@ https://github.com/eclipse/sw360/wiki
 Apart from the vagrant way, the software can be deployed using sw360chores:
 
 https://github.com/sw360/sw360chores
+
+Or using sw360vagrant:
+
+https://github.com/sw360/sw360vagrant
 
 ### Commands
 

@@ -9,7 +9,9 @@
  */
 package org.eclipse.sw360.rest.authserver.security.basicauth;
 
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.authserver.Sw360AuthorizationServer;
 import org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthoritiesCalculator;
 import org.eclipse.sw360.rest.authserver.security.Sw360UserDetailsProvider;
 
@@ -106,7 +108,10 @@ public class Sw360LiferayAuthenticationProvider implements AuthenticationProvide
 
     private boolean liferayAuthCheckRequest(String route, String userParam, String user, String password) {
         String liferayParameterURL = "/api/jsonws/user/%s?companyId=%s&%s=%s";
-        String url = sw360PortalServerURL + String.format(liferayParameterURL, route, sw360LiferayCompanyId, userParam, user);
+        String companyId = CommonUtils.isNotNullEmptyOrWhitespace(Sw360AuthorizationServer.SW360_LIFERAY_COMPANY_ID)
+                ? Sw360AuthorizationServer.SW360_LIFERAY_COMPANY_ID
+                : sw360LiferayCompanyId;
+        String url = sw360PortalServerURL + String.format(liferayParameterURL, route, companyId, userParam, user);
         String encodedPassword;
 
         try {

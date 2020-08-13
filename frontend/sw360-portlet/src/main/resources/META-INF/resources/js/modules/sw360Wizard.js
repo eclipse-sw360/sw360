@@ -108,7 +108,7 @@ define('modules/sw360Wizard', [ 'jquery', 'modules/button' ], function($, button
             lastStep = $('.wizardBody div.step:last', $wizardRoot);
 
         $wizardRoot.append('' +
-            '<div class="wizardFooter btn-group content-right">' +
+            '<div class="wizardFooter btn-group content-right float-right">' +
             '    <button type="button" class="wizardBack btn btn-secondary" disabled>'+Liferay.Language.get('back')+'</button>' +
             '    <button type="button" class="wizardNext btn btn-primary">'+Liferay.Language.get('next')+'</button>' +
             '    <button type="button" class="wizardAbort btn btn-danger hide">Abort</button>' +
