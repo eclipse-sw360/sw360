@@ -95,6 +95,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private static final Logger log = LogManager.getLogger(ComponentDatabaseHandler.class);
     private static final String ECC_AUTOSET_COMMENT = "automatically set";
     private static final String ECC_AUTOSET_VALUE = "N";
+    private static final String DEFAULT_CATEGORY = "Default_Category";
 
     /**
      * Connection to the couchDB database
@@ -334,7 +335,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         removeLeadingTrailingWhitespace(component);
         Set<String> categories = component.getCategories();
         if (categories == null || categories.isEmpty()) {
-            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.NAMINGERROR);
+            component.setCategories(ImmutableSet.of(DEFAULT_CATEGORY));
         }
 
         // Prepare the component
@@ -501,7 +502,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
         Set<String> categories = component.getCategories();
         if (categories == null || categories.isEmpty()) {
-            return RequestStatus.NAMINGERROR;
+            component.setCategories(ImmutableSet.of(DEFAULT_CATEGORY));
         }
         // Prepare component for database
         prepareComponent(component);

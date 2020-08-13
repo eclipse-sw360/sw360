@@ -111,7 +111,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
             throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.NAMINGERROR) {
-            throw new HttpMessageNotReadableException("Component name and categories field cannot be empty or contain only whitespace character");
+            throw new HttpMessageNotReadableException("Component name field cannot be empty or contain only whitespace character");
         }
         return null;
     }
@@ -122,7 +122,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
         if (requestStatus == RequestStatus.INVALID_INPUT) {
             throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
         } else if (requestStatus == RequestStatus.NAMINGERROR) {
-            throw new HttpMessageNotReadableException("Component name and categories field cannot be empty or contain only whitespace character");
+            throw new HttpMessageNotReadableException("Component name field cannot be empty or contain only whitespace character");
         } else if (requestStatus != RequestStatus.SUCCESS) {
             throw new RuntimeException("sw360 component with name '" + component.getName() + " cannot be updated.");
         }
