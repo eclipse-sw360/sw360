@@ -299,7 +299,7 @@ service ProjectService {
     /**
      * get project by id, with moderation requests of user applied
      */
-    Project getProjectByIdForEdit(1: string id, 2: User user);
+    Project getProjectByIdForEdit(1: string id, 2: User user) throws (1: SW360Exception exp);
 
     /**
      * try to update a project as a user, if user has no permission, a moderation request is created

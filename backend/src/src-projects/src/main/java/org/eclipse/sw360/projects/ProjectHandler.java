@@ -154,7 +154,7 @@ public class ProjectHandler implements ProjectService.Iface {
     }
 
     @Override
-    public Project getProjectByIdForEdit(String id, User user) throws TException {
+    public Project getProjectByIdForEdit(String id, User user) throws SW360Exception {
         assertUser(user);
         assertId(id);
 
