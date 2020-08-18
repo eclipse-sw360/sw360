@@ -134,7 +134,7 @@
 <script>
     document.title = $("<span></span>").html("<sw360:out value='${component.name}'/> - " + document.title).text();
 
-    require(['jquery', 'modules/button', 'modules/listgroup'], function($, button, listgroup) {
+    require(['jquery', 'modules/button', 'modules/listgroup', 'utils/link'], function($, button, listgroup, linkutil) {
         listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
 
         $('#mergeButton').on('click', function(event) {
@@ -202,6 +202,10 @@
                     errorCallback();
                 }
             });
+        }
+
+        if (window.history.replaceState) {
+            window.history.replaceState(null, document.title, linkutil.to('component', 'show', "${component.id}"));
         }
 	});
 </script>

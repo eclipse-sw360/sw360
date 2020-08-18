@@ -74,7 +74,7 @@
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;
 
-        require(['jquery', 'bridges/datatables', 'modules/dialog', 'utils/includes/quickfilter' ], function($, datatables, dialog, quickfilter) {
+        require(['jquery', 'bridges/datatables', 'modules/dialog', 'utils/includes/quickfilter', 'utils/link' ], function($, datatables, dialog, quickfilter, linkutil) {
             var vendorsTable,
                 vendorIdInURL = '<%=PortalConstants.VENDOR_ID%>',
                 pageName = '<%=PortalConstants.PAGENAME%>';
@@ -200,6 +200,10 @@
                         deleteVendorInternal(callback);
                     }
                 );
+            }
+
+            if (window.history.replaceState) {
+                window.history.replaceState(null, document.title, linkutil.to('vendor', 'list', ""));
             }
         });
     });

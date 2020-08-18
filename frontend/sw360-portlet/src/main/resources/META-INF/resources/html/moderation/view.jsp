@@ -527,5 +527,10 @@ AUI().use('liferay-portlet-url', function () {
         ModeratorsListHidden.toggle();
         ModeratorsListShown.toggle();
     }
+    require(['jquery', 'utils/link'], function($, linkutil) {
+        if (window.history.replaceState) {
+            window.history.replaceState(null, document.title, linkutil.to('moderationRequest', 'list', ""));
+        }
+    });
 });
 </script>

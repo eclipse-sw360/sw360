@@ -263,7 +263,10 @@
 <script>
 	document.title = $("<span></span>").html("<sw360:ProjectName project="${project}"/> - " + document.title).text();
 
-	require(['jquery', 'modules/listgroup'], function($, listgroup) {
+	require(['jquery', 'modules/listgroup', 'utils/link'], function($, listgroup, linkutil) {
 		listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
+	    if (window.history.replaceState) {
+	        window.history.replaceState(null, document.title, linkutil.to('project', 'show', "${project.id}"));
+	    }
 	});
 </script>

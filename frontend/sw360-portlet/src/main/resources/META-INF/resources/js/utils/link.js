@@ -19,7 +19,11 @@ define('utils/link', function() {
 				'show': 'components/-/component/detail/'
 			},
 			'moderationRequest': {
-				'edit': 'moderation/-/moderation/edit/'
+				'edit': 'moderation/-/moderation/edit/',
+				'list': 'moderation'
+			},
+			'vendor': {
+			    'list': 'vendors'
 			}
 		};
 
