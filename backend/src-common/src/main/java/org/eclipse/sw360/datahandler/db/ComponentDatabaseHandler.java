@@ -1598,6 +1598,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             ProjectReleaseRelationship rel = (ProjectReleaseRelationship) relation;
             releaseLink.setReleaseRelationship(rel.getReleaseRelation());
             releaseLink.setMainlineState(rel.getMainlineState());
+            releaseLink.setComment(rel.getComment());
         } else if (relation instanceof ReleaseRelationship) {
             releaseLink.setReleaseRelationship((ReleaseRelationship) relation);
         } else {

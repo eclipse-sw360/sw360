@@ -139,6 +139,9 @@ struct ConfigContainer {
 struct ProjectReleaseRelationship {
     1: required ReleaseRelationship releaseRelation,
     2: required MainlineState mainlineState,
+    3: optional string comment,
+    4: optional string createdOn,
+    5: optional string createdBy,
 }
 
 struct VerificationStateInfo {

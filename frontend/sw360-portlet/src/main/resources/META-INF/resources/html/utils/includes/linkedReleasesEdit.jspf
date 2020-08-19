@@ -12,13 +12,14 @@
 <%@ page import="org.eclipse.sw360.datahandler.thrift.ReleaseRelationship" %>
 
 <h4 class="mt-4"><liferay-ui:message key="linked.releases" /></h4>
-<table class="table edit-table four-columns-with-actions" id="LinkedReleasesInfo">
+<table class="table edit-table five-columns-with-actions" id="LinkedReleasesInfo">
     <thead>
         <tr>
             <th><liferay-ui:message key="release.name" /></th>
             <th><liferay-ui:message key="release.version" /></th>
             <th><liferay-ui:message key="release.relation" /> <sw360:DisplayEnumInfo type="<%=ReleaseRelationship.class%>"/></th>
             <th><liferay-ui:message key="project.mainline.state" /> <sw360:DisplayEnumInfo type="<%=MainlineState.class%>"/></th>
+            <th><liferay-ui:message key="comments" /></th>
             <th></th>
         </tr>
     </thead>

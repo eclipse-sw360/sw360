@@ -14,6 +14,8 @@ package org.eclipse.sw360.rest.resourceserver.core.serializer;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
+
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.rest.resourceserver.project.ProjectController;
 import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
@@ -43,6 +45,9 @@ public class JsonReleaseRelationSerializer extends JsonSerializer<Map<String, Pr
             ProjectReleaseRelationship projectReleaseRelationship = releaseRelation.getValue();
             linkedRelease.put("relation", projectReleaseRelationship.getReleaseRelation().name());
             linkedRelease.put("mainlineState", projectReleaseRelationship.getMainlineState().name());
+            linkedRelease.put("comment", CommonUtils.nullToEmptyString(projectReleaseRelationship.getComment()));
+            linkedRelease.put("createdBy", CommonUtils.nullToEmptyString(projectReleaseRelationship.getCreatedBy()));
+            linkedRelease.put("createdOn", CommonUtils.nullToEmptyString(projectReleaseRelationship.getCreatedOn()));
             linkedRelease.put("release", releaseLink);
             linkedReleases.add(linkedRelease);
         }

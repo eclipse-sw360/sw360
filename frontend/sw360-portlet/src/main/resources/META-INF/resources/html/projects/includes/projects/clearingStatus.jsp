@@ -54,13 +54,14 @@
         >
             <thead>
                 <tr>
-                    <th style="width:46%"><liferay-ui:message key="name" /></th>
+                    <th style="width:40%"><liferay-ui:message key="name" /></th>
                     <th style="width:7%"><liferay-ui:message key="type" /></th>
                     <th style="width:7%"><liferay-ui:message key="relation" /></th>
-                    <th style="width:15%"><liferay-ui:message key="main.licenses" /></th>
+                    <th style="width:12%"><liferay-ui:message key="main.licenses" /></th>
                     <th style="width:7%"><liferay-ui:message key="state" /></th>
                     <th style="width:7%"><liferay-ui:message key="release.mainline.state" /></th>
                     <th style="width:7%"><liferay-ui:message key="project.mainline.state" /></th>
+                    <th style="width:9%"><liferay-ui:message key="comment" /></th>
                     <th style="width:4%"><liferay-ui:message key="actions" /></th>
                </tr>
            </thead>
@@ -114,8 +115,17 @@ AUI().use('liferay-portlet-url', function () {
                     }, render: {display: renderState}, "defaultContent": ""},
                     {title: "<liferay-ui:message key="release.mainline.state" />", data : "releaseMainlineState", "defaultContent": ""},
                     {title: "<liferay-ui:message key="project.mainline.state" />", data : "projectMainlineState", "defaultContent": ""},
+                    {title: "<liferay-ui:message key="comment" />",  data: "comment", "defaultContent": "", render: $.fn.dataTable.render.ellipsis},
                     {title: "<liferay-ui:message key="actions" />",  data: "id", "orderable": false, "defaultContent": "", render: {display: renderActions}, className: "two actions" }
                 ],
+                "columnDefs": [
+                    {
+                        "targets": 9,
+                        "createdCell": function (td) {
+                            $(td).css('max-width', '10rem');
+                        }
+                    }
+                    ],
                 "order": [[ 0, "asc" ]],
                 fnDrawCallback: datatables.showPageContainer,
             language: {
