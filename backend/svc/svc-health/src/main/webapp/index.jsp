@@ -12,10 +12,11 @@ Description: Welcome file for Health Service
 -->
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <html>
-<head>
-  <title>Welcome to the SW360 Health Service</title>
-</head>
-<body>
-<h2>Welcome to the SW360 Health Service!</h2>
-</body>
+    <head>
+        <title>Welcome to the SW360 Health Service</title>
+    </head>
+
+    <body>
+        <h2>Welcome to the SW360 Health Service!</h2>
+    </body>
 </html>

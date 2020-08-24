@@ -32,7 +32,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
-            <scope>compile</scope>
             <version>${spring-boot.version}</version>
         </dependency>
         <dependency>

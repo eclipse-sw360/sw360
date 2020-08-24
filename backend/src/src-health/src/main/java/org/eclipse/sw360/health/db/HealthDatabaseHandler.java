@@ -9,16 +9,16 @@
  */
 package org.eclipse.sw360.health.db;
 
+import com.google.common.collect.ImmutableSet;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseInstance;
 import org.eclipse.sw360.datahandler.thrift.health.Health;
 import org.eclipse.sw360.datahandler.thrift.health.Status;
+import org.ektorp.DbAccessException;
 import org.ektorp.http.HttpClient;
 
 import java.net.MalformedURLException;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -26,13 +26,10 @@ public class HealthDatabaseHandler {
 
     private final DatabaseInstance db;
 
-    public static final Set<String> DATABASES_TO_CHECK = Collections.unmodifiableSet(new HashSet<String>() {
-        {
-            add(DatabaseSettings.COUCH_DB_ATTACHMENTS);
-            add(DatabaseSettings.COUCH_DB_DATABASE);
-            add(DatabaseSettings.COUCH_DB_USERS);
-        }
-    });
+    public static final Set<String> DATABASES_TO_CHECK = ImmutableSet.of(
+            DatabaseSettings.COUCH_DB_ATTACHMENTS,
+            DatabaseSettings.COUCH_DB_DATABASE,
+            DatabaseSettings.COUCH_DB_USERS);
 
     public HealthDatabaseHandler(Supplier<HttpClient> httpClient) throws MalformedURLException {
         db = new DatabaseInstance(httpClient.get());
@@ -46,7 +43,7 @@ public class HealthDatabaseHandler {
                 if (!db.checkIfDbExists(database)) {
                     health.getDetails().put(database, String.format("The database '%s' does not exist.", database));
                 }
-            } catch (Exception e) {
+            } catch (DbAccessException e) {
                 health.getDetails().put(database, e.getMessage());
             }
         }

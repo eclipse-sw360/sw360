@@ -10,21 +10,24 @@
 namespace java org.eclipse.sw360.datahandler.thrift.health
 namespace php sw360.thrift.health
 
+/**
+* List of all accepted health statuses
+**/
 enum Status {
-UP = 0,
-UNKNOWN = 1,
-DOWN = 2,
-ERROR = 3
+    UP = 0,
+    UNKNOWN = 1,
+    DOWN = 2,
+    ERROR = 3
 }
 
 struct Health {
-1: required Status status = Status.UNKNOWN,
-2: required map<string, string> details,
+    1: required Status status = Status.UNKNOWN,
+    2: required map<string, string> details,
 }
 
 service HealthService {
-/**
-* Returns a single health of the thrift service and all running thrift services
-**/
-Health getHealth();
+    /**
+    * Returns a single health of the thrift service and all running thrift services
+    **/
+    Health getHealth();
 }
