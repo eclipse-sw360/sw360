@@ -100,6 +100,10 @@ public abstract class OutputGenerator<T> {
         return SW360Utils.getReleaseFullname(li.getVendor(), li.getName(), li.getVersion());
     }
 
+    public String getComponentShortName(LicenseInfoParsingResult li) {
+        return SW360Utils.getReleaseFullname("", li.getName(), li.getVersion());
+    }
+
     public VelocityContext getConfiguredVelocityContext() {
         Properties p = new Properties();
         p.setProperty(RuntimeConstants.RESOURCE_LOADER, "file, class");

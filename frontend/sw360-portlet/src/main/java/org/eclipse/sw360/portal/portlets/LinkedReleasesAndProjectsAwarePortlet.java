@@ -107,12 +107,15 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
 
     protected void putDirectlyLinkedReleaseRelationsInRequest(PortletRequest request, Release release) {
         List<ReleaseLink> linkedReleaseRelations = SW360Utils.getLinkedReleaseRelations(release, thriftClients, log);
+        linkedReleaseRelations = linkedReleaseRelations.stream().filter(Objects::nonNull).sorted(Comparator.comparing(
+                rl -> SW360Utils.getVersionedName(nullToEmptyString(rl.getName()), rl.getVersion()), String.CASE_INSENSITIVE_ORDER)
+                ).collect(Collectors.toList());
         request.setAttribute(RELEASE_LIST, linkedReleaseRelations);
     }
 
     protected void putDirectlyLinkedReleasesInRequest(PortletRequest request, Project project) throws TException {
         List<ReleaseLink> linkedReleases = SW360Utils.getLinkedReleases(project, thriftClients, log);
-        linkedReleases = linkedReleases.stream().sorted(Comparator.comparing(
+        linkedReleases = linkedReleases.stream().filter(Objects::nonNull).sorted(Comparator.comparing(
                 rl -> SW360Utils.getVersionedName(nullToEmptyString(rl.getName()), rl.getVersion()), String.CASE_INSENSITIVE_ORDER)
                 ).collect(Collectors.toList());
         request.setAttribute(RELEASE_LIST, linkedReleases);
@@ -187,10 +190,10 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         }
         ComponentService.Iface compClient = thriftClients.makeComponentClient();
         List<ProjectLink> mappedProjectLinks = createLinkedProjects(project, user);
-
         Set<String> releaseIds = mappedProjectLinks.stream().map(ProjectLink::getLinkedReleases)
                 .filter(CommonUtils::isNotEmpty).flatMap(rList -> rList.stream()).filter(Objects::nonNull)
                 .map(ReleaseLink::getId).collect(Collectors.toSet());
+        mappedProjectLinks = sortProjectLink(mappedProjectLinks);
         request.setAttribute(PROJECT_LIST, mappedProjectLinks);
         request.setAttribute("projectReleaseRelation", project.getReleaseIdToUsage());
         request.setAttribute("relMainLineState", fillMainLineState(releaseIds, compClient, user));
@@ -205,6 +208,26 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
     protected void serveLoadLinkedReleasesRows(ResourceRequest request, ResourceResponse response) throws PortletException, IOException {
         loadLinkedReleasesRows(request, response);
         include("/html/utils/ajax/linkedReleasesRows.jsp", request, response, PortletRequest.RESOURCE_PHASE);
+    }
+
+    protected List<ProjectLink> sortProjectLink(List<ProjectLink> mappedProjectLinks) {
+        if (CommonUtils.isNotEmpty(mappedProjectLinks)) {
+            ProjectLink parentProjectLink = mappedProjectLinks.remove(0);
+            if (parentProjectLink != null && CommonUtils.isNotEmpty(parentProjectLink.getLinkedReleases())) {
+                List<ReleaseLink> sortedLinkedRelease = parentProjectLink.getLinkedReleases().stream()
+                        .filter(Objects::nonNull)
+                        .sorted(Comparator.comparing(
+                                rl -> SW360Utils.getVersionedName(nullToEmptyString(rl.getName()), rl.getVersion()), String.CASE_INSENSITIVE_ORDER))
+                        .collect(Collectors.toList());
+                parentProjectLink.setLinkedReleases(sortedLinkedRelease);
+            }
+            mappedProjectLinks = mappedProjectLinks.stream().filter(Objects::nonNull)
+                    .sorted(Comparator.comparing(
+                            pl -> SW360Utils.getVersionedName(nullToEmptyString(pl.getName()), pl.getVersion()), String.CASE_INSENSITIVE_ORDER))
+                    .collect(Collectors.toList());
+            mappedProjectLinks.add(0, parentProjectLink);
+        }
+        return mappedProjectLinks;
     }
 
     private void loadLinkedReleasesRows(ResourceRequest request, ResourceResponse response)
