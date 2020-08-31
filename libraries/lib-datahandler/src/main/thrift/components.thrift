@@ -259,7 +259,8 @@ struct Release {
     65: optional set<string> mainLicenseIds,
 
     // Urls for the project
-    70: optional string downloadurl, // URL for download page for this release
+    70: optional string sourceCodeDownloadurl, // URL for download page for this release source code
+    71: optional string binaryDownloadurl, // URL for download page for this release binaries
 
     80: optional map<string, ReleaseRelationship> releaseIdToRelationship,    //id, comment
 

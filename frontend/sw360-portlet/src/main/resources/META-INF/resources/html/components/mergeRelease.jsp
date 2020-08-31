@@ -210,7 +210,8 @@
             $stepElement.append(wizard.createMultiMergeLine('<liferay-ui:message key="software.platforms" />', data.releaseTarget.softwarePlatforms, data.releaseSource.softwarePlatforms));
             $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="release.date" />', data.releaseTarget.releaseDate, data.releaseSource.releaseDate));
             $stepElement.append(wizard.createMultiMergeLine('<liferay-ui:message key="licenses" />', data.releaseTarget.mainLicenseIds, data.releaseSource.mainLicenseIds));
-            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="download.url" />', data.releaseTarget.downloadurl, data.releaseSource.downloadurl));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="source.code.download.url" />', data.releaseTarget.sourceCodeDownloadurl, data.releaseSource.sourceCodeDownloadurl));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="binary.download.url" />', data.releaseTarget.binaryDownloadurl, data.releaseSource.binaryDownloadurl));
             $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="release.mainline.state" />', data.releaseTarget.mainlineState, data.releaseSource.mainlineState, mapFormatter(data.displayInformation, 'mainlineState')));
             $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="created.on" />', data.releaseTarget.createdOn, data.releaseSource.createdOn));
             $stepElement.append(
@@ -364,7 +365,8 @@
             releaseSelection.softwarePlatforms = wizard.getFinalMultiValue('<liferay-ui:message key="software.platforms" />');
             releaseSelection.releaseDate = wizard.getFinalSingleValue('<liferay-ui:message key="release.date" />');
             releaseSelection.mainLicenseIds = wizard.getFinalMultiValue('<liferay-ui:message key="licenses" />');
-            releaseSelection.downloadurl = wizard.getFinalSingleValue('<liferay-ui:message key="download.url" />');
+            releaseSelection.sourceCodeDownloadurl = wizard.getFinalSingleValue('<liferay-ui:message key="source.code.download.url" />');
+            releaseSelection.binaryDownloadurl = wizard.getFinalSingleValue('<liferay-ui:message key="binary.download.url" />');
             releaseSelection.mainlineState = wizard.getFinalSingleValue('<liferay-ui:message key="release.mainline.state" />');
             releaseSelection.createdOn = wizard.getFinalSingleValue('<liferay-ui:message key="created.on" />');
             releaseSelection.createdBy = wizard.getFinalSingleValue('<liferay-ui:message key="created.by" />');
@@ -481,7 +483,8 @@
             $stepElement.append(wizard.createMultiDisplayLine('<liferay-ui:message key="software.platforms" />', data.releaseSelection.softwarePlatforms));
             $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="release.date" />', data.releaseSelection.releaseDate));
             $stepElement.append(wizard.createMultiDisplayLine('<liferay-ui:message key="licenses" />', data.releaseSelection.mainLicenseIds));
-            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="download.url" />', data.releaseSelection.downloadurl));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="source.code.download.url" />', data.releaseSelection.sourceCodeDownloadurl));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="binary.download.url" />', data.releaseSelection.binaryDownloadurl));
             $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="release.mainline.state" />', data.releaseSelection.mainlineState, mapFormatter(displayInformation, 'mainlineState')));
             $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="created.on" />', data.releaseSelection.createdOn));
             $stepElement.append(

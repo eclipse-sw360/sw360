@@ -366,7 +366,7 @@ class JacksonCustomizations {
                 "languagesSize",
                 "setLanguages",
                 "setCotsDetails",
-                "setDownloadurl",
+                "setSourceCodeDownloadurl",
                 "setPermissions",
                 "externalIdsSize",
                 "attachmentsIterator",
@@ -413,7 +413,8 @@ class JacksonCustomizations {
                 "softwarePlatformsIterator",
                 "additionalDataSize",
                 "setAdditionalData",
-                "mainLicenseIdsIterator"
+                "mainLicenseIdsIterator",
+                "setBinaryDownloadurl"
         })
         static abstract class ReleaseMixin extends Release {
             @Override

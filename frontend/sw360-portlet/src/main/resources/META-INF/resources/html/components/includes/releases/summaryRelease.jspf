@@ -50,10 +50,13 @@
             <td><sw360:DisplayMapOfEmailSets value="${release.roles}"/></td>
         </tr>
         <tr>
-            <td><liferay-ui:message key="download.url" />:</td>
-            <td><sw360:DisplayLink target="${release.downloadurl}"/></td>
+            <td><liferay-ui:message key="source.code.download.url" />:</td>
+            <td><sw360:DisplayLink target="${release.sourceCodeDownloadurl}"/></td>
         </tr>
-
+        <tr>
+            <td><liferay-ui:message key="binary.download.url" />:</td>
+            <td><sw360:DisplayLink target="${release.binaryDownloadurl}"/></td>
+        </tr>
         <tr>
             <td><liferay-ui:message key="clearing.state" />:</td>
             <td><sw360:DisplayEnum value="${release.clearingState}"/></td>
