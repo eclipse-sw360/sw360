@@ -18,6 +18,7 @@ import com.google.common.collect.Sets;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.portlet.PortletResponseUtil;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCPortlet;
 import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.servlet.SessionMessages;
@@ -33,6 +34,8 @@ import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
+import org.eclipse.sw360.exporter.LicsExporter;
+import org.eclipse.sw360.exporter.utils.ZipTools;
 import org.eclipse.sw360.portal.common.ErrorMessages;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
@@ -45,8 +48,12 @@ import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Modified;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
+import java.util.zip.ZipOutputStream;
 
 import javax.portlet.*;
 
@@ -397,5 +404,23 @@ abstract public class Sw360Portlet extends MVCPortlet {
             log.error("Error searching linked releases", e);
             return Collections.emptyList();
         }
+    }
+
+    public void backUpLicenses(ResourceRequest request, ResourceResponse response) throws IOException, TException {
+        final LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
+        Map<String, InputStream> fileNameToStreams = (new LicsExporter(licenseClient)).getFilenameToCSVStreams();
+
+        final ByteArrayOutputStream outB = new ByteArrayOutputStream();
+        final ZipOutputStream zipOutputStream = new ZipOutputStream(outB);
+
+        for (Map.Entry<String, InputStream> entry : fileNameToStreams.entrySet()) {
+            ZipTools.addToZip(zipOutputStream, entry.getKey(), entry.getValue());
+        }
+
+        zipOutputStream.flush();
+        zipOutputStream.close(); // this closes outB
+
+        final ByteArrayInputStream zipFile = new ByteArrayInputStream(outB.toByteArray());
+        PortletResponseUtil.sendFile(request, response, "LicensesBackup.lics", zipFile, "application/zip");
     }
 }
