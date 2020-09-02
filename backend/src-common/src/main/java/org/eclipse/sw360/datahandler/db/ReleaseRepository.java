@@ -82,6 +82,10 @@ import static com.google.common.base.Strings.isNullOrEmpty;
                         "    for (var externalId in doc.externalIds) {" +
                         "      try {" +
                         "            var values = JSON.parse(doc.externalIds[externalId]);" +
+                        "            if(!isNaN(values)) {" +
+                        "               emit( [externalId, doc.externalIds[externalId]], doc._id);" +
+                        "               continue;" +
+                        "            }" +
                         "            for (var idx in values) {" +
                         "              emit( [externalId, values[idx]], doc._id);" +
                         "            }" +
