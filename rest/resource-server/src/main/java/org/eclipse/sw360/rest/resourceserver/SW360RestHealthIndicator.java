@@ -94,7 +94,7 @@ public class SW360RestHealthIndicator implements HealthIndicator {
         return new DatabaseInstance(DatabaseSettings.getConfiguredHttpClient().get());
     }
 
-    static class RestState {
+    public static class RestState {
         @JsonInclude
         public boolean isDbReachable;
 
