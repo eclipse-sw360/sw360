@@ -1,5 +1,6 @@
 #
 # Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+# Copyright Bosch.IO GmbH 2020
 #
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
@@ -10,6 +11,15 @@
 
 server:
   port: 8091
+
+endpoints:
+  enabled: false
+  info:
+    enabled: true
+    sensitive: true
+  health:
+    enabled: true
+    sensitive: false
 
 spring:
   http:
