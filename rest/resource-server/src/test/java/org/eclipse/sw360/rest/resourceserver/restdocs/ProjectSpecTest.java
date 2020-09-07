@@ -19,7 +19,6 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
 import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -50,7 +49,6 @@ import org.springframework.hateoas.Resources;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Sets;
 
 import java.io.IOException;
@@ -338,18 +336,33 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/projects")
                 .header("Authorization", "Bearer " + accessToken)
+                .param("page", "0")
+                .param("page_entries", "5")
+                .param("sort", "name,desc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("page").description("Page of projects"),
+                                parameterWithName("page_entries").description("Amount of projects per page"),
+                                parameterWithName("sort").description("Defines order of the projects")
+                        ),
                         links(
-                                linkWithRel("curies").description("Curies are used for online documentation")
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
                         ),
                         responseFields(
                                 fieldWithPath("_embedded.sw360:projects[]name").description("The name of the project"),
                                 fieldWithPath("_embedded.sw360:projects[]version").description("The project version"),
                                 fieldWithPath("_embedded.sw360:projects[]projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
                                 fieldWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
-                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of projects per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all existing projects"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
                         )));
     }
 
@@ -399,13 +412,25 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_get_projects_with_all_details() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        mockMvc.perform(get("/api/projects?allDetails=true")
+        mockMvc.perform(get("/api/projects")
                 .header("Authorization", "Bearer " + accessToken)
+                .param("allDetails", "true")
+                .param("page", "0")
+                .param("page_entries", "5")
+                .param("sort", "name,desc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("allDetails").description("Flag to get projects with all details. Possible values are `<true|false>`"),
+                                parameterWithName("page").description("Page of projects"),
+                                parameterWithName("page_entries").description("Amount of projects per page"),
+                                parameterWithName("sort").description("Defines order of the projects")
+                        ),
                         links(
-                                linkWithRel("curies").description("Curies are used for online documentation")
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
                         ),
                         responseFields(
                                 fieldWithPath("_embedded.sw360:projects[]name").description("The name of the project"),
@@ -450,7 +475,12 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("_embedded.sw360:projects[]_embedded.sw360:moderators").description("An array of all project moderators with email"),
                                 fieldWithPath("_embedded.sw360:projects[]_embedded.sw360:contributors").description("An array of all project contributors with email"),
                                 fieldWithPath("_embedded.sw360:projects[]_embedded.sw360:attachments").description("An array of all project attachments"),
-                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of projects per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all existing projects"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
                         )));
     }
 
@@ -512,13 +542,25 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_get_projects_by_type() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        mockMvc.perform(get("/api/projects?type=" + project.getProjectType())
+        mockMvc.perform(get("/api/projects")
                 .header("Authorization", "Bearer " + accessToken)
+                .param("type", project.getProjectType().toString())
+                .param("page", "0")
+                .param("page_entries", "5")
+                .param("sort", "name,desc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("type").description("Project types = `{CUSTOMER, INTERNAL, PRODUCT, SERVICE, INNER_SOURCE}`"),
+                                parameterWithName("page").description("Page of projects"),
+                                parameterWithName("page_entries").description("Amount of projects per page"),
+                                parameterWithName("sort").description("Defines order of the projects")
+                        ),
                         links(
-                                linkWithRel("curies").description("Curies are used for online documentation")
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
                         ),
                         responseFields(
                                 fieldWithPath("_embedded.sw360:projects[]name").description("The name of the project"),
@@ -528,18 +570,38 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                         .description("The visibility of the project, possible values are: "
                                                 + Arrays.asList(Visibility.values())),
                                 fieldWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
-                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of projects per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all existing projects"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
                         )));
     }
 
     @Test
     public void should_document_get_projects_by_group() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        mockMvc.perform(get("/api/projects?group=" + project.getBusinessUnit())
-                .header("Authorization", "Bearer " + accessToken).accept(MediaTypes.HAL_JSON))
+        mockMvc.perform(get("/api/projects")
+                .header("Authorization", "Bearer " + accessToken)
+                .param("group", project.getBusinessUnit())
+                .param("page", "0")
+                .param("page_entries", "5")
+                .param("sort", "name,desc")
+                .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        links(linkWithRel("curies").description("Curies are used for online documentation")),
+                        requestParameters(
+                                parameterWithName("group").description("The project group"),
+                                parameterWithName("page").description("Page of projects"),
+                                parameterWithName("page_entries").description("Amount of projects per page"),
+                                parameterWithName("sort").description("Defines order of the projects")
+                        ),
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
+                        ),
                         responseFields(
                                 fieldWithPath("_embedded.sw360:projects[]name").description("The name of the project"),
                                 fieldWithPath("_embedded.sw360:projects[]version").description("The project version"),
@@ -552,17 +614,38 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("_embedded.sw360:projects")
                                         .description("An array of <<resources-projects, Projects resources>>"),
                                 fieldWithPath("_links")
-                                        .description("<<resources-index-links,Links>> to other resources"))));
+                                        .description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of projects per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all existing projects"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
+                        )));
     }
 
     @Test
     public void should_document_get_projects_by_tag() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        mockMvc.perform(get("/api/projects?tag=" + project.getTag())
-                .header("Authorization", "Bearer " + accessToken).accept(MediaTypes.HAL_JSON))
+        mockMvc.perform(get("/api/projects")
+                .header("Authorization", "Bearer " + accessToken)
+                .param("tag", project.getTag())
+                .param("page", "0")
+                .param("page_entries", "5")
+                .param("sort", "name,desc")
+                .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        links(linkWithRel("curies").description("Curies are used for online documentation")),
+                        requestParameters(
+                                parameterWithName("tag").description("The project tag"),
+                                parameterWithName("page").description("Page of projects"),
+                                parameterWithName("page_entries").description("Amount of projects per page"),
+                                parameterWithName("sort").description("Defines order of the projects")
+                        ),
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
+                        ),
                         responseFields(
                                 fieldWithPath("_embedded.sw360:projects[]name").description("The name of the project"),
                                 fieldWithPath("_embedded.sw360:projects[]version").description("The project version"),
@@ -575,19 +658,37 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("_embedded.sw360:projects")
                                         .description("An array of <<resources-projects, Projects resources>>"),
                                 fieldWithPath("_links")
-                                        .description("<<resources-index-links,Links>> to other resources"))));
+                                        .description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of projects per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all existing projects"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
+                        )));
     }
 
     @Test
     public void should_document_get_projects_by_name() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        mockMvc.perform(get("/api/projects?name=" + project.getName())
+        mockMvc.perform(get("/api/projects")
                 .header("Authorization", "Bearer " + accessToken)
+                .param("name", project.getName())
+                .param("page", "0")
+                .param("page_entries", "5")
+                .param("sort", "name,desc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("name").description("The name of the project"),
+                                parameterWithName("page").description("Page of projects"),
+                                parameterWithName("page_entries").description("Amount of projects per page"),
+                                parameterWithName("sort").description("Defines order of the projects")
+                        ),
                         links(
-                                linkWithRel("curies").description("Curies are used for online documentation")
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
                         ),
                         responseFields(
                                 fieldWithPath("_embedded.sw360:projects[]name").description("The name of the project"),
@@ -597,7 +698,12 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                         .description("The visibility of the project, possible values are: "
                                                 + Arrays.asList(Visibility.values())),
                                 fieldWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
-                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of projects per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all existing projects"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
                         )));
     }
 
@@ -627,17 +733,34 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_get_project_releases() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        mockMvc.perform(get("/api/projects/" + project.getId() + "/releases?transitive=false")
+        mockMvc.perform(get("/api/projects/" + project.getId() + "/releases")
                 .header("Authorization", "Bearer " + accessToken)
+                .param("transitive", "false")
+                .param("page", "0")
+                .param("page_entries", "5")
+                .param("sort", "name,desc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("transitive").description("Get the transitive releases"),
+                                parameterWithName("page").description("Page of releases"),
+                                parameterWithName("page_entries").description("Amount of releases page"),
+                                parameterWithName("sort").description("Defines order of the releases")
+                        ),
                         links(
-                                linkWithRel("curies").description("Curies are used for online documentation")
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
                         ),
                         responseFields(
                                 fieldWithPath("_embedded.sw360:releases").description("An array of <<resources-releases, Releases resources>>"),
-                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of releases per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all existing releases"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
                         )));
     }
 
