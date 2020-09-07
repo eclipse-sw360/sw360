@@ -719,7 +719,8 @@ public class LicenseDatabaseHandler {
         Map<String, LicenseObligation> obligationIdMap = null;
         if (!obligationIdsToFetch.isEmpty()) {
             List<LicenseObligation> obligations = getListOfobligationByIds(obligationIdsToFetch);
-            if (obligations != null && !obligations.isEmpty()) {
+            if (CommonUtils.isNotEmpty(obligations)) {
+                obligations = obligations.stream().filter(Objects::nonNull).collect(Collectors.toList());
                 obligationIdMap = ThriftUtils.getIdMap(obligations);
             }
         }

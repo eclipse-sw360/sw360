@@ -340,22 +340,5 @@ public class ImportExportPortlet extends Sw360Portlet {
 
         renderRequestSummary(request, response, requestSummary);
     }
-    public void backUpLicenses(ResourceRequest request, ResourceResponse response) throws IOException, TException {
-        final LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
-        Map<String, InputStream> fileNameToStreams = (new LicsExporter(licenseClient)).getFilenameToCSVStreams();
-
-        final ByteArrayOutputStream outB = new ByteArrayOutputStream();
-        final ZipOutputStream zipOutputStream = new ZipOutputStream(outB);
-
-        for (Map.Entry<String, InputStream> entry : fileNameToStreams.entrySet()) {
-            ZipTools.addToZip(zipOutputStream, entry.getKey(), entry.getValue());
-        }
-
-        zipOutputStream.flush();
-        zipOutputStream.close(); // this closes outB
-
-        final ByteArrayInputStream zipFile = new ByteArrayInputStream(outB.toByteArray());
-        PortletResponseUtil.sendFile(request, response, "LicensesBackup.lics", zipFile, "application/zip");
-    }
 }
 
