@@ -34,7 +34,7 @@ db = couch[DBNAME]
 
 doc_id = "_design/Release"
 nested_field_key = ["views", "byExternalIds", "map"]
-new_value = "function(doc) {  if (doc.type == 'release') {    for (var externalId in doc.externalIds) {      try {            var values = JSON.parse(doc.externalIds[externalId]);            for (var idx in values) {              emit( [externalId, values[idx]], doc._id);            }      } catch(error) {          emit( [externalId, doc.externalIds[externalId]], doc._id);      }    }  }}"
+new_value = "function(doc) {  if (doc.type == 'release') {    for (var externalId in doc.externalIds) {      try {            var values = JSON.parse(doc.externalIds[externalId]);            if(!isNaN(values)) {               emit( [externalId, doc.externalIds[externalId]], doc._id);               continue;            }            for (var idx in values) {              emit( [externalId, values[idx]], doc._id);            }      } catch(error) {          emit( [externalId, doc.externalIds[externalId]], doc._id);      }    }  }}"
 
 # ---------------------------------------
 # functions
