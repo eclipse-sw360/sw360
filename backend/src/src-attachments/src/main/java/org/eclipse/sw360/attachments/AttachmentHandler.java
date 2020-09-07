@@ -18,6 +18,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 
 import java.net.MalformedURLException;
 import java.util.Collections;
@@ -60,7 +61,7 @@ public class AttachmentHandler implements AttachmentService.Iface {
     }
 
     @Override
-    public AttachmentContent getAttachmentContent(String id) throws TException {
+    public AttachmentContent getAttachmentContent(String id) throws SW360Exception {
         assertNotEmpty(id);
         return handler.getAttachmentContent(id);
     }

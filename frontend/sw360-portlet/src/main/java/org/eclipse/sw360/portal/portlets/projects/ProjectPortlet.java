@@ -23,6 +23,7 @@ import com.liferay.portal.kernel.portlet.LiferayPortletURL;
 import com.liferay.portal.kernel.portlet.PortletResponseUtil;
 import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
 import com.liferay.portal.kernel.servlet.SessionMessages;
+import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -77,6 +78,7 @@ import java.util.Map.Entry;
 import java.util.function.*;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Strings.nullToEmpty;
@@ -108,6 +110,11 @@ import static org.eclipse.sw360.portal.portlets.projects.ProjectPortletUtils.isU
     configurationPolicy = ConfigurationPolicy.REQUIRE
 )
 public class ProjectPortlet extends FossologyAwarePortlet {
+
+    private static final String NO = "No";
+
+    private static final String YES = "Yes";
+
     private static final Logger log = LogManager.getLogger(ProjectPortlet.class);
 
     private static final String NOT_CHECKED_YET = "Not checked yet.";
@@ -118,6 +125,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     private static final String LICENSE_NAME_WITH_TEXT_ERROR = "error";
     private static final String LICENSE_NAME_WITH_TEXT_FILE = "file";
     private static final String CYCLIC_LINKED_PROJECT = "Project cannot be created/updated due to cyclic linked project present. Cyclic Hierarchy : ";
+    private static final String ATTCHMENTS_ERROR_MSG = "Warning!! Attachments could not be opened-->";
 
     // Project view datatables, index of columns
     private static final int PROJECT_NO_SORT = -1;
@@ -194,6 +202,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             exportReleasesSpreadsheet(request, response);
         } else if (PortalConstants.DOWNLOAD_LICENSE_INFO.equals(action)) {
             downloadLicenseInfo(request, response);
+        } else if (PortalConstants.PROJECT_CHECK_FOR_ATTACHMENTS.equals(action)) {
+            verifyIfAttachmentsExists(request, response);
         } else if (PortalConstants.DOWNLOAD_SOURCE_CODE_BUNDLE.equals(action)) {
             downloadSourceCodeBundle(request, response);
         } else if (PortalConstants.GET_CLEARING_STATE_SUMMARY.equals(action)) {
@@ -430,8 +440,31 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
     private void downloadLicenseInfo(ResourceRequest request, ResourceResponse response) throws IOException {
         final String projectId = request.getParameter(PROJECT_ID);
+        String isEmptyFile = request.getParameter(PortalConstants.LICENSE_INFO_EMPTY_FILE);
         String outputGenerator = request.getParameter(PortalConstants.LICENSE_INFO_SELECTED_OUTPUT_FORMAT);
+        User user = UserCacheHolder.getUserFromRequest(request);
+        ProjectService.Iface projClient = thriftClients.makeProjectClient();
+        Project project = null;
+        try {
+            project = projClient.getProjectById(projectId, user);
+        } catch (TException e) {
+            log.error("Error getting project with id " + projectId + " and generator ", e);
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE,
+                    Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+            return;
+        }
+        if (YES.equals(isEmptyFile)) {
+            try {
+                downloadEmptyLicenseInfo(request, response, project, user, outputGenerator);
+                return;
+            } catch (IOException | TException e) {
+                log.error("Error getting empty licenseInfo file for project with id " + projectId + " and generator " + outputGenerator, e);
+                response.setProperty(ResourceResponse.HTTP_STATUS_CODE, Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+            }
+        }
+
         String extIdsFromRequest = request.getParameter(PortalConstants.EXTERNAL_ID_SELECTED_KEYS);
+        String externalIds = Optional.ofNullable(extIdsFromRequest).orElse(StringUtils.EMPTY);
         boolean isLinkedProjectPresent = Boolean.parseBoolean(request.getParameter(PortalConstants.IS_LINKED_PROJECT_PRESENT));
         List<String> selectedReleaseRelationships =  getSelectedReleaseRationships(request);
         String[] selectedAttachmentIdsWithPathArray = request.getParameterValues(PortalConstants.LICENSE_INFO_RELEASE_TO_ATTACHMENT);
@@ -450,38 +483,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 .map(rel -> ThriftEnumUtils.stringToEnum(rel, ProjectRelationship.class)).filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        User user = UserCacheHolder.getUserFromRequest(request);
-        ProjectService.Iface projClient = thriftClients.makeProjectClient();
-        Project project = null;
-        try {
-            project = projClient.getProjectById(projectId, user);
-        } catch (TException e) {
-            log.error("Error getting project with id " + projectId + " and generator ", e);
-            response.setProperty(ResourceResponse.HTTP_STATUS_CODE,
-                    Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
-            return;
-        }
-
-        List<ProjectLink> filteredMappedProjectLinks = createLinkedProjects(project,
-                filterAndSortAttachments(SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES), true, user,
-                listOfSelectedProjectRelationships);
-        Set<String> filteredProjectIds = filteredProjectIds(filteredMappedProjectLinks);
-        String externalIds = Optional.ofNullable(extIdsFromRequest).orElse(StringUtils.EMPTY);
-
-        Set<String> selectedAttachmentIdsWithPath = Sets.newHashSet();
-        if (null != selectedAttachmentIdsWithPathArray) {
-            selectedAttachmentIdsWithPath = Sets.newHashSet(selectedAttachmentIdsWithPathArray);
-        }
-
-        selectedAttachmentIdsWithPath=selectedAttachmentIdsWithPath.stream().filter(fullPath -> {
-            String[] pathParts = fullPath.split(":");
-            int length = pathParts.length;
-            if (length >= 4) {
-                String projectIdOpted = pathParts[pathParts.length - 4];
-                return filteredProjectIds.contains(projectIdOpted);
-            }
-            return true;
-        }).collect(Collectors.toSet());
+        Set<String> selectedAttachmentIdsWithPath = filterAttachmentSelectionOnProjectRelation(listOfSelectedProjectRelationships, selectedAttachmentIdsWithPathArray, user, project);
 
         Set<String> filteredSelectedAttachmentIdsWithPath = filterSelectedAttachmentIdsWithPath(selectedAttachmentIdsWithPath, listOfSelectedRelationshipsInString);
         final Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachmentIdWithPath = ProjectPortletUtils
@@ -527,6 +529,99 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             log.error("Error getting LicenseInfo file for project with id " + projectId + " and generator " + outputGenerator, e);
             response.setProperty(ResourceResponse.HTTP_STATUS_CODE, Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
         }
+    }
+
+    private void downloadEmptyLicenseInfo(ResourceRequest request, ResourceResponse response, Project project, User user, String outputGenerator) throws TException, IOException {
+        final LicenseInfoService.Iface licenseInfoClient = thriftClients.makeLicenseInfoClient();
+        LicenseInfoFile licenseInfoFile = licenseInfoClient.getLicenseInfoFile(project, user, outputGenerator,
+                Collections.emptyMap(), Collections.emptyMap(), "");
+        sendLicenseInfoResponse(request, response, project, licenseInfoFile);
+    }
+
+    private void verifyIfAttachmentsExists(ResourceRequest request, ResourceResponse response) throws IOException {
+        String[] fileNameToAttchmntId = request.getParameterValues(PortalConstants.ATTACHMENT_ID_TO_FILENAMES);
+        String[] selectedAttachmentsWithFullPaths = request
+                .getParameterValues(PortalConstants.SELECTED_ATTACHMENTS_WITH_FULL_PATH);
+        final String projectId = request.getParameter(PROJECT_ID);
+
+        Map<String, String> attchmntIdToFilename = Arrays.stream(fileNameToAttchmntId).map(elem -> elem.split(":"))
+                .filter(elem -> elem.length == 2).collect(Collectors.toMap(elem -> elem[1], elem -> elem[0]));
+
+        AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
+        JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+        Set<String> attachmntNames = new HashSet<String>();
+
+        User user = UserCacheHolder.getUserFromRequest(request);
+        ProjectService.Iface projClient = thriftClients.makeProjectClient();
+        Project project = null;
+        try {
+            project = projClient.getProjectById(projectId, user);
+        } catch (TException e) {
+            log.error("Error getting project with id " + projectId + " and generator ", e);
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE,
+                    Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+            return;
+        }
+
+        final String selectedProjectRelation = request.getParameter(PortalConstants.SELECTED_PROJECT_RELATIONS);
+        List<String> selectedProjectRelationStrAsList = selectedProjectRelation == null ? Lists.newArrayList()
+                : Arrays.asList(selectedProjectRelation.split(","));
+
+        Set<ProjectRelationship> listOfSelectedProjectRelationships = selectedProjectRelationStrAsList.stream()
+                .map(rel -> ThriftEnumUtils.stringToEnum(rel, ProjectRelationship.class)).filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Set<String> selectedAttachmentIdsWithPath = filterAttachmentSelectionOnProjectRelation(
+                listOfSelectedProjectRelationships, selectedAttachmentsWithFullPaths, user, project);
+
+        Set<String> attachmentIds = selectedAttachmentIdsWithPath.stream().map(fullpath -> {
+            String[] pathParts = fullpath.split(":");
+            String attachmentId = pathParts[pathParts.length - 1];
+            return attachmentId;
+        }).collect(Collectors.toSet());
+
+        try {
+            for (String attchmntId : attachmentIds) {
+                try {
+                    attachmentClient.getAttachmentContent(attchmntId);
+                } catch (SW360Exception sw360Exp) {
+                    if (sw360Exp.getErrorCode() == 404) {
+                        attachmntNames.add(attchmntIdToFilename.get(attchmntId));
+                        log.error("Error: attachment not found", sw360Exp);
+                    }
+                }
+            }
+        } catch (TException exception) {
+            log.error("Error getting attachment", exception);
+        }
+
+        if (attachmntNames.size() > 0) {
+            jsonObject.put("attachmentNames", attachmntNames);
+        }
+        writeJSON(request, response, jsonObject);
+    }
+
+    private Set<String> filterAttachmentSelectionOnProjectRelation(
+            Set<ProjectRelationship> listOfSelectedProjectRelationships, String[] selectedAttachmentsWithFullPaths,
+            User user, Project project) {
+        List<ProjectLink> filteredMappedProjectLinks = createLinkedProjects(project,
+                filterAndSortAttachments(SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES), true, user,
+                listOfSelectedProjectRelationships);
+        Set<String> filteredProjectIds = filteredProjectIds(filteredMappedProjectLinks);
+        Set<String> selectedAttachmentIdsWithPath = Sets.newHashSet();
+        if (null != selectedAttachmentsWithFullPaths) {
+            selectedAttachmentIdsWithPath = Sets.newHashSet(selectedAttachmentsWithFullPaths);
+        }
+        selectedAttachmentIdsWithPath = selectedAttachmentIdsWithPath.stream().filter(fullPath -> {
+            String[] pathParts = fullPath.split(":");
+            int length = pathParts.length;
+            if (length >= 4) {
+                String projectIdOpted = pathParts[pathParts.length - 4];
+                return filteredProjectIds.contains(projectIdOpted);
+            }
+            return true;
+        }).collect(Collectors.toSet());
+        return selectedAttachmentIdsWithPath;
     }
 
     private void saveSelectedReleaseAndProjectRelations(String projectId,
@@ -1066,7 +1161,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         User user = UserCacheHolder.getUserFromRequest(request);
         List<Organization> organizations = UserUtils.getOrganizations(request);
         request.setAttribute(PortalConstants.ORGANIZATIONS, organizations);
-        request.setAttribute(IS_USER_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user) ? "Yes" : "No");
+        request.setAttribute(IS_USER_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user) ? YES : NO);
         for (Project._Fields filteredField : projectFilteredFields) {
             String parameter = request.getParameter(filteredField.toString());
             request.setAttribute(filteredField.getFieldName(), nullToEmpty(parameter));
@@ -1169,7 +1264,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 request.setAttribute(PROJECT_OBLIGATIONS, SW360Utils.getProjectObligations(project));
                 request.setAttribute(COMPONENT_OBLIGATIONS, SW360Utils.getComponentObligations(project));
                 request.setAttribute(ORGANISATION_OBLIGATIONS, SW360Utils.getOrganisationObligations(project));
-                request.setAttribute(IS_USER_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user) ? "Yes" : "No");
+                request.setAttribute(IS_USER_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user) ? YES : NO);
 
                 if (PortalConstants.IS_PROJECT_OBLIGATIONS_ENABLED && project.getReleaseIdToUsageSize() > 0) {
                     request.setAttribute(OBLIGATION_DATA, loadLinkedObligations(request, project));
@@ -1186,6 +1281,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     private void prepareLicenseInfo(RenderRequest request, RenderResponse response) throws IOException, PortletException {
         User user = UserCacheHolder.getUserFromRequest(request);
         String id = request.getParameter(PROJECT_ID);
+        String showAttchmntSessionError = request.getParameter("showSessionError");
+        String attachmentNames = request.getParameter("attachmentNames");
+        String outputGenerator = request.getParameter(PortalConstants.LICENSE_INFO_SELECTED_OUTPUT_FORMAT);
         boolean projectWithSubProjects = Boolean
                 .parseBoolean(request.getParameter(PortalConstants.PROJECT_WITH_SUBPROJECT));
 
@@ -1193,6 +1291,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_PROJECT);
         request.setAttribute(PROJECT_LINK_TABLE_MODE, PROJECT_LINK_TABLE_MODE_LICENSE_INFO);
         request.setAttribute("onlyClearingReport", request.getParameter(PortalConstants.PREPARE_LICENSEINFO_OBL_TAB));
+        request.setAttribute("projectOrWithSubProjects", projectWithSubProjects);
 
         if (id != null) {
             try {
@@ -1229,11 +1328,25 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
                 storePathsMapInRequest(request, mappedProjectLinks);
                 storeAttachmentUsageCountInRequest(request, mappedProjectLinks, UsageData.licenseInfo(new LicenseInfoUsage(Sets.newHashSet())));
+                if (YES.equals(showAttchmntSessionError)) {
+                    request.setAttribute(PortalConstants.SHOW_ATTACHMENT_MISSING_ERROR, true);
+                    addCustomErrorMessageForMissingAttchmnt(ATTCHMENTS_ERROR_MSG + attachmentNames, request, response);
+                }
+                if (null != outputGenerator) {
+                    request.setAttribute("lcInfoSelectedOutputFormat", outputGenerator);
+                }
             } catch (TException e) {
                 log.error("Error fetching project from backend!", e);
                 setSW360SessionError(request, ErrorMessages.ERROR_GETTING_PROJECT);
             }
         }
+    }
+
+    public static void addCustomErrorMessageForMissingAttchmnt(String errorMessage, RenderRequest request, RenderResponse response) {
+        SessionErrors.add(request, "attachment_error");
+        request.setAttribute("attachmentLoadingError", errorMessage);
+        SessionMessages.add(request, PortalUtil.getPortletId(request) + SessionMessages.KEY_SUFFIX_HIDE_DEFAULT_ERROR_MESSAGE);
+        SessionMessages.add(request, PortalUtil.getPortletId(request) + SessionMessages.KEY_SUFFIX_HIDE_DEFAULT_SUCCESS_MESSAGE);
     }
 
     private Set<ReleaseRelationship> fetchReleaseRelationships(List<ProjectLink> mappedProjectLinks) {

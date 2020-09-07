@@ -17,6 +17,7 @@ namespace php sw360.thrift.attachments
 typedef sw360.RequestStatus RequestStatus
 typedef sw360.RequestSummary RequestSummary
 typedef sw360.Source Source
+typedef sw360.SW360Exception SW360Exception
 typedef users.User User
 
 enum AttachmentType {
@@ -165,7 +166,7 @@ service AttachmentService {
     /**
      * get validated attachmentContent by id
      **/
-    AttachmentContent getAttachmentContent(1:string id);
+    AttachmentContent getAttachmentContent(1:string id) throws (1: SW360Exception exp);
 
     /**
      * Update attachmentContent in database, no permission check is necessary
