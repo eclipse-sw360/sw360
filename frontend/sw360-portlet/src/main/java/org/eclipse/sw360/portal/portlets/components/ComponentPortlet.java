@@ -1277,7 +1277,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
                 setUsingDocs(request, user, client, releaseIds);
 
-                request.setAttribute(IS_USER_ALLOWED_TO_MERGE, PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user));
+                request.setAttribute(IS_USER_ALLOWED_TO_MERGE, PermissionUtils.isUserAtLeast(USER_ROLE_ALLOWED_TO_MERGE_OR_SPLIT_COMPONENT, user));
 
                 // get vulnerabilities
                 putVulnerabilitiesInRequestComponent(request, id, user);
@@ -1352,7 +1352,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
                 setUsingDocs(request, releaseId, user, client);
                 putDirectlyLinkedReleaseRelationsInRequest(request, release);
-                request.setAttribute(IS_USER_ALLOWED_TO_MERGE, PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user));
+                request.setAttribute(IS_USER_ALLOWED_TO_MERGE, PermissionUtils.isUserAtLeast(USER_ROLE_ALLOWED_TO_MERGE_OR_SPLIT_COMPONENT, user));
 
                 if (isNullOrEmpty(id)) {
                     id = release.getComponentId();
