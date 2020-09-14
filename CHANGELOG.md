@@ -4,6 +4,60 @@ This is the changelog file of the sw360 project. It starts with the first releas
 
 https://github.com/sw360/sw360portal/releases
 
+## sw360-11.0.0-M1
+
+### Features
+
+* `60f82182` feat(ProjectReleaseRelation): Added new Field comment, createdOn, createdBy in ProjectReleaseRelation   * comment field is available in UI, REST and Excel   * createdOn , createdBy is not available in UI but available in REST and Excel. (4 weeks ago) <jaideep.palit@siemens.com>
+* `c4342f38` feat(ui): Added link to project button from project detail view
+* `137b46a7` feat(language): add Japanese properties
+* `4d4184d3` feat(ProjectUI):Added Expand/Collapse All and Search in AttachmentUsageTable
+* `1b4f2362` feat(project-report): Layout and content update in project report
+* `1ee05b59` feat(ComponentUI): Added new filters in Advance search
+* `30ce4db1` feat(ExternalIds): Change file permission
+* `2442e1f2` feat(ExternalIds): Change file permission and fix typo of special character
+* `753d3889` feat(ExternalIds): Add comments to Component, Release and Project rest APIs
+* `0049dd3b` feat(ExternalIds): Add byExternalIds views migration scripts, and upgrade to new version 11.0.0-SNAPSHOT
+* `bb2f2950` feat(ExternalIds): 1. Handle EscapeXml for external id value, 2. Fix "Upon update of existing project or Component or Release without any change in External IDs"
+* `6ec67338` feat(REST): Whitelisting field in REST API response
+* `5ee02f75` feat(EditProjectUI): Release table in edit project page should be sorted and omit vendor name
+* `c0bf7132` feat(CRView): Clearing Request Comments enhancements
+
+### Corrections
+
+* `73894c08` fix(resource-server): Resolve logback conflict
+* `40f4a3aa` fix(ui): Prevent resubmission of form for Project, Component, Vendor, Moderation inorder to prevent loss of data.
+* `6b484677` fix(ui): Fixed download license disclosure error upon selection of corrupted attachment
+* `b8446dc1` fix(license): Fixed the NullPointerException and addressed code duplication
+* `a92d2677` fix(byExternalIdView): Fixed the byExternalIds view not working if the value is number
+* `f62a685f` fix(Language_ja): change datatables.lang's URL
+* `d65be244` fix(ImportSPDXBOM): Set Default value[Default_Category] to categories field of Component if found null or empty
+* `fda56f18` Fix: 'Download license archive' button in Admin>'import & Export' page is not working #906
+* `56eb7074` Fix: import spdx information #927 #915 and change quotes
+* `538b1aa7` fix(license): Fixed the license loading issue
+
+### Infrastructure
+
+* `c0685187` chore(script): Added support to uninstall the current thrift version
+* `14b1a4af` chore(deps): Bump jackson-databind in /backend/src/src-fossology 
+* `4f7234cc` chore(java): Support for Liferay 7.3.3 GA4
+* `d4c6983c` chore(java): Fixed Deployment issues
+* `5d484ee1` chore(java): Updated Spring version
+* `d247a0ff` chore(java): updating test deps for java 11
+* `3a5958b6` chore(java): migrating to openjdk java version 11
+* `c5f82e0e` chore(logging): Added a library containing the log4j2 classes
+* `aa6d5ae0` chore(logging): Fixed test failures caused by NoClassDefFound errors
+* `fe659050` chore(logging): Updated OSGi package imports
+* `68b91bcc` chore(logging): More tweaks of logging dependencies
+* `e4060da6` chore(logging): Switched logging configuration to log4j2 format
+* `ebc8f852` chore(logging): Upgraded from log4j 1 to log4j 2
+* `7866a852` chore(logging): Removed unused dependency to logback
+* `465fc5fa` chore(couchdb): Support CouchDb Lucene 2.1.0 with CouchDb 2.1.2 and backward compatibility
+* `bbabafd7` chore(Portlet): Rename Moderation portlet to Requests
+* `f512b867` chore(changelog): fixing formatting
+* `a6d07505` chore(release): changing pom file for 10.0.0-SNAPSHOT
+
+
 ## sw360-10.0.0-M1
 
 Again, another data model change, new major version. Please see the script `018_remove_unwanted_field_from_clearing_request.py` in the directory `scripts/migrations` to change the data model accordingly. The script is necessary for existing clearing request records; not executing the script will lead to malfunction of the sw360 application.
