@@ -6,9 +6,54 @@ https://github.com/sw360/sw360portal/releases
 
 ## sw360-11.0.0-M1
 
+The changes for this release incorporate a larger jump from the previous release, because it changes the sw360 infrastructure to the following versions:
+
+* From Couchdb 1.X to Couchdb 2.X and Couchdb Lucene 2.1
+* From Java 8 to Java 11 - tested with the OpenJDK
+* From Liferay Community Edition 7.2.1 to 7.3.3
+* From thrift 0.11 to 0.13
+
+Accordingly, also the vagrant project has changed: the current latest master of sw360/sw360vagrant builds with Java-11-based versions of sw360 (onwards from commit `0269392` at https://github.com/sw360/sw360vagrant).
+
+Apart from the changes to the infrastructure, a number of nice new features are introduced, including:
+
+* A Japanese language file for SW360
+* Multiple values for external ids for the same keys
+* A completely new healthcheck service for better monitoring of an sw360 installation
+* Improvements on project handling
+
+For corrections and further changes on the infrastructure, please refer to the listed commits below.
+
+### Migrations
+
+For existing installations, a data migration is required. Please go to the readme file in `scripts/migrations` to see more information:
+
+https://github.com/eclipse/sw360/blob/master/scripts/migrations/README.md
+
+For running the migrations scripts, you will need python and the couchdb package.
+
+### Credits
+
+The following users have contributed to the source code since the last release (in order of appearance):
+
+```
+albert.he@sap.com
+smruti.sahoo@siemens.com
+michael.c.jaeger@siemens.com
+kouki1.hama@toshiba.co.jp
+oliver.heger@bosch.io
+Stephanie.Neubauer@bosch.io
+jaideep.palit@siemens.com
+kouki1.hama@toshiba.co.jp
+nam1.nguyenphuong@toshiba.co.jp
+abdul.mannankapti@siemens.com
+```
+
+And many thanks to all the other contributions in presentation, issues, discussions!
+
 ### Features
 
-* `60f82182` feat(ProjectReleaseRelation): Added new Field comment, createdOn, createdBy in ProjectReleaseRelation   * comment field is available in UI, REST and Excel   * createdOn , createdBy is not available in UI but available in REST and Excel. (4 weeks ago) <jaideep.palit@siemens.com>
+* `60f82182` feat(ProjectReleaseRelation): Added new Field comment, createdOn, createdBy in ProjectReleaseRelation
 * `c4342f38` feat(ui): Added link to project button from project detail view
 * `137b46a7` feat(language): add Japanese properties
 * `4d4184d3` feat(ProjectUI):Added Expand/Collapse All and Search in AttachmentUsageTable
@@ -39,7 +84,7 @@ https://github.com/sw360/sw360portal/releases
 ### Infrastructure
 
 * `c0685187` chore(script): Added support to uninstall the current thrift version
-* `14b1a4af` chore(deps): Bump jackson-databind in /backend/src/src-fossology 
+* `14b1a4af` chore(deps): Bump jackson-databind in /backend/src/src-fossology
 * `4f7234cc` chore(java): Support for Liferay 7.3.3 GA4
 * `d4c6983c` chore(java): Fixed Deployment issues
 * `5d484ee1` chore(java): Updated Spring version

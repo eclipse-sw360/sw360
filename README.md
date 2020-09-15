@@ -2,28 +2,28 @@
 [![Build Status](https://travis-ci.org/eclipse/sw360.svg?branch=master)](https://travis-ci.org/eclipse/sw360)
 [![Slack Channel](https://img.shields.io/badge/slack-sw360chat-blue.svg?longCache=true&logo=slack)](https://join.slack.com/t/sw360chat/shared_invite/enQtNzg5NDQxMTQyNjA5LThiMjBlNTRmOWI0ZjJhYjc0OTk3ODM4MjBmOGRhMWRmN2QzOGVmMzQwYzAzN2JkMmVkZTI1ZjRhNmJlNTY4ZGI)
 [![Changelog](https://badgen.net/badge/changelog/%E2%98%85/blue)](https://github.com/eclipse/sw360/blob/master/CHANGELOG.md)
-[![version](https://img.shields.io/badge/version-10.0.0-blue)](https://github.com/eclipse/sw360/releases/tag/sw360-10.0.0-M1)
+[![version](https://img.shields.io/badge/version-11.0.0-blue)](https://github.com/eclipse/sw360/releases/tag/sw360-11.0.0-M1)
 
 ### SW360 Portal
 
 A software component catalogue application - designed to work with FOSSology.
 
-SW360 is a server with a REST interface and a liferay CE portal application
+SW360 is a server with a REST interface and a Liferay CE portal application
 to maintain your projects / products and the software components within.
 
-It can manage SPDX files for checking the license conditions and maintain
+It can manage SPDX files for maintaining the license conditions and maintain
 license information.
 
 ### Introduction
 
 It is comprised of one frontend (portal) part, backend (services) part and additionally a REST API:
 
-* Frontend: Liferay-(Tomcat-)based portal application using portlets.
+* Frontend: Liferay-CE-(Tomcat-)based portal application using portlets.
 * Backend: Tomcat-based thrift services for being called by different applications.
-* Database: we store software components and metadata about them in couchdb.
+* Database: we store software components and metadata about them in CouchDB.
 * Rest: this REST API provides access to project resources for external integration.
 
-The reference platform is the Ubuntu server 18.04 (which is a LTS version). However, it runs well on other OSes (see below).
+The reference platform is the Ubuntu server 18.04 (which is an LTS version). However, it runs well on other OSes (see below).
 
 ### Project structure
 
@@ -37,10 +37,11 @@ This is a multi module maven file. please consider that we have the following mo
 
 ### Required software
 
-* Java 11
-* CouchDB, at least 1.5
-* Liferay Portal CE 7.2.0 GA1
-* Apache Tomcat 9.0.X
+* Java 11, tested with OpenJDK
+* CouchDB, at least 2.1 (tested, may work with other releases of CouchDB as well)
+* Liferay Portal CE 7.3.3 GA4
+* Apache Tomcat 9.0.X (which is bundled with Liferay)
+* couchdb-lucene for search, please refer to installation details in the wiki, because a patch is required
 
 In addition, the Liferay instance must provide the following dependecies via OSGi:
 
@@ -55,18 +56,19 @@ In addition, the Liferay instance must provide the following dependecies via OSG
 * Jackson Annotations 2.9.8
 * Jackson Core 2.9.8
 * Jackson Databind 2.9.8
+* libthrift 0.13
 
 In order to build you will need:
 
 * A git client
 * Apache Maven 3.6.X
-* Apache Thrift 0.13.0
+* Apache Thrift 0.13
 
 http://maven.apache.org/download.html#Installation
 
 Then, you must install Apache Tomcat, CouchDB. And, Java of course.
 
-The software is tested with with debian 8, debian 9, ubuntu 16.04, ubuntu 18.04, macosx 10.8 - 10.14. We run Liferay with PostgreSQL 9.X or 10 as the Liferax requires, but HSQL (provided with the liferay bundle) runs also OK.
+The software is tested with with debian 8, debian 9, ubuntu 16.04, ubuntu 18.04, macosx 10.8 - 10.14. We run Liferay with PostgreSQL 9.X or 10 as the Liferay CE requires, but HSQL (provided with the liferay bundle) runs also OK.
 
 ### PROBLEMS
 
@@ -79,10 +81,6 @@ https://github.com/eclipse/sw360/issues
 There is a vagrant project for one-step-deployment. See the project wiki for details:
 
 https://github.com/eclipse/sw360/wiki
-
-Apart from the vagrant way, the software can be deployed using sw360chores:
-
-https://github.com/sw360/sw360chores
 
 Or using sw360vagrant:
 
@@ -123,6 +121,12 @@ You may also specify the paths using these properties:
   - liferay artifacts (frontend, libraries): `liferay.deploy.dir`
 Be aware that you have to deploy the liferay artifacts in the Liferay auto-deploy folder.
 On the other hand you must not deploy rest and backend artifacts to the auto-deploy folder.
+
+**Note:** the test framework for the REST API needs the tests running in order to generate the API documentation. So, for building the REST API artefacts, please switch in the rest subprojects and execute:
+
+```
+mvn package -P deploy -Dbase.deploy.dir=. -Dliferay.deploy.dir=${LIFERAY_INSTALL}/deploy -Dbackend.deploy.dir=${LIFERAY_INSTALL}/tomcat-9.0.17/webapps -Drest.deploy.dir=${LIFERAY_INSTALL}/tomcat-9.0.17/webapps
+```
 
 ### Liferay Configuration
 
