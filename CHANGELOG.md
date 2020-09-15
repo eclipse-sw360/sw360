@@ -19,7 +19,7 @@ Apart from the changes to the infrastructure, a number of nice new features are 
 
 * A Japanese language file for SW360
 * Multiple values for external ids for the same keys
-* A completely new healthcheck service for better monitoring of an sw360 installation
+* A completely new health check service for better monitoring of an sw360 installation
 * Improvements on project handling
 
 For corrections and further changes on the infrastructure, please refer to the listed commits below.
