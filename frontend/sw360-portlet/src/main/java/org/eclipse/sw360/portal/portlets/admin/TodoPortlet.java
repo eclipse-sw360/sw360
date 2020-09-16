@@ -15,7 +15,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
-import org.eclipse.sw360.datahandler.thrift.licenses.Obligations;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
@@ -89,7 +89,7 @@ public class TodoPortlet extends Sw360Portlet {
     }
 
     private void prepareStandardView(RenderRequest request) {
-        List<Obligations> obligList;
+        List<Obligation> obligList;
         try {
             final User user = UserCacheHolder.getUserFromRequest(request);
             LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
@@ -97,7 +97,7 @@ public class TodoPortlet extends Sw360Portlet {
             obligList = licenseClient.getObligations();
 
         } catch (TException e) {
-            log.error("Could not get Obligations from backend ", e);
+            log.error("Could not get Obligation from backend ", e);
             obligList = Collections.emptyList();
         }
 
@@ -107,7 +107,7 @@ public class TodoPortlet extends Sw360Portlet {
     @UsedAsLiferayAction
     public void addObligations(ActionRequest request, ActionResponse response) {
 
-        final Obligations oblig = new Obligations();
+        final Obligation oblig = new Obligation();
         ComponentPortletUtils.updateTodoFromRequest(request, oblig);
 
         try {

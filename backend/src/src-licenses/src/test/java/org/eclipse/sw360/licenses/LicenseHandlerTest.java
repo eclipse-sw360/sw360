@@ -39,12 +39,12 @@ public class LicenseHandlerTest {
     private User user;
 
     private Map<String, License> licenses;
-    private Map<String, Obligations> obligs;
+    private Map<String, Obligation> obligs;
     private Map<String, LicenseObligation> obligations;
 
-    public static Obligations getById(String id, Collection<Obligations> obligs) {
+    public static Obligation getById(String id, Collection<Obligation> obligs) {
         if (id != null && obligs != null) {
-            for (Obligations oblig : obligs) {
+            for (Obligation oblig : obligs) {
                 if (id.equals(oblig.getId()))
                     return oblig;
             }
@@ -101,8 +101,8 @@ public class LicenseHandlerTest {
 
         // Check obligations
         for (String id : expLicense.getObligationDatabaseIds()) {
-            Obligations actTodo = getById(id, actLicense.getObligations());
-            Obligations expTodo = getById(id, obligs.values());
+            Obligation actTodo = getById(id, actLicense.getObligations());
+            Obligation expTodo = getById(id, obligs.values());
 
             // Now check equals
             assertEquals(expTodo.getId(), actTodo.getId());
@@ -201,16 +201,16 @@ public class LicenseHandlerTest {
         license2.addToObligationDatabaseIds("T4");
         licenses.put(license2.id, license2);
 
-        Obligations oblig1 = new Obligations().setId("T1").setText("You must include the acknowledgement as part of the documentation for the end user. An example looks as following:  This product includes software developed by the Apache Software Foundation (http://www.apache.org/).");
+        Obligation oblig1 = new Obligation().setId("T1").setText("You must include the acknowledgement as part of the documentation for the end user. An example looks as following:  This product includes software developed by the Apache Software Foundation (http://www.apache.org/).");
         oblig1.addToObligationDatabaseIds("O1");
         oblig1.addToObligationDatabaseIds("O2");
-        Obligations oblig2 = new Obligations().setId("T2").setText("You must not names listed in in the license at paragraph 4 (for example Apache and Apache Software Foundation) neither in the documentation nor for ads or marketing.");
+        Obligation oblig2 = new Obligation().setId("T2").setText("You must not names listed in in the license at paragraph 4 (for example Apache and Apache Software Foundation) neither in the documentation nor for ads or marketing.");
         oblig2.addToObligationDatabaseIds("O3");
-        Obligations oblig3 = new Obligations().setId("T3").setText("Then you must add the following sentence in the header of any modified/added file: 'Code modifications by Siemens AG are under Siemens license conditions'");
-        Obligations oblig4 = new Obligations().setId("T4").setText("You must include a prominent notice in the header of all modified files in the following form: © Siemens AG, [year]");
+        Obligation oblig3 = new Obligation().setId("T3").setText("Then you must add the following sentence in the header of any modified/added file: 'Code modifications by Siemens AG are under Siemens license conditions'");
+        Obligation oblig4 = new Obligation().setId("T4").setText("You must include a prominent notice in the header of all modified files in the following form: © Siemens AG, [year]");
         oblig4.addToObligationDatabaseIds("O1");
         oblig4.addToObligationDatabaseIds("O4");
-        Obligations oblig5 = new Obligations().setId("T5").setText("With the Apache License 2.0,no copyleft effect for proprietary code exists. For proprietary Siemens modifications you can choose the license (meaning applying the Apache 2.0 license or any other license)");
+        Obligation oblig5 = new Obligation().setId("T5").setText("With the Apache License 2.0,no copyleft effect for proprietary code exists. For proprietary Siemens modifications you can choose the license (meaning applying the Apache 2.0 license or any other license)");
         oblig5.addToObligationDatabaseIds("O4");
 
         obligs.put("T1", oblig1);
@@ -232,7 +232,7 @@ public class LicenseHandlerTest {
         }
 
         // Add obligations to database
-        for (Obligations oblig : obligs.values()) {
+        for (Obligation oblig : obligs.values()) {
             db.add(oblig);
         }
 

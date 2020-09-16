@@ -111,7 +111,7 @@ public class LicenseHandler implements LicenseService.Iface {
     }
 
     @Override
-    public List<Obligations> addListOfObligations(List<Obligations> ListOfObligations, User user) throws TException {
+    public List<Obligation> addListOfObligations(List<Obligation> ListOfObligations, User user) throws TException {
         return handler.addListOfObligations(ListOfObligations, user);
 
     }
@@ -137,7 +137,7 @@ public class LicenseHandler implements LicenseService.Iface {
     }
 
     @Override
-    public List<Obligations> getObligations() throws TException {
+    public List<Obligation> getObligations() throws TException {
         return handler.getObligations();
     }
 
@@ -166,7 +166,7 @@ public class LicenseHandler implements LicenseService.Iface {
     }
 
     @Override
-    public List<Obligations> getObligationsByIds(List<String> ids) throws TException {
+    public List<Obligation> getObligationsByIds(List<String> ids) throws TException {
         assertNotEmpty(ids);
         return handler.getObligationsByIds(ids);
     }
@@ -230,7 +230,7 @@ public class LicenseHandler implements LicenseService.Iface {
     }
 
     @Override
-    public Obligations getObligationsById(String id) throws TException {
+    public Obligation getObligationsById(String id) throws TException {
         assertNotEmpty(id);
         return handler.getObligationsById(id);
     }
@@ -243,7 +243,7 @@ public class LicenseHandler implements LicenseService.Iface {
      * Add a new obligation object
      */
     @Override
-    public String addObligations(Obligations obligs, User user) throws TException {
+    public String addObligations(Obligation obligs, User user) throws TException {
         assertNotNull(obligs);
         assertIdUnset(obligs.getId());
 
@@ -254,7 +254,7 @@ public class LicenseHandler implements LicenseService.Iface {
      * Add an existing oblig to a license
      */
     @Override
-    public RequestStatus addObligationsToLicense(Obligations obligs, String licenseId, User user) throws TException {
+    public RequestStatus addObligationsToLicense(Obligation obligs, String licenseId, User user) throws TException {
         assertNotEmpty(licenseId);
        return  handler.addObligationsToLicense(obligs, licenseId, user);
     }

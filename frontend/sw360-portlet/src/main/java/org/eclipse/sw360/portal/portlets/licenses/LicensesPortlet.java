@@ -193,12 +193,12 @@ public class LicensesPortlet extends Sw360Portlet {
                 LicenseService.Iface client = thriftClients.makeLicenseClient();
                 License moderationLicense = client.getByIDWithOwnModerationRequests(id, user.getDepartment(), user);
 
-                List<Obligations> allTodos = nullToEmptyList(moderationLicense.getObligations());
-                List<Obligations> addedTodos = allTodos
+                List<Obligation> allTodos = nullToEmptyList(moderationLicense.getObligations());
+                List<Obligation> addedTodos = allTodos
                         .stream()
                         .filter(CommonUtils::isTemporaryTodo)
                         .collect(Collectors.toList());
-                List<Obligations> currentTodos = allTodos
+                List<Obligation> currentTodos = allTodos
                         .stream()
                         .filter(t -> !CommonUtils.isTemporaryTodo(t))
                         .collect(Collectors.toList());
@@ -404,11 +404,11 @@ public class LicensesPortlet extends Sw360Portlet {
     public void addObligations(ActionRequest request, ActionResponse response) throws PortletException, IOException {
         String licenseID = request.getParameter(LICENSE_ID);
         String[] obligationIds = request.getParameterValues("obligations");
-        String obligsText = request.getParameter("obligsText");
+        String obligsText = request.getParameter("obligText");
         String[] bools = request.getParameterValues("bools");
 
 
-        Obligations oblig = new Obligations();
+        Obligation oblig = new Obligation();
         //add temporary id
         oblig.setId(TMP_TODO_ID_PREFIX + UUID.randomUUID().toString());
         if (obligationIds != null) {

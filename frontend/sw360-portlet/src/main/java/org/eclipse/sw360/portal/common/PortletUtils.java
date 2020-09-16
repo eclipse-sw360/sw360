@@ -31,8 +31,9 @@ import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.cvesearch.UpdateType;
 import org.eclipse.sw360.datahandler.thrift.cvesearch.VulnerabilityUpdateStatus;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
-import org.eclipse.sw360.datahandler.thrift.licenses.Obligations;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
@@ -126,6 +127,10 @@ public class PortletUtils {
         return  ECCStatus.findByValue(parseInt(enumNumber));
     }
 
+    public static ObligationLevel getObligationLevelFromString(String enumNumber) {
+        return  ObligationLevel.findByValue(parseInt(enumNumber));
+    }
+
     public static ObligationType getObligationTypeFromString(String enumNumber) {
         return  ObligationType.findByValue(parseInt(enumNumber));
     }
@@ -179,7 +184,9 @@ public class PortletUtils {
             return getUserGroupFromString(value);
         else if (field == EccInformation._Fields.ECC_STATUS)
             return getEccStatusFromString(value);
-        else if (field == Obligations._Fields.OBLIGATION_TYPE)
+        else if (field == Obligation._Fields.OBLIGATION_LEVEL)
+            return getObligationLevelFromString(value);
+        else if (field == Obligation._Fields.OBLIGATION_TYPE)
             return getObligationTypeFromString(value);
         else {
             LOGGER.error("Missing case in enumFromString, unknown field was " + field.toString());

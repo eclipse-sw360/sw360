@@ -30,16 +30,23 @@ struct LicenseObligation {
     6: required i32 obligationId,
 }
 
-enum ObligationType {
+enum ObligationLevel {
     ORGANISATION_OBLIGATION = 0,
     PRODUCT_OBLIGATION = 1,
     COMPONENT_OBLIGATION = 2,
 }
 
-struct Obligations {
+enum ObligationType {
+    PERMISSION = 0,
+    RISK = 1,
+    EXCEPTION = 2,
+    RESTRICTION = 3
+}
+
+struct Obligation {
     1: optional string id,
     2: optional string revision,
-    3: optional string type = "obligations",
+    3: optional string type = "obligation",
     4: required string text,
     5: optional set<string> whitelist,
     6: optional bool development,
@@ -58,7 +65,8 @@ struct Obligations {
     // is valid for Projects
     20: optional bool validForProject,
     21: optional string comments,
-    22: optional ObligationType obligationType,
+    22: optional ObligationLevel obligationLevel,
+    23: optional ObligationType obligationType,
     300: optional map<string, string> additionalData,
 
 }
@@ -111,7 +119,7 @@ struct License {
 	15: optional Ternary GPLv2Compat = sw360.Ternary.UNDEFINED,
 	16: optional Ternary GPLv3Compat = sw360.Ternary.UNDEFINED,
 
-    20: optional list<Obligations> obligations,
+    20: optional list<Obligation> obligations,
     21: optional set<string> obligationDatabaseIds,
 	22: optional list<Risk> risks,
 	23: optional set<string> riskDatabaseIds,
@@ -148,12 +156,12 @@ service LicenseService {
     /**
      * Add a new obligation object to database, return id
      **/
-    string addObligations(1:Obligations obligations, 2: User user);
+    string addObligations(1:Obligation obligations, 2: User user);
 
     /**
     * Add an existing obligation to a license or generate moderation request if user has no permission
     **/
-    RequestStatus addObligationsToLicense(1: Obligations obligations, 2: string licenseId, 3: User user);
+    RequestStatus addObligationsToLicense(1: Obligation obligations, 2: string licenseId, 3: User user);
 
     /**
      * Update given license,
@@ -233,7 +241,7 @@ service LicenseService {
     /**
      * bulk add for import of license archive, returns input obligations if successful, null otherwise
      **/
-    list<Obligations> addListOfObligations(1: list <Obligations> obligations, 2: User user);
+    list<Obligation> addListOfObligations(1: list <Obligation> obligations, 2: User user);
 
     /**
      * get complete list of risk categories
@@ -258,7 +266,7 @@ service LicenseService {
     /**
      * get complete list of filled obligations
      **/
-    list<Obligations> getObligations();
+    list<Obligation> getObligations();
 
     /**
      * get complete list of obligations
@@ -288,7 +296,7 @@ service LicenseService {
     /**
      * get filled obligations with id in ids
      **/
-    list<Obligations> getObligationsByIds( 1: list<string> ids);
+    list<Obligation> getObligationsByIds( 1: list<string> ids);
 
     /**
      * return filled risk
@@ -302,7 +310,7 @@ service LicenseService {
     /**
      * return filled obligation
      **/
-    Obligations getObligationsById( 1: string id);
+    Obligation getObligationsById( 1: string id);
 
     list<CustomProperties> getCustomProperties(1: string documentType);
 

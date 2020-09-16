@@ -27,7 +27,7 @@ typedef components.Release Release
 typedef projects.Project Project
 typedef users.User User
 typedef licenses.License License
-typedef licenses.Obligations Obligations
+typedef licenses.Obligation Obligation
 typedef components.ComponentType ComponentType
 typedef projects.ClearingRequest ClearingRequest
 

@@ -19,10 +19,11 @@
 
 <%@ page import="javax.portlet.PortletRequest" %>
 <%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
-<%@ page import="org.eclipse.sw360.datahandler.thrift.licenses.Obligations" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.licenses.Obligation" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.licenses.ObligationType" %>
 
-<jsp:useBean id="todo" class="org.eclipse.sw360.datahandler.thrift.licenses.Obligations" scope="request" />
+<jsp:useBean id="todo" class="org.eclipse.sw360.datahandler.thrift.licenses.Obligation" scope="request" />
 
 <portlet:actionURL var="addURL" name="addObligations">
 </portlet:actionURL>
@@ -57,7 +58,7 @@
                                     <td>
                                         <div class="form-group">
                                             <label for="todoTitle"><liferay-ui:message key="title" /></label>
-                                            <input id="todoTitle" type="text" required class="form-control" placeholder="<liferay-ui:message key="enter.title" />" name="<portlet:namespace/><%=Obligations._Fields.TITLE%>"/>
+                                            <input id="todoTitle" type="text" required class="form-control" placeholder="<liferay-ui:message key="enter.title" />" name="<portlet:namespace/><%=Obligation._Fields.TITLE%>"/>
                                             <div class="invalid-feedback">
                                                 <liferay-ui:message key="please.enter.a.title" />
                                             </div>
@@ -66,7 +67,7 @@
                                     <td colspan="2">
                                         <div class="form-group">
                                             <label for="obligsText"><liferay-ui:message key="text" /></label>
-                                            <input id="obligsText" type="text" required class="form-control" placeholder="<liferay-ui:message key="enter.text" />" name="<portlet:namespace/><%=Obligations._Fields.TEXT%>"/>
+                                            <input id="obligsText" type="text" required class="form-control" placeholder="<liferay-ui:message key="enter.text" />" name="<portlet:namespace/><%=Obligation._Fields.TEXT%>"/>
                                             <div class="invalid-feedback">
                                                 <liferay-ui:message key="please.enter.a.text" />
                                             </div>
@@ -76,19 +77,26 @@
                                 <tr>
                                     <td>
                                         <div class="form-check">
-                                            <input id="todoValidForProject" type="checkbox" class="form-check-input" name="<portlet:namespace/><%=Obligations._Fields.VALID_FOR_PROJECT%>"/>
+                                            <input id="todoValidForProject" type="checkbox" class="form-check-input" name="<portlet:namespace/><%=Obligation._Fields.VALID_FOR_PROJECT%>"/>
                                             <label for="todoValidForProject" class="form-check-label"><liferay-ui:message key="valid.for.projects" /></label>
                                         </div>
                                     </td>
                                     <td>
-                                    <div class="form-group">
-                                        <label for="obligationType"><liferay-ui:message key="obligation.type" /></label>
-                                        <select class="form-control" id="obligationType" name="<portlet:namespace/><%=Obligations._Fields.OBLIGATION_TYPE%>">
-                                            <sw360:DisplayEnumOptions type="<%=ObligationType.class%>" selected="${todo.obligationType}"/>
-                                        </select>
-                                     </div>
+                                        <div class="form-group">
+                                            <label for="obligationType"><liferay-ui:message key="obligation.type" /></label>
+                                            <select class="form-control" id="obligationType" name="<portlet:namespace/><%=Obligation._Fields.OBLIGATION_TYPE%>">
+                                                <option value="">Select Obligation Type</option>
+                                                <sw360:DisplayEnumOptions type="<%=ObligationType.class%>" selected="${todo.obligationType}"/>
+                                            </select>
+                                        </div>
                                     </td>
                                     <td>
+                                    <div class="form-group">
+                                        <label for="obligationLevel"><liferay-ui:message key="obligation.level" /></label>
+                                        <select class="form-control" id="obligationLevel" name="<portlet:namespace/><%=Obligation._Fields.OBLIGATION_LEVEL%>">
+                                            <sw360:DisplayEnumOptions type="<%=ObligationLevel.class%>" selected="${todo.obligationLevel}"/>
+                                        </select>
+                                     </div>
                                     </td>
                                 </tr>
                             </tbody>

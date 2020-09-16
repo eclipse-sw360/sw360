@@ -170,7 +170,7 @@ public class LicenseDatabaseHandler {
                         moderationRequest.getLicenseDeletions(),
                         organisation);
 
-                for (Obligations oblig : license.getObligations()) {
+                for (Obligation oblig : license.getObligations()) {
                     //remove other organisations from whitelist of oblig
                     oblig.setWhitelist(SW360Utils.filterBUSet(organisation, oblig.whitelist));
                 }
@@ -191,7 +191,7 @@ public class LicenseDatabaseHandler {
         }
 
         if (license.isSetObligations()) {
-            for (Obligations oblig : license.getObligations()) {
+            for (Obligation oblig : license.getObligations()) {
                 //remove other organisations from whitelist of oblig
                 oblig.setWhitelist(SW360Utils.filterBUSet(organisation, oblig.whitelist));
                 if(oblig.isSetObligationDatabaseIds()) {
@@ -221,7 +221,7 @@ public class LicenseDatabaseHandler {
      *
      * @return ID of the added obligations.
      */
-    public String addObligations(@NotNull Obligations obligs, User user) throws SW360Exception {
+    public String addObligations(@NotNull Obligation obligs, User user) throws SW360Exception {
         if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)){
             return null;
         }
@@ -234,7 +234,7 @@ public class LicenseDatabaseHandler {
     /**
      * Add oblig id to a given license
      */
-    public RequestStatus addObligationsToLicense(Obligations oblig, String licenseId, User user) throws SW360Exception {
+    public RequestStatus addObligationsToLicense(Obligation oblig, String licenseId, User user) throws SW360Exception {
         assertNotNull(oblig);
         License license = licenseRepository.get(licenseId);
         if (makePermission(license, user).isActionAllowed(RequestedAction.WRITE)) {
@@ -272,8 +272,8 @@ public class LicenseDatabaseHandler {
 
         if (makePermission(license, user).isActionAllowed(RequestedAction.WRITE)) {
 
-            List<Obligations> obligations = obligRepository.get(license.obligationDatabaseIds);
-            for (Obligations oblig : obligations) {
+            List<Obligation> obligations = obligRepository.get(license.obligationDatabaseIds);
+            for (Obligation oblig : obligations) {
                 String obligId = oblig.getId();
                 Set<String> currentWhitelist = oblig.whitelist != null ? oblig.whitelist : new HashSet<>();
 
@@ -294,8 +294,8 @@ public class LicenseDatabaseHandler {
         } else {
             //add updated whitelists to obligations in moderation request, not yet in database
             License licenseForModerationRequest = getLicenseForOrganisationWithOwnModerationRequests(licenseId, user.getDepartment(),user);
-            List<Obligations> obligations = licenseForModerationRequest.getObligations();
-            for (Obligations oblig : obligations) {
+            List<Obligation> obligations = licenseForModerationRequest.getObligations();
+            for (Obligation oblig : obligations) {
                 String obligId = oblig.getId();
                 Set<String> currentWhitelist = oblig.whitelist != null ? oblig.whitelist : new HashSet<>();
 
@@ -316,7 +316,7 @@ public class LicenseDatabaseHandler {
 
     public List<License> getLicenses(Set<String> ids, String organisation) {
         final List<License> licenses = licenseRepository.get(ids);
-        final List<Obligations> obligationsFromLicenses = getTodosFromLicenses(licenses);
+        final List<Obligation> obligationsFromLicenses = getTodosFromLicenses(licenses);
         final List<LicenseType> licenseTypes = getLicenseTypesFromLicenses(licenses);
         final List<Risk> risks = getRisksFromLicenses(licenses);
         filterTodoWhiteListAndFillTodosRisksAndLicenseTypeInLicense(organisation, licenses, obligationsFromLicenses, risks, licenseTypes);
@@ -326,14 +326,14 @@ public class LicenseDatabaseHandler {
     public List<License> getDetailedLicenseSummaryForExport(String organisation) {
 
         final List<License> licenses = licenseRepository.getAll();
-        final List<Obligations> obligations = obligRepository.getAll();
+        final List<Obligation> obligations = obligRepository.getAll();
         final List<LicenseType> licenseTypes = licenseTypeRepository.getAll();
         final List<Risk> risks = riskRepository.getAll();
         return filterTodoWhiteListAndFillTodosRisksAndLicenseTypeInLicense(organisation, licenses, obligations, risks, licenseTypes);
     }
 
     @NotNull
-    private List<License> filterTodoWhiteListAndFillTodosRisksAndLicenseTypeInLicense(String organisation, List<License> licenses, List<Obligations> obligations, List<Risk> risks, List<LicenseType> licenseTypes) {
+    private List<License> filterTodoWhiteListAndFillTodosRisksAndLicenseTypeInLicense(String organisation, List<License> licenses, List<Obligation> obligations, List<Risk> risks, List<LicenseType> licenseTypes) {
         filterTodoWhiteList(organisation, obligations);
         fillTodosRisksAndLicenseTypes(licenses, obligations, risks, licenseTypes);
         return licenses;
@@ -348,8 +348,8 @@ public class LicenseDatabaseHandler {
         }
     }
 
-    private void putTodosInLicenses(List<License> licenses, List<Obligations> obligations) {
-        final Map<String, Obligations> obligationsById = ThriftUtils.getIdMap(obligations);
+    private void putTodosInLicenses(List<License> licenses, List<Obligation> obligations) {
+        final Map<String, Obligation> obligationsById = ThriftUtils.getIdMap(obligations);
 
         for (License license : licenses) {
             license.setObligations(getEntriesFromIds(obligationsById, CommonUtils.nullToEmptySet(license.getObligationDatabaseIds())));
@@ -366,8 +366,8 @@ public class LicenseDatabaseHandler {
         }
     }
 
-    private void filterTodoWhiteList(String organisation, List<Obligations> obligations) {
-        for (Obligations oblig : obligations) {
+    private void filterTodoWhiteList(String organisation, List<Obligation> obligations) {
+        for (Obligation oblig : obligations) {
             oblig.setWhitelist(SW360Utils.filterBUSet(organisation, oblig.getWhitelist()));
         }
     }
@@ -421,7 +421,7 @@ public class LicenseDatabaseHandler {
     private License updateLicenseFromInputLicense(Optional<License> oldLicense, License inputLicense, String businessUnit, User user){
         License license = oldLicense.orElse(new License());
         if(inputLicense.isSetObligations()) {
-            for (Obligations oblig : inputLicense.getObligations()) {
+            for (Obligation oblig : inputLicense.getObligations()) {
                 if (isTemporaryTodo(oblig)) {
                     oblig.unsetId();
                     try {
@@ -431,7 +431,7 @@ public class LicenseDatabaseHandler {
                         log.error("Error adding oblig to database.");
                     }
                 } else if (oblig.isSetId()) {
-                    Obligations dbTodo = obligRepository.get(oblig.id);
+                    Obligation dbTodo = obligRepository.get(oblig.id);
                     if (oblig.whitelist.contains(businessUnit) && !dbTodo.whitelist.contains(businessUnit)) {
                         dbTodo.addToWhitelist(businessUnit);
                         obligRepository.update(dbTodo);
@@ -479,14 +479,14 @@ public class LicenseDatabaseHandler {
 
     public List<License> getDetailedLicenseSummaryForExport(String organisation, List<String> identifiers) {
         final List<License> licenses = CommonUtils.nullToEmptyList(licenseRepository.searchByShortName(identifiers));
-        List<Obligations> obligations = getTodosFromLicenses(licenses);
+        List<Obligation> obligations = getTodosFromLicenses(licenses);
         final List<LicenseType> licenseTypes = getLicenseTypesFromLicenses(licenses);
         final List<Risk> risks = getRisksFromLicenses(licenses);
         return filterTodoWhiteListAndFillTodosRisksAndLicenseTypeInLicense(organisation, licenses, obligations, risks, licenseTypes);
     }
 
-    private List<Obligations> getTodosFromLicenses(List<License> licenses) {
-        List<Obligations> obligations;
+    private List<Obligation> getTodosFromLicenses(List<License> licenses) {
+        List<Obligation> obligations;
         final Set<String> obligIds = new HashSet<>();
         for (License license : licenses) {
             obligIds.addAll(CommonUtils.nullToEmptySet(license.getObligationDatabaseIds()));
@@ -618,11 +618,11 @@ public class LicenseDatabaseHandler {
         } else return null;
     }
 
-    public List<Obligations> addListOfObligations(List<Obligations> listOfObligations, User user) throws SW360Exception {
+    public List<Obligation> addListOfObligations(List<Obligation> listOfObligations, User user) throws SW360Exception {
         if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)){
             return null;
         }
-        for (Obligations Oblig : listOfObligations) {
+        for (Obligation Oblig : listOfObligations) {
             prepareTodo(Oblig);
         }
 
@@ -637,14 +637,14 @@ public class LicenseDatabaseHandler {
         if (licenses == null) {
             return Collections.emptyList();
         }
-        final List<Obligations> obligations = getTodosFromLicenses(licenses);
+        final List<Obligation> obligations = getTodosFromLicenses(licenses);
         final List<LicenseType> licenseTypes = getLicenseTypesFromLicenses(licenses);
         final List<Risk> risks = getRisksFromLicenses(licenses);
         fillTodosRisksAndLicenseTypes(licenses, obligations, risks, licenseTypes);
         return licenses;
     }
 
-    private void fillTodosRisksAndLicenseTypes(List<License> licenses, List<Obligations> obligations, List<Risk> risks, List<LicenseType> licenseTypes) {
+    private void fillTodosRisksAndLicenseTypes(List<License> licenses, List<Obligation> obligations, List<Risk> risks, List<LicenseType> licenseTypes) {
         putTodosInLicenses(licenses, obligations);
         putRisksInLicenses(licenses, risks);
         putLicenseTypesInLicenses(licenses, licenseTypes);
@@ -665,8 +665,8 @@ public class LicenseDatabaseHandler {
     }
 
 
-    public List<Obligations> getObligations() {
-        final List<Obligations> obligations = obligRepository.getAll();
+    public List<Obligation> getObligations() {
+        final List<Obligation> obligations = obligRepository.getAll();
         fillTodos(obligations);
         return obligations;
     }
@@ -704,15 +704,15 @@ public class LicenseDatabaseHandler {
         return licenseTypeRepository.get(ids);
     }
 
-    public List<Obligations> getObligationsByIds(Collection<String> ids) {
-        final List<Obligations> obligations = obligRepository.get(ids);
+    public List<Obligation> getObligationsByIds(Collection<String> ids) {
+        final List<Obligation> obligations = obligRepository.get(ids);
         fillTodos(obligations);
         return obligations;
     }
 
-    private void fillTodos(List<Obligations> obligs) {
+    private void fillTodos(List<Obligation> obligs) {
         Set<String> obligationIdsToFetch = new HashSet<>();
-        for (Obligations oblig : obligs) {
+        for (Obligation oblig : obligs) {
             obligationIdsToFetch.addAll(CommonUtils.nullToEmptySet(oblig.getObligationDatabaseIds()));
         }
 
@@ -728,7 +728,7 @@ public class LicenseDatabaseHandler {
             obligationIdMap = Collections.emptyMap();
         }
 
-        for (Obligations oblig : obligs) {
+        for (Obligation oblig : obligs) {
             if (oblig.isSetObligationDatabaseIds()) {
                 for (String id : oblig.getObligationDatabaseIds()) {
                     final LicenseObligation obligation = obligationIdMap.get(id);
@@ -742,7 +742,7 @@ public class LicenseDatabaseHandler {
             oblig.unsetObligationDatabaseIds();
         }
 
-        for (Obligations oblig : obligs) {
+        for (Obligation oblig : obligs) {
             if(! oblig.isSetWhitelist()){
                 oblig.setWhitelist(Collections.emptySet());
             }
@@ -775,15 +775,15 @@ public class LicenseDatabaseHandler {
         return licenseTypeRepository.get(id);
     }
 
-    public Obligations getObligationsById(String id) {
-        final Obligations oblig = obligRepository.get(id);
+    public Obligation getObligationsById(String id) {
+        final Obligation oblig = obligRepository.get(id);
 
         fillTodo(oblig);
 
         return oblig;
     }
 
-    private void fillTodo(Obligations oblig) {
+    private void fillTodo(Obligation oblig) {
         if (oblig.isSetObligationDatabaseIds()) {
             final List<LicenseObligation> obligations = obligationRepository.get(oblig.getObligationDatabaseIds());
             oblig.setListOfobligation(obligations);
@@ -900,7 +900,7 @@ public class LicenseDatabaseHandler {
     }
 
     public RequestStatus deleteObligations(String id, User user) throws SW360Exception {
-        Obligations oblig = obligRepository.get(id);
+        Obligation oblig = obligRepository.get(id);
         assertNotNull(oblig);
 
         // Remove the license if the user is allowed to do it by himself
