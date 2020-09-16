@@ -147,11 +147,11 @@ public class CLIParserTest {
         when(connector.getAttachmentStream(anyObject(), anyObject(), anyObject())).thenReturn(new ReaderInputStream(new StringReader(CLI_TESTFILE)));
         ObligationParsingResult oblRes = parser.getObligations(cliAttachment, new User(), new Project());
         assertThat(oblRes.getStatus(), is(ObligationInfoRequestStatus.SUCCESS));
-        assertThat(oblRes.getObligationsSize(), is(2));
-        assertThat(oblRes.getObligations().get(0).getTopic(), equalTo("do not change the nature of the package"));
-        assertThat(oblRes.getObligations().get(1).getText(), equalTo("In any case contact your 3rd Party Software Manager to check the copyleft effect\n"));
-        assertThat(oblRes.getObligations().get(1).getLicenseIDsSize(), is(4));
-        assertThat(oblRes.getObligations().get(1).getLicenseIDs(), containsInAnyOrder("GPL-1.0+", "GPL-2.0", "GPL-2.0+", "LGPL-2.1+"));
+        assertThat(oblRes.getObligationsAtProjectSize(), is(2));
+        assertThat(oblRes.getObligationsAtProject().get(0).getTopic(), equalTo("do not change the nature of the package"));
+        assertThat(oblRes.getObligationsAtProject().get(1).getText(), equalTo("In any case contact your 3rd Party Software Manager to check the copyleft effect\n"));
+        assertThat(oblRes.getObligationsAtProject().get(1).getLicenseIDsSize(), is(4));
+        assertThat(oblRes.getObligationsAtProject().get(1).getLicenseIDs(), containsInAnyOrder("GPL-1.0+", "GPL-2.0", "GPL-2.0+", "LGPL-2.1+"));
     }
 
     @Test
