@@ -14,7 +14,7 @@ import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Maps;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseObligation;
-import org.eclipse.sw360.datahandler.thrift.licenses.Obligations;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.apache.thrift.meta_data.FieldMetaData;
 
 import javax.servlet.jsp.JspException;
@@ -35,25 +35,25 @@ import static org.eclipse.sw360.portal.tags.TagUtils.*;
  * @author birgit.heydenreich@tngtech.com
  */
 public class CompareTodos extends NameSpaceAwareTag {
-    public static final List<Obligations._Fields> RELEVANT_FIELDS = FluentIterable
-            .from(copyOf(Obligations._Fields.values())).filter(field -> isFieldRelevant(field)).toList();
+    public static final List<Obligation._Fields> RELEVANT_FIELDS = FluentIterable
+            .from(copyOf(Obligation._Fields.values())).filter(field -> isFieldRelevant(field)).toList();
 
-    private List<Obligations> old;
-    private List<Obligations> update;
-    private List<Obligations> delete;
+    private List<Obligation> old;
+    private List<Obligation> update;
+    private List<Obligation> delete;
     private String department;
     private String tableClasses = "";
     private String idPrefix = "";
 
-    public void setOld(List<Obligations> old) {
+    public void setOld(List<Obligation> old) {
         this.old = nullToEmptyList(old);
     }
 
-    public void setUpdate(List<Obligations> update) {
+    public void setUpdate(List<Obligation> update) {
         this.update = nullToEmptyList(update);
     }
 
-    public void setDelete(List<Obligations> delete) {
+    public void setDelete(List<Obligation> delete) {
         this.delete = nullToEmptyList(delete);
     }
 
@@ -81,7 +81,7 @@ public class CompareTodos extends NameSpaceAwareTag {
             String renderString = display.toString();
 
             if (Strings.isNullOrEmpty(renderString)) {
-                renderString = "<div class=\"alert alert-danger\">No changes in Obligations</div>";
+                renderString = "<div class=\"alert alert-danger\">No changes in Obligation</div>";
             }
 
             jspWriter.print(renderString);
@@ -91,28 +91,28 @@ public class CompareTodos extends NameSpaceAwareTag {
         return SKIP_BODY;
     }
 
-    private void renderTodos(StringBuilder display, List<Obligations> current, List<Obligations> update, List<Obligations> delete) {
-        List<Obligations> newWhitelistedTodos = update
+    private void renderTodos(StringBuilder display, List<Obligation> current, List<Obligation> update, List<Obligation> delete) {
+        List<Obligation> newWhitelistedTodos = update
                 .stream()
                 .filter(CommonUtils::isTemporaryTodo)
                 .filter(oblig -> oblig.isSetWhitelist() && oblig.getWhitelist().contains(department))
                 .collect(Collectors.toList());
-        Map<String, Obligations> newWhitelistedTodosById = getTodosById(newWhitelistedTodos);
+        Map<String, Obligation> newWhitelistedTodosById = getTodosById(newWhitelistedTodos);
         Set<String> newWhitelistedTodoIds = newWhitelistedTodosById.keySet();
         renderTodoList(display, newWhitelistedTodosById, newWhitelistedTodoIds, "Add to database and to whitelist of " + department);
 
-        List<Obligations> newBlacklistedTodos = update
+        List<Obligation> newBlacklistedTodos = update
                 .stream()
                 .filter(CommonUtils::isTemporaryTodo)
                 .filter(oblig -> !oblig.isSetWhitelist() || !oblig.getWhitelist().contains(department))
                 .collect(Collectors.toList());
-        Map<String, Obligations> newBlacklistedTodosById = getTodosById(newBlacklistedTodos);
+        Map<String, Obligation> newBlacklistedTodosById = getTodosById(newBlacklistedTodos);
         Set<String> newBlacklistedTodoIds = newBlacklistedTodosById.keySet();
         renderTodoList(display, newBlacklistedTodosById, newBlacklistedTodoIds, "Add to database and <em>not</em> to whitelist of " + department);
 
-        Map<String, Obligations> currentTodosById = getTodosById(current);
+        Map<String, Obligation> currentTodosById = getTodosById(current);
         Set<String> currentTodoIds = currentTodosById.keySet();
-        List<Obligations> whitelistedTodos = update
+        List<Obligation> whitelistedTodos = update
                 .stream()
                 .filter(oblig -> !CommonUtils.isTemporaryTodo(oblig))
                 .filter(oblig -> oblig.isSetWhitelist() && oblig.getWhitelist().contains(department))
@@ -124,7 +124,7 @@ public class CompareTodos extends NameSpaceAwareTag {
         Set<String> whitelistedTodoIds = getTodosById(whitelistedTodos).keySet();
         renderTodoList(display, currentTodosById, whitelistedTodoIds, "Add to whitelist of " + department);
 
-        List<Obligations> blacklistedTodos = delete
+        List<Obligation> blacklistedTodos = delete
                 .stream()
                 .filter(oblig -> oblig.isSetWhitelist() && oblig.getWhitelist().contains(department))
                 .filter(oblig -> currentTodoIds.contains(oblig.getId()))
@@ -137,7 +137,7 @@ public class CompareTodos extends NameSpaceAwareTag {
 
     }
 
-    private void renderTodoList(StringBuilder display, Map<String, Obligations> allTodos, Set<String> obligIds, String msg) {
+    private void renderTodoList(StringBuilder display, Map<String, Obligation> allTodos, Set<String> obligIds, String msg) {
         if (obligIds.isEmpty()) return;
         display.append(String.format("<table class=\"%s\" id=\"%s%s\" >", tableClasses, idPrefix, msg));
 
@@ -152,19 +152,19 @@ public class CompareTodos extends NameSpaceAwareTag {
     private static void renderTodoRowHeader(StringBuilder display, String msg) {
 
         display.append(String.format("<thead><tr><th colspan=\"%d\"> %s</th></tr><tr>", RELEVANT_FIELDS.size(), msg));
-        for (Obligations._Fields field : RELEVANT_FIELDS) {
+        for (Obligation._Fields field : RELEVANT_FIELDS) {
             display.append(String.format("<th>%s</th>", field.getFieldName()));
         }
         display.append("</tr></thead>");
     }
 
-    private static void renderTodoRow(StringBuilder display, Obligations oblig) {
+    private static void renderTodoRow(StringBuilder display, Obligation oblig) {
         display.append("<tr>");
-        for (Obligations._Fields field : RELEVANT_FIELDS) {
+        for (Obligation._Fields field : RELEVANT_FIELDS) {
 
-            FieldMetaData fieldMetaData = Obligations.metaDataMap.get(field);
+            FieldMetaData fieldMetaData = Obligation.metaDataMap.get(field);
             Object fieldValue = oblig.getFieldValue(field);
-            if (field.equals(Obligations._Fields.LIST_OFOBLIGATION) && fieldValue != null) {
+            if (field.equals(Obligation._Fields.LIST_OFOBLIGATION) && fieldValue != null) {
                 fieldValue =
                         ((List<LicenseObligation>) fieldValue).stream()
                                 .map(LicenseObligation::getName)
@@ -176,11 +176,11 @@ public class CompareTodos extends NameSpaceAwareTag {
         display.append("</tr>");
     }
 
-    private static Map<String, Obligations> getTodosById(List<Obligations> currentTodos) {
+    private static Map<String, Obligation> getTodosById(List<Obligation> currentTodos) {
         return Maps.uniqueIndex(currentTodos, input -> input.getId());
     }
 
-    private static boolean isFieldRelevant(Obligations._Fields field) {
+    private static boolean isFieldRelevant(Obligation._Fields field) {
         switch (field) {
             //ignored Fields
             case ID:

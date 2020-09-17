@@ -29,8 +29,8 @@ import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
-import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
-import org.eclipse.sw360.datahandler.thrift.licenses.Obligations;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
@@ -277,15 +277,15 @@ public class SW360Utils {
         return getReleaseFullname(vendorName, release.getName(), release.getVersion());
     }
 
-    public static Map<Obligations, TodoInfo> getProjectObligations(Project project) {
+    public static Map<Obligation, TodoInfo> getProjectObligations(Project project) {
         final LicenseService.Iface licenseClient = new ThriftClients().makeLicenseClient();
 
         Set<ProjectTodo> projectTodos = project.getTodosSize() > 0 ? project.getTodos() : Collections.emptySet();
         try {
             return licenseClient.getObligations().stream()
                     .filter(o -> o.isValidForProject())
-                    .filter(o -> Objects.nonNull(o.getObligationType()))
-                    .filter(o->o.getObligationType().equals(ObligationType.PRODUCT_OBLIGATION))
+                    .filter(o -> Objects.nonNull(o.getObligationLevel()))
+                    .filter(o->o.getObligationLevel().equals(ObligationLevel.PRODUCT_OBLIGATION))
                     .collect(Collectors.toMap(
                             todo -> todo,
                             todo -> new TodoInfo(projectTodos.stream()
@@ -300,15 +300,15 @@ public class SW360Utils {
         }
     }
 
-    public static Map<Obligations, TodoInfo> getComponentObligations(Project project) {
+    public static Map<Obligation, TodoInfo> getComponentObligations(Project project) {
         final LicenseService.Iface licenseClient = new ThriftClients().makeLicenseClient();
 
         Set<ProjectTodo> projectTodos = project.getTodosSize() > 0 ? project.getTodos() : Collections.emptySet();
         try {
             return licenseClient.getObligations().stream()
                     .filter(o -> o.isValidForProject())
-                    .filter(o -> Objects.nonNull(o.getObligationType()))
-                    .filter(o->o.getObligationType().equals(ObligationType.COMPONENT_OBLIGATION))
+                    .filter(o -> Objects.nonNull(o.getObligationLevel()))
+                    .filter(o->o.getObligationLevel().equals(ObligationLevel.COMPONENT_OBLIGATION))
                     .collect(Collectors.toMap(
                             todo -> todo,
                             todo -> new TodoInfo(projectTodos.stream()
@@ -323,15 +323,15 @@ public class SW360Utils {
         }
     }
 
-    public static Map<Obligations, TodoInfo> getOrganisationObligations(Project project) {
+    public static Map<Obligation, TodoInfo> getOrganisationObligations(Project project) {
         final LicenseService.Iface licenseClient = new ThriftClients().makeLicenseClient();
 
         Set<ProjectTodo> projectTodos = project.getTodosSize() > 0 ? project.getTodos() : Collections.emptySet();
         try {
             return licenseClient.getObligations().stream()
                     .filter(o -> o.isValidForProject())
-                    .filter(o -> Objects.nonNull(o.getObligationType()))
-                    .filter(o->o.getObligationType().equals(ObligationType.ORGANISATION_OBLIGATION))
+                    .filter(o -> Objects.nonNull(o.getObligationLevel()))
+                    .filter(o->o.getObligationLevel().equals(ObligationLevel.ORGANISATION_OBLIGATION))
                     .collect(Collectors.toMap(
                             todo -> todo,
                             todo -> new TodoInfo(projectTodos.stream()

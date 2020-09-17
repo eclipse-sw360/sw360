@@ -14,7 +14,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
-import org.eclipse.sw360.datahandler.thrift.licenses.Obligations;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -163,11 +163,12 @@ public abstract class ComponentPortletUtils {
         setFieldValue(request, vendor, Vendor._Fields.URL);
     }
 
-    public static void updateTodoFromRequest(PortletRequest request, Obligations oblig) {
-        setFieldValue(request, oblig, Obligations._Fields.TITLE);
-        setFieldValue(request, oblig, Obligations._Fields.TEXT);
-        setFieldValue(request, oblig, Obligations._Fields.VALID_FOR_PROJECT);
-        setFieldValue(request, oblig, Obligations._Fields.OBLIGATION_TYPE);
+    public static void updateTodoFromRequest(PortletRequest request, Obligation oblig) {
+        setFieldValue(request, oblig, Obligation._Fields.TITLE);
+        setFieldValue(request, oblig, Obligation._Fields.TEXT);
+        setFieldValue(request, oblig, Obligation._Fields.VALID_FOR_PROJECT);
+        setFieldValue(request, oblig, Obligation._Fields.OBLIGATION_LEVEL);
+        setFieldValue(request, oblig, Obligation._Fields.OBLIGATION_TYPE);
     }
 
     private static void updateLinkedReleaseFromRequest(PortletRequest request, Map<String, ReleaseRelationship> linkedReleases) {
@@ -208,8 +209,8 @@ public abstract class ComponentPortletUtils {
         PortletUtils.setFieldValue(request, vendor, field, Vendor.metaDataMap.get(field), "");
     }
 
-    private static void setFieldValue(PortletRequest request, Obligations oblig, Obligations._Fields field) {
-        PortletUtils.setFieldValue(request, oblig, field, Obligations.metaDataMap.get(field), "");
+    private static void setFieldValue(PortletRequest request, Obligation oblig, Obligation._Fields field) {
+        PortletUtils.setFieldValue(request, oblig, field, Obligation.metaDataMap.get(field), "");
     }
 
     public static RequestStatus deleteRelease(PortletRequest request, Logger log) {

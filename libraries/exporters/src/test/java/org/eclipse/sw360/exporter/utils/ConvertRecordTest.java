@@ -13,7 +13,7 @@ package org.eclipse.sw360.exporter.utils;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import org.eclipse.sw360.datahandler.common.ImportCSV;
-import org.eclipse.sw360.datahandler.thrift.licenses.Obligations;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.apache.commons.csv.CSVRecord;
 import org.hamcrest.Matchers;
 import org.junit.Before;
@@ -41,7 +41,7 @@ public class ConvertRecordTest {
     private List<CSVRecord> whitePropRecord;
     private List<CSVRecord> emptyValRecord;
     private List<CSVRecord> whiteValRecord;
-    private List<Obligations> obligations;
+    private List<Obligation> obligations;
     private List<CSVRecord> fullTodoRecord;
 
     @Before
@@ -74,11 +74,11 @@ public class ConvertRecordTest {
 
         Map<String, String> obligCustomProperties1 = new HashMap<>();
         obligCustomProperties1.put("A", "A1");
-        Obligations oblig1 = new Obligations().setId("1").setCustomPropertyToValue(obligCustomProperties1);
+        Obligation oblig1 = new Obligation().setId("1").setCustomPropertyToValue(obligCustomProperties1);
         Map<String, String> obligCustomProperties2 = new HashMap<>();
         obligCustomProperties2.put("A", "A2");
         obligCustomProperties2.put("C", "C2");
-        Obligations oblig2 = new Obligations().setId("2").setCustomPropertyToValue(obligCustomProperties2);
+        Obligation oblig2 = new Obligation().setId("2").setCustomPropertyToValue(obligCustomProperties2);
         obligations = Arrays.asList(oblig1, oblig2);
     }
 
@@ -198,13 +198,13 @@ public class ConvertRecordTest {
 
     @Test
     public void testConvertTodosEmpty() throws Exception {
-        List<Obligations> obligations = convertTodos(emptyRecord);
+        List<Obligation> obligations = convertTodos(emptyRecord);
         assertThat(obligations.size(), is(0));
     }
 
     @Test
     public void testConvertTodosFull() throws Exception {
-        List<Obligations> obligations = convertTodos(fullTodoRecord);
+        List<Obligation> obligations = convertTodos(fullTodoRecord);
         assertThat(obligations.size(), is(2));
         assertThat(obligations.get(0).getText(), is("text1"));
         assertThat(obligations.get(0).isDevelopment(), is(true));

@@ -55,7 +55,7 @@ public class ThriftValidate {
         obligation.setType(TYPE_OBLIGATION);
     }
 
-    public static void prepareTodo(Obligations oblig) throws SW360Exception {
+    public static void prepareTodo(Obligation oblig) throws SW360Exception {
         // Check required fields
         assertNotNull(oblig);
         assertNotEmpty(oblig.getText());
@@ -77,7 +77,7 @@ public class ThriftValidate {
 
         oblig.unsetListOfobligation();
         // Check type
-        oblig.setType(TYPE_OBLIGATIONS);
+        oblig.setType(TYPE_OBLIGATION);
     }
 
     public static void prepareRiskCategory(RiskCategory riskCategory) throws SW360Exception {
@@ -118,7 +118,7 @@ public class ThriftValidate {
         license.unsetLicenseType();
 
         if (license.isSetObligations() && license.isSetObligationDatabaseIds()) {
-            for (Obligations oblig : license.getObligations()) {
+            for (Obligation oblig : license.getObligations()) {
                 license.addToObligationDatabaseIds(oblig.getId());
             }
         }

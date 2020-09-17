@@ -165,9 +165,9 @@ public class ConvertRecord {
         return true;
     }
 
-    public static void fillTodoCustomPropertyInfo(List<Obligations> obligations, List<PropertyWithValueAndId> customProperties, SetMultimap<String, Integer> obligCustomPropertyMap) {
+    public static void fillTodoCustomPropertyInfo(List<Obligation> obligations, List<PropertyWithValueAndId> customProperties, SetMultimap<String, Integer> obligCustomPropertyMap) {
         int nextPropertyId = 0;
-        for(Obligations oblig : obligations){
+        for(Obligation oblig : obligations){
             if(oblig.isSetCustomPropertyToValue()){
                 for(Map.Entry<String, String> entry : oblig.getCustomPropertyToValue().entrySet()){
                     customProperties.add(new PropertyWithValueAndId(nextPropertyId, entry.getKey(), entry.getValue()));
@@ -201,8 +201,8 @@ public class ConvertRecord {
         };
     }
 
-    public static List<Obligations> convertTodos(List<CSVRecord> records) {
-        List<Obligations> list = new ArrayList<>(records.size());
+    public static List<Obligation> convertTodos(List<CSVRecord> records) {
+        List<Obligation> list = new ArrayList<>(records.size());
 
         for (CSVRecord record : records) {
             if (record.size() < 2) break;
@@ -210,7 +210,7 @@ public class ConvertRecord {
             String title = record.get(0);
             String text = record.get(1);
 
-            Obligations oblig = new Obligations();
+            Obligation oblig = new Obligation();
             oblig.setTitle(title);
             oblig.setText(text);
 
@@ -240,10 +240,10 @@ public class ConvertRecord {
         return list;
     }
 
-    public static Serializer<Obligations> obligSerializer() {
-        return new Serializer<Obligations>() {
+    public static Serializer<Obligation> obligSerializer() {
+        return new Serializer<Obligation>() {
             @Override
-            public Function<Obligations, List<String>> transformer() {
+            public Function<Obligation, List<String>> transformer() {
                 return oblig -> {
 
                     final ArrayList<String> out = new ArrayList<>(5);
@@ -303,12 +303,12 @@ public class ConvertRecord {
     }
 
 
-    public static void putToTodos(Map<Integer, LicenseObligation> obligations, Map<Integer, Obligations> obligs, Map<Integer, Set<Integer>> obligationTodo) {
+    public static void putToTodos(Map<Integer, LicenseObligation> obligations, Map<Integer, Obligation> obligs, Map<Integer, Set<Integer>> obligationTodo) {
         Map<Integer, Set<Integer>> obligObligation = invertRelation(obligationTodo);
 
 
         for (Map.Entry<Integer, Set<Integer>> entry : obligObligation.entrySet()) {
-            Obligations oblig = obligs.get(entry.getKey());
+            Obligation oblig = obligs.get(entry.getKey());
 
             if (oblig != null) {
                 fillTodo(obligations, entry.getValue(), oblig);
@@ -317,7 +317,7 @@ public class ConvertRecord {
         }
     }
 
-    private static void fillTodo(Map<Integer, LicenseObligation> obligations, Set<Integer> values, Obligations oblig) {
+    private static void fillTodo(Map<Integer, LicenseObligation> obligations, Set<Integer> values, Obligation oblig) {
         for (int obligationId : values) {
             LicenseObligation obligation = obligations.get(obligationId);
 
@@ -362,7 +362,7 @@ public class ConvertRecord {
     }
 
 
-    public static List<License> fillLicenses(List<CSVRecord> records, Map<Integer, LicenseType> licenseTypeMap, Map<Integer, Obligations> obligMap, Map<Integer, Risk> riskMap, Map<String, Set<Integer>> licenseTodo, Map<String, Set<Integer>> licenseRisk) {
+    public static List<License> fillLicenses(List<CSVRecord> records, Map<Integer, LicenseType> licenseTypeMap, Map<Integer, Obligation> obligMap, Map<Integer, Risk> riskMap, Map<String, Set<Integer>> licenseTodo, Map<String, Set<Integer>> licenseRisk) {
         List<License> licenses = new ArrayList<>(records.size());
 
         for (CSVRecord record : records) {
@@ -425,7 +425,7 @@ public class ConvertRecord {
             Set<Integer> obligIds = licenseTodo.get(identifier);
             if (obligIds != null) {
                 for (int obligId : obligIds) {
-                    Obligations oblig = obligMap.get(obligId);
+                    Obligation oblig = obligMap.get(obligId);
                     if (oblig != null) {
                         license.addToObligationDatabaseIds(oblig.getId());
                     }
@@ -540,10 +540,10 @@ public class ConvertRecord {
     }
 
     @NotNull
-    public static SetMultimap<Integer, String> getTodoToObligationMap(List<Obligations> obligations) {
+    public static SetMultimap<Integer, String> getTodoToObligationMap(List<Obligation> obligations) {
         SetMultimap<Integer, String> obligationTodo = HashMultimap.create();
 
-        for (Obligations oblig : obligations) {
+        for (Obligation oblig : obligations) {
             if (oblig.isSetListOfobligation()) {
                 for (LicenseObligation obligation : oblig.getListOfobligation()) {
                     obligationTodo.put(obligation.getObligationId(), oblig.getId());
@@ -559,7 +559,7 @@ public class ConvertRecord {
 
         for (License license : licenses) {
             if (license.isSetObligations()) {
-                for (Obligations oblig : license.getObligations()) {
+                for (Obligation oblig : license.getObligations()) {
                     licenseToTodo.put(license.getId(), oblig.getId());
                 }
             }

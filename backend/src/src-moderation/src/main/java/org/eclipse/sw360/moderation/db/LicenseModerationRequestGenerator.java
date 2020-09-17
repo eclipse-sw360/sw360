@@ -13,7 +13,7 @@ package org.eclipse.sw360.moderation.db;
 
 import com.google.common.collect.Maps;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
-import org.eclipse.sw360.datahandler.thrift.licenses.Obligations;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 
 import java.util.*;
@@ -44,16 +44,16 @@ public class LicenseModerationRequestGenerator extends ModerationRequestGenerato
         documentDeletions.setFullname(actualLicense.getFullname());
         documentDeletions.setId(actualLicense.getId());
 
-        Map<String, Obligations> actualTodos = Maps.uniqueIndex(nullToEmptyList(actualLicense.getObligations()), Obligations::getId);
+        Map<String, Obligation> actualTodos = Maps.uniqueIndex(nullToEmptyList(actualLicense.getObligations()), Obligation::getId);
 
-        for (Obligations updateTodo : updateLicense.getObligations()) {
+        for (Obligation updateTodo : updateLicense.getObligations()) {
             if(!actualTodos.containsKey(updateTodo.getId())){
                 if(!documentAdditions.isSetObligations()) {
                     documentAdditions.setObligations(new ArrayList<>());
                 }
                 documentAdditions.getObligations().add(updateTodo);
             } else {
-                Obligations actualTodo = actualTodos.get(updateTodo.getId());
+                Obligation actualTodo = actualTodos.get(updateTodo.getId());
                 Set<String> actualWhitelist = actualTodo.whitelist != null ? actualTodo.whitelist : new HashSet<String>();
                 Set<String> updateWhitelist = updateTodo.whitelist != null ? updateTodo.whitelist : new HashSet<String>();
                 String departement = request.getRequestingUserDepartment();

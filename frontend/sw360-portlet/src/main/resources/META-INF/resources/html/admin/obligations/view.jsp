@@ -25,7 +25,7 @@
     <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_ADD%>" />
 </portlet:renderURL>
 
-<jsp:useBean id="obligList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenses.Obligations>" scope="request"/>
+<jsp:useBean id="obligList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenses.Obligation>" scope="request"/>
 
 <div class="container">
 	<div class="row">
@@ -92,7 +92,7 @@
                     title: "<sw360:out value='${oblig.title}'/>",
                     text: "<sw360:out value='${oblig.text}'/>",
                     projectValidity: "${oblig.validForProject}",
-                    obligationType: "<sw360:DisplayEnum value="${oblig.obligationType}"/>"
+                    obligationLevel: "<sw360:DisplayEnum value="${oblig.obligationLevel}"/>"
                 });
             </core_rt:forEach>
 
@@ -103,7 +103,7 @@
                     {"title": "<liferay-ui:message key="title" />", data: 'title' },
                     {"title": "<liferay-ui:message key="text" />", data: 'text' },
                     {"title": "<liferay-ui:message key="valid.for.projects" />", data: 'projectValidity', className: 'text-center', render: $.fn.dataTable.render.inputCheckbox('project-validity', '', false, checkboxHook) },
-                    {"title": "<liferay-ui:message key="obligation.type" />", data: 'obligationType'},
+                    {"title": "<liferay-ui:message key="obligation.type" />", data: 'obligationLevel'},
                     {"title": "<liferay-ui:message key="actions" />", data: 'id', render: renderActions }
                 ],
                 language: {

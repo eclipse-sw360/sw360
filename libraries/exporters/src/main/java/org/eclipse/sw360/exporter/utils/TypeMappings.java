@@ -67,10 +67,10 @@ public class TypeMappings {
     }
 
     @NotNull
-    public static Function<Obligations, Integer> getTodoIdentifier() {
-        return new Function<Obligations, Integer>() {
+    public static Function<Obligation, Integer> getTodoIdentifier() {
+        return new Function<Obligation, Integer>() {
             @Override
-            public Integer apply(Obligations input) {
+            public Integer apply(Obligation input) {
                 return -1;
             }
         };
@@ -201,20 +201,20 @@ public class TypeMappings {
     }
 
     @NotNull
-    public static Map<Integer, Obligations> getTodoMapAndWriteMissingToDatabase(LicenseService.Iface licenseClient, Map<Integer, LicenseObligation> obligationMap, Map<Integer, Set<Integer>> obligationTodoMapping, InputStream in, User user) throws TException {
+    public static Map<Integer, Obligation> getTodoMapAndWriteMissingToDatabase(LicenseService.Iface licenseClient, Map<Integer, LicenseObligation> obligationMap, Map<Integer, Set<Integer>> obligationTodoMapping, InputStream in, User user) throws TException {
         List<CSVRecord> obligRecords = ImportCSV.readAsCSVRecords(in);
-        final List<Obligations> obligations = CommonUtils.nullToEmptyList(licenseClient.getObligations());
-        Map<Integer, Obligations> obligMap = Maps.newHashMap(Maps.uniqueIndex(obligations, getTodoIdentifier()));
-        final List<Obligations> obligationsToAdd = ConvertRecord.convertTodos(obligRecords);
-        final ImmutableList<Obligations> filteredTodos = getElementsWithIdentifiersNotInMap(getTodoIdentifier(), obligMap, obligationsToAdd);
-        final ImmutableMap<Integer, Obligations> filteredMap = Maps.uniqueIndex(filteredTodos, getTodoIdentifier());
+        final List<Obligation> obligations = CommonUtils.nullToEmptyList(licenseClient.getObligations());
+        Map<Integer, Obligation> obligMap = Maps.newHashMap(Maps.uniqueIndex(obligations, getTodoIdentifier()));
+        final List<Obligation> obligationsToAdd = ConvertRecord.convertTodos(obligRecords);
+        final ImmutableList<Obligation> filteredTodos = getElementsWithIdentifiersNotInMap(getTodoIdentifier(), obligMap, obligationsToAdd);
+        final ImmutableMap<Integer, Obligation> filteredMap = Maps.uniqueIndex(filteredTodos, getTodoIdentifier());
         putToTodos(obligationMap, filteredMap, obligationTodoMapping);
         //insertCustomProperties
 
         if (filteredTodos.size() > 0) {
-            final List<Obligations> addedTodos = licenseClient.addListOfObligations(filteredTodos, user);
+            final List<Obligation> addedTodos = licenseClient.addListOfObligations(filteredTodos, user);
             if (addedTodos != null) {
-                final ImmutableMap<Integer, Obligations> addedTodoMap = Maps.uniqueIndex(addedTodos, getTodoIdentifier());
+                final ImmutableMap<Integer, Obligation> addedTodoMap = Maps.uniqueIndex(addedTodos, getTodoIdentifier());
                 obligMap.putAll(addedTodoMap);
             }
         }
@@ -222,9 +222,9 @@ public class TypeMappings {
     }
 
     @NotNull
-    public static Map<Integer, Obligations> updateTodoMapWithCustomPropertiesAndWriteToDatabase(LicenseService.Iface licenseClient, Map<Integer, Obligations> obligMap, Map<Integer, ConvertRecord.PropertyWithValue> customPropertiesMap, Map<Integer, Set<Integer>> obligPropertiesMap, User user) throws TException {
+    public static Map<Integer, Obligation> updateTodoMapWithCustomPropertiesAndWriteToDatabase(LicenseService.Iface licenseClient, Map<Integer, Obligation> obligMap, Map<Integer, ConvertRecord.PropertyWithValue> customPropertiesMap, Map<Integer, Set<Integer>> obligPropertiesMap, User user) throws TException {
         for(Integer obligId : obligPropertiesMap.keySet()){
-            Obligations oblig = obligMap.get(obligId);
+            Obligation oblig = obligMap.get(obligId);
             if(! oblig.isSetCustomPropertyToValue()){
                 oblig.setCustomPropertyToValue(new HashMap<>());
             }
@@ -235,9 +235,9 @@ public class TypeMappings {
         }
 
         if (obligMap.values().size() > 0) {
-            final List<Obligations> addedTodos = licenseClient.addListOfObligations(obligMap.values().stream().collect(Collectors.toList()), user);
+            final List<Obligation> addedTodos = licenseClient.addListOfObligations(obligMap.values().stream().collect(Collectors.toList()), user);
             if (addedTodos != null) {
-                final ImmutableMap<Integer, Obligations> addedTodoMap = Maps.uniqueIndex(addedTodos, getTodoIdentifier());
+                final ImmutableMap<Integer, Obligation> addedTodoMap = Maps.uniqueIndex(addedTodos, getTodoIdentifier());
                 obligMap.putAll(addedTodoMap);
             }
         }

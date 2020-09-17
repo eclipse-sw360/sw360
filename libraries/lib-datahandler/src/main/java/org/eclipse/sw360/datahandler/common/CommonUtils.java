@@ -17,7 +17,7 @@ import com.google.common.collect.*;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.licenses.Obligations;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
@@ -623,7 +623,7 @@ public class CommonUtils {
                 .max(Comparator.comparing(Attachment::getCheckStatus, CHECK_STATUS_COMPARATOR));
     }
 
-    public static boolean isTemporaryTodo(Obligations oblig) {
+    public static boolean isTemporaryTodo(Obligation oblig) {
         return oblig.isSetId() && oblig.getId().startsWith(TMP_TODO_ID_PREFIX);
     }
 

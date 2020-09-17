@@ -29,7 +29,7 @@ import org.eclipse.sw360.portal.common.CustomFieldHelper;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.common.PortletUtils;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
-import org.eclipse.sw360.datahandler.thrift.licenses.Obligations;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
@@ -130,8 +130,8 @@ public class ProjectPortletUtils {
         String updated = SW360Utils.getCreatedOnTime();
 
         final PortletRequest finalrequest = request;
-        Map<Obligations, TodoInfo> projectObligation = SW360Utils.getProjectObligations(project);
-        Set<Obligations> todoSets = projectObligation.keySet();
+        Map<Obligation, TodoInfo> projectObligation = SW360Utils.getProjectObligations(project);
+        Set<Obligation> todoSets = projectObligation.keySet();
         Set<String> totalTodoIds = todoSets.stream().map(td -> td.getId()).collect(Collectors.toSet());
         Set<String> nonFulFulfilledProjectTodoIds = Sets.difference(totalTodoIds, idSet);
         List<ProjectTodo> listOfNotFulfilledProjectIds = new ArrayList<ProjectTodo>();

@@ -54,6 +54,11 @@ To migrate it is recommended to do this in the following order:
 - `021_update_byexternalids_project_view.py`
 - `022_migrate_todo_to_obligation.py`
 
+### 11.0.0 -> 12.0.0
+- `023_rename_obligationType_to_obligationLevel.py`
+- `024_update_type_from_obligations_to_obligation.py`
+- `025_remove_old_obligations_view.py`
+
 ## Optional usage
 - `009_overwrite_release_name_with_component_name.py`
 - `010_repair_missing_vendorId_links_in_releases.py`

@@ -46,15 +46,15 @@
                         <td><sw360:DisplayBoolean value="${oblig.development}" defined="${oblig.setDevelopment}"/></td>
                         <td><sw360:DisplayBoolean value="${oblig.distribution}" defined="${oblig.setDistribution}"/></td>
                         <td><sw360:DisplayMap value="${oblig.customPropertyToValue}"/></td>
-                        <core_rt:if test="${oblig.listOfobligationSize > 0}">
-                            <td>
+                        <td>
+                            <core_rt:if test="${oblig.listOfobligationSize > 0}">
                                 <ul>
-                                    <core_rt:forEach var="ob" varStatus="status" items="${oblig.obligations}">
+                                    <core_rt:forEach var="ob" varStatus="status" items="${oblig.listOfobligation}">
                                         <li><sw360:out value="${ob.name}"/></li>
                                     </core_rt:forEach>
                                 </ul>
-                            </td>
-                        </core_rt:if>
+                            </core_rt:if>
+                        </td>
                     </tr>
                 </core_rt:if>
             </core_rt:forEach>
@@ -95,15 +95,15 @@
                     <td><sw360:DisplayBoolean value="${oblig.development}" defined="${oblig.setDevelopment}"/></td>
                     <td><sw360:DisplayBoolean value="${oblig.distribution}" defined="${oblig.setDistribution}"/></td>
                     <td><sw360:DisplayMap value="${oblig.customPropertyToValue}"/></td>
-                    <core_rt:if test="${oblig.listOfobligationSize > 0}">
-                        <td>
+                    <td>
+                        <core_rt:if test="${oblig.listOfobligationSize > 0}">
                             <ul>
-                                <core_rt:forEach var="ob" varStatus="status" items="${oblig.obligations}">
+                                <core_rt:forEach var="ob" varStatus="status" items="${oblig.listOfobligation}">
                                     <li><sw360:out value="${ob.name}"/></li>
                                 </core_rt:forEach>
                             </ul>
-                        </td>
-                    </core_rt:if>
+                        </core_rt:if>
+                    </td>
                 </tr>
             </core_rt:forEach>
         </tbody>
@@ -143,15 +143,15 @@
                         <td><sw360:DisplayBoolean value="${oblig.development}" defined="${oblig.setDevelopment}"/></td>
                         <td><sw360:DisplayBoolean value="${oblig.distribution}" defined="${oblig.setDistribution}"/></td>
                         <td><sw360:DisplayMap value="${oblig.customPropertyToValue}"/></td>
-                        <core_rt:if test="${oblig.listOfobligationSize > 0}">
-                            <td colspan="1">
+                        <td colspan="1">
+                            <core_rt:if test="${oblig.listOfobligationSize > 0}">
                                 <ul>
-                                    <core_rt:forEach var="ob" varStatus="status" items="${oblig.obligations}">
+                                    <core_rt:forEach var="ob" varStatus="status" items="${oblig.listOfobligation}">
                                         <li><sw360:out value="${ob.name}"/></li>
                                     </core_rt:forEach>
                                 </ul>
-                            </td>
-                        </core_rt:if>
+                            </core_rt:if>
+                        </td>
                     </tr>
                 </core_rt:forEach>
             </tbody>
@@ -190,7 +190,9 @@
                 emptyTable: '<liferay-ui:message key="no.obligations" />'
             }
         }, undefined, [0]);
-        datatables.enableCheckboxForSelection(whitelistTable, 0);
+        $("#moderationLicenseObligations").on('init.dt', function() {
+            datatables.enableCheckboxForSelection(whitelistTable, 0);
+        });
 
         var moderationListTable = datatables.create('#licenseObligationsFromModeration', {
             info: false,
@@ -203,7 +205,9 @@
                 emptyTable: '<liferay-ui:message key="no.obligations" />'
             }
         }, undefined, [0]);
-        datatables.enableCheckboxForSelection(moderationListTable, 0);
+        $("#licenseObligationsFromModeration").on('init.dt', function() {
+            datatables.enableCheckboxForSelection(moderationListTable, 0);
+        });
 
 
         $('#EditWhitelist').on('click', function(event) {

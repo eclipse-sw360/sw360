@@ -27,7 +27,6 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
-import org.eclipse.sw360.datahandler.thrift.licenses.Obligations;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -782,7 +781,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         if (spdxLicense != null && !spdxLicense.isEmpty() && licenses != null) {
             for (License license : licenses) {
                 if (spdxLicense.equalsIgnoreCase(license.getId())) {
-                    for (Obligations oblig : license.getObligations()) {
+                    for (org.eclipse.sw360.datahandler.thrift.licenses.Obligation oblig : license.getObligations()) {
                         obligations.add(oblig.getText());
                     }
                 }

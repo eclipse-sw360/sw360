@@ -61,7 +61,7 @@ public class LicsExporter {
         fileNameToStreams.put(LicsArchive.RISK_FILE, getCsvStream(serialize(licenseClient.getRisks(), riskSerializer())));
         fileNameToStreams.put(LicsArchive.OBLIGATION_FILE, getCsvStream(serialize(licenseClient.getListOfobligation(), obligationSerializer())));
 
-        final List<Obligations> obligations = licenseClient.getObligations();
+        final List<Obligation> obligations = licenseClient.getObligations();
         List<ConvertRecord.PropertyWithValueAndId> customProperties = new ArrayList<>();
         SetMultimap<String, Integer> obligCustomPropertyMap = HashMultimap.create();
         ConvertRecord.fillTodoCustomPropertyInfo(obligations, customProperties, obligCustomPropertyMap);

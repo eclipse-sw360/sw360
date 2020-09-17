@@ -21,9 +21,9 @@
     <jsp:useBean id="moderationLicenseDetail" class="org.eclipse.sw360.datahandler.thrift.licenses.License"
                  scope="request"/>
     <jsp:useBean id="added_obligations_from_moderation_request"
-                 type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenses.Obligations>" scope="request"/>
+                 type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenses.Obligation>" scope="request"/>
     <jsp:useBean id="db_obligations_from_moderation_request"
-                 type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenses.Obligations>" scope="request"/>
+                 type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenses.Obligation>" scope="request"/>
     <jsp:useBean id="isUserAtLeastClearingAdmin" class="java.lang.String" scope="request"/>
     <jsp:useBean id="obligationList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenses.LicenseObligation>"
                  scope="request"/>
