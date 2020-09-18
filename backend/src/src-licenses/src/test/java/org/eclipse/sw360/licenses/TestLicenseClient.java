@@ -12,7 +12,6 @@ package org.eclipse.sw360.licenses;
 import com.google.common.collect.ImmutableList;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
-import org.eclipse.sw360.datahandler.thrift.licenses.LicenseObligation;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -34,12 +33,9 @@ public class TestLicenseClient {
         LicenseService.Iface client = new LicenseService.Client(protocol);
 
         List<License> licenses = client.getLicenseSummary();
-        List<LicenseObligation> obligations = client.getListOfobligation();
 
         System.out.println("Fetched " + licenses.size() + " licenses from license service");
-        System.out.println("Fetched " + obligations.size() + " obligations from license service");
 
-//        final List<License> licenseList = client.getDetailedLicenseSummaryForExport("");
         final List<License> licenseList = client.getDetailedLicenseSummary("", ImmutableList.of("AFL-2.1","Artistic-1.0"));
         System.out.println(licenseList.toString());
 

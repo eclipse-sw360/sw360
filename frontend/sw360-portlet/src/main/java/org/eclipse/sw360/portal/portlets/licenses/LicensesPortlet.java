@@ -36,9 +36,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
+import static org.eclipse.sw360.datahandler.common.WrappedException.wrapException;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -46,7 +48,7 @@ import javax.portlet.*;
 import javax.servlet.http.HttpServletResponse;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static org.eclipse.sw360.datahandler.common.CommonUtils.TMP_TODO_ID_PREFIX;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.TMP_OBLIGATION_ID_PREFIX;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.CONTENT_TYPE_OPENXML_SPREADSHEET;
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
@@ -196,11 +198,11 @@ public class LicensesPortlet extends Sw360Portlet {
                 List<Obligation> allTodos = nullToEmptyList(moderationLicense.getObligations());
                 List<Obligation> addedTodos = allTodos
                         .stream()
-                        .filter(CommonUtils::isTemporaryTodo)
+                        .filter(CommonUtils::isTemporaryObligation)
                         .collect(Collectors.toList());
                 List<Obligation> currentTodos = allTodos
                         .stream()
-                        .filter(t -> !CommonUtils.isTemporaryTodo(t))
+                        .filter(t -> !CommonUtils.isTemporaryObligation(t))
                         .collect(Collectors.toList());
 
                 request.setAttribute(ADDED_TODOS_FROM_MODERATION_REQUEST, addedTodos);
@@ -211,7 +213,11 @@ public class LicensesPortlet extends Sw360Portlet {
                 License dbLicense = client.getByID(id, user.getDepartment());
                 request.setAttribute(KEY_LICENSE_DETAIL, dbLicense);
 
-                List<LicenseObligation> obligations = client.getListOfobligation();
+                List<Obligation> obligations = client.getObligations().stream()
+                        .filter(Objects::nonNull)
+                        .filter(Obligation::isSetObligationLevel)
+                        .filter(obl -> obl.getObligationLevel().equals(ObligationLevel.LICENSE_OBLIGATION))
+                        .collect(Collectors.toList());
                 request.setAttribute(KEY_OBLIGATION_LIST, obligations);
 
                 addLicenseBreadcrumb(request, response, moderationLicense);
@@ -405,23 +411,9 @@ public class LicensesPortlet extends Sw360Portlet {
         String licenseID = request.getParameter(LICENSE_ID);
         String[] obligationIds = request.getParameterValues("obligations");
         String obligsText = request.getParameter("obligText");
+        String obligTitle = request.getParameter("obligTitle");
         String[] bools = request.getParameterValues("bools");
-
-
-        Obligation oblig = new Obligation();
-        //add temporary id
-        oblig.setId(TMP_TODO_ID_PREFIX + UUID.randomUUID().toString());
-        if (obligationIds != null) {
-            for (String obligationId : obligationIds) {
-                if (obligationId != null && !obligationId.isEmpty()) {
-                    oblig.addToObligationDatabaseIds(obligationId);
-                }
-            }
-        } else {
-            oblig.setObligationDatabaseIds(Collections.emptySet());
-        }
-        oblig.setText(obligsText);
-        oblig.setTitle(StringUtils.EMPTY);
+        final LicenseService.Iface client = thriftClients.makeLicenseClient();
 
         User user = UserCacheHolder.getUserFromRequest(request);
         String moderationComment = request.getParameter(PortalConstants.MODERATION_REQUEST_COMMENT);
@@ -429,22 +421,35 @@ public class LicensesPortlet extends Sw360Portlet {
             user.setCommentMadeDuringModerationRequest(moderationComment);
         }
 
-        oblig.addToWhitelist(user.getDepartment());
-
-        if (bools != null) {
-            List<String> theBools = Arrays.asList(bools);
-            oblig.setDevelopment(theBools.contains("development"));
-            oblig.setDistribution(theBools.contains("distribution"));
-        } else {
-            oblig.setDevelopment(false);
-            oblig.setDistribution(false);
-        }
-        try {
-            LicenseService.Iface client = thriftClients.makeLicenseClient();
-            RequestStatus requestStatus = client.addObligationsToLicense(oblig, licenseID, user);
-
+        Consumer<Obligation> fillObligation = obl -> wrapException(() -> {
+            obl.setId(TMP_OBLIGATION_ID_PREFIX + UUID.randomUUID().toString());
+            obl.setText(obligsText);
+            obl.addToWhitelist(user.getDepartment());
+            obl.setTitle(obligTitle);
+            obl.setObligationLevel(ObligationLevel.LICENSE_OBLIGATION);
+            if (bools != null) {
+                List<String> theBools = Arrays.asList(bools);
+                obl.setDevelopment(theBools.contains("development"));
+                obl.setDistribution(theBools.contains("distribution"));
+            } else {
+                obl.setDevelopment(false);
+                obl.setDistribution(false);
+            }
+            RequestStatus requestStatus = client.addObligationsToLicense(obl, licenseID, user);
             setSessionMessage(request, requestStatus, "License", "update");
+        });
 
+        try {
+            if (null == obligationIds) {
+                if (CommonUtils.isNotNullEmptyOrWhitespace(obligsText)) {
+                    fillObligation.accept(new Obligation());
+                }
+            } else {
+                List<Obligation> obls = client.getObligationsByIds(Arrays.asList(obligationIds));
+                obls.stream().filter(Objects::nonNull).forEach(obl -> {
+                    fillObligation.accept(obl.deepCopy());
+                });
+            }
         } catch (TException e) {
             log.error("Error updating license details from backend", e);
         }

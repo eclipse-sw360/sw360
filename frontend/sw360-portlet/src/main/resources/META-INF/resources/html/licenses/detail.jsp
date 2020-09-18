@@ -25,7 +25,7 @@
     <jsp:useBean id="db_obligations_from_moderation_request"
                  type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenses.Obligation>" scope="request"/>
     <jsp:useBean id="isUserAtLeastClearingAdmin" class="java.lang.String" scope="request"/>
-    <jsp:useBean id="obligationList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenses.LicenseObligation>"
+    <jsp:useBean id="obligationList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenses.Obligation>"
                  scope="request"/>
 </c:catch>
 <%@include file="/html/utils/includes/logError.jspf" %>

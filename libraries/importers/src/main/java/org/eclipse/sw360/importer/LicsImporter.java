@@ -63,16 +63,9 @@ public class LicsImporter {
     }
 
     private Map<Integer, Obligation> parseLicsTodoMap(User user, Map<String, InputStream> inputMap) throws TException {
-        log.debug("Parsing obligations ...");
-        Map<Integer, LicenseObligation> obligationMap = getIdentifierToTypeMapAndWriteMissingToDatabase(licenseClient,
-                inputMap.get(OBLIGATION_FILE), LicenseObligation.class, Integer.class, user);
-
-        log.debug("Parsing obligation obligations ...");
-        List<CSVRecord> obligationTodoRecords = readAsCSVRecords(inputMap.get(OBLIGATION_TODO_FILE));
-        Map<Integer, Set<Integer>> obligationTodoMapping = ConvertRecord.convertRelationalTableWithIntegerKeys(obligationTodoRecords);
 
         log.debug("Parsing obligations ...");
-        return getTodoMapAndWriteMissingToDatabase(licenseClient, obligationMap, obligationTodoMapping, inputMap.get(TODO_FILE), user);
+        return getTodoMapAndWriteMissingToDatabase(licenseClient, inputMap.get(TODO_FILE), user);
     }
 
     private Map<Integer, LicenseType> parseLicsLicenseTypeMap(User user, Map<String, InputStream> inputMap) throws TException {

@@ -45,37 +45,16 @@ public class ThriftValidate {
         // Utility class with only static functions
     }
 
-    public static void prepareObligation(LicenseObligation obligation) throws SW360Exception {
-        // Check required fields
-        assertNotNull(obligation);
-        assertNotEmpty(obligation.getName());
-        assertNotNull(obligation.getObligationId());
-
-        // Check type
-        obligation.setType(TYPE_OBLIGATION);
-    }
-
     public static void prepareTodo(Obligation oblig) throws SW360Exception {
         // Check required fields
         assertNotNull(oblig);
         assertNotEmpty(oblig.getText());
         assertNotNull(oblig.getTitle());
 
-        if (oblig.isSetListOfobligation() && !oblig.isSetObligationDatabaseIds()) {
-            for (LicenseObligation obligation : oblig.getListOfobligation()) {
-                oblig.addToObligationDatabaseIds(obligation.getId());
-            }
-        }
-
-        if (oblig.listOfobligation == null) {
-            oblig.setListOfobligation(Collections.emptyList());
-        }
-
         if (oblig.whitelist == null) {
             oblig.setWhitelist(Collections.emptySet());
         }
 
-        oblig.unsetListOfobligation();
         // Check type
         oblig.setType(TYPE_OBLIGATION);
     }
