@@ -2135,6 +2135,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         }
 
         List<ProjectLink> mappedProjectLinks = createLinkedProjects(project, user);
+        mappedProjectLinks = sortProjectLink(mappedProjectLinks);
         request.setAttribute(PROJECT_LIST, mappedProjectLinks);
         request.setAttribute("projectReleaseRelation", project.getReleaseIdToUsage());
         Set<String> releaseIds = mappedProjectLinks.stream().map(ProjectLink::getLinkedReleases)

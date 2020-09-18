@@ -149,6 +149,11 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         Project project,
         String licenseInfoHeaderText,
         boolean includeObligations, Map<String, String> externalIds) throws XmlException, TException {
+            if (CommonUtils.isNotEmpty(projectLicenseInfoResults)) {
+                projectLicenseInfoResults = projectLicenseInfoResults.stream().filter(Objects::nonNull)
+                    .sorted(Comparator.comparing(li -> getComponentLongName(li), String.CASE_INSENSITIVE_ORDER))
+                    .collect(Collectors.toList());
+            }
             Map<LicenseNameWithText, Integer> licenseToReferenceId  = populatelicenseToReferenceId(projectLicenseInfoResults, Maps.newHashMap());
             String projectName = project.getName();
             String projectVersion = project.getVersion();
@@ -271,7 +276,12 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
             if (CommonUtils.isNullOrEmptyCollection(projectLicenseInfoResults)) {
                 printErrorForNoRelease(document, projectLicenseInfoResults);
                 return;
+            } else {
+                projectLicenseInfoResults = projectLicenseInfoResults.stream().filter(Objects::nonNull)
+                    .sorted(Comparator.comparing(li -> getComponentShortName(li), String.CASE_INSENSITIVE_ORDER))
+                    .collect(Collectors.toList());
             }
+
             fillSpecialOSSRisksTable(document, project, obligationResults);
             fillDevelopmentDetailsTable(document, project, user, projectLicenseInfoResults);
             fillOverview3rdPartyComponentTable(document, projectLicenseInfoResults);
