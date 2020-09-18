@@ -55,7 +55,7 @@
                     </td>
                 </tr>
                 <core_rt:forEach items="${licenses}" var="license" varStatus="licenseLoop">
-                    <core_rt:set var="obligationSize" value="${fn:length(license.obligations)}" />
+                    <core_rt:set var="obligationSize" value="${fn:length(license.obligationsAtProject)}" />
                     <core_rt:if test="${licenseType != license.type}">
                         <core_rt:set var="licenseType" value="${license.type}" />
                         <tr id="licenseTypeRow_${licenseType}"
@@ -77,7 +77,7 @@
                     </tr>
 
                     <core_rt:if test="${obligationSize gt 0}">
-                        <core_rt:forEach items="${license.obligations}" var="obligation" varStatus="obligationLoop">
+                        <core_rt:forEach items="${license.obligationsAtProject}" var="obligation" varStatus="obligationLoop">
                             <tr
                             <core_rt:set var="osi" value="${obligation.obligationStatusInfo}" />
                             <core_rt:if test="${not empty osi.modifiedBy}">

@@ -19,7 +19,7 @@ import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.Obligation;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationAtProject;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -164,9 +164,9 @@ public abstract class AbstractCLIParser extends LicenseInfoParser {
                         .orElse(TYPE_UNKNOWN));
     }
 
-    protected Obligation getObligationFromObligationNode(Node node) {
+    protected ObligationAtProject getObligationFromObligationNode(Node node) {
 
-        return new Obligation()
+        return new ObligationAtProject()
                 .setTopic(findNamedSubelement(node, OBLIGATION_TOPIC_ELEMENT_NAME)
                     .map(Node::getFirstChild)
                     .map(AbstractCLIParser::normalizeSpace)

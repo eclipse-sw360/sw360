@@ -246,11 +246,11 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
             Release release = result.getRelease();
             LicenseInfo licenseInfo = result.getLicenseInfo();
             for (LicenseNameWithText license : licenseInfo.getLicenseNamesWithTexts()) {
-                if (license.getObligationsSize() < 1) {
+                if (license.getObligationsAtProjectSize() < 1) {
                     continue;
                 }
                 String licenseName = license.getLicenseName();
-                license.getObligations().stream().forEach(obl -> {
+                license.getObligationsAtProject().stream().forEach(obl -> {
                     ObligationStatusInfo osInfo = filteredObligationStatusMap.get(obl.getTopic());
                     release.setAttachments(release.getAttachments().stream()
                             .filter(a -> a.getAttachmentContentId().equals(result.getAttachmentContentId()))
@@ -300,13 +300,13 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
             return cachedResults;
         }
 
-        Map<String, Set<Obligation>> licenseIdToObligations = obligationResult.getObligations().stream()
+        Map<String, Set<ObligationAtProject>> licenseIdToObligations = obligationResult.getObligationsAtProject().stream()
                 // filtering obligations with unknown topic
                 .filter(obligation -> !(SW360Constants.OBLIGATION_TOPIC_UNKNOWN.equals(obligation.getTopic())))
                 // sort the obligations by topic in ascending order
-                .sorted(Comparator.comparing(Obligation::getTopic, String.CASE_INSENSITIVE_ORDER))
+                .sorted(Comparator.comparing(ObligationAtProject::getTopic, String.CASE_INSENSITIVE_ORDER))
                 .collect(Collectors.toList()).stream()
-                // create a Map<licenseId, Set<Obligation>>
+                // create a Map<licenseId, Set<ObligationAtProject>>
                 .flatMap(obligation -> obligation.getLicenseIDs().stream()
                         .map(id -> new AbstractMap.SimpleEntry<>(obligation, id)))
                 .collect(Collectors.groupingBy(Map.Entry::getValue,
@@ -314,8 +314,8 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
 
         LicenseInfo licenseInfo = licenseResult.getLicenseInfo();
         licenseInfo.getLicenseNamesWithTexts()
-                .forEach(license -> license.setObligations(licenseIdToObligations.get(license.getLicenseName())));
-        licenseInfo.setTotalObligations(obligationResult.getObligationsSize());
+                .forEach(license -> license.setObligationsAtProject(licenseIdToObligations.get(license.getLicenseName())));
+        licenseInfo.setTotalObligations(obligationResult.getObligationsAtProjectSize());
         licenseObligationMappingCache.put(licenseResult.getAttachmentContentId(), licenseResult);
         return licenseResult;
     }
@@ -341,7 +341,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
                 .collect(Collectors.toMap(LicenseInfoParsingResult::getAttachmentContentId, Function.identity()));
 
         Map<String, ObligationParsingResult> attachmentIdToObligationMap = obligationResults.stream()
-                .filter(ObligationParsingResult::isSetAttachmentContentId).filter(o -> o.getObligationsSize() > 0)
+                .filter(ObligationParsingResult::isSetAttachmentContentId).filter(o -> o.getObligationsAtProjectSize() > 0)
                 .collect(Collectors.toList()).stream()
                 .collect(Collectors.toMap(ObligationParsingResult::getAttachmentContentId, Function.identity()));
 

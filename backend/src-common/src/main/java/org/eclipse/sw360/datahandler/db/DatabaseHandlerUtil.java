@@ -366,6 +366,8 @@ public class DatabaseHandlerUtil {
         }
         attachentContentIdsToBeDeleted.stream().forEach(attachmentContentId -> WrappedTException.wrapTException(() -> {
             AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
+            if (attachmentContent == null)
+                return;
             ChangeLogs changeLog = initChangeLogsObj(attachmentContent, userEdited, parentDocId, Operation.DELETE,
                     parentOperation);
             referenceDocLogList.add(changeLog);
@@ -669,6 +671,8 @@ public class DatabaseHandlerUtil {
 
         newAttachmentContentIds.stream().forEach(attachmentContentId -> WrappedTException.wrapTException(() -> {
             AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
+            if (attachmentContent == null)
+                return;
             ChangeLogs changeLog = initChangeLogsObj(attachmentContent, userEdited, idForLambdaExpr, Operation.CREATE,
                     parentOperationForLambdaExpr);
             referenceDocLogList.add(changeLog);

@@ -20,7 +20,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.Obligation;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationAtProject;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationInfoRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus;
@@ -111,7 +111,7 @@ public class CLIParser extends AbstractCLIParser {
             attachmentStream = attachmentConnector.getAttachmentStream(attachmentContent, user, context);
             Document doc = getDocument(attachmentStream);
 
-            result.setObligations(getObligations(doc));
+            result.setObligationsAtProject(getObligations(doc));
             result.setAttachmentContentId(attachment.getAttachmentContentId());
             result.setStatus(ObligationInfoRequestStatus.SUCCESS);
         } catch (ParserConfigurationException | IOException | XPathExpressionException | SAXException | SW360Exception e) {
@@ -123,7 +123,7 @@ public class CLIParser extends AbstractCLIParser {
         return result;
     }
 
-    private List<Obligation> getObligations(Document doc) throws XPathExpressionException {
+    private List<ObligationAtProject> getObligations(Document doc) throws XPathExpressionException {
         NodeList obligationNodes = getNodeListByXpath(doc, OBLIGATIONS_XPATH);
         return nodeListToObligationList(obligationNodes);
     }
@@ -172,8 +172,8 @@ public class CLIParser extends AbstractCLIParser {
         return licenseNamesWithTexts;
     }
 
-    private List<Obligation> nodeListToObligationList(NodeList nodes) {
-        List<Obligation> obligations = Lists.newArrayList();
+    private List<ObligationAtProject> nodeListToObligationList(NodeList nodes) {
+        List<ObligationAtProject> obligations = Lists.newArrayList();
         for (int i = 0; i < nodes.getLength(); i++) {
             obligations.add(getObligationFromObligationNode(nodes.item(i)));
         }

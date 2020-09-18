@@ -363,7 +363,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
         obligationResults.stream()
                 .filter(opr -> opr.getStatus() == ObligationInfoRequestStatus.SUCCESS)
-                .flatMap(opr -> opr.getObligations().stream())
+                .flatMap(opr -> opr.getObligationsAtProject().stream())
                 .distinct()
                 .forEach(o ->
                         {
@@ -458,14 +458,14 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
                 ObligationParsingResult obligationsResult = obligationsResultOp.get();
 
-                if (!obligationsResult.isSetObligations()) {
+                if (!obligationsResult.isSetObligationsAtProject()) {
                     continue;
                 }
 
                 int currentRow = 0;
-                Collection<Obligation> obligations = obligationsResult.getObligations();
+                Collection<ObligationAtProject> obligationsAtProject = obligationsResult.getObligationsAtProject();
                 XWPFTable table = document.insertNewTbl(cursor);
-                for (Obligation o : obligations) {
+                for (ObligationAtProject o : obligationsAtProject) {
                     XWPFTableRow row = table.insertNewTableRow(currentRow++);
                     String licensesString = String.join(" ", o.getLicenseIDs());
                     row.addNewTableCell().setText(o.getTopic());
@@ -513,7 +513,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
     protected static Set<String> extractMostCommonLicenses(Collection<ObligationParsingResult> obligationResults, long threshold) {
         return obligationResults.stream()
                 .filter(opr -> opr.getStatus() == ObligationInfoRequestStatus.SUCCESS)
-                .flatMap(opr -> opr.getObligations().stream())
+                .flatMap(opr -> opr.getObligationsAtProject().stream())
                 .flatMap(o -> o.getLicenseIDs().stream())
                 .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
                 .entrySet().stream()
@@ -529,7 +529,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
         obligationResults.stream()
                 .filter(opr -> opr.getStatus() == ObligationInfoRequestStatus.SUCCESS)
-                .flatMap(opr -> opr.getObligations().stream())
+                .flatMap(opr -> opr.getObligationsAtProject().stream())
                 .filter(o -> o.getLicenseIDs().stream()
                         .anyMatch(lid -> mostLicenses.parallelStream().anyMatch(mlid -> mlid.equals(lid.replace("\n", "").replace("\r", "")))))
                 .forEach(o-> {

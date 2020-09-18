@@ -48,7 +48,7 @@ struct LicenseNameWithText {
     4: optional string acknowledgements,
     5: optional string licenseSpdxId,
     6: optional string type,
-    7: optional set<Obligation> obligations,
+    7: optional set<ObligationAtProject> obligationsAtProject,
 }
 
 struct LicenseInfo {
@@ -86,12 +86,12 @@ enum ObligationInfoRequestStatus {
 struct ObligationParsingResult {
     1: required ObligationInfoRequestStatus status,
     2: optional string message,
-    3: optional list<Obligation> obligations,
+    3: optional list<ObligationAtProject> obligationsAtProject,
     4: optional Release release,
     5: optional string attachmentContentId,
 }
 
-struct Obligation {
+struct ObligationAtProject {
     1: required string topic,
     2: required string text,
     3: required list<string> licenseIDs,
