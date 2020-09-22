@@ -40,7 +40,8 @@ enum ObligationType {
     PERMISSION = 0,
     RISK = 1,
     EXCEPTION = 2,
-    RESTRICTION = 3
+    RESTRICTION = 3,
+    OBLIGATION = 4
 }
 
 struct Obligation {

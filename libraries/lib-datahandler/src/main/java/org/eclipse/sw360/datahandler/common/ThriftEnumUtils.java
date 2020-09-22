@@ -66,6 +66,7 @@ public class ThriftEnumUtils {
             .put(ObligationType.RISK, "Risk")
             .put(ObligationType.EXCEPTION, "Exception")
             .put(ObligationType.RESTRICTION, "Restriction")
+            .put(ObligationType.OBLIGATION, "Obligation")
             .build();
 
     private static final ImmutableMap<Ternary,String> MAP_TERNARY_STRING = ImmutableMap.of(

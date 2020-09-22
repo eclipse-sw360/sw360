@@ -193,7 +193,9 @@ struct ObligationStatusInfo {
     6: optional string modifiedOn,
     7: optional set<Release> releases, // used to display in UI, no need to save this in database
     8: required set<string> licenseIds,
-    9: optional map<string, string> releaseIdToAcceptedCLI
+    9: optional map<string, string> releaseIdToAcceptedCLI,
+    10: optional string id,
+    11: optional string type
 }
 
 struct UsedReleaseRelations {
