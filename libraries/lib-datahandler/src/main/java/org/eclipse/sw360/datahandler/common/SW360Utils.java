@@ -285,7 +285,7 @@ public class SW360Utils {
             return licenseClient.getObligations().stream()
                     .filter(o -> o.isValidForProject())
                     .filter(o -> Objects.nonNull(o.getObligationLevel()))
-                    .filter(o->o.getObligationLevel().equals(ObligationLevel.PRODUCT_OBLIGATION))
+                    .filter(o->o.getObligationLevel().equals(ObligationLevel.PROJECT_OBLIGATION))
                     .collect(Collectors.toMap(
                             todo -> todo,
                             todo -> new TodoInfo(projectTodos.stream()
