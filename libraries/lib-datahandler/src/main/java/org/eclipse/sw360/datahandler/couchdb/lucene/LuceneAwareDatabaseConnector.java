@@ -68,7 +68,6 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
      */
     public LuceneAwareDatabaseConnector(Supplier<HttpClient> httpClient, String dbName) throws IOException {
         this(new DatabaseConnector(httpClient, dbName));
-        this.dbNameForLuceneSearch = dbName;
     }
 
     /**
@@ -77,6 +76,7 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
     public LuceneAwareDatabaseConnector(DatabaseConnector connector) throws IOException {
         super(connector.getDbName(), connector.getInstance());
         this.connector = connector;
+        this.dbNameForLuceneSearch = connector.getDbName();
         setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
     }
 
@@ -125,7 +125,7 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
         try {
             return queryLucene(query);
         } catch (DbAccessException e) {
-            log.error("Error querying database.", e);
+            log.error("Error querying database using _fti hook." + e.getMessage());
             log.info("Trying to call lucene directly");
             try {
                 LuceneResult callLuceneDirectly = callLuceneDirectly(function, queryString, includeDocs);
@@ -151,15 +151,25 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
         }
         queryURI.param("q", queryString.toString());
         URL luceneResourceUrl = new URL(DatabaseSettings.COUCH_DB_LUCENE_URL + queryURI.toString());
+        ObjectMapper objectMapper = new EktorpLuceneObjectMapperFactory().createObjectMapper();
         HttpURLConnection connection = null;
         try {
-            connection = (HttpURLConnection) luceneResourceUrl.openConnection();
-            connection.setRequestMethod("GET");
-            connection.connect();
+            connection = makeLuceneRequest(luceneResourceUrl);
             int responseCode = connection.getResponseCode();
             if (responseCode == 200) {
-                ObjectMapper objectMapper = new EktorpLuceneObjectMapperFactory().createObjectMapper();
                 return objectMapper.readValue(connection.getInputStream(), LuceneResult.class);
+            } else {
+                connection.disconnect();
+                log.error("Getting error with reponse code = " + responseCode + ".Retrying with stale parameter");
+                queryURI.param("stale", "ok");
+                luceneResourceUrl = new URL(DatabaseSettings.COUCH_DB_LUCENE_URL + queryURI.toString());
+                connection = makeLuceneRequest(luceneResourceUrl);
+                responseCode = connection.getResponseCode();
+                if (responseCode == 200) {
+                    return objectMapper.readValue(connection.getInputStream(), LuceneResult.class);
+                } else {
+                    log.error("Retried with stale parameter.Getting error with reponse code=" + responseCode);
+                }
             }
         } finally {
             if (connection != null) {
@@ -167,6 +177,13 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
             }
         }
         return null;
+    }
+
+    private HttpURLConnection makeLuceneRequest(URL luceneResourceUrl) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) luceneResourceUrl.openConnection();
+        connection.setRequestMethod("GET");
+        connection.connect();
+        return connection;
     }
 
     /////////////////////////
