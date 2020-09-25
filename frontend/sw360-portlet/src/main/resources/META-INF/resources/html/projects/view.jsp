@@ -127,6 +127,11 @@
                                 <input type="text" class="form-control form-control-sm" name="<portlet:namespace/><%=Project._Fields.TAG%>"
                                         value="<sw360:out value="${tag}"/>" id="tag">
                             </div>
+                            <div class="form-group">
+                                <label for="additional_data"><liferay-ui:message key="additional.data" /></label>
+                                <input type="text" class="form-control form-control-sm" name="<portlet:namespace/><%=Project._Fields.ADDITIONAL_DATA%>"
+                                        value="<sw360:out value="${additionalData}"/>" id="additional_data">
+                            </div>
                             <button type="submit" class="btn btn-primary btn-sm btn-block"><liferay-ui:message key="search" /></button>
                         </form>
                     </div>

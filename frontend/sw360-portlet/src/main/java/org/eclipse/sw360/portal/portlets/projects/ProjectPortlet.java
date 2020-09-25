@@ -143,7 +143,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             Project._Fields.PROJECT_RESPONSIBLE,
             Project._Fields.NAME,
             Project._Fields.STATE,
-            Project._Fields.TAG);
+            Project._Fields.TAG,
+            Project._Fields.ADDITIONAL_DATA);
 
     private static final JsonFactory JSON_FACTORY = new JsonFactory();
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
