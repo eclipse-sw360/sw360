@@ -28,11 +28,13 @@
         <colgroup>
             <col />
             <col style="width: 25%;" />
-            <col style="width: 20%;" />
-            <col style="width: 25%;" />
-            <col style="width: 12%;" />
+            <col style="width: 15%;" />
+            <col style="width: 15%;" />
+            <col style="width: 10%;" />
+            <col style="width: 10%;" />
+            <col style="width: 10%;" />
             <!-- <col style="width: 15%;" /> -->
-            <col style="width: 18%;" />
+            <col style="width: 15%;" />
             <col />
         </colgroup>
         <thead>
@@ -44,6 +46,8 @@
                 <th><liferay-ui:message key="licenses" /></th>
                 <th><liferay-ui:message key="releases" /></th>
                 <th><liferay-ui:message key="status" /></th>
+                <th><liferay-ui:message key="type" /></th>
+                <th><liferay-ui:message key="id" /></th>
                 <!-- Commented code for obligation action, until action select options are provided -->
                 <!-- <th>Action</th> -->
                 <th><liferay-ui:message key="comment" /></th>
@@ -88,12 +92,13 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
         </core_rt:if>
 
         obligationJSON.push({
-            "DT_RowId": "<sw360:out value='${entry.key}'/>",
             "obligation": "<sw360:out value='${entry.key}'/>",
             "licenseLinks": licenseLinks,
             "releaseLinks": releaseLinks,
             "status": '<sw360:DisplayEnumOptions type="<%=ObligationStatus.class%>" selected="${projectObligations.status}" />',
             /* "action": "${projectObligations.action}", */
+            "type": "<sw360:out value='${projectObligations.type}'/>",
+            "id": "<sw360:out value='${projectObligations.id}'/>",
             "comment": "<sw360:out value='${projectObligations.comment}'/>",
             "text": '<sw360:out value="${projectObligations.text}" maxChar="200" />',
             "modifiedBy": "${projectObligations.modifiedBy}",
@@ -119,6 +124,8 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
             { "data": "releaseLinks", "render": { display: renderReleaseLink } },
             { "data": "status", "render": { display: renderStatus } },
             /* { "data": "action", render: $.fn.dataTable.render.inputSelect(actionOptions, '', 'obl_action toplabelledInput', 'textlabel stackedLabel') }, */
+            { "data": "type", className: 'text-center' },
+            { "data": "id", className: 'text-center' },
             { "data": function(row) {
                             return $('<span></span>').html(row.comment).text();
                       }, defaultContent: "", render: $.fn.dataTable.render.inputText('comment', 'obl_comment toplabelledInput', '<liferay-ui:message key="enter.comments" />')
@@ -132,7 +139,13 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
                 }
             },
             {
-                "targets": 5,
+                "targets": 1,
+                "createdCell": function (td, cellData, rowData, row, col) {
+                    $(td).css('max-width', '15rem');
+                }
+            },
+            {
+                "targets": 7,
                 "createdCell": function (td, cellData, rowData, row, col) {
                     $.fn.dataTable.render.inputText.updateTitle(td);
                     $.fn.dataTable.render.inputText.useInputDialog(td, "<liferay-ui:message key="enter.obligation.comment" />");
@@ -162,7 +175,7 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
             }
         ],
         "initComplete": datatables.showPageContainer
-    }, undefined, [0, 4, 5]);
+    }, undefined, [0, 4, 7]);
 
     function renderStatus(status, type, row) {
         return '<select class="obl_status toplabelledInput form-control">' + status + '</select>';
@@ -223,7 +236,8 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
     function storeData(thisObj) {
         let $tr = thisObj.closest("tr");
         if (!$tr.hasClass('orphan')) {
-            dataMap.set($tr.prop('id'), '');
+            // get obligatoin topic/text from second column (index -> 1) in table.
+            dataMap.set($.parseHTML($tr.find('td:eq(1)').text())[0].nodeValue, '');
         }
     }
 
@@ -236,7 +250,7 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
     // delete action
     function deleteObligation(tr) {
         var $dialog,
-            topic = $(tr).prop('id');
+            topic = $(tr).find('td:eq(1)').text()[0].nodeValue;
 
         function deleteObligationInternal(callback) {
             jQuery.ajax({
@@ -311,7 +325,7 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
 
         table.rows().every(function (rowIdx, tableLoop, rowLoop) {
             let rowData = this.data(),
-                mapKey = rowData.obligation,
+                mapKey = $.parseHTML(rowData.obligation)[0].nodeValue,
                 releaseToAcceptedCLIMap = new Map(),
                 ids = [];
             for (release of rowData.releaseLinks) {

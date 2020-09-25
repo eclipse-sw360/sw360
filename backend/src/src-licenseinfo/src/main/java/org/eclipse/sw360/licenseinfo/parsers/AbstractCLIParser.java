@@ -58,6 +58,8 @@ public abstract class AbstractCLIParser extends LicenseInfoParser {
     private static final String SPDX_IDENTIFIER_ATTRIBUTE_NAME = "spdxidentifier";
     private static final String TYPE_ATTRIBUTE_NAME = "type";
     private static final String TYPE_UNKNOWN = "Type unknown";
+    private static final String ID_ATTRIBUTE_NAME = "id";
+    private static final String EMPTY = "";
     private static final String OBLIGATION_TEXT_UNKNOWN = "Obligation text unknown";
     private static final Logger log = LogManager.getLogger(CLIParser.class);
     private static final String SPDX_IDENTIFIER_UNKNOWN = "SPDX identifier unknown";
@@ -187,7 +189,13 @@ public abstract class AbstractCLIParser extends LicenseInfoParser {
                         }
                         return strings;
                     })
-                    .orElse(new ArrayList<String>()));
+                    .orElse(new ArrayList<String>()))
+                .setType(findNamedAttribute(node, TYPE_ATTRIBUTE_NAME)
+                        .map(Node::getNodeValue)
+                        .orElse(EMPTY))
+                .setId(findNamedAttribute(node, ID_ATTRIBUTE_NAME)
+                        .map(Node::getNodeValue)
+                        .orElse(EMPTY));
     }
 
     protected class NodeListIterator implements Iterator<Node> {

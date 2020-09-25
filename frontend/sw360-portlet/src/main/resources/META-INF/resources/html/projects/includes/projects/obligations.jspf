@@ -25,11 +25,13 @@
         <colgroup>
             <col />
             <col style="width: 25%;" />
-            <col style="width: 20%;" />
-            <col style="width: 25%;" />
+            <col style="width: 15%;" />
+            <col style="width: 15%;" />
+            <col style="width: 10%;" />
+            <col style="width: 10%;" />
             <col style="width: 10%;" />
             <!-- <col style="width: 8%;" /> -->
-            <col style="width: 20%;" />
+            <col style="width: 15%;" />
             <col />
         </colgroup>
         <thead>
@@ -41,6 +43,8 @@
                 <th><liferay-ui:message key="licenses" /></th>
                 <th><liferay-ui:message key="releases" /></th>
                 <th><liferay-ui:message key="status" /></th>
+                <th><liferay-ui:message key="type" /></th>
+                <th><liferay-ui:message key="id" /></th>
                 <!-- Commented code for obligation action, until action select options are provided -->
                 <!-- <th>Action</th> -->
                 <th><liferay-ui:message key="comment" /></th>
@@ -82,6 +86,8 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
             "rNames": releaseNames.join(', <br>'),
             "status": "<sw360:DisplayEnum value='${projectObligations.status}'/>",
             /* "action": '${projectObligations.action}', */
+            "type": "<sw360:out value='${projectObligations.type}'/>",
+            "id": "<sw360:out value='${projectObligations.id}'/>",
             "comment": "<sw360:out value='${projectObligations.comment}'/>",
             "text": '<sw360:out value="${projectObligations.text}" maxChar="200" />',
             "modifiedBy": '${projectObligations.modifiedBy}',
@@ -107,6 +113,8 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
             { "data": "rNames", "render": { display: renderReleaseLink } },
             { "data": "status", className: 'text-center' },
            /*  { "data": "action" }, */
+            { "data": "type", className: 'text-center' },
+            { "data": "id", className: 'text-center' },
             { "data": function(row) {
                             return $('<span></span>').html(row.comment).text();
                       }, render: $.fn.dataTable.render.ellipsis
@@ -123,21 +131,21 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
                 "targets": 4,
                 "createdCell": function (td, cellData, rowData, row, col) {
                     var status = $(rowData.status).text();
-                    if (status === 'Open') {
+                    if (status === '<liferay-ui:message key="open" />') {
                         $(td).addClass('text-danger');
-                    } else if (status === 'Fulfilled') {
+                    } else if (status === '<liferay-ui:message key="fulfilled" />') {
                         $(td).addClass('text-success');
-                    } else if (status === 'In Progress') {
+                    } else if (status === '<liferay-ui:message key="in.progress" />') {
                         $(td).addClass('text-warning');
-                    } else if (status === 'Not Applicable') {
+                    } else if (status === '<liferay-ui:message key="not.applicable" />') {
                         $(td).addClass('text-secondary');
-                    } else if (status === 'To be fulfilled by parent project') {
+                    } else if (status === '<liferay-ui:message key="to.be.fulfilled.by.parent.project" />') {
                         $(td).addClass('text-info');
                     }
                 }
             },
             {
-                "targets": 5,
+                "targets": [1, 7],
                 "createdCell": function (td, cellData, rowData, row, col) {
                     $(td).css('max-width', '15rem');
                 }
@@ -154,7 +162,7 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
         },
         "order": [[1, 'asc']],
         "initComplete": datatables.showPageContainer
-    }, [1, 2, 3, 4, 5], [0, 5]);
+    }, [1, 2, 3, 4, 5, 6, 7], [0, 7]);
 
     function renderReleaseLink(rNames, type, row) {
         if (row.rIds && row.rIds.length > 0) {

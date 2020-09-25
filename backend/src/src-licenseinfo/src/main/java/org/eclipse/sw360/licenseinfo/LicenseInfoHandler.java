@@ -21,6 +21,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
 import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
@@ -29,6 +30,7 @@ import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectObligation;
@@ -257,11 +259,13 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
                             .collect(Collectors.toSet()));
                     if (Objects.nonNull(osInfo)) {
                         osInfo.setText(obl.getText());
+                        osInfo.setId(obl.getId());
+                        osInfo.setType(obl.getType());
                         osInfo.addToLicenseIds(licenseName);
                         osInfo.addToReleases(release);
                         obl.setObligationStatusInfo(osInfo);
                     } else {
-                        ObligationStatusInfo osi = new ObligationStatusInfo().setText(obl.getText())
+                        ObligationStatusInfo osi = new ObligationStatusInfo().setText(obl.getText()).setId(obl.getId()).setType(obl.getType())
                                 .setReleases(Sets.newHashSet(release)).setLicenseIds(Sets.newHashSet(licenseName));
                         filteredObligationStatusMap.put(obl.getTopic(), osi);
                     }

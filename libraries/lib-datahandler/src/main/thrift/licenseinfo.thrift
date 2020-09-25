@@ -96,6 +96,8 @@ struct ObligationAtProject {
     2: required string text,
     3: required list<string> licenseIDs,
     4: optional ObligationStatusInfo obligationStatusInfo,
+    5: optional string id,
+    6: optional string type
 }
 
 struct LicenseInfoFile {

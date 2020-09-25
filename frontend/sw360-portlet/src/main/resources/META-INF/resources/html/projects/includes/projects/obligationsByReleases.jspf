@@ -26,16 +26,18 @@
     <table class="table info_table" id="poInfoTableByRelease" style="table-layout: auto">
         <thead>
             <tr>
-                <th colspan="4" class="headlabel"><liferay-ui:message key="project.obligation.status" /></th>
+                <th colspan="6" class="headlabel"><liferay-ui:message key="project.obligation.status" /></th>
             </tr>
             <tr>
-                <th width="35%"><liferay-ui:message key="release" /> &#8883; <liferay-ui:message key="license.type" /> &#8883;
+                <th width="30%"><liferay-ui:message key="release" /> &#8883; <liferay-ui:message key="license.type" /> &#8883;
                     <liferay-ui:message key="release" /> &#8883; <liferay-ui:message key="obligation" /></th>
                 <th width="25%"><liferay-ui:message key="text" /></th>
                 <!-- Commented code for obligation action, until action select options are provided -->
                 <!-- <th width="10"><liferay-ui:message key="action.taken" /></th> -->
+                <th width="10%"><liferay-ui:message key="type" /></th>
+                <th width="7%"><liferay-ui:message key="id" /></th>
                 <th width="10%"><liferay-ui:message key="status" /></th>
-                <th width="20%"><liferay-ui:message key="comment" /></th>
+                <th width="18%"><liferay-ui:message key="comment" /></th>
             </tr>
         </thead>
         <tbody>
@@ -47,7 +49,7 @@
                 <core_rt:set var="bckgrndClass" value="text-success" />
 
                 <tr id="releaseRow_${loop.count}" data-tt-id="${release.id}" data-row-type="release">
-                    <td colspan="4">
+                    <td colspan="6">
                         <sw360:DisplayReleaseLink release="${release}" showName="true"/>
                         <span class="badge badge-light text-dark">
                             <sw360:out value=" (${totalObligations})" />
@@ -62,7 +64,7 @@
                             data-tt-id="${release.id}_${licenseType}"
                             data-tt-parent-id="${release.id}" data-row-type="licenseType"
                             class="highlightSuccess">
-                            <td colspan="4"><sw360:out value="${licenseType}" /></td>
+                            <td colspan="6"><sw360:out value="${licenseType}" /></td>
                         </tr>
                     </core_rt:if>
 
@@ -71,8 +73,8 @@
                         data-tt-parent-id="${release.id}_${licenseType}"
                         data-row-type="licenseId"
                         <core_rt:if test="${obligationSize gt 0}">class="highlightWarning"</core_rt:if>>
-                        <td colspan="4">
-                            <sw360:out value="${license.licenseSpdxId}" />
+                        <td colspan="6">
+                            <sw360:out value="${license.licenseName}" />
                         </td>
                     </tr>
 
@@ -97,6 +99,12 @@
                                 <%-- <td>
                                     <sw360:out value="${osi.action}" />
                                 </td> --%>
+                                <td>
+                                    <sw360:out value="${obligation.type}" maxChar="20" />
+                                </td>
+                                <td>
+                                    <sw360:out value="${obligation.id}" maxChar="20" />
+                                </td>
                                 <td>
                                     <sw360:DisplayEnum value="${osi.status}" />
                                 </td>

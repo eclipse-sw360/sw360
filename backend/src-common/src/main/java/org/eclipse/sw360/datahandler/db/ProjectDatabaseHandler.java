@@ -529,7 +529,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public RequestStatus updateLinkedObligations(ProjectObligation obligation, User user) throws TException {
         Project project = getProjectById(obligation.getProjectId(), user);
-        ProjectObligation projectObligationbefore=obligationRepository.get(obligation.getId());
+        ProjectObligation projectObligationbefore = obligationRepository.get(obligation.getId());
         if (isWriteActionAllowedOnProject(project, user)) {
             obligationRepository.update(obligation);
             DatabaseHandlerUtil.addChangeLogs(obligation, projectObligationbefore, user.getEmail(), Operation.UPDATE,
