@@ -19,6 +19,9 @@ The Projects resource is used to create and list projects.
 
 A `GET` request will list all of the service's projects.
 
+===== Request parameter
+include::{snippets}/should_document_get_projects/request-parameters.adoc[]
+
 ===== Response structure
 include::{snippets}/should_document_get_projects/response-fields.adoc[]
 
@@ -35,8 +38,10 @@ include::{snippets}/should_document_get_projects/links.adoc[]
 [[resources-projects-list-all-details]]
 ==== Listing projects with all details
 
-A `GET` request will list all of the service's projects. +
-Please set the request parameter `&allDetails=<true|false>`, to get projects with all Details.
+A `GET` request will list all of the service's projects.
+
+===== Request parameter
+include::{snippets}/should_document_get_projects_with_all_details/request-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_projects_with_all_details/response-fields.adoc[]
@@ -54,8 +59,10 @@ include::{snippets}/should_document_get_projects_with_all_details/links.adoc[]
 [[resources-projects-list-by-name]]
 ==== Listing by name
 
-A `GET` request will list all of the service's projects by project name. +
-Please set the request parameter `&name=<NAME>`.
+A `GET` request will list all of the service's projects by project name.
+
+===== Request parameter
+include::{snippets}/should_document_get_projects_by_name/request-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_projects_by_name/response-fields.adoc[]
@@ -73,8 +80,10 @@ include::{snippets}/should_document_get_projects_by_name/links.adoc[]
 [[resources-projects-list-by-type]]
 ==== Listing by type
 
-A `GET` request will list all of the service's projects by project type. +
-Project types = `{CUSTOMER, INTERNAL, PRODUCT, SERVICE, INNER_SOURCE}`
+A `GET` request will list all of the service's projects by project type.
+
+===== Request parameter
+include::{snippets}/should_document_get_projects_by_type/request-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_projects_by_type/response-fields.adoc[]
@@ -92,8 +101,10 @@ include::{snippets}/should_document_get_projects_by_type/links.adoc[]
 [[resources-projects-list-by-group]]
 ==== Listing by group
 
-A `GET` request will list all of the service's projects by group. +
-Please set the request parameter `&group=<GROUP>`.
+A `GET` request will list all of the service's projects by group.
+
+===== Request parameter
+include::{snippets}/should_document_get_projects_by_group/request-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_projects_by_group/response-fields.adoc[]
@@ -111,8 +122,10 @@ include::{snippets}/should_document_get_projects_by_group/links.adoc[]
 [[resources-projects-list-by-tag]]
 ==== Listing by tag
 
-A `GET` request will list all of the service's projects by tag. +
-Please set the request parameter `&tag=<TAG>`.
+A `GET` request will list all of the service's projects by tag.
+
+===== Request parameter
+include::{snippets}/should_document_get_projects_by_tag/request-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_projects_by_tag/response-fields.adoc[]

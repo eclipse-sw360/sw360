@@ -18,9 +18,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
+import org.springframework.data.domain.Pageable;
 import org.apache.thrift.protocol.TSimpleJSONProtocol;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
+import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
@@ -44,6 +47,7 @@ import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
+import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -69,6 +73,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.google.common.base.Strings;
@@ -132,11 +137,13 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
 
     @RequestMapping(value = PROJECTS_URL, method = RequestMethod.GET)
     public ResponseEntity<Resources<Resource<Project>>> getProjectsForUser(
+            Pageable pageable,
             @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "type", required = false) String projectType,
             @RequestParam(value = "group", required = false) String group,
             @RequestParam(value = "tag", required = false) String tag,
-            @RequestParam(value = "allDetails", required = false) boolean allDetails) throws TException {
+            @RequestParam(value = "allDetails", required = false) boolean allDetails,
+            HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Map<String, Project> mapOfProjects = new HashMap<>();
         boolean isSearchByName = name != null && !name.isEmpty();
@@ -146,9 +153,12 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         } else {
             sw360Projects.addAll(projectService.getProjectsForUser(sw360User));
         }
+
         sw360Projects.stream().forEach(prj -> mapOfProjects.put(prj.getId(), prj));
+        PaginationResult<Project> paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Projects, SW360Constants.TYPE_PROJECT);
+
         List<Resource<Project>> projectResources = new ArrayList<>();
-        sw360Projects.stream()
+        paginationResult.getResources().stream()
                 .filter(project -> projectType == null || projectType.equals(project.projectType.name()))
                 .filter(project -> group == null || group.isEmpty() || group.equals(project.getBusinessUnit()))
                 .filter(project -> tag == null || tag.isEmpty() || tag.equals(project.getTag()))
@@ -167,7 +177,13 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
                     projectResources.add(embeddedProjectResource);
                 });
 
-        Resources<Resource<Project>> resources = restControllerHelper.createResources(projectResources);
+        Resources resources;
+        if (projectResources.size() == 0) {
+            resources = restControllerHelper.emptyPageResource(Project.class, paginationResult);
+        } else {
+            resources = restControllerHelper.generatePagesResource(paginationResult, projectResources);
+        }
+
         HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(resources, status);
     }
@@ -228,26 +244,41 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
 
     @RequestMapping(value = PROJECTS_URL + "/{id}/releases", method = RequestMethod.GET)
     public ResponseEntity<Resources<Resource<Release>>> getProjectReleases(
+            Pageable pageable,
             @PathVariable("id") String id,
-            @RequestParam(value = "transitive", required = false) String transitive) throws TException {
+            @RequestParam(value = "transitive", required = false) String transitive,HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
 
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Set<String> releaseIds = projectService.getReleaseIds(id, sw360User, transitive);
         final Set<String> releaseIdsInBranch = new HashSet<>();
         boolean isTransitive = Boolean.parseBoolean(transitive);
-        final List<Resource<Release>> releaseResources = new ArrayList<>();
-        for (final String releaseId : releaseIds) {
-            final Release sw360Release = releaseService.getReleaseForUserById(releaseId, sw360User);
-            final Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(sw360Release);
-            final HalResource<Release> releaseResource = new HalResource<>(embeddedRelease);
-            if (isTransitive) {
-                projectService.addEmbeddedlinkedRelease(sw360Release, sw360User, releaseResource, releaseService,
-                        releaseIdsInBranch);
-            }
-            releaseResources.add(releaseResource);
+
+        List<Release> releases = releaseIds.stream().map(relId -> wrapTException(() -> {
+            final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
+            return sw360Release;
+        })).collect(Collectors.toList());
+
+        PaginationResult<Release> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
+                releases, SW360Constants.TYPE_RELEASE);
+
+        final List<Resource<Release>> releaseResources = paginationResult.getResources().stream()
+                .map(sw360Release -> wrapTException(() -> {
+                    final Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(sw360Release);
+                    final HalResource<Release> releaseResource = new HalResource<>(embeddedRelease);
+                    if (isTransitive) {
+                        projectService.addEmbeddedlinkedRelease(sw360Release, sw360User, releaseResource,
+                                releaseService, releaseIdsInBranch);
+                    }
+                    return releaseResource;
+                })).collect(Collectors.toList());
+
+        Resources resources;
+        if (releaseResources.size() == 0) {
+            resources = restControllerHelper.emptyPageResource(Project.class, paginationResult);
+        } else {
+            resources = restControllerHelper.generatePagesResource(paginationResult, releaseResources);
         }
 
-        final Resources<Resource<Release>> resources = restControllerHelper.createResources(releaseResources);
         HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(resources, status);
     }

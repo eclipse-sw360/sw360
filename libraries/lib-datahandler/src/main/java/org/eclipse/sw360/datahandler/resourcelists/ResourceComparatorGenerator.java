@@ -15,12 +15,16 @@ import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
 
 import java.util.*;
 
 public class ResourceComparatorGenerator<T> {
 
     private static final Map<Component._Fields, Comparator<Component>> componentMap = generateComponentMap();
+    private static final Map<Project._Fields, Comparator<Project>> projectMap = generateProjectMap();
+    private static final Map<Release._Fields, Comparator<Release>> releaseMap = generateReleaseMap();
 
     private static Map<Component._Fields, Comparator<Component>> generateComponentMap() {
         Map<Component._Fields, Comparator<Component>> componentMap = new HashMap<>();
@@ -31,10 +35,31 @@ public class ResourceComparatorGenerator<T> {
         return Collections.unmodifiableMap(componentMap);
     }
 
+    private static Map<Project._Fields, Comparator<Project>> generateProjectMap() {
+        Map<Project._Fields, Comparator<Project>> projectMap = new HashMap<>();
+        projectMap.put(Project._Fields.NAME, Comparator.comparing(Project::getName, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        projectMap.put(Project._Fields.CREATED_ON, Comparator.comparing(Project::getCreatedOn, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        projectMap.put(Project._Fields.CREATED_BY, Comparator.comparing(Project::getCreatedBy, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        projectMap.put(Project._Fields.CLEARING_STATE, Comparator.comparing(p -> Optional.ofNullable(p.getClearingState()).map(Object::toString).orElse(null), Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        projectMap.put(Project._Fields.PROJECT_TYPE, Comparator.comparing(p -> Optional.ofNullable(p.getProjectType()).map(Object::toString).orElse(null), Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        return Collections.unmodifiableMap(projectMap);
+    }
+
+    private static Map<Release._Fields, Comparator<Release>> generateReleaseMap() {
+        Map<Release._Fields, Comparator<Release>> releaseMap = new HashMap<>();
+        releaseMap.put(Release._Fields.NAME, Comparator.comparing(Release::getName, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        releaseMap.put(Release._Fields.CLEARING_STATE, Comparator.comparing(p -> Optional.ofNullable(p.getClearingState()).map(Object::toString).orElse(null), Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        return Collections.unmodifiableMap(releaseMap);
+    }
+
     public Comparator<T> generateComparator(String type) throws ResourceClassNotFoundException {
         switch (type) {
             case SW360Constants.TYPE_COMPONENT:
                 return (Comparator<T>)defaultComponentComparator();
+            case SW360Constants.TYPE_PROJECT:
+                return (Comparator<T>)defaultProjectComparator();
+            case SW360Constants.TYPE_RELEASE:
+                return (Comparator<T>)defaultReleaseComparator();
             default:
                 throw new ResourceClassNotFoundException("No default comparator for resource class with name " + type);
         }
@@ -55,6 +80,24 @@ public class ResourceComparatorGenerator<T> {
                     }
                 }
                 return generateComparatorWithFields(type, fields);
+            case SW360Constants.TYPE_PROJECT:
+                List<Project._Fields> projectFields = new ArrayList<>();
+                for(String property:properties) {
+                    Project._Fields field = Project._Fields.findByName(property);
+                    if (field != null) {
+                        projectFields.add(field);
+                    }
+                }
+                return generateProjectComparatorWithFields(type, projectFields);
+            case SW360Constants.TYPE_RELEASE:
+                List<Release._Fields> releaeFields = new ArrayList<>();
+                for(String property:properties) {
+                    Release._Fields field = Release._Fields.findByName(property);
+                    if (field != null) {
+                        releaeFields.add(field);
+                    }
+                }
+                return generateReleaseComparatorWithFields(type, releaeFields);
             default:
                 throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
         }
@@ -64,6 +107,24 @@ public class ResourceComparatorGenerator<T> {
         switch (type) {
             case SW360Constants.TYPE_COMPONENT:
                 return (Comparator<T>)componentComparator(fields);
+            default:
+                throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
+        }
+    }
+
+    public Comparator<T> generateProjectComparatorWithFields(String type, List<Project._Fields> fields) throws ResourceClassNotFoundException {
+        switch (type) {
+            case SW360Constants.TYPE_PROJECT:
+                return (Comparator<T>)projectComparator(fields);
+            default:
+                throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
+        }
+    }
+
+    public Comparator<T> generateReleaseComparatorWithFields(String type, List<Release._Fields> fields) throws ResourceClassNotFoundException {
+        switch (type) {
+            case SW360Constants.TYPE_RELEASE:
+                return (Comparator<T>)releaseComparator(fields);
             default:
                 throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
         }
@@ -81,8 +142,40 @@ public class ResourceComparatorGenerator<T> {
         return comparator;
     }
 
+    private Comparator<Project> projectComparator(List<Project._Fields> fields) {
+        Comparator<Project> comparator = Comparator.comparing(x -> true);
+        for (Project._Fields field:fields) {
+            Comparator<Project> fieldComparator = projectMap.get(field);
+            if(fieldComparator != null) {
+                comparator = comparator.thenComparing(fieldComparator);
+            }
+        }
+        comparator = comparator.thenComparing(defaultProjectComparator());
+        return comparator;
+    }
+
+    private Comparator<Release> releaseComparator(List<Release._Fields> fields) {
+        Comparator<Release> comparator = Comparator.comparing(x -> true);
+        for (Release._Fields field:fields) {
+            Comparator<Release> fieldComparator = releaseMap.get(field);
+            if(fieldComparator != null) {
+                comparator = comparator.thenComparing(fieldComparator);
+            }
+        }
+        comparator = comparator.thenComparing(defaultReleaseComparator());
+        return comparator;
+    }
+
     private Comparator<Component> defaultComponentComparator() {
         return componentMap.get(Component._Fields.NAME);
+    }
+    
+    private Comparator<Project> defaultProjectComparator() {
+        return projectMap.get(Project._Fields.NAME);
+    }
+
+    private Comparator<Release> defaultReleaseComparator() {
+        return releaseMap.get(Release._Fields.NAME);
     }
 
 }
