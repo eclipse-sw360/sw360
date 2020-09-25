@@ -67,6 +67,9 @@ public class ProjectSearchHandler {
                     "    if(doc.tag !== undefined && doc.tag != null && doc.tag.length >0) {  "+
                     "      ret.add(doc.tag, {\"field\": \"tag\"} );" +
                     "    }" +
+                    "    for(var [key, value] in doc.additionalData) {" +
+                    "      ret.add(doc.additionalData[key], {\"field\": \"additionalData\"} );" +
+                    "    }" +
                     "    return ret;" +
                     "}");
 
