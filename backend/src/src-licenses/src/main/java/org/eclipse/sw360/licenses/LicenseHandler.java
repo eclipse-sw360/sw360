@@ -73,17 +73,6 @@ public class LicenseHandler implements LicenseService.Iface {
     }
 
     @Override
-    public List<RiskCategory> addRiskCategories(List<RiskCategory> riskCategories, User user) throws TException {
-        return handler.addRiskCategories(riskCategories, user);
-    }
-
-    @Override
-    public List<Risk> addRisks(List<Risk> risks, User user) throws TException {
-        return handler.addRisks(risks, user);
-    }
-
-
-    @Override
     public List<LicenseType> addLicenseTypes(List<LicenseType> licenseTypes, User user) throws TException {
         return handler.addLicenseTypes(licenseTypes, user);
     }
@@ -105,16 +94,6 @@ public class LicenseHandler implements LicenseService.Iface {
     }
 
     @Override
-    public List<RiskCategory> getRiskCategories() throws TException {
-        return handler.getRiskCategories() ;
-    }
-
-    @Override
-    public List<Risk> getRisks() throws TException {
-        return handler.getRisks();
-    }
-
-    @Override
     public List<LicenseType> getLicenseTypes() throws TException {
         return handler.getLicenseTypes();
     }
@@ -128,19 +107,6 @@ public class LicenseHandler implements LicenseService.Iface {
     public List<Obligation> getObligations() throws TException {
         return handler.getObligations();
     }
-
-    @Override
-    public List<Risk> getRisksByIds(List<String> ids) throws TException {
-        assertNotEmpty(ids);
-        return handler.getRisksByIds(ids);
-    }
-
-    @Override
-    public List<RiskCategory> getRiskCategoriesByIds(List<String> ids) throws TException {
-        assertNotEmpty(ids);
-        return handler.getRiskCategoriesByIds(ids);
-    }
-
 
     @Override
     public List<LicenseType> getLicenseTypesByIds(List<String> ids) throws TException {
@@ -187,19 +153,6 @@ public class LicenseHandler implements LicenseService.Iface {
 
         return handler.getLicenses(ids, organisation);
     }
-
-    @Override
-    public Risk getRiskById(String id) throws TException {
-        assertNotEmpty(id);
-        return handler.getRiskById(id);
-    }
-
-    @Override
-    public RiskCategory getRiskCategoryById(String id) throws TException {
-        assertNotEmpty(id);
-        return handler.getRiskCategoryById(id);
-    }
-
 
     @Override
     public LicenseType getLicenseTypeById(String id) throws TException {

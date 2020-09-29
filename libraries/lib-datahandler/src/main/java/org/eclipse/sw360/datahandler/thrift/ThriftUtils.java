@@ -56,7 +56,7 @@ public class ThriftUtils {
             .add(AttachmentUsage.class) // Attachment service
             .add(Component.class).add(Release.class) // Component service
             .add(License.class).add(Obligation.class)
-            .add(LicenseType.class).add(Risk.class).add(RiskCategory.class) // License service
+            .add(LicenseType.class) // License service
             .add(CustomProperties.class) // License service
             .add(Project.class).add(ObligationList.class).add(UsedReleaseRelations.class).add(ClearingRequest.class)  // Project service
             .add(User.class) // User service

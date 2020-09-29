@@ -59,32 +59,6 @@ public class ThriftValidate {
         oblig.setType(TYPE_OBLIGATION);
     }
 
-    public static void prepareRiskCategory(RiskCategory riskCategory) throws SW360Exception {
-        // Check required fields
-        assertNotNull(riskCategory);
-        assertNotEmpty(riskCategory.getText());
-        assertNotNull(riskCategory.getRiskCategoryId());
-
-        // Check type
-        riskCategory.setType(TYPE_RISKCATEGORY);
-    }
-
-    public static void prepareRisk(Risk risk) throws SW360Exception {
-        // Check required fields
-        assertNotNull(risk);
-        assertNotEmpty(risk.getText());
-        assertNotNull(risk.getRiskId());
-
-        if (risk.isSetCategory() && !risk.isSetRiskCategoryDatabaseId()) {
-            risk.setRiskCategoryDatabaseId(risk.getCategory().getId());
-        }
-
-        risk.unsetCategory();
-
-        // Check type
-        risk.setType(TYPE_RISK);
-    }
-
     public static void prepareLicense(License license) throws SW360Exception {
         // Check required fields
         assertNotNull(license);
@@ -102,13 +76,6 @@ public class ThriftValidate {
             }
         }
         license.unsetObligations();
-
-        if (license.isSetRisks() && !license.isSetRiskDatabaseIds()) {
-            for (Risk risk : license.getRisks()) {
-                license.addToRiskDatabaseIds(risk.getId());
-            }
-        }
-        license.unsetRisks();
 
         // Check type
         license.setType(TYPE_LICENSE);
