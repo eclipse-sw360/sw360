@@ -24,7 +24,7 @@ import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectObligation;
+import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projects.UsedReleaseRelations;
@@ -310,14 +310,14 @@ public class ProjectHandler implements ProjectService.Iface {
     }
 
     @Override
-    public ProjectObligation getLinkedObligations(String obligationId, User user) throws TException {
+    public ObligationList getLinkedObligations(String obligationId, User user) throws TException {
         assertId(obligationId);
         assertUser(user);
         return handler.getLinkedObligations(obligationId, user);
     }
 
     @Override
-    public RequestStatus addLinkedObligations(ProjectObligation obligation, User user) throws TException {
+    public RequestStatus addLinkedObligations(ObligationList obligation, User user) throws TException {
         assertUser(user);
         assertNotNull(obligation);
         assertIdUnset(obligation.getId());
@@ -325,7 +325,7 @@ public class ProjectHandler implements ProjectService.Iface {
     }
 
     @Override
-    public RequestStatus updateLinkedObligations(ProjectObligation obligation, User user) throws TException {
+    public RequestStatus updateLinkedObligations(ObligationList obligation, User user) throws TException {
         assertNotNull(obligation);
         assertId(obligation.getId());
         assertId(obligation.getProjectId());

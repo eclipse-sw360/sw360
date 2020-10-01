@@ -84,7 +84,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private final ProjectRepository repository;
     private final ProjectVulnerabilityRatingRepository pvrRepository;
-    private final ProjectObligationRepository obligationRepository;
+    private final ObligationListRepository obligationRepository;
     private final ProjectModerator moderator;
     private final AttachmentConnector attachmentConnector;
     private final ComponentDatabaseHandler componentDatabaseHandler;
@@ -136,7 +136,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         // Create the repositories
         repository = new ProjectRepository(db);
         pvrRepository = new ProjectVulnerabilityRatingRepository(db);
-        obligationRepository = new ProjectObligationRepository(db);
+        obligationRepository = new ObligationListRepository(db);
         relUsageRepository = new RelationsUsageRepository(db);
         vendorRepository = new VendorRepository(db);
         releaseRepository = new ReleaseRepository(db, vendorRepository);
@@ -505,14 +505,14 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         sendMailForUpdatedProjectWithClearingRequest(updated, user);
     }
 
-    public ProjectObligation getLinkedObligations(String obligationId, User user) throws TException {
-        ProjectObligation obligation = obligationRepository.get(obligationId);
+    public ObligationList getLinkedObligations(String obligationId, User user) throws TException {
+        ObligationList obligation = obligationRepository.get(obligationId);
         assertNotNull(obligation);
         assertId(obligation.getProjectId());
         return obligation;
     }
 
-    public RequestStatus addLinkedObligations(ProjectObligation obligation, User user) throws TException {
+    public RequestStatus addLinkedObligations(ObligationList obligation, User user) throws TException {
         ThriftValidate.prepareProjectObligation(obligation);
         obligationRepository.add(obligation);
         Project project = getProjectById(obligation.getProjectId(), user);
@@ -527,9 +527,9 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return RequestStatus.SUCCESS;
     }
 
-    public RequestStatus updateLinkedObligations(ProjectObligation obligation, User user) throws TException {
+    public RequestStatus updateLinkedObligations(ObligationList obligation, User user) throws TException {
         Project project = getProjectById(obligation.getProjectId(), user);
-        ProjectObligation projectObligationbefore = obligationRepository.get(obligation.getId());
+        ObligationList projectObligationbefore = obligationRepository.get(obligation.getId());
         if (isWriteActionAllowedOnProject(project, user)) {
             obligationRepository.update(obligation);
             DatabaseHandlerUtil.addChangeLogs(obligation, projectObligationbefore, user.getEmail(), Operation.UPDATE,
@@ -600,15 +600,15 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return true;
     }
 
-    private ProjectObligation deleteObligationsOfUnlinkedReleases(Project updated) {
-        ProjectObligation obligation = obligationRepository.get(updated.getLinkedObligationId());
+    private ObligationList deleteObligationsOfUnlinkedReleases(Project updated) {
+        ObligationList obligation = obligationRepository.get(updated.getLinkedObligationId());
         Set<String> updatedLinkedReleaseIds = nullToEmptyMap(updated.getReleaseIdToUsage()).keySet();
         // return null if no linked releases in updated project.
         if (CommonUtils.isNullOrEmptyCollection(updatedLinkedReleaseIds)) {
-            obligation.unsetLinkedObligations();
+            obligation.unsetLinkedObligationStatus();
             return obligation;
         }
-        Map<String, ObligationStatusInfo> updatedOsInfoMap = nullToEmptyMap(obligation.getLinkedObligations());
+        Map<String, ObligationStatusInfo> updatedOsInfoMap = nullToEmptyMap(obligation.getLinkedObligationStatus());
         for (Iterator<Map.Entry<String, ObligationStatusInfo>> it = updatedOsInfoMap.entrySet().iterator(); it.hasNext();) {
             Map.Entry<String, ObligationStatusInfo> entry = it.next();
             Map<String, String> releaseIdToAcceptedCLI = entry.getValue().getReleaseIdToAcceptedCLI();
@@ -617,7 +617,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 it.remove();
             }
         }
-        obligation.setLinkedObligations(updatedOsInfoMap);
+        obligation.setLinkedObligationStatus(updatedOsInfoMap);
         return obligation;
     }
 

@@ -74,9 +74,9 @@
 <core_rt:set var="isObligationPresent" value="${not empty project.releaseIdToUsage}" />
 <core_rt:set var="isProjectObligationsEnabled"  value="${isProjectObligationsEnabled and hasWritePermissions}" />
 <core_rt:if test="${isProjectObligationsEnabled and isObligationPresent}">
-    <jsp:useBean id="obligationData" type="org.eclipse.sw360.datahandler.thrift.projects.ProjectObligation" scope="request" />
-    <core_rt:set var="isObligationPresent" value="${not empty obligationData and not empty obligationData.linkedObligations}" />
-    <core_rt:set var="linkedObligations" value="${obligationData.linkedObligations}" />
+    <jsp:useBean id="obligationData" type="org.eclipse.sw360.datahandler.thrift.projects.ObligationList" scope="request" />
+    <core_rt:set var="isObligationPresent" value="${not empty obligationData and not empty obligationData.linkedObligationStatus}" />
+    <core_rt:set var="linkedObligations" value="${obligationData.linkedObligationStatus}" />
     <core_rt:if test="${isObligationPresent}">
         <jsp:useBean id="projectObligationsInfoByRelease" type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult>" scope="request" />
         <jsp:useBean id="approvedObligationsCount" type="java.lang.Integer" scope="request"/>

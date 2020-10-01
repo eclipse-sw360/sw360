@@ -33,7 +33,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectObligation;
+import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.licenseinfo.outputGenerators.*;
 import org.eclipse.sw360.licenseinfo.parsers.*;
@@ -353,8 +353,8 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         Map<String, String> releaseIdToAcceptedCLI = Maps.newHashMap();
 
         if (CommonUtils.isNotNullEmptyOrWhitespace(project.getLinkedObligationId())) {
-            ProjectObligation obligation = projectDatabaseHandler.getLinkedObligations(project.getLinkedObligationId(), user);
-            obligationStatusMap = obligation.getLinkedObligations();
+            ObligationList obligation = projectDatabaseHandler.getLinkedObligations(project.getLinkedObligationId(), user);
+            obligationStatusMap = obligation.getLinkedObligationStatus();
             releaseIdToAcceptedCLI.putAll(SW360Utils.getReleaseIdtoAcceptedCLIMappings(obligationStatusMap));
         }
 

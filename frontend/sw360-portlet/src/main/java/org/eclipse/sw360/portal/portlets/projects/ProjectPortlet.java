@@ -246,7 +246,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         final String topic = request.getParameter(OBLIGATION_TOPIC);
         RequestStatus status = null;
         try {
-            ProjectObligation obligation;
+            ObligationList obligation;
             if (CommonUtils.isNullEmptyOrWhitespace(topic)) {
                 status = RequestStatus.FAILURE;
                 throw new IllegalArgumentException("Invalid obligation topic for project obligation id: " + obligationId);
@@ -254,7 +254,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             final ProjectService.Iface client = thriftClients.makeProjectClient();
             final User user = UserCacheHolder.getUserFromRequest(request);
             obligation = client.getLinkedObligations(obligationId, user);
-            obligation.getLinkedObligations().remove(topic);
+            obligation.getLinkedObligationStatus().remove(topic);
             status = client.updateLinkedObligations(obligation, user);
         } catch (TException exception) {
             log.error("Failed to delete obligation: "+ obligationId +" with topic: " + topic, exception);
@@ -1838,12 +1838,12 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             final boolean isObligationPresent = CommonUtils.isNotNullEmptyOrWhitespace(project.getLinkedObligationId());
             final String email = user.getEmail();
             final String createdOn = SW360Utils.getCreatedOn();
-            final ProjectObligation obligation = isObligationPresent
+            final ObligationList obligation = isObligationPresent
                     ? client.getLinkedObligations(project.getLinkedObligationId(), user)
-                    : new ProjectObligation().setProjectId(project.getId());
+                    : new ObligationList().setProjectId(project.getId());
 
             Map<String, ObligationStatusInfo> obligationStatusInfo = isObligationPresent
-                    && obligation.getLinkedObligationsSize() > 0 ? obligation.getLinkedObligations() : Maps.newHashMap();
+                    && obligation.getLinkedObligationStatusSize() > 0 ? obligation.getLinkedObligationStatus() : Maps.newHashMap();
 
             rootNode.fieldNames().forEachRemaining(topic -> {
                 JsonNode osiNode = rootNode.get(topic);
@@ -1869,8 +1869,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 obligationStatusInfo.computeIfAbsent(topic, e -> newOsi);
             });
 
-            obligation.unsetLinkedObligations();
-            obligation.setLinkedObligations(obligationStatusInfo);
+            obligation.unsetLinkedObligationStatus();
+            obligation.setLinkedObligationStatus(obligationStatusInfo);
             return isObligationPresent ? client.updateLinkedObligations(obligation, user) : client.addLinkedObligations(obligation, user);
         } catch (TException | IOException exception) {
             log.error("Failed to add/update obligation for project: " + project.getId(), exception);
@@ -1880,12 +1880,12 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
     private void copyLinkedObligationsForClonedProject(ActionRequest request, Project newProject, Project sourceProject, ProjectService.Iface client, User user) {
         try {
-            ProjectObligation obligation = client.getLinkedObligations(sourceProject.getLinkedObligationId(), user);
+            ObligationList obligation = client.getLinkedObligations(sourceProject.getLinkedObligationId(), user);
             Set<String> newLinkedReleaseIds = newProject.getReleaseIdToUsage().keySet();
             Set<String> sourceLinkedReleaseIds = sourceProject.getReleaseIdToUsage().keySet();
-            Map<String, ObligationStatusInfo> linkedObligations = obligation.getLinkedObligations();
+            Map<String, ObligationStatusInfo> linkedObligations = obligation.getLinkedObligationStatus();
             if (!newLinkedReleaseIds.equals(sourceLinkedReleaseIds)) {
-                linkedObligations = obligation.getLinkedObligations().entrySet().stream().filter(entry -> {
+                linkedObligations = obligation.getLinkedObligationStatus().entrySet().stream().filter(entry -> {
                     Set<String> releaseIds = entry.getValue().getReleaseIdToAcceptedCLI().keySet();
                     releaseIds.retainAll(newLinkedReleaseIds);
                     if (releaseIds.isEmpty()) {
@@ -1895,7 +1895,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
             }
             if (!linkedObligations.isEmpty()) {
-                client.addLinkedObligations(new ProjectObligation().setProjectId(newProject.getId()).setLinkedObligations(linkedObligations), user);
+                client.addLinkedObligations(new ObligationList().setProjectId(newProject.getId()).setLinkedObligationStatus(linkedObligations), user);
             }
         } catch (TException e) {
             log.error("Error duplicating obligations for project: " + newProject.getId(), e);
@@ -2000,13 +2000,13 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         }
     }
 
-    private ProjectObligation loadLinkedObligations(PortletRequest request, Project project) {
+    private ObligationList loadLinkedObligations(PortletRequest request, Project project) {
 
         final ProjectService.Iface projectClient = thriftClients.makeProjectClient();
         final User user = UserCacheHolder.getUserFromRequest(request);
         final Map<String, String> releaseIdToAcceptedCLI = Maps.newHashMap();
         List<Release> releases;
-        ProjectObligation obligation = new ProjectObligation();
+        ObligationList obligation = new ObligationList();
         Map<String, ObligationStatusInfo> obligationStatusMap = Maps.newHashMap();
 
         try {
@@ -2014,10 +2014,10 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             if (CommonUtils.isNotEmpty(releases)) {
                 if (CommonUtils.isNotNullEmptyOrWhitespace(project.getLinkedObligationId())) {
                     obligation = projectClient.getLinkedObligations(project.getLinkedObligationId(), user);
-                    obligationStatusMap = obligation.getLinkedObligations();
+                    obligationStatusMap = obligation.getLinkedObligationStatus();
                     releaseIdToAcceptedCLI.putAll(SW360Utils.getReleaseIdtoAcceptedCLIMappings(obligationStatusMap));
                 }
-                obligation.setLinkedObligations(setLicenseInfoWithObligations(request, obligationStatusMap, releaseIdToAcceptedCLI, releases, user));
+                obligation.setLinkedObligationStatus(setLicenseInfoWithObligations(request, obligationStatusMap, releaseIdToAcceptedCLI, releases, user));
             }
         } catch (TException e) {
             log.error(String.format("error loading linked obligations for project: %s ", project.getId()), e);
