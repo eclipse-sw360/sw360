@@ -58,6 +58,11 @@ To migrate it is recommended to do this in the following order:
 - `023_rename_obligationType_to_obligationLevel.py`
 - `024_update_type_from_obligations_to_obligation.py`
 - `025_remove_old_obligations_view.py`
+- `026_licenseObligation_populate_text_field.py`
+- `027_licenseObligation_field_update.py`
+- `028_update_type_from_licenseObligation_to_obligation.py`
+- `029_remove_old_licenseobligation_view.py`
+- `030_obligation_field_update.py`
 
 ## Optional usage
 - `009_overwrite_release_name_with_component_name.py`

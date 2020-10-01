@@ -35,7 +35,6 @@
                 <th><liferay-ui:message key="applies.to.development" /></th>
                 <th><liferay-ui:message key="applies.to.distribution" /></th>
                 <th><liferay-ui:message key="further.properties" /></th>
-                <th><liferay-ui:message key="obligations" /></th>
             </tr>
         </thead>
         <tbody>
@@ -46,15 +45,6 @@
                         <td><sw360:DisplayBoolean value="${oblig.development}" defined="${oblig.setDevelopment}"/></td>
                         <td><sw360:DisplayBoolean value="${oblig.distribution}" defined="${oblig.setDistribution}"/></td>
                         <td><sw360:DisplayMap value="${oblig.customPropertyToValue}"/></td>
-                        <td>
-                            <core_rt:if test="${oblig.listOfobligationSize > 0}">
-                                <ul>
-                                    <core_rt:forEach var="ob" varStatus="status" items="${oblig.listOfobligation}">
-                                        <li><sw360:out value="${ob.name}"/></li>
-                                    </core_rt:forEach>
-                                </ul>
-                            </core_rt:if>
-                        </td>
                     </tr>
                 </core_rt:if>
             </core_rt:forEach>
@@ -79,7 +69,6 @@
                 <th><liferay-ui:message key="applies.to.development" /></th>
                 <th><liferay-ui:message key="applies.to.distribution" /></th>
                 <th><liferay-ui:message key="further.properties" /></th>
-                <th><liferay-ui:message key="obligations" /></th>
             </tr>
         </thead>
         <tbody>
@@ -95,15 +84,6 @@
                     <td><sw360:DisplayBoolean value="${oblig.development}" defined="${oblig.setDevelopment}"/></td>
                     <td><sw360:DisplayBoolean value="${oblig.distribution}" defined="${oblig.setDistribution}"/></td>
                     <td><sw360:DisplayMap value="${oblig.customPropertyToValue}"/></td>
-                    <td>
-                        <core_rt:if test="${oblig.listOfobligationSize > 0}">
-                            <ul>
-                                <core_rt:forEach var="ob" varStatus="status" items="${oblig.listOfobligation}">
-                                    <li><sw360:out value="${ob.name}"/></li>
-                                </core_rt:forEach>
-                            </ul>
-                        </core_rt:if>
-                    </td>
                 </tr>
             </core_rt:forEach>
         </tbody>
@@ -127,7 +107,6 @@
                     <th><liferay-ui:message key="applies.to.development" /></th>
                     <th><liferay-ui:message key="applies.to.distribution" /></th>
                     <th><liferay-ui:message key="further.properties" /></th>
-                    <th><liferay-ui:message key="obligations" /></th>
                 </tr>
             </thead>
             <tbody>
@@ -143,15 +122,6 @@
                         <td><sw360:DisplayBoolean value="${oblig.development}" defined="${oblig.setDevelopment}"/></td>
                         <td><sw360:DisplayBoolean value="${oblig.distribution}" defined="${oblig.setDistribution}"/></td>
                         <td><sw360:DisplayMap value="${oblig.customPropertyToValue}"/></td>
-                        <td colspan="1">
-                            <core_rt:if test="${oblig.listOfobligationSize > 0}">
-                                <ul>
-                                    <core_rt:forEach var="ob" varStatus="status" items="${oblig.listOfobligation}">
-                                        <li><sw360:out value="${ob.name}"/></li>
-                                    </core_rt:forEach>
-                                </ul>
-                            </core_rt:if>
-                        </td>
                     </tr>
                 </core_rt:forEach>
             </tbody>

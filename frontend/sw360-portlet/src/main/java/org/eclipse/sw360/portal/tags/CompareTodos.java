@@ -13,7 +13,6 @@ import com.google.common.base.Strings;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Maps;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.thrift.licenses.LicenseObligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.apache.thrift.meta_data.FieldMetaData;
 
@@ -94,7 +93,7 @@ public class CompareTodos extends NameSpaceAwareTag {
     private void renderTodos(StringBuilder display, List<Obligation> current, List<Obligation> update, List<Obligation> delete) {
         List<Obligation> newWhitelistedTodos = update
                 .stream()
-                .filter(CommonUtils::isTemporaryTodo)
+                .filter(CommonUtils::isTemporaryObligation)
                 .filter(oblig -> oblig.isSetWhitelist() && oblig.getWhitelist().contains(department))
                 .collect(Collectors.toList());
         Map<String, Obligation> newWhitelistedTodosById = getTodosById(newWhitelistedTodos);
@@ -103,7 +102,7 @@ public class CompareTodos extends NameSpaceAwareTag {
 
         List<Obligation> newBlacklistedTodos = update
                 .stream()
-                .filter(CommonUtils::isTemporaryTodo)
+                .filter(CommonUtils::isTemporaryObligation)
                 .filter(oblig -> !oblig.isSetWhitelist() || !oblig.getWhitelist().contains(department))
                 .collect(Collectors.toList());
         Map<String, Obligation> newBlacklistedTodosById = getTodosById(newBlacklistedTodos);
@@ -114,7 +113,7 @@ public class CompareTodos extends NameSpaceAwareTag {
         Set<String> currentTodoIds = currentTodosById.keySet();
         List<Obligation> whitelistedTodos = update
                 .stream()
-                .filter(oblig -> !CommonUtils.isTemporaryTodo(oblig))
+                .filter(oblig -> !CommonUtils.isTemporaryObligation(oblig))
                 .filter(oblig -> oblig.isSetWhitelist() && oblig.getWhitelist().contains(department))
                 .filter(oblig -> currentTodoIds.contains(oblig.getId()))
                 .filter(oblig -> !(currentTodosById.get(oblig.getId()).isSetWhitelist() &&
@@ -164,12 +163,6 @@ public class CompareTodos extends NameSpaceAwareTag {
 
             FieldMetaData fieldMetaData = Obligation.metaDataMap.get(field);
             Object fieldValue = oblig.getFieldValue(field);
-            if (field.equals(Obligation._Fields.LIST_OFOBLIGATION) && fieldValue != null) {
-                fieldValue =
-                        ((List<LicenseObligation>) fieldValue).stream()
-                                .map(LicenseObligation::getName)
-                                .collect(Collectors.toList());
-            }
             display.append(String.format("<td>%s</td>", getDisplayString(fieldMetaData.valueMetaData.type, fieldValue)));
 
         }
@@ -186,7 +179,6 @@ public class CompareTodos extends NameSpaceAwareTag {
             case ID:
             case REVISION:
             case TYPE:
-            case OBLIGATION_DATABASE_IDS:
             case TITLE:
             case DEVELOPMENT_STRING:
             case DISTRIBUTION_STRING:

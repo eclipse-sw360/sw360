@@ -26,7 +26,14 @@
         </div>
         <div class="row">
             <div class="col-8">
-                <div class="form-group">
+				<div class="form-group">
+					<label for="oblTitle"><liferay-ui:message key="title" /></label>
+					<input id="oblTitle" type="text" class="form-control"
+						placeholder="<liferay-ui:message key="enter.title" />"
+						name="<portlet:namespace/>obligTitle"/>
+				</div>
+				<div class="form-group">
+				    <label for="oblText"><liferay-ui:message key="text" /></label>
                     <textarea name="<portlet:namespace/>obligText" rows="5" class="form-control"
                                 required placeholder="<liferay-ui:message key="enter.the.oblig.text.here" />"></textarea>
                 </div>
@@ -52,7 +59,8 @@
                     <thead>
                         <tr>
                             <th></th>
-                            <th><liferay-ui:message key="obligations" /></th>
+                            <th><liferay-ui:message key="obligation.title" /></th>
+                            <th><liferay-ui:message key="obligation.text" /></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -64,7 +72,10 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <sw360:out value="${ob.name}"/>
+                                    <sw360:out value="${ob.title}"/>
+                                </td>
+                                <td>
+                                    <sw360:out value="${ob.text}"/>
                                 </td>
                             </tr>
                         </core_rt:forEach>

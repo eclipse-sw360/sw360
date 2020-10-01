@@ -40,7 +40,6 @@ public class LicenseHandlerTest {
 
     private Map<String, License> licenses;
     private Map<String, Obligation> obligs;
-    private Map<String, LicenseObligation> obligations;
 
     public static Obligation getById(String id, Collection<Obligation> obligs) {
         if (id != null && obligs != null) {
@@ -107,7 +106,6 @@ public class LicenseHandlerTest {
             // Now check equals
             assertEquals(expTodo.getId(), actTodo.getId());
             assertEquals(expTodo.getText(), actTodo.getText());
-            assertEquals(expTodo.getObligationDatabaseIdsSize(), actTodo.getListOfobligationSize());
             assertEquals(expTodo.getRevision(), actTodo.getRevision());
         }
     }
@@ -126,11 +124,6 @@ public class LicenseHandlerTest {
         assertNull(license);
     }
 
-    @Test
-    public void testGetObligations() throws Exception {
-        List<LicenseObligation> actualObligations = handler.getListOfobligation();
-        assertEquals(obligations.size(), actualObligations.size());
-    }
 
     @Test
     public void testAddLicense() throws Exception {
@@ -177,7 +170,6 @@ public class LicenseHandlerTest {
         // List of test objects
         licenses = new HashMap<>();
         obligs = new HashMap<>();
-        obligations = new HashMap<>();
 
         License license1 = new License();
         license1.setShortname("Apache-1.1");
@@ -202,16 +194,10 @@ public class LicenseHandlerTest {
         licenses.put(license2.id, license2);
 
         Obligation oblig1 = new Obligation().setId("T1").setText("You must include the acknowledgement as part of the documentation for the end user. An example looks as following:  This product includes software developed by the Apache Software Foundation (http://www.apache.org/).");
-        oblig1.addToObligationDatabaseIds("O1");
-        oblig1.addToObligationDatabaseIds("O2");
         Obligation oblig2 = new Obligation().setId("T2").setText("You must not names listed in in the license at paragraph 4 (for example Apache and Apache Software Foundation) neither in the documentation nor for ads or marketing.");
-        oblig2.addToObligationDatabaseIds("O3");
         Obligation oblig3 = new Obligation().setId("T3").setText("Then you must add the following sentence in the header of any modified/added file: 'Code modifications by Siemens AG are under Siemens license conditions'");
         Obligation oblig4 = new Obligation().setId("T4").setText("You must include a prominent notice in the header of all modified files in the following form: © Siemens AG, [year]");
-        oblig4.addToObligationDatabaseIds("O1");
-        oblig4.addToObligationDatabaseIds("O4");
         Obligation oblig5 = new Obligation().setId("T5").setText("With the Apache License 2.0,no copyleft effect for proprietary code exists. For proprietary Siemens modifications you can choose the license (meaning applying the Apache 2.0 license or any other license)");
-        oblig5.addToObligationDatabaseIds("O4");
 
         obligs.put("T1", oblig1);
         obligs.put("T2", oblig2);
@@ -219,17 +205,7 @@ public class LicenseHandlerTest {
         obligs.put("T4", oblig4);
         obligs.put("T5", oblig5);
 
-        obligations.put("O1", new LicenseObligation().setId("O1").setName("Provide acknowledgements in documentation"));
-        obligations.put("O2", new LicenseObligation().setId("O2").setName("Advertising materials are restricted subject to limitations"));
-        obligations.put("O3", new LicenseObligation().setId("O3").setName("Documentation that represent additional requirements in case of modifications (for example notice file with author's name)"));
-        obligations.put("O4", new LicenseObligation().setId("O4").setName("Apache Copyleft effect"));
-
         DatabaseConnector db = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), dbName);
-
-        // Add obligations to database
-        for (LicenseObligation obligation : obligations.values()) {
-            db.add(obligation);
-        }
 
         // Add obligations to database
         for (Obligation oblig : obligs.values()) {

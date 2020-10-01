@@ -267,66 +267,6 @@ public class ConvertRecord {
         };
     }
 
-   public static List<LicenseObligation> convertObligation(List<CSVRecord> records) {
-        List<LicenseObligation> list = new ArrayList<>(records.size());
-
-        for (CSVRecord record : records) {
-            if (record.size() < 2) break;
-            String id = record.get(0);
-            String name = record.get(1);
-
-            LicenseObligation obligation = new LicenseObligation().setObligationId(Integer.parseInt(id)).setName(name);
-            list.add(obligation);
-        }
-
-        return list;
-    }
-
-    public static Serializer<LicenseObligation> obligationSerializer() {
-        return new Serializer<LicenseObligation>() {
-            @Override
-            public Function<LicenseObligation, List<String>> transformer() {
-                return obligation -> {
-                        final ArrayList<String> out = new ArrayList<>(2);
-
-                        out.add(((Integer) obligation.getObligationId()).toString());
-                        out.add(obligation.getName());
-                        return out;
-                };
-            }
-
-            @Override
-            public List<String> headers() {
-                return ImmutableList.of("ID", "Name");
-            }
-        };
-    }
-
-
-    public static void putToTodos(Map<Integer, LicenseObligation> obligations, Map<Integer, Obligation> obligs, Map<Integer, Set<Integer>> obligationTodo) {
-        Map<Integer, Set<Integer>> obligObligation = invertRelation(obligationTodo);
-
-
-        for (Map.Entry<Integer, Set<Integer>> entry : obligObligation.entrySet()) {
-            Obligation oblig = obligs.get(entry.getKey());
-
-            if (oblig != null) {
-                fillTodo(obligations, entry.getValue(), oblig);
-            }
-
-        }
-    }
-
-    private static void fillTodo(Map<Integer, LicenseObligation> obligations, Set<Integer> values, Obligation oblig) {
-        for (int obligationId : values) {
-            LicenseObligation obligation = obligations.get(obligationId);
-
-            if (obligation != null) {
-                oblig.addToListOfobligation(obligation);
-            }
-        }
-    }
-
     public static List<LicenseType> convertLicenseTypes(List<CSVRecord> records) {
         List<LicenseType> list = new ArrayList<>(records.size());
 
@@ -537,20 +477,6 @@ public class ConvertRecord {
 
          return Boolean.parseBoolean(string);
         }
-    }
-
-    @NotNull
-    public static SetMultimap<Integer, String> getTodoToObligationMap(List<Obligation> obligations) {
-        SetMultimap<Integer, String> obligationTodo = HashMultimap.create();
-
-        for (Obligation oblig : obligations) {
-            if (oblig.isSetListOfobligation()) {
-                for (LicenseObligation obligation : oblig.getListOfobligation()) {
-                    obligationTodo.put(obligation.getObligationId(), oblig.getId());
-                }
-            }
-        }
-        return obligationTodo;
     }
 
     @NotNull

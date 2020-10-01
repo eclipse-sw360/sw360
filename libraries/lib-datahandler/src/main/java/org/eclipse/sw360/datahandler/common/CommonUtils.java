@@ -78,7 +78,7 @@ public class CommonUtils {
     });
 
 
-    public static final String TMP_TODO_ID_PREFIX = "tmp";
+    public static final String TMP_OBLIGATION_ID_PREFIX = "tmp";
 
     private static final Predicate<String> NOT_EMPTY_OR_NULL = new Predicate<String>() {
         @Override
@@ -623,8 +623,8 @@ public class CommonUtils {
                 .max(Comparator.comparing(Attachment::getCheckStatus, CHECK_STATUS_COMPARATOR));
     }
 
-    public static boolean isTemporaryTodo(Obligation oblig) {
-        return oblig.isSetId() && oblig.getId().startsWith(TMP_TODO_ID_PREFIX);
+    public static boolean isTemporaryObligation(Obligation oblig) {
+        return oblig.isSetId() && oblig.getId().startsWith(TMP_OBLIGATION_ID_PREFIX);
     }
 
     public static class AfterFunction<T, V> {

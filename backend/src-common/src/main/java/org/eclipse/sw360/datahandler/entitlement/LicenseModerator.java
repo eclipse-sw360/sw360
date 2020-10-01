@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
 
-import static org.eclipse.sw360.datahandler.common.CommonUtils.isTemporaryTodo;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.isTemporaryObligation;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
 
 /**
@@ -69,7 +69,7 @@ public class LicenseModerator extends Moderator<License._Fields, License> {
                 log.error("Obligation id not set in licenseAdditions.");
                 continue;
             }
-            if (isTemporaryTodo(added)) {
+            if (isTemporaryObligation(added)) {
                 if(!license.isSetObligations()){
                     license.setObligations(new ArrayList<>());
                 }

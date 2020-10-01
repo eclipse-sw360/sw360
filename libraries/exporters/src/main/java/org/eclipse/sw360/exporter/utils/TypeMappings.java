@@ -28,8 +28,6 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.eclipse.sw360.exporter.utils.ConvertRecord.putToTodos;
-
 /**
  * @author johannes.najjar@tngtech.com
  * @author birgit.heydenreich@tngtech.com
@@ -77,16 +75,6 @@ public class TypeMappings {
     }
 
     @NotNull
-    public static Function<LicenseObligation, Integer> getObligationIdentifier() {
-        return new Function<LicenseObligation, Integer>() {
-            @Override
-            public Integer apply(LicenseObligation input) {
-                return input.getObligationId();
-            }
-        };
-    }
-
-    @NotNull
     public static Function<LicenseType, Integer> getLicenseTypeIdentifier() {
         return new Function<LicenseType, Integer>() {
             @Override
@@ -120,8 +108,6 @@ public class TypeMappings {
     public static <T, U> Function<T, U> getIdentifier(Class<T> clazz, @SuppressWarnings("unused") Class<U> uClass /*used to infer type*/) throws SW360Exception {
         if (clazz.equals(LicenseType.class)) {
             return (Function<T, U>) getLicenseTypeIdentifier();
-        } else if (clazz.equals(LicenseObligation.class)) {
-            return (Function<T, U>) getObligationIdentifier();
         } else if (clazz.equals(RiskCategory.class)) {
             return (Function<T, U>) getRiskCategoryIdentifier();
         }
@@ -133,8 +119,6 @@ public class TypeMappings {
     public static <T> List<T> getAllFromDB(LicenseService.Iface licenseClient, Class<T> clazz) throws TException {
         if (clazz.equals(LicenseType.class)) {
             return (List<T>) licenseClient.getLicenseTypes();
-        } else if (clazz.equals(LicenseObligation.class)) {
-            return (List<T>) licenseClient.getListOfobligation();
         } else if (clazz.equals(RiskCategory.class)) {
             return (List<T>) licenseClient.getRiskCategories();
         }
@@ -145,8 +129,6 @@ public class TypeMappings {
     public static <T> List<T> simpleConvert(List<CSVRecord> records, Class<T> clazz) throws SW360Exception {
         if (clazz.equals(LicenseType.class)) {
             return (List<T>) ConvertRecord.convertLicenseTypes(records);
-        } else if (clazz.equals(LicenseObligation.class)) {
-            return (List<T>) ConvertRecord.convertObligation(records);
         } else if (clazz.equals(RiskCategory.class)) {
             return (List<T>) ConvertRecord.convertRiskCategories(records);
         }
@@ -158,8 +140,6 @@ public class TypeMappings {
         if (candidates != null && !candidates.isEmpty()) {
             if (clazz.equals(LicenseType.class)) {
                 return (List<T>) licenseClient.addLicenseTypes((List<LicenseType>) candidates, user);
-            } else if (clazz.equals(LicenseObligation.class)) {
-                return (List<T>) licenseClient.addListOfobligation((List<LicenseObligation>) candidates, user);
             } else if (clazz.equals(RiskCategory.class)) {
                 return (List<T>) licenseClient.addRiskCategories((List<RiskCategory>) candidates, user);
             }
@@ -201,17 +181,18 @@ public class TypeMappings {
     }
 
     @NotNull
-    public static Map<Integer, Obligation> getTodoMapAndWriteMissingToDatabase(LicenseService.Iface licenseClient, Map<Integer, LicenseObligation> obligationMap, Map<Integer, Set<Integer>> obligationTodoMapping, InputStream in, User user) throws TException {
+    public static Map<Integer, Obligation> getTodoMapAndWriteMissingToDatabase(LicenseService.Iface licenseClient, InputStream in, User user) throws TException {
         List<CSVRecord> obligRecords = ImportCSV.readAsCSVRecords(in);
         final List<Obligation> obligations = CommonUtils.nullToEmptyList(licenseClient.getObligations());
         Map<Integer, Obligation> obligMap = Maps.newHashMap(Maps.uniqueIndex(obligations, getTodoIdentifier()));
         final List<Obligation> obligationsToAdd = ConvertRecord.convertTodos(obligRecords);
         final ImmutableList<Obligation> filteredTodos = getElementsWithIdentifiersNotInMap(getTodoIdentifier(), obligMap, obligationsToAdd);
-        final ImmutableMap<Integer, Obligation> filteredMap = Maps.uniqueIndex(filteredTodos, getTodoIdentifier());
-        putToTodos(obligationMap, filteredMap, obligationTodoMapping);
         //insertCustomProperties
 
         if (filteredTodos.size() > 0) {
+            filteredTodos.stream().forEach(obl -> {
+                obl.setObligationLevel(ObligationLevel.LICENSE_OBLIGATION);
+            });
             final List<Obligation> addedTodos = licenseClient.addListOfObligations(filteredTodos, user);
             if (addedTodos != null) {
                 final ImmutableMap<Integer, Obligation> addedTodoMap = Maps.uniqueIndex(addedTodos, getTodoIdentifier());
