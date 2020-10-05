@@ -831,14 +831,13 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         XWPFTable table = document.getTables().get(COMMON_RULES_TABLE_INDEX);
         final int[] currentRow = new int[]{0};
 
-        SW360Utils.getProjectObligations(project).entrySet().stream()
-                .forEachOrdered(oblig -> {
-                    currentRow[0] = currentRow[0] + 1;
-                    XWPFTableRow row = table.insertNewTableRow(currentRow[0]);
-                    row.addNewTableCell().setText(oblig.getKey().getText());
-                    row.addNewTableCell().setText(oblig.getValue().fulfilled ? "yes" : "no");
-                    row.addNewTableCell().setText(oblig.getValue().getComments());
-                });
+        SW360Utils.getOrganisationObligations(project).entrySet().stream().forEachOrdered(oblig -> {
+            currentRow[0] = currentRow[0] + 1;
+            XWPFTableRow row = table.insertNewTableRow(currentRow[0]);
+            row.addNewTableCell().setText(oblig.getKey().getText());
+            row.addNewTableCell().setText(oblig.getValue().fulfilled ? "yes" : "no");
+            row.addNewTableCell().setText(oblig.getValue().getComments());
+        });
         setTableBorders(table);
     }
 
@@ -846,7 +845,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         XWPFTable table = document.getTables().get(PROJECT_OBLIGATIONS_TABLE_INDEX);
         final int[] currentRow = new int[] { 0 };
 
-        SW360Utils.getOrganisationObligations(project).entrySet().stream().forEachOrdered(oblig -> {
+        SW360Utils.getProjectObligations(project).entrySet().stream().forEachOrdered(oblig -> {
             currentRow[0] = currentRow[0] + 1;
             XWPFTableRow row = table.insertNewTableRow(currentRow[0]);
             row.addNewTableCell().setText(oblig.getKey().getText());

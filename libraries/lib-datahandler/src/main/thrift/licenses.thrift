@@ -24,7 +24,7 @@ typedef sw360.Ternary Ternary
 
 enum ObligationLevel {
     ORGANISATION_OBLIGATION = 0,
-    PRODUCT_OBLIGATION = 1,
+    PROJECT_OBLIGATION = 1,
     COMPONENT_OBLIGATION = 2,
     LICENSE_OBLIGATION = 3,
 }

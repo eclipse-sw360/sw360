@@ -63,6 +63,7 @@ To migrate it is recommended to do this in the following order:
 - `028_update_type_from_licenseObligation_to_obligation.py`
 - `029_remove_old_licenseobligation_view.py`
 - `030_obligation_field_update.py`
+- `031_update_obligationLevel_from_productObligation_to_projectObligation.py`
 
 ## Optional usage
 - `009_overwrite_release_name_with_component_name.py`

@@ -58,7 +58,7 @@ public class ThriftEnumUtils {
     private static final ImmutableMap<ObligationLevel, String> MAP_OBLIGATION_LEVEL_STRING = ImmutableMap.<ObligationLevel, String>builder()
             .put(ObligationLevel.ORGANISATION_OBLIGATION, "Organisation Obligation")
             .put(ObligationLevel.COMPONENT_OBLIGATION, "Component Obligation")
-            .put(ObligationLevel.PRODUCT_OBLIGATION, "Product Obligation")
+            .put(ObligationLevel.PROJECT_OBLIGATION, "Project Obligation")
             .put(ObligationLevel.LICENSE_OBLIGATION, "License Obligation")
             .build();
 
