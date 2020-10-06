@@ -176,12 +176,12 @@ struct ProjectTodo {
     5: optional string comments;
 }
 
-struct ProjectObligation {
+struct ObligationList {
     1: optional string id,
     2: optional string revision,
-    3: optional string type = "projectObligation",
+    3: optional string type = "obligationList",
     4: required string projectId,
-    5: optional map<string, ObligationStatusInfo> linkedObligations
+    5: optional map<string, ObligationStatusInfo> linkedObligationStatus
 }
 
 struct ObligationStatusInfo {
@@ -404,17 +404,17 @@ service ProjectService {
     /**
      * get linked obligation of a project
      */
-    ProjectObligation getLinkedObligations(1: string obligationId, 2: User user);
+    ObligationList getLinkedObligations(1: string obligationId, 2: User user);
 
     /**
      * add linked obligations to a project
      */
-    RequestStatus addLinkedObligations(1: ProjectObligation obligation, 2: User user);
+    RequestStatus addLinkedObligations(1: ObligationList obligation, 2: User user);
 
     /**
      * update linked obligations of a project
      */
-    RequestStatus updateLinkedObligations(1: ProjectObligation obligation, 2: User user);
+    RequestStatus updateLinkedObligations(1: ObligationList obligation, 2: User user);
 
     /**
      * Deletes an UsedReleaseRelations object. The given usage object must exist in the database.

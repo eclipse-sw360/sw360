@@ -17,7 +17,7 @@ import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.*;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectObligation;
+import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 
@@ -258,10 +258,10 @@ public class ThriftValidate {
         project.unsetReleaseClearingStateSummary();
     }
 
-    public static void prepareProjectObligation(ProjectObligation obligation) throws SW360Exception {
+    public static void prepareProjectObligation(ObligationList obligation) throws SW360Exception {
         assertId(obligation.getProjectId());
-        assertNotNull(obligation.getLinkedObligations());
-        assertNotEmpty(obligation.getLinkedObligations().keySet(), "linked obligtions cannot be empty");
+        assertNotNull(obligation.getLinkedObligationStatus());
+        assertNotEmpty(obligation.getLinkedObligationStatus().keySet(), "linked obligtions cannot be empty");
         obligation.setType(TYPE_PROJECT_OBLIGATION);
     }
 }

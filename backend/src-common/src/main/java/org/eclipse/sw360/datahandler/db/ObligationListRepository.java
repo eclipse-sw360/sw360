@@ -13,7 +13,7 @@ import java.util.Optional;
 
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectObligation;
+import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.ektorp.support.View;
 
 /**
@@ -21,24 +21,24 @@ import org.ektorp.support.View;
  *
  * @author abdul.mannankapti@siemens.com
  */
-@View(name = "all", map = "function(doc) { if (doc.type == 'projectObligation') emit(null, doc._id) }")
-public class ProjectObligationRepository extends DatabaseRepository<ProjectObligation> {
+@View(name = "all", map = "function(doc) { if (doc.type == 'obligationList') emit(null, doc._id) }")
+public class ObligationListRepository extends DatabaseRepository<ObligationList> {
 
     private static final String BY_PROJECT_ID =
             "function(doc) {" +
-                    "  if (doc.type == 'projectObligation') {" +
+                    "  if (doc.type == 'obligationList') {" +
                     "    emit(doc.projectId, doc);" +
                     "  }" +
                     "}";
 
 
-    public ProjectObligationRepository(DatabaseConnector db) {
-        super(ProjectObligation.class, db);
+    public ObligationListRepository(DatabaseConnector db) {
+        super(ObligationList.class, db);
         initStandardDesignDocument();
     }
 
     @View(name = "byProjectId", map = BY_PROJECT_ID)
-    public Optional<ProjectObligation> getObligationByProjectid(String projectId) {
+    public Optional<ObligationList> getObligationByProjectid(String projectId) {
         return queryView("byProjectId", projectId).stream().findFirst();
     }
 }

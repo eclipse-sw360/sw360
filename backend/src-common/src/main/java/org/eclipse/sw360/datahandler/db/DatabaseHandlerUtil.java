@@ -62,7 +62,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Repository;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectObligation;
+import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectTodo;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -312,8 +312,8 @@ public class DatabaseHandlerUtil {
             changeLog.setDocumentId(newProjVer.getId());
             changeLog.setDocumentType(newProjVer.getType());
             changeLog.setDbName(DatabaseSettings.COUCH_DB_DATABASE);
-        } else if (newDocVersion instanceof ProjectObligation) {
-            ProjectObligation newProjVer = (ProjectObligation) newDocVersion;
+        } else if (newDocVersion instanceof ObligationList) {
+            ObligationList newProjVer = (ObligationList) newDocVersion;
             changeLog.setDocumentId(newProjVer.getId());
             changeLog.setDocumentType(newProjVer.getType());
             changeLog.setDbName(DatabaseSettings.COUCH_DB_DATABASE);
@@ -448,8 +448,8 @@ public class DatabaseHandlerUtil {
         TFieldIdEnum[] fields = null;
         if (neworDeletedVersion instanceof Project) {
             fields = Project._Fields.values();
-        } else if (neworDeletedVersion instanceof ProjectObligation) {
-            fields = ProjectObligation._Fields.values();
+        } else if (neworDeletedVersion instanceof ObligationList) {
+            fields = ObligationList._Fields.values();
         } else if (neworDeletedVersion instanceof AttachmentUsage) {
             fields = AttachmentUsage._Fields.values();
         } else if (neworDeletedVersion instanceof Component) {
@@ -474,8 +474,8 @@ public class DatabaseHandlerUtil {
         TFieldIdEnum[] fields = null;
         if (newVersion instanceof Project) {
             fields = Project._Fields.values();
-        } else if (newVersion instanceof ProjectObligation) {
-            fields = ProjectObligation._Fields.values();
+        } else if (newVersion instanceof ObligationList) {
+            fields = ObligationList._Fields.values();
         } else if (newVersion instanceof Component) {
             fields = Component._Fields.values();
         } else if (newVersion instanceof Release) {
