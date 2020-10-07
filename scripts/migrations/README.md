@@ -67,6 +67,8 @@ To migrate it is recommended to do this in the following order:
 - `032_rename_linkedObligation_to_linkedObligationStatus_in_ProjectObligation.py`
 - `033_update_type_from_projectObligation_to_obligationList.py`
 - `034_remove_old_projectObligation_view.py`
+- `035_risk_field_updates.py`
+- `036_drop_old_views_and_license_field_update.py`
 
 ## Optional usage
 - `009_overwrite_release_name_with_component_name.py`

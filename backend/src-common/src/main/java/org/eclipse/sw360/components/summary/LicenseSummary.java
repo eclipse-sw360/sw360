@@ -30,7 +30,6 @@ public class LicenseSummary extends DocumentSummary<License> {
             case EXPORT_SUMMARY:
                 copyField(document, copy, _Fields.GPLV2_COMPAT);
                 copyField(document, copy, _Fields.REVIEWDATE);
-                copyField(document, copy, _Fields.RISKS);
             case SUMMARY:
                 copyField(document, copy, _Fields.LICENSE_TYPE);
             default:

@@ -62,8 +62,6 @@ public class LicenseDatabaseHandler {
      */
     private final LicenseRepository licenseRepository;
     private final TodoRepository obligRepository;
-    private final RiskRepository riskRepository;
-    private final RiskCategoryRepository riskCategoryRepository;
     private final LicenseTypeRepository licenseTypeRepository;
     private final LicenseModerator moderator;
     private final CustomPropertiesRepository customPropertiesRepository;
@@ -78,8 +76,6 @@ public class LicenseDatabaseHandler {
         // Create the repository
         licenseRepository = new LicenseRepository(db);
         obligRepository = new TodoRepository(db);
-        riskRepository = new RiskRepository(db);
-        riskCategoryRepository = new RiskCategoryRepository(db);
         licenseTypeRepository = new LicenseTypeRepository(db);
         customPropertiesRepository = new CustomPropertiesRepository(db);
 
@@ -87,8 +83,6 @@ public class LicenseDatabaseHandler {
                 licenseRepository,
                 licenseTypeRepository,
                 obligRepository,
-                riskRepository,
-                riskCategoryRepository,
                 customPropertiesRepository
         };
 
@@ -185,10 +179,6 @@ public class LicenseDatabaseHandler {
         if (license.isSetLicenseTypeDatabaseId()) {
             final LicenseType licenseType = licenseTypeRepository.get(license.getLicenseTypeDatabaseId());
             license.setLicenseType(licenseType);
-        }
-        if(license.isSetRiskDatabaseIds()) {
-            license.setRisks(getRisksByIds(license.riskDatabaseIds));
-            license.unsetRiskDatabaseIds();
         }
 
         license.setShortname(license.getId());
@@ -297,8 +287,7 @@ public class LicenseDatabaseHandler {
         final List<License> licenses = licenseRepository.get(ids);
         final List<Obligation> obligationsFromLicenses = getTodosFromLicenses(licenses);
         final List<LicenseType> licenseTypes = getLicenseTypesFromLicenses(licenses);
-        final List<Risk> risks = getRisksFromLicenses(licenses);
-        filterTodoWhiteListAndFillTodosRisksAndLicenseTypeInLicense(organisation, licenses, obligationsFromLicenses, risks, licenseTypes);
+        filterTodoWhiteListAndFillTodosRisksAndLicenseTypeInLicense(organisation, licenses, obligationsFromLicenses, licenseTypes);
         return licenses;
     }
 
@@ -307,14 +296,13 @@ public class LicenseDatabaseHandler {
         final List<License> licenses = licenseRepository.getAll();
         final List<Obligation> obligations = obligRepository.getAll();
         final List<LicenseType> licenseTypes = licenseTypeRepository.getAll();
-        final List<Risk> risks = riskRepository.getAll();
-        return filterTodoWhiteListAndFillTodosRisksAndLicenseTypeInLicense(organisation, licenses, obligations, risks, licenseTypes);
+        return filterTodoWhiteListAndFillTodosRisksAndLicenseTypeInLicense(organisation, licenses, obligations, licenseTypes);
     }
 
     @NotNull
-    private List<License> filterTodoWhiteListAndFillTodosRisksAndLicenseTypeInLicense(String organisation, List<License> licenses, List<Obligation> obligations, List<Risk> risks, List<LicenseType> licenseTypes) {
+    private List<License> filterTodoWhiteListAndFillTodosRisksAndLicenseTypeInLicense(String organisation, List<License> licenses, List<Obligation> obligations, List<LicenseType> licenseTypes) {
         filterTodoWhiteList(organisation, obligations);
-        fillTodosRisksAndLicenseTypes(licenses, obligations, risks, licenseTypes);
+        fillTodosRisksAndLicenseTypes(licenses, obligations, licenseTypes);
         return licenses;
     }
 
@@ -333,15 +321,6 @@ public class LicenseDatabaseHandler {
         for (License license : licenses) {
             license.setObligations(getEntriesFromIds(obligationsById, CommonUtils.nullToEmptySet(license.getObligationDatabaseIds())));
             license.unsetObligationDatabaseIds();
-        }
-    }
-
-    private void putRisksInLicenses(List<License> licenses, List<Risk> risks) {
-        final Map<String, Risk> risksById = ThriftUtils.getIdMap(risks);
-
-        for (License license : licenses) {
-            license.setRisks(getEntriesFromIds(risksById, CommonUtils.nullToEmptySet(license.getRiskDatabaseIds())));
-            license.unsetRiskDatabaseIds();
         }
     }
 
@@ -460,8 +439,7 @@ public class LicenseDatabaseHandler {
         final List<License> licenses = CommonUtils.nullToEmptyList(licenseRepository.searchByShortName(identifiers));
         List<Obligation> obligations = getTodosFromLicenses(licenses);
         final List<LicenseType> licenseTypes = getLicenseTypesFromLicenses(licenses);
-        final List<Risk> risks = getRisksFromLicenses(licenses);
-        return filterTodoWhiteListAndFillTodosRisksAndLicenseTypeInLicense(organisation, licenses, obligations, risks, licenseTypes);
+        return filterTodoWhiteListAndFillTodosRisksAndLicenseTypeInLicense(organisation, licenses, obligations, licenseTypes);
     }
 
     private List<Obligation> getTodosFromLicenses(List<License> licenses) {
@@ -479,21 +457,6 @@ public class LicenseDatabaseHandler {
         return obligations;
     }
 
-    private List<Risk> getRisksFromLicenses(List<License> licenses) {
-        List<Risk> risks;
-        final Set<String> riskIds = new HashSet<>();
-        for (License license : licenses) {
-            riskIds.addAll(CommonUtils.nullToEmptySet(license.getRiskDatabaseIds()));
-        }
-
-        if (riskIds.isEmpty()) {
-            risks = Collections.emptyList();
-        } else {
-            risks = CommonUtils.nullToEmptyList(getRisksByIds(riskIds));
-        }
-        return risks;
-    }
-
     private List<LicenseType> getLicenseTypesFromLicenses(List<License> licenses) {
         List<LicenseType> licenseTypes;
         final Set<String> licenseTypeIds = new HashSet<>();
@@ -509,34 +472,6 @@ public class LicenseDatabaseHandler {
             licenseTypes = CommonUtils.nullToEmptyList(getLicenseTypesByIds(licenseTypeIds));
         }
         return licenseTypes;
-    }
-
-    public List<RiskCategory> addRiskCategories(List<RiskCategory> riskCategories, User user) throws SW360Exception {
-        if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)){
-            return null;
-        }
-        for (RiskCategory riskCategory : riskCategories) {
-            prepareRiskCategory(riskCategory);
-        }
-
-        final List<DocumentOperationResult> documentOperationResults = riskCategoryRepository.executeBulk(riskCategories);
-        if (documentOperationResults.isEmpty()) {
-            return riskCategories;
-        } else return null;
-    }
-
-    public List<Risk> addRisks(List<Risk> risks, User user) throws SW360Exception {
-        if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)){
-            return null;
-        }
-        for (Risk risk : risks) {
-            prepareRisk(risk);
-        }
-
-        final List<DocumentOperationResult> documentOperationResults = riskRepository.executeBulk(risks);
-        if (documentOperationResults.isEmpty()) {
-            return risks;
-        } else return null;
     }
 
     public List<LicenseType> addLicenseTypes(List<LicenseType> licenseTypes, User user) {
@@ -604,14 +539,12 @@ public class LicenseDatabaseHandler {
         }
         final List<Obligation> obligations = getTodosFromLicenses(licenses);
         final List<LicenseType> licenseTypes = getLicenseTypesFromLicenses(licenses);
-        final List<Risk> risks = getRisksFromLicenses(licenses);
-        fillTodosRisksAndLicenseTypes(licenses, obligations, risks, licenseTypes);
+        fillTodosRisksAndLicenseTypes(licenses, obligations, licenseTypes);
         return licenses;
     }
 
-    private void fillTodosRisksAndLicenseTypes(List<License> licenses, List<Obligation> obligations, List<Risk> risks, List<LicenseType> licenseTypes) {
+    private void fillTodosRisksAndLicenseTypes(List<License> licenses, List<Obligation> obligations, List<LicenseType> licenseTypes) {
         putTodosInLicenses(licenses, obligations);
-        putRisksInLicenses(licenses, risks);
         putLicenseTypesInLicenses(licenses, licenseTypes);
     }
 
@@ -619,45 +552,10 @@ public class LicenseDatabaseHandler {
         return licenseTypeRepository.getAll();
     }
 
-    public List<Risk> getRisks() {
-        final List<Risk> risks = riskRepository.getAll();
-        fillRisks(risks);
-        return risks;
-    }
-
-    public List<RiskCategory> getRiskCategories() {
-        return riskCategoryRepository.getAll();
-    }
-
 
     public List<Obligation> getObligations() {
         final List<Obligation> obligations = obligRepository.getAll();
         return obligations;
-    }
-
-    public List<Risk> getRisksByIds(Collection<String> ids) {
-        final List<Risk> risks = riskRepository.get(ids);
-        fillRisks(risks);
-        return risks;
-    }
-
-    private void fillRisks(List<Risk> risks) {
-        final List<RiskCategory> riskCategories = riskCategoryRepository.get(risks.stream()
-                .map(Risk::getRiskCategoryDatabaseId)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList()));
-
-        final Map<String, RiskCategory> idMap = ThriftUtils.getIdMap(riskCategories);
-        for (Risk risk : risks) {
-            if (risk.isSetRiskCategoryDatabaseId()) {
-                risk.setCategory(idMap.get(risk.getRiskCategoryDatabaseId()));
-                risk.unsetRiskCategoryDatabaseId();
-            }
-        }
-    }
-
-    public List<RiskCategory> getRiskCategoriesByIds(Collection<String> ids) {
-        return riskCategoryRepository.get(ids);
     }
 
     public List<LicenseType> getLicenseTypesByIds(Collection<String> ids) {
@@ -676,24 +574,6 @@ public class LicenseDatabaseHandler {
             obl.setDistributionString(obl.isDistribution() ? "True" : "False");
         });
         return obligations;
-    }
-
-    public Risk getRiskById(String id) {
-        final Risk risk = riskRepository.get(id);
-        fillRisk(risk);
-        return risk;
-    }
-
-    private void fillRisk(Risk risk) {
-        if (risk.isSetRiskCategoryDatabaseId()) {
-            final RiskCategory riskCategory = riskCategoryRepository.get(risk.getRiskCategoryDatabaseId());
-            risk.setCategory(riskCategory);
-            risk.unsetRiskCategoryDatabaseId();
-        }
-    }
-
-    public RiskCategory getRiskCategoryById(String id) {
-        return riskCategoryRepository.get(id);
     }
 
     public LicenseType getLicenseTypeById(String id) {

@@ -56,10 +56,6 @@ public class LicsExporter {
     public Map<String, InputStream> getFilenameToCSVStreams() throws TException, IOException {
         Map<String, InputStream> fileNameToStreams = new HashMap<>();
 
-        fileNameToStreams.put(LicsArchive.RISK_CATEGORY_FILE, getCsvStream(serialize(licenseClient.getRiskCategories(), riskCategorySerializer())));
-
-        fileNameToStreams.put(LicsArchive.RISK_FILE, getCsvStream(serialize(licenseClient.getRisks(), riskSerializer())));
-
         final List<Obligation> obligations = licenseClient.getObligations();
         List<ConvertRecord.PropertyWithValueAndId> customProperties = new ArrayList<>();
         SetMultimap<String, Integer> obligCustomPropertyMap = HashMultimap.create();
@@ -72,7 +68,6 @@ public class LicsExporter {
 
         final List<License> licenses = licenseClient.getLicenses();
         fileNameToStreams.put(LicsArchive.LICENSE_TODO_FILE, getCsvStream(serialize(getLicenseToTodoMap(licenses), ImmutableList.of("Identifier", "ID"))));
-        fileNameToStreams.put(LicsArchive.LICENSE_RISK_FILE, getCsvStream(serialize(getLicenseToRiskMap(licenses), ImmutableList.of("Identifier", "ID"))));
         fileNameToStreams.put(LicsArchive.LICENSE_FILE, getCsvStream(serialize(licenses, licenseSerializer())));
         return fileNameToStreams;
     }

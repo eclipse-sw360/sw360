@@ -84,33 +84,11 @@ public class TypeMappings {
         };
     }
 
-    @NotNull
-    public static Function<RiskCategory, Integer> getRiskCategoryIdentifier() {
-        return new Function<RiskCategory, Integer>() {
-            @Override
-            public Integer apply(RiskCategory input) {
-                return input.getRiskCategoryId();
-            }
-        };
-    }
-
-    @NotNull
-    public static Function<Risk, Integer> getRiskIdentifier() {
-        return new Function<Risk, Integer>() {
-            @Override
-            public Integer apply(Risk input) {
-                return input.getRiskId();
-            }
-        };
-    }
-
     @SuppressWarnings("unchecked")
     public static <T, U> Function<T, U> getIdentifier(Class<T> clazz, @SuppressWarnings("unused") Class<U> uClass /*used to infer type*/) throws SW360Exception {
         if (clazz.equals(LicenseType.class)) {
             return (Function<T, U>) getLicenseTypeIdentifier();
-        } else if (clazz.equals(RiskCategory.class)) {
-            return (Function<T, U>) getRiskCategoryIdentifier();
-        }
+        } 
 
         throw new SW360Exception("Unknown Type requested");
     }
@@ -119,8 +97,6 @@ public class TypeMappings {
     public static <T> List<T> getAllFromDB(LicenseService.Iface licenseClient, Class<T> clazz) throws TException {
         if (clazz.equals(LicenseType.class)) {
             return (List<T>) licenseClient.getLicenseTypes();
-        } else if (clazz.equals(RiskCategory.class)) {
-            return (List<T>) licenseClient.getRiskCategories();
         }
         throw new SW360Exception("Unknown Type requested");
     }
@@ -129,8 +105,6 @@ public class TypeMappings {
     public static <T> List<T> simpleConvert(List<CSVRecord> records, Class<T> clazz) throws SW360Exception {
         if (clazz.equals(LicenseType.class)) {
             return (List<T>) ConvertRecord.convertLicenseTypes(records);
-        } else if (clazz.equals(RiskCategory.class)) {
-            return (List<T>) ConvertRecord.convertRiskCategories(records);
         }
         throw new SW360Exception("Unknown Type requested");
     }
@@ -140,8 +114,6 @@ public class TypeMappings {
         if (candidates != null && !candidates.isEmpty()) {
             if (clazz.equals(LicenseType.class)) {
                 return (List<T>) licenseClient.addLicenseTypes((List<LicenseType>) candidates, user);
-            } else if (clazz.equals(RiskCategory.class)) {
-                return (List<T>) licenseClient.addRiskCategories((List<RiskCategory>) candidates, user);
             }
         }
         throw new SW360Exception("Unknown Type requested");
@@ -165,22 +137,6 @@ public class TypeMappings {
     }
 
     @NotNull
-    public static Map<Integer, Risk> getIntegerRiskMap(LicenseService.Iface licenseClient, Map<Integer, RiskCategory> riskCategoryMap, InputStream in, User user) throws TException {
-        List<CSVRecord> riskRecords = ImportCSV.readAsCSVRecords(in);
-        final List<Risk> risksToAdd = ConvertRecord.convertRisks(riskRecords, riskCategoryMap);
-        final List<Risk> risks = CommonUtils.nullToEmptyList(licenseClient.getRisks());
-        Map<Integer, Risk> riskMap = Maps.newHashMap(Maps.uniqueIndex(risks, getRiskIdentifier()));
-        final ImmutableList<Risk> filteredList = getElementsWithIdentifiersNotInMap(getRiskIdentifier(), riskMap, risksToAdd);
-        List<Risk> addedRisks = null;
-        if (filteredList.size() > 0) {
-            addedRisks = licenseClient.addRisks(filteredList, user);
-        }
-        if (addedRisks != null)
-            riskMap.putAll(Maps.uniqueIndex(addedRisks, getRiskIdentifier()));
-        return riskMap;
-    }
-
-    @NotNull
     public static Map<Integer, Obligation> getTodoMapAndWriteMissingToDatabase(LicenseService.Iface licenseClient, InputStream in, User user) throws TException {
         List<CSVRecord> obligRecords = ImportCSV.readAsCSVRecords(in);
         final List<Obligation> obligations = CommonUtils.nullToEmptyList(licenseClient.getObligations());
@@ -190,9 +146,6 @@ public class TypeMappings {
         //insertCustomProperties
 
         if (filteredTodos.size() > 0) {
-            filteredTodos.stream().forEach(obl -> {
-                obl.setObligationLevel(ObligationLevel.LICENSE_OBLIGATION);
-            });
             final List<Obligation> addedTodos = licenseClient.addListOfObligations(filteredTodos, user);
             if (addedTodos != null) {
                 final ImmutableMap<Integer, Obligation> addedTodoMap = Maps.uniqueIndex(addedTodos, getTodoIdentifier());

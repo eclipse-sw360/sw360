@@ -176,8 +176,6 @@ public class LicenseHandlerTest {
         license1.setId("Apache-1.1");
         license1.setFullname("The Apache Software License, Version 1.1");
         license1.setLicenseType(new LicenseType().setLicenseTypeId(3).setType("Red - copyleft effect"));
-        license1.addToRisks(new Risk().setRiskId(123123).setText("If Siemens uses this contractor pattern a long text follows here for reading and display... this might be long.").setCategory(new RiskCategory().setRiskCategoryId(32).setText("Beige")));
-        license1.addToRisks(new Risk().setRiskId(1223).setText("Apache 1.1 is noy so risky").setCategory(new RiskCategory().setRiskCategoryId(3123).setText("Green")));
         license1.setReviewdate("10.10.2010");
         license1.addToObligationDatabaseIds("T1");
         license1.addToObligationDatabaseIds("T2");
