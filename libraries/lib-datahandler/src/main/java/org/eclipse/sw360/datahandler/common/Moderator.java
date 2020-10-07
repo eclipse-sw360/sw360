@@ -10,6 +10,8 @@
 package org.eclipse.sw360.datahandler.common;
 
 import com.google.common.collect.Maps;
+
+import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
@@ -167,11 +169,11 @@ public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
     protected T updateStringMap(U field, T document, T documentAdditions, T documentDeletions) {
 
         if (documentAdditions.isSet(field)) {
-            for (Map.Entry<String, String> entry : ((Map<String,String>) documentAdditions.getFieldValue(field)).entrySet()) {
+            for (Map.Entry<String, ProjectReleaseRelationship> entry : ((Map<String,ProjectReleaseRelationship>) documentAdditions.getFieldValue(field)).entrySet()) {
                 if(!document.isSet(field)){
                     document.setFieldValue(field,new HashMap<>());
                 }
-                Map<String, String> documentMap = (Map<String, String>) document.getFieldValue(field);
+                Map<String, ProjectReleaseRelationship> documentMap = (Map<String, ProjectReleaseRelationship>) document.getFieldValue(field);
                 if (documentMap.containsKey(entry.getKey())) {
                     documentMap.replace(entry.getKey(), entry.getValue());
                 } else {
@@ -180,11 +182,11 @@ public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
             }
         }
         if (documentDeletions.isSet(field) && document.isSet(field)) {
-            for (Map.Entry<String, String> entry : ((Map<String, String>) documentDeletions.getFieldValue(field)).entrySet()) {
+            for (Map.Entry<String, ProjectReleaseRelationship> entry : ((Map<String, ProjectReleaseRelationship>) documentDeletions.getFieldValue(field)).entrySet()) {
                 if (!documentAdditions.isSet(field) ||
-                        !((Map<String, String>) documentAdditions.getFieldValue(field)).containsKey(entry.getKey())) {
+                        !((Map<String, ProjectReleaseRelationship>) documentAdditions.getFieldValue(field)).containsKey(entry.getKey())) {
                     //if it's not in documentAdditions, entry must be deleted, not updated
-                    ((HashMap<String, String>) document.getFieldValue(field)).remove(entry.getKey());
+                    ((HashMap<String, ProjectReleaseRelationship>) document.getFieldValue(field)).remove(entry.getKey());
                 }
             }
         }
