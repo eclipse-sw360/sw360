@@ -260,12 +260,13 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
                     if (Objects.nonNull(osInfo)) {
                         osInfo.setText(obl.getText());
                         osInfo.setId(obl.getId());
-                        osInfo.setType(obl.getType());
+                        osInfo.setObligationType(ThriftEnumUtils.enumByString(obl.getType(), ObligationType.class));
                         osInfo.addToLicenseIds(licenseName);
                         osInfo.addToReleases(release);
                         obl.setObligationStatusInfo(osInfo);
                     } else {
-                        ObligationStatusInfo osi = new ObligationStatusInfo().setText(obl.getText()).setId(obl.getId()).setType(obl.getType())
+                        ObligationStatusInfo osi = new ObligationStatusInfo().setText(obl.getText()).setId(obl.getId())
+                                .setObligationType(ThriftEnumUtils.enumByString(obl.getType(), ObligationType.class))
                                 .setReleases(Sets.newHashSet(release)).setLicenseIds(Sets.newHashSet(licenseName));
                         filteredObligationStatusMap.put(obl.getTopic(), osi);
                     }

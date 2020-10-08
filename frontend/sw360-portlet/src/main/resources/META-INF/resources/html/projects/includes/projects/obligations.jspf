@@ -86,7 +86,7 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
             "rNames": releaseNames.join(', <br>'),
             "status": "<sw360:DisplayEnum value='${projectObligations.status}'/>",
             /* "action": '${projectObligations.action}', */
-            "type": "<sw360:out value='${projectObligations.type}'/>",
+            "type": "<sw360:DisplayEnum value='${projectObligations.obligationType}'/>",
             "id": "<sw360:out value='${projectObligations.id}'/>",
             "comment": "<sw360:out value='${projectObligations.comment}'/>",
             "text": '<sw360:out value="${projectObligations.text}"/>',

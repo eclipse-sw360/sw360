@@ -871,7 +871,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                     row.addNewTableCell().setText(String.join(", \n", osi.getLicenseIds()));
                     row.addNewTableCell().setText(String.join(", \n", releases));
                     row.addNewTableCell().setText(ThriftEnumUtils.enumToString(osi.getStatus()));
-                    row.addNewTableCell().setText(nullToEmptyString(osi.getType()));
+                    row.addNewTableCell().setText(nullToEmptyString(ThriftEnumUtils.enumToString(osi.getObligationType())));
                     row.addNewTableCell().setText(nullToEmptyString(osi.getComment()));
                     currentRow[0] = currentRow[0] + 1;
                     XWPFTableRow textRow = table.createRow();
