@@ -12,7 +12,6 @@ package org.eclipse.sw360.portal.portlets.projects;
 import com.google.common.collect.*;
 
 import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.common.SW360Utils.TodoInfo;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
@@ -20,7 +19,6 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectTodo;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityCheckStatus;
@@ -113,73 +111,10 @@ public class ProjectPortletUtils {
                 case ADDITIONAL_DATA:
                     project.setAdditionalData(PortletUtils.getAdditionalDataMapFromRequest(request));
                     break;
-                case TODOS:
-                    String userId = UserCacheHolder.getUserFromRequest(request).getId();
-                    updateProjectTodosFromRequest(request, field, userId, project);
-                    break;
                 default:
                     setFieldValue(request, project, field);
             }
         }
-    }
-
-    private static void updateProjectTodosFromRequest(PortletRequest request, Project._Fields field, String userId, Project project) {
-        String ids[] = request.getParameterValues(field.toString());
-        Set<String> idSet = ids != null ? Arrays.stream(ids).collect(Collectors.toSet()) : Collections.emptySet();
-        Set<ProjectTodo> currentTodos = project.getTodosSize() > 0 ? project.getTodos() : Collections.emptySet();
-        String updated = SW360Utils.getCreatedOnTime();
-
-        final PortletRequest finalrequest = request;
-        Map<Obligation, TodoInfo> projectObligation = SW360Utils.getProjectObligations(project);
-        Set<Obligation> todoSets = projectObligation.keySet();
-        Set<String> totalTodoIds = todoSets.stream().map(td -> td.getId()).collect(Collectors.toSet());
-        Set<String> nonFulFulfilledProjectTodoIds = Sets.difference(totalTodoIds, idSet);
-        List<ProjectTodo> listOfNotFulfilledProjectIds = new ArrayList<ProjectTodo>();
-
-        for (String id : nonFulFulfilledProjectTodoIds) {
-            ProjectTodo pt = new ProjectTodo();
-            pt.setTodoId(id);
-            pt.setUserId(userId);
-            pt.setUpdated(updated);
-            pt.setFulfilled(false);
-            pt.setComments(getCommentsByTodoId(finalrequest, id));
-            listOfNotFulfilledProjectIds.add(pt);
-        }
-
-        Set<ProjectTodo> projectTodos = idSet.stream()
-                // assemble set of project todos
-                .map(id -> currentTodos.stream()
-                        .filter(pt -> pt.getTodoId().equals(id))
-                        .findAny()
-                        .orElseGet(() -> new ProjectTodo(id, userId, updated, true))
-                        .setComments(getCommentsByTodoId(request, id)))
-                .collect(Collectors.toSet());
-
-        // update changed to fulfilled
-        projectTodos.stream()
-                .filter(projectTodo -> !projectTodo.fulfilled)
-                .forEach(projectTodo -> {
-                            projectTodo.fulfilled = true;
-                            projectTodo.setUserId(userId);
-                            projectTodo.setUpdated(updated);
-                            projectTodo.setComments(getCommentsByTodoId(request, projectTodo.todoId));
-                        });
-
-        // update changed to not fulfilled
-        Set<ProjectTodo> changedToNotFulfilled = currentTodos.stream()
-                .filter(projectTodo -> idSet.stream().noneMatch(id -> id.equals(projectTodo.todoId)))
-                .map(projectTodo -> {
-                    projectTodo.fulfilled = false;
-                    projectTodo.setUserId(userId);
-                    projectTodo.setUpdated(updated);
-                    projectTodo.setComments(getCommentsByTodoId(request, projectTodo.todoId));
-                    return projectTodo;
-                })
-                .collect(Collectors.toSet());
-
-        projectTodos.addAll(changedToNotFulfilled);
-        projectTodos.addAll(listOfNotFulfilledProjectIds);
-        project.setTodos(projectTodos);
     }
 
     public static String getCommentsByTodoId(PortletRequest request, String id) {

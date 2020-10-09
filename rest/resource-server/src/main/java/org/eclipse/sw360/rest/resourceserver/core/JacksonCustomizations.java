@@ -25,7 +25,6 @@ import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectTodo;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -69,7 +68,6 @@ class JacksonCustomizations {
             setMixInAnnotation(COTSDetails.class, Sw360Module.COTSDetailsMixin.class);
             setMixInAnnotation(ClearingInformation.class, Sw360Module.ClearingInformationMixin.class);
             setMixInAnnotation(Repository.class, Sw360Module.RepositoryMixin.class);
-            setMixInAnnotation(ProjectTodo.class, Sw360Module.ProjectTodoMixin.class);
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -145,8 +143,6 @@ class JacksonCustomizations {
                 "setReleaseIds",
                 "setPermissions",
                 "setClearingState",
-                "setTodos",
-                "todosSize",
                 "securityResponsiblesSize",
                 "securityResponsiblesIterator",
                 "setSecurityResponsibles",
@@ -163,8 +159,7 @@ class JacksonCustomizations {
                 "setAdditionalData",
                 "setLinkedObligationId",
                 "linkedObligationId",
-                "setClearingRequestId",
-                "todosIterator"
+                "setClearingRequestId"
         })
         static abstract class ProjectMixin extends Project {
 
@@ -795,16 +790,6 @@ class JacksonCustomizations {
             "setRepositorytype"
         })
         public static abstract class RepositoryMixin extends Repository {
-        }
-
-        @JsonInclude(JsonInclude.Include.NON_NULL)
-        @JsonIgnoreProperties({
-            "setTodoId",
-            "setUserId",
-            "setUpdated",
-            "setFulfilled"
-        })
-        public static abstract class ProjectTodoMixin extends ProjectTodo {
         }
     }
 }

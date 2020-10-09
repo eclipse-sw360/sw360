@@ -81,48 +81,6 @@ public class SW360Utils {
         // Utility class with only static functions
     }
 
-    public static class TodoInfo {
-        public final boolean fulfilled;
-        public final String timestamp;
-        public final String user;
-        public final String comments;
-
-        public String getComments() {
-            return comments;
-        }
-
-        public TodoInfo(ProjectTodo projectTodo) {
-            final UserService.Iface userClient = new ThriftClients().makeUserClient();
-
-            String userString = "";
-
-            User user;
-            try {
-                if (projectTodo.userId != null) {
-                    user = userClient.getUser(projectTodo.userId);
-                    if (user != null) {
-                        userString = String.format("%s <%s>", user.getFullname(), user.getEmail());
-                    }
-                }
-            } catch (TException te) {
-                log.error("Could not load user from backend.", te);
-            }
-
-            this.user = userString;
-            this.fulfilled = projectTodo.fulfilled;
-            this.timestamp = Strings.nullToEmpty(projectTodo.updated);
-            this.comments = Strings.nullToEmpty(projectTodo.comments);
-        }
-
-        public String getModificationHint() {
-            return String.format("%s %s",this.user, this.timestamp);
-        }
-
-        public boolean isFulfilled() {
-            return fulfilled;
-        }
-    }
-
     static{
         objectMapper = new ObjectMapper();
         SimpleModule customModule = new SimpleModule("SW360 serializers");
@@ -276,75 +234,6 @@ public class SW360Utils {
         }
         String vendorName = Optional.ofNullable(release.getVendor()).map(Vendor::getShortname).orElse(null);
         return getReleaseFullname(vendorName, release.getName(), release.getVersion());
-    }
-
-    public static Map<Obligation, TodoInfo> getProjectObligations(Project project) {
-        final LicenseService.Iface licenseClient = new ThriftClients().makeLicenseClient();
-
-        Set<ProjectTodo> projectTodos = project.getTodosSize() > 0 ? project.getTodos() : Collections.emptySet();
-        try {
-            return licenseClient.getObligations().stream()
-                    .filter(o -> o.isValidForProject())
-                    .filter(o -> Objects.nonNull(o.getObligationLevel()))
-                    .filter(o->o.getObligationLevel().equals(ObligationLevel.PROJECT_OBLIGATION))
-                    .collect(Collectors.toMap(
-                            todo -> todo,
-                            todo -> new TodoInfo(projectTodos.stream()
-                                        .filter(projectTodo -> projectTodo.getTodoId().equals(todo.getId()))
-                                        .findFirst()
-                                        .orElseGet(ProjectTodo::new))
-                            )
-                    );
-        } catch (TException te) {
-            log.error("ERROR getting project obligations", te);
-            return Collections.emptyMap();
-        }
-    }
-
-    public static Map<Obligation, TodoInfo> getComponentObligations(Project project) {
-        final LicenseService.Iface licenseClient = new ThriftClients().makeLicenseClient();
-
-        Set<ProjectTodo> projectTodos = project.getTodosSize() > 0 ? project.getTodos() : Collections.emptySet();
-        try {
-            return licenseClient.getObligations().stream()
-                    .filter(o -> o.isValidForProject())
-                    .filter(o -> Objects.nonNull(o.getObligationLevel()))
-                    .filter(o->o.getObligationLevel().equals(ObligationLevel.COMPONENT_OBLIGATION))
-                    .collect(Collectors.toMap(
-                            todo -> todo,
-                            todo -> new TodoInfo(projectTodos.stream()
-                                        .filter(projectTodo -> projectTodo.getTodoId().equals(todo.getId()))
-                                        .findFirst()
-                                        .orElseGet(ProjectTodo::new))
-                            )
-                    );
-        } catch (TException te) {
-            log.error("ERROR getting component obligations", te);
-            return Collections.emptyMap();
-        }
-    }
-
-    public static Map<Obligation, TodoInfo> getOrganisationObligations(Project project) {
-        final LicenseService.Iface licenseClient = new ThriftClients().makeLicenseClient();
-
-        Set<ProjectTodo> projectTodos = project.getTodosSize() > 0 ? project.getTodos() : Collections.emptySet();
-        try {
-            return licenseClient.getObligations().stream()
-                    .filter(o -> o.isValidForProject())
-                    .filter(o -> Objects.nonNull(o.getObligationLevel()))
-                    .filter(o->o.getObligationLevel().equals(ObligationLevel.ORGANISATION_OBLIGATION))
-                    .collect(Collectors.toMap(
-                            todo -> todo,
-                            todo -> new TodoInfo(projectTodos.stream()
-                                        .filter(projectTodo -> projectTodo.getTodoId().equals(todo.getId()))
-                                        .findFirst()
-                                        .orElseGet(ProjectTodo::new))
-                            )
-                    );
-        } catch (TException te) {
-            log.error("ERROR getting organisation obligations", te);
-            return Collections.emptyMap();
-        }
     }
 
     @NotNull
@@ -698,5 +587,35 @@ public class SW360Utils {
             log.error("Number Format Exception while parsing clearing request Id: "+digitsOnly);
             return 0;
         }
+    }
+
+    public static Map<String, ObligationStatusInfo> getProjectComponentOrganisationObligationToDisplay(
+            Map<String, ObligationStatusInfo> obligationStatusMap, List<Obligation> obligations, ObligationLevel oblLevel) {
+        Map<String, ObligationStatusInfo> obligationAlreadyPresent = obligationStatusMap.entrySet().stream()
+                .filter(Objects::nonNull).filter(e -> Objects.nonNull(e.getValue()))
+                .filter(e -> Objects.nonNull(e.getValue().getObligationLevel()))
+                .filter(e -> e.getValue().getObligationLevel().equals(oblLevel))
+                .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().setText(e.getKey()),
+                        (oldValue, newValue) -> oldValue));
+        obligationAlreadyPresent.entrySet().stream().forEach(e -> obligationStatusMap.remove(e.getKey()));
+
+        Map<String, ObligationStatusInfo> mapOfObligations = obligations.stream().filter(Objects::nonNull)
+                .filter(o -> o.isValidForProject()).filter(o -> Objects.nonNull(o.getObligationLevel()))
+                .filter(o -> o.getObligationLevel().equals(oblLevel))
+                .collect(Collectors.toMap(
+                        o -> CommonUtils.isNotNullEmptyOrWhitespace(o.getTitle()) ? o.getTitle() : o.getText(), o -> {
+                            if (obligationAlreadyPresent.containsKey(o.getText())) {
+                                return obligationAlreadyPresent.remove(o.getText());
+                            } else {
+                                return new ObligationStatusInfo().setComment(o.getComments())
+                                        .setObligationLevel(oblLevel)
+                                        .setObligationType(o.getObligationType())
+                                        .setReleaseIdToAcceptedCLI(new HashMap()).setText(o.getText());
+                            }
+                        }, (oldValue, newValue) -> oldValue));
+
+        obligationAlreadyPresent.entrySet().stream().forEach(e -> mapOfObligations.put(e.getKey(), e.getValue()));
+
+        return mapOfObligations;
     }
 }

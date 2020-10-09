@@ -83,9 +83,6 @@ public class ProjectSummaryTest {
                 case ENABLE_VULNERABILITIES_DISPLAY:
                     project.enableVulnerabilitiesDisplay = true;
                     break;
-                case TODOS:
-                    project.todos = Collections.emptySet();
-                    break;
                 default: //most fields are string
                     project.setFieldValue(renderedField, "asd");
                     break;

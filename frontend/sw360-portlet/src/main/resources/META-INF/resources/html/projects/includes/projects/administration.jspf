@@ -89,63 +89,6 @@
     </tr>
 </table>
 
-<table class="table label-value-table-obligations table-bordered" id="orgobligations">
-    <thead>
-        <tr><th><liferay-ui:message key="organisation.obligation" /></th><th><liferay-ui:message key="fulfilled" /></th><th><liferay-ui:message key="modified" /></th><th>Comments</th></tr>
-    </thead>
-    <tbody>
-        <core_rt:forEach items="${organisationObligations}" var="entry">
-            <tr>
-                <td><sw360:out value="${entry.getKey().getText()}"/></td>
-                <td><input type="checkbox" value="${entry.getKey().getId()}"
-                    disabled="disabled"
-                    <core_rt:if test="${entry.getValue().isFulfilled()}">checked="checked"</core_rt:if>
-                /></td>
-                <td><sw360:out value="${entry.getValue().getModificationHint()}"/></td>
-                <td><sw360:out value="${entry.getValue().getComments()}"/></td>
-            </tr>
-        </core_rt:forEach>
-    </tbody>
-</table>
-
-<table class="table label-value-table-obligations table-bordered" id="prodobligations">
-    <thead>
-        <tr><th><liferay-ui:message key="project.obligation" /></th><th><liferay-ui:message key="fulfilled" /></th><th><liferay-ui:message key="modified" /></th><th>Comments</th></tr>
-    </thead>
-    <tbody>
-        <core_rt:forEach items="${projectObligations}" var="entry">
-            <tr>
-                <td><sw360:out value="${entry.getKey().getText()}"/></td>
-                <td><input type="checkbox" value="${entry.getKey().getId()}"
-                    disabled="disabled"
-                    <core_rt:if test="${entry.getValue().isFulfilled()}">checked="checked"</core_rt:if>
-                /></td>
-                <td><sw360:out value="${entry.getValue().getModificationHint()}"/></td>
-                <td><sw360:out value="${entry.getValue().getComments()}"/></td>
-            </tr>
-        </core_rt:forEach>
-    </tbody>
-</table>
-
-<table class="table label-value-table-obligations table-bordered" id="prodobligations">
-    <thead>
-        <tr><th><liferay-ui:message key="component.obligation" /></th><th><liferay-ui:message key="fulfilled" /></th><th><liferay-ui:message key="modified" /></th><th>Comments</th></tr>
-    </thead>
-    <tbody>
-        <core_rt:forEach items="${componentObligations}" var="entry">
-            <tr>
-                <td><sw360:out value="${entry.getKey().getText()}"/></td>
-                <td><input type="checkbox" value="${entry.getKey().getId()}"
-                    disabled="disabled"
-                    <core_rt:if test="${entry.getValue().isFulfilled()}">checked="checked"</core_rt:if>
-                /></td>
-                <td><sw360:out value="${entry.getValue().getModificationHint()}"/></td>
-                <td><sw360:out value="${entry.getValue().getComments()}"/></td>
-            </tr>
-        </core_rt:forEach>
-    </tbody>
-</table>
-
 <table class="table label-value-table" id="lifecycle">
     <thead>
     <tr>

@@ -218,7 +218,9 @@ public class PortalConstants {
     // ! Specialized keys for changelog
     public static final String LOAD_CHANGE_LOGS = "load_change_logs";
     public static final String VIEW_CHANGE_LOGS = "view_change_logs";
-
+    public static final String LOAD_OBLIGATIONS_VIEW = "load_obligations_view";
+    public static final String LOAD_OBLIGATIONS_EDIT = "load_obligations_edit";
+    
     //! Specialized keys for projects
     public static final String PROJECTS = "projects";
     public static final String PROJECT_PORTLET_NAME = PORTLET_NAME_PREFIX + PROJECTS;
@@ -252,9 +254,9 @@ public class PortalConstants {
     public static final String DEFAULT_OBLIGATIONS_TEXT = "defaultObligationsText";
     public static final String DEFAULT_LICENSE_INFO_HEADER_TEXT_FOR_DISPALY = "--default text--";
     public static final String DEFAULT_OBLIGATIONS_TEXT_FOR_DISPALY = "--default text--";
-    public static final String PROJECT_OBLIGATIONS = "projectObligations";
-    public static final String ORGANISATION_OBLIGATIONS = "organisationObligations";
-    public static final String COMPONENT_OBLIGATIONS = "componentObligations";
+    public static final String PROJECT_OBLIGATIONS = "projectLevelObligations";
+    public static final String ORGANISATION_OBLIGATIONS = "organisationLevelObligations";
+    public static final String COMPONENT_OBLIGATIONS = "componentLevelObligations";
     public static final Set<String> PROJECT_EXTERNAL_ID_KEYS;
     public static final String PROJECT_SELECTED_ATTACHMENT_USAGES = "selectedAttachmentUsages";
     public static final String PROJECT_SELECTED_ATTACHMENT_USAGES_SHADOWS = "selectedAttachmentUsagesShadows";
