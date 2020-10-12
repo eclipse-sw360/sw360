@@ -205,7 +205,7 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
 
     @PreAuthorize("hasAuthority('WRITE')")
     @PatchMapping(value = RELEASES_URL + "/{id}")
-    public ResponseEntity<Resource<Release>> patchComponent(
+    public ResponseEntity<Resource<Release>> patchRelease(
             @PathVariable("id") String id,
             @RequestBody Release updateRelease) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
