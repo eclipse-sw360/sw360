@@ -100,7 +100,7 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
             "type": "<sw360:out value='${projectObligations.type}'/>",
             "id": "<sw360:out value='${projectObligations.id}'/>",
             "comment": "<sw360:out value='${projectObligations.comment}'/>",
-            "text": '<sw360:out value="${projectObligations.text}" maxChar="200" />',
+            "text": '<sw360:out value="${projectObligations.text}"/>',
             "modifiedBy": "${projectObligations.modifiedBy}",
             "modifiedOn": "${projectObligations.modifiedOn}"
         });
@@ -156,8 +156,10 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
         "createdRow": function (row, data, dataIndex, cell) {
             if (data.releaseLinks < 1) {
                 $(row).addClass('orphan');
-                $(row).find(".details-control").removeClass('details-control').html('');
                 $(row).find("input,select").attr('disabled', true);
+                if(!data.text||data.text.length==0){
+                    data.text=data.obligation;
+                }
             }
             if (data.modifiedBy && data.modifiedOn) {
                 $(row).attr('title', '<liferay-ui:message key="modified.by" />: ' + data.modifiedBy + ' | <liferay-ui:message key="modified.on" />: ' + data.modifiedOn);
@@ -250,7 +252,7 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
     // delete action
     function deleteObligation(tr) {
         var $dialog,
-            topic = $(tr).find('td:eq(1)').text()[0].nodeValue;
+            topic = $(tr).find('td:eq(1)').text();
 
         function deleteObligationInternal(callback) {
             jQuery.ajax({
@@ -263,7 +265,7 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
                 success: function (data) {
                     callback();
                     if (data.result == 'SUCCESS') {
-                        table.row('#' + topic).remove().draw(false);
+                        table.row(tr).remove().draw(false);
                         $dialog.close();
                         let count = $('#detailTab #obligtionsCount').text(),
                             fulfilled = count.split(' / ')[0],
@@ -291,16 +293,6 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
             deleteObligationInternal(callback);
         });
     }
-
-    /* Add event listener for opening and closing list of licenses */
-    $('#editObligationsTable tbody').on('click', 'td .TogglerLicenseList', function () {
-        render.toggleExpandableList($(this), '<liferay-ui:message key="license" />');
-    });
-
-    /* Add event listener for opening and closing list of releases */
-    $('#editObligationsTable tbody').on('click', 'td .TogglerReleaseList', function () {
-        render.toggleExpandableList($(this), '<liferay-ui:message key="license" />');
-    });
 
     /* Add event listener for opening and closing individual child row */
     $('#editObligationsTable').on('click', 'td.details-control', function () {
