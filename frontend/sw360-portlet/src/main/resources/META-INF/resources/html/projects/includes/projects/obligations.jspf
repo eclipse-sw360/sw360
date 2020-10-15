@@ -89,7 +89,7 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
             "type": "<sw360:out value='${projectObligations.type}'/>",
             "id": "<sw360:out value='${projectObligations.id}'/>",
             "comment": "<sw360:out value='${projectObligations.comment}'/>",
-            "text": '<sw360:out value="${projectObligations.text}" maxChar="200" />',
+            "text": '<sw360:out value="${projectObligations.text}"/>',
             "modifiedBy": '${projectObligations.modifiedBy}',
             "modifiedOn": '${projectObligations.modifiedOn}'
         });
@@ -117,7 +117,7 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
             { "data": "id", className: 'text-center' },
             { "data": function(row) {
                             return $('<span></span>').html(row.comment).text();
-                      }, render: $.fn.dataTable.render.ellipsis
+                      }, className: 'obl-comment', render: $.fn.dataTable.render.ellipsis
             },
         ],
         "columnDefs": [
@@ -154,7 +154,9 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
         'createdRow': function (row, data, dataIndex, cell) {
             if (data.rIds < 1) {
                 $(row).addClass('orphan');
-                $(row).find(".details-control").removeClass('details-control').html('');
+                if(!data.text||data.text.length==0){
+                    data.text=data.obligation;
+                }
             }
             if (data.modifiedBy && data.modifiedOn) {
                 $(row).attr('title', 'Modified by: ' + data.modifiedBy + ' | Modified on: ' + data.modifiedOn);
@@ -193,16 +195,6 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
             .replace('<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>', page)
             .replace('<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>', id);
     }
-
-    /* Add event listener for opening and closing list of licenses */
-    $('#obligationsDetailTable tbody').on('click', 'td .TogglerLicenseList', function () {
-        render.toggleExpandableList($(this), 'License');
-    });
-
-    /* Add event listener for opening and closing list of releases */
-    $('#obligationsDetailTable tbody').on('click', 'td .TogglerReleaseList', function () {
-        render.toggleExpandableList($(this), 'Release');
-    });
 
     /* Add event listener for opening and closing individual child row */
     $('#obligationsDetailTable tbody').on('click', 'td.details-control', function () {

@@ -60,16 +60,6 @@ define('utils/render', [
         var $container = $('<div/>', {
             style: 'display: flex;'
         }),
-            $toggler = $('<div/>', {
-                'class': 'Toggler' + urlType + 'List',
-                'style': 'margin-right: 0.25rem; cursor: pointer;'
-            }),
-            $togglerOn = $('<div/>', {
-                'class': 'Toggler_on'
-            }).html('&#x25BC'),
-            $togglerOff = $('<div/>', {
-                'class': 'Toggler_off'
-            }).html('&#x25BA'),
             $collapsed = $('<div/>', {
                 'class': urlType + 'ListHidden'
             }).text(cutUrlList(urls, truncate, delimiter)),
@@ -77,10 +67,8 @@ define('utils/render', [
                 'class': urlType + 'ListShown'
             }).html(urls);
 
-        $togglerOn.hide();
         $expanded.hide();
-        $toggler.append($togglerOff, $togglerOn);
-        $container.append($toggler, $collapsed, $expanded);
+        $container.append($collapsed, $expanded);
         return $container[0].outerHTML;
     }
 
@@ -108,6 +96,22 @@ define('utils/render', [
         listShown.toggle();
     }
 
+    function expandExpandableList(thisObj, type) {
+        let listHidden = thisObj.find('.' + type + 'ListHidden'),
+            listShown = thisObj.find('.' + type + 'ListShown');
+
+        listHidden.hide();
+        listShown.show();
+    }
+
+    function collapseExpandableList(thisObj, type) {
+        let listHidden = thisObj.find('.' + type + 'ListHidden'),
+            listShown = thisObj.find('.' + type + 'ListShown');
+
+        listShown.hide();
+        listHidden.show();
+    }
+
     function toggleChildRow(thisObj, table) {
         let tr = thisObj.closest('tr'),
             row = table.row(tr);
@@ -117,14 +121,33 @@ define('utils/render', [
             row.child.hide();
             tr.removeClass('shown');
             row.child().removeClass('active');
+            collapseExpandableList(tr, "License");
+            collapseExpandableList(tr, "Release");
+            collapseComment(tr);
         } else {
             tr.find("td:first").html('&#x25BC');
             row.child(createChildRow(row.data())).show();
             tr.addClass('shown');
             row.child().addClass('active');
+            expandExpandableList(tr, "License");
+            expandExpandableList(tr, "Release");
+            expandComment(tr);
         }
     }
 
+    function expandComment(tr) {
+        let obl_comment = tr.find('td.obl-comment').find('span');
+        if(obl_comment.hasClass('text-truncate')){
+            obl_comment.removeClass('text-truncate').css({"white-space": "pre-wrap","word-break": "break-all"});
+        }
+    }
+
+    function collapseComment(tr) {
+        let obl_comment = tr.find('td.obl-comment').find('span');
+        if(!obl_comment.hasClass('text-truncate')){
+            obl_comment.addClass('text-truncate').removeAttr("style");
+        }
+    }
     /*
      * Define function for child row creation, which will contain additional data for a clicked table row
      */
@@ -139,7 +162,7 @@ define('utils/render', [
     function toggleAllChildRows(thisObj, table) {
         let textShown = thisObj.attr('data-show') === 'true';
 
-        table.rows(':not(.orphan)').every(function (rowIdx, tableLoop, rowLoop) {
+        table.rows().every(function (rowIdx, tableLoop, rowLoop) {
             let tr = $(this.node()),
                 row = table.row(tr);
 
@@ -148,14 +171,20 @@ define('utils/render', [
                     $(tr).find('td:first').html('&#x25BA');
                     row.child.hide();
                     tr.removeClass('shown');
-                    row.child().removeClass('active')
+                    row.child().removeClass('active');
+                    collapseExpandableList(tr, "License");
+                    collapseExpandableList(tr, "Release");
+                    collapseComment(tr);
                 }
             } else {
                 if (!row.child.isShown()) {
                     $(tr).find('td:first').html('&#x25BC');
                     row.child(createChildRow(row.data())).show();
                     tr.addClass('shown');
-                    row.child().addClass('active')
+                    row.child().addClass('active');
+                    expandExpandableList(tr, "License");
+                    expandExpandableList(tr, "Release");
+                    expandComment(tr);
                 }
             }
         });
