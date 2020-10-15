@@ -376,6 +376,9 @@
 .sw360-tt-ClearingRequestState-CLOSED:hover:after {
     content: attr(data-content);
 }
+.sw360-tt-ClearingRequestState-ON_HOLD:hover:after {
+    content: attr(data-content);
+}
 
 /** ProjectRelationShip **/
 .sw360-tt-ProjectRelationship:hover:after {

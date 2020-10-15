@@ -28,6 +28,7 @@
 <jsp:useBean id="writeAccessUser" type="java.lang.Boolean" scope="request"/>
 <jsp:useBean id="isClearingExpert" type="java.lang.Boolean" scope="request"/>
 <jsp:useBean id="printDate" class="java.util.Date"/>
+<jsp:useBean id="approvedReleaseCount" class="java.lang.Integer" scope="request" />
 
 <core_rt:if test="${not empty clearingRequest.id}">
 
@@ -52,13 +53,16 @@
     <portlet:param name="<%=PortalConstants.CLEARING_REQUEST_ID%>" value="${clearingRequestId}"/>
 </portlet:resourceURL>
 
-<core_rt:set var="pageName"  value="<%= request.getParameter("pagename") %>" />
+<core_rt:set var="pageName"  value="<%=request.getParameter("pagename") %>" />
 <core_rt:set var="user" value="<%=themeDisplay.getUser()%>"/>
 <core_rt:set var="isProjectPresent" value='${not empty clearingRequest.projectId}'/>
 <core_rt:set var="isRequestingUser" value='${clearingRequest.requestingUser eq user.emailAddress}'/>
 <core_rt:set var="isClearingTeam" value='${clearingRequest.clearingTeam eq user.emailAddress or (isClearingExpert and writeAccessUser)}'/>
 <core_rt:set var="isClosedOrRejected" value="${clearingRequest.clearingState eq 'CLOSED' or clearingRequest.clearingState eq 'REJECTED' or empty clearingRequest.projectId}"/>
 <core_rt:set var="isEditableForClearingTeam" value="${isClearingTeam and not isClosedOrRejected and pageName eq 'editClearingRequest'}"/>
+<core_rt:set var="isProgressBarVisible" value="${not isClosedOrRejected and clearingRequest.clearingState ne 'NEW' and project.releaseIdToUsageSize gt 0}"/>
+<core_rt:set var="isCRreOpened" value="${not empty clearingRequest.reOpenOn and clearingRequest.reOpenOn.size() gt 0}"/>
+<core_rt:set var="isReOpenButtonVisible" value="${isProjectPresent and isClosedOrRejected and (isClearingTeam or isRequestingUser)}" />
 
 <div class="container" id="clearing-request">
 <div class="row portlet-toolbar">
@@ -69,7 +73,7 @@
                     <button type="button" class="btn btn-primary" onclick="window.location.href='<%=editlURL%>' + window.location.hash"><liferay-ui:message key="edit.request" /></button>
                 </div>
             </core_rt:if>
-            <core_rt:if test="${isProjectPresent and isClosedOrRejected and isClearingTeam}">
+            <core_rt:if test="${isReOpenButtonVisible}">
                 <div class="btn-group" role="group">
                     <button type="button" id="reOpenRequest" class="btn btn-primary"><liferay-ui:message key="reopen.request" /></button>
                 </div>
@@ -189,12 +193,12 @@
                                             </tr>
                                             <tr>
                                                 <td>
-                                                    <label class="form-group <core_rt:if test='${isEditableForClearingTeam}'> mandatory</core_rt:if>"><liferay-ui:message key="agreed.clearing.date" />:</label>
+                                                    <label class="form-group <core_rt:if test='${isEditableForClearingTeam}'> </core_rt:if>"><liferay-ui:message key="agreed.clearing.date" />:</label>
                                                 </td>
                                                 <td>
                                                 <core_rt:choose>
                                                     <core_rt:when test="${isEditableForClearingTeam}">
-                                                        <input class="form-control datepicker" required
+                                                        <input class="form-control datepicker"
                                                             name="<portlet:namespace/><%=ClearingRequest._Fields.AGREED_CLEARING_DATE%>" type="text" pattern="\d{4}-\d{2}-\d{2}"
                                                             value="<sw360:out value="${clearingRequest.agreedClearingDate}"/>" placeholder="<liferay-ui:message key='agreed.clearing.date.yyyy.mm.dd' />" />
                                                     </core_rt:when>
@@ -213,19 +217,37 @@
                                                     </td>
                                                 </tr>
                                             </core_rt:if>
-                                            <tr>
-                                                <td>
-                                                    <label class="form-group">
-                                                        <liferay-ui:message key="last.updated.on" />:
-                                                    </label>
-                                                </td>
-                                                <td>
-                                                    <core_rt:if test="${clearingRequest.isSetModifiedOn() and clearingRequest.modifiedOn > 0}">
+                                            <core_rt:if test="${clearingRequest.isSetModifiedOn() and clearingRequest.modifiedOn > 0}">
+                                                <tr>
+                                                    <td><label class="form-group"><liferay-ui:message key="last.updated.on" />:</label></td>
+                                                    <td class="modifiedOn">
                                                         <jsp:setProperty name="printDate" property="time" value="${clearingRequest.modifiedOn}"/>
                                                         <fmt:formatDate value="${printDate}" pattern="yyyy-MM-dd"/>
-                                                    </core_rt:if>
-                                                </td>
-                                            </tr>
+                                                    </td>
+                                                </tr>
+                                            </core_rt:if>
+                                            <core_rt:if test="${isCRreOpened}">
+                                            <core_rt:set var="listSize" value="${clearingRequest.reOpenOn.size()}"/>
+                                                <tr>
+                                                    <td><label class="form-group"><liferay-ui:message key="reopened.on" />:</label></td>
+                                                    <td>
+                                                        <jsp:setProperty name="printDate" property="time" value="${clearingRequest.reOpenOn[listSize - 1]}"/>
+                                                        <fmt:formatDate value="${printDate}" pattern="yyyy-MM-dd"/> <span title="re-open count"><i>(<sw360:out value="${listSize}" bare="true"/>)</i></span>
+                                                    </td>
+                                                </tr>
+                                            </core_rt:if>
+                                            <core_rt:if test="${isProgressBarVisible}">
+                                                <tr>
+                                                    <td><label class="form-group"> <liferay-ui:message key="clearing.progress" />:</label></td>
+                                                    <td>
+                                                        <div class="progress h-100 rounded-0" style="font-size: 100%;">
+                                                            <div id="crProgress" class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+                                                                <span class="text-dark font-weight-bold"></span>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </core_rt:if>
                                         </tbody>
                                     </table>
                                 </div>
@@ -280,7 +302,7 @@
                                                 <div class="m-auto row">
                                                     <div class="col-0 user-icon user-icon-info text-uppercase"><span>${iconText}</span></div>
                                                     <div class="col-11">
-                                                        <div class="comment-text"><core_rt:if test="${comment.autoGenerated}"> <liferay-ui:message key="this.is.auto.generated.comment" /></core_rt:if><sw360:out value="${comment.text}"/></div>
+                                                        <div class="comment-text"><core_rt:if test="${comment.autoGenerated}"> <liferay-ui:message key="this.is.auto.generated.comment" /></core_rt:if><sw360:out value="${comment.text}" stripNewlines="false"/></div>
                                                             <footer class="blockquote-footer"><liferay-ui:message key="by" /> <cite><b><sw360:DisplayUserEmail email="${by}"/></b></cite> <liferay-ui:message key="on" /> <cite>
                                                                 <b><fmt:formatDate value="${printDate}" pattern="yyyy-MM-dd HH:mm"/></b></cite>
                                                             </footer>
@@ -299,7 +321,42 @@
         </div>
     </div>
 </div>
-<div class="dialogs auto-dialogs"></div>
+<div class="dialogs auto-dialogs">
+<core_rt:if test="${isReOpenButtonVisible}">
+    <div id="reOpenClearingRequestDialog" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-info" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <clay:icon symbol="question-circle" />
+                        <liferay-ui:message key="reopen.clearing.request" />?
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p><liferay-ui:message key="please.enter.preferred.clearing.date.to.reopen.clearing.request" /></p>
+                    <hr/>
+                    <form id="reOpenClearingRequestForm" name="reOpenClearingRequestForm" action="<%=updateClearingRequestURL%>" method="post">
+                        <div class="form-group">
+                            <label for="requestedClearingDate" class="mandatory"><liferay-ui:message key="preferred.clearing.date" />:</label>
+                            <input class="datepicker form-control" id="requestedClearingDate" name="<portlet:namespace/><%=ClearingRequest._Fields.REQUESTED_CLEARING_DATE%>" type="text" pattern="\d{4}-\d{2}-\d{2}" placeholder="<liferay-ui:message key='preferred.clearing.date.yyyy.mm.dd' />" required/>
+                            <div class="invalid-feedback">
+                                <liferay-ui:message key="date.should.be.in.valid.format" /> & <liferay-ui:message key="greater.than.7.days.from.today" />
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="close" /></button>
+                    <button type="button" id="createClearingrequestButton" class="btn btn-primary"><liferay-ui:message key="reopen.clearing.request" /></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</core_rt:if>
+</div>
 
 <script>
 require(['jquery', 'modules/dialog', 'modules/validation', 'modules/button', 'bridges/jquery-ui' ], function($, dialog, validation, button) {
@@ -313,7 +370,14 @@ require(['jquery', 'modules/dialog', 'modules/validation', 'modules/button', 'br
     );
 
     $('.datepicker').datepicker({
-        minDate: new Date(),
+        <core_rt:choose>
+            <core_rt:when test="${isReOpenButtonVisible}">
+                minDate: 7,
+            </core_rt:when>
+            <core_rt:otherwise>
+                minDate: new Date(),
+            </core_rt:otherwise>
+        </core_rt:choose>
         changeMonth: true,
         changeYear: true,
         dateFormat: "yy-mm-dd"
@@ -329,9 +393,54 @@ require(['jquery', 'modules/dialog', 'modules/validation', 'modules/button', 'br
         }
         $("#clearingCommentsTable tbody tr").first().hide();
         $("#clearingCommentsTable tbody tr").not(":first").each(function(index) {
-            let id = $(this).find("td").first().text().toLowerCase();
+            let id = $(this).find("td").first().text().trim().toLowerCase();
             $(this).toggle(id.indexOf(value) !== -1);
         });
+    });
+
+    function unEscapeHtmlTextFormatting(input) {
+        return input.replace(/&lt;(b|i|u|s|ul|li)\s*&gt;/gi, "<$1>").replace(/&lt;\/(b|i|u|s|ul|li)\s*&gt;/gi, "</$1>")
+    }
+
+    $(document).ready(function() {
+        if ("${isProgressBarVisible}" == "true") {
+        let totalRelease = "${project.releaseIdToUsageSize}",
+            approvedReleaseCount =  "${approvedReleaseCount}",
+            $progressBar = $("#crProgress"),
+            $td = $("#crProgress").closest("tr").find("td:eq(1)");
+
+            if(approvedReleaseCount == 0) {
+                let progressText = "(0/"+totalRelease+") "+"<liferay-ui:message key="none.of.the.directly.linked.releases.are.cleared" />";
+                $progressBar.find('span').text("0%").removeClass('text-dark').addClass('text-danger');
+                $progressBar.attr("aria-valuenow", "0").css("width", "0%").removeClass('text-dark').addClass('text-danger');
+                $td.attr("title", progressText);
+            } else if (approvedReleaseCount === totalRelease) {
+                let progressText = "("+totalRelease+"/"+totalRelease+") "+"<liferay-ui:message key="all.of.the.directly.linked.releases.are.cleared" />";
+                $progressBar.find('span').text("100%");
+                $progressBar.attr("aria-valuenow", "100").css("width", "100%").addClass("closed");
+                $td.attr("title", progressText);
+            } else {
+                let progressPercentage = ((approvedReleaseCount / totalRelease) * 100).toFixed(0),
+                    progressText = "("+ approvedReleaseCount +"/"+totalRelease+") "+"<liferay-ui:message key="directly.linked.releases.are.cleared" />";
+                $progressBar.find("span").text(progressPercentage + "%");
+                $progressBar.attr("aria-valuenow", progressPercentage).css("width", progressPercentage + "%").addClass("progress-bar-animated inProgress");
+                $td.attr("title", progressText);
+            }
+        }
+
+        $("#clearingCommentsTable tbody tr").not(":first").each(function(index) {
+            let innerHtml = unEscapeHtmlTextFormatting($(this).find('td .comment-text').html());
+            $(this).find('.comment-text').html(innerHtml);
+        });
+
+        let anchor = $("a.breadcrumb-link"),
+            href = $(anchor).attr("href"),
+            state = "${clearingRequest.clearingState}";
+        if (state === "CLOSED" || state === "REJECTED") {
+            $(anchor).attr("href", href+"?selectedTab=tab-ClosedCR");
+        } else {
+            $(anchor).attr("href", href+"?selectedTab=tab-OpenCR");
+        }
     });
 
     /* Add event listener for saving the comment */
@@ -373,12 +482,13 @@ require(['jquery', 'modules/dialog', 'modules/validation', 'modules/button', 'br
                                     +'<div class="m-auto row">'
                                     +'<div class="col-0 user-icon user-icon-info text-uppercase"><span>'+iconText+'</span></div>'
                                     +'<div class="col-11">'
-                                    +'<div class="comment-text"><footer class="blockquote-footer">'
+                                    +'<div class="comment-text"></div><footer class="blockquote-footer">'
                                     +' <liferay-ui:message key="by" /> <cite><b>' + by + '</b></cite>'
-                                    +' <liferay-ui:message key="on" /> <cite><b>' + on + '</b></cite></footer></div>'
+                                    +' <liferay-ui:message key="on" /> <cite><b>' + on + '</b></cite></footer>'
                                     +'</div></div>'
                                 +'</td></tr>');
                     $('#clearingCommentsTable tbody tr:eq(1) .comment-text').prepend(document.createTextNode(comment));
+                    $("#clearingDecisionData tbody tr td.modifiedOn").html(on);
                 }
                 else {
                     displayErrorMessage('<liferay-ui:message key="failed.to.add.comment" />');
@@ -394,21 +504,31 @@ require(['jquery', 'modules/dialog', 'modules/validation', 'modules/button', 'br
 
     /* Add event listener for re opening the CR */
     $("#reOpenRequest").on("click", function (event) {
-        $dialog = dialog.confirm('info',
-                    'question-circle',
-                    '<liferay-ui:message key="reopen.clearing.request" />?',
-                    '<p><liferay-ui:message key="clearing.request.will.be.reopened.in.new.state" /></p>',
-                    '<liferay-ui:message key="reopen.clearing.request" />',
-                    {},
-                function(submit, callback) {
-                    $('#updateCRForm').append('<input type="hidden" value="true" name="<portlet:namespace/><%=PortalConstants.RE_OPEN_REQUEST%>"/>');
-                    $('#updateCRForm').submit();
-        });
+    $dialog = dialog.open('#reOpenClearingRequestDialog', {
+    }, function(submit, callback) {
+        let selectedDate = $("#requestedClearingDate").val(),
+            $form = $('#reOpenClearingRequestForm');
+        $form.removeClass('was-validated');
+        if (!validation.isValidDate(selectedDate, 7)) {
+            $form.addClass('was-validated');
+            $dialog.alert('<liferay-ui:message key="date.should.be.in.valid.format" /> & <liferay-ui:message key="greater.than.7.days.from.today" />');
+            callback();
+            setTimeout(function() {
+                $("#reOpenClearingRequestDialog .alert-danger").hide();
+            }, 5000);
+        } else {
+            $form.addClass('was-validated');
+            $form.append('<input type="hidden" value="true" name="<portlet:namespace/><%=PortalConstants.RE_OPEN_REQUEST%>"/>');
+            $form.submit();
+        }
+    }, function() {
+        $('#reOpenClearingRequestDialog #reOpenClearingRequestForm').removeClass('was-validated');
     });
 
     function displayErrorMessage(message) {
         $("#addCommentStatusMessage").html(message).show().delay(5000).fadeOut();
     }
+    });
 });
 </script>
 </core_rt:if>

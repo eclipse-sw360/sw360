@@ -13,6 +13,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
 import org.eclipse.sw360.datahandler.thrift.Comment;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
@@ -34,6 +35,7 @@ import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
 
 import static java.lang.Integer.parseInt;
 
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
 import javax.portlet.PortletRequest;
@@ -89,11 +91,15 @@ public class ModerationPortletUtils {
         }
         String agreedDate = request.getParameter(ClearingRequest._Fields.AGREED_CLEARING_DATE.toString());
         String status = request.getParameter(ClearingRequest._Fields.CLEARING_STATE.toString());
-        if (null != id && null != agreedDate) {
+        if (null != id) {
             try {
                 ModerationService.Iface client = new ThriftClients().makeModerationClient();
                 ClearingRequest clearingRequest = client.getClearingRequestByIdForEdit(id, user);
-                clearingRequest.setAgreedClearingDate(agreedDate);
+                if (CommonUtils.isNotNullEmptyOrWhitespace(agreedDate) && !SW360Utils.isValidDate(agreedDate, DateTimeFormatter.ISO_LOCAL_DATE, 0)) {
+                    log.warn("Invalid agreed clearing date: " + agreedDate + " is entered, by user: "+ user.getEmail());
+                    return RequestStatus.FAILURE;
+                }
+                clearingRequest.setAgreedClearingDate(CommonUtils.nullToEmptyString(agreedDate));
                 clearingRequest.setClearingState(ClearingRequestState.findByValue(parseInt(status)));
                 LiferayPortletURL projectUrl = getProjectPortletUrl(request, clearingRequest.getProjectId());
                 return client.updateClearingRequest(clearingRequest, user, CommonUtils.nullToEmptyString(projectUrl));
@@ -101,17 +107,24 @@ public class ModerationPortletUtils {
                 log.error("Failed to update clearing request", e);
             }
         }
-        log.error("Clearing request Id or Agreed clearing date cannot be null.");
+        log.error("Invalid clearing request Id.");
         return RequestStatus.FAILURE;
     }
 
     private static RequestStatus reOpenClearingRequest(String id, PortletRequest request, User user) {
         try {
+            String preferredDate = request.getParameter(ClearingRequest._Fields.REQUESTED_CLEARING_DATE.toString());
+            if (!SW360Utils.isValidDate(preferredDate, DateTimeFormatter.ISO_LOCAL_DATE, 7)) {
+                log.warn("Invalid requested clearing date: " + preferredDate + " is entered, by user: "+ user.getEmail());
+                return RequestStatus.FAILURE;
+            }
             ModerationService.Iface client = new ThriftClients().makeModerationClient();
             ClearingRequest clearingRequest = client.getClearingRequestByIdForEdit(id, user);
+            clearingRequest.setRequestedClearingDate(preferredDate);
             clearingRequest.unsetAgreedClearingDate();
             clearingRequest.setClearingState(ClearingRequestState.NEW);
             clearingRequest.unsetTimestampOfDecision();
+            clearingRequest.addToReOpenOn(System.currentTimeMillis());
             LiferayPortletURL projectUrl = getProjectPortletUrl(request, clearingRequest.getProjectId());
             return client.updateClearingRequest(clearingRequest, user, CommonUtils.nullToEmptyString(projectUrl));
         } catch (TException e) {

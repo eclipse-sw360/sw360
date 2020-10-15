@@ -288,6 +288,7 @@ public class ThriftEnumUtils {
             .put(ClearingRequestState.IN_QUEUE, "In Queue")
             .put(ClearingRequestState.IN_PROGRESS, "In Progress")
             .put(ClearingRequestState.CLOSED, "Closed")
+            .put(ClearingRequestState.ON_HOLD, "On Hold")
             .build();
 
     public static final ImmutableMap<Class<? extends TEnum>, Map<? extends TEnum, String>>

@@ -17,6 +17,7 @@ import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Organization;
 import com.liferay.portal.kernel.servlet.SessionMessages;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
@@ -30,6 +31,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
@@ -63,6 +65,7 @@ import org.jetbrains.annotations.NotNull;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 
 import javax.portlet.*;
+import javax.servlet.http.HttpServletRequest;
 
 import java.io.IOException;
 import java.util.*;
@@ -284,6 +287,14 @@ public class ModerationPortlet extends FossologyAwarePortlet {
                 Project project = projectClient.getProjectById(clearingRequest.getProjectId(), UserCacheHolder.getUserFromRequest(request));
                 request.setAttribute(PROJECT, project);
                 request.setAttribute(WRITE_ACCESS_USER, makePermission(project, user).isActionAllowed(RequestedAction.WRITE));
+                List<Project> projects = getWithFilledClearingStateSummary(projectClient, Lists.newArrayList(project), user);
+                Integer approvedReleaseCount = 0;
+                Project projWithCsSummary = projects.get(0);
+                if (null != projWithCsSummary && null != projWithCsSummary.getReleaseClearingStateSummary()) {
+                    ReleaseClearingStateSummary summary = projWithCsSummary.getReleaseClearingStateSummary();
+                    approvedReleaseCount = summary.getApproved();
+                }
+                request.setAttribute(APPROVED_RELEASE_COUNT, approvedReleaseCount);
             }
             addClearingBreadcrumb(request, response, clearingId);
         } catch (TException e) {
@@ -428,12 +439,14 @@ public class ModerationPortlet extends FossologyAwarePortlet {
         baseUrl.setParameter(PAGENAME, PAGENAME_EDIT_CLEARING_REQUEST);
         baseUrl.setParameter(CLEARING_REQUEST_ID, Id);
 
-        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
-        addBreadcrumbEntry(request, LanguageUtil.get(resourceBundle,"clearing.request"), baseUrl);
+        addBreadcrumbEntry(request, Id, baseUrl);
     }
 
     public void renderStandardView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
         User user = UserCacheHolder.getUserFromRequest(request);
+
+        HttpServletRequest httpServletRequest = PortalUtil.getOriginalServletRequest(PortalUtil.getHttpServletRequest(request));
+        String selectedTab = httpServletRequest.getParameter(SELECTED_TAB);
 
         List<ModerationRequest> openModerationRequests = null;
         List<ModerationRequest> closedModerationRequests = null;
@@ -471,6 +484,10 @@ public class ModerationPortlet extends FossologyAwarePortlet {
         request.setAttribute(CLEARING_REQUESTS, CommonUtils.nullToEmptyList(openClearingRequests));
         request.setAttribute(CLOSED_CLEARING_REQUESTS, CommonUtils.nullToEmptyList(closedClearingRequests));
         request.setAttribute(IS_CLEARING_EXPERT, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_EXPERT, user));
+
+        if (CommonUtils.isNotNullEmptyOrWhitespace(selectedTab)) {
+            request.setAttribute(SELECTED_TAB, selectedTab);
+        }
         super.doView(request, response);
     }
 
