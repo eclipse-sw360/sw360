@@ -14,8 +14,6 @@ import org.apache.poi.ss.SpreadsheetVersion;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
-import org.apache.poi.xssf.usermodel.XSSFCellStyle;
-import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.exporter.helper.ExporterHelper;
 import org.eclipse.sw360.exporter.utils.SubTable;
@@ -110,10 +108,10 @@ public class ExcelExporter<T, U extends ExporterHelper<T>> {
      */
     private static CellStyle createCellStyle(Workbook workbook) {
         CellStyle cellStyle = workbook.createCellStyle();
-        cellStyle.setBorderBottom(XSSFCellStyle.BORDER_THIN);
-        cellStyle.setBorderTop(XSSFCellStyle.BORDER_THIN);
-        cellStyle.setBorderRight(XSSFCellStyle.BORDER_THIN);
-        cellStyle.setBorderLeft(XSSFCellStyle.BORDER_THIN);
+        cellStyle.setBorderBottom(BorderStyle.THIN);
+        cellStyle.setBorderTop(BorderStyle.THIN);
+        cellStyle.setBorderRight(BorderStyle.THIN);
+        cellStyle.setBorderLeft(BorderStyle.THIN);
         return cellStyle;
     }
 
@@ -123,7 +121,7 @@ public class ExcelExporter<T, U extends ExporterHelper<T>> {
     private static CellStyle createHeaderStyle(Workbook workbook) {
         CellStyle headerCellStyle = createCellStyle(workbook);
         Font font = workbook.createFont();
-        font.setBoldweight(XSSFFont.BOLDWEIGHT_BOLD);
+        font.setBold(true);
         headerCellStyle.setFont(font);
         return headerCellStyle;
     }
