@@ -11,7 +11,6 @@
 <%@page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState"%>
 <%@page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectState"%>
 <%@page import="org.eclipse.sw360.datahandler.thrift.projects.Project" %>
-<%@page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectTodo" %>
 <core_rt:set var="isUnknownCTeamEnabled" value='<%=PortalConstants.IS_CLEARING_TEAM_UNKNOWN_ENABLED%>'/>
 
 <table class="table edit-table three-columns" id="ProjectClearingInfo" title="<liferay-ui:message key="clearing" />">
@@ -123,73 +122,6 @@
             </div>
         </td>
     </tr>
-</table>
-<table class="table edit-table three-columns" id="org_obligations">
-    <thead>
-        <tr><th><liferay-ui:message key="organisation.obligation" /></th><th><liferay-ui:message key="fulfilled" /></th><th>Comments</th></tr>
-    </thead>
-    <tbody>
-        <core_rt:forEach items="${organisationObligations}" var="entry">
-            <tr>
-                <td><sw360:out value="${entry.getKey().getText()}"/></td>
-                <td>
-                    <div class="form-group form-check">
-                        <input type="checkbox"
-                            name="<portlet:namespace/><%=Project._Fields.TODOS%>"
-                            value ="${entry.getKey().getId()}"
-                            class="form-check-input"
-                            <core_rt:if test="${entry.getValue().fulfilled}">checked="checked"</core_rt:if>/>
-                    </div>
-                </td>
-                <td><textarea name="<portlet:namespace/>projectobligation:${entry.getKey().getId()}" placeholder="Enter comments here" class="form-control"><sw360:out value="${entry.getValue().getComments()}"/></textarea></td>
-            </tr>
-        </core_rt:forEach>
-    </tbody>
-</table>
-<table class="table edit-table three-columns" id="prod_obligations">
-    <thead>
-        <tr><th><liferay-ui:message key="project.obligation" /></th><th><liferay-ui:message key="fulfilled" /></th><th>Comments</th></tr>
-    </thead>
-    <tbody>
-        <core_rt:forEach items="${projectObligations}" var="entry">
-            <tr>
-                <td><sw360:out value="${entry.getKey().getText()}"/></td>
-                <td>
-                    <div class="form-group form-check">
-                        <input type="checkbox"
-                            name="<portlet:namespace/><%=Project._Fields.TODOS%>"
-                            value ="${entry.getKey().getId()}"
-                            class="form-check-input"
-                            <core_rt:if test="${entry.getValue().fulfilled}">checked="checked"</core_rt:if>/>
-                    </div>
-                </td>
-                <td><textarea name="<portlet:namespace/>projectobligation:${entry.getKey().getId()}" placeholder="Enter comments here" class="form-control"><sw360:out value="${entry.getValue().getComments()}"/></textarea></td>
-            </tr>
-        </core_rt:forEach>
-    </tbody>
-</table>
-
-<table class="table edit-table three-columns" id="comp_obligations">
-    <thead>
-        <tr><th><liferay-ui:message key="component.obligation" /></th><th><liferay-ui:message key="fulfilled" /></th><th>Comments</th></tr>
-    </thead>
-    <tbody>
-        <core_rt:forEach items="${componentObligations}" var="entry">
-            <tr>
-                <td><sw360:out value="${entry.getKey().getText()}"/></td>
-                <td>
-                    <div class="form-group form-check">
-                        <input type="checkbox"
-                            name="<portlet:namespace/><%=Project._Fields.TODOS%>"
-                            value ="${entry.getKey().getId()}"
-                            class="form-check-input"
-                            <core_rt:if test="${entry.getValue().fulfilled}">checked="checked"</core_rt:if>/>
-                    </div>
-                </td>
-                <td><textarea name="<portlet:namespace/>projectobligation:${entry.getKey().getId()}" placeholder="Enter comments here" class="form-control"><sw360:out value="${entry.getValue().getComments()}"/></textarea></td>
-            </tr>
-        </core_rt:forEach>
-    </tbody>
 </table>
 
 <table class="table edit-table three-columns" id="ProjectLifecycleInfo" title="<liferay-ui:message key="" /><liferay-ui:message key="lifecycle" />">

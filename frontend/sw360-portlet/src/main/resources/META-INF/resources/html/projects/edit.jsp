@@ -26,7 +26,10 @@
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <%-- the following is needed by liferay to display error messages--%>
 <%@ include file="/html/utils/includes/errorKeyToMessage.jspf"%>
-
+<portlet:resourceURL var="obligationediturl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.LOAD_OBLIGATIONS_EDIT%>"/>
+    <portlet:param name="<%=PortalConstants.DOCUMENT_ID%>" value="${project.id}"/>
+</portlet:resourceURL>
 
 <liferay-ui:error key="custom_error" message="${fn:escapeXml(cyclicError)}" embed="false"/>
 <portlet:defineObjects />
@@ -73,15 +76,6 @@
 
 <core_rt:set var="isObligationPresent" value="${not empty project.releaseIdToUsage}" />
 <core_rt:set var="isProjectObligationsEnabled"  value="${isProjectObligationsEnabled and hasWritePermissions}" />
-<core_rt:if test="${isProjectObligationsEnabled and isObligationPresent}">
-    <jsp:useBean id="obligationData" type="org.eclipse.sw360.datahandler.thrift.projects.ObligationList" scope="request" />
-    <core_rt:set var="isObligationPresent" value="${not empty obligationData and not empty obligationData.linkedObligationStatus}" />
-    <core_rt:set var="linkedObligations" value="${obligationData.linkedObligationStatus}" />
-    <core_rt:if test="${isObligationPresent}">
-        <jsp:useBean id="projectObligationsInfoByRelease" type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult>" scope="request" />
-        <jsp:useBean id="approvedObligationsCount" type="java.lang.Integer" scope="request"/>
-    </core_rt:if>
-</core_rt:if>
 
 <div class="container" style="display: none;">
     <div class="row">
@@ -93,22 +87,7 @@
                 <core_rt:if test="${not addMode}" >
                     <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Attachments'}">active</core_rt:if>" href="#tab-Attachments" data-toggle="list" role="tab"><liferay-ui:message key="attachments" /></a>
                     <core_rt:if test="${isProjectObligationsEnabled}">
-                        <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Obligations'}">active</core_rt:if>" href="#tab-Obligations" data-toggle="list" role="tab"><liferay-ui:message key="obligations" />
-                        <core_rt:if test="${isObligationPresent}">
-                            <span id="obligtionsCount"
-                                <core_rt:choose>
-                                    <core_rt:when test="${approvedObligationsCount == 0}">
-                                        class="badge badge-danger"
-                                    </core_rt:when>
-                                    <core_rt:when test="${approvedObligationsCount == linkedObligations.size()}">
-                                        class="badge badge-success"
-                                    </core_rt:when>
-                                    <core_rt:otherwise>
-                                        class="badge badge-light"
-                                    </core_rt:otherwise>
-                                </core_rt:choose>
-                            >${approvedObligationsCount} / ${linkedObligations.size()}</span>
-                        </core_rt:if>
+                        <a id="obligationCountBadge" class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Obligations'}">active</core_rt:if>" href="#tab-Obligations" data-toggle="list" role="tab"><liferay-ui:message key="obligations" />
                         </a>
                     </core_rt:if>
                 </core_rt:if>
@@ -192,7 +171,7 @@
                                 </div>
                                 <core_rt:if test="${isProjectObligationsEnabled}">
                                     <div id="tab-Obligations" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Obligations'}">active show</core_rt:if>">
-                                        <%@include file="/html/projects/includes/projects/linkedObligations.jspf" %>
+                                        <%@ include file="/html/utils/includes/pageSpinner.jspf" %>
                                     </div>
                                 </core_rt:if>
                             </core_rt:if>
@@ -288,6 +267,15 @@ require(['jquery', 'modules/dialog', 'modules/listgroup', 'modules/validation', 
         <core_rt:if test="${not addMode and isProjectObligationsEnabled and isObligationPresent}">
             $('#updateObligationsButtonHidden').trigger('click');
         </core_rt:if>
+        <core_rt:if test="${not addMode and isProjectObligationsEnabled}">
+            $('#project-updateObligationsButtonHidden').trigger('click');
+        </core_rt:if>
+        <core_rt:if test="${not addMode and isProjectObligationsEnabled}">
+            $('#comp-updateObligationsButtonHidden').trigger('click');
+        </core_rt:if>
+        <core_rt:if test="${not addMode and isProjectObligationsEnabled}">
+            $('#org-updateObligationsButtonHidden').trigger('click');
+        </core_rt:if>
         $('#projectEditForm').submit();
     }
 
@@ -381,5 +369,12 @@ require(['jquery', 'modules/dialog', 'modules/listgroup', 'modules/validation', 
             $('#obligationsText').prop('disabled', true);
         }
     }
+    
+    $.ajax({
+        url: '<%=obligationediturl%>',
+        type: "GET",
+        success: function(result){
+            $("#tab-Obligations").html("").append(result);
+      }});
 });
 </script>

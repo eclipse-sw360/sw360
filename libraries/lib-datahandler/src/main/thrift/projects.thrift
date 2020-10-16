@@ -38,6 +38,8 @@ typedef components.ReleaseLink ReleaseLink
 typedef components.ReleaseClearingStatusData ReleaseClearingStatusData
 typedef sw360.AddDocumentRequestSummary AddDocumentRequestSummary
 typedef licenses.Obligation Obligation
+typedef licenses.ObligationType ObligationType
+typedef licenses.ObligationLevel ObligationLevel
 
 const string CLEARING_TEAM_UNKNOWN = "Unknown"
 
@@ -128,7 +130,6 @@ struct Project {
     138: optional string specialRisks3rdParty,
     139: optional string deliveryChannels,
     140: optional string remarksAdditionalRequirements,
-    141: optional set<ProjectTodo> todos,
 
     // Urls for the project
     50: optional string homepage,
@@ -168,14 +169,6 @@ struct ProjectWithReleaseRelationTuple {
     2: required ProjectReleaseRelationship relation,
 }
 
-struct ProjectTodo {
-    1: required string todoId;
-    2: required string userId;
-    3: required string updated;
-    4: required bool fulfilled;
-    5: optional string comments;
-}
-
 struct ObligationList {
     1: optional string id,
     2: optional string revision,
@@ -192,10 +185,11 @@ struct ObligationStatusInfo {
     5: optional string modifiedBy,
     6: optional string modifiedOn,
     7: optional set<Release> releases, // used to display in UI, no need to save this in database
-    8: required set<string> licenseIds,
+    8: optional set<string> licenseIds,
     9: optional map<string, string> releaseIdToAcceptedCLI,
     10: optional string id,
-    11: optional string type
+    11: optional ObligationLevel obligationLevel,
+    12: optional ObligationType obligationType,
 }
 
 struct UsedReleaseRelations {

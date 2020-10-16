@@ -20,7 +20,6 @@ import org.apache.xmlbeans.XmlException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
-import org.eclipse.sw360.datahandler.common.SW360Utils.TodoInfo;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -578,15 +577,6 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
         }
 
-        SW360Utils.getComponentObligations(project).entrySet().stream().forEachOrdered(oblig -> {
-            currentRow[0] = currentRow[0] + 1;
-            XWPFTableRow crow = table.insertNewTableRow(currentRow[0]);
-            crow.addNewTableCell().setText(oblig.getKey().getTitle());
-            crow.addNewTableCell().setText(entr.getKey());
-            crow.addNewTableCell().setText(oblig.getKey().getText());
-            crow.addNewTableCell().setText(oblig.getValue().fulfilled ? "yes" : "no");
-            crow.addNewTableCell().setText(oblig.getValue().getComments());
-        });
         setTableBorders(table);
     }
 
@@ -604,16 +594,6 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         row.addNewTableCell().setText(topictxt.getValue());
         row.addNewTableCell();
         row.addNewTableCell();
-
-        SW360Utils.getComponentObligations(project).entrySet().stream().forEachOrdered(oblig -> {
-            currentRow[0] = currentRow[0] + 1;
-            XWPFTableRow crow = table.insertNewTableRow(currentRow[0]);
-            crow.addNewTableCell().setText(oblig.getKey().getTitle());
-            crow.addNewTableCell().setText(entr1.getKey());
-            crow.addNewTableCell().setText(oblig.getKey().getText());
-            crow.addNewTableCell().setText(oblig.getValue().fulfilled ? "yes" : "no");
-            crow.addNewTableCell().setText(oblig.getValue().getComments());
-        });
 
         setTableBorders(table);
         return table;
@@ -831,13 +811,6 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         XWPFTable table = document.getTables().get(COMMON_RULES_TABLE_INDEX);
         final int[] currentRow = new int[]{0};
 
-        SW360Utils.getOrganisationObligations(project).entrySet().stream().forEachOrdered(oblig -> {
-            currentRow[0] = currentRow[0] + 1;
-            XWPFTableRow row = table.insertNewTableRow(currentRow[0]);
-            row.addNewTableCell().setText(oblig.getKey().getText());
-            row.addNewTableCell().setText(oblig.getValue().fulfilled ? "yes" : "no");
-            row.addNewTableCell().setText(oblig.getValue().getComments());
-        });
         setTableBorders(table);
     }
 
@@ -845,13 +818,6 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         XWPFTable table = document.getTables().get(PROJECT_OBLIGATIONS_TABLE_INDEX);
         final int[] currentRow = new int[] { 0 };
 
-        SW360Utils.getProjectObligations(project).entrySet().stream().forEachOrdered(oblig -> {
-            currentRow[0] = currentRow[0] + 1;
-            XWPFTableRow row = table.insertNewTableRow(currentRow[0]);
-            row.addNewTableCell().setText(oblig.getKey().getText());
-            row.addNewTableCell().setText(oblig.getValue().fulfilled ? "yes" : "no");
-            row.addNewTableCell().setText(oblig.getValue().getComments());
-        });
         setTableBorders(table);
     }
 
@@ -871,7 +837,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                     row.addNewTableCell().setText(String.join(", \n", osi.getLicenseIds()));
                     row.addNewTableCell().setText(String.join(", \n", releases));
                     row.addNewTableCell().setText(ThriftEnumUtils.enumToString(osi.getStatus()));
-                    row.addNewTableCell().setText(nullToEmptyString(osi.getType()));
+                    row.addNewTableCell().setText(nullToEmptyString(ThriftEnumUtils.enumToString(osi.getObligationType())));
                     row.addNewTableCell().setText(nullToEmptyString(osi.getComment()));
                     currentRow[0] = currentRow[0] + 1;
                     XWPFTableRow textRow = table.createRow();

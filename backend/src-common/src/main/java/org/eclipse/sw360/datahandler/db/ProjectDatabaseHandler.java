@@ -625,19 +625,21 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private ObligationList deleteObligationsOfUnlinkedReleases(Project updated) {
         ObligationList obligation = obligationRepository.get(updated.getLinkedObligationId());
         Set<String> updatedLinkedReleaseIds = nullToEmptyMap(updated.getReleaseIdToUsage()).keySet();
-        // return null if no linked releases in updated project.
-        if (CommonUtils.isNullOrEmptyCollection(updatedLinkedReleaseIds)) {
-            obligation.unsetLinkedObligationStatus();
-            return obligation;
-        }
+
         Map<String, ObligationStatusInfo> updatedOsInfoMap = nullToEmptyMap(obligation.getLinkedObligationStatus());
         for (Iterator<Map.Entry<String, ObligationStatusInfo>> it = updatedOsInfoMap.entrySet().iterator(); it.hasNext();) {
             Map.Entry<String, ObligationStatusInfo> entry = it.next();
             Map<String, String> releaseIdToAcceptedCLI = entry.getValue().getReleaseIdToAcceptedCLI();
-            releaseIdToAcceptedCLI.keySet().retainAll(updatedLinkedReleaseIds);
-            if (releaseIdToAcceptedCLI.isEmpty()) {
-                it.remove();
+            if (releaseIdToAcceptedCLI != null) {
+                releaseIdToAcceptedCLI.keySet().retainAll(updatedLinkedReleaseIds);
+                if (releaseIdToAcceptedCLI.isEmpty()) {
+                    it.remove();
+                }
             }
+        }
+        if(CommonUtils.isNullOrEmptyMap(updatedOsInfoMap)) {
+            obligation.unsetLinkedObligationStatus();
+            return obligation;
         }
         obligation.setLinkedObligationStatus(updatedOsInfoMap);
         return obligation;

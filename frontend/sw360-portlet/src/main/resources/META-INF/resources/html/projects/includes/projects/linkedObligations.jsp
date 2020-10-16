@@ -14,12 +14,34 @@
 
 <portlet:defineObjects />
 <liferay-theme:defineObjects />
+<portlet:renderURL var="downloadReportInfoWithSubProject">
+    <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${projectid}"/>
+    <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_LICENSE_INFO%>"/>
+    <portlet:param name="<%=PortalConstants.PROJECT_WITH_SUBPROJECT%>" value="true"/>
+    <portlet:param name="<%=PortalConstants.PREPARE_LICENSEINFO_OBL_TAB%>" value="true"/>
+</portlet:renderURL>
+
+<portlet:renderURL var="downloadReportInfoWithoutSubProject">
+    <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${projectid}"/>
+    <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_LICENSE_INFO%>"/>
+    <portlet:param name="<%=PortalConstants.PROJECT_WITH_SUBPROJECT%>" value="false"/>
+    <portlet:param name="<%=PortalConstants.PREPARE_LICENSEINFO_OBL_TAB%>" value="true"/>
+</portlet:renderURL>
 
 <%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.projects.Project"%>
 <%@ page import="javax.portlet.PortletRequest"%>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants"%>
-
+<core_rt:if test="${isProjectObligationsEnabled and isObligationPresent}">
+    <jsp:useBean id="obligationData" type="org.eclipse.sw360.datahandler.thrift.projects.ObligationList" scope="request" />
+    <core_rt:set var="isObligationPresent" value="${not empty obligationData and not empty obligationData.linkedObligationStatus}" />
+    <core_rt:set var="linkedObligations" value="${obligationData.linkedObligationStatus}" />
+    <core_rt:if test="${isObligationPresent}">
+        <jsp:useBean id="projectObligationsInfoByRelease" type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult>" scope="request" />
+        <jsp:useBean id="approvedObligationsCount" type="java.lang.Integer" scope="request"/>
+        <jsp:useBean id="excludedReleases" type="java.util.Set<org.eclipse.sw360.datahandler.thrift.components.Release>" scope="request" />
+    </core_rt:if>
+</core_rt:if>
 <core_rt:if test="${not isObligationPresent}">
     <div class="alert alert-info" role="alert">
             <liferay-ui:message key="no.linked.obligations" />
@@ -27,7 +49,7 @@
 </core_rt:if>
 
 <core_rt:if test="${isObligationPresent}">
-    <jsp:useBean id="excludedReleases" type="java.util.Set<org.eclipse.sw360.datahandler.thrift.components.Release>" scope="request" />
+    
 
 <liferay-portlet:renderURL var="friendlyReleaseURL" portletName="sw360_portlet_components">
     <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>"/>
@@ -79,17 +101,27 @@ AUI().use('liferay-portlet-url', function () {
     var PortletURL = Liferay.PortletURL;
     $('#downloadLicenseInfoObl a.dropdown-item').on('click', function(event) {
         var type=$(event.currentTarget).data('type');
-        downloadLicenseInfo(type);
+        if(type === 'projectWithSubProject'){
+            window.location.href = '<%=downloadReportInfoWithSubProject%>'
+        }
+        else{
+            window.location.href = '<%=downloadReportInfoWithoutSubProject%>'
+        }
     });
-
-    function downloadLicenseInfo(type) {
-        var portletURL = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>');
-        portletURL.setParameter('<%=PortalConstants.PROJECT_ID%>', '${project.id}');
-        portletURL.setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_LICENSE_INFO%>');
-        portletURL.setParameter('<%=PortalConstants.PROJECT_WITH_SUBPROJECT%>', type === 'projectWithSubProject' ? 'true' : 'false');
-        portletURL.setParameter('<%=PortalConstants.PREPARE_LICENSEINFO_OBL_TAB%>', 'true');
-
-        window.location.href = portletURL.toString();
-    }
+    <core_rt:if test="${not empty obligationData.linkedObligationStatus.size()}">
+        let badgeClass = ""; 
+        <core_rt:choose>
+			<core_rt:when test="${approvedObligationsCount == 0}">
+			badgeClass="badge badge-danger"
+			</core_rt:when>
+			<core_rt:when test="${approvedObligationsCount == linkedObligations.size()}">
+			badgeClass="badge badge-success"
+			</core_rt:when>
+			<core_rt:otherwise>
+			badgeClass="badge badge-light"
+			</core_rt:otherwise>
+		</core_rt:choose>
+		$("#obligationCountBadge").append('<span id="obligtionsCount" class="'+badgeClass+'">${approvedObligationsCount} / ${obligationData.linkedObligationStatus.size()}</span>');
+	</core_rt:if>
 });
 </script>

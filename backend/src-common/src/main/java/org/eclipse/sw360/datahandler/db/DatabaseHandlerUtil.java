@@ -41,7 +41,6 @@ import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ClearingI
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.EccInformationMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ObligationStatusInfoMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ProjectReleaseRelationshipMixin;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ProjectTodoMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.RepositoryMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.VendorMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
@@ -63,7 +62,6 @@ import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectTodo;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 
@@ -533,7 +531,9 @@ public class DatabaseHandlerUtil {
             Set<?> newValueMapKeySet = newValueMap.keySet();
             if (isTwoCollectionSame(actualValueMapKeySet, newValueMapKeySet)) {
                 long diffCount = newValueMap.entrySet().stream()
-                        .filter(entry -> !actualValueMap.get(entry.getKey()).equals(entry.getValue())).count();
+                        .filter(entry -> !actualValueMap.containsKey(entry.getKey())
+                                || !actualValueMap.get(entry.getKey()).equals(entry.getValue()))
+                        .count();
                 if (diffCount == 0)
                     return false;
             }
@@ -693,7 +693,6 @@ public class DatabaseHandlerUtil {
             mapper.addMixInAnnotations(Vendor.class, VendorMixin.class);
             mapper.addMixInAnnotations(Repository.class, RepositoryMixin.class);
             mapper.addMixInAnnotations(ProjectReleaseRelationship.class, ProjectReleaseRelationshipMixin.class);
-            mapper.addMixInAnnotations(ProjectTodo.class, ProjectTodoMixin.class);
         }
         return mapper;
     }

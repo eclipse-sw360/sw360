@@ -19,7 +19,6 @@ import org.eclipse.sw360.datahandler.thrift.components.ClearingInformation;
 import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Repository;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectTodo;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -125,7 +124,10 @@ public class DatabaseMixInForChangeLog {
         "setLicenseIds",
         "setReleaseIdToAcceptedCLI",
         "releaseIdToAcceptedCLISize",
-        "setModifiedOn"
+        "setModifiedOn",
+        "setObligationLevel",
+        "setObligationType",
+        "setId"
     })
     public static abstract class ObligationStatusInfoMixin extends ObligationStatusInfo {
     }
@@ -223,16 +225,5 @@ public class DatabaseMixInForChangeLog {
         "setCreatedBy"
     })
     public static abstract class ProjectReleaseRelationshipMixin extends ProjectReleaseRelationship {
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonIgnoreProperties({
-        "setComments",
-        "setTodoId",
-        "setUserId",
-        "setUpdated",
-        "setFulfilled"
-    })
-    public static abstract class ProjectTodoMixin extends ProjectTodo {
     }
 }
