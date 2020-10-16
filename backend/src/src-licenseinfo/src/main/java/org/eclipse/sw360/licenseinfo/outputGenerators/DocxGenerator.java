@@ -31,6 +31,8 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.licenseinfo.util.LicenseNameWithTextUtils;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.STMerge;
 
 import com.google.common.collect.Maps;
@@ -50,6 +52,9 @@ import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTExcepti
 import static org.eclipse.sw360.licenseinfo.outputGenerators.DocxUtils.*;
 
 public class DocxGenerator extends OutputGenerator<byte[]> {
+    private static final String NO_ORGANISATION_OBLIGATIONS = "No Organisation Obligations.";
+    private static final String NO_PROJECT_OBLIGATIONS = "No Project Obligations.";
+    private static final String NO_COMPONENT_OBLIGATIONS = "No Component Obligations.";
     private static final int TABLE_WIDTH = 8800;
     private static final String CAPTION_EXTID_TABLE_VALUE = "External Identifiers for this Product:";
     private static final String CAPTION_EXTID_TABLE = "$caption-extid-table";
@@ -74,8 +79,9 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
     public static final int THIRD_PARTY_COMPONENT_OVERVIEW_TABLE_INDEX = 3;
     private static final int COMMON_RULES_TABLE_INDEX = 4;
     private static final int PROJECT_OBLIGATIONS_TABLE_INDEX = 5;
-    public static final int ADDITIONAL_REQ_TABLE_INDEX = 6;
-    public static int OBLIGATION_STATUS_TABLE_INDEX = 7;
+    private static final int COMPONENT_OBLIGATIONS_TABLE_INDEX = 6;
+    public static final int ADDITIONAL_REQ_TABLE_INDEX = 7;
+    public static int OBLIGATION_STATUS_TABLE_INDEX = 8;
 
     private static final String EXT_ID_TABLE_HEADER_COL1 = "Identifier Name";
     private static final String EXT_ID_TABLE_HEADER_COL2 = "Identifier Value";
@@ -284,11 +290,14 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
             fillSpecialOSSRisksTable(document, project, obligationResults);
             fillDevelopmentDetailsTable(document, project, user, projectLicenseInfoResults);
             fillOverview3rdPartyComponentTable(document, projectLicenseInfoResults);
-            
-            fillOrganisationObligationsTable(document, project);
-            fillProjectSpecificObligationsTable(document, project);
+            List<Obligation> obligations = SW360Utils.getObligations();
+            fillProjectComponentOrganisationObligationsTable(document, obligationsStatus, obligations,
+                    ObligationLevel.ORGANISATION_OBLIGATION, COMMON_RULES_TABLE_INDEX, NO_ORGANISATION_OBLIGATIONS);
+            fillProjectComponentOrganisationObligationsTable(document, obligationsStatus, obligations, 
+                    ObligationLevel.PROJECT_OBLIGATION, PROJECT_OBLIGATIONS_TABLE_INDEX, NO_PROJECT_OBLIGATIONS);
+            fillProjectComponentOrganisationObligationsTable(document, obligationsStatus, obligations, 
+                    ObligationLevel.COMPONENT_OBLIGATION, COMPONENT_OBLIGATIONS_TABLE_INDEX, NO_COMPONENT_OBLIGATIONS);
             fillComponentObligationsTable(document, obligationResults, mostLicenses, project);
-
 
             fillLinkedObligations(document, obligationsStatus);
             // because of the impossible API component subsections must be the last thing in the docx file
@@ -312,7 +321,12 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         UserService.Iface userClient = new ThriftClients().makeUserClient();
 
         if(project.isSetProjectOwner() && !project.getProjectOwner().isEmpty()) {
-            User owner = userClient.getByEmail(project.getProjectOwner());
+            User owner = null;
+            try {
+                owner = userClient.getByEmail(project.getProjectOwner());
+            } catch (TException te) {
+                // a resulting null user object is handled below
+            }
             if(owner != null) {
                 XWPFTableRow row = table.insertNewTableRow(currentRow++);
                 row.addNewTableCell().setText(owner.getEmail());
@@ -522,6 +536,38 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                 .collect(Collectors.toSet());
     }
 
+    private void fillProjectComponentOrganisationObligationsTable(XWPFDocument document,Map<String, ObligationStatusInfo> obligationsStatusAtProject,
+            List<Obligation> obligations,ObligationLevel oblLevel,int tableIndex,String emptyTableText) {
+
+        XWPFTable table = document.getTables().get(tableIndex);
+        final int[] currentRow = new int[] { 0 };
+
+        Map<String, ObligationStatusInfo> obligationsStatus = SW360Utils.sortMapOfObligationOnType(
+                SW360Utils.getProjectComponentOrganisationObligationToDisplay(obligationsStatusAtProject, obligations, oblLevel));
+        if (!obligationsStatus.isEmpty()) {
+            obligationsStatus.entrySet().stream().forEach(o -> {
+                ObligationStatusInfo osi = o.getValue();
+                currentRow[0] = currentRow[0] + 1;
+                XWPFTableRow row = table.insertNewTableRow(currentRow[0]);
+                row.addNewTableCell().setText(o.getKey());
+                row.addNewTableCell().setText(ThriftEnumUtils.enumToString(osi.getStatus()));
+                row.addNewTableCell().setText(nullToEmptyString(ThriftEnumUtils.enumToString(osi.getObligationType())));
+                row.addNewTableCell().setText(nullToEmptyString(osi.getId()));
+                row.addNewTableCell().setText(nullToEmptyString(osi.getComment()));
+                currentRow[0] = currentRow[0] + 1;
+                XWPFTableRow textRow = table.createRow();
+                textRow.getCell(0).setText(osi.getText());
+                mergeColumns(table, currentRow[0], 0, textRow.getCtRow().sizeOfTcArray() - 1);
+            });
+        } else {
+            currentRow[0] = currentRow[0] + 1;
+            XWPFTableRow textRow = table.createRow();
+            textRow.getCell(0).setText(emptyTableText);
+            mergeColumns(table, currentRow[0], 0, textRow.getCtRow().sizeOfTcArray() - 1);
+        }
+        setTableBorders(table);
+    }
+
     private void fillComponentObligationsTable(XWPFDocument document, Collection<ObligationParsingResult> obligationResults, Set<String> mostLicenses, Project project) throws XmlException, SW360Exception {
         final int[] currentRow = new int[] { 0, 0 };
         final  Map<String, Map<String, String>> licenseIdToOblTopicText = new HashMap<String, Map<String, String>>();
@@ -550,7 +596,6 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                 cursor = printLicenseNameHeader(document, table, entr.getKey());
                 printSecondTableOnwards(document, cursor, entr, project);
             }
-
         }
     }
 
@@ -805,20 +850,6 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
             setText(document.createParagraph().createRun(), nullToEmptyString(licenseNameWithText.getLicenseText()));
             addNewLines(document, 1);
         }
-    }
-
-    private void fillOrganisationObligationsTable(XWPFDocument document, Project project) throws TException {
-        XWPFTable table = document.getTables().get(COMMON_RULES_TABLE_INDEX);
-        final int[] currentRow = new int[]{0};
-
-        setTableBorders(table);
-    }
-
-    private void fillProjectSpecificObligationsTable(XWPFDocument document, Project project) throws TException {
-        XWPFTable table = document.getTables().get(PROJECT_OBLIGATIONS_TABLE_INDEX);
-        final int[] currentRow = new int[] { 0 };
-
-        setTableBorders(table);
     }
 
     private void fillLinkedObligations(XWPFDocument document, Map<String, ObligationStatusInfo> obligationsStatus) {

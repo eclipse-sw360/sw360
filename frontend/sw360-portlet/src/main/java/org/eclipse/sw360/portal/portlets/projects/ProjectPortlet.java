@@ -1618,17 +1618,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         }
     }
 
-    public void setObligationsFromAdminSection(Map<String, ObligationStatusInfo> obligationStatusMap,
+    private void setObligationsFromAdminSection(Map<String, ObligationStatusInfo> obligationStatusMap,
             PortletRequest request) throws TException {
-        final LicenseService.Iface licenseClient = new ThriftClients().makeLicenseClient();
-        List<Obligation> obligations = new ArrayList<>();
-
-        try {
-            obligations = licenseClient.getObligations();
-        } catch (TException e) {
-            log.error("Could not get Obligations from Admin Section!", e);
-            return;
-        }
+        List<Obligation> obligations = SW360Utils.getObligations();
 
         request.setAttribute(PROJECT_OBLIGATIONS, SW360Utils.getProjectComponentOrganisationObligationToDisplay(
                 obligationStatusMap, obligations, ObligationLevel.PROJECT_OBLIGATION));

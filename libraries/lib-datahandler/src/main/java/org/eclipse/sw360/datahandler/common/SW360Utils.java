@@ -51,6 +51,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
@@ -73,6 +74,17 @@ public class SW360Utils {
     public static final Comparator<ReleaseLink> RELEASE_LINK_COMPARATOR = Comparator.comparing(rl -> getReleaseFullname(rl.getVendor(), rl.getName(), rl.getVersion()).toLowerCase());
     private static final ObjectMapper objectMapper;
     private static final String DIGIT_AND_DECIMAL_REGEX = "[^\\d.]";
+    private static final Comparator<Entry<String, ObligationStatusInfo>> COMPARE_BY_OBLIGATIONTYPE = Comparator
+            .comparing(Entry<String, ObligationStatusInfo>::getValue, (osi1, osi2) -> {
+                String type1 = "", type2 = "";
+                if (Objects.nonNull(osi1) && Objects.nonNull(osi1.getObligationType())) {
+                    type1 = osi1.getObligationType().name();
+                }
+                if (Objects.nonNull(osi2) && Objects.nonNull(osi2.getObligationType())) {
+                    type2 = osi2.getObligationType().name();
+                }
+                return type1.compareToIgnoreCase(type2);
+            });
 
     public static Joiner spaceJoiner = Joiner.on(" ");
     public static Joiner commaJoiner = Joiner.on(", ");
@@ -617,5 +629,24 @@ public class SW360Utils {
         obligationAlreadyPresent.entrySet().stream().forEach(e -> mapOfObligations.put(e.getKey(), e.getValue()));
 
         return mapOfObligations;
+    }
+
+    public static List<Obligation> getObligations() {
+        final LicenseService.Iface licenseClient = new ThriftClients().makeLicenseClient();
+        List<Obligation> obligations = new ArrayList<>();
+
+        try {
+            obligations = licenseClient.getObligations();
+        } catch (TException e) {
+            log.error("Could not get Obligations from Admin Section!", e);
+        }
+        return obligations;
+    }
+
+    public static Map<String, ObligationStatusInfo> sortMapOfObligationOnType(
+            Map<String, ObligationStatusInfo> mapOfObligations) {
+        return mapOfObligations.entrySet().stream().sorted(COMPARE_BY_OBLIGATIONTYPE)
+                .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue(), (oldValue, newValue) -> oldValue,
+                        LinkedHashMap<String, ObligationStatusInfo>::new));
     }
 }
