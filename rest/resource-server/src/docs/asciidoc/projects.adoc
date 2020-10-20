@@ -400,3 +400,38 @@ include::{snippets}/should_document_get_attachment_usage_for_project/curl-reques
 
 ===== Example response
 include::{snippets}/should_document_get_attachment_usage_for_project/http-response.adoc[]
+
+[[resources-project-get-project-vulnerabilities]]
+==== Listing project vulnerabilities
+
+A `GET` request will get vulnerabilities of a single project.
+
+===== Response structure
+include::{snippets}/should_document_get_project_vulnerabilities/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_project_vulnerabilities/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_vulnerabilities/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_project_vulnerabilities/links.adoc[]
+
+
+[[resources-project-update-project-vulnerabilities]]
+==== Update project vulnerabilities
+
+A `PATCH` request will patch vulnerabilities of a single project.
+
+===== Response structure
+include::{snippets}/should_document_update_project_vulnerabilities/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_update_project_vulnerabilities/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_project_vulnerabilities/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_update_project_vulnerabilities/links.adoc[]

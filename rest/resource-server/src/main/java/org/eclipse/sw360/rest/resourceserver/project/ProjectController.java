@@ -25,9 +25,12 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
@@ -45,7 +48,10 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityCheckStatus;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityRatingForProject;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
@@ -66,6 +72,7 @@ import org.springframework.hateoas.Resources;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.MultiValueMap;
@@ -78,6 +85,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -90,6 +98,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.eclipse.sw360.datahandler.common.CommonUtils.wrapThriftOptionalReplacement;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
@@ -310,16 +319,102 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final List<VulnerabilityDTO> allVulnerabilityDTOs = vulnerabilityService.getVulnerabilitiesByProjectId(id, sw360User);
 
+        Optional<ProjectVulnerabilityRating> projectVulnerabilityRating = wrapThriftOptionalReplacement(vulnerabilityService.getProjectVulnerabilityRatingByProjectId(id, sw360User));
+        Map<String, Map<String, List<VulnerabilityCheckStatus>>> vulnerabilityIdToStatusHistory = projectVulnerabilityRating
+                .map(ProjectVulnerabilityRating::getVulnerabilityIdToReleaseIdToStatus).orElseGet(HashMap::new);
+
         final List<Resource<VulnerabilityDTO>> vulnerabilityResources = new ArrayList<>();
         for (final VulnerabilityDTO vulnerabilityDTO : allVulnerabilityDTOs) {
+            String comment = "";
+            Map<String, Map<String, VulnerabilityRatingForProject>> vulRatingProj = vulnerabilityService.fillVulnerabilityMetadata(vulnerabilityDTO, projectVulnerabilityRating);
+            vulnerabilityDTO.setProjectRelevance(vulRatingProj.get(vulnerabilityDTO.externalId).get(vulnerabilityDTO.intReleaseId).toString());
+            Map<String, List<VulnerabilityCheckStatus>> relIdToCheckStatus = vulnerabilityIdToStatusHistory.get(vulnerabilityDTO.externalId);
+            if(null != relIdToCheckStatus && relIdToCheckStatus.containsKey(vulnerabilityDTO.intReleaseId)) {
+                List<VulnerabilityCheckStatus> checkStatus = relIdToCheckStatus.get(vulnerabilityDTO.intReleaseId);
+                comment = checkStatus.get(checkStatus.size()-1).getComment();
+            }
+            vulnerabilityDTO.setComment(comment);
             final Resource<VulnerabilityDTO> vulnerabilityDTOResource = new Resource<>(vulnerabilityDTO);
             vulnerabilityResources.add(vulnerabilityDTOResource);
         }
 
-        final Resources<Resource<VulnerabilityDTO>> resources = restControllerHelper
-                .createResources(vulnerabilityResources);
+        final Resources<Resource<VulnerabilityDTO>> resources = restControllerHelper.createResources(vulnerabilityResources);
         HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(resources, status);
+    }
+
+    @RequestMapping(value = PROJECTS_URL + "/{id}/vulnerabilities", method = RequestMethod.PATCH, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Resources<Resource<VulnerabilityDTO>>> updateVulnerabilitiesOfReleases(
+            @PathVariable("id") String id, @RequestBody List<VulnerabilityDTO> vulnDTOs) {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+
+        List<VulnerabilityDTO> actualVDto = vulnerabilityService.getVulnerabilitiesByProjectId(id, sw360User);
+        Set<String> actualExternalId = actualVDto.stream().map(VulnerabilityDTO::getExternalId).collect(Collectors.toSet());
+        Set<String> externalIdsFromRequestDto = vulnDTOs.stream().map(VulnerabilityDTO::getExternalId).collect(Collectors.toSet());
+        Set<String> commonExtIds = Sets.intersection(actualExternalId, externalIdsFromRequestDto);
+
+        if(CommonUtils.isNullOrEmptyCollection(commonExtIds)) {
+            throw new HttpMessageNotReadableException("External ID is not valid");
+        }
+
+        Set<String> actualReleaseIds = actualVDto.stream().map(VulnerabilityDTO::getIntReleaseId).collect(Collectors.toSet());
+        Set<String> releaseIdsFromRequestDto = vulnDTOs.stream().map(VulnerabilityDTO::getIntReleaseId).collect(Collectors.toSet());
+        Set<String> commonRelIds = Sets.intersection(actualReleaseIds, releaseIdsFromRequestDto);
+
+        if(CommonUtils.isNullOrEmptyCollection(commonRelIds)) {
+            throw new HttpMessageNotReadableException("Release ID is not valid");
+        }
+
+        Optional<ProjectVulnerabilityRating> projectVulnerabilityRatings = wrapThriftOptionalReplacement(vulnerabilityService.getProjectVulnerabilityRatingByProjectId(id, sw360User));
+        ProjectVulnerabilityRating link = updateProjectVulnerabilityRatingFromRequest(projectVulnerabilityRatings, vulnDTOs, id, sw360User);
+        final RequestStatus requestStatus = vulnerabilityService.updateProjectVulnerabilityRating(link, sw360User);
+        final List<Resource<VulnerabilityDTO>> vulnerabilityResources = new ArrayList<>();
+        vulnDTOs.forEach(dto->{
+            final Resource<VulnerabilityDTO> vulnerabilityDTOResource = new Resource<>(dto);
+            vulnerabilityResources.add(vulnerabilityDTOResource);
+        });
+
+        Resources<Resource<VulnerabilityDTO>> resources = null;
+        if (RequestStatus.SUCCESS.equals(requestStatus)) {
+            resources = restControllerHelper.createResources(vulnerabilityResources);
+        }
+        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(resources, status);
+    }
+
+    public ProjectVulnerabilityRating updateProjectVulnerabilityRatingFromRequest(Optional<ProjectVulnerabilityRating> projectVulnerabilityRatings, List<VulnerabilityDTO> vulDtoList, String projectId, User sw360User) {
+        Function<VulnerabilityDTO, VulnerabilityCheckStatus> fillVulnerabilityCheckStatus = vulDto -> {
+            return new VulnerabilityCheckStatus().setCheckedBy(sw360User.getEmail())
+                    .setCheckedOn(SW360Utils.getCreatedOn())
+                    .setVulnerabilityRating(ThriftEnumUtils.stringToEnum(vulDto.getProjectRelevance(), VulnerabilityRatingForProject.class))
+                    .setComment(vulDto.getComment() == null ? "" : vulDto.getComment());
+
+        };
+
+        ProjectVulnerabilityRating projectVulnerabilityRating = projectVulnerabilityRatings.orElse(
+                new ProjectVulnerabilityRating()
+                        .setProjectId(projectId)
+                        .setVulnerabilityIdToReleaseIdToStatus(new HashMap<>()));
+
+        if (!projectVulnerabilityRating.isSetVulnerabilityIdToReleaseIdToStatus()) {
+            projectVulnerabilityRating.setVulnerabilityIdToReleaseIdToStatus(new HashMap<>());
+        }
+        Map<String, Map<String, List<VulnerabilityCheckStatus>>> vulnerabilityIdToReleaseIdToStatus = projectVulnerabilityRating.getVulnerabilityIdToReleaseIdToStatus();
+
+        String[] vulnerabilityIds = vulDtoList.stream().map(dto -> dto.getExternalId()).toArray(String[]::new);
+        String[] releaseIds = vulDtoList.stream().map(dto -> dto.getIntReleaseId()).toArray(String[]::new);
+        VulnerabilityCheckStatus[] vulStatusCheck = vulDtoList.stream().map(dt -> fillVulnerabilityCheckStatus.apply(dt)).toArray(VulnerabilityCheckStatus[]::new);
+
+        for (int i = 0; i < vulnerabilityIds.length; i++) {
+            String vulnerabilityId = vulnerabilityIds[i];
+            String releaseId = releaseIds[i];
+
+            Map<String, List<VulnerabilityCheckStatus>> releaseIdToStatus = vulnerabilityIdToReleaseIdToStatus.computeIfAbsent(vulnerabilityId, k -> new HashMap<>());
+            List<VulnerabilityCheckStatus> vulnerabilityCheckStatusHistory = releaseIdToStatus.computeIfAbsent(releaseId, k -> new ArrayList<>());
+            vulnerabilityCheckStatusHistory.add(vulStatusCheck[i]);
+        }
+
+        return projectVulnerabilityRating;
     }
 
     @RequestMapping(value = PROJECTS_URL + "/{id}/licenses", method = RequestMethod.GET)

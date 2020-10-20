@@ -533,14 +533,11 @@ class JacksonCustomizations {
                 "id",
                 "revision",
                 "type",
-                "externalId",
                 "title",
                 "description",
                 "publishDate",
                 "lastExternalUpdate",
-                "priority",
                 "priorityToolTip",
-                "action",
                 "impact",
                 "legalNotice",
                 "cveReferences",
@@ -578,7 +575,9 @@ class JacksonCustomizations {
                 "setPublishDate",
                 "setTitle",
                 "referencesIterator",
-                "cveReferencesIterator"
+                "cveReferencesIterator",
+                "setProjectRelevance",
+                "setComment"
         })
         static abstract class VulnerabilityDTOMixin extends VulnerabilityDTO {
             @Override
@@ -592,6 +591,10 @@ class JacksonCustomizations {
             @Override
             @JsonProperty("intReleaseName")
             abstract public String getIntReleaseName();
+
+            @Override
+            @JsonProperty(access = Access.WRITE_ONLY)
+            abstract public String getExternalId();
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
