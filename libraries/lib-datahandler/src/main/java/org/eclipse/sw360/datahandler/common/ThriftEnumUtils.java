@@ -249,7 +249,8 @@ public class ThriftEnumUtils {
             VulnerabilityRatingForProject.NOT_CHECKED, "Not Checked" ,
             VulnerabilityRatingForProject.IRRELEVANT, "Irrelevant" ,
             VulnerabilityRatingForProject.RESOLVED, "Resolved" ,
-            VulnerabilityRatingForProject.APPLICABLE, "Applicable"
+            VulnerabilityRatingForProject.APPLICABLE, "Applicable",
+            VulnerabilityRatingForProject.IN_ANALYSIS, "In Analysis"
     );
 
     private static final ImmutableMap<VerificationState, String> MAP_VERIFICATION_STATUS_STRING = ImmutableMap.of(

@@ -10,7 +10,9 @@
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -30,6 +32,10 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityCheckStatus;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityRatingForProject;
 import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
@@ -37,6 +43,7 @@ import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
+import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,6 +53,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.Resources;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
@@ -96,6 +104,9 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
     @MockBean
     private Sw360LicenseInfoService licenseInfoMockService;
+
+    @MockBean
+    private Sw360VulnerabilityService vulnerabilityMockService;
 
     private Project project;
     private Set<Project> projectList = new HashSet<>();
@@ -329,6 +340,45 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         attachmentUsageList.add(attachmentUsage1);
         attachmentUsageList.add(attachmentUsage2);
         given(this.attachmentServiceMock.getAllAttachmentUsage(anyObject())).willReturn(attachmentUsageList);
+        List<VulnerabilityDTO> vulDtos = new ArrayList<VulnerabilityDTO>();
+        VulnerabilityDTO vulDto = new VulnerabilityDTO();
+        vulDto.setComment("Lorem Ipsum");
+        vulDto.setExternalId("12345");
+        vulDto.setProjectRelevance("IRRELEVANT");
+        vulDto.setIntReleaseId("21055");
+        vulDto.setIntReleaseName("Angular 2.3.0");
+        vulDto.setAction("Update to Fixed Version");
+        vulDto.setPriority("2 - major");
+        vulDtos.add(vulDto);
+        given(this.vulnerabilityMockService.getVulnerabilitiesByProjectId(anyObject(), anyObject())).willReturn(vulDtos);
+        VulnerabilityCheckStatus vulnCheckStatus = new VulnerabilityCheckStatus();
+        vulnCheckStatus.setCheckedBy("admin@sw360.org");
+        vulnCheckStatus.setCheckedOn(SW360Utils.getCreatedOn());
+        vulnCheckStatus.setVulnerabilityRating(VulnerabilityRatingForProject.IRRELEVANT);
+        vulnCheckStatus.setComment("Lorem Ipsum");
+
+        List<VulnerabilityCheckStatus> vulCheckStatuses = new ArrayList<VulnerabilityCheckStatus>();
+        vulCheckStatuses.add(vulnCheckStatus);
+
+        Map<String, List<VulnerabilityCheckStatus>> releaseIdToStatus = new HashMap<String, List<VulnerabilityCheckStatus>>();
+        releaseIdToStatus.put("21055", vulCheckStatuses);
+
+        ProjectVulnerabilityRating projVulnRating = new ProjectVulnerabilityRating();
+        projVulnRating.setProjectId(project.getId());
+        Map<String, Map<String, List<VulnerabilityCheckStatus>>> vulnerabilityIdToReleaseIdToStatus = new HashMap<String, Map<String, List<VulnerabilityCheckStatus>>>();
+        vulnerabilityIdToReleaseIdToStatus.put("12345", releaseIdToStatus);
+        projVulnRating.setVulnerabilityIdToReleaseIdToStatus(vulnerabilityIdToReleaseIdToStatus);
+        List<ProjectVulnerabilityRating> projVulnRatings = new ArrayList<ProjectVulnerabilityRating>();
+        projVulnRatings.add(projVulnRating);
+        given(this.vulnerabilityMockService.getProjectVulnerabilityRatingByProjectId(anyObject(), anyObject())).willReturn(projVulnRatings);
+
+        Map<String, VulnerabilityRatingForProject> relIdToprojVUlRating = new HashMap<String, VulnerabilityRatingForProject>();
+        relIdToprojVUlRating.put("21055", VulnerabilityRatingForProject.IRRELEVANT);
+        Map<String, Map<String, VulnerabilityRatingForProject>> vulIdToRelIdToRatings = new HashMap<String, Map<String, VulnerabilityRatingForProject>>();
+        vulIdToRelIdToRatings.put("12345", relIdToprojVUlRating);
+
+        given(this.vulnerabilityMockService.fillVulnerabilityMetadata(anyObject(), anyObject())).willReturn(vulIdToRelIdToRatings);
+        given(this.vulnerabilityMockService.updateProjectVulnerabilityRating(anyObject(), anyObject())).willReturn(RequestStatus.SUCCESS);
     }
 
     @Test
@@ -761,6 +811,58 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("page.totalElements").description("Total number of all existing releases"),
                                 fieldWithPath("page.totalPages").description("Total number of pages"),
                                 fieldWithPath("page.number").description("Number of the current page")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_project_vulnerabilities() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/projects/" + project.getId() + "/vulnerabilities")
+                .header("Authorization", "Bearer " + accessToken)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation")
+                        ),
+                        responseFields(
+                                fieldWithPath("_embedded.sw360:vulnerabilityDToes[]priority").description("The priority of vulnerability"),
+                                fieldWithPath("_embedded.sw360:vulnerabilityDToes[]action").description("The action of vulnerability"),
+                                fieldWithPath("_embedded.sw360:vulnerabilityDToes[]projectRelevance").description("The relevance of project of the vulnerability, possible values are: " + Arrays.asList(VulnerabilityRatingForProject.values())),
+                                fieldWithPath("_embedded.sw360:vulnerabilityDToes[]comment").description("Any message to added while updating project vulnerabilities"),
+                                fieldWithPath("_embedded.sw360:vulnerabilityDToes[]intReleaseId").description("The release id"),
+                                fieldWithPath("_embedded.sw360:vulnerabilityDToes[]intReleaseName").description("The release name"),
+                                fieldWithPath("_embedded.sw360:vulnerabilityDToes").description("An array of <<resources-vulnerabilities, Vulnerability resources>>"),
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
+
+    @Test
+    public void should_document_update_project_vulnerabilities() throws Exception {
+        Map<String, String> vulDtoMap = new HashMap<>();
+        vulDtoMap.put("externalId", "12345");
+        vulDtoMap.put("projectRelevance", "IRRELEVANT");
+        vulDtoMap.put("comment", "Lorem Ipsum");
+        vulDtoMap.put("intReleaseId", "21055");
+        List<Map<String, String>> vulDtoMaps = new ArrayList<Map<String, String>>();
+        vulDtoMaps.add(vulDtoMap);
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(patch("/api/projects/" + project.getId() + "/vulnerabilities")
+                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                .content(this.objectMapper.writeValueAsString(vulDtoMaps))
+                .header("Authorization", "Bearer " + accessToken)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation")
+                        ),
+                        responseFields(
+                                fieldWithPath("_embedded.sw360:vulnerabilityDToes[]projectRelevance").description("The relevance of project of the vulnerability, possible values are: " + Arrays.asList(VulnerabilityRatingForProject.values())),
+                                fieldWithPath("_embedded.sw360:vulnerabilityDToes[]intReleaseId").description("The release id"),
+                                fieldWithPath("_embedded.sw360:vulnerabilityDToes[]comment").description("Any message to add while updating project vulnerabilities"),
+                                fieldWithPath("_embedded.sw360:vulnerabilityDToes").description("An array of <<resources-vulnerabilities, Vulnerability resources>>"),
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
 

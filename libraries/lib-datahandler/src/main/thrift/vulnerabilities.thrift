@@ -99,6 +99,10 @@ struct VulnerabilityDTO{
     // meta information
    100: optional string matchedBy,
    101: optional string usedNeedle,
+
+   // Used in REST API
+   300: optional string projectRelevance,
+   301: optional string comment
 }
 
 struct CVEReference{
@@ -129,6 +133,7 @@ enum VulnerabilityRatingForProject {
     IRRELEVANT = 1,
     RESOLVED = 2,
     APPLICABLE = 3,
+    IN_ANALYSIS = 4,
 }
 
 struct VulnerabilityCheckStatus{
