@@ -72,6 +72,8 @@ To migrate it is recommended to do this in the following order:
 - `037_checkfor_project_todos_in_moderations.py`
 - `038_convert_ObligationStatusInfo_type_to_obligationType.py`
 - `039_projecttodo_to_obligationlist.py`
+- `040_rename_downloadurl_to_sourceCodeDownloadurl_in_Release.py`
+- `041_update_release_moderation_with_downloadurl.py`
 
 ## Optional usage
 - `009_overwrite_release_name_with_component_name.py`

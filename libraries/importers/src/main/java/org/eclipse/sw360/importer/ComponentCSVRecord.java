@@ -66,7 +66,8 @@ public class ComponentCSVRecord extends ComponentAwareCSVRecord {
     private final String releaseLanguages;
     private final String releaseOperatingSystems;
     private final String releaseMainLicenseIds;
-    private final String releaseDownloadURL;
+    private final String releaseSourceCodeDownloadurl;
+    private final String releaseBinaryDownloadurl;
     private final String vendorName;
     private final String vendorShortname;
     private final String vendorUrl;
@@ -112,7 +113,7 @@ public class ComponentCSVRecord extends ComponentAwareCSVRecord {
                        String releaseRepositoryType, String releaseMainlineState, String releaseClearingState,
                        String releaseContributors, String releaseModerators, String releaseSubscribers,
                        String releaseLanguages, String releaseOperatingSystems, String releaseMainLicenseIds,
-                       String releaseDownloadURL, String vendorName, String vendorShortname, String vendorUrl,
+                       String releaseSourceCodeDownloadurl, String releaseBinaryDownloadurl, String vendorName, String vendorShortname, String vendorUrl,
                        String cIExternalSupplierID, String cIAdditionalInfo, String cIEvaluated,
                        String cIProcStart, String cIRequestId, String cIScanned, String cIClearingStandard,
                        String cIComment, String cIExternalUrl, Boolean cIBinariesOriginalFromCommunity,
@@ -157,7 +158,8 @@ public class ComponentCSVRecord extends ComponentAwareCSVRecord {
         this.releaseLanguages = releaseLanguages;
         this.releaseOperatingSystems = releaseOperatingSystems;
         this.releaseMainLicenseIds = releaseMainLicenseIds;
-        this.releaseDownloadURL = releaseDownloadURL;
+        this.releaseSourceCodeDownloadurl = releaseSourceCodeDownloadurl;
+        this.releaseBinaryDownloadurl = releaseBinaryDownloadurl;
         this.vendorName = vendorName;
         this.vendorShortname = vendorShortname;
         this.vendorUrl = vendorUrl;
@@ -211,7 +213,7 @@ public class ComponentCSVRecord extends ComponentAwareCSVRecord {
         return isSetRelease() && !isNullOrEmpty(releaseRepositoryURL);
     }
 
-    public boolean isSetAttachmentContent() {return isValidUrl(releaseDownloadURL);}
+    public boolean isSetAttachmentContent() {return isValidUrl(releaseSourceCodeDownloadurl);}
 
     private boolean isSetClearingInformation() {
         if (!isNullOrEmpty(cIExternalSupplierID)) {
@@ -405,8 +407,11 @@ public class ComponentCSVRecord extends ComponentAwareCSVRecord {
         if (!isNullOrEmpty(releaseCreatedBy)) {
             release.setCreatedBy(releaseCreatedBy);
         }
-        if (CommonUtils.isValidUrl(releaseDownloadURL)) {
-            release.setDownloadurl(releaseDownloadURL);
+        if (CommonUtils.isValidUrl(releaseSourceCodeDownloadurl)) {
+            release.setSourceCodeDownloadurl(releaseSourceCodeDownloadurl);
+        }
+        if (CommonUtils.isValidUrl(releaseBinaryDownloadurl)) {
+            release.setBinaryDownloadurl(releaseBinaryDownloadurl);
         }
 
         if (isSetRepository() ) {
@@ -596,13 +601,13 @@ public class ComponentCSVRecord extends ComponentAwareCSVRecord {
 
     public List<AttachmentContent> getAttachmentContents() {
         List<AttachmentContent> attachments = new ArrayList<>();
-        if (CommonUtils.isValidUrl(releaseDownloadURL)) {
-            String urlFileName = CommonUtils.getTargetNameOfUrl(releaseDownloadURL);
+        if (CommonUtils.isValidUrl(releaseSourceCodeDownloadurl)) {
+            String urlFileName = CommonUtils.getTargetNameOfUrl(releaseSourceCodeDownloadurl);
             String fileName = prefixFileNameIfNecessary(urlFileName);
 
             attachments.add(new AttachmentContent()
                     .setFilename(fileName)
-                    .setRemoteUrl(releaseDownloadURL)
+                    .setRemoteUrl(releaseSourceCodeDownloadurl)
                     .setOnlyRemote(true));
         }
         return attachments;
@@ -660,7 +665,8 @@ public class ComponentCSVRecord extends ComponentAwareCSVRecord {
         elements.add(nullToEmptyString(releaseLanguages));
         elements.add(nullToEmptyString(releaseOperatingSystems));
         elements.add(nullToEmptyString(releaseMainLicenseIds));
-        elements.add(nullToEmptyString(releaseDownloadURL));
+        elements.add(nullToEmptyString(releaseSourceCodeDownloadurl));
+        elements.add(nullToEmptyString(releaseBinaryDownloadurl));
         elements.add(nullToEmptyString(vendorName));
         elements.add(nullToEmptyString(vendorShortname));
         elements.add(nullToEmptyString(vendorUrl));
@@ -807,7 +813,8 @@ public class ComponentCSVRecord extends ComponentAwareCSVRecord {
         elements.add("releaseLanguages");
         elements.add("releaseOperatingSystems");
         elements.add("releaseMainLicenseIds");
-        elements.add("releaseDownloadURL");
+        elements.add("releaseSourceCodeDownloadURL");
+        elements.add("releaseBinaryDownloadURL");
         elements.add("vendorName");
         elements.add("vendorShortname");
         elements.add("vendorUrl");
@@ -887,7 +894,8 @@ public class ComponentCSVRecord extends ComponentAwareCSVRecord {
                 ", releaseLanguages='" + releaseLanguages + '\'' +
                 ", releaseOperatingSystems='" + releaseOperatingSystems + '\'' +
                 ", releaseMainLicenseIds='" + releaseMainLicenseIds + '\'' +
-                ", releaseDownloadURL='" + releaseDownloadURL + '\'' +
+                ", releaseSourceCodeDownloadurl='" + releaseSourceCodeDownloadurl + '\'' +
+                ", releaseBinaryDownloadurl='" + releaseBinaryDownloadurl + '\'' +
                 ", vendorName='" + vendorName + '\'' +
                 ", vendorShortname='" + vendorShortname + '\'' +
                 ", vendorUrl='" + vendorUrl + '\'' +

@@ -170,7 +170,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         release.setCreatedBy("admin@sw360.org");
         release.setModerators(new HashSet<>(Arrays.asList("admin@sw360.org", "jane@sw360.org")));
         release.setCreatedBy("admin@sw360.org");
-        release.setDownloadurl("http://www.google.com");
+        release.setSourceCodeDownloadurl("http://www.google.com");
+        release.setBinaryDownloadurl("http://www.google.com/binaries");
         release.setComponentId(component.getId());
         release.setClearingState(ClearingState.APPROVED);
         release.setMainlineState(MainlineState.SPECIFIC);
@@ -194,7 +195,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         release2.setVersion("2.3.1");
         release2.setCreatedOn("2016-12-18");
         release2.setCreatedBy("admin@sw360.org");
-        release2.setDownloadurl("http://www.google.com");
+        release2.setSourceCodeDownloadurl("http://www.google.com");
+        release2.setBinaryDownloadurl("http://www.google.com/binaries");
         release2.setModerators(new HashSet<>(Arrays.asList("admin@sw360.org", "jane@sw360.org")));
         release2.setComponentId(component.getId());
         release2.setClearingState(ClearingState.APPROVED);
@@ -341,7 +343,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("_embedded.sw360:releases[]releaseDate").description("The date of this release"),
                                 fieldWithPath("_embedded.sw360:releases[]createdOn").description("The creation date of the internal sw360 release"),
                                 fieldWithPath("_embedded.sw360:releases[]mainlineState").description("the mainline state of the release, possible values are: " + Arrays.asList(MainlineState.values())),
-                                fieldWithPath("_embedded.sw360:releases[]downloadurl").description("the download url of the release"),
+                                fieldWithPath("_embedded.sw360:releases[]sourceCodeDownloadurl").description("the source code download url of the release"),
+                                fieldWithPath("_embedded.sw360:releases[]binaryDownloadurl").description("the binary download url of the release"),
                                 fieldWithPath("_embedded.sw360:releases[]externalIds").description("When releases are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
                                 fieldWithPath("_embedded.sw360:releases[]additionalData").description("A place to store additional data used by external tools"),
                                 fieldWithPath("_embedded.sw360:releases[]languages").description("The language of the component"),
@@ -423,7 +426,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("releaseDate").description("The date of this release"),
                                 fieldWithPath("createdOn").description("The creation date of the internal sw360 release"),
                                 fieldWithPath("mainlineState").description("the mainline state of the release, possible values are: " + Arrays.asList(MainlineState.values())),
-                                fieldWithPath("downloadurl").description("the download url of the release"),
+                                fieldWithPath("sourceCodeDownloadurl").description("the source code download url of the release"),
+                                fieldWithPath("binaryDownloadurl").description("the binary download url of the release"),
                                 fieldWithPath("externalIds").description("When releases are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
                                 fieldWithPath("additionalData").description("A place to store additional data used by external tools"),
                                 fieldWithPath("languages").description("The language of the component"),
@@ -656,7 +660,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                         fieldWithPath("releaseDate").description("The date of this release"),
                         fieldWithPath("createdOn").description("The creation date of the internal sw360 release"),
                         fieldWithPath("mainlineState").description("the mainline state of the release, possible values are: " + Arrays.asList(MainlineState.values())),
-                        fieldWithPath("downloadurl").description("the download url of the release"),
+                        fieldWithPath("sourceCodeDownloadurl").description("the source code download url of the release"),
+                        fieldWithPath("binaryDownloadurl").description("the binary download url of the release"),
                         fieldWithPath("externalIds").description("When releases are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
                         fieldWithPath("additionalData").description("A place to store additional data used by external tools"),
                         fieldWithPath("languages").description("The language of the component"),

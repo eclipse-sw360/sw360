@@ -89,11 +89,6 @@
                     value="<sw360:DisplayCollection value="${release.softwarePlatforms}" />"/>
             </div>
         </td>
-        <td></td>
-        <td></td>
-    </tr>
-
-    <tr>
         <td>
             <div class="form-group">
                 <label for="releaseDate"><liferay-ui:message key="release.date" /></label>
@@ -103,7 +98,10 @@
                     value="<sw360:out value="${release.releaseDate}"/>"/>
             </div>
         </td>
+        <td></td>
+    </tr>
 
+    <tr>
         <td>
             <sw360:DisplayMainLicensesEdit id="<%=Release._Fields.MAIN_LICENSE_IDS.toString()%>"
                                            licenseIds="${release.mainLicenseIds}"/>
@@ -111,10 +109,18 @@
 
         <td>
             <div class="form-group">
-                <label for="downloadUrl"><liferay-ui:message key="download.url" /></label>
-                <input id="downloadUrl" class="form-control" name="<portlet:namespace/><%=Release._Fields.DOWNLOADURL%>" type="URL"
+                <label for="downloadUrl"><liferay-ui:message key="source.code.download.url" /></label>
+                <input id="downloadUrl" class="form-control" name="<portlet:namespace/><%=Release._Fields.SOURCE_CODE_DOWNLOADURL%>" type="URL"
                     placeholder="<liferay-ui:message key="enter.url" />"
-                    value="<sw360:out value="${release.downloadurl}"/>"/>
+                    value="<sw360:out value="${release.sourceCodeDownloadurl}"/>"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="binarydownloadUrl"><liferay-ui:message key="binary.download.url" /></label>
+                <input id="binarydownloadUrl" class="form-control" name="<portlet:namespace/><%=Release._Fields.BINARY_DOWNLOADURL%>" type="URL"
+                    placeholder="<liferay-ui:message key="enter.url" />"
+                    value="<sw360:out value="${release.binaryDownloadurl}"/>"/>
             </div>
         </td>
     </tr>

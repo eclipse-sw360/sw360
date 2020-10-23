@@ -50,7 +50,8 @@ public class ComponentCSVRecordBuilder extends  CustomizedCSVRecordBuilder<Compo
     private String releaseLanguages;
     private String releaseOperatingSystems;
     private String releaseMainLicenseNames;
-    private String releaseDownloadURL;
+    private String releaseSourceCodeDownloadURL;
+    private String releaseBinaryDownloadURL;
     private String vendorName;
     private String vendorShortname;
     private String vendorUrl;
@@ -110,7 +111,7 @@ public class ComponentCSVRecordBuilder extends  CustomizedCSVRecordBuilder<Compo
                 releaseRepositoryType, releaseMainlineState, releaseClearingState,
                 releaseContributors, releaseModerators, releaseSubscribers,
                 releaseLanguages, releaseOperatingSystems, releaseMainLicenseNames,
-                releaseDownloadURL, vendorName, vendorShortname, vendorUrl, cIExternalSupplierID, cIAdditionalInfo, cIEvaluated,
+                releaseSourceCodeDownloadURL, releaseBinaryDownloadURL, vendorName, vendorShortname, vendorUrl, cIExternalSupplierID, cIAdditionalInfo, cIEvaluated,
                 cIProcStart, cIRequestId, cIScanned, cIClearingStandard,
                 cIComment, cIExternalUrl, cIBinariesOriginalFromCommunity,
                 cIBinariesSelfMade, cIComponentLicenseInformation,
@@ -153,7 +154,8 @@ public class ComponentCSVRecordBuilder extends  CustomizedCSVRecordBuilder<Compo
         releaseLanguages = null;
         releaseOperatingSystems = null;
         releaseMainLicenseNames = null;
-        releaseDownloadURL = null;
+        releaseSourceCodeDownloadURL = null;
+        releaseBinaryDownloadURL = null;
         vendorName = null;
         vendorShortname = null;
         vendorUrl = null;
@@ -225,7 +227,8 @@ public class ComponentCSVRecordBuilder extends  CustomizedCSVRecordBuilder<Compo
         releaseLanguages = record.get(i++);
         releaseOperatingSystems = record.get(i++);
         releaseMainLicenseNames = record.get(i++);
-        releaseDownloadURL = record.get(i++);
+        releaseSourceCodeDownloadURL = record.get(i++);
+        releaseBinaryDownloadURL = record.get(i++);
         vendorName = record.get(i++);
         vendorShortname = record.get(i++);
         vendorUrl = record.get(i++);
@@ -372,7 +375,8 @@ public class ComponentCSVRecordBuilder extends  CustomizedCSVRecordBuilder<Compo
         setReleaseDate(release.getReleaseDate());
         setReleaseCreatedOn(release.getCreatedOn());
         setReleaseCreatedBy(release.getCreatedBy());
-        setReleaseDownloadURL(release.getDownloadurl());
+        setReleaseSourceCodeDownloadURL(release.getSourceCodeDownloadurl());
+        setReleaseBinaryDownloadURL(release.getBinaryDownloadurl());
 
         setReleaseMainlineState(getEnumStringOrNull(release.getMainlineState()));
         setReleaseClearingState(getEnumStringOrNull(release.getClearingState()));
@@ -500,8 +504,12 @@ public class ComponentCSVRecordBuilder extends  CustomizedCSVRecordBuilder<Compo
         this.releaseMainLicenseNames = releaseMainLicenseNames;
     }
 
-    public void setReleaseDownloadURL(String releaseDownloadURL) {
-        this.releaseDownloadURL = releaseDownloadURL;
+    public void setReleaseSourceCodeDownloadURL(String releaseSourceCodeDownloadURL) {
+        this.releaseSourceCodeDownloadURL = releaseSourceCodeDownloadURL;
+    }
+
+    public void setReleaseBinaryDownloadURL(String releaseBinaryDownloadURL) {
+        this.releaseBinaryDownloadURL = releaseBinaryDownloadURL;
     }
 
     public void setVendorName(String vendorName) {

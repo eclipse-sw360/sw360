@@ -50,7 +50,7 @@ public class ComponentCSVRecordBuilderTest {
 
         release.setName("Name").setCreatedBy("theCreator").setCreatedOn("the5thDay")
                 .setVersion("6").setCpeid("cpe2.3://///***").setReleaseDate("theDayOfTheRelease")
-                .setDownloadurl("http://www.siemens.com").setMainlineState(MainlineState.MAINLINE)
+                .setSourceCodeDownloadurl("http://www.siemens.com").setMainlineState(MainlineState.MAINLINE)
                 .setClearingState(ClearingState.NEW_CLEARING)
                 .setContributors(ImmutableSet.of("me", "myself", "and", "I", "are", "singing"))
                 .setModerators(ImmutableSet.of("and", "dancing")).setSubscribers(ImmutableSet.of("to", "a"))

@@ -125,7 +125,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Component._Fields.HOMEPAGE, Component._Fields.MAILINGLIST, Component._Fields.WIKI, Component._Fields.BLOG);
     private static final ImmutableList<Release._Fields> listOfStringFieldsInReleaseToTrim = ImmutableList.of(
             Release._Fields.CPEID, Release._Fields.NAME, Release._Fields.VERSION, Release._Fields.RELEASE_DATE,
-            Release._Fields.DOWNLOADURL);
+            Release._Fields.SOURCE_CODE_DOWNLOADURL, Release._Fields.BINARY_DOWNLOADURL);
     private static final ImmutableList<COTSDetails._Fields> listOfStringFieldsInCOTSDetailsToTrim = ImmutableList.of(
             COTSDetails._Fields.USED_LICENSE, COTSDetails._Fields.LICENSE_CLEARING_REPORT_URL,
             COTSDetails._Fields.OSS_INFORMATION_URL);
@@ -1056,7 +1056,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         Component parentComponent = componentRepository.get(release.getComponentId());
         ComponentType compType = parentComponent.getComponentType();
 
-        String url = release.getDownloadurl();
+        String url = release.getSourceCodeDownloadurl();
         if (!isNullOrEmpty(url) && ComponentType.OSS.equals(compType)) {
             if (CommonUtils.isValidUrl(url)) {
                 ensureEccInformationIsSet(release);
@@ -1240,7 +1240,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             .add(Release._Fields.SOFTWARE_PLATFORMS)
             .add(Release._Fields.RELEASE_DATE)
             .add(Release._Fields.MAIN_LICENSE_IDS)
-            .add(Release._Fields.DOWNLOADURL)
+            .add(Release._Fields.SOURCE_CODE_DOWNLOADURL)
+            .add(Release._Fields.BINARY_DOWNLOADURL)
             .add(Release._Fields.MAINLINE_STATE)
             .add(Release._Fields.CREATED_ON)
             .add(Release._Fields.CREATED_BY)
