@@ -11,9 +11,12 @@ package org.eclipse.sw360.datahandler.common;
 
 import com.google.common.collect.Maps;
 
+import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.apache.logging.log4j.LogManager;
@@ -25,7 +28,9 @@ import org.apache.thrift.TFieldIdEnum;
 import org.apache.thrift.meta_data.FieldMetaData;
 import org.apache.thrift.protocol.TType;
 
+import java.net.MalformedURLException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 
@@ -38,6 +43,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
 
     protected final ThriftClients thriftClients;
+    AttachmentConnector attachmentConnector = null;
     private static final Logger log = LogManager.getLogger(Moderator.class);
 
     public Moderator(ThriftClients thriftClients) {
@@ -119,7 +125,14 @@ public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
                         }
                     }
                 } else {
-                    attachments.add(update);
+                    try {
+                        if (CommonUtils.isNotNullEmptyOrWhitespace(id)
+                                && getAttachmentConnector().getAttachmentContent(id) != null) {
+                            attachments.add(update);
+                        }
+                    } catch (SW360Exception e) {
+                        log.error("Error occured while checking attachment exists in DB: ", e);
+                    }
                 }
             }
         }
@@ -205,5 +218,17 @@ public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
             resultMap.get(key).removeAll(getNullToEmptyValue(deleteMap, key));
         }
         return resultMap;
+    }
+
+    private AttachmentConnector getAttachmentConnector() {
+        if (attachmentConnector == null) {
+            try {
+                attachmentConnector = new AttachmentConnector(DatabaseSettings.getConfiguredHttpClient(),
+                        DatabaseSettings.COUCH_DB_ATTACHMENTS, Duration.durationOf(30, TimeUnit.SECONDS));
+            } catch (MalformedURLException e) {
+                log.error("Could not create attachment connect for Moderator.", e);
+            }
+        }
+        return attachmentConnector;
     }
 }

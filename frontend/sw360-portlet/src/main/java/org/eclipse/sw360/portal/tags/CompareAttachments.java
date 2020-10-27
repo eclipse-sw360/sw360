@@ -40,6 +40,8 @@ import static org.eclipse.sw360.portal.tags.TagUtils.*;
  * @author Johannes.Najjar@tngtech.com
  */
 public class CompareAttachments extends ContextAwareTag {
+    private static final String ATTACHMENT_DELETED = "Attachment deleted";
+
     public static final List<Attachment._Fields> RELEVANT_FIELDS = FluentIterable
             .from(copyOf(Attachment._Fields.values()))
             .filter(CompareAttachments::isFieldRelevant)
@@ -195,6 +197,10 @@ public class CompareAttachments extends ContextAwareTag {
         HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
         ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
 
+        if (old == null) {
+            old = new Attachment().setAttachmentContentId(ATTACHMENT_DELETED)
+                    .setFilename(String.format(" - <span class=\"bg-danger pl-1 pr-1\">%s</span>", ATTACHMENT_DELETED));
+        }
         if (old.equals(added)) return;
         display.append(String.format("<table class=\"%s\" id=\"%schanges%s\" >", tableClasses, idPrefix, old.getAttachmentContentId()));
         display.append(String.format("<thead><tr><th colspan=\"4\"> Changes for Attachment %s </th></tr>", old.getFilename()));
