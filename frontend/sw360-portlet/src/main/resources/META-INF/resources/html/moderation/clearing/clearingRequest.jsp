@@ -412,7 +412,7 @@ require(['jquery', 'modules/dialog', 'modules/validation', 'modules/button', 'br
             if(approvedReleaseCount == 0) {
                 let progressText = "(0/"+totalRelease+") "+"<liferay-ui:message key="none.of.the.directly.linked.releases.are.cleared" />";
                 $progressBar.find('span').text("0%").removeClass('text-dark').addClass('text-danger');
-                $progressBar.attr("aria-valuenow", "0").css("width", "0%").removeClass('text-dark').addClass('text-danger');
+                $progressBar.attr("aria-valuenow", "0").css({"width": "0%", "overflow": "visible"}).removeClass('text-dark').addClass('text-danger');
                 $td.attr("title", progressText);
             } else if (approvedReleaseCount === totalRelease) {
                 let progressText = "("+totalRelease+"/"+totalRelease+") "+"<liferay-ui:message key="all.of.the.directly.linked.releases.are.cleared" />";

@@ -464,6 +464,17 @@ public class PortletUtils {
         request.setAttribute("welcomePageGuideLine", welcomePageGuideLine);
     }
 
+    public static void getBaBlSelection(RenderRequest request, User user) {
+        Map<String, CustomField> customFieldMap = CustomFieldHelper.getCustomFields(request, user, CustomFieldPageIdentifier.PROJECT);
+        if (CommonUtils.isNullOrEmptyMap(customFieldMap)) {
+            return;
+        }
+        CustomField customField = customFieldMap.get("BA BL");
+        if (null != customField) {
+            request.setAttribute("babl", customField);
+        }
+    }
+
     public static void setCustomFieldsDisplay(RenderRequest request, User user, Project project) {
         Map<String, CustomField> customFieldMap = CustomFieldHelper.getCustomFields(request, user, CustomFieldPageIdentifier.PROJECT);
         setCustomFieldsDisplay(customFieldMap, project.getAdditionalData());
