@@ -2286,9 +2286,19 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     }
 
     private Comparator<Project> compareByState(boolean isAscending) {
-        Comparator<Project> comparator = Comparator.comparing(
-                p -> nullToEmptyString(p.getState()));
+        Comparator<Project> comparator = Comparator.comparing(p -> getProjectStatePriority(p.getState()) + "-"
+                + (p.getClearingState() == null ? 4 : p.getClearingState().getValue()));
         return isAscending ? comparator : comparator.reversed();
+    }
+
+    private int getProjectStatePriority(ProjectState ps) {
+        if (ps == null)
+            return 3;
+
+        int priority = ps.getValue();
+        if (ps == ProjectState.PHASE_OUT)
+            priority = 4;
+        return priority;
     }
 
     private void linkProjectsToProject(ResourceRequest request, ResourceResponse response, String[] projectIds)
