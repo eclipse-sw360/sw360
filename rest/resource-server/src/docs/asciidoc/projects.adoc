@@ -266,6 +266,26 @@ include::{snippets}/should_document_get_project_releases/http-response.adoc[]
 ===== Links
 include::{snippets}/should_document_get_project_releases/links.adoc[]
 
+[[resources-project-get-projects-releases]]
+==== Listing releases of multiple projects
+
+A `GET` request will get releases of multiple projects. Please pass an array of project ids as request body
+
+===== Request parameter
+include::{snippets}/should_document_get_projects_releases/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_projects_releases/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_projects_releases/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_projects_releases/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_projects_releases/links.adoc[]
+
 
 [[resources-project-get-project-releases-transitive]]
 ==== Listing releases (transitive)

@@ -27,6 +27,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
+import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
@@ -68,6 +69,7 @@ class JacksonCustomizations {
             setMixInAnnotation(COTSDetails.class, Sw360Module.COTSDetailsMixin.class);
             setMixInAnnotation(ClearingInformation.class, Sw360Module.ClearingInformationMixin.class);
             setMixInAnnotation(Repository.class, Sw360Module.RepositoryMixin.class);
+            setMixInAnnotation(SearchResult.class, Sw360Module.SearchResultMixin.class);
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -794,6 +796,21 @@ class JacksonCustomizations {
             "setRepositorytype"
         })
         public static abstract class RepositoryMixin extends Repository {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+            "score",
+            "details",
+            "setScore",
+            "detailsSize",
+            "detailsIterator",
+            "setDetails",
+            "setId",
+            "setType",
+            "setName"
+        })
+        public static abstract class SearchResultMixin extends SearchResult {
         }
     }
 }

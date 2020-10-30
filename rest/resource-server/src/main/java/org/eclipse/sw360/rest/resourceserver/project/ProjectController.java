@@ -35,6 +35,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
+import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
@@ -66,6 +67,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.json.GsonJsonParser;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.ResourceProcessor;
 import org.springframework.hateoas.Resources;
@@ -73,6 +75,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.MultiValueMap;
@@ -93,12 +96,19 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.wrapThriftOptionalReplacement;
+import static org.eclipse.sw360.datahandler.common.WrappedException.wrapException;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
@@ -292,6 +302,46 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         return new ResponseEntity<>(resources, status);
     }
 
+    @RequestMapping(value = PROJECTS_URL + "/releases", method = RequestMethod.GET)
+    public ResponseEntity<Resources<Resource<Release>>> getProjectsReleases(
+            Pageable pageable,
+            @RequestBody List<String> projectIds,
+            @RequestParam(value = "transitive", required = false) String transitive,@RequestParam(value = "clearingState", required = false) String clState, HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        final Set<String> releaseIdsInBranch = new HashSet<>();
+        boolean isTransitive = Boolean.parseBoolean(transitive);
+
+        Set<Release> releases = projectService.getReleasesFromProjectIds(projectIds, transitive, sw360User,releaseService);
+
+        if (null != clState) {
+            ClearingState cls = ThriftEnumUtils.stringToEnum(clState, ClearingState.class);
+            releases = releases.stream().filter(rel -> rel.getClearingState().equals(cls)).collect(Collectors.toSet());
+        }
+
+        List<Release> relList = releases.stream().collect(Collectors.toList());
+
+        PaginationResult<Release> paginationResult = restControllerHelper.createPaginationResult(request, pageable, relList, SW360Constants.TYPE_RELEASE);
+        final List<Resource<Release>> releaseResources = paginationResult.getResources().stream()
+                .map(sw360Release -> wrapTException(() -> {
+                    final Release embeddedRelease = restControllerHelper.convertToEmbeddedReleaseWithDet(sw360Release);
+                    final HalResource<Release> releaseResource = new HalResource<>(embeddedRelease);
+                    if (isTransitive) {
+                        projectService.addEmbeddedlinkedRelease(sw360Release, sw360User, releaseResource,
+                                releaseService, releaseIdsInBranch);
+                    }
+                    return releaseResource;
+                })).collect(Collectors.toList());
+
+        Resources resources = null;
+        if (CommonUtils.isNotEmpty(releaseResources)) {
+            resources = restControllerHelper.generatePagesResource(paginationResult, releaseResources);
+        }
+
+        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(resources, status);
+    }
+
     @RequestMapping(value = PROJECTS_URL + "/{id}/releases/ecc", method = RequestMethod.GET)
     public ResponseEntity<Resources<Resource<Release>>> getECCsOfReleases(
             @PathVariable("id") String id,
@@ -353,7 +403,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         Set<String> externalIdsFromRequestDto = vulnDTOs.stream().map(VulnerabilityDTO::getExternalId).collect(Collectors.toSet());
         Set<String> commonExtIds = Sets.intersection(actualExternalId, externalIdsFromRequestDto);
 
-        if(CommonUtils.isNullOrEmptyCollection(commonExtIds)) {
+        if(CommonUtils.isNullOrEmptyCollection(commonExtIds) || commonExtIds.size() != externalIdsFromRequestDto.size()) {
             throw new HttpMessageNotReadableException("External ID is not valid");
         }
 
@@ -361,7 +411,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         Set<String> releaseIdsFromRequestDto = vulnDTOs.stream().map(VulnerabilityDTO::getIntReleaseId).collect(Collectors.toSet());
         Set<String> commonRelIds = Sets.intersection(actualReleaseIds, releaseIdsFromRequestDto);
 
-        if(CommonUtils.isNullOrEmptyCollection(commonRelIds)) {
+        if(CommonUtils.isNullOrEmptyCollection(commonRelIds) || commonRelIds.size() != releaseIdsFromRequestDto.size()) {
             throw new HttpMessageNotReadableException("Release ID is not valid");
         }
 

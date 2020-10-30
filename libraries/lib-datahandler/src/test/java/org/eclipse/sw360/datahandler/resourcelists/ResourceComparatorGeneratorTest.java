@@ -19,6 +19,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
+import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -137,5 +138,23 @@ public class ResourceComparatorGeneratorTest {
         assertTrue(nameComparator.compare(new Release().setName("alpha"), new Release().setName("beta")) < 0);
         assertTrue(nameComparator.compare(new Release().setName("beta"), new Release().setName("alpha")) > 0);
         assertEquals(nameComparator.compare(new Release().setName("alpha"), new Release().setName("alpha")), 0);
+    }
+
+    @Test
+    public void checkSearchResultComparatorName() throws ResourceClassNotFoundException {
+        Comparator<SearchResult> nameComparator = resourceComparatorGenerator.generateComparator(SW360Constants.TYPE_SEARCHRESULT, "name");
+        assertNotNull(nameComparator);
+        assertTrue(nameComparator.compare(new SearchResult().setName("alpha"), new SearchResult().setName("beta")) < 0);
+        assertTrue(nameComparator.compare(new SearchResult().setName("beta"), new SearchResult().setName("alpha")) > 0);
+        assertEquals(nameComparator.compare(new SearchResult().setName("alpha"), new SearchResult().setName("alpha")), 0);
+    }
+
+    @Test
+    public void checkSearchResultComparatorType() throws ResourceClassNotFoundException {
+        Comparator<SearchResult> nameComparator = resourceComparatorGenerator.generateComparator(SW360Constants.TYPE_SEARCHRESULT, "type");
+        assertNotNull(nameComparator);
+        assertTrue(nameComparator.compare(new SearchResult().setType("project"), new SearchResult().setType("release")) < 0);
+        assertTrue(nameComparator.compare(new SearchResult().setType("release"), new SearchResult().setType("project")) > 0);
+        assertEquals(nameComparator.compare(new SearchResult().setType("project"), new SearchResult().setType("project")), 0);
     }
 }
