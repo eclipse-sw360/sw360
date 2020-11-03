@@ -146,6 +146,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             Project._Fields.PROJECT_RESPONSIBLE,
             Project._Fields.NAME,
             Project._Fields.STATE,
+            Project._Fields.CLEARING_STATE,
             Project._Fields.TAG,
             Project._Fields.ADDITIONAL_DATA);
 
@@ -1230,7 +1231,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         Map<String, Set<String>> filterMap = new HashMap<>();
         for (Project._Fields filteredField : projectFilteredFields) {
             String parameter = request.getParameter(filteredField.toString());
-            if (!isNullOrEmpty(parameter) && !((filteredField.equals(Project._Fields.PROJECT_TYPE) || filteredField.equals(Project._Fields.STATE))
+            if (!isNullOrEmpty(parameter) && !((filteredField.equals(Project._Fields.PROJECT_TYPE)
+                    || filteredField.equals(Project._Fields.STATE)
+                    || filteredField.equals(Project._Fields.CLEARING_STATE))
                     && parameter.equals(PortalConstants.NO_FILTER))) {
                 Set<String> values = CommonUtils.splitToSet(parameter);
                 if (filteredField.equals(Project._Fields.NAME) || filteredField.equals(Project._Fields.VERSION)) {

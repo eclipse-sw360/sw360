@@ -15,6 +15,7 @@
 <%@ page import="javax.portlet.PortletRequest" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectType" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectState" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState" %>
 <%@ page import="org.eclipse.sw360.portal.common.FossologyConnectionHelper" %>
 
 <%@ include file="/html/init.jsp" %>
@@ -120,6 +121,13 @@
                                 <select class="form-control form-control-sm" id="project_state" name="<portlet:namespace/><%=Project._Fields.STATE%>">
                                     <option value="<%=PortalConstants.NO_FILTER%>"></option>
                                     <sw360:DisplayEnumOptions type="<%=ProjectState.class%>" selectedName="${state}" useStringValues="true"/>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                               <label for="project_clearing_state"><liferay-ui:message key="clearing.state" /></label>
+                                <select class="form-control form-control-sm" id="project_clearing_state" name="<portlet:namespace/><%=Project._Fields.CLEARING_STATE%>">
+                                    <option value="<%=PortalConstants.NO_FILTER%>"></option>
+                                    <sw360:DisplayEnumOptions type="<%=ProjectClearingState.class%>" selectedName="${clearingState}" useStringValues="true"/>
                                 </select>
                             </div>
                             <div class="form-group">
