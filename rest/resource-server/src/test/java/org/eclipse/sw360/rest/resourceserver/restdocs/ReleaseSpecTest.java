@@ -66,6 +66,8 @@ import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.li
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
+import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
+import static org.springframework.restdocs.request.RequestDocumentation.requestParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -309,17 +311,32 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/releases")
                 .header("Authorization", "Bearer " + accessToken)
+                .param("page", "0")
+                .param("page_entries", "5")
+                .param("sort", "name,desc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("page").description("Page of release"),
+                                parameterWithName("page_entries").description("Amount of releases per page"),
+                                parameterWithName("sort").description("Defines order of the releases")
+                        ),
                         links(
-                                linkWithRel("curies").description("Curies are used for online documentation")
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
                         ),
                         responseFields(
                                 fieldWithPath("_embedded.sw360:releases[]name").description("The name of the release, optional"),
                                 fieldWithPath("_embedded.sw360:releases[]version").description("The version of the release"),
                                 fieldWithPath("_embedded.sw360:releases").description("An array of <<resources-releases, Releases resources>>"),
-                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of projects per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all existing projects"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
                         )));
     }
 

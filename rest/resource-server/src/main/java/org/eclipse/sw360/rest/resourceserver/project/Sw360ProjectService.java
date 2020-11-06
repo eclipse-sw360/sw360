@@ -44,7 +44,10 @@ import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.Link;
@@ -59,15 +62,25 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
+
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import javax.annotation.PreDestroy;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 
@@ -82,6 +95,8 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     @NonNull
     private RestControllerHelper rch;
+
+    public static final ExecutorService releaseExecutor = Executors.newFixedThreadPool(10);
 
     public Set<Project> getProjectsForUser(User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
@@ -269,5 +284,67 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         final Collection<ProjectLink> linkedProjects = SW360Utils
                 .flattenProjectLinkTree(SW360Utils.getLinkedProjects(project, deep, new ThriftClients(), log, user));
         return linkedProjects.stream().map(projectLinkMapper).collect(Collectors.toList());
+    }
+
+    public Set<Release> getReleasesFromProjectIds(List<String> projectIds, String transitive, final User sw360User, Sw360ReleaseService releaseService) {
+        final List<Callable<List<Release>>> callableTasksToGetReleases = new ArrayList<Callable<List<Release>>>();
+
+        projectIds.stream().forEach(id -> {
+            Callable<List<Release>> getReleasesByProjectId = () -> {
+                final Set<String> releaseIds = getReleaseIds(id, sw360User, transitive);
+
+                List<Release> releases = releaseIds.stream().map(relId -> wrapTException(() -> {
+                    final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
+                    return sw360Release;
+                })).collect(Collectors.toList());
+                return releases;
+            };
+            callableTasksToGetReleases.add(getReleasesByProjectId);
+        });
+
+        List<Future<List<Release>>> releasesFuture = new ArrayList<Future<List<Release>>>();
+        try {
+            releasesFuture = releaseExecutor.invokeAll(callableTasksToGetReleases);
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Error getting releases: " + e.getMessage());
+        }
+
+        List<List<Release>> listOfreleases = releasesFuture.stream().map(fut -> {
+            List<Release> rels = new ArrayList<Release>();
+            try {
+                rels = fut.get();
+            } catch (InterruptedException | ExecutionException e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof ResourceNotFoundException) {
+                    throw (ResourceNotFoundException) cause;
+                }
+
+                if (cause instanceof AccessDeniedException) {
+                    throw (AccessDeniedException) cause;
+                }
+                throw new RuntimeException("Error getting releases: " + e.getMessage());
+            }
+            return rels;
+        }).collect(Collectors.toList());
+
+        final Set<Release> relList = new HashSet<Release>();
+        listOfreleases.stream().forEach(listOfRel -> {
+            for(Release rel : listOfRel) {
+                relList.add(rel);
+            }
+        });
+        return relList;
+    }
+
+    @PreDestroy
+    public void shutDownThreadpool() {
+        releaseExecutor.shutdown();
+        try {
+            if (!releaseExecutor.awaitTermination(800, TimeUnit.MILLISECONDS)) {
+                releaseExecutor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            releaseExecutor.shutdownNow();
+        }
     }
 }

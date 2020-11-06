@@ -17,6 +17,7 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 
 import java.util.*;
 
@@ -25,6 +26,7 @@ public class ResourceComparatorGenerator<T> {
     private static final Map<Component._Fields, Comparator<Component>> componentMap = generateComponentMap();
     private static final Map<Project._Fields, Comparator<Project>> projectMap = generateProjectMap();
     private static final Map<Release._Fields, Comparator<Release>> releaseMap = generateReleaseMap();
+    private static final Map<SearchResult._Fields, Comparator<SearchResult>> searchResultMap = generateSearchResultMap();
 
     private static Map<Component._Fields, Comparator<Component>> generateComponentMap() {
         Map<Component._Fields, Comparator<Component>> componentMap = new HashMap<>();
@@ -52,6 +54,13 @@ public class ResourceComparatorGenerator<T> {
         return Collections.unmodifiableMap(releaseMap);
     }
 
+    private static Map<SearchResult._Fields, Comparator<SearchResult>> generateSearchResultMap() {
+        Map<SearchResult._Fields, Comparator<SearchResult>> searchResultMap = new HashMap<>();
+        searchResultMap.put(SearchResult._Fields.NAME, Comparator.comparing(SearchResult::getName, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        searchResultMap.put(SearchResult._Fields.TYPE, Comparator.comparing(SearchResult::getType, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        return Collections.unmodifiableMap(searchResultMap);
+    }
+
     public Comparator<T> generateComparator(String type) throws ResourceClassNotFoundException {
         switch (type) {
             case SW360Constants.TYPE_COMPONENT:
@@ -60,6 +69,8 @@ public class ResourceComparatorGenerator<T> {
                 return (Comparator<T>)defaultProjectComparator();
             case SW360Constants.TYPE_RELEASE:
                 return (Comparator<T>)defaultReleaseComparator();
+            case SW360Constants.TYPE_SEARCHRESULT:
+                return (Comparator<T>)defaultSearchResultComparator();
             default:
                 throw new ResourceClassNotFoundException("No default comparator for resource class with name " + type);
         }
@@ -98,6 +109,15 @@ public class ResourceComparatorGenerator<T> {
                     }
                 }
                 return generateReleaseComparatorWithFields(type, releaeFields);
+            case SW360Constants.TYPE_SEARCHRESULT:
+                List<SearchResult._Fields> searchReult = new ArrayList<>();
+                for(String property:properties) {
+                    SearchResult._Fields field = SearchResult._Fields.findByName(property);
+                    if (field != null) {
+                        searchReult.add(field);
+                    }
+                }
+                return generateSearchResultComparatorWithFields(type, searchReult);
             default:
                 throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
         }
@@ -125,6 +145,15 @@ public class ResourceComparatorGenerator<T> {
         switch (type) {
             case SW360Constants.TYPE_RELEASE:
                 return (Comparator<T>)releaseComparator(fields);
+            default:
+                throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
+        }
+    }
+
+    public Comparator<T> generateSearchResultComparatorWithFields(String type, List<SearchResult._Fields> fields) throws ResourceClassNotFoundException {
+        switch (type) {
+            case SW360Constants.TYPE_SEARCHRESULT:
+                return (Comparator<T>)searchResultComparator(fields);
             default:
                 throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
         }
@@ -166,16 +195,32 @@ public class ResourceComparatorGenerator<T> {
         return comparator;
     }
 
+    private Comparator<SearchResult> searchResultComparator(List<SearchResult._Fields> fields) {
+        Comparator<SearchResult> comparator = Comparator.comparing(x -> true);
+        for (SearchResult._Fields field:fields) {
+            Comparator<SearchResult> fieldComparator = searchResultMap.get(field);
+            if(fieldComparator != null) {
+                comparator = comparator.thenComparing(fieldComparator);
+            }
+        }
+        comparator = comparator.thenComparing(defaultSearchResultComparator());
+        return comparator;
+    }
+
     private Comparator<Component> defaultComponentComparator() {
         return componentMap.get(Component._Fields.NAME);
     }
-    
+
     private Comparator<Project> defaultProjectComparator() {
         return projectMap.get(Project._Fields.NAME);
     }
 
     private Comparator<Release> defaultReleaseComparator() {
         return releaseMap.get(Release._Fields.NAME);
+    }
+
+    private Comparator<SearchResult> defaultSearchResultComparator() {
+        return searchResultMap.get(SearchResult._Fields.NAME);
     }
 
 }

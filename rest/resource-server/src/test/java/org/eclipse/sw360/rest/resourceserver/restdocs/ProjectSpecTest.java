@@ -11,6 +11,7 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.Source;
@@ -32,6 +33,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityCheckStatus;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
@@ -57,6 +59,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
 import java.io.IOException;
@@ -297,6 +300,31 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         release2.setClearingState(ClearingState.APPROVED);
         release2.setExternalIds(Collections.singletonMap("mainline-id-component", "1771"));
 
+        Release rel = new Release();
+        Map<String, String> releaseExternalIds = new HashMap<>();
+        releaseExternalIds.put("mainline-id-component", "1432");
+        releaseExternalIds.put("ws-component-id", "[\"2365\",\"5487923\"]");
+
+        rel.setId("3765276512");
+        rel.setName("Spring Core 4.3.4");
+        rel.setCpeid("cpe:/a:pivotal:spring-core:4.3.4:");
+        rel.setReleaseDate("2016-12-07");
+        rel.setVersion("4.3.4");
+        rel.setCreatedOn("2016-12-18");
+        rel.setCreatedBy("admin@sw360.org");
+        rel.setSourceCodeDownloadurl("http://www.google.com");
+        rel.setBinaryDownloadurl("http://www.google.com/binaries");
+        rel.setComponentId("17653524");
+        rel.setClearingState(ClearingState.APPROVED);
+        rel.setExternalIds(releaseExternalIds);
+        rel.setAdditionalData(Collections.singletonMap("Key", "Value"));
+        rel.setLanguages(new HashSet<>(Arrays.asList("C++", "Java")));
+        rel.setMainLicenseIds(new HashSet<>(Arrays.asList("GPL-2.0-or-later", "Apache-2.0")));
+        rel.setOperatingSystems(ImmutableSet.of("Windows", "Linux"));
+        rel.setSoftwarePlatforms(new HashSet<>(Arrays.asList("Java SE", ".NET")));
+        rel.setMainlineState(MainlineState.MAINLINE);
+        rel.setVendor(new Vendor("TV", "Test Vendor", "http://testvendor.com"));
+
         given(this.releaseServiceMock.getReleaseForUserById(eq(release.getId()), anyObject())).willReturn(release);
         given(this.releaseServiceMock.getReleaseForUserById(eq(release2.getId()), anyObject())).willReturn(release2);
 
@@ -379,6 +407,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
         given(this.vulnerabilityMockService.fillVulnerabilityMetadata(anyObject(), anyObject())).willReturn(vulIdToRelIdToRatings);
         given(this.vulnerabilityMockService.updateProjectVulnerabilityRating(anyObject(), anyObject())).willReturn(RequestStatus.SUCCESS);
+        given(this.projectServiceMock.getReleasesFromProjectIds(anyObject(), anyObject(), anyObject(), anyObject())).willReturn(Set.of(rel));
     }
 
     @Test
@@ -1109,6 +1138,63 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 parameterWithName("variant").description("All the possible values for variants are "
                                         + Arrays.asList(OutputFormatVariant.values())),
                                 parameterWithName("externalIds").description("The external Ids of the project"))));
+    }
+
+    @Test
+    public void should_document_get_projects_releases() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        this.mockMvc.perform(get("/api/projects/releases")
+                 .header("Authorization", "Bearer " + accessToken)
+                 .param("clearingState", ClearingState.APPROVED.toString())
+                 .param("transitive", "false")
+                 .param("page", "0")
+                 .param("page_entries", "5")
+                 .param("sort", "name,desc")
+                 .content(this.objectMapper.writeValueAsString(List.of("376576","376570")))
+                 .contentType(MediaTypes.HAL_JSON)
+                 .accept(MediaTypes.HAL_JSON))
+                 .andExpect(status().isOk())
+                 .andDo(this.documentationHandler.document(
+                             links(
+                                     linkWithRel("curies").description("Curies are used for online documentation"),
+                                     linkWithRel("first").description("Link to first page"),
+                                     linkWithRel("last").description("Link to last page")
+                                     ),
+                             requestParameters(
+                                     parameterWithName("transitive").description("Get the transitive releases"),
+                                     parameterWithName("clearingState").description("The clearing state of the release. Possible values are: "+Arrays.asList(ClearingState.values())),
+                                     parameterWithName("page").description("Page of releases"),
+                                     parameterWithName("page_entries").description("Amount of releases page"),
+                                     parameterWithName("sort").description("Defines order of the releases")
+                                     ),
+                             responseFields(
+                                     fieldWithPath("_embedded.sw360:releases[]name").description("The name of the release, optional"),
+                                     fieldWithPath("_embedded.sw360:releases[]version").description("The version of the release"),
+                                     fieldWithPath("_embedded.sw360:releases[]createdBy").description("Email of the release creator"),
+                                     fieldWithPath("_embedded.sw360:releases[]componentId").description("The component id"),
+                                     fieldWithPath("_embedded.sw360:releases[]cpeId").description("CpeId of the release"),
+                                     fieldWithPath("_embedded.sw360:releases[]clearingState").description("The clearing of the release, possible values are " + Arrays.asList(ClearingState.values())),
+                                     fieldWithPath("_embedded.sw360:releases[]releaseDate").description("The date of this release"),
+                                     fieldWithPath("_embedded.sw360:releases[]createdOn").description("The creation date of the internal sw360 release"),
+                                     fieldWithPath("_embedded.sw360:releases[]mainlineState").description("the mainline state of the release, possible values are: " + Arrays.asList(MainlineState.values())),
+                                     fieldWithPath("_embedded.sw360:releases[]sourceCodeDownloadurl").description("the source code download url of the release"),
+                                     fieldWithPath("_embedded.sw360:releases[]binaryDownloadurl").description("the binary download url of the release"),
+                                     fieldWithPath("_embedded.sw360:releases[]externalIds").description("When releases are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
+                                     fieldWithPath("_embedded.sw360:releases[]additionalData").description("A place to store additional data used by external tools"),
+                                     fieldWithPath("_embedded.sw360:releases[]languages").description("The language of the component"),
+                                     fieldWithPath("_embedded.sw360:releases[]mainLicenseIds").description("An array of all main licenses"),
+                                     fieldWithPath("_embedded.sw360:releases[]operatingSystems").description("The OS on which the release operates"),
+                                     fieldWithPath("_embedded.sw360:releases[]softwarePlatforms").description("The software platforms of the component"),
+                                     fieldWithPath("_embedded.sw360:releases[]vendor").description("The Id of the vendor"),
+                                     fieldWithPath("_embedded.sw360:releases[]_links").description("<<resources-release-get,Release>> to release resource"),
+                                     fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                     fieldWithPath("page").description("Additional paging information"),
+                                     fieldWithPath("page.size").description("Number of releases per page"),
+                                     fieldWithPath("page.totalElements").description("Total number of all existing releases"),
+                                     fieldWithPath("page.totalPages").description("Total number of pages"),
+                                     fieldWithPath("page.number").description("Number of the current page")
+                                     )
+                             ));
     }
 
     private void add_patch_releases(MockHttpServletRequestBuilder requestBuilder) throws Exception {

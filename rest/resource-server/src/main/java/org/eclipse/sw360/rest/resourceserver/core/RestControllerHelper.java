@@ -12,6 +12,7 @@ package org.eclipse.sw360.rest.resourceserver.core;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.resourcelists.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
@@ -29,6 +30,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.eclipse.sw360.rest.resourceserver.project.ProjectController;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
@@ -435,6 +437,14 @@ public class RestControllerHelper<T> {
         embeddedRelease.setVersion(release.getVersion());
         embeddedRelease.setType(null);
         return embeddedRelease;
+    }
+
+    public Release convertToEmbeddedReleaseWithDet(Release release) {
+        List<String> fields = List.of("id", "name", "version", "cpeid", "createdBy", "createdOn", "componentId",
+                "additionalData", "clearingState", "mainLicenseIds", "binaryDownloadurl", "sourceCodeDownloadurl",
+                "releaseDate", "externalIds", "languages", "operatingSystems", "softwarePlatforms", "vendor",
+                "mainlineState");
+        return convertToEmbeddedRelease(release, fields);
     }
 
     public Release convertToEmbeddedRelease(Release release, List<String> fields) {

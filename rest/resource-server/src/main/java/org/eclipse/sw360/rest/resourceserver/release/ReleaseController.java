@@ -16,6 +16,11 @@ import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
+import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
+import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.Source;
@@ -33,6 +38,7 @@ import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.Link;
@@ -50,6 +56,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.google.common.collect.ImmutableMap;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
@@ -92,10 +99,11 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
 
     @GetMapping(value = RELEASES_URL)
     public ResponseEntity<Resources<Resource>> getReleasesForUser(
+            Pageable pageable,
             @RequestParam(value = "sha1", required = false) String sha1,
             @RequestParam(value = "fields", required = false) List<String> fields,
             @RequestParam(value = "name", required = false) String name,
-            @RequestParam(value = "allDetails", required = false) boolean allDetails) throws TException {
+            @RequestParam(value = "allDetails", required = false) boolean allDetails, HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<Release> sw360Releases = new ArrayList<>();
@@ -110,8 +118,10 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
                 .filter(release -> name == null || name.isEmpty() || release.getName().equals(name))
                 .collect(Collectors.toList());
 
+        PaginationResult<Release> paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Releases, SW360Constants.TYPE_RELEASE);
+
         List<Resource> releaseResources = new ArrayList<>();
-        for (Release sw360Release : sw360Releases) {
+        for (Release sw360Release : paginationResult.getResources()) {
             Resource<Release> releaseResource = null;
             if (!allDetails) {
                 Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(sw360Release, fields);
@@ -123,7 +133,11 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
             releaseResources.add(releaseResource);
         }
 
-        Resources<Resource> resources = restControllerHelper.createResources(releaseResources);
+        Resources resources = null;
+        if (CommonUtils.isNotEmpty(releaseResources)) {
+            resources = restControllerHelper.generatePagesResource(paginationResult, releaseResources);
+        }
+
         HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(resources, status);
     }
