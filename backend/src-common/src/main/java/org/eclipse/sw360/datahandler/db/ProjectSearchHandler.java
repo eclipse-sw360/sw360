@@ -64,6 +64,9 @@ public class ProjectSearchHandler {
                     "    if(doc.state !== undefined && doc.state != null && doc.state.length >0) {  "+
                     "      ret.add(doc.state, {\"field\": \"state\"} );" +
                     "    }" +
+                    "    if(doc.clearingState) {  "+
+                    "      ret.add(doc.clearingState, {\"field\": \"clearingState\"} );" +
+                    "    }" +
                     "    if(doc.tag !== undefined && doc.tag != null && doc.tag.length >0) {  "+
                     "      ret.add(doc.tag, {\"field\": \"tag\"} );" +
                     "    }" +
