@@ -74,6 +74,12 @@ public class DocxUtils {
         }
     }
 
+    public static void addFormattedTextInTableCell(XWPFTableCell cell, String text) {
+        XWPFParagraph cellParagraph = cell.getParagraphs().get(0);
+        XWPFRun run = cellParagraph.createRun();
+        addFormattedText(run, text, "Arial", 9, false, null);
+    }
+
     public static void addFormattedText(XWPFRun run, String text, String fontFamily, int fontSize, boolean bold, String rrggbbColor) {
         run.setFontSize(fontSize);
         run.setFontFamily(fontFamily);
