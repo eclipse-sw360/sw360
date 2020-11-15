@@ -4,6 +4,96 @@ This is the changelog file of the sw360 project. It starts with the first releas
 
 https://github.com/sw360/sw360portal/releases
 
+## sw360-12.0.0-M1
+
+This release something special because it brings a lot, really a lot of changes in the database model, more specifically it is a refactoring of the licenses and obligation objects. Following corrections:
+
+* Risks are dropped and migrated to obligations
+* Term "todo" is eliminated and we aim at consistently use "obligation"
+
+Then there are two new dimensions of obligations, first obligation level
+
+* Organisation obligations: obligations that apply for all projects of the sw360 instance.
+* Project obligations: obligations that apply for a specific project, for example, obligations need to be applied to software which is delivered on a device without display.
+* Component obligations: obligations that apply to a release to be more precise, for example IP issues coming when using a particular release.
+* License obligations: obligations which come from using software under a license.
+
+Second, the obligations have types:
+
+* Permissions
+* Restrictions
+* Obligations (finally)
+* Risks (for example patent litigation clauses)
+* Exceptions (for example classpath exception with GPL)
+
+So that involves a lot of changes to the data model, and resulting a lot of migrations. We apologize in advance for the 18 migrations scripts to execute. But it will be easier to have individual migration scripts for particular changes instead of having a large one. Please refer to scripts/migrations/README.md for further details. Please note that in general, all scripts have a `DRYRUN` variable which is set to `True` by default and needs to be set to `False` to apply actually changes to the database.
+
+Besides, this release has also some other changes, including:
+
+* changing download URL into two attributes: binary download URL and source code download URL
+* New REST Endpoint: Search!
+* if you ant to write clients using REST: Pagination for some of the major listings!
+
+### Migrations
+
+For existing installations, a data migration is required. Please go to the readme file in `scripts/migrations` to see more information:
+
+https://github.com/eclipse/sw360/blob/master/scripts/migrations/README.md
+
+For running the migrations scripts, you will need python and the couchdb package. Please note that you will need to change manually in the python file: the `DRYRUN` variable and the couchdb URL (if that is not on localhost or requires password or both).
+
+### Credits
+
+The following github users have contributed to the source code since the last release (in order of appearance):
+
+```
+<abdul.mannankapti@siemens.com>
+github dependabot ;-)
+<jaideep.palit@siemens.com>
+<michael.c.jaeger@siemens.com>
+<smruti.sahoo@siemens.com>
+<Stephanie.Neubauer@bosch.io>
+```
+
+### Features Summary
+
+* `596ed7bb` feat(ProjectListUI): Added clearing state filter in Project List
+* `693dc596` feat(rest): New search resource endpoint and get releases for multiple projects
+* `a2577cf0` feat(rest/ui): Project vulnerability enpoint update & added new projectrating in UI
+* `c1b1e33b` feat(ui-rest): Changes in Release information, change title "Download URL" to "Source Code Download URL", add new data filed "Binary Download URL", added new field in excel sheet
+* `99b3f816` feat(ProjectTodo): Remove ProjectTodo and UI changes for Obligation and ProjectTodo
+* `7b9b73a7` feat(projecttodo): Migration Scripts
+* `cb890218` feat(ProjectTodo): Renamed type to obligationType ,Changed required licenseIds to optional, Added optional ObligationLevel obligationLevel in ObligationStatusInfo
+* `04020bef` feat(CR-UI): Enhancement & Bug fixes
+* `1d6d2b32` feat(licensemodel): Drop Risk and Risk category and merge it with Obligation
+* `3ac3ba23` feat(ProjectObligation): Changes in Project Obligation Data Model, renamed linkedObligations to linkedObligationStatus in ProjectObligation struct, renamed struct ProjectObligation to struct ObligationList
+* `c009f2c8` feat(obligation): Rename product obligation to project obligation
+* `fcfec496` feat(LicenseDataModel): Merge LiceneObligation with Obligation
+* `c5e4e1e6` feat(ui): Allow access to merge/split of component and release based on user role configured in properties (6 weeks ago) <jaideep.palit@siemens.com>
+* `af625d7b` feat(ProjectUI): Added 2 new fields in Project Obligation
+* `5b837649` feat(Project-UI): Added new field in Advanced Search for Projets
+* `ff4a9af4` feat(LicenseInfoObligation): Rename Obligation in LicenseInfo.thrift to ObligationAtProject, added null check in change log for merge release
+* `6c13cc93` feat(ObligationDataModel): Changes in Obligation data model, Renamed struct Obligations to struct Obligation in License.thrift, Renamed existing obligationType to obligationLevel, Created new obligationType field which has Permission,Risk,Exception,Restriction as options, Fixed adding obligation in licenses tab
+* `067b731f` feat(rest): Adding pagination while listing projects and listing project releases
+
+### Corections
+
+* `a2dd35de` fix(lucene): fix parameter allow leading wildcard to true
+* `9ac6e93e` fix(ModerationRequest): Fixed Moderation Request not opening when associated attachment deleted
+* `51ab6e0b` fix(ProjectListUI): Fixed sorting of project clearing state in Project List page
+* `0d525531` fix(Report): Fixed Clearing report to show project, component, organisation obligation
+* `92d00ab1` fix(Obligation): Expand/Collapse all columns including comment using single leftmost toggle button for a row, Remove truncate for Obligation Text, Added expand collapse column feature for comments
+* `5a1422e6` fix(obligations):cover null pointer case if file with obligations is missing
+* `51860a0f` fix(moderation): Project moderation fix
+* `2f9a6879` fix(UserSearch): Fixed search user functionality
+
+### Infrastructure
+
+* `d04911b8` chore(deps-dev): Bump junit in /backend/src/src-attachments
+* `4a3e8904` chore(deps-dev): Bump junit in /backend/src/src-licenseinfo
+* `4f3c3ea8` chore(deps): Bump junit from 4.12 to 4.13.1
+* `ca348628` typo(rest): fix patchComponent in releasecontroller is patchRelease
+
 ## sw360-11.0.0-M1
 
 The changes for this release incorporate a larger jump from the previous release, because it changes the sw360 infrastructure to the following versions:
