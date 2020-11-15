@@ -208,7 +208,7 @@ public class XhtmlGeneratorTest {
     @Test
     public void testGenerateOutputFile_parseSingleCopyright() throws Exception {
         String copyrights = findCopyrights(document3, releaseNameString(vendorName, releaseName, version1));
-        assertThat(copyrights, is("\n"+ cr));
+        assertThat(copyrights, is("\n"+ cr + "\n"));
     }
 
     @Test
