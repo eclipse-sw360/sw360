@@ -1283,6 +1283,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 PortletUtils.setCustomFieldsDisplay(request, user, project);
                 addProjectBreadcrumb(request, response, project);
                 request.setAttribute(IS_USER_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user) ? YES : NO);
+                request.setAttribute(IS_PROJECT_MEMBER, SW360Utils.isModeratorOrCreator(project, user));
             } catch (SW360Exception sw360Exp) {
                 setSessionErrorBasedOnErrorCode(request, sw360Exp.getErrorCode());
             } catch (TException e) {
@@ -1643,6 +1644,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         Set<Project> usingProjects;
         int allUsingProjectCount = 0;
         request.setAttribute(IS_USER_AT_LEAST_CLEARING_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user));
+        request.setAttribute(IS_USER_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user) ? YES : NO);
 
         if (id != null) {
 
@@ -1675,6 +1677,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             request.setAttribute(ALL_USING_PROJECTS_COUNT, allUsingProjectCount);
             Map<RequestedAction, Boolean> permissions = project.getPermissions();
             DocumentState documentState = project.getDocumentState();
+            request.setAttribute(IS_PROJECT_MEMBER, SW360Utils.isModeratorOrCreator(project, user));
 
             addEditDocumentMessage(request, permissions, documentState);
         } else {
@@ -2209,7 +2212,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         PortletUtils.handlePaginationSortOrder(request, paginationParameters, projectFilteredFields, PROJECT_NO_SORT);
         List<Project> projectList = getFilteredProjectList(request);
 
-        JSONArray jsonProjects = getProjectData(projectList, paginationParameters);
+        JSONArray jsonProjects = getProjectData(projectList, paginationParameters, request);
         JSONObject jsonResult = createJSONObject();
         jsonResult.put(DATATABLE_RECORDS_TOTAL, projectList.size());
         jsonResult.put(DATATABLE_RECORDS_FILTERED, projectList.size());
@@ -2222,7 +2225,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         }
     }
 
-    public JSONArray getProjectData(List<Project> projectList, PaginationParameters projectParameters) {
+    public JSONArray getProjectData(List<Project> projectList, PaginationParameters projectParameters, ResourceRequest request) {
         List<Project> sortedProjects = sortProjectList(projectList, projectParameters);
         int count = PortletUtils.getProjectDataCount(projectParameters, projectList.size());
 
@@ -2243,6 +2246,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             jsonObject.put("lProjSize", String.valueOf(project.getLinkedProjectsSize()));
             jsonObject.put("lRelsSize", String.valueOf(project.getReleaseIdToUsageSize()));
             jsonObject.put("attsSize", String.valueOf(project.getAttachmentsSize()));
+            jsonObject.put(IS_PROJECT_MEMBER,
+                    SW360Utils.isModeratorOrCreator(project, UserCacheHolder.getUserFromRequest(request)));
             projectData.put(jsonObject);
         }
 

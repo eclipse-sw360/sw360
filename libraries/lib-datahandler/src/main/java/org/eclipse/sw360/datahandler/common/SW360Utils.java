@@ -649,4 +649,12 @@ public class SW360Utils {
                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue(), (oldValue, newValue) -> oldValue,
                         LinkedHashMap<String, ObligationStatusInfo>::new));
     }
+
+    public static boolean isModeratorOrCreator(Project project, User user) {
+        Set<String> users = new HashSet<String>();
+        Set<String> moderators = project.getModerators();
+        users.addAll(moderators);
+        users.add(project.getCreatedBy());
+        return users.contains(user.getEmail());
+    }
 }
