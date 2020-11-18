@@ -22,6 +22,11 @@
     <portlet:param name="<%=PortalConstants.OBLIGATION_ID%>" value="${requestScope.obligationData.id}"/>
 </portlet:resourceURL>
 
+<portlet:resourceURL var="licenseObligationUrl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.LOAD_LICENSE_OBLIGATIONS%>"/>
+    <portlet:param name="<%=PortalConstants.DOCUMENT_ID%>" value="${requestScope.projectid}"/>
+</portlet:resourceURL>
+
 <%-- <core_rt:set var="obligationsActionSet" value='<%=PortalConstants.PROJECT_OBLIGATIONS_ACTION_SET%>'/> --%>
 
 <!-- Obligation Edit -->
@@ -44,7 +49,7 @@
                 <th class="more-info">
                     <span title="Expand all" data-show="false">&#x25BA</span>
                 </th>
-                <th><liferay-ui:message key="obligation" /></th>
+                <th><liferay-ui:message key="license.obligation" /></th>
                 <th><liferay-ui:message key="licenses" /></th>
                 <th><liferay-ui:message key="releases" /></th>
                 <th><liferay-ui:message key="status" /></th>
@@ -146,6 +151,11 @@
         </tbody>
     </table>
 </div>
+<div id="spinnerForLicenseObligation" class="d-none">
+    <div id="spinnerElem" style="max-height:60vh">
+       <%@ include file="/html/utils/includes/pageSpinner.jspf" %>
+    </div>
+</div>
 <script>
 require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modules/dialog'], function ($, datatables, render, button, dialog) {
     let obligationJSON = [],
@@ -159,7 +169,10 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
         compDataMap = new Map(),
         orgDataMap = new Map(),
         actionOptions = {};
-    var jsonObject = {};
+    var jsonObject = {},
+        obligationsFromLicenseDatabase = "",
+        licenseTableData=$("#spinnerForLicenseObligation").html().toString();
+    $("#spinnerForLicenseObligation").remove();
     <core_rt:forEach items="${obligationsActionSet}" var="action">
         actionOptions['${action}'] = '${action}';
     </core_rt:forEach>
@@ -192,6 +205,7 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
             "status": '<sw360:DisplayEnumOptions type="<%=ObligationStatus.class%>" selected="${projectObligations.status}" />',
             /* "action": "${projectObligations.action}", */
             "type": "<sw360:DisplayEnum value='${projectObligations.obligationType}'/>",
+            "level": "${projectObligations.obligationLevel}",
             "id": "<sw360:out value='${projectObligations.id}'/>",
             "comment": "<sw360:out value='${projectObligations.comment}'/>",
             "text": '<sw360:out value="${projectObligations.text}"/>',
@@ -261,6 +275,14 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
         },
         "order": [[1, 'asc']],
         "buttons": [
+            {
+                text: 'Add Obligations from License Database',
+                "className": 'btn btn-primary',
+                "attr": {
+                    "id": 'obligationsFromLicenseDatabase',
+                },
+                "action": getObligationsFromLicenseDatabase
+            },
             {
                 "className": 'd-none',
                 "attr": {
@@ -347,7 +369,10 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
     function deleteObligation(tr) {
         var $dialog,
             topic = $(tr).find('td:eq(1)').text();
-
+        let deleteRowData = table.row(tr).data();
+        if(deleteRowData.added||deleteRowData.level=="LICENSE_OBLIGATION"){
+            topic = deleteRowData.text;
+        }
         function deleteObligationInternal(callback) {
             jQuery.ajax({
                 type: 'POST',
@@ -398,6 +423,25 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
         render.toggleAllChildRows($(this), table);
     });
 
+    function getObligationsFromLicenseDatabase(event, data, node, config) {
+      if (obligationsFromLicenseDatabase.trim().length == 0) {
+          $.ajax({
+              url: '<%=licenseObligationUrl%>',
+              type: "GET",
+              success: function(result){
+                  $("#spinnerElem").html("").append(result);
+          }});
+      }
+      else {
+          licenseTableData = obligationsFromLicenseDatabase;
+      }
+      dialog.confirm('info', 'check-square', '<liferay-ui:message key="select.license.obligations.to.be.added" />', licenseTableData, '<liferay-ui:message key="add" />', {
+      }, function(submit, callback) {
+          addLicenseObligation();
+          callback(true);
+      });
+    }
+
     /* collect all the obligation status */
     function updateObligations(event, data, node, config) {
         let btnData = node.data(),
@@ -427,6 +471,14 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
                 /* mapValue.action = $node.find("select.obl_action option:selected").val(); */
                 mapValue.comment = $node.find("input.obl_comment").val();
                 mapValue.modifiedOn = date;
+            }
+
+            if (rowData.added || rowData.level == "LICENSE_OBLIGATION") {
+                mapValue.obligationLevel = "<%=ObligationLevel.LICENSE_OBLIGATION%>";
+                if (rowData.type.trim().length > 0)
+                    mapValue.obligationType = rowData.type;
+                mapValue.id = rowData.id;
+                mapKey = rowData.text;
             }
             obligationMap.set(mapKey, mapValue);
         });
@@ -717,7 +769,10 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
       function orgUpdateObligations(event, data, node, config) {
           updateprojectCompOrgObligations(event, data, node, config, "<%=ObligationLevel.ORGANISATION_OBLIGATION%>",orgTable, orgDataMap);
           $('#projectEditForm').append('<input id="obligationData" type="hidden" name="<portlet:namespace/><%=PortalConstants.OBLIGATION_DATA%>"/>');
-          $("#obligationData").val(JSON.stringify(jsonObject));
+
+          if (Object.keys(jsonObject).length > 0) {
+              $("#obligationData").val(JSON.stringify(jsonObject));
+          }
       }
 
       /* collect all the obligation status */
@@ -787,6 +842,32 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
               // get obligatoin topic/text from second column (index -> 1) in table.
               projectCompOrgObligationDataMap.set($.parseHTML($tr.attr('data-text'))[0].nodeValue, '');
           }
+      }
+
+      function addLicenseObligation() {
+          let licensetable = $("#licenseObligationsDetailTable").DataTable(),
+              tableModified = false;
+          licensetable.rows().every(function (rowIdx, tableLoop, rowLoop) {
+              $data = $(this.data());
+              $node = $(this.node());
+              let selected = $node.find("input.checkbox-control").prop('checked');
+              if (selected) {
+                  let present = false;
+                  table.rows().every(function (rowIdx, tableLoop, rowLoop) {
+                      $targetdata = $(this.data());
+                      if ($targetdata[0].obligation == $data[0].obligation) {
+                          present = true;
+                          return false;
+                      }
+                  });
+                  if (!present) {
+                      $data[0].status = '<sw360:DisplayEnumOptions type="<%=ObligationStatus.class%>" />';
+                      $data[0].added = true;
+                      table.row.add($data).draw();
+                      dataMap.set("dummy_value", '');
+                  }
+              }
+          });
       }
 });
 </script>

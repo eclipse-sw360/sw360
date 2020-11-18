@@ -601,27 +601,30 @@ public class SW360Utils {
         }
     }
 
-    public static Map<String, ObligationStatusInfo> getProjectComponentOrganisationObligationToDisplay(
-            Map<String, ObligationStatusInfo> obligationStatusMap, List<Obligation> obligations, ObligationLevel oblLevel) {
+    public static Map<String, ObligationStatusInfo> getProjectComponentOrganisationLicenseObligationToDisplay(
+            Map<String, ObligationStatusInfo> obligationStatusMap, List<Obligation> obligations,
+            ObligationLevel oblLevel, boolean isValidForProjectOptional, boolean addFromDB) {
         Map<String, ObligationStatusInfo> obligationAlreadyPresent = obligationStatusMap.entrySet().stream()
                 .filter(Objects::nonNull).filter(e -> Objects.nonNull(e.getValue()))
                 .filter(e -> Objects.nonNull(e.getValue().getObligationLevel()))
-                .filter(e -> e.getValue().getObligationLevel().equals(oblLevel))
-                .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().setText(e.getKey()),
-                        (oldValue, newValue) -> oldValue));
+                .filter(e -> e.getValue().getObligationLevel().equals(oblLevel)).collect(Collectors.toMap(
+                        e -> e.getKey(), e -> e.getValue().setText(e.getKey()), (oldValue, newValue) -> oldValue));
         obligationAlreadyPresent.entrySet().stream().forEach(e -> obligationStatusMap.remove(e.getKey()));
 
         Map<String, ObligationStatusInfo> mapOfObligations = obligations.stream().filter(Objects::nonNull)
-                .filter(o -> o.isValidForProject()).filter(o -> Objects.nonNull(o.getObligationLevel()))
+                .filter(o -> isValidForProjectOptional || o.isValidForProject())
+                .filter(o -> Objects.nonNull(o.getObligationLevel()))
                 .filter(o -> o.getObligationLevel().equals(oblLevel))
+                .filter(o -> addFromDB || obligationAlreadyPresent
+                        .containsKey(CommonUtils.nullToEmptyString(o.getText()).replaceAll("\r\n", " ")))
                 .collect(Collectors.toMap(
                         o -> CommonUtils.isNotNullEmptyOrWhitespace(o.getTitle()) ? o.getTitle() : o.getText(), o -> {
-                            if (obligationAlreadyPresent.containsKey(o.getText())) {
-                                return obligationAlreadyPresent.remove(o.getText());
+                            String key = CommonUtils.nullToEmptyString(o.getText()).replaceAll("\r\n", " ");
+                            if (obligationAlreadyPresent.containsKey(key)) {
+                                return obligationAlreadyPresent.remove(key);
                             } else {
                                 return new ObligationStatusInfo().setComment(o.getComments())
-                                        .setObligationLevel(oblLevel)
-                                        .setObligationType(o.getObligationType())
+                                        .setObligationLevel(oblLevel).setObligationType(o.getObligationType())
                                         .setReleaseIdToAcceptedCLI(new HashMap()).setText(o.getText());
                             }
                         }, (oldValue, newValue) -> oldValue));

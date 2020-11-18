@@ -382,11 +382,13 @@ require(['jquery', 'modules/dialog', 'modules/listgroup', 'modules/validation', 
         $("form#projectEditForm button[id='formSubmit']").prop("disabled", false);
     </core_rt:if>
 
-    $.ajax({
+    <core_rt:if test="${isProjectObligationsEnabled}">
+      $.ajax({
         url: '<%=obligationediturl%>',
         type: "GET",
         success: function(result){
             $("#tab-Obligations").html("").append(result);
       }});
+    </core_rt:if>
 });
 </script>
