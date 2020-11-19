@@ -292,7 +292,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
                 Project projWithCsSummary = projects.get(0);
                 if (null != projWithCsSummary && null != projWithCsSummary.getReleaseClearingStateSummary()) {
                     ReleaseClearingStateSummary summary = projWithCsSummary.getReleaseClearingStateSummary();
-                    approvedReleaseCount = summary.getApproved();
+                    approvedReleaseCount = summary.getApproved() + summary.getReportAvailable();
                 }
                 request.setAttribute(APPROVED_RELEASE_COUNT, approvedReleaseCount);
             }
@@ -484,7 +484,9 @@ public class ModerationPortlet extends FossologyAwarePortlet {
         request.setAttribute(CLEARING_REQUESTS, CommonUtils.nullToEmptyList(openClearingRequests));
         request.setAttribute(CLOSED_CLEARING_REQUESTS, CommonUtils.nullToEmptyList(closedClearingRequests));
         request.setAttribute(IS_CLEARING_EXPERT, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_EXPERT, user));
-
+        PortletUtils.getBaBlSelection(request, user);
+        List<Organization> organizations = UserUtils.getOrganizations(request);
+        request.setAttribute(PortalConstants.ORGANIZATIONS, organizations);
         if (CommonUtils.isNotNullEmptyOrWhitespace(selectedTab)) {
             request.setAttribute(SELECTED_TAB, selectedTab);
         }
