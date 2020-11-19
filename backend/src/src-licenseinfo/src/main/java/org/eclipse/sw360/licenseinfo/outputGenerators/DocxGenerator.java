@@ -33,7 +33,14 @@ import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.licenseinfo.util.LicenseNameWithTextUtils;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTColor;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTFonts;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTHyperlink;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTR;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTRPr;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTText;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.STMerge;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.STUnderline;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -72,7 +79,6 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
     private int noOfTablesCreated;
 
     private static final long ADDITIONAL_REQ_THRESHOLD = 3;
-
     public static final int OVERVIEW_TABLE_INDEX = 0;
     public static final int SPECIAL_OSS_RISKS_TABLE_INDEX = 1;
     public static final int DEV_DETAIL_TABLE_INDEX = 2;
@@ -85,9 +91,13 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
     private static final String EXT_ID_TABLE_HEADER_COL1 = "Identifier Name";
     private static final String EXT_ID_TABLE_HEADER_COL2 = "Identifier Value";
+    public static final String PROPERTIES_FILE_PATH = "/sw360.properties";
+    public static String FRIENDLY_RELEASE_URL;
 
     public DocxGenerator(OutputFormatVariant outputFormatVariant, String description) {
         super(DOCX_OUTPUT_TYPE, description, true, DOCX_MIME_TYPE, outputFormatVariant);
+        Properties props = CommonUtils.loadProperties(DocxGenerator.class, PROPERTIES_FILE_PATH);
+        FRIENDLY_RELEASE_URL = props.getProperty("release.friendly.url", "");
     }
 
     @Override
@@ -329,9 +339,9 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
             }
             if(owner != null) {
                 XWPFTableRow row = table.insertNewTableRow(currentRow++);
-                row.addNewTableCell().setText(owner.getEmail());
-                row.addNewTableCell().setText(owner.getDepartment());
-                row.addNewTableCell().setText("Owner");
+                addFormattedTextInTableCell(row.addNewTableCell(), owner.getEmail());
+                addFormattedTextInTableCell(row.addNewTableCell(), owner.getDepartment());
+                addFormattedTextInTableCell(row.addNewTableCell(), "Owner");
             }
         }
 
@@ -362,9 +372,9 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                         department = user.getDepartment();
                     }
 
-                    row.addNewTableCell().setText(name);
-                    row.addNewTableCell().setText(department);
-                    row.addNewTableCell().setText(rol);
+                    addFormattedTextInTableCell(row.addNewTableCell(), name);
+                    addFormattedTextInTableCell(row.addNewTableCell(), department);
+                    addFormattedTextInTableCell(row.addNewTableCell(), rol);
                 }
             }
         }
@@ -382,9 +392,9 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                         {
                             currentRow[0] = currentRow[0] + 1;
                             XWPFTableRow row = table.insertNewTableRow(currentRow[0]);
-                            row.addNewTableCell().setText(o.getTopic());
-                            row.addNewTableCell().setText(String.join(" ", o.getLicenseIDs()));
-                            row.addNewTableCell().setText(o.getText());
+                            addFormattedTextInTableCell(row.addNewTableCell(), o.getTopic());
+                            addFormattedTextInTableCell(row.addNewTableCell(), String.join(" ", o.getLicenseIDs()));
+                            addFormattedTextInTableCell(row.addNewTableCell(), o.getText());
                         }
                 );
         setTableBorders(table);
@@ -401,10 +411,12 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
             XWPFTableRow row = table.insertNewTableRow(currentRow++);
             LicenseInfo licenseInfo = result.getLicenseInfo();
-            row.addNewTableCell().setText(result.getName());
-            row.addNewTableCell().setText(result.getVersion());
-            row.addNewTableCell().setText(licenseInfo.getSha1Hash());
-            row.addNewTableCell().setText(licenseInfo.getComponentName());
+            addFormattedTextInTableCell(row.addNewTableCell(), result.getName());
+            XWPFParagraph versionParagraph = row.addNewTableCell().getParagraphs().get(0);
+            addHyperlink(versionParagraph, result.getVersion(), result.getRelease().getId());
+
+            addFormattedTextInTableCell(row.addNewTableCell(), licenseInfo.getSha1Hash());
+            addFormattedTextInTableCell(row.addNewTableCell(), licenseInfo.getComponentName());
 
             String globalLicense = "";
             for(LicenseNameWithText l : licenseInfo.getLicenseNamesWithTexts()) {
@@ -413,11 +425,37 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                     break;
                 }
             }
-
-            row.addNewTableCell().setText(result.getComponentType());
-            row.addNewTableCell().setText(globalLicense);
+            addFormattedTextInTableCell(row.addNewTableCell(), result.getComponentType());
+            addFormattedTextInTableCell(row.addNewTableCell(), globalLicense);
         }
         setTableBorders(table);
+    }
+
+    private static void addHyperlink(XWPFParagraph paragraph, String releaseVersion, String releaseId) {
+        String id = paragraph.getDocument().getPackagePart().addExternalRelationship(
+                FRIENDLY_RELEASE_URL.replace("releaseId", releaseId), XWPFRelation.HYPERLINK.getRelation()).getId();
+
+        CTHyperlink newHyperLink = paragraph.getCTP().addNewHyperlink();
+        newHyperLink.setId(id);
+
+        CTText ctText = CTText.Factory.newInstance();
+        ctText.setStringValue(releaseVersion);
+        CTR ctr = CTR.Factory.newInstance();
+        ctr.setTArray(new CTText[] { ctText });
+
+        formatHyperlink(ctr);
+        newHyperLink.setRArray(new CTR[] { ctr });
+    }
+
+    private static void formatHyperlink(CTR ctr) {
+        CTFonts ctFont = CTFonts.Factory.newInstance();
+        ctFont.setAscii("Arial");
+        CTRPr ctrpr = ctr.addNewRPr();
+        CTColor colour = CTColor.Factory.newInstance();
+        colour.setVal("0000FF");
+        ctrpr.setColor(colour);
+        ctrpr.addNewU().setVal(STUnderline.SINGLE);
+        ctrpr.addNewSz().setVal(new BigInteger("18"));
     }
 
     private static Optional<ObligationParsingResult> obligationsForRelease(Release release, Collection<ObligationParsingResult> obligationResults) {
@@ -481,9 +519,9 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                 for (ObligationAtProject o : obligationsAtProject) {
                     XWPFTableRow row = table.insertNewTableRow(currentRow++);
                     String licensesString = String.join(" ", o.getLicenseIDs());
-                    row.addNewTableCell().setText(o.getTopic());
-                    row.addNewTableCell().setText(licensesString);
-                    row.addNewTableCell().setText(o.getText());
+                    addFormattedTextInTableCell(row.addNewTableCell(), o.getTopic());
+                    addFormattedTextInTableCell(row.addNewTableCell(), licensesString);
+                    addFormattedTextInTableCell(row.addNewTableCell(), o.getText());
                 }
                 setTableBorders(table);
             }
@@ -509,16 +547,16 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
             XWPFTableRow row = table.insertNewTableRow(currentRow++);
 
-            row.addNewTableCell().setText(r.getName());
+            addFormattedTextInTableCell(row.addNewTableCell(), r.getName());
 
             String operatingSystems = r.getOperatingSystemsSize() == 0 ? "N/A" : String.join(" ", r.getOperatingSystems());
-            row.addNewTableCell().setText(operatingSystems);
+            addFormattedTextInTableCell(row.addNewTableCell(), operatingSystems);
 
             String langs = r.getLanguagesSize() == 0 ? "N/A" : String.join(" ", r.getLanguages());
-            row.addNewTableCell().setText(langs);
+            addFormattedTextInTableCell(row.addNewTableCell(), langs);
 
             String platforms = r.getSoftwarePlatformsSize() == 0 ? "N/A" : String.join(" ", r.getSoftwarePlatforms());
-            row.addNewTableCell().setText(platforms);
+            addFormattedTextInTableCell(row.addNewTableCell(), platforms);
         }
         setTableBorders(table);
     }
@@ -549,20 +587,21 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                 ObligationStatusInfo osi = o.getValue();
                 currentRow[0] = currentRow[0] + 1;
                 XWPFTableRow row = table.insertNewTableRow(currentRow[0]);
-                row.addNewTableCell().setText(o.getKey());
-                row.addNewTableCell().setText(ThriftEnumUtils.enumToString(osi.getStatus()));
-                row.addNewTableCell().setText(nullToEmptyString(ThriftEnumUtils.enumToString(osi.getObligationType())));
-                row.addNewTableCell().setText(nullToEmptyString(osi.getId()));
-                row.addNewTableCell().setText(nullToEmptyString(osi.getComment()));
+                addFormattedTextInTableCell(row.addNewTableCell(), o.getKey());
+                addFormattedTextInTableCell(row.addNewTableCell(), ThriftEnumUtils.enumToString(osi.getStatus()));
+                addFormattedTextInTableCell(row.addNewTableCell(),
+                        nullToEmptyString(ThriftEnumUtils.enumToString(osi.getObligationType())));
+                addFormattedTextInTableCell(row.addNewTableCell(), nullToEmptyString(osi.getId()));
+                addFormattedTextInTableCell(row.addNewTableCell(), nullToEmptyString(osi.getComment()));
                 currentRow[0] = currentRow[0] + 1;
                 XWPFTableRow textRow = table.createRow();
-                textRow.getCell(0).setText(osi.getText());
+                addFormattedTextInTableCell(textRow.getCell(0), osi.getText());
                 mergeColumns(table, currentRow[0], 0, textRow.getCtRow().sizeOfTcArray() - 1);
             });
         } else {
             currentRow[0] = currentRow[0] + 1;
             XWPFTableRow textRow = table.createRow();
-            textRow.getCell(0).setText(emptyTableText);
+            addFormattedTextInTableCell(textRow.getCell(0), emptyTableText);
             mergeColumns(table, currentRow[0], 0, textRow.getCtRow().sizeOfTcArray() - 1);
         }
         setTableBorders(table);
@@ -606,20 +645,19 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         final int[] currentRow = new int[]{noOfRows};
 
         XWPFTableRow row = table.getRow(0);
-        row.getCell(0).setText("Obligation");
-        row.addNewTableCell().setText("License");
-        row.addNewTableCell().setText("License section reference and short description");
-        row.addNewTableCell().setText("Fulfilled");
-        row.addNewTableCell().setText("Comments");
+        addFormattedTextInTableCell(row.getCell(0), "Obligation");
+        addFormattedTextInTableCell(row.addNewTableCell(), "License");
+        addFormattedTextInTableCell(row.addNewTableCell(), "License section reference and short description");
+        addFormattedTextInTableCell(row.addNewTableCell(), "Fulfilled");
+        addFormattedTextInTableCell(row.addNewTableCell(), "Comments");
 
         for (Map.Entry<String, String> entry : tctxt.entrySet()) {
             XWPFTableRow tableRow = table.createRow();
-            tableRow.getCell(0).setText(entry.getKey());
-            tableRow.getCell(1).setText(entr.getKey());
-            tableRow.getCell(2).setText(entry.getValue());
+            addFormattedTextInTableCell(tableRow.getCell(0), entry.getKey());
+            addFormattedTextInTableCell(tableRow.getCell(1), entr.getKey());
+            addFormattedTextInTableCell(tableRow.getCell(2), entry.getValue());
             tableRow.getCell(3);
             tableRow.getCell(4);
-
         }
 
         setTableBorders(table);
@@ -634,9 +672,9 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
         final XWPFTable table = document.getTables().get(ADDITIONAL_REQ_TABLE_INDEX);
         XWPFTableRow row = table.insertNewTableRow(1);
-        row.addNewTableCell().setText(topictxt.getKey());
-        row.addNewTableCell().setText(entr1.getKey());
-        row.addNewTableCell().setText(topictxt.getValue());
+        addFormattedTextInTableCell(row.addNewTableCell(), topictxt.getKey());
+        addFormattedTextInTableCell(row.addNewTableCell(), entr1.getKey());
+        addFormattedTextInTableCell(row.addNewTableCell(), topictxt.getValue());
         row.addNewTableCell();
         row.addNewTableCell();
 
@@ -864,22 +902,23 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                     XWPFTableRow row = table.insertNewTableRow(currentRow[0]);
                     Set<String> releases = osi.getReleases().stream().map(SW360Utils::printName)
                             .collect(Collectors.toSet());
-                    row.addNewTableCell().setText(o.getKey());
-                    row.addNewTableCell().setText(String.join(", \n", osi.getLicenseIds()));
-                    row.addNewTableCell().setText(String.join(", \n", releases));
-                    row.addNewTableCell().setText(ThriftEnumUtils.enumToString(osi.getStatus()));
-                    row.addNewTableCell().setText(nullToEmptyString(ThriftEnumUtils.enumToString(osi.getObligationType())));
-                    row.addNewTableCell().setText(nullToEmptyString(osi.getComment()));
+                    addFormattedTextInTableCell(row.addNewTableCell(), o.getKey());
+                    addFormattedTextInTableCell(row.addNewTableCell(), String.join(", \n", osi.getLicenseIds()));
+                    addFormattedTextInTableCell(row.addNewTableCell(), String.join(", \n", releases));
+                    addFormattedTextInTableCell(row.addNewTableCell(), ThriftEnumUtils.enumToString(osi.getStatus()));
+                    addFormattedTextInTableCell(row.addNewTableCell(),
+                            nullToEmptyString(ThriftEnumUtils.enumToString(osi.getObligationType())));
+                    addFormattedTextInTableCell(row.addNewTableCell(), nullToEmptyString(osi.getComment()));
                     currentRow[0] = currentRow[0] + 1;
                     XWPFTableRow textRow = table.createRow();
-                    textRow.getCell(0).setText(osi.getText());
+                    addFormattedTextInTableCell(textRow.getCell(0), osi.getText());
                     mergeColumns(table, currentRow[0], 0, textRow.getCtRow().sizeOfTcArray() - 1);
                 }
             });
         } else {
             currentRow[0] = currentRow[0] + 1;
             XWPFTableRow textRow = table.createRow();
-            textRow.getCell(0).setText("No Linked Obligations.");
+            addFormattedTextInTableCell(textRow.getCell(0), "No Linked Obligations.");
             mergeColumns(table, currentRow[0], 0, textRow.getCtRow().sizeOfTcArray() - 1);
         }
         setTableBorders(table);
