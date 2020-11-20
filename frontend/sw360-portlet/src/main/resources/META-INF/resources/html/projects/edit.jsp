@@ -264,6 +264,10 @@ require(['jquery', 'modules/dialog', 'modules/listgroup', 'modules/validation', 
         disableLicenseInfoHeaderTextIfNecessary();
         disableObligationsTextIfNecessary();
         $('#LinkedReleasesInfo tbody tr #mainlineState').prop('disabled', false);
+        <core_rt:if test = "${(project.clearingState eq 'CLOSED') && (isUserAdmin != 'Yes') && isProjectMember && not addMode}">
+            $("form#projectEditForm select").prop("disabled", false);
+            $("form#projectEditForm input").prop("disabled", false);
+        </core_rt:if>
         <core_rt:if test="${not addMode and isProjectObligationsEnabled and isObligationPresent}">
             $('#updateObligationsButtonHidden').trigger('click');
         </core_rt:if>
@@ -369,7 +373,15 @@ require(['jquery', 'modules/dialog', 'modules/listgroup', 'modules/validation', 
             $('#obligationsText').prop('disabled', true);
         }
     }
-    
+
+    <core_rt:if test = "${(project.clearingState eq 'CLOSED') && (isUserAdmin != 'Yes') && isProjectMember && not addMode}">
+        $("form#projectEditForm :input:not([name^='_sw360_portlet_projects_externalIdKey'], [name^='_sw360_portlet_projects_externalIdValue'], [name='_sw360_portlet_projects_ENABLE_SVM'], [name='_sw360_portlet_projects_ENABLE_VULNERABILITIES_DISPLAY'], [type='hidden'])").prop("disabled", true);
+        $("form#projectEditForm select").prop("disabled", true);
+        $("form#projectEditForm button").prop("disabled", true);
+        $("form#projectEditForm button[id='add-external-id']").prop("disabled", false);
+        $("form#projectEditForm button[id='formSubmit']").prop("disabled", false);
+    </core_rt:if>
+
     $.ajax({
         url: '<%=obligationediturl%>',
         type: "GET",

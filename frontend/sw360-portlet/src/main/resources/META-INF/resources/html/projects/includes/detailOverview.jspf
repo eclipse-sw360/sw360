@@ -64,7 +64,7 @@
 						<div class="btn-toolbar" role="toolbar">
 							<div class="btn-group" role="group">
 								<button type="button" class="btn btn-primary" onclick="window.location.href='<%=editProjectURL%>' + window.location.hash"
-									<core_rt:if test = "${(project.clearingState eq 'CLOSED') && (isUserAdmin != 'Yes')}">
+									<core_rt:if test = "${(project.clearingState eq 'CLOSED') && (isUserAdmin != 'Yes') && (not isProjectMember)}">
 										disabled="disabled"
 									</core_rt:if>
 								>

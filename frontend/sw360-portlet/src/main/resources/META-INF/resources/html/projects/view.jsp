@@ -374,7 +374,7 @@
 
                 $clearingRequestAction.append($('<use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#check-square"/>'));
 
-                if(row.cState == 'CLOSED' && ${isUserAdmin != 'Yes'}) {
+                if(row.cState == 'CLOSED' && ${isUserAdmin != 'Yes'} & !(row.isProjectMember)) {
                     $editAction = $('<svg class="lexicon-icon disabled"><title><liferay-ui:message key="only.administrators.can.edit.a.closed.project" /></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>');
                 } else {
                     $editAction = render.linkTo(

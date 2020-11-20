@@ -12,6 +12,7 @@
 <%@page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectState"%>
 <%@page import="org.eclipse.sw360.datahandler.thrift.projects.Project" %>
 <core_rt:set var="isUnknownCTeamEnabled" value='<%=PortalConstants.IS_CLEARING_TEAM_UNKNOWN_ENABLED%>'/>
+<core_rt:set var="clearingStateClosedAndUserNotAdmin" value="${(project.clearingState eq 'CLOSED') && (isUserAdmin != 'Yes')}"/>
 
 <table class="table edit-table three-columns" id="ProjectClearingInfo" title="<liferay-ui:message key="clearing" />">
     <thead>
@@ -22,9 +23,16 @@
     <tr>
         <td>
             <div class="form-group">
-                <label for="proj_projectclearingstate"><liferay-ui:message key="project.clearing.state" /></label>
+                <label for="proj_projectclearingstate"><liferay-ui:message key="project.clearing.state" />
+                <core_rt:if test = "${clearingStateClosedAndUserNotAdmin}">
+                    <clay:icon symbol="lock" />
+                </core_rt:if></label>
                 <select class="form-control" id="proj_projectclearingstate"
-                        name="<portlet:namespace/><%=Project._Fields.CLEARING_STATE%>">
+                        name="<portlet:namespace/><%=Project._Fields.CLEARING_STATE%>"
+                        <core_rt:if test = "${clearingStateClosedAndUserNotAdmin}">
+                            disabled="disabled"
+                        </core_rt:if>
+                >
                     <sw360:DisplayEnumOptions type="<%=ProjectClearingState.class%>" selected="${project.clearingState}"/>
                 </select>
                 <small class="form-text">

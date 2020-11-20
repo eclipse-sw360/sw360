@@ -92,6 +92,7 @@ public class PortalConstants {
     public static final String IS_USER_AT_LEAST_ECC_ADMIN = "isUserAtLeastECCAdmin";
     public static final String IS_USER_ADMIN = "isUserAdmin";
     public static final String IS_CLEARING_EXPERT = "isClearingExpert";
+    public static final String IS_PROJECT_MEMBER = "isProjectMember";
 
     //! Specialized keys for licenses
     public static final String LICENSES_PORTLET_NAME = PORTLET_NAME_PREFIX + "licenses";
