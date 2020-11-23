@@ -54,8 +54,6 @@ struct Obligation {
 
     // information from external data sources
     19: optional map<string, string> externalIds,
-    // is valid for Projects
-    20: optional bool validForProject,
     21: optional string comments,
     22: optional ObligationLevel obligationLevel,
     23: optional ObligationType obligationType,
@@ -133,7 +131,7 @@ service LicenseService {
     /**
     * Add an existing obligation to a license or generate moderation request if user has no permission
     **/
-    RequestStatus addObligationsToLicense(1: Obligation obligations, 2: string licenseId, 3: User user);
+    RequestStatus addObligationsToLicense(1: set<Obligation> obligations, 2: License license, 3: User user);
 
     /**
      * Update given license,

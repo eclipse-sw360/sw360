@@ -1812,16 +1812,16 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         List<Obligation> obligations = SW360Utils.getObligations();
         ComponentService.Iface componentClient = thriftClients.makeComponentClient();
         request.setAttribute(PROJECT_OBLIGATIONS, SW360Utils.getProjectComponentOrganisationLicenseObligationToDisplay(
-                obligationStatusMap, obligations, ObligationLevel.PROJECT_OBLIGATION, false, true));
+                obligationStatusMap, obligations, ObligationLevel.PROJECT_OBLIGATION, true));
         request.setAttribute(COMPONENT_OBLIGATIONS,
                 SW360Utils.getProjectComponentOrganisationLicenseObligationToDisplay(obligationStatusMap, obligations,
-                        ObligationLevel.COMPONENT_OBLIGATION, false, true));
+                        ObligationLevel.COMPONENT_OBLIGATION, true));
         request.setAttribute(ORGANISATION_OBLIGATIONS,
                 SW360Utils.getProjectComponentOrganisationLicenseObligationToDisplay(obligationStatusMap, obligations,
-                        ObligationLevel.ORGANISATION_OBLIGATION, false, true));
+                        ObligationLevel.ORGANISATION_OBLIGATION, true));
         Map<String, ObligationStatusInfo> licenseObligations = SW360Utils
                 .getProjectComponentOrganisationLicenseObligationToDisplay(obligationStatusMap, obligations,
-                        ObligationLevel.LICENSE_OBLIGATION, true, false);
+                        ObligationLevel.LICENSE_OBLIGATION, false);
         Map<String, ProjectReleaseRelationship> releaseIdToUsage = project.getReleaseIdToUsage();
 
         Map<String, Release> mapOfReleases = new HashMap<String, Release>();

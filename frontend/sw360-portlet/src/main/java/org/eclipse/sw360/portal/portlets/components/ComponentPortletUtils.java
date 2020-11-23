@@ -166,7 +166,6 @@ public abstract class ComponentPortletUtils {
     public static void updateTodoFromRequest(PortletRequest request, Obligation oblig) {
         setFieldValue(request, oblig, Obligation._Fields.TITLE);
         setFieldValue(request, oblig, Obligation._Fields.TEXT);
-        setFieldValue(request, oblig, Obligation._Fields.VALID_FOR_PROJECT);
         setFieldValue(request, oblig, Obligation._Fields.OBLIGATION_LEVEL);
         setFieldValue(request, oblig, Obligation._Fields.OBLIGATION_TYPE);
     }

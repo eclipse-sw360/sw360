@@ -35,6 +35,8 @@ import org.ektorp.DocumentOperationResult;
 import org.ektorp.http.HttpClient;
 import org.jetbrains.annotations.NotNull;
 
+import com.google.common.collect.Sets;
+
 import java.net.MalformedURLException;
 import java.util.*;
 import java.util.function.Supplier;
@@ -206,25 +208,22 @@ public class LicenseDatabaseHandler {
     /**
      * Add oblig id to a given license
      */
-    public RequestStatus addObligationsToLicense(Obligation oblig, String licenseId, User user) throws SW360Exception {
-        assertNotNull(oblig);
-        License license = licenseRepository.get(licenseId);
+    public RequestStatus addObligationsToLicense(Set<Obligation> obligs, License license, User user) throws SW360Exception {
+        license.setObligationDatabaseIds(Sets.newHashSet());
         if (makePermission(license, user).isActionAllowed(RequestedAction.WRITE)) {
             assertNotNull(license);
-            if(isTemporaryObligation(oblig)){
-                if (oblig.isSetRevision()) {
-                    oblig.unsetRevision();
-                }
-                oblig.unsetId();
+            for (Obligation oblig : obligs) {
+                obligRepository.update(oblig);
+                license.addToObligationDatabaseIds(oblig.getId());
             }
-            String obligId = addObligations(oblig, user);
-            license.addToObligationDatabaseIds(obligId);
             licenseRepository.update(license);
             return RequestStatus.SUCCESS;
         } else {
-            License licenseForModerationRequest = getLicenseForOrganisationWithOwnModerationRequests(licenseId, user.getDepartment(),user);
+            License licenseForModerationRequest = getLicenseForOrganisationWithOwnModerationRequests(license.getId(), user.getDepartment(),user);
             assertNotNull(licenseForModerationRequest);
-            licenseForModerationRequest.addToObligations(oblig);
+            for (Obligation oblig : obligs) {
+                licenseForModerationRequest.addToObligations(oblig);
+            }
             return moderator.updateLicense(licenseForModerationRequest, user); // Only moderators can change licenses!
         }
     }
@@ -414,6 +413,7 @@ public class LicenseDatabaseHandler {
                 .orElse(Ternary.UNDEFINED));
         license.setExternalLicenseLink(inputLicense.getExternalLicenseLink());
         license.setChecked(inputLicense.isChecked());
+        license.setObligationDatabaseIds(inputLicense.getObligationDatabaseIds());
 
         return license;
     }

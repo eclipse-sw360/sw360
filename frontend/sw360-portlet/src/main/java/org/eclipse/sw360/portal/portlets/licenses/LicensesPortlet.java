@@ -12,6 +12,8 @@ package org.eclipse.sw360.portal.portlets.licenses;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.liferay.portal.kernel.portlet.PortletResponseUtil;
 import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
@@ -101,7 +103,26 @@ public class LicensesPortlet extends Sw360Portlet {
 
         if (PortalConstants.EXPORT_TO_EXCEL.equals(action)) {
             exportExcel(request, response);
+        } else if (PortalConstants.LOAD_LICENSE_OBLIGATIONS.equals(action)) {
+            request.setAttribute(LICENSE_OBLIGATION_DATA, loadLicenseObligation(request));
+            include("/html/licenses/includes/licObligations.jsp", request, response, PortletRequest.RESOURCE_PHASE);
         }
+    }
+
+    private List<Obligation> loadLicenseObligation(ResourceRequest request) {
+        List<Obligation> obligations = new ArrayList<Obligation>();
+        try {
+            LicenseService.Iface client = thriftClients.makeLicenseClient();
+            obligations = client.getObligations().stream()
+                    .filter(Objects::nonNull)
+                    .filter(Obligation::isSetObligationLevel)
+                    .filter(obl -> obl.getObligationLevel().equals(ObligationLevel.LICENSE_OBLIGATION))
+                    .collect(Collectors.toList());
+            request.setAttribute(KEY_OBLIGATION_LIST, obligations);
+        } catch (TException e) {
+            log.error("Error fetching license obligations from backend", e);
+        }
+        return obligations;
     }
 
     private void exportExcel(ResourceRequest request, ResourceResponse response) {
@@ -141,6 +162,7 @@ public class LicensesPortlet extends Sw360Portlet {
         LicenseService.Iface client = thriftClients.makeLicenseClient();
         boolean isAtLeastClearingAdmin = PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user);
         request.setAttribute(IS_USER_AT_LEAST_CLEARING_ADMIN, isAtLeastClearingAdmin ? "Yes" : "No");
+        request.setAttribute(SELECTED_TAB, "tab-AddLicense");
 
         try {
             licenseTypes = client.getLicenseTypes();
@@ -152,7 +174,24 @@ public class LicensesPortlet extends Sw360Portlet {
 
         if (id != null) {
             try {
-                License license = client.getByID(id, user.getDepartment());
+                License moderationLicense = client.getByIDWithOwnModerationRequests(id, user.getDepartment(), user);
+                request.setAttribute(MODERATION_LICENSE_DETAIL, moderationLicense);
+                List<Obligation> obligations = client.getObligations().stream()
+                        .filter(Objects::nonNull)
+                        .filter(Obligation::isSetObligationLevel)
+                        .filter(obl -> obl.getObligationLevel().equals(ObligationLevel.LICENSE_OBLIGATION))
+                        .collect(Collectors.toList());
+                request.setAttribute(KEY_OBLIGATION_LIST, obligations);
+
+                final License license = client.getByID(id, user.getDepartment());
+                Set<String> licenseOblIds = license.getObligationDatabaseIds();
+                List<Obligation> obls = new ArrayList<Obligation>();
+
+                if (CommonUtils.isNotEmpty(licenseOblIds)) {
+                    obls = client.getObligationsByIds(Lists.newArrayList(licenseOblIds));
+                }
+
+                request.setAttribute("linkedObligations", obls);
                 request.setAttribute(KEY_LICENSE_DETAIL, license);
                 addLicenseBreadcrumb(request, response, license);
             } catch (TException e) {
@@ -249,14 +288,17 @@ public class LicensesPortlet extends Sw360Portlet {
 
         RequestStatus requestStatus = updateLicense(license, user, isAttemptToOverwriteExistingByNew, client);
 
-        if (isAttemptToOverwriteExistingByNew){
+        if (isAttemptToOverwriteExistingByNew) {
             response.setRenderParameter(PAGENAME, PAGENAME_EDIT);
             setSW360SessionError(request, ErrorMessages.LICENSE_SHORTNAME_TAKEN);
             request.setAttribute(KEY_LICENSE_DETAIL, license);
         } else if (isNewLicense) {
+            boolean isAtLeastClearingAdmin = PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user);
+            request.setAttribute(IS_USER_AT_LEAST_CLEARING_ADMIN, isAtLeastClearingAdmin ? "Yes" : "No");
             response.setRenderParameter(PAGENAME, PAGENAME_VIEW);
             setSessionMessage(request, requestStatus, "License", "adde");
         } else {
+            addObligations(request, response);
             response.setRenderParameter(LICENSE_ID, licenseId);
             response.setRenderParameter(PAGENAME, PAGENAME_DETAIL);
             request.setAttribute(SELECTED_TAB, "tab-Details");
@@ -317,6 +359,9 @@ public class LicensesPortlet extends Sw360Portlet {
         license.setGPLv2Compat(gpl2compatibility);
         license.setGPLv3Compat(gpl3compatibility);
         license.setChecked(checked);
+        String obligationIds = request.getParameter("obligations");
+        List<String> oblIds = CommonUtils.isNotNullEmptyOrWhitespace(obligationIds) ? Arrays.asList(obligationIds.split(",")) : Lists.newArrayList();
+        license.setObligationDatabaseIds(Sets.newHashSet(oblIds));
         try {
             Optional<String> licenseTypeDatabaseId = getDatabaseIdFromLicenseType(licenseTypeString);
             if(licenseTypeDatabaseId.isPresent()) {
@@ -406,13 +451,10 @@ public class LicensesPortlet extends Sw360Portlet {
         request.setAttribute(SELECTED_TAB, "tab-LicenseText");
     }
 
-    @UsedAsLiferayAction
     public void addObligations(ActionRequest request, ActionResponse response) throws PortletException, IOException {
         String licenseID = request.getParameter(LICENSE_ID);
-        String[] obligationIds = request.getParameterValues("obligations");
-        String obligsText = request.getParameter("obligText");
-        String obligTitle = request.getParameter("obligTitle");
-        String[] bools = request.getParameterValues("bools");
+        String obligationIds = request.getParameter("obligations");
+        List<String> oblIds = CommonUtils.isNotNullEmptyOrWhitespace(obligationIds) ? Arrays.asList(obligationIds.split(",")) : Lists.newArrayList();
         final LicenseService.Iface client = thriftClients.makeLicenseClient();
 
         User user = UserCacheHolder.getUserFromRequest(request);
@@ -421,35 +463,31 @@ public class LicensesPortlet extends Sw360Portlet {
             user.setCommentMadeDuringModerationRequest(moderationComment);
         }
 
-        Consumer<Obligation> fillObligation = obl -> wrapException(() -> {
-            obl.setId(TMP_OBLIGATION_ID_PREFIX + UUID.randomUUID().toString());
-            obl.setText(obligsText);
-            obl.addToWhitelist(user.getDepartment());
-            obl.setTitle(obligTitle);
-            obl.setObligationLevel(ObligationLevel.LICENSE_OBLIGATION);
-            if (bools != null) {
-                List<String> theBools = Arrays.asList(bools);
-                obl.setDevelopment(theBools.contains("development"));
-                obl.setDistribution(theBools.contains("distribution"));
-            } else {
+        try {
+            final License license = client.getByID(licenseID,user.getDepartment());
+            license.unsetObligationDatabaseIds();
+            license.setObligationDatabaseIds(Sets.newHashSet());
+
+            Function<Obligation, Obligation> fillObl = obl -> {
+                obl.addToWhitelist(user.getDepartment());
+                obl.setObligationLevel(ObligationLevel.LICENSE_OBLIGATION);
                 obl.setDevelopment(false);
                 obl.setDistribution(false);
-            }
-            RequestStatus requestStatus = client.addObligationsToLicense(obl, licenseID, user);
-            setSessionMessage(request, requestStatus, "License", "update");
-        });
+                return obl;
+            };
 
-        try {
-            if (null == obligationIds) {
-                if (CommonUtils.isNotNullEmptyOrWhitespace(obligsText)) {
-                    fillObligation.accept(new Obligation());
-                }
-            } else {
-                List<Obligation> obls = client.getObligationsByIds(Arrays.asList(obligationIds));
-                obls.stream().filter(Objects::nonNull).forEach(obl -> {
-                    fillObligation.accept(obl.deepCopy());
-                });
+            List<Obligation> obls = new ArrayList<Obligation>();
+            if (CommonUtils.isNotEmpty(oblIds)) {
+                obls = client.getObligationsByIds(Lists.newArrayList(Sets.newHashSet(oblIds)));
             }
+
+            Set<Obligation> obligations = obls.stream().filter(Objects::nonNull).map(obl -> {
+                Obligation filledObl = fillObl.apply(obl.deepCopy());
+                return filledObl;
+            }).collect(Collectors.toSet());
+
+            RequestStatus requestStatus=client.addObligationsToLicense(obligations, license, user);
+            setSessionMessage(request, requestStatus, "License", "update");
         } catch (TException e) {
             log.error("Error updating license details from backend", e);
         }

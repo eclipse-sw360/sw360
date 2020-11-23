@@ -91,7 +91,6 @@
                     id: "${oblig.id}",
                     title: "<sw360:out value='${oblig.title}'/>",
                     text: "<sw360:out value='${oblig.text}'/>",
-                    projectValidity: "${oblig.validForProject}",
                     obligationLevel: "<sw360:DisplayEnum value="${oblig.obligationLevel}"/>"
                 });
             </core_rt:forEach>
@@ -102,7 +101,6 @@
                 columns: [
                     {"title": "<liferay-ui:message key="title" />", data: 'title' },
                     {"title": "<liferay-ui:message key="text" />", data: 'text' },
-                    {"title": "<liferay-ui:message key="valid.for.projects" />", data: 'projectValidity', className: 'text-center', render: $.fn.dataTable.render.inputCheckbox('project-validity', '', false, checkboxHook) },
                     {"title": "<liferay-ui:message key="obligation.level" />", data: 'obligationLevel'},
                     {"title": "<liferay-ui:message key="actions" />", data: 'id', render: renderActions }
                 ],
@@ -111,18 +109,9 @@
                     loadingRecords: "<liferay-ui:message key="loading" />"
                 },
                 initComplete: datatables.showPageContainer
-            }, [0, 1, 2], [4]);
+            }, [0, 1], [3]);
 
             return todosTbl;
-        }
-
-        function checkboxHook(value) {
-            var $input = this;
-
-            if(value == 'true') {
-                $input.attr('checked', 'checked');
-            }
-            $input.prop('disabled', true);
         }
 
         function renderActions(value, type, row, meta) {

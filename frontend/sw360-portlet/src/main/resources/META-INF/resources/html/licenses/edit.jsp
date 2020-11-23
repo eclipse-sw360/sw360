@@ -50,57 +50,81 @@
 <core_rt:if test="${empty attributeNotFoundException || exceptionInBackend}">
 
     <div class="container" style="display: none;">
-        <div class="row portlet-toolbar">
-            <div class="col-auto">
-                <div class="btn-toolbar" role="toolbar">
-                    <div class="btn-group" role="group">
-                        <core_rt:if test="${addMode}" >
-                            <button type="button" id="formSubmit" class="btn btn-primary"><liferay-ui:message key="create.license" /></button>
-                        </core_rt:if>
-
-                        <core_rt:if test="${not addMode}" >
-                            <button type="button" id="formSubmit" class="btn btn-primary"><liferay-ui:message key="update.license" /></button>
-                        </core_rt:if>
-                    </div>
-
-                    <core_rt:if test="${not addMode}" >
-                        <div class="btn-group" role="group">
-                            <button id="deleteLicenseButton" type="button" class="btn btn-danger"><liferay-ui:message key="delete.license" /></button>
-                        </div>
+        <div class="row">
+            <div class="col-3 sidebar">
+                <div id="detailTab" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
+                    <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-AddLicense'}">active</core_rt:if>" href="#tab-AddLicense" data-toggle="list" role="tab"><liferay-ui:message key="license" /></a>
+                    <core_rt:if test="${isUserAtLeastClearingAdmin == 'Yes' or not addMode}">
+                        <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-AddTodo'}">active</core_rt:if>" href="#tab-AddTodo" data-toggle="list" role="tab"><liferay-ui:message key="linked.obligations"/></a>
                     </core_rt:if>
+                </div>
+            </div>
+            <div class="col">
+                <div class="row">
+                    <div class="col">
+                        <div class="row portlet-toolbar">
+                            <div class="col-auto">
+                                <div class="btn-toolbar" role="toolbar">
+                                    <div class="btn-group" role="group">
+                                        <core_rt:if test="${addMode}" >
+                                            <button type="button" id="formSubmit" class="btn btn-primary"><liferay-ui:message key="create.license" /></button>
+                                        </core_rt:if>
 
-                    <div class="btn-group" role="group">
-                        <core_rt:if test="${not addMode}" >
-                            <button id="cancelEditButton" type="button" class="btn btn-light" onclick="window.location.href='<%=cancelToDetailURL%>' + window.location.hash"><liferay-ui:message key="cancel" /></button>
-                        </core_rt:if>
-                        <core_rt:if test="${addMode}" >
-                            <button id="cancelEditButton" type="button" class="btn btn-light" onclick="window.location.href='<%=cancelToViewURL%>' + window.location.hash"><liferay-ui:message key="cancel" /></button>
-                        </core_rt:if>
+                                        <core_rt:if test="${not addMode}" >
+                                            <button type="button" id="formSubmit" class="btn btn-primary"><liferay-ui:message key="update.license" /></button>
+                                        </core_rt:if>
+                                    </div>
+
+                                    <core_rt:if test="${not addMode}" >
+                                        <div class="btn-group" role="group">
+                                            <button id="deleteLicenseButton" type="button" class="btn btn-danger"><liferay-ui:message key="delete.license" /></button>
+                                        </div>
+                                    </core_rt:if>
+					                <div class="btn-group" role="group">
+                                        <div class="list-group-companion" data-belong-to="tab-AddTodo">
+                                            <button type="button" class="btn btn-secondary" id="submitTodo"><liferay-ui:message key="add.obligation" /></button>
+							            </div>
+                                    </div>
+                                    <div class="btn-group" role="group">
+                                        <core_rt:if test="${not addMode}" >
+                                            <button id="cancelEditButton" type="button" class="btn btn-light" onclick="window.location.href='<%=cancelToDetailURL%>#/tab-Details'"><liferay-ui:message key="cancel" /></button>
+                                        </core_rt:if>
+                                        <core_rt:if test="${addMode}" >
+                                            <button id="cancelEditButton" type="button" class="btn btn-light" onclick="window.location.href='<%=cancelToViewURL%>' + window.location.hash"><liferay-ui:message key="cancel" /></button>
+                                        </core_rt:if>
+                                    </div>
+                            </div>
+                        </div>
+                        <div class="col portlet-title column text-truncate" title="<sw360:out value="${licenseDetail.fullname}"/> (<sw360:out value="${licenseDetail.shortname}"/>)">
+                            <sw360:out value="${licenseDetail.fullname}"/> (<sw360:out value="${licenseDetail.shortname}"/>)
+                            <core_rt:if test="${licenseDetail.checked != true}">
+                                <span class="badge badge-danger"><liferay-ui:message key="unchecked" /></span>
+                            </core_rt:if>
+                            <core_rt:if test="${licenseDetail.checked == true}">
+                                <span class="badge badge-success"><liferay-ui:message key="checked" /></span>
+                            </core_rt:if>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <form  id="licenseEditForm" name="licenseEditForm" action="<%=updateURL%>" class="needs-validation" method="post" novalidate data-license-name="${licenseDetail.fullname} (${licenseDetail.shortname})"
+                                                data-delete-url="<%=deleteURL%>">
+                                <div class="tab-content">
+                                    <div id="tab-AddTodo" class="tab-pane <core_rt:if test="${selectedTab == 'tab-AddTodo'}">active show</core_rt:if>">
+                                        <%@include file="/html/licenses/includes/detailAddTodo.jspf" %>
+                                    </div>
+                                    <div id="tab-AddLicense" class="tab-pane <core_rt:if test="${selectedTab == 'tab-AddLicense'}">active show</core_rt:if>">
+                                        <%@include file="/html/licenses/includes/editDetailSummary.jspf"%>
+                                        <%@include file="/html/licenses/includes/editDetailText.jspf"%>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col portlet-title column text-truncate" title="<sw360:out value="${licenseDetail.fullname}"/> (<sw360:out value="${licenseDetail.shortname}"/>)">
-                <sw360:out value="${licenseDetail.fullname}"/> (<sw360:out value="${licenseDetail.shortname}"/>)
-                <core_rt:if test="${licenseDetail.checked != true}">
-                    <span class="badge badge-danger"><liferay-ui:message key="unchecked" /></span>
-                </core_rt:if>
-                <core_rt:if test="${licenseDetail.checked == true}">
-                    <span class="badge badge-success"><liferay-ui:message key="checked" /></span>
-                </core_rt:if>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col">
-                <form  id="licenseEditForm" name="licenseEditForm" action="<%=updateURL%>" class="needs-validation" method="post" novalidate
-                  data-license-name="${licenseDetail.fullname} (${licenseDetail.shortname})"
-                  data-delete-url="<%=deleteURL%>">
-                    <%@include file="/html/licenses/includes/editDetailSummary.jspf"%>
-                    <%@include file="/html/licenses/includes/editDetailText.jspf"%>
-                </form>
-            </div>
         </div>
     </div>
-    <%@ include file="/html/utils/includes/pageSpinner.jspf" %>
 
     <div class="dialogs auto-dialogs">
         <div id="deleteLicenseDialog" class="modal fade" tabindex="-1" role="dialog">
@@ -126,13 +150,22 @@
             </div>
         </div>
     </div>
+    <div id="spinnerForLicenseObligation" class="d-none">
+        <div id="spinnerElem" style="max-height:60vh">
+           <%@ include file="/html/utils/includes/pageSpinner.jspf" %>
+        </div>
+    </div>
 
     <%--for javascript library loading --%>
     <%@ include file="/html/utils/includes/requirejs.jspf" %>
     <script>
         document.title = "${licenseDetail.shortname} - " + document.title;
 
-        require(['jquery', 'modules/dialog', 'modules/validation', 'bridges/jquery-ui'], function($, dialog, validation) {
+        require(['jquery', 'modules/dialog', 'modules/validation', 'bridges/datatables', 'modules/listgroup', 'bridges/jquery-ui'], function($, dialog, validation, datatables, listgroup) {
+            licenseTableData=$("#spinnerForLicenseObligation").html().toString();
+            $("#spinnerForLicenseObligation").remove();
+            listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-AddLicense');
+
             $('#licenseEditForm').parents('.container:first').show().siblings('.container-spinner').hide();
 
             validation.enableForm('#licenseEditForm');
@@ -142,6 +175,15 @@
             });
 
             $('#formSubmit').on('click', function() {
+                var selectedObligationIds = [];
+                $('#licenseTodoTable > tbody  > tr').each(function() {
+                    id = $(this).attr('id');
+                    if(id){
+                        selectedObligationIds.push($(this).attr('id').slice(10));
+                    }
+                });
+                $('#licenseEditForm').append('<input id="oblIds" type="hidden" name="<portlet:namespace/>obligations"/>');
+                $("#oblIds").val(selectedObligationIds);
                 $('#licenseEditForm').submit();
             });
 

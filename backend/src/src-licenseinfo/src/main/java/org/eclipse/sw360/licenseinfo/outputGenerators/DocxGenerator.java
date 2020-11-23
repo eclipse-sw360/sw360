@@ -582,7 +582,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
         Map<String, ObligationStatusInfo> obligationsStatus = SW360Utils.sortMapOfObligationOnType(
                 SW360Utils.getProjectComponentOrganisationLicenseObligationToDisplay(obligationsStatusAtProject,
-                        obligations, oblLevel, false, true));
+                        obligations, oblLevel, true));
         if (!obligationsStatus.isEmpty()) {
             obligationsStatus.entrySet().stream().forEach(o -> {
                 ObligationStatusInfo osi = o.getValue();
