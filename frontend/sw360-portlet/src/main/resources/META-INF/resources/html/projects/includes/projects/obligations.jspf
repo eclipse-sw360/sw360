@@ -40,7 +40,7 @@
                 <th class="more-info">
                     <span title="<liferay-ui:message key="expand.all" />" data-show="false">&#x25BA</span>
                 </th>
-                <th><liferay-ui:message key="obligation" /></th>
+                <th><liferay-ui:message key="license.obligation" /></th>
                 <th><liferay-ui:message key="licenses" /></th>
                 <th><liferay-ui:message key="releases" /></th>
                 <th><liferay-ui:message key="status" /></th>
