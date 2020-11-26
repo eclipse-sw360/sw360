@@ -1,0 +1,14 @@
+[
+  {
+    "resourceId": "res-err-1",
+    "status": 400
+  },
+  {
+    "resourceId": "res-success",
+    "status": 200
+  },
+  {
+    "resourceId": "res-err-2",
+    "status": 500
+  }
+]
