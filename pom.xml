@@ -42,6 +42,7 @@
         <module>backend</module>
         <module>frontend</module>
         <module>rest</module>
+        <module>clients</module>
     </modules>
 
     <properties>
