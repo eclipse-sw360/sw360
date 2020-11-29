@@ -257,7 +257,7 @@ struct Release {
     56: optional set<string> softwarePlatforms,
 
     65: optional set<string> mainLicenseIds,
-
+    66: optional set<string> otherLicenseIds,
     // Urls for the project
     70: optional string sourceCodeDownloadurl, // URL for download page for this release source code
     71: optional string binaryDownloadurl, // URL for download page for this release binaries
