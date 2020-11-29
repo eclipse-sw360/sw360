@@ -69,11 +69,16 @@
             <td><liferay-ui:message key="release.mainline.state" />:</td>
             <td><sw360:DisplayEnum value="${release.mainlineState}"/></td>
         </tr>
-
         <tr>
             <td><liferay-ui:message key="main.licenses" />:</td>
             <td>
                 <sw360:DisplayLicenseCollection licenseIds="${release.mainLicenseIds}" scopeGroupId="${pageContext.getAttribute('scopeGroupId')}"/>
+            </td>
+        </tr>
+        <tr>
+            <td><liferay-ui:message key="other.licenses" />:</td>
+            <td>
+                <sw360:DisplayLicenseCollection licenseIds="${release.otherLicenseIds}" scopeGroupId="${pageContext.getAttribute('scopeGroupId')}"/>
             </td>
         </tr>
         <tr>
