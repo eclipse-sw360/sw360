@@ -173,7 +173,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project.setRemarksAdditionalRequirements("Lorem Ipsum");
         linkedReleases.put("3765276512", projectReleaseRelationship);
         project.setReleaseIdToUsage(linkedReleases);
-        linkedProjects.put("376576", ProjectRelationship.CONTAINED);
+        linkedProjects.put("376570", ProjectRelationship.CONTAINED);
         project.setLinkedProjects(linkedProjects);
         project.setAttachments(attachmentList);
         project.setSecurityResponsibles(new HashSet<>(Arrays.asList("securityresponsible1@sw360.org", "securityresponsible2@sw360.org")));
@@ -240,6 +240,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
         given(this.projectServiceMock.getProjectsForUser(anyObject())).willReturn(projectList);
         given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), anyObject())).willReturn(project);
+        given(this.projectServiceMock.getProjectForUserById(eq(project2.getId()), anyObject())).willReturn(project2);
         given(this.projectServiceMock.searchLinkingProjects(eq(project.getId()), anyObject())).willReturn(usedByProjectList);
         given(this.projectServiceMock.searchProjectByName(eq(project.getName()), anyObject())).willReturn(projectListByName);
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), anyObject(), eq("false"))).willReturn(releaseIds);
@@ -1098,6 +1099,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         fieldWithPath("_embedded.createdBy").description("The user who created this project"),
                         fieldWithPath("enableSvm").description("Security vulnerability monitoring flag"),
                         fieldWithPath("enableVulnerabilitiesDisplay").description("Displaying vulnerabilities flag."),
+                        fieldWithPath("_embedded.sw360:moderators").description("An array of moderators"),
                         fieldWithPath("_embedded.sw360:projects")
                                 .description("An array of <<resources-projects, Projects resources>>"),
                                   fieldWithPath("_embedded.sw360:releases")

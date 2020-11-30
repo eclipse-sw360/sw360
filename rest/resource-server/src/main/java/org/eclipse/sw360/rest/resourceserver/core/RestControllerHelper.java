@@ -59,6 +59,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.google.common.collect.ImmutableMap;
+
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -358,10 +360,18 @@ public class RestControllerHelper<T> {
         halResource.addEmbeddedResource("sw360:projects", halProject);
     }
 
-    public Project updateProject(Project projectToUpdate, Project requestBodyProject) {
-        for(Project._Fields field:Project._Fields.values()) {
+    public Project updateProject(Project projectToUpdate, Project requestBodyProject, Map<String, Object> reqBodyMap,
+            ImmutableMap<Project._Fields, String> mapOfProjectFieldsToRequestBody) {
+        for (Project._Fields field : Project._Fields.values()) {
             Object fieldValue = requestBodyProject.getFieldValue(field);
-            if(fieldValue != null) {
+            if (fieldValue != null) {
+                String reqBodyStr = field.getFieldName();
+                if (mapOfProjectFieldsToRequestBody.containsKey(field)) {
+                    reqBodyStr = mapOfProjectFieldsToRequestBody.get(field);
+                }
+                if (!reqBodyMap.containsKey(reqBodyStr)) {
+                    continue;
+                }
                 projectToUpdate.setFieldValue(field, fieldValue);
             }
         }
