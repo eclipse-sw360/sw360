@@ -108,25 +108,12 @@
         <argLine>-Dcatalina.home=${project.build.directory}/home -Xms64m -Xmx128m -XX:MaxPermSize=512m</argLine>
     </properties>
 
-    <repositories>
-        <repository>
-            <id>antenna</id>
-            <name>antenna</name>
-            <url>https://download.eclipse.org/antenna/releases/</url>
-        </repository>
-    </repositories>
-
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp</artifactId>
                 <version>4.3.1</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.sw360.antenna</groupId>
-                <artifactId>http-support</artifactId>
-                <version>1.0.0-weekly-2020-48</version>
             </dependency>
             <dependency>
                 <groupId>com.github.cliftonlabs</groupId>

@@ -13,7 +13,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.eclipse.sw360.antenna</groupId>
+            <groupId>org.eclipse.sw360</groupId>
             <artifactId>http-support</artifactId>
         </dependency>
         <dependency>
