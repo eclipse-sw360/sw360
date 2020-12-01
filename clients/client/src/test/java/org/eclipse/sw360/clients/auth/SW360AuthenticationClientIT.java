@@ -11,13 +11,13 @@
 package org.eclipse.sw360.clients.auth;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.eclipse.sw360.antenna.http.HttpClient;
-import org.eclipse.sw360.antenna.http.HttpClientFactory;
-import org.eclipse.sw360.antenna.http.HttpClientFactoryImpl;
-import org.eclipse.sw360.antenna.http.config.HttpClientConfig;
-import org.eclipse.sw360.antenna.http.utils.FailedRequestException;
+import org.eclipse.sw360.http.HttpClient;
+import org.eclipse.sw360.http.HttpClientFactory;
+import org.eclipse.sw360.http.HttpClientFactoryImpl;
+import org.eclipse.sw360.http.config.HttpClientConfig;
+import org.eclipse.sw360.http.utils.FailedRequestException;
 import org.eclipse.sw360.clients.config.SW360ClientConfig;
-import org.eclipse.sw360.antenna.http.utils.HttpUtils;
+import org.eclipse.sw360.http.utils.HttpUtils;
 import org.eclipse.sw360.clients.rest.AbstractMockServerTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,10 +30,10 @@ import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.eclipse.sw360.antenna.http.utils.HttpConstants.CONTENT_TYPE_FORM;
-import static org.eclipse.sw360.antenna.http.utils.HttpConstants.HEADER_CONTENT_TYPE;
-import static org.eclipse.sw360.antenna.http.utils.HttpConstants.STATUS_ERR_SERVER;
-import static org.eclipse.sw360.antenna.http.utils.HttpConstants.STATUS_OK;
+import static org.eclipse.sw360.http.utils.HttpConstants.CONTENT_TYPE_FORM;
+import static org.eclipse.sw360.http.utils.HttpConstants.HEADER_CONTENT_TYPE;
+import static org.eclipse.sw360.http.utils.HttpConstants.STATUS_ERR_SERVER;
+import static org.eclipse.sw360.http.utils.HttpConstants.STATUS_OK;
 
 public class SW360AuthenticationClientIT extends AbstractMockServerTest {
     private static final String ACCESS_TOKEN = "theSecretAccessToken";

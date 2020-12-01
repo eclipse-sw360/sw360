@@ -10,8 +10,8 @@
  */
 package org.eclipse.sw360.clients.adapter;
 
-import org.eclipse.sw360.antenna.http.utils.FailedRequestException;
-import org.eclipse.sw360.antenna.http.utils.HttpUtils;
+import org.eclipse.sw360.http.utils.FailedRequestException;
+import org.eclipse.sw360.http.utils.HttpUtils;
 import org.eclipse.sw360.clients.rest.MultiStatusResponse;
 import org.eclipse.sw360.clients.utils.SW360ClientException;
 

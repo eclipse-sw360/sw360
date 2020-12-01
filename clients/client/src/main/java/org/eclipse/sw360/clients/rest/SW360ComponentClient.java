@@ -12,8 +12,8 @@
  */
 package org.eclipse.sw360.clients.rest;
 
-import org.eclipse.sw360.antenna.http.RequestBuilder;
-import org.eclipse.sw360.antenna.http.utils.HttpUtils;
+import org.eclipse.sw360.http.RequestBuilder;
+import org.eclipse.sw360.http.utils.HttpUtils;
 import org.eclipse.sw360.clients.auth.AccessTokenProvider;
 import org.eclipse.sw360.clients.config.SW360ClientConfig;
 import org.eclipse.sw360.clients.rest.resource.components.ComponentSearchParams;
@@ -106,7 +106,7 @@ public class SW360ComponentClient extends SW360Client {
     /**
      * Returns a future with detail information about the component with the ID
      * provided. If the component cannot be found, the future fails with a
-     * {@link org.eclipse.sw360.antenna.http.utils.FailedRequestException} with
+     * {@link org.eclipse.sw360.http.utils.FailedRequestException} with
      * status code 404.
      *
      * @param componentId the ID of the component in question

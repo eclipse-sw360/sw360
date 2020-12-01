@@ -14,9 +14,9 @@
 package org.eclipse.sw360.clients.auth;
 
 import org.apache.commons.lang3.StringUtils;
-import org.eclipse.sw360.antenna.http.RequestBuilder;
-import org.eclipse.sw360.antenna.http.Response;
-import org.eclipse.sw360.antenna.http.utils.HttpUtils;
+import org.eclipse.sw360.http.RequestBuilder;
+import org.eclipse.sw360.http.Response;
+import org.eclipse.sw360.http.utils.HttpUtils;
 import org.eclipse.sw360.clients.config.SW360ClientConfig;
 import org.eclipse.sw360.clients.rest.resource.SW360Attributes;
 
@@ -27,9 +27,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import static org.eclipse.sw360.antenna.http.utils.HttpConstants.AUTH_BASIC;
-import static org.eclipse.sw360.antenna.http.utils.HttpConstants.CONTENT_TYPE_FORM;
-import static org.eclipse.sw360.antenna.http.utils.HttpConstants.HEADER_AUTHORIZATION;
+import static org.eclipse.sw360.http.utils.HttpConstants.AUTH_BASIC;
+import static org.eclipse.sw360.http.utils.HttpConstants.CONTENT_TYPE_FORM;
+import static org.eclipse.sw360.http.utils.HttpConstants.HEADER_AUTHORIZATION;
 
 /**
  * <p>

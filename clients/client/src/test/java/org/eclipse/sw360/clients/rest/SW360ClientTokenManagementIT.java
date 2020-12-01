@@ -11,7 +11,7 @@
 package org.eclipse.sw360.clients.rest;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
-import org.eclipse.sw360.antenna.http.utils.HttpConstants;
+import org.eclipse.sw360.http.utils.HttpConstants;
 import org.eclipse.sw360.clients.auth.AccessTokenProvider;
 import org.eclipse.sw360.clients.auth.SW360AuthenticationClient;
 import org.eclipse.sw360.clients.config.SW360ClientConfig;
@@ -35,7 +35,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.eclipse.sw360.antenna.http.utils.HttpUtils.waitFor;
+import static org.eclipse.sw360.http.utils.HttpUtils.waitFor;
 
 /**
  * An integration test class that tests whether access tokens are correctly

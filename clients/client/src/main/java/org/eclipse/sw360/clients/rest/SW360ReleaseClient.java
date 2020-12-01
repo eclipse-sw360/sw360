@@ -12,8 +12,8 @@
  */
 package org.eclipse.sw360.clients.rest;
 
-import org.eclipse.sw360.antenna.http.RequestBuilder;
-import org.eclipse.sw360.antenna.http.utils.HttpUtils;
+import org.eclipse.sw360.http.RequestBuilder;
+import org.eclipse.sw360.http.utils.HttpUtils;
 import org.eclipse.sw360.clients.config.SW360ClientConfig;
 import org.eclipse.sw360.clients.auth.AccessTokenProvider;
 import org.eclipse.sw360.clients.utils.SW360ResourceUtils;
@@ -80,7 +80,7 @@ public class SW360ReleaseClient extends SW360AttachmentAwareClient<SW360Release>
     /**
      * Returns a future with detail information about the release with the
      * given ID. If the release cannot be found, the future fails with a
-     * {@link org.eclipse.sw360.antenna.http.utils.FailedRequestException} with
+     * {@link org.eclipse.sw360.http.utils.FailedRequestException} with
      * status code 404.
      *
      * @param releaseId the ID of the release in question

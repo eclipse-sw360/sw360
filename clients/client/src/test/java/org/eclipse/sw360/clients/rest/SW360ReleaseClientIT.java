@@ -10,8 +10,8 @@
  */
 package org.eclipse.sw360.clients.rest;
 
-import org.eclipse.sw360.antenna.http.utils.FailedRequestException;
-import org.eclipse.sw360.antenna.http.utils.HttpConstants;
+import org.eclipse.sw360.http.utils.FailedRequestException;
+import org.eclipse.sw360.http.utils.HttpConstants;
 import org.eclipse.sw360.clients.rest.resource.attachments.SW360AttachmentType;
 import org.eclipse.sw360.clients.rest.resource.attachments.SW360SparseAttachment;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360Release;
@@ -42,7 +42,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.eclipse.sw360.antenna.http.utils.HttpUtils.waitFor;
+import static org.eclipse.sw360.http.utils.HttpUtils.waitFor;
 
 public class SW360ReleaseClientIT extends AbstractMockServerTest {
     /**

@@ -20,7 +20,7 @@ import java.util.Set;
 /**
  * <p>
  * An adapter class that implements the {@code Response} interface of the
- * Antenna HTTP library on top of a response object from OkHttpClient.
+ * SW360 HTTP library on top of a response object from OkHttpClient.
  * </p>
  */
 class ResponseImpl implements org.eclipse.sw360.http.Response {

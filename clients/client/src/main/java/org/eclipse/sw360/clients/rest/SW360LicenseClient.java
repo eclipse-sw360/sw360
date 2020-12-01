@@ -12,8 +12,8 @@
  */
 package org.eclipse.sw360.clients.rest;
 
-import org.eclipse.sw360.antenna.http.RequestBuilder;
-import org.eclipse.sw360.antenna.http.utils.HttpUtils;
+import org.eclipse.sw360.http.RequestBuilder;
+import org.eclipse.sw360.http.utils.HttpUtils;
 import org.eclipse.sw360.clients.config.SW360ClientConfig;
 import org.eclipse.sw360.clients.auth.AccessTokenProvider;
 import org.eclipse.sw360.clients.utils.SW360ResourceUtils;
@@ -74,7 +74,7 @@ public class SW360LicenseClient extends SW360Client {
     /**
      * Returns a future with detail information of a license selected by its
      * name. If the name provided cannot be resolved, the future fails with a
-     * {@link org.eclipse.sw360.antenna.http.utils.FailedRequestException} with
+     * {@link org.eclipse.sw360.http.utils.FailedRequestException} with
      * status code 404.
      *
      * @param name the name of the license in question

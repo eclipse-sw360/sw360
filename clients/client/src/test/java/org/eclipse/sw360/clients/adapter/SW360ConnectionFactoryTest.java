@@ -11,7 +11,7 @@
 package org.eclipse.sw360.clients.adapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.eclipse.sw360.antenna.http.HttpClient;
+import org.eclipse.sw360.http.HttpClient;
 import org.eclipse.sw360.clients.auth.SW360AuthenticationClient;
 import org.eclipse.sw360.clients.config.SW360ClientConfig;
 import org.eclipse.sw360.clients.rest.SW360Client;

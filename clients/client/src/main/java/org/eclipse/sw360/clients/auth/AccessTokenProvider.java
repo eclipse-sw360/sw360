@@ -10,7 +10,7 @@
  */
 package org.eclipse.sw360.clients.auth;
 
-import org.eclipse.sw360.antenna.http.utils.HttpConstants;
+import org.eclipse.sw360.http.utils.HttpConstants;
 import org.eclipse.sw360.clients.utils.FutureUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

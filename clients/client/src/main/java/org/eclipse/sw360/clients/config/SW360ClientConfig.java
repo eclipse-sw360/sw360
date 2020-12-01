@@ -13,8 +13,8 @@ package org.eclipse.sw360.clients.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.eclipse.sw360.antenna.http.HttpClient;
-import org.eclipse.sw360.antenna.http.utils.HttpConstants;
+import org.eclipse.sw360.http.HttpClient;
+import org.eclipse.sw360.http.utils.HttpConstants;
 
 import java.net.URI;
 import java.util.Objects;

@@ -225,7 +225,7 @@ public class HttpUtilsTest {
 
     @Test
     public void testAddQueryParametersNoParams() {
-        String url = "https://test.antenna.org/test";
+        String url = "https://test.sw360.org/test";
 
         assertThat(HttpUtils.addQueryParameters(url, Collections.emptyMap())).isEqualTo(url);
     }
@@ -243,7 +243,7 @@ public class HttpUtilsTest {
         params.put("complex param", "this must be encoded");
         params.put("nullValue", null);
         params.put("emptyValue", "");
-        String url = "https://test.antenna.org/query";
+        String url = "https://test.sw360.org/query";
         String expResult = url + "?foo=bar&test=true&complex+param=this+must+be+encoded&nullValue=&emptyValue=";
 
         assertThat(HttpUtils.addQueryParameters(url, params)).isEqualTo(expResult);
@@ -255,7 +255,7 @@ public class HttpUtilsTest {
         params.put("nullValue", null);
         params.put("emptyValue", "");
         params.put("foo", "bar");
-        String url = "https://test.antenna.org/query";
+        String url = "https://test.sw360.org/query";
         String expResult = url + "?foo=bar";
 
         assertThat(HttpUtils.addQueryParameters(url, params, true)).isEqualTo(expResult);
@@ -263,7 +263,7 @@ public class HttpUtilsTest {
 
     @Test
     public void testAddQueryParameter() {
-        String url = "https://test.antenna.org/query";
+        String url = "https://test.sw360.org/query";
         String expResult = url + "?param=the+param";
 
         assertThat(HttpUtils.addQueryParameter(url, "param", "the param")).isEqualTo(expResult);

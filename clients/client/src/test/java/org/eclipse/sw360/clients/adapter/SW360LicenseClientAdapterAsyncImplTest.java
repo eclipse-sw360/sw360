@@ -10,8 +10,8 @@
  */
 package org.eclipse.sw360.clients.adapter;
 
-import org.eclipse.sw360.antenna.http.utils.FailedRequestException;
-import org.eclipse.sw360.antenna.http.utils.HttpConstants;
+import org.eclipse.sw360.http.utils.FailedRequestException;
+import org.eclipse.sw360.http.utils.HttpConstants;
 import org.eclipse.sw360.clients.rest.SW360LicenseClient;
 import org.eclipse.sw360.clients.rest.resource.licenses.SW360License;
 import org.eclipse.sw360.clients.rest.resource.licenses.SW360SparseLicense;
@@ -59,11 +59,11 @@ public class SW360LicenseClientAdapterAsyncImplTest {
     public void testGetLicenseByName() {
         SW360License license = prepareLicenseClientGetLicenseByName();
 
-        Optional<SW360License> sw360LicenseByAntennaLicense =
+        Optional<SW360License> sw360LicenseByLicense =
                 block(licenseClientAdapter.getLicenseByName(LICENSE_NAME));
 
-        assertThat(sw360LicenseByAntennaLicense).isPresent();
-        assertThat(sw360LicenseByAntennaLicense).hasValue(license);
+        assertThat(sw360LicenseByLicense).isPresent();
+        assertThat(sw360LicenseByLicense).hasValue(license);
         verify(licenseClient, atLeastOnce()).getLicenseByName(LICENSE_NAME);
     }
 

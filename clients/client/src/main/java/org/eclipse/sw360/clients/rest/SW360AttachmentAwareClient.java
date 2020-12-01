@@ -11,8 +11,8 @@
  */
 package org.eclipse.sw360.clients.rest;
 
-import org.eclipse.sw360.antenna.http.RequestBuilder;
-import org.eclipse.sw360.antenna.http.utils.HttpConstants;
+import org.eclipse.sw360.http.RequestBuilder;
+import org.eclipse.sw360.http.utils.HttpConstants;
 import org.eclipse.sw360.clients.auth.AccessTokenProvider;
 import org.eclipse.sw360.clients.config.SW360ClientConfig;
 import org.eclipse.sw360.clients.rest.resource.SW360HalResource;
@@ -116,7 +116,7 @@ public abstract class SW360AttachmentAwareClient<T extends SW360HalResource<?, ?
      * {@code AttachmentProcessor} provided. A future with the result produced
      * by the processor is returned. If the attachment cannot be resolved, the
      * resulting future fails with a
-     * {@link org.eclipse.sw360.antenna.http.utils.FailedRequestException} with
+     * {@link org.eclipse.sw360.http.utils.FailedRequestException} with
      * status code 404; it contains an {@code IOException} if there was a
      * problem with the processor or if the server could not be contacted.
      *

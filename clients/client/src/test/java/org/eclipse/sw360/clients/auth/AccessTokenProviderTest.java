@@ -10,8 +10,8 @@
  */
 package org.eclipse.sw360.clients.auth;
 
-import org.eclipse.sw360.antenna.http.utils.FailedRequestException;
-import org.eclipse.sw360.antenna.http.utils.HttpConstants;
+import org.eclipse.sw360.http.utils.FailedRequestException;
+import org.eclipse.sw360.http.utils.HttpConstants;
 import org.junit.Before;
 import org.junit.Test;
 

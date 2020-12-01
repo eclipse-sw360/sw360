@@ -12,7 +12,7 @@ package org.eclipse.sw360.clients.rest;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.eclipse.sw360.antenna.http.utils.HttpUtils;
+import org.eclipse.sw360.http.utils.HttpUtils;
 
 import java.io.IOException;
 import java.io.InputStream;

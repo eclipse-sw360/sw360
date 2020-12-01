@@ -13,8 +13,8 @@
 
 package org.eclipse.sw360.clients.rest;
 
-import org.eclipse.sw360.antenna.http.RequestBuilder;
-import org.eclipse.sw360.antenna.http.utils.HttpUtils;
+import org.eclipse.sw360.http.RequestBuilder;
+import org.eclipse.sw360.http.utils.HttpUtils;
 import org.eclipse.sw360.clients.auth.AccessTokenProvider;
 import org.eclipse.sw360.clients.config.SW360ClientConfig;
 import org.eclipse.sw360.clients.rest.resource.SW360Attributes;

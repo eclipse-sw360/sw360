@@ -11,9 +11,9 @@
 package org.eclipse.sw360.clients.rest;
 
 import org.apache.commons.lang3.StringUtils;
-import org.eclipse.sw360.antenna.http.utils.FailedRequestException;
-import org.eclipse.sw360.antenna.http.utils.HttpConstants;
-import org.eclipse.sw360.antenna.http.utils.HttpUtils;
+import org.eclipse.sw360.http.utils.FailedRequestException;
+import org.eclipse.sw360.http.utils.HttpConstants;
+import org.eclipse.sw360.http.utils.HttpUtils;
 import org.eclipse.sw360.clients.auth.AccessToken;
 import org.eclipse.sw360.clients.rest.resource.projects.SW360Project;
 import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectList;

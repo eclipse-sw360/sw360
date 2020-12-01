@@ -13,7 +13,7 @@ package org.eclipse.sw360.clients.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
-import org.eclipse.sw360.antenna.http.HttpClient;
+import org.eclipse.sw360.http.HttpClient;
 import org.junit.Before;
 import org.junit.Test;
 
