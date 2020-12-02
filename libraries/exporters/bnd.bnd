@@ -25,6 +25,7 @@ Import-Package: \
 	javax.xml.*, \
 	org.apache.commons.collections4.*, \
 	org.apache.commons.csv.*, \
+	org.apache.commons.compress.*, \
 	org.apache.logging.log4j, \
 	org.apache.thrift.*, \
 	org.eclipse.sw360.commonIO.*, \
