@@ -10,8 +10,8 @@ To execute it is recommended to do this in the following order:
     * be aware that some scripts are using an internal dry-run switch which you have to change manually in the script's code
 
 ## List and Description of script
-- `001_update_project_field_value.py`
-    - Script to update a field*(String)* in project document to a new value.
+- `001_update_project_field_value_couchdb_1_x.py`
+    - Script for couchdb 1.x to update a field*(String)* in project document to a new value.
       Following variables needs to be updated based on the requirement
       1. `fieldName` = *"field_to_be_migrated"*
       2. `oldValue` = *"old_value"*
@@ -21,6 +21,12 @@ To execute it is recommended to do this in the following order:
       Following variables needs to be updated based on the requirement
       1. `doc_id` = *"document_id"*
       2. `nested_field_key` = *"field_to_be_updated"*
+      3. `newValue` = *"new_value"*
+- `003_update_project_field_value_couchdb_2_x.py`
+    - Script for couchdb 2.x to update a field*(String)* in project document to a new value.
+      Following variables needs to be updated based on the requirement
+      1. `fieldName` = *"field_to_be_migrated"*
+      2. `oldValue` = *"old_value"*
       3. `newValue` = *"new_value"*
 
 ## Run the scripts for a database not running on localhost
