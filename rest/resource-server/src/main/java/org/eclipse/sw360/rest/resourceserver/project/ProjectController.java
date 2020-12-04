@@ -86,6 +86,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
@@ -126,6 +127,9 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
             .put(Project._Fields.MODERATORS, "sw360:moderators")
             .put(Project._Fields.CONTRIBUTORS,"sw360:contributors")
             .put(Project._Fields.ATTACHMENTS,"sw360:attachments").build();
+    private static final ImmutableMap<Project._Fields, String> mapOfProjectFieldsToRequestBody = ImmutableMap.<Project._Fields, String>builder()
+            .put(Project._Fields.VISBILITY, "visibility")
+            .put(Project._Fields.RELEASE_ID_TO_USAGE, "linkedReleases").build();
 
     @NonNull
     private final Sw360ProjectService projectService;
@@ -153,6 +157,9 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
 
     @NonNull
     private final Sw360ComponentService componentService;
+
+    @NonNull
+    private final com.fasterxml.jackson.databind.Module sw360Module;
 
     @RequestMapping(value = PROJECTS_URL, method = RequestMethod.GET)
     public ResponseEntity<Resources<Resource<Project>>> getProjectsForUser(
@@ -617,10 +624,13 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
     @RequestMapping(value = PROJECTS_URL + "/{id}", method = RequestMethod.PATCH)
     public ResponseEntity<Resource<Project>> patchProject(
             @PathVariable("id") String id,
-            @RequestBody Project updateProject) throws TException {
+            @RequestBody Map<String, Object> reqBodyMap) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Project sw360Project = projectService.getProjectForUserById(id, user);
-        sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject);
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(sw360Module);
+        Project updateProject = mapper.convertValue(reqBodyMap, Project.class);
+        sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap, mapOfProjectFieldsToRequestBody);
         projectService.updateProject(sw360Project, user);
         HalResource<Project> userHalResource = createHalProject(sw360Project, user);
         return new ResponseEntity<>(userHalResource, HttpStatus.OK);
