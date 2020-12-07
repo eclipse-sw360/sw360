@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # -----------------------------------------------------------------------------
 # Copyright Siemens AG, 2017.
+# Copyright Bosch.IO 2020.
 # Part of the SW360 Portal Project.
 #
 # This program and the accompanying materials are made
@@ -30,7 +31,7 @@ while read file ; do
     echo "$(tput bold)ERROR: no EPL-2.0 licensing is specified in $file$(tput sgr0)"
     failure=true
 done <<< "$(git ls-files \
-    | grep -Ev '\.(csv|rdf|ent|dtd|lar|png|gif|psd|ico|jpg|docx|gitignore|cert|jks|spdx|rdf|MockMaker)' \
+    | grep -Ev '\.(csv|rdf|ent|dtd|lar|png|gif|psd|ico|jpg|docx|gitignore|cert|jks|spdx|rdf|MockMaker|json)' \
     | grep -Ev '(LICENSE|NOTICE|README|CHANGELOG|Language|Language_vi)' \
     | grep -v 'id_rsa' \
     | grep -Ev '*/asciidoc/*')"
