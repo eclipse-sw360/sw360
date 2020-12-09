@@ -15,15 +15,19 @@ import java.net.MalformedURLException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
+import org.eclipse.sw360.datahandler.thrift.changelogs.ChangedFields;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.ektorp.http.HttpClient;
+
+import com.google.common.collect.ImmutableSet;
 
 /**
  * Class for accessing the CouchDB database for Change logs objects
@@ -33,8 +37,13 @@ import org.ektorp.http.HttpClient;
 public class ChangeLogsDatabaseHandler {
     private final DatabaseConnector db;
     private final ChangeLogsRepository changeLogsRepository;
-
-    private static final Logger log = LogManager.getLogger(ChangeLogsDatabaseHandler.class);
+    private static final ImmutableSet<String> setOfIgnoredFieldValues = ImmutableSet.<String>builder()
+            .add("\"\"")
+            .add("[]")
+            .add("{}").build();
+    private static final ImmutableSet<String> setOfIgnoredFieldNames = ImmutableSet.<String>builder()
+            .add("revision")
+            .add("documentState").build();
 
     public ChangeLogsDatabaseHandler(Supplier<HttpClient> httpClient, String dbName) throws MalformedURLException {
         db = new DatabaseConnector(httpClient, dbName);
@@ -44,7 +53,8 @@ public class ChangeLogsDatabaseHandler {
     public List<ChangeLogs> getChangeLogsByDocumentId(User user, String docId) {
         List<ChangeLogs> changeLogsByDocId = changeLogsRepository.getChangeLogsByDocId(docId);
         changeLogsByDocId.addAll(changeLogsRepository.getChangeLogsByParentDocId(docId));
-
+        changeLogsByDocId = changeLogsByDocId.stream().filter(changeLog -> isEmptyChangeLog(changeLog))
+                .collect(Collectors.toList());
         Collections.sort(changeLogsByDocId, Comparator.comparing(ChangeLogs::getChangeTimestamp).reversed());
         changeLogsByDocId.stream().forEach(cl -> cl.setChangeTimestamp(cl.getChangeTimestamp().split(" ")[0]));
         return changeLogsByDocId;
@@ -53,7 +63,34 @@ public class ChangeLogsDatabaseHandler {
     public ChangeLogs getChangeLogsById(String id) throws SW360Exception {
         ChangeLogs changeLogs = changeLogsRepository.get(id);
         assertNotNull(changeLogs);
+        removeNullToEmtpyChanges(changeLogs);
         changeLogs.setChangeTimestamp(changeLogs.changeTimestamp.split(" ")[0]);
         return changeLogs;
+    }
+
+    private ChangeLogs removeNullToEmtpyChanges(ChangeLogs changeLog) {
+        Set<ChangedFields> changes = changeLog.getChanges();
+        if (CommonUtils.isNotEmpty(changes)) {
+            Set<ChangedFields> collectFiltered = changes.stream().filter(ch -> {
+                String fieldName = ch.getFieldName();
+                String oldFieldValue = ch.getFieldValueOld();
+                String newFieldValue = ch.getFieldValueNew();
+                if ((fieldName != null && setOfIgnoredFieldNames.contains(fieldName))
+                        || (oldFieldValue == null && newFieldValue == null)
+                        || (oldFieldValue == null && setOfIgnoredFieldValues.contains(newFieldValue))
+                        || (newFieldValue == null && setOfIgnoredFieldValues.contains(oldFieldValue))
+                        || newFieldValue.equals(oldFieldValue)) {
+                    return false;
+                }
+                return true;
+            }).collect(Collectors.toSet());
+            changeLog.setChanges(collectFiltered);
+        }
+
+        return changeLog;
+    }
+
+    private boolean isEmptyChangeLog(ChangeLogs changeLog) {
+        return CommonUtils.isNotEmpty(removeNullToEmtpyChanges(changeLog).getChanges());
     }
 }

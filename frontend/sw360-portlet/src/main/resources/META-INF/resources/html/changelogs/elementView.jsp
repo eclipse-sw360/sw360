@@ -118,10 +118,6 @@
                 {
                     for(let i=0;i<changes.length;i++)
                     {
-                        if(changes[i].fieldName === "revision"||changes[i].fieldName === "documentState")
-                        {
-                            continue;
-                        }
                         cardId++;
                         let template=$("#template").clone(true,true);
                         template.removeClass("d-none").attr("id","template-"+cardId);
