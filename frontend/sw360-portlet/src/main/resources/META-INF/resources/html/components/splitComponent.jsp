@@ -73,6 +73,28 @@
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
     require(['jquery', 'bridges/datatables', 'modules/mergeWizard' ], function($, datatables, wizard) {
+        let releaseTooltipFormatter = function(release) {
+            if (!release) {
+                return '';
+            }
+            return '<liferay-ui:message key="source.code.download.url" /> - ' + (release.sourceCodeDownloadurl || '') + '\n'
+                 + '<liferay-ui:message key="binary.download.url" /> - ' + (release.binaryDownloadurl || '');
+        }
+
+        let releaseDetailFormatter = function(release) {
+            if (!release) {
+                return '';
+            }
+            return (release.name || '-no-name-') + ' ' + (release.version || '-no-version-');
+        }
+
+        let attachmentDetailFormatter = function(attachment) {
+            if (!attachment) {
+                return '';
+            }
+            return (attachment.filename || '-no-filename-') + ' (' + (attachment.attachementType || '-no-type-') + ')';
+        }
+
         var mergeWizardStepUrl = '<%=componentSplitWizardStepUrl%>',
             postParamsPrefix = '<portlet:namespace/>',
             $wizardRoot = $('#componentSplitWizard');
@@ -199,20 +221,11 @@
             $stepElement.append(wizard.createSingleSplitLine('<liferay-ui:message key="created.by" />', data.componentSource.createdBy, data.componentTarget.createdBy));
 
             $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="releases" />'));
-            $stepElement.append(wizard.createMultiSplitLine('Releases', data.componentSource.releases, data.componentTarget.releases, function(release) {
-                if (!release) {
-                    return '';
-                }
-                return (release.name || '-no-name-') + ' ' + (release.version || '-no-version-');
-            }, midElement));
-
+            $stepElement.append(wizard.createMultiSplitLine('Releases', data.componentSource.releases, data.componentTarget.releases, 
+                    releaseDetailFormatter, midElement, true, releaseTooltipFormatter));
             $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="attachments" />'));
-            $stepElement.append(wizard.createMultiSplitLine('<liferay-ui:message key="attachments" />', data.componentSource.attachments, data.componentTarget.attachments, function(attachment) {
-                if (!attachment) {
-                    return '';
-                }
-                return (attachment.filename || '-no-filename-') + ' (' + (attachment.attachementType || '-no-type-') + ')';
-            }, midElement));
+            $stepElement.append(wizard.createMultiSplitLine('<liferay-ui:message key="attachments" />', data.componentSource.attachments, 
+                    data.componentTarget.attachments, attachmentDetailFormatter, midElement, false, null));
 
             $wizardRoot.find('fieldset div.mid input').each(function(index, element) {
                 $(element).off('click.merge');
@@ -238,7 +251,9 @@
                     buttonNode.addClass('undo');
                     targetNode.data('newVal', sourceNode.data('origVal'));
                     sourceNode.data('newVal', '');
-                    targetNode.find('span:first').text($row.data('detailFormatter')(sourceNode.data('origVal')));
+                    targetNode.find('span:first').text($row.data('detailFormatter')(sourceNode.data('origVal')))
+                       .attr("title", sourceNode.find('span:first').attr("title"))
+                       .attr("data-html", "true");
                     sourceNode.find('span:first').text("");
                 }
                });
@@ -263,7 +278,8 @@
             srcReleases = wizard.getFinalMultiValue('Releases');
             srcComponent.releases = [];
             $.each(srcReleases, function(index, value) {
-                srcComponent.releases.push({ "id": value.id , "name": value.name , "version": value.version , "componentId": value.componentId });
+                srcComponent.releases.push({ "id": value.id , "name": value.name , "version": value.version , "componentId": value.componentId ,
+                    "sourceCodeDownloadurl": value.sourceCodeDownloadurl , "binaryDownloadurl": value.binaryDownloadurl});
             });
             srcAttachments = wizard.getFinalMultiValue('<liferay-ui:message key="attachments" />');
             srcComponent.attachments = [];
@@ -278,7 +294,8 @@
             targetReleases = wizard.getFinalMultiValueTarget('Releases');
             targetComponent.releases = [];
             $.each(targetReleases, function(index, value) {
-                targetComponent.releases.push({ "id": value.id , "name": value.name , "version": value.version , "componentId": value.componentId });
+                targetComponent.releases.push({ "id": value.id , "name": value.name , "version": value.version , "componentId": value.componentId ,
+                    "sourceCodeDownloadurl": value.sourceCodeDownloadurl , "binaryDownloadurl": value.binaryDownloadurl});
             });
             targetAttachments = wizard.getFinalMultiValueTarget('<liferay-ui:message key="attachments" />');
             targetComponent.attachments = [];
@@ -301,19 +318,11 @@
                     wizard.createSingleSplitLine('<liferay-ui:message key="created.by" />', data.srcComponent.createdBy, data.targetComponent.createdBy),
             );
             $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="releases" />'));
-            $stepElement.append(wizard.createMultiSplitLine('Releases', data.srcComponent.releases, data.targetComponent.releases, function(release) {
-                if (!release) {
-                    return '';
-                }
-                return (release.name || '-no-name-') + ' ' + (release.version || '-no-version-');
-            }, ''));
+            $stepElement.append(wizard.createMultiSplitLine('Releases', data.srcComponent.releases, data.targetComponent.releases,
+                    releaseDetailFormatter, '', true, releaseTooltipFormatter));
             $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="attachments" />'));
-            $stepElement.append(wizard.createMultiSplitLine('<liferay-ui:message key="attachments" />', data.srcComponent.attachments, data.targetComponent.attachments, function(attachment) {
-                if (!attachment) {
-                    return '';
-                }
-                return (attachment.filename || '-no-filename-') + ' (' + (attachment.attachementType || '-no-type-') + ')';
-            }, ''));
+            $stepElement.append(wizard.createMultiSplitLine('<liferay-ui:message key="attachments" />', data.srcComponent.attachments,
+                    data.targetComponent.attachments, attachmentDetailFormatter, '', false, null));
         }
 
         function submitConfirmedSplitComponent($stepElement) {

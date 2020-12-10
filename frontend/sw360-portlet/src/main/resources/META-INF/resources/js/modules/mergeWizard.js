@@ -59,7 +59,7 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
     mergeWizard.createSingleSplitLine = function createSingleSplitLine(propName, target, source, detailFormatter) {
         let line = createSingleLine(propName, target, source, detailFormatter);
 
-        return $(line).append(createSingleSplitContent(target, source, 0, detailFormatter, true, ''));
+        return $(line).append(createSingleSplitContent(target, source, 0, detailFormatter, true, '', false, null));
     };
 
     function createSingleLine(propName, target, source, detailFormatter) {
@@ -75,14 +75,14 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
     }
 
     mergeWizard.createMultiMergeLine = function createMultiMergeLine(propName, target, source, detailFormatter) {
-        return createMultiLine(propName, target, source, detailFormatter, false, '');
+        return createMultiLine(propName, target, source, detailFormatter, false, '', false , null);
     };
 
-    mergeWizard.createMultiSplitLine = function createMultiMergeLine(propName, target, source, detailFormatter, midElement) {
-        return createMultiLine(propName, target, source, detailFormatter, true, midElement);
+    mergeWizard.createMultiSplitLine = function createMultiMergeLine(propName, target, source, detailFormatter, midElement, addTooltip, tooltipFormatter) {
+        return createMultiLine(propName, target, source, detailFormatter, true, midElement, addTooltip, tooltipFormatter);
     };
 
-    function createMultiLine(propName, target, source, detailFormatter, split, midElement) {
+    function createMultiLine(propName, target, source, detailFormatter, split, midElement, addTooltip, tooltipFormatter) {
         var result,
             rowIndex = 0,
             existInBoth = [];
@@ -97,15 +97,18 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         $.each(target, function(index, value) {
             var foundIndex = -1;
             if ((foundIndex = $.inArray(value, source)) === -1) {
-                result.append(split?createSingleSplitContent(value, '', rowIndex++, detailFormatter, false, midElement) : createSingleMergeContent(value, '', rowIndex++, detailFormatter));
+                result.append(split ? createSingleSplitContent(value, '', rowIndex++, detailFormatter, false, midElement, addTooltip, tooltipFormatter)
+                                    : createSingleMergeContent(value, '', rowIndex++, detailFormatter));
             } else {
-                result.append(split?createSingleSplitContent(value, source[foundIndex], rowIndex++, detailFormatter, true, '') : createSingleMergeContent(value, source[foundIndex], rowIndex++, detailFormatter));
+                result.append(split ? createSingleSplitContent(value, source[foundIndex], rowIndex++, detailFormatter, true, '', addTooltip, tooltipFormatter) 
+                                    : createSingleMergeContent(value, source[foundIndex], rowIndex++, detailFormatter));
                 existInBoth.push(foundIndex);
             }
         });
         $.each(source, function(index, value) {
             if ($.inArray(index, existInBoth) === -1) {
-                result.append(split?createSingleSplitContent('', value, rowIndex++, detailFormatter, true, '') : createSingleMergeContent('', value, rowIndex++, detailFormatter));
+                result.append(split ? createSingleSplitContent('', value, rowIndex++, detailFormatter, true, '', addTooltip, tooltipFormatter)
+                                    : createSingleMergeContent('', value, rowIndex++, detailFormatter));
             }
         });
 
@@ -214,16 +217,16 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         return propName.replace(/[^a-zA-Z\d]/g, '_');
     }
 
-    function createSingleSplitContent(target, source, rowIndex, detailFormatter, locked, midElement) {
-        return createSingleLineContent(target, source, rowIndex, detailFormatter, locked, midElement);
+    function createSingleSplitContent(target, source, rowIndex, detailFormatter, locked, midElement, addTooltip, tooltipFormatter) {
+        return createSingleLineContent(target, source, rowIndex, detailFormatter, locked, midElement, addTooltip, tooltipFormatter);
     }
 
     function createSingleMergeContent(target, source, rowIndex, detailFormatter, locked) {
         let midElement = (target === source ? '<span class="text-success">&#10003;</span>' : '<input class="btn btn-secondary" type="button" value="&#8656;" />');
-        return createSingleLineContent(target, source, rowIndex, detailFormatter, locked, midElement);
+        return createSingleLineContent(target, source, rowIndex, detailFormatter, locked, midElement, false, null);
     }
 
-    function createSingleLineContent(target, source, rowIndex, detailFormatter, locked, midElement) {
+    function createSingleLineContent(target, source, rowIndex, detailFormatter, locked, midElement, addTooltip, tooltipFormatter) {
         var row,
             left,
             mid,
@@ -244,6 +247,12 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
 
         $(left).find("span:eq(0)").text(detailFormatter(target));
         $(right).find("span:eq(0)").text(detailFormatter(source));
+
+        if (addTooltip) {
+            $(left).find("span:eq(0)").attr("title", tooltipFormatter(target));
+            $(right).find("span:eq(0)").attr("title", tooltipFormatter(source));
+        }
+
         $(row).data('detailFormatter', detailFormatter);
         $(left).data('origVal', target);
         $(right).data('origVal', source);
@@ -438,6 +447,7 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
         buttonNode.addClass('undo');
 
         targetNode.data('newVal', sourceNode.data('origVal'));
+
         if(html){
             targetNode.find('span:first').html($row.data('detailFormatter')(sourceNode.data('origVal')));
         }
