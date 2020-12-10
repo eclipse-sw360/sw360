@@ -86,6 +86,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -628,6 +629,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Project sw360Project = projectService.getProjectForUserById(id, user);
         ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.registerModule(sw360Module);
         Project updateProject = mapper.convertValue(reqBodyMap, Project.class);
         sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap, mapOfProjectFieldsToRequestBody);
