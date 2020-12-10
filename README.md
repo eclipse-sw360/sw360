@@ -128,6 +128,11 @@ On the other hand you must not deploy rest and backend artifacts to the auto-dep
 mvn package -P deploy -Dbase.deploy.dir=. -Dliferay.deploy.dir=${LIFERAY_INSTALL}/deploy -Dbackend.deploy.dir=${LIFERAY_INSTALL}/tomcat-9.0.17/webapps -Drest.deploy.dir=${LIFERAY_INSTALL}/tomcat-9.0.17/webapps
 ```
 
+### Building components with docker
+
+If you plan on using the sw360chores project to deploy SW360, you will need to deploy the components first. This can also be done in a docker container. Simply `cd docker && ./compileWithDocker.sh` to build the required jar (`_deploy`) and war (`_webapps`) files.
+__note: It can take a while!__
+
 ### Liferay Configuration
 
 You should provide below property configuration based on his/her liferay deployment

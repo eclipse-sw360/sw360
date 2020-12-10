@@ -9,12 +9,15 @@
 # SPDX-License-Identifier: EPL-2.0
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
+
 tempdir=$(mktemp -d)
 mkdir -p "$tempdir/scripts"
 cp "$DIR/scripts/install-thrift.sh" "$tempdir/scripts"
+cp "$DIR/docker/entrypoint.sh" "$tempdir/scripts"
+
 pushd $tempdir
 docker build \
-    -f "$DIR/sw360dev.Dockerfile" \
+    -f "$DIR/docker/sw360dev.Dockerfile" \
     -t sw360/sw360dev \
     --rm=true --force-rm=true \
     $tempdir
@@ -24,7 +27,11 @@ rm -r $tempdir
 docker run -i \
     -v "$DIR":/sw360portal \
     -w /sw360portal \
-    --net=host \
+    -e LOCAL_USER_ID=`id -u` \
+    -e MAVEN_CONFIG=/sw360portal/.m2 \
     sw360/sw360dev \
-    su-exec $(id -u):$(id -g) \
-    mvn package -DskipTests
+    mvn clean package -P deploy -Dbase.deploy.dir=/sw360portal/_deploy \
+         -Dliferay.deploy.dir=/sw360portal/_deploy \
+         -Dbackend.deploy.dir=/sw360portal/_webapps \
+         -Drest.deploy.dir=/sw360portal/_webapps \
+         -DskipTests
