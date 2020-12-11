@@ -54,6 +54,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 
 import javax.servlet.http.HttpServletRequest;
@@ -88,6 +90,10 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
             Release._Fields.COTS_DETAILS, "sw360:cotsDetails",
             Release._Fields.RELEASE_ID_TO_RELATIONSHIP,"sw360:releaseIdToRelationship",
             Release._Fields.CLEARING_INFORMATION, "sw360:clearingInformation");
+    private static final ImmutableMap<Release._Fields, String[]> mapOfBackwardCompatible_Field_OldFieldNames_NewFieldNames = ImmutableMap.<Release._Fields, String[]>builder()
+            .put(Release._Fields.SOURCE_CODE_DOWNLOADURL, new String[] { "downloadurl", "sourceCodeDownloadurl" })
+            .build();
+
     @NonNull
     private Sw360ReleaseService releaseService;
 
@@ -96,6 +102,9 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
 
     @NonNull
     private RestControllerHelper restControllerHelper;
+
+    @NonNull
+    private final com.fasterxml.jackson.databind.Module sw360Module;
 
     @GetMapping(value = RELEASES_URL)
     public ResponseEntity<Resources<Resource>> getReleasesForUser(
@@ -221,9 +230,10 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
     @PatchMapping(value = RELEASES_URL + "/{id}")
     public ResponseEntity<Resource<Release>> patchRelease(
             @PathVariable("id") String id,
-            @RequestBody Release updateRelease) throws TException {
+            @RequestBody Map<String, Object> reqBodyMap) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Release sw360Release = releaseService.getReleaseForUserById(id, user);
+        Release updateRelease = setBackwardCompatibleFieldsInRelease(reqBodyMap);
         sw360Release = this.restControllerHelper.updateRelease(sw360Release, updateRelease);
         releaseService.updateRelease(sw360Release, user);
         HalResource<Release> halRelease = createHalReleaseResource(sw360Release, true);
@@ -233,9 +243,9 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
     @PreAuthorize("hasAuthority('WRITE')")
     @PostMapping(value = RELEASES_URL)
     public ResponseEntity<Resource<Release>> createRelease(
-            @RequestBody Release release) throws URISyntaxException, TException {
+            @RequestBody Map<String, Object> reqBodyMap) throws URISyntaxException, TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-
+        Release release = setBackwardCompatibleFieldsInRelease(reqBodyMap);
         if (release.isSetComponentId()) {
             URI componentURI = new URI(release.getComponentId());
             String path = componentURI.getPath();
@@ -437,6 +447,23 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
             restControllerHelper.addEmbeddedFields(field.getValue(), release.getFieldValue(field.getKey()), halRelease);
         }
         return halRelease;
+    }
+
+    private Release setBackwardCompatibleFieldsInRelease(Map<String, Object> reqBodyMap) {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.registerModule(sw360Module);
+        Release release = mapper.convertValue(reqBodyMap, Release.class);
+        mapOfBackwardCompatible_Field_OldFieldNames_NewFieldNames.entrySet().stream().forEach(entry -> {
+            Release._Fields field = entry.getKey();
+            String oldFieldName = entry.getValue()[0];
+            String newFieldName = entry.getValue()[1];
+            if (!reqBodyMap.containsKey(newFieldName) && reqBodyMap.containsKey(oldFieldName)) {
+                release.setFieldValue(field, CommonUtils.nullToEmptyString(reqBodyMap.get(oldFieldName)));
+            }
+        });
+
+        return release;
     }
 }
 
