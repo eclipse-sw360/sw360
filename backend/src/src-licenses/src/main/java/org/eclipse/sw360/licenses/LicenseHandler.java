@@ -185,9 +185,9 @@ public class LicenseHandler implements LicenseService.Iface {
      * Add an existing oblig to a license
      */
     @Override
-    public RequestStatus addObligationsToLicense(Obligation obligs, String licenseId, User user) throws TException {
-        assertNotEmpty(licenseId);
-       return  handler.addObligationsToLicense(obligs, licenseId, user);
+    public RequestStatus addObligationsToLicense(Set<Obligation> obligs, License license, User user) throws TException {
+       assertNotNull(license);
+       return  handler.addObligationsToLicense(obligs, license, user);
     }
 
     @Override

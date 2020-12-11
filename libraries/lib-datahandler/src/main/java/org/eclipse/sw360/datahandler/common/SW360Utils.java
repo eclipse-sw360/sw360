@@ -603,7 +603,7 @@ public class SW360Utils {
 
     public static Map<String, ObligationStatusInfo> getProjectComponentOrganisationLicenseObligationToDisplay(
             Map<String, ObligationStatusInfo> obligationStatusMap, List<Obligation> obligations,
-            ObligationLevel oblLevel, boolean isValidForProjectOptional, boolean addFromDB) {
+            ObligationLevel oblLevel, boolean addFromDB) {
         Map<String, ObligationStatusInfo> obligationAlreadyPresent = obligationStatusMap.entrySet().stream()
                 .filter(Objects::nonNull).filter(e -> Objects.nonNull(e.getValue()))
                 .filter(e -> Objects.nonNull(e.getValue().getObligationLevel()))
@@ -612,7 +612,6 @@ public class SW360Utils {
         obligationAlreadyPresent.entrySet().stream().forEach(e -> obligationStatusMap.remove(e.getKey()));
 
         Map<String, ObligationStatusInfo> mapOfObligations = obligations.stream().filter(Objects::nonNull)
-                .filter(o -> isValidForProjectOptional || o.isValidForProject())
                 .filter(o -> Objects.nonNull(o.getObligationLevel()))
                 .filter(o -> o.getObligationLevel().equals(oblLevel))
                 .filter(o -> addFromDB || obligationAlreadyPresent

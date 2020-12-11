@@ -76,12 +76,6 @@
                                 </tr>
                                 <tr>
                                     <td>
-                                        <div class="form-check">
-                                            <input id="todoValidForProject" type="checkbox" class="form-check-input" name="<portlet:namespace/><%=Obligation._Fields.VALID_FOR_PROJECT%>"/>
-                                            <label for="todoValidForProject" class="form-check-label"><liferay-ui:message key="valid.for.projects" /></label>
-                                        </div>
-                                    </td>
-                                    <td>
                                         <div class="form-group">
                                             <label for="obligationType"><liferay-ui:message key="obligation.type" /></label>
                                             <select class="form-control" id="obligationType" name="<portlet:namespace/><%=Obligation._Fields.OBLIGATION_TYPE%>">

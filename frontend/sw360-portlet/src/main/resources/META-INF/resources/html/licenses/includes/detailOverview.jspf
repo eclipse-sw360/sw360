@@ -20,9 +20,6 @@
                 <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Details'}">active</core_rt:if>" href="#tab-Details" data-toggle="list" role="tab"><liferay-ui:message key="details" /></a>
                 <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-LicenseText'}">active</core_rt:if>" href="#tab-LicenseText" data-toggle="list" role="tab"><liferay-ui:message key="text" /></a>
                 <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-TodosAndObligations'}">active</core_rt:if>" href="#tab-TodosAndObligations" data-toggle="list" role="tab"><liferay-ui:message key="obligations" /></a>
-                <core_rt:if test="${editMode}">
-                    <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-AddTodo'}">active</core_rt:if>" href="#tab-AddTodo" data-toggle="list" role="tab"><liferay-ui:message key="add.obligation" /></a>
-                </core_rt:if>
             </div>
         </div>
         <div class="col">
