@@ -15,6 +15,7 @@ package org.eclipse.sw360.licenseinfo.outputGenerators;
 import org.apache.commons.lang.StringUtils;
 import org.apache.poi.xwpf.usermodel.*;
 import org.apache.xmlbeans.XmlException;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.*;
 
 import java.math.BigInteger;
@@ -66,11 +67,15 @@ public class DocxUtils {
     }
 
     public static void setText(XWPFRun run, String text) {
-        String[] split = text.split("\n");
-        run.setText(split[0]);
-        for (int i = 1; i < split.length; i++) {
-            run.addBreak();
-            run.setText(split[i]);
+        if (CommonUtils.isNullEmptyOrWhitespace(text)) {
+            run.setText("");
+        } else {
+            String[] split = text.split("\n");
+            run.setText(split[0]);
+            for (int i = 1; i < split.length; i++) {
+                run.addBreak();
+                run.setText(split[i]);
+            }
         }
     }
 
