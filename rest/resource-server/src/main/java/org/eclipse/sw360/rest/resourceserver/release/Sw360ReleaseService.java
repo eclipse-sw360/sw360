@@ -20,6 +20,7 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
@@ -121,13 +122,14 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
     public Release createRelease(Release release, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        setComponentNameAsReleaseName(release, sw360User);
         rch.checkForCyclicOrInvalidDependencies(sw360ComponentClient, release, sw360User);
         AddDocumentRequestSummary documentRequestSummary = sw360ComponentClient.addRelease(release, sw360User);
         if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.SUCCESS) {
             release.setId(documentRequestSummary.getId());
             return release;
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
-            throw new DataIntegrityViolationException("sw360 release with name '" + release.getName() + "' already exists.");
+            throw new DataIntegrityViolationException("sw360 release with name '" + SW360Utils.printName(release) + "' already exists.");
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
             throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
         }
@@ -136,6 +138,21 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
                     "Release name and version field cannot be empty or contain only whitespace character");
         }
         return null;
+    }
+
+    public void setComponentNameAsReleaseName(Release release, User sw360User) {
+        String componentId = release.getComponentId();
+        if (CommonUtils.isNullEmptyOrWhitespace(componentId)) {
+            throw new HttpMessageNotReadableException("ComponentId must be present");
+        }
+        Component componentById = null;
+        try {
+            ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+            componentById = sw360ComponentClient.getComponentById(componentId, sw360User);
+        } catch (TException e) {
+            throw new HttpMessageNotReadableException("No Component found with Id - " + componentId);
+        }
+        release.setName(componentById.getName());
     }
 
     public RequestStatus updateRelease(Release release, User sw360User) throws TException {
@@ -148,7 +165,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             throw new HttpMessageNotReadableException(
                     "Release name and version field cannot be empty or contain only whitespace character");
         } else if (requestStatus != RequestStatus.SUCCESS) {
-            throw new RuntimeException("sw360 release with name '" + release.getName() + " cannot be updated.");
+            throw new RuntimeException("sw360 release with name '" + SW360Utils.printName(release) + " cannot be updated.");
         }
         return requestStatus;
     }
