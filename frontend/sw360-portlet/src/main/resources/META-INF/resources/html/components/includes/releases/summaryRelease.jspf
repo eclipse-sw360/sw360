@@ -18,6 +18,10 @@
         </tr>
         </thead>
         <tr>
+            <td><liferay-ui:message key="id" />:</td>
+            <td><sw360:out value="${release.id}"/></td>
+        </tr>
+        <tr>
             <td><liferay-ui:message key="cpe.id3" />:</td>
             <td><sw360:out value="${release.cpeid}"/></td>
         </tr>
