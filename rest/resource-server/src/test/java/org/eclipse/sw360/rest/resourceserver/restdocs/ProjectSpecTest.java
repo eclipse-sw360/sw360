@@ -379,6 +379,15 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         vulDto.setAction("Update to Fixed Version");
         vulDto.setPriority("2 - major");
         vulDtos.add(vulDto);
+        VulnerabilityDTO vulDto1 = new VulnerabilityDTO();
+        vulDto1.setComment("Lorem Ipsum");
+        vulDto1.setExternalId("23105");
+        vulDto1.setProjectRelevance("APPLICABLE");
+        vulDto1.setIntReleaseId("21055");
+        vulDto1.setIntReleaseName("Angular 2.3.0");
+        vulDto1.setAction("Update to Fixed Version");
+        vulDto1.setPriority("1 - critical");
+        vulDtos.add(vulDto1);
         given(this.vulnerabilityMockService.getVulnerabilitiesByProjectId(anyObject(), anyObject())).willReturn(vulDtos);
         VulnerabilityCheckStatus vulnCheckStatus = new VulnerabilityCheckStatus();
         vulnCheckStatus.setCheckedBy("admin@sw360.org");
@@ -386,8 +395,15 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         vulnCheckStatus.setVulnerabilityRating(VulnerabilityRatingForProject.IRRELEVANT);
         vulnCheckStatus.setComment("Lorem Ipsum");
 
+        VulnerabilityCheckStatus vulnCheckStatus1 = new VulnerabilityCheckStatus();
+        vulnCheckStatus1.setCheckedBy("admin@sw360.org");
+        vulnCheckStatus1.setCheckedOn(SW360Utils.getCreatedOn());
+        vulnCheckStatus1.setVulnerabilityRating(VulnerabilityRatingForProject.APPLICABLE);
+        vulnCheckStatus1.setComment("Lorem Ipsum");
+
         List<VulnerabilityCheckStatus> vulCheckStatuses = new ArrayList<VulnerabilityCheckStatus>();
         vulCheckStatuses.add(vulnCheckStatus);
+        vulCheckStatuses.add(vulnCheckStatus1);
 
         Map<String, List<VulnerabilityCheckStatus>> releaseIdToStatus = new HashMap<String, List<VulnerabilityCheckStatus>>();
         releaseIdToStatus.put("21055", vulCheckStatuses);
@@ -396,6 +412,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         projVulnRating.setProjectId(project.getId());
         Map<String, Map<String, List<VulnerabilityCheckStatus>>> vulnerabilityIdToReleaseIdToStatus = new HashMap<String, Map<String, List<VulnerabilityCheckStatus>>>();
         vulnerabilityIdToReleaseIdToStatus.put("12345", releaseIdToStatus);
+        vulnerabilityIdToReleaseIdToStatus.put("23105", releaseIdToStatus);
         projVulnRating.setVulnerabilityIdToReleaseIdToStatus(vulnerabilityIdToReleaseIdToStatus);
         List<ProjectVulnerabilityRating> projVulnRatings = new ArrayList<ProjectVulnerabilityRating>();
         projVulnRatings.add(projVulnRating);
@@ -403,8 +420,13 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
         Map<String, VulnerabilityRatingForProject> relIdToprojVUlRating = new HashMap<String, VulnerabilityRatingForProject>();
         relIdToprojVUlRating.put("21055", VulnerabilityRatingForProject.IRRELEVANT);
+
+        Map<String, VulnerabilityRatingForProject> relIdToprojVUlRating1 = new HashMap<String, VulnerabilityRatingForProject>();
+        relIdToprojVUlRating1.put("21055", VulnerabilityRatingForProject.APPLICABLE);
+
         Map<String, Map<String, VulnerabilityRatingForProject>> vulIdToRelIdToRatings = new HashMap<String, Map<String, VulnerabilityRatingForProject>>();
         vulIdToRelIdToRatings.put("12345", relIdToprojVUlRating);
+        vulIdToRelIdToRatings.put("23105", relIdToprojVUlRating1);
 
         given(this.vulnerabilityMockService.fillVulnerabilityMetadata(anyObject(), anyObject())).willReturn(vulIdToRelIdToRatings);
         given(this.vulnerabilityMockService.updateProjectVulnerabilityRating(anyObject(), anyObject())).willReturn(RequestStatus.SUCCESS);
@@ -849,9 +871,16 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/projects/" + project.getId() + "/vulnerabilities")
                 .header("Authorization", "Bearer " + accessToken)
+                .param("priority", "1 - critical")
+                .param("priority", "2 - major")
+                .param("projectRelevance", "IRRELEVANT")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("priority").description("The priority of vulnerability. For example: `1 - critical`, `2 - major`"),
+                                parameterWithName("projectRelevance").description("The relevance of project of the vulnerability, possible values are: " + Arrays.asList(VulnerabilityRatingForProject.values()))
+                        ),
                         links(
                                 linkWithRel("curies").description("Curies are used for online documentation")
                         ),
