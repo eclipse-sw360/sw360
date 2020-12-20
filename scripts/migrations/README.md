@@ -75,6 +75,10 @@ To migrate it is recommended to do this in the following order:
 - `040_rename_downloadurl_to_sourceCodeDownloadurl_in_Release.py`
 - `041_update_release_moderation_with_downloadurl.py`
 
+### 12.0.0 -> 13.0.0
+
+- `042_remove_validForProject_from_Obligation.py`
+
 ## Optional usage
 - `009_overwrite_release_name_with_component_name.py`
 - `010_repair_missing_vendorId_links_in_releases.py`
