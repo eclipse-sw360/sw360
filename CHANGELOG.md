@@ -4,6 +4,54 @@ This is the changelog file of the sw360 project. It starts with the first releas
 
 https://github.com/sw360/sw360portal/releases
 
+## sw360-13.0.0-M1
+
+We tagged this release, because there are issues with persons testing the master and not seeing the migration script on the database required. The migration on the database came in because of working on the obligations. After the major work on the obligations data model in the previous release, more work on the UI made a migration script necessary (42).
+
+### Migrations
+
+For existing installations, a data migration is required. Please go to the readme file in `scripts/migrations` to see more information:
+
+https://github.com/eclipse/sw360/blob/master/scripts/migrations/README.md
+
+For running the migrations scripts, you will need python and the couchdb package. Please note that you will need to change manually in the python file: the `DRYRUN` variable and the couchdb URL (if that is not on localhost or requires password or both).
+
+### Credits
+
+The following github users have contributed to the source code since the last release (in order of appearance):
+
+```
+smruti.sahoo@siemens.com
+jaideep.palit@siemens.com
+abdul.mannankapti@siemens-healthineers.com
+michael.c.jaeger@siemens.com
+external.Martin.Idel@bosch.io
+```
+
+### Features Summary
+
+* `1246c023` feat(SplitComponent): Add tooltip for releases of component with SourceCodeDownloadUrl and BinaryDownloadUrl during split feature
+* `2eafe3d5` feat(rest): Accept 'downloadurl' in request body as 'sourceCodeDownloadurl' as an alternative to original value 'sourceCodeDownloadurl' for Create and update Release APIs
+* `ccf05247` feat(ChangeLogs): Fixed issue related to null to empty string or collection conversion
+* `20be42db` fix(rest): Fixed update Project API issue - unexpected changes in some fields like moderators, contributors, etc
+* `cf4bdcfa` feat(UtilityScript): Script for couchdb 2.x to update a field(String) in project document to a new value
+* `ea009aed` feat(Obligation): Add License Obligation from License Database based on licenses found in accepted attachments in Release and its LicenseInfo attachmentUsage in Project
+* `a6cf31a3` feat(projectEdit): Project creators and moderators can edit few fields in a closed project
+* `2496f037` feat(ClearingReport): Added hyperlink to release document in project clearing report, Changed Font Style (Arial) and Font Size (9) for table content
+* `bd07d53e` feat(CR-UI): Added Advaced filter for CR & fix # of components count
+
+### Corections
+
+* `c18b42b9` fix(clearingreport): Error while downloading clearing report
+* `3ff60a09` fix(ExportSpreadSheet): Fixed ClassNotFoundException while export Spreadsheet
+* `431e1673` fix(ClearingReport): Fixed null pointer issue for replace text in Clearing report
+* `3ff60a09` fix(ExportSpreadSheet): Fixed ClassNotFoundException while export Spreadsheet
+* `431e1673` fix(ClearingReport): Fixed null pointer issue for replace text in Clearing report
+
+### Infrastructure
+
+* `71348b4f` chore(deps): Upgrade dependencies (LibreOffice et al)
+
 ## sw360-12.0.0-M1
 
 This release something special because it brings a lot, really a lot of changes in the database model, more specifically it is a refactoring of the licenses and obligation objects. Following corrections:
