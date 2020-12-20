@@ -49,7 +49,7 @@
         <!-- note that 6.1.0-SNAPSHOT relates to 6.0.${patchlevel} -->
         <!-- pls see also the profile cli -->
         <revision>13.${patchlevel}</revision>
-        <patchlevel>0.0</patchlevel>
+        <patchlevel>1.0-SNAPSHOT</patchlevel>
         <java.version>11</java.version>
         <ektorp.version>1.5.0</ektorp.version>
         <thrift.version>0.13.0</thrift.version>
