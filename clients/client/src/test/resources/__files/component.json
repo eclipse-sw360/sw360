@@ -1,0 +1,113 @@
+{
+  "name": "jackson-annotations",
+  "createdOn": "2019-11-13",
+  "languages": [],
+  "operatingSystems": [],
+  "_links": {
+    "self": {
+      "href": "https://sw360.test.com/resource/api/components/xxxxxxyyyyyzzzzz8c34"
+    }
+  },
+  "_embedded": {
+    "createdBy": {
+      "email": "osi9be@bosch.com",
+      "_links": {
+        "self": {
+          "href": "https://sw360.test.com/resource/api/users/xxxxxxyyyyyzzzzz008ed"
+        }
+      }
+    },
+    "sw360:releases": [
+      {
+        "name": "jackson-annotations",
+        "version": "2.8.7",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/releases/xxxxxxyyyyyzzzzz5cfd5"
+          }
+        }
+      },
+      {
+        "name": "jackson-annotations",
+        "version": "2.9.0",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/releases/xxxxxxyyyyyzzzzz633a896"
+          }
+        }
+      },
+      {
+        "name": "jackson-annotations",
+        "version": "2.9.9",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/releases/xxxxxxyyyyyzzzzz6a4e3"
+          }
+        }
+      },
+      {
+        "name": "jackson-annotations",
+        "version": "2.8.8",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/releases/xxxxxxyyyyyzzzzz1a78"
+          }
+        }
+      },
+      {
+        "name": "jackson-annotations",
+        "version": "2.9.1",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/releases/xxxxxxyyyyyzzzzz347919"
+          }
+        }
+      },
+      {
+        "name": "jackson-annotations",
+        "version": "2.8.11",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/releases/xxxxxxyyyyyzzzzz6390468"
+          }
+        }
+      },
+      {
+        "name": "jackson-annotations",
+        "version": "2.10.0",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/releases/xxxxxxyyyyyzzzzz6316fe9"
+          }
+        }
+      },
+      {
+        "name": "jackson-annotations",
+        "version": "2.8.6",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/releases/xxxxxxyyyyyzzzzzb6368dc8"
+          }
+        }
+      },
+      {
+        "name": "jackson-annotations",
+        "version": "2.8.5",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/releases/xxxxxxyyyyyzzzzz63845ff"
+          }
+        }
+      },
+      {
+        "name": "jackson-annotations",
+        "version": "2.8.9",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/releases/xxxxxxyyyyyzzzzz62daebf"
+          }
+        }
+      }
+    ]
+  }
+}
