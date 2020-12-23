@@ -44,6 +44,12 @@ public class LicenseInfoParserTest {
             public <T> List<LicenseInfoParsingResult> getLicenseInfos(Attachment attachment, User user, T context) throws TException {
                 return null;
             }
+
+            @Override
+            public <T> List<LicenseInfoParsingResult> getLicenseInfosIncludeConcludedLicense(Attachment attachment,
+                    boolean includeConcludedLicense, User user, T context) throws TException {
+                return null;
+            }
         };
         Arrays.stream(AttachmentType.values()).filter(SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES::contains)
                 .forEach(attachmentType -> parser.getApplicableFileExtensions().stream().forEach(extension -> {

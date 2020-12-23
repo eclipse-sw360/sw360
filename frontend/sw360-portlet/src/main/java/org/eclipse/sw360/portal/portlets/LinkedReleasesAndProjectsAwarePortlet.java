@@ -185,6 +185,9 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
                 log.error("Error getting projects!", e);
                 throw new PortletException("cannot load project " + projectIdOpt.get(), e);
             }
+            String parentProjectPath = request.getParameter(PortalConstants.PARENT_PROJECT_PATH);
+            request.setAttribute(PortalConstants.PARENT_PROJECT_PATH,
+                    parentProjectPath.concat(":").concat(projectIdOpt.get()));
         } else {
             project = new Project();
         }

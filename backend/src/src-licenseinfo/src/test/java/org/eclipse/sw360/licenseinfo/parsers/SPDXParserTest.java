@@ -136,7 +136,7 @@ public class SPDXParserTest {
                 parser.getUriOfAttachment(attachmentContentStore.get(exampleFile)),
                 FILETYPE_SPDX_INTERNAL);
 
-        LicenseInfoParsingResult result = SPDXParserTools.getLicenseInfoFromSpdx(attachmentContent, spdxDocument);
+        LicenseInfoParsingResult result = SPDXParserTools.getLicenseInfoFromSpdx(attachmentContent, true, spdxDocument);
         assertIsResultOfExample(result.getLicenseInfo(), exampleFile, expectedLicenses, numberOfCoyprights,
                 exampleCopyright, exampleConcludedLicenseIds);
     }

@@ -57,6 +57,9 @@
             <th><input type="checkbox" class="form-check-input" checked="checked" id="selectAllCheckbox"/></th>
             <th><liferay-ui:message key="lvl" /></th>
             <th><liferay-ui:message key="name" /></th>
+            <core_rt:if test="${enableConcludedLicense}">
+                <th style="width:7%" id="conclusionHeader"><liferay-ui:message key="conclusions" /></th>
+            </core_rt:if>
             <th><liferay-ui:message key="type" /></th>
             <th><liferay-ui:message key="clearing.state" /></th>
             <th><liferay-ui:message key="uploaded.by" /></th>
@@ -90,6 +93,9 @@
                         </div>
                     </core_rt:if>
                 </td>
+                <core_rt:if test="${enableConcludedLicense}">
+                    <td></td>
+                </core_rt:if>
                 <td>
                     <sw360:DisplayEnum value="${projectLink.projectType}"/>
                 </td>
@@ -117,6 +123,9 @@
                             value="${releaseLink.vendor} ${releaseLink.name}" maxChar="50"/> <sw360:out
                             value="${releaseLink.version}"/></a>
                 </td>
+                <core_rt:if test="${enableConcludedLicense}">
+                    <td></td>
+                </core_rt:if>
                 <td>
                     <sw360:DisplayEnum value="${releaseLink.componentType}"/>
                 </td>
@@ -146,7 +155,7 @@
                     <core_rt:if test="${fn:length(releaseLink.attachments) gt 1}">class="selectable highlightWarning"</core_rt:if>
                 >
                     <td>
-                        <input type="checkbox" class="form-check-input"
+                        <input type="checkbox" class="form-check-input attachmentChkbox"
                                 name="<portlet:namespace/><%=PortalConstants.LICENSE_INFO_RELEASE_TO_ATTACHMENT%>"
                                 <core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo}">value='${projectPath.concat(":").concat(releaseLink.id).concat(":").concat(releaseLink.releaseRelationship).concat(":").concat(attachment.attachmentContentId)}'</core_rt:if>
                                 <core_rt:if test="${projectLinkTableMode != tableModeLicenseInfo}">value='${releaseLink.id.concat(":").concat(attachment.attachmentContentId)}'</core_rt:if>
@@ -161,6 +170,17 @@
                     <td class="filename">
                         <sw360:out value="${attachment.filename}"/>
                     </td>
+                    <core_rt:if test='${enableConcludedLicense}'>
+                      <td>
+                        <core_rt:if test='${attachment.filename.toLowerCase().endsWith(".rdf")}'>
+                            <input type="checkbox" class="form-check-input concludedLicense" disabled="true"
+                                name="<portlet:namespace/><%=PortalConstants.INCLUDE_CONCLUDED_LICENSE%>"
+                                <core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo}">value='${projectPath.concat(":").concat(releaseLink.id).concat(":").concat(releaseLink.releaseRelationship).concat(":").concat(attachment.attachmentContentId)}'</core_rt:if>
+                                <core_rt:if test="${projectLinkTableMode != tableModeLicenseInfo}">value='${releaseLink.id.concat(":").concat(attachment.attachmentContentId)}'</core_rt:if>
+                            />
+                        </core_rt:if>
+                      </td>
+                    </core_rt:if>
                     <td colspan="2">
                             <c:set var="mapKey">${releaseLink.id.concat("_").concat(attachment.attachmentContentId)}</c:set>
                             <core_rt:choose>
@@ -241,12 +261,26 @@
 
             $('#LinkedProjectsInfo').on('click', 'tr.selectable', function(event) {
                 var $row = $(event.target).parents('tr:first'),
-                    checked = $row.find(':checkbox').is(':checked');
+                    checked = $row.find(':checkbox:first').is(':checked');
 
                 if(!$(event.target).is(':checkbox') && !$(event.target).is('a')) {
-                    $row.find(':checkbox').prop('checked', !checked).trigger('change');
+                    $row.find(':checkbox:first').prop('checked', !checked).trigger('change');
+                    setIncludeConcludedLicense(!checked, $row);
+                } else {
+                    setIncludeConcludedLicense(checked, $row);
                 }
             });
+
+            function setIncludeConcludedLicense(checked, $row) {
+                let includeConcludedLicense = $row.find(':checkbox:eq(1)')
+                if(checked) {
+                    $(includeConcludedLicense).prop("disabled", false);
+                }
+                else {
+                    $(includeConcludedLicense).prop("checked", false);
+                    $(includeConcludedLicense).prop("disabled", true);
+                }
+            }
 
             function removeProjectLoader(ttParentId) {
                 button.finish($linkedProjectsInfoTable.find('tr[data-tt-id=' + ttParentId + '] button.use-subproject-selection'));
@@ -464,6 +498,17 @@
                             // this means a subproject selection has been loaded
                             removeProjectLoader(ttId);
                         }
+
+                        $(".attachmentChkbox").each(function(event){
+                            let selectedRow = $(this).parents('tr:first'),
+                                checked = $(this).is(':checked');
+                            let includeConcludedLicense = $(selectedRow).find(':checkbox:eq(1)')
+                            if(checked) {
+                                $(includeConcludedLicense).prop("disabled", false);
+                                $(includeConcludedLicense).prop("checked", true);
+                            }
+                        });
+
                         $('#infobar').removeClass('alert-info').addClass('alert-secondary').html($('<span>', {
                             text: "<liferay-ui:message key="no.previous.selection.found.if.you.have.writing.permissions.to.this.project.your.selection.will.be.stored.automatically.when.downloading" />"
                         }));
@@ -532,7 +577,6 @@
                 var warnings = [],
                     loadCountdown = countdown(attachmentUsages.length, function() { readyCallback(null, warnings); }),
                     config = $linkedProjectsInfoTable.data();
-
                 if (!prefix) {
                     // on first load (=prefix is empty) reset all default selected checkboxes if we have a stored selection
                     $("#selectAllCheckbox").prop('checked', false).trigger('change');
@@ -559,6 +603,13 @@
                     var releaseRelation = licenseinfoTableMode ? relationPlusColon : '';
 
                     $linkedProjectsInfoTable.find('tr input[value="' + inputPrefix + usage.owner.releaseId + ':' + releaseRelation + usage.attachmentContentId + '"]:first').prop('checked', true).trigger('change');
+                    $linkedProjectsInfoTable.find('tr input[value="' + inputPrefix + usage.owner.releaseId + ':' + releaseRelation + usage.attachmentContentId + '"]:eq(1)').prop('disabled', false).trigger('change');
+
+                    if(usage.usageData && usage.usageData.licenseInfo && 
+                            (usage.usageData.licenseInfo.includeConcludedLicense === null || usage.usageData.licenseInfo.includeConcludedLicense === undefined 
+                                    || usage.usageData.licenseInfo.includeConcludedLicense)) {
+                        $linkedProjectsInfoTable.find('tr input[value="' + inputPrefix + usage.owner.releaseId + ':' + releaseRelation + usage.attachmentContentId + '"]:eq(1)').prop('checked', true).trigger('change');
+                    }
 
                     if(usage.usageData.licenseInfo && usage.usageData.licenseInfo.excludedLicenseIds.length > 0) {
                         if (!usage.usageData.licenseInfo.projectPath) {
@@ -639,6 +690,10 @@
             function findReleaseName($linkedProjectsInfoTable, usage, prefix) {
                 var $row = $linkedProjectsInfoTable.find('tr[data-project-path="' + prefix + usage.usageData.licenseInfo.projectPath + '"][data-release-id=' + usage.owner.releaseId + ']:first');
                 return $row.find('td.release-name a').text();
+            }
+
+            if (!$(".concludedLicense")[0]) {
+                $("#conclusionHeader").html("").css("width","0%");
             }
 
             function countdown(value, callback) {

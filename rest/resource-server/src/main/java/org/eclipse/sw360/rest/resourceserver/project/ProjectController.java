@@ -35,6 +35,8 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
+import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
+import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
@@ -520,10 +522,16 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
                 .collect(Collectors.toMap(AttachmentUsage::getOwner,
                         x -> x.getUsageData().getLicenseInfo().getExcludedLicenseIds(), (li1, li2) -> li1));
 
-        Set<String> usedAttachmentContentIds = attchmntUsg.stream()
-                .map(AttachmentUsage::getAttachmentContentId).collect(Collectors.toSet());
+        Map<String, Boolean> usedAttachmentContentIds = attchmntUsg.stream()
+                .collect(Collectors.toMap(AttachmentUsage::getAttachmentContentId, attUsage -> {
+                    if (attUsage.isSetUsageData()
+                            && attUsage.getUsageData().getSetField().equals(UsageData._Fields.LICENSE_INFO)) {
+                        return new Boolean(attUsage.getUsageData().getLicenseInfo().isIncludeConcludedLicense());
+                    }
+                    return Boolean.FALSE;
+                }, (li1, li2) -> li1));
 
-        final Map<String, Set<String>> selectedReleaseAndAttachmentIds = new HashMap<>();
+        final Map<String, Map<String, Boolean>> selectedReleaseAndAttachmentIds = new HashMap<>();
         final Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachments = new HashMap<>();
 
 
@@ -533,18 +541,20 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
             Set<String> excludedLicenseIds = releaseIdToExcludedLicenses.get(Source.releaseId(releaseLinkId));
 
             if (!selectedReleaseAndAttachmentIds.containsKey(releaseLinkId)) {
-                selectedReleaseAndAttachmentIds.put(releaseLinkId, new HashSet<>());
+                selectedReleaseAndAttachmentIds.put(releaseLinkId, new HashMap<>());
             }
             final List<Attachment> attachments = releaseLink.getAttachments();
             Release release = componentService.getReleaseById(releaseLinkId, sw360User);
             for (final Attachment attachment : attachments) {
                 String attachemntContentId = attachment.getAttachmentContentId();
-                if (usedAttachmentContentIds.contains(attachemntContentId)) {
+                if (usedAttachmentContentIds.containsKey(attachemntContentId)) {
+                    boolean includeConcludedLicense = usedAttachmentContentIds.get(attachemntContentId);
                     List<LicenseInfoParsingResult> licenseInfoParsingResult = licenseInfoService
-                            .getLicenseInfoForAttachment(release, sw360User, attachemntContentId);
+                            .getLicenseInfoForAttachment(release, sw360User, attachemntContentId, includeConcludedLicense);
                     excludedLicensesPerAttachments.put(attachemntContentId,
                             getExcludedLicenses(excludedLicenseIds, licenseInfoParsingResult));
-                    selectedReleaseAndAttachmentIds.get(releaseLinkId).add(attachemntContentId);
+                    selectedReleaseAndAttachmentIds.get(releaseLinkId).put(attachemntContentId,
+                            includeConcludedLicense);
                 }
             }
         })));
@@ -698,6 +708,20 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         for (Map<String, Object> attachmentUsage : listOfAttachmentUsages) {
             attachmentUsage.remove("revision");
             attachmentUsage.remove("type");
+            Object usageData=attachmentUsage.get("usageData");
+            if (usageData != null) {
+                Map<String, Object> licenseInfo = ((Map<String, Map<String, Object>>) usageData).get("licenseInfo");
+                if (licenseInfo != null) {
+                    Object includeConcludedLicense = licenseInfo.get("includeConcludedLicense");
+                    if (includeConcludedLicense != null) {
+                        if ((Double)includeConcludedLicense == 0.0) {
+                            licenseInfo.put("includeConcludedLicense", false);
+                        } else {
+                            licenseInfo.put("includeConcludedLicense", true);
+                        }
+                    }
+                }
+            }
         }
 
         if (listOfAttachmentUsages.isEmpty()) {

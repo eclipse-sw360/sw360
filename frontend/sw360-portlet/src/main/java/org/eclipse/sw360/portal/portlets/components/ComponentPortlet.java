@@ -543,6 +543,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
         String attachmentContentId = request.getParameter(PortalConstants.ATTACHMENT_ID);
         String attachmentName = request.getParameter(PortalConstants.ATTACHMENT_NAME);
+        boolean includeConcludedLicense = new Boolean(request.getParameter(PortalConstants.INCLUDE_CONCLUDED_LICENSE));
+
         ComponentService.Iface componentClient = thriftClients.makeComponentClient();
         LicenseInfoService.Iface licenseInfoClient = thriftClients.makeLicenseInfoClient();
 
@@ -551,7 +553,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         try {
             Release release = componentClient.getReleaseById(releaseId, user);
             List<LicenseInfoParsingResult> licenseInfoResult = licenseInfoClient.getLicenseInfoForAttachment(release,
-                    attachmentContentId, user);
+                    attachmentContentId, includeConcludedLicense, user);
             if (attachmentName.endsWith(".rdf")) {
                 concludedLicenseIds = licenseInfoResult.stream()
                         .flatMap(singleResult -> singleResult.getLicenseInfo().getConcludedLicenseIds().stream())

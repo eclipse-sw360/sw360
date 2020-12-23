@@ -125,7 +125,7 @@ public class ProjectPortletUtilsTest {
         List<AttachmentUsage> attachmentUsages = ProjectPortletUtils.selectedAttachmentUsagesFromRequest(request);
         Assert.assertThat(attachmentUsages, Matchers.containsInAnyOrder(
                 new AttachmentUsage(Source.releaseId("r1"), "att1", Source.projectId("p1"))
-                        .setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(Collections.emptySet()))),
+                        .setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(Collections.emptySet()).setIncludeConcludedLicense(false))),
                 new AttachmentUsage(Source.releaseId("r2"), "att2", Source.projectId("p1"))
                         .setUsageData(UsageData.sourcePackage(new SourcePackageUsage()))
         ));

@@ -34,7 +34,7 @@
         >
         <thead>
         <tr>
-            <th colspan="7" class="headlabel"><liferay-ui:message key="linked.releases.and.projects" />
+            <th colspan="8" class="headlabel"><liferay-ui:message key="linked.releases.and.projects" />
             <core_rt:if test="${projectList.size() > 1 or (projectList.size() == 1 and not empty projectList.get(0).linkedReleases)}">
                 (<a href="#" id="expandAll" class="text-primary"><liferay-ui:message key="expand.all" /> </a>|
                 <a href="#" id="collapseAll" class="text-primary"> <liferay-ui:message key="collapse.all" /></a>)
@@ -43,16 +43,20 @@
             </th>
         </tr>
         <tr>
-            <th rowspan="2"><liferay-ui:message key="name" /></th>
-            <th rowspan="2"><liferay-ui:message key="relation" /></th>
-            <th rowspan="2"><liferay-ui:message key="uploaded.by" /></th>
-            <th rowspan="2"><liferay-ui:message key="type" /></th>
-            <th colspan="3"><liferay-ui:message key="used.in" /></th>
+            <th rowspan="3"><liferay-ui:message key="name" /></th>
+            <th rowspan="3"><liferay-ui:message key="relation" /></th>
+            <th rowspan="3"><liferay-ui:message key="uploaded.by" /></th>
+            <th rowspan="3"><liferay-ui:message key="type" /></th>
+            <th colspan="4"><liferay-ui:message key="used.in" /></th>
         </tr>
         <tr>
-            <th><liferay-ui:message key="license.info" /></th>
-            <th><liferay-ui:message key="source.code.bundle" /></th>
-            <th><liferay-ui:message key="other" /></th>
+            <th colspan="2"><liferay-ui:message key="license.info" /></th>
+            <th rowspan="2"><liferay-ui:message key="source.code.bundle" /></th>
+            <th rowspan="2"><liferay-ui:message key="other" /></th>
+        </tr>
+        <tr>
+            <th></th>
+            <th class="p-1"><liferay-ui:message key="conclusions" /></th>
         </tr>
         </thead>
         <tbody>
@@ -75,6 +79,7 @@
             ajaxTreeTable.setup('AttachmentUsagesInfo', config.loadNodeUrl, function(table, node) {
                 var data = {};
                 data[config.portletNamespace + config.parentBranchKey] = node.id;
+                data[config.portletNamespace + 'parentProjectPath'] = $(node.row[0]).attr("data-tt-parentProjectPath");
                 data[config.portletNamespace + 'parentScopeGroupId'] = config.scopeGroupId;
                 return data;
             }, function(table, node, result) {
@@ -86,9 +91,10 @@
                 table.treetable("collapseNode", node.id);
                 table.treetable("expandNode", node.id);
                 attachCheckboxEventHandlers();
+                attachClickHandlerForLicInfo();
             });
             attachCheckboxEventHandlers();
-
+            attachClickHandlerForLicInfo();
             $('#saveAttachmentUsagesButton').click(saveAttachmentUsages);
         });
 
@@ -132,6 +138,11 @@
                 var $shadow = $("#" + this.id + "_shadow");
                 $shadow.prop('checked', true);
             });
+
+            $("#attachmentUsagesForm .trackChangeLicInfo").change(function() {
+                var $shadow = $("#attachmentUsagesForm").find('input[id="' + this.id + "_shadow" + '"]');
+                $shadow.prop('checked', true);
+            });
         }
 
         function saveAttachmentUsages() {
@@ -149,6 +160,26 @@
             }).fail(function(xhr, status, error){
                 alert.danger($form, "<liferay-ui:message key="couldnt.save.attachment.usages" />" + xhr.responseText, 6);
                 button.finish('#saveAttachmentUsagesButton');
+            });
+        }
+
+        function attachClickHandlerForLicInfo() {
+            $("#AttachmentUsagesInfo").find(".licInfo").on("change",function() {
+                let checked = $(this).prop("checked");
+                let includeConcludedLicense = $(this).parents("tr:eq(0)").find('.includeConcludedLicense');
+                if(checked) {
+                    $(includeConcludedLicense).prop("disabled", false);
+                }
+                else {
+                    $(includeConcludedLicense).prop("checked", false).trigger('change');
+                    $(includeConcludedLicense).prop("disabled", true);
+                }
+            });
+
+            $("#AttachmentUsagesInfo").find(".includeConcludedLicense").on("change",function() {
+                let $shadow = $("#" + $(this).val() + "_shadow");
+                $shadow.prop('checked', true);
+                $("#" + this.id + "_shadow").prop('checked', true);
             });
         }
     });

@@ -46,6 +46,11 @@ public abstract class LicenseInfoParser {
 
     public abstract <T> List<LicenseInfoParsingResult> getLicenseInfos(Attachment attachment, User user, T context) throws TException;
 
+    public <T> List<LicenseInfoParsingResult> getLicenseInfosIncludeConcludedLicense(Attachment attachment,
+            boolean includeConcludedLicense, User user, T context) throws TException {
+        return new ArrayList<LicenseInfoParsingResult>();
+    }
+
     public <T> ObligationParsingResult getObligations(Attachment attachment, User user, T context) throws TException {
         return new ObligationParsingResult().setStatus(ObligationInfoRequestStatus.NO_APPLICABLE_SOURCE);
     }

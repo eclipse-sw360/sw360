@@ -73,7 +73,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
     protected List<OutputGenerator<?>> outputGenerators;
     protected ComponentDatabaseHandler componentDatabaseHandler;
     protected ProjectDatabaseHandler projectDatabaseHandler;
-    protected Cache<String, List<LicenseInfoParsingResult>> licenseInfoCache;
+    protected Cache<Object[], List<LicenseInfoParsingResult>> licenseInfoCache;
     protected Cache<String, List<ObligationParsingResult>> obligationCache;
     protected Cache<String, LicenseInfoParsingResult> licenseObligationMappingCache;
 
@@ -115,7 +115,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
 
     @Override
     public LicenseInfoFile getLicenseInfoFile(Project project, User user, String outputGenerator,
-                                              Map<String, Set<String>> releaseIdsToSelectedAttachmentIds, Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachment, String externalIds)
+            Map<String, Map<String, Boolean>> releaseIdsToSelectedAttachmentIds, Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachment, String externalIds)
             throws TException {
         assertNotNull(project);
         assertNotNull(user);
@@ -123,7 +123,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         assertNotNull(releaseIdsToSelectedAttachmentIds);
         assertNotNull(excludedLicensesPerAttachment);
 
-        Map<Release, Set<String>> releaseToAttachmentId = mapKeysToReleases(releaseIdsToSelectedAttachmentIds, user);
+        Map<Release, Map<String, Boolean>> releaseToAttachmentId = mapKeysToReleases(releaseIdsToSelectedAttachmentIds, user);
         Collection<LicenseInfoParsingResult> projectLicenseInfoResults = getAllReleaseLicenseInfos(releaseToAttachmentId, user,
                 excludedLicensesPerAttachment);
         Collection<ObligationParsingResult> obligationsResults = getAllReleaseObligations(releaseToAttachmentId, user);
@@ -187,15 +187,21 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
     }
 
     @Override
-    public List<LicenseInfoParsingResult> getLicenseInfoForAttachment(Release release, String attachmentContentId, User user)
+    public List<LicenseInfoParsingResult> getLicenseInfoForAttachment(Release release, String attachmentContentId, boolean includeConcludedLicense, User user)
             throws TException {
         if (release == null) {
             return Collections.singletonList(noSourceParsingResult(MSG_NO_RELEASE_GIVEN));
         }
 
-        List<LicenseInfoParsingResult> cachedResults = licenseInfoCache.getIfPresent(attachmentContentId);
-        if (cachedResults != null) {
-            return cachedResults;
+        if (licenseInfoCache != null) {
+            for (Entry<Object[], List<LicenseInfoParsingResult>> entry : licenseInfoCache.asMap().entrySet()) {
+                Object[] key = entry.getKey();
+                List<LicenseInfoParsingResult> cachedValue = entry.getValue();
+                if (attachmentContentId.equals(key[0].toString()) && includeConcludedLicense == (boolean) key[1]
+                        && cachedValue != null) {
+                    return cachedValue;
+                }
+            }
         }
 
         Attachment attachment = nullToEmptySet(release.getAttachments()).stream()
@@ -221,15 +227,20 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
                 LOGGER.info("More than one parser claims to be able to parse attachment with contend id " + attachmentContentId);
             }
 
-            List<LicenseInfoParsingResult> results = applicableParsers.stream()
-                    .map(parser -> wrapTException(() -> parser.getLicenseInfos(attachment, user, release))).flatMap(Collection::stream)
-                    .collect(Collectors.toList());
+            List<LicenseInfoParsingResult> results = applicableParsers.stream().map(parser -> wrapTException(() -> {
+                if (parser instanceof SPDXParser) {
+                    return parser.getLicenseInfosIncludeConcludedLicense(attachment, includeConcludedLicense, user,
+                            release);
+                }
+                return parser.getLicenseInfos(attachment, user, release);
+            })).flatMap(Collection::stream).collect(Collectors.toList());
             filterEmptyLicenses(results);
 
             results = assignReleaseToLicenseInfoParsingResults(results, release);
             results = assignComponentToLicenseInfoParsingResults(results, release, user);
 
-            licenseInfoCache.put(attachmentContentId, results);
+            Object[] cacheKey = new Object[] { attachmentContentId, includeConcludedLicense };
+            licenseInfoCache.put(cacheKey, results);
             return results;
         } catch (WrappedTException exception) {
             throw exception.getCause();
@@ -326,12 +337,12 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
     }
 
     private Map<String, ObligationStatusInfo> createLicenseToObligationMappingForReport(Project project, Collection<LicenseInfoParsingResult> licenseResults,
-            Collection<ObligationParsingResult> obligationResults, Map<Release, Set<String>> releaseToSelectedAttachmentIds, User user) throws TException {
+            Collection<ObligationParsingResult> obligationResults, Map<Release, Map<String, Boolean>> releaseToSelectedAttachmentIds, User user) throws TException {
 
         Set<String> linkedReleaseIds = project.getReleaseIdToUsage().keySet();
         Map<String, ObligationStatusInfo> obligationStatusMap = Maps.newHashMap();
 
-        Map<Release, Set<String>> filteredRelToSelAttIds = releaseToSelectedAttachmentIds.entrySet().stream()
+        Map<Release, Map<String,Boolean>> filteredRelToSelAttIds = releaseToSelectedAttachmentIds.entrySet().stream()
                 .filter(entry -> linkedReleaseIds.contains(entry.getKey().getId()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
@@ -359,7 +370,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
             releaseIdToAcceptedCLI.putAll(SW360Utils.getReleaseIdtoAcceptedCLIMappings(obligationStatusMap));
         }
 
-        for (Entry<Release, Set<String>> entry : filteredRelToSelAttIds.entrySet()) {
+        for (Entry<Release, Map<String, Boolean>> entry : filteredRelToSelAttIds.entrySet()) {
             List<Attachment> filteredAttachments = SW360Utils.getApprovedClxAttachmentForRelease(entry.getKey());
 
             if (filteredAttachments.size() == 1) {
@@ -370,7 +381,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
                     releaseIdToAcceptedCLI.remove(releaseId);
                 }
 
-                for (String attachmentContentId : entry.getValue()) {
+                for (String attachmentContentId : entry.getValue().keySet()) {
                     LicenseInfoParsingResult licenseResult = attachmentIdToLicenseMap.get(attachmentContentId);
                     ObligationParsingResult obligationResult = attachmentIdToObligationMap.get(attachmentContentId);
                     if (attachmentContentId.equals(acceptedAttachmentContentId) && null != obligationResult && null != licenseResult) {
@@ -452,11 +463,12 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         return DEFAULT_OBLIGATIONS_TEXT;
     }
 
-    protected Map<Release, Set<String>> mapKeysToReleases(Map<String, Set<String>> releaseIdsToAttachmentIds, User user) throws TException {
-        Map<Release, Set<String>> result = Maps.newHashMap();
+    protected Map<Release, Map<String, Boolean>> mapKeysToReleases(
+            Map<String, Map<String, Boolean>> releaseIdsToAttachmentIds, User user) throws TException {
+        Map<Release, Map<String, Boolean>> result = Maps.newHashMap();
         try {
-            releaseIdsToAttachmentIds
-                    .forEach((relId, attIds) -> wrapTException(() -> result.put(componentDatabaseHandler.getRelease(relId, user), attIds)));
+            releaseIdsToAttachmentIds.forEach((relId, attIds) -> wrapTException(
+                    () -> result.put(componentDatabaseHandler.getRelease(relId, user), attIds)));
         } catch (WrappedTException exception) {
             throw exception.getCause();
         }
@@ -474,16 +486,18 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         }
     }
 
-    protected Collection<LicenseInfoParsingResult> getAllReleaseLicenseInfos(Map<Release, Set<String>> releaseToSelectedAttachmentIds,
+    protected Collection<LicenseInfoParsingResult> getAllReleaseLicenseInfos(Map<Release, Map<String,Boolean>> releaseToSelectedAttachmentIds,
             User user, Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachment) throws TException {
         List<LicenseInfoParsingResult> results = Lists.newArrayList();
 
-        for (Entry<Release, Set<String>> entry : releaseToSelectedAttachmentIds.entrySet()) {
-            for (String attachmentContentId : entry.getValue()) {
+        for (Entry<Release, Map<String,Boolean>> entry : releaseToSelectedAttachmentIds.entrySet()) {
+            for (Entry<String, Boolean> attachmentIdUseLicenseInfoFromFileEntry : entry.getValue().entrySet()) {
+                String attachmentContentId = attachmentIdUseLicenseInfoFromFileEntry.getKey();
                 if (attachmentContentId != null) {
                     Set<LicenseNameWithText> licencesToExclude = excludedLicensesPerAttachment.getOrDefault(attachmentContentId,
                             Sets.newHashSet());
-                    List<LicenseInfoParsingResult> parsedLicenses = getLicenseInfoForAttachment(entry.getKey(), attachmentContentId, user);
+                    List<LicenseInfoParsingResult> parsedLicenses = getLicenseInfoForAttachment(entry.getKey(),
+                            attachmentContentId, attachmentIdUseLicenseInfoFromFileEntry.getValue(), user);
 
                     results.addAll(
                             parsedLicenses.stream().map(result -> filterLicenses(result, licencesToExclude)).collect(Collectors.toList()));
@@ -494,12 +508,12 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         return results;
     }
 
-    private Collection<ObligationParsingResult> getAllReleaseObligations(Map<Release, Set<String>> releaseToSelectedAttachmentIds, User user)
+    private Collection<ObligationParsingResult> getAllReleaseObligations(Map<Release, Map<String,Boolean>> releaseToSelectedAttachmentIds, User user)
             throws TException {
         List<ObligationParsingResult> results = Lists.newArrayList();
 
-        for (Entry<Release, Set<String>> entry : releaseToSelectedAttachmentIds.entrySet()) {
-            for (String attachmentContentId : entry.getValue()) {
+        for (Entry<Release, Map<String,Boolean>> entry : releaseToSelectedAttachmentIds.entrySet()) {
+            for (String attachmentContentId : entry.getValue().keySet()) {
                 if (attachmentContentId != null) {
                     results.addAll(getObligationsForAttachment(entry.getKey(), attachmentContentId, user));
                 }
