@@ -22,6 +22,10 @@
     </tr>
     </thead>
     <tr>
+        <td><liferay-ui:message key="id" />:</td>
+        <td><sw360:out value="${project.id}"/></td>
+    </tr>
+    <tr>
         <td><liferay-ui:message key="name" />:</td>
         <td><sw360:out value="${project.name}"/></td>
     </tr>
