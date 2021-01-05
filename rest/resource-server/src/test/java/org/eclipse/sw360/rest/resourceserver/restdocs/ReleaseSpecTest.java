@@ -250,8 +250,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                         .setExternalIds(Collections.singletonMap("mainline-id-component", "4876")));
         when(this.releaseServiceMock.createRelease(anyObject(), anyObject())).then(invocation ->
                 new Release("Test Release", "1.0", component.getId())
-                        .setId("1234567890")
-                        .setCreatedOn(new SimpleDateFormat("yyyy-MM-dd").format(new Date())));
+                        .setId("1234567890"));
 
         given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(
                 new User("admin@sw360.org", "sw360").setId("123456789"));
@@ -605,7 +604,6 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_create_release() throws Exception {
         Map<String, String> release = new HashMap<>();
-        release.put("name", "Test Release");
         release.put("version", "1.0");
         release.put("componentId", component.getId());
 
@@ -617,14 +615,12 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                 .andExpect(status().isCreated())
                 .andDo(this.documentationHandler.document(
                         requestFields(
-                                fieldWithPath("name").description("The name of the new release"),
                                 fieldWithPath("version").description("The version of the new release"),
                                 fieldWithPath("componentId").description("The componentId of the origin component")
                         ),
                         responseFields(
                                 fieldWithPath("name").description("The name of the release, optional"),
                                 fieldWithPath("version").description("The version of the release"),
-                                fieldWithPath("createdOn").description("The creation date of the internal sw360 release"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }

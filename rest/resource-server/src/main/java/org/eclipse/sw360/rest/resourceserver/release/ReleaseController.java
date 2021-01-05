@@ -235,6 +235,7 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
         Release sw360Release = releaseService.getReleaseForUserById(id, user);
         Release updateRelease = setBackwardCompatibleFieldsInRelease(reqBodyMap);
         sw360Release = this.restControllerHelper.updateRelease(sw360Release, updateRelease);
+        releaseService.setComponentNameAsReleaseName(sw360Release, user);
         releaseService.updateRelease(sw360Release, user);
         HalResource<Release> halRelease = createHalReleaseResource(sw360Release, true);
         return new ResponseEntity<>(halRelease, HttpStatus.OK);
