@@ -10,6 +10,7 @@
 package org.eclipse.sw360.rest.authserver.client.persistence;
 
 import org.ektorp.ViewQuery;
+import org.ektorp.ViewResult;
 import org.ektorp.http.StdHttpClient;
 import org.ektorp.impl.StdCouchDbConnector;
 import org.ektorp.impl.StdCouchDbInstance;
@@ -18,6 +19,8 @@ import org.ektorp.support.View;
 import org.ektorp.support.Views;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import com.google.common.collect.Lists;
 
 import java.net.MalformedURLException;
 import java.util.List;
@@ -60,7 +63,13 @@ public class OAuthClientRepository extends CouchDbRepositorySupport<OAuthClientE
         query.setIgnoreNotFound(true);
         query.key(clientId);
 
-        List<OAuthClientEntity> clients = db.queryView(query, OAuthClientEntity.class);
+        List<OAuthClientEntity> clients = Lists.newArrayList();
+        ViewResult result = db.queryView(query);
+        for (ViewResult.Row row : result.getRows()) {
+            String id = row.getId();
+            clients.add(super.get(id));
+        }
+
         if (clients.size() < 1) {
             log.warn("No clients found for clientId <{}>.", clientId);
             return null;

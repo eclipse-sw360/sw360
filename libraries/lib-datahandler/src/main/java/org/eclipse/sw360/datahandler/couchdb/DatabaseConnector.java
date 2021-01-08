@@ -20,6 +20,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,6 +34,7 @@ import org.ektorp.SecurityGroup;
 import org.ektorp.Status;
 import org.ektorp.UpdateConflictException;
 import org.ektorp.ViewQuery;
+import org.ektorp.ViewResult;
 import org.ektorp.http.HttpClient;
 import org.ektorp.impl.StdCouchDbConnector;
 import org.ektorp.util.Documents;
@@ -170,7 +172,13 @@ public class DatabaseConnector extends StdCouchDbConnector {
                 .keys(idSet);
         q.setIgnoreNotFound(ignoreNotFound);
 
-        return queryView(q, type);
+        List<T> results = Lists.newArrayList();
+        ViewResult result = queryView(q);
+        for (ViewResult.Row row : result.getRows()) {
+            String id = row.getId();
+            results.add(get(type, id));
+        }
+        return results;
     }
 
     public <T> List<T> get(Class<T> type, Collection<String> ids) {
