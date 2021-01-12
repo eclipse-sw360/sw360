@@ -21,6 +21,9 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
+import org.eclipse.sw360.datahandler.thrift.changelogs.ChangedFields;
+import org.eclipse.sw360.datahandler.thrift.changelogs.ReferenceDocData;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -70,6 +73,9 @@ class JacksonCustomizations {
             setMixInAnnotation(ClearingInformation.class, Sw360Module.ClearingInformationMixin.class);
             setMixInAnnotation(Repository.class, Sw360Module.RepositoryMixin.class);
             setMixInAnnotation(SearchResult.class, Sw360Module.SearchResultMixin.class);
+            setMixInAnnotation(ChangeLogs.class, Sw360Module.ChangeLogsMixin.class);
+            setMixInAnnotation(ChangedFields.class, Sw360Module.ChangedFieldsMixin.class);
+            setMixInAnnotation(ReferenceDocData.class, Sw360Module.ReferenceDocDataMixin.class);
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -811,6 +817,53 @@ class JacksonCustomizations {
             "setName"
         })
         public static abstract class SearchResultMixin extends SearchResult {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+            "revision",
+            "dbName",
+            "setId",
+            "setType",
+            "setDocumentId",
+            "setParentDocId",
+            "setDbName",
+            "changesSize",
+            "changesIterator",
+            "setChanges",
+            "setOperation",
+            "setUserEdited",
+            "setChangeTimestamp",
+            "referenceDocSize",
+            "referenceDocIterator",
+            "setReferenceDoc",
+            "infoSize",
+            "setInfo",
+            "setRevision",
+            "setDocumentType"
+        })
+        @JsonRootName(value = "changeLog")
+        public static abstract class ChangeLogsMixin extends ChangeLogs {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+            "setFieldName",
+            "setFieldValueOld",
+            "setFieldValueNew"
+        })
+        public static abstract class ChangedFieldsMixin extends ChangedFields {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+            "setDbName",
+            "setRefDocId",
+            "setRefDocType",
+            "setRefDocOperation",
+            "dbName"
+        })
+        public static abstract class ReferenceDocDataMixin extends ReferenceDocData {
         }
     }
 }

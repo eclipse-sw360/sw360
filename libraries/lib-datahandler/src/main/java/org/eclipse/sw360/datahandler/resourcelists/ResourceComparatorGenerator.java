@@ -14,6 +14,7 @@ package org.eclipse.sw360.datahandler.resourcelists;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -27,6 +28,7 @@ public class ResourceComparatorGenerator<T> {
     private static final Map<Project._Fields, Comparator<Project>> projectMap = generateProjectMap();
     private static final Map<Release._Fields, Comparator<Release>> releaseMap = generateReleaseMap();
     private static final Map<SearchResult._Fields, Comparator<SearchResult>> searchResultMap = generateSearchResultMap();
+    private static final Map<ChangeLogs._Fields, Comparator<ChangeLogs>> changeLogMap = generateChangeLogMap();
 
     private static Map<Component._Fields, Comparator<Component>> generateComponentMap() {
         Map<Component._Fields, Comparator<Component>> componentMap = new HashMap<>();
@@ -61,6 +63,13 @@ public class ResourceComparatorGenerator<T> {
         return Collections.unmodifiableMap(searchResultMap);
     }
 
+    private static Map<ChangeLogs._Fields, Comparator<ChangeLogs>> generateChangeLogMap() {
+        Map<ChangeLogs._Fields, Comparator<ChangeLogs>> changeLogMap = new HashMap<>();
+        changeLogMap.put(ChangeLogs._Fields.CHANGE_TIMESTAMP, Comparator.comparing(ChangeLogs::getChangeTimestamp, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        changeLogMap.put(ChangeLogs._Fields.USER_EDITED, Comparator.comparing(ChangeLogs::getUserEdited, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        return Collections.unmodifiableMap(changeLogMap);
+    }
+
     public Comparator<T> generateComparator(String type) throws ResourceClassNotFoundException {
         switch (type) {
             case SW360Constants.TYPE_COMPONENT:
@@ -71,6 +80,8 @@ public class ResourceComparatorGenerator<T> {
                 return (Comparator<T>)defaultReleaseComparator();
             case SW360Constants.TYPE_SEARCHRESULT:
                 return (Comparator<T>)defaultSearchResultComparator();
+            case SW360Constants.TYPE_CHANGELOG:
+                return (Comparator<T>)defaultChangeLogComparator();
             default:
                 throw new ResourceClassNotFoundException("No default comparator for resource class with name " + type);
         }
@@ -118,6 +129,15 @@ public class ResourceComparatorGenerator<T> {
                     }
                 }
                 return generateSearchResultComparatorWithFields(type, searchReult);
+            case SW360Constants.TYPE_CHANGELOG:
+                List<ChangeLogs._Fields> changeLogs = new ArrayList<>();
+                for(String property : properties) {
+                    ChangeLogs._Fields field = ChangeLogs._Fields.findByName(property);
+                    if (field != null) {
+                        changeLogs.add(field);
+                    }
+                }
+                return generateChangeLogComparatorWithFields(type, changeLogs);
             default:
                 throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
         }
@@ -154,6 +174,15 @@ public class ResourceComparatorGenerator<T> {
         switch (type) {
             case SW360Constants.TYPE_SEARCHRESULT:
                 return (Comparator<T>)searchResultComparator(fields);
+            default:
+                throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
+        }
+    }
+
+    public Comparator<T> generateChangeLogComparatorWithFields(String type, List<ChangeLogs._Fields> fields) throws ResourceClassNotFoundException {
+        switch (type) {
+            case SW360Constants.TYPE_CHANGELOG:
+                return (Comparator<T>)changeLogComparator(fields);
             default:
                 throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
         }
@@ -207,6 +236,18 @@ public class ResourceComparatorGenerator<T> {
         return comparator;
     }
 
+    private Comparator<ChangeLogs> changeLogComparator(List<ChangeLogs._Fields> fields) {
+        Comparator<ChangeLogs> comparator = Comparator.comparing(x -> true);
+        for (ChangeLogs._Fields field:fields) {
+            Comparator<ChangeLogs> fieldComparator = changeLogMap.get(field);
+            if(fieldComparator != null) {
+                comparator = comparator.thenComparing(fieldComparator);
+            }
+        }
+        comparator = comparator.thenComparing(defaultChangeLogComparator());
+        return comparator;
+    }
+
     private Comparator<Component> defaultComponentComparator() {
         return componentMap.get(Component._Fields.NAME);
     }
@@ -223,4 +264,7 @@ public class ResourceComparatorGenerator<T> {
         return searchResultMap.get(SearchResult._Fields.NAME);
     }
 
+    private Comparator<ChangeLogs> defaultChangeLogComparator() {
+        return changeLogMap.get(ChangeLogs._Fields.CHANGE_TIMESTAMP);
+    }
 }

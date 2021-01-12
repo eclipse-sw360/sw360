@@ -1,0 +1,35 @@
+//
+// Copyright Siemens AG, 2020. Part of the SW360 Portal Project.
+//
+// This program and the accompanying materials are made
+// available under the terms of the Eclipse Public License 2.0
+// which is available at https://www.eclipse.org/legal/epl-2.0/
+//
+// SPDX-License-Identifier: EPL-2.0
+//
+
+[[resources-changelog]]
+=== ChangeLog
+
+The changelog resource is used get the changelog of a document
+
+
+[[resources-changelog-list]]
+==== Get changelog by document id
+
+A `GET` request will list all the changelog based on the document id and parent document id
+
+===== Request parameter
+include::{snippets}/should_document_get_changelog_by_documentid/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_changelog_by_documentid/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_changelog_by_documentid/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_changelog_by_documentid/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_changelog_by_documentid/links.adoc[]
