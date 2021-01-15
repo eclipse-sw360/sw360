@@ -349,6 +349,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         LicenseInfoUsage licenseInfoUsage1 = new LicenseInfoUsage(new HashSet<>());
         licenseInfoUsage1.setProjectPath("11223344:22334455");
         licenseInfoUsage1.setExcludedLicenseIds(Sets.newHashSet("22334455", "9988776655"));
+        licenseInfoUsage1.setIncludeConcludedLicense(false);
         UsageData usageData1 = new UsageData();
         usageData1.setLicenseInfo(licenseInfoUsage1);
         AttachmentUsage attachmentUsage1 = new AttachmentUsage(ownerSrc1, "aa1122334455bbcc", usedBySrc);
@@ -359,6 +360,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         LicenseInfoUsage licenseInfoUsage2 = new LicenseInfoUsage(new HashSet<>());
         licenseInfoUsage2.setProjectPath("11223344:22334455:445566778899");
         licenseInfoUsage2.setExcludedLicenseIds(Sets.newHashSet("44553322", "5566778899"));
+        licenseInfoUsage2.setIncludeConcludedLicense(true);
         UsageData usageData2 = new UsageData();
         usageData2.setLicenseInfo(licenseInfoUsage2);
         AttachmentUsage attachmentUsage2 = new AttachmentUsage(ownerSrc2, "aa1122334455ee", usedBySrc);
@@ -507,6 +509,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 .description("The list of excluded License Ids."),
                         fieldWithPath("sw360:attachmentUsages[]usageData.licenseInfo.projectPath").description(
                                 "The hierarchy of project in which attachment is used. Ex: projectId1:subProjectId1:subProjectId2"),
+                        fieldWithPath("sw360:attachmentUsages[]usageData.licenseInfo.includeConcludedLicense").description(
+                                "Value to indicate whether to include concluded license"),
                         fieldWithPath("sw360:attachmentUsages").description(
                                 "An array of <<resources-project-get-attachmentusage, AttachmentUsages resources>>"))));
     }

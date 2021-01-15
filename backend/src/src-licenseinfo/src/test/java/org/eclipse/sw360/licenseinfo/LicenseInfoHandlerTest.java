@@ -59,7 +59,7 @@ public class LicenseInfoHandlerTest {
     @Test(expected = IllegalStateException.class)
     public void testThatAttachmentMustBePartOfTheRelease() throws TException {
         Release release = Mockito.mock(Release.class);
-        handler.getLicenseInfoForAttachment(release, "123", user);
+        handler.getLicenseInfoForAttachment(release, "123", true, user);
     }
 
     @Test

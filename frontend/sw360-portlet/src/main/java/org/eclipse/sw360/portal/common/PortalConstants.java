@@ -220,6 +220,9 @@ public class PortalConstants {
     public static final String ATTACHMENT_USAGES_RESTRICTED_COUNTS = "attachmentUsagesRestrictedCounts";
     public static final String SPDX_LICENSE_INFO = "spdxLicenseInfo";
     public static final String SELECTED_ATTACHMENTS_WITH_FULL_PATH = "selectedAttachmentIdsWithFullPath[]";
+    public static final String INCLUDE_CONCLUDED_LICENSE = "includeConcludedLicense";
+    public static final String INCLUDE_CONCLUDED_LICENSE_SHADOWS = "includeConcludedLicenseShadows";
+    public static final String ENABLE_CONCLUDED_LICENSE = "enableConcludedLicense";
 
     // ! Specialized keys for changelog
     public static final String LOAD_CHANGE_LOGS = "load_change_logs";
@@ -270,6 +273,7 @@ public class PortalConstants {
     public static final String MANUAL_ATTACHMENT_USAGES = "manualAttUsages";
     public static final String PROJECT_PATH = "projectPath";
     public static final String PROJECT_PATHS = "projectPaths";
+    public static final String PARENT_PROJECT_PATH = "parentProjectPath";
     public static final String SOURCE_PROJECT_ID = "sourceProjectId";
     public static final String PROJECT_OBLIGATIONS_INFO_BY_RELEASE = "projectObligationsInfoByRelease";
     public static final String LINKED_OBLIGATIONS = "linkedObligations";

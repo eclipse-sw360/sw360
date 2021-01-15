@@ -100,8 +100,13 @@ public class SPDXParserTools {
         return Stream.empty();
     }
 
-    private static Stream<LicenseNameWithText> getAllLicenseTexts(SpdxItem spdxItem, boolean useLicenseInfoFromFiles) {
-        Stream<LicenseNameWithText> licenseTexts = getAllLicenseTextsFromInfo(spdxItem.getLicenseConcluded());
+    private static Stream<LicenseNameWithText> getAllLicenseTexts(SpdxItem spdxItem, boolean useLicenseInfoFromFiles, boolean includeConcludedLicense) {
+        Stream<LicenseNameWithText> licenseTexts = null;
+        if (includeConcludedLicense) {
+            licenseTexts = getAllLicenseTextsFromInfo(spdxItem.getLicenseConcluded());
+        } else {
+            licenseTexts = Stream.<LicenseNameWithText>empty();
+        }
 
         if (useLicenseInfoFromFiles) {
             licenseTexts = Stream.concat(licenseTexts,
@@ -117,7 +122,7 @@ public class SPDXParserTools {
 
                 for (SpdxFile spdxFile : spdxPackage.getFiles()) {
                     licenseTexts = Stream.concat(licenseTexts,
-                            getAllLicenseTexts(spdxFile, useLicenseInfoFromFiles));
+                            getAllLicenseTexts(spdxFile, useLicenseInfoFromFiles, includeConcludedLicense));
                 }
             } catch (InvalidSPDXAnalysisException e) {
                 log.error("Failed to analyse spdx package: " + spdxPackage.getName(), e);
@@ -173,7 +178,8 @@ public class SPDXParserTools {
     }
 
 
-    protected static LicenseInfoParsingResult getLicenseInfoFromSpdx(AttachmentContent attachmentContent, SpdxDocument doc) {
+    protected static LicenseInfoParsingResult getLicenseInfoFromSpdx(AttachmentContent attachmentContent,
+            boolean includeConcludedLicense, SpdxDocument doc) {
         LicenseInfo licenseInfo = new LicenseInfo().setFilenames(Arrays.asList(attachmentContent.getFilename()));
         licenseInfo.setLicenseNamesWithTexts(new HashSet<>());
         licenseInfo.setCopyrights(new HashSet<>());
@@ -182,7 +188,7 @@ public class SPDXParserTools {
             Set<String> concludedLicenseIds = Sets.newHashSet();
             for (SpdxItem spdxItem : doc.getDocumentDescribes()) {
                 licenseInfo.getLicenseNamesWithTexts()
-                        .addAll(getAllLicenseTexts(spdxItem, USE_LICENSE_INFO_FROM_FILES)
+                        .addAll(getAllLicenseTexts(spdxItem, USE_LICENSE_INFO_FROM_FILES, includeConcludedLicense)
                                 .collect(Collectors.toSet()));
                 licenseInfo.getCopyrights()
                         .addAll(getAllCopyrights(spdxItem)

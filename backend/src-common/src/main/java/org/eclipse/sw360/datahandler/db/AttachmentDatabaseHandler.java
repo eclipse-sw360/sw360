@@ -164,7 +164,10 @@ public class AttachmentDatabaseHandler {
                         au.isSetUsageData() && au.getUsageData().getSetField().equals(UsageData._Fields.LICENSE_INFO)
                                 && au.getUsageData().getLicenseInfo().isSetProjectPath()
                                         ? au.getUsageData().getLicenseInfo().getProjectPath()
-                                        : "")))
+                                        : "",
+                        au.isSetUsageData() && au.getUsageData().getSetField().equals(UsageData._Fields.LICENSE_INFO)
+                                ? au.getUsageData().getLicenseInfo().isIncludeConcludedLicense()
+                                : false)))
                 .collect(Collectors.toList());
     }
 

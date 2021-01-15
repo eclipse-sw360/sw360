@@ -33,7 +33,7 @@
     <%--first element in the list is the root linked project --%>
     <core_rt:if test="${loop.index==0}"><core_rt:set var="new_root_id" value="${projectLink.nodeId}"/></core_rt:if>
     <core_rt:if test="${loop.index!=0}">
-        <tr data-tt-id="${projectLink.nodeId}" data-tt-branch="true"
+        <tr data-tt-id="${projectLink.nodeId}" data-tt-branch="true" data-tt-parentProjectPath="${parentProjectPath}"
             <%--attach children of the new root node to the existing node being expanded--%>
             <core_rt:if test="${projectLink.parentNodeId == new_root_id}">data-tt-parent-id="${parent_branch_id}"</core_rt:if>
             <core_rt:if test="${projectLink.parentNodeId != new_root_id}">data-tt-parent-id="${projectLink.parentNodeId}"</core_rt:if>
@@ -93,18 +93,39 @@
                 <td>
                     <input type="checkbox"
                            name="<portlet:namespace/><%=PortalConstants.PROJECT_SELECTED_ATTACHMENT_USAGES%>"
-                           value="${releaseLink.id}_<%=UsageData._Fields.LICENSE_INFO.getFieldName()%>_${attachment.attachmentContentId}"
-                           id="${releaseLink.id}_<%=UsageData._Fields.LICENSE_INFO.getFieldName()%>_${attachment.attachmentContentId}"
+                           value="${parentProjectPath}-${releaseLink.id}_<%=UsageData._Fields.LICENSE_INFO.getFieldName()%>_${attachment.attachmentContentId}"
+                           id="${parentProjectPath}-${releaseLink.id}_<%=UsageData._Fields.LICENSE_INFO.getFieldName()%>_${attachment.attachmentContentId}"
                            <core_rt:if test="${!licenseInfoAttachmentTypes.contains(attachment.attachmentType) or !writeAccessUser}">disabled</core_rt:if>
                            <core_rt:if test="${licInfoAttUsages.containsKey(attachment.attachmentContentId)}">checked="checked"</core_rt:if>
-                           class="form-check-input trackChange<core_rt:if test="${licInfoAttUsages.containsKey(attachment.attachmentContentId)}"> defaultChecked</core_rt:if>"
+                           class="form-check-input licInfo trackChange trackChangeLicInfo<core_rt:if test="${licInfoAttUsages.containsKey(attachment.attachmentContentId)}"> defaultChecked</core_rt:if>"
                     />
                     <input type="checkbox"
                            name="<portlet:namespace/><%=PortalConstants.PROJECT_SELECTED_ATTACHMENT_USAGES_SHADOWS%>"
-                           value="${releaseLink.id}_<%=UsageData._Fields.LICENSE_INFO.getFieldName()%>_${attachment.attachmentContentId}"
-                           id="${releaseLink.id}_<%=UsageData._Fields.LICENSE_INFO.getFieldName()%>_${attachment.attachmentContentId}_shadow"
+                           value="${parentProjectPath}-${releaseLink.id}_<%=UsageData._Fields.LICENSE_INFO.getFieldName()%>_${attachment.attachmentContentId}"
+                           id="${parentProjectPath}-${releaseLink.id}_<%=UsageData._Fields.LICENSE_INFO.getFieldName()%>_${attachment.attachmentContentId}_shadow"
                            style="display:none"
                     />
+                </td>
+                <td>
+                  <core_rt:if test='${attachment.filename.toLowerCase().endsWith(".rdf")}'>
+                    <input type="checkbox"
+                           id="${parentProjectPath}-${releaseLink.id}_<%=PortalConstants.INCLUDE_CONCLUDED_LICENSE_SHADOWS%>_${attachment.attachmentContentId}"
+                           name="<portlet:namespace/><%=PortalConstants.INCLUDE_CONCLUDED_LICENSE%>"
+                           value="${parentProjectPath}-${releaseLink.id}_<%=UsageData._Fields.LICENSE_INFO.getFieldName()%>_${attachment.attachmentContentId}"
+                           <core_rt:if test="${!licenseInfoAttachmentTypes.contains(attachment.attachmentType) 
+                               or !licInfoAttUsages.containsKey(attachment.attachmentContentId) or !writeAccessUser}">disabled</core_rt:if>
+                           <core_rt:if test="${licInfoAttUsages.containsKey(attachment.attachmentContentId) 
+                               && licInfoAttUsages.get(attachment.attachmentContentId).usageData.licenseInfo.includeConcludedLicense}">checked="checked"</core_rt:if>
+                           class="form-check-input includeConcludedLicense trackChange trackChangeLicInfo<core_rt:if test="${licInfoAttUsages.containsKey(attachment.attachmentContentId) 
+                               && licInfoAttUsages.get(attachment.attachmentContentId).usageData.licenseInfo.includeConcludedLicense}"> defaultChecked</core_rt:if>"
+                    />
+                    <input type="checkbox"
+                           name="<portlet:namespace/><%=PortalConstants.INCLUDE_CONCLUDED_LICENSE_SHADOWS%>"
+                           value="${parentProjectPath}-${releaseLink.id}_<%=UsageData._Fields.LICENSE_INFO.getFieldName()%>_${attachment.attachmentContentId}"
+                           id="${parentProjectPath}-${releaseLink.id}_<%=PortalConstants.INCLUDE_CONCLUDED_LICENSE_SHADOWS%>_${attachment.attachmentContentId}_shadow"
+                           style="display:none"
+                    />
+                  </core_rt:if>
                 </td>
                 <td>
                     <input type="checkbox"

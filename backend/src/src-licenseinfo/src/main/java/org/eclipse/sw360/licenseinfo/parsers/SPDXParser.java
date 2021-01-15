@@ -57,11 +57,19 @@ public class SPDXParser extends LicenseInfoParser {
     }
 
     @Override
-    public <T> List<LicenseInfoParsingResult> getLicenseInfos(Attachment attachment, User user, T context) throws TException {
-        return Collections.singletonList(getLicenseInfo(attachment, user, context));
+    public <T> List<LicenseInfoParsingResult> getLicenseInfos(Attachment attachment, User user, T context)
+            throws TException {
+        return Collections.singletonList(getLicenseInfo(attachment, true, user, context));
     }
 
-    public <T> LicenseInfoParsingResult getLicenseInfo(Attachment attachment, User user, T context) throws TException {
+    @Override
+    public <T> List<LicenseInfoParsingResult> getLicenseInfosIncludeConcludedLicense(Attachment attachment,
+            boolean includeConcludedLicense, User user, T context) throws TException {
+        return Collections.singletonList(getLicenseInfo(attachment, includeConcludedLicense, user, context));
+    }
+
+    public <T> LicenseInfoParsingResult getLicenseInfo(Attachment attachment, boolean includeConcludedLicense, User user,
+            T context) throws TException {
         AttachmentContent attachmentContent = attachmentContentProvider.getAttachmentContent(attachment);
 
         final Optional<SpdxDocument> spdxDocument = openAsSpdx(attachmentContent, user, context);
@@ -70,7 +78,7 @@ public class SPDXParser extends LicenseInfoParser {
                     .setStatus(LicenseInfoRequestStatus.FAILURE);
         }
 
-        return getLicenseInfoFromSpdx(attachmentContent, spdxDocument.get());
+        return getLicenseInfoFromSpdx(attachmentContent, includeConcludedLicense, spdxDocument.get());
     }
 
     protected String getUriOfAttachment(AttachmentContent attachmentContent) throws URISyntaxException {

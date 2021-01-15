@@ -362,25 +362,33 @@ public class ProjectPortletUtils {
     }
 
     public static List<AttachmentUsage> deselectedAttachmentUsagesFromRequest(ResourceRequest request) {
-        return makeAttachmentUsagesFromRequestParameters(request, Sets::difference);
+        return makeAttachmentUsagesFromRequestParameters(request, Sets::difference, true);
     }
 
     public static List<AttachmentUsage> selectedAttachmentUsagesFromRequest(ResourceRequest request) {
-        return makeAttachmentUsagesFromRequestParameters(request, Sets::intersection);
+        return makeAttachmentUsagesFromRequestParameters(request, Sets::intersection, false);
     }
 
-    private static List<AttachmentUsage> makeAttachmentUsagesFromRequestParameters(ResourceRequest request, BiFunction<Set<String>, Set<String>, Set<String>> computeUsagesFromCheckboxes) {
+    private static List<AttachmentUsage> makeAttachmentUsagesFromRequestParameters(ResourceRequest request,
+            BiFunction<Set<String>, Set<String>, Set<String>> computeUsagesFromCheckboxes, boolean deselectUsage) {
         final String projectId = request.getParameter(PROJECT_ID);
         Set<String> selectedUsages = new HashSet<>(arrayToList(request.getParameterValues(PROJECT_SELECTED_ATTACHMENT_USAGES)));
         Set<String> changedUsages = new HashSet<>(arrayToList(request.getParameterValues(PROJECT_SELECTED_ATTACHMENT_USAGES_SHADOWS)));
+        Set<String> changedIncludeConludedLicenses = new HashSet<>(
+                arrayToList(request.getParameterValues(INCLUDE_CONCLUDED_LICENSE_SHADOWS)));
+        changedUsages = Sets.union(changedUsages, new HashSet(changedIncludeConludedLicenses));
+        List<String> includeConludedLicenses = arrayToList(request.getParameterValues(INCLUDE_CONCLUDED_LICENSE));
         Set<String> usagesSubset = computeUsagesFromCheckboxes.apply(changedUsages, selectedUsages);
+        if (deselectUsage) {
+            usagesSubset = Sets.union(usagesSubset, new HashSet(changedIncludeConludedLicenses));
+        }
         return usagesSubset.stream()
-                .map(s -> parseAttachmentUsageFromString(projectId, s))
+                .map(s -> parseAttachmentUsageFromString(projectId, s, includeConludedLicenses))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
-    private static AttachmentUsage parseAttachmentUsageFromString(String projectId, String s) {
+    private static AttachmentUsage parseAttachmentUsageFromString(String projectId, String s, List<String> includeConludedLicense) {
         String[] split = s.split("_");
         if (split.length != 3) {
             log.warn(String.format("cannot parse attachment usage from %s for project id %s", s, projectId));
@@ -390,12 +398,25 @@ public class ProjectPortletUtils {
         String releaseId = split[0];
         String type = split[1];
         String attachmentContentId = split[2];
+        String projectPath = null;
+        if (UsageData._Fields.findByName(type).equals(UsageData._Fields.LICENSE_INFO)) {
+            String[] projectPath_releaseId = split[0].split("-");
+            if (projectPath_releaseId.length == 2) {
+                releaseId = projectPath_releaseId[1];
+                projectPath = projectPath_releaseId[0];
+            }
+        }
 
         AttachmentUsage usage = new AttachmentUsage(Source.releaseId(releaseId), attachmentContentId, Source.projectId(projectId));
         final UsageData usageData;
         switch (UsageData._Fields.findByName(type)) {
             case LICENSE_INFO:
-                usageData = UsageData.licenseInfo(new LicenseInfoUsage(Collections.emptySet()));
+                LicenseInfoUsage licenseInfoUsage = new LicenseInfoUsage(Collections.emptySet());
+                licenseInfoUsage.setIncludeConcludedLicense(includeConludedLicense.contains(s));
+                if (projectPath != null) {
+                    licenseInfoUsage.setProjectPath(projectPath);
+                }
+                usageData = UsageData.licenseInfo(licenseInfoUsage);
                 break;
             case SOURCE_PACKAGE:
                 usageData = UsageData.sourcePackage(new SourcePackageUsage());

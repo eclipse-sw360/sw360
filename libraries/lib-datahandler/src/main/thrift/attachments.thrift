@@ -123,6 +123,7 @@ union UsageData {
 struct LicenseInfoUsage {
     1: required set<string> excludedLicenseIds;
     2: optional string projectPath;
+    3: optional bool includeConcludedLicense = true;
 }
 
 /**
