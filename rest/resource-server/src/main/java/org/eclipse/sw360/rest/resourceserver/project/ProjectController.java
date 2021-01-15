@@ -90,6 +90,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import java.io.IOException;
@@ -373,7 +374,9 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
     }
 
     @RequestMapping(value = PROJECTS_URL + "/{id}/vulnerabilities", method = RequestMethod.GET)
-    public ResponseEntity<Resources<Resource<VulnerabilityDTO>>> getVulnerabilitiesOfReleases(@PathVariable("id") String id) {
+    public ResponseEntity<Resources<Resource<VulnerabilityDTO>>> getVulnerabilitiesOfReleases(
+            @PathVariable("id") String id, @RequestParam(value = "priority") Optional<String> priority,
+            @RequestParam(value = "projectRelevance") Optional<String> projectRelevance) {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final List<VulnerabilityDTO> allVulnerabilityDTOs = vulnerabilityService.getVulnerabilitiesByProjectId(id, sw360User);
 
@@ -396,7 +399,12 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
             vulnerabilityResources.add(vulnerabilityDTOResource);
         }
 
-        final Resources<Resource<VulnerabilityDTO>> resources = restControllerHelper.createResources(vulnerabilityResources);
+        List<String> priorityList = priority.isPresent() ? Lists.newArrayList(priority.get().split(",")) : Lists.newArrayList();
+        final List<Resource<VulnerabilityDTO>> vulnResources = vulnerabilityResources.stream()
+                .filter(vulRes -> projectRelevance.isEmpty() || vulRes.getContent().getProjectRelevance().equals(projectRelevance.get()))
+                .filter(vulRes -> priority.isEmpty() || priorityList.contains(vulRes.getContent().getPriority()))
+                .collect(Collectors.toList());
+        final Resources<Resource<VulnerabilityDTO>> resources = restControllerHelper.createResources(vulnResources);
         HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(resources, status);
     }

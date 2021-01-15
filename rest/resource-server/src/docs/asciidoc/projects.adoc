@@ -426,6 +426,9 @@ include::{snippets}/should_document_get_attachment_usage_for_project/http-respon
 
 A `GET` request will get vulnerabilities of a single project.
 
+===== Request parameter
+include::{snippets}/should_document_get_project_vulnerabilities/request-parameters.adoc[]
+
 ===== Response structure
 include::{snippets}/should_document_get_project_vulnerabilities/response-fields.adoc[]
 
