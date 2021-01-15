@@ -101,7 +101,7 @@
     <tr>
         <td><liferay-ui:message key="main.licenses" />: </td>
         <td>
-            <sw360:DisplayLicenseCollection licenseIds="${component.mainLicenseIds}" scopeGroupId="${pageContext.getAttribute('scopeGroupId')}"/>
+            <sw360:DisplayCollection value="${component.mainLicenseIds}" />
         </td>
     </tr>
 </table>

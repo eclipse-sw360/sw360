@@ -31,8 +31,7 @@
         </td>
         <td>
             <core_rt:if test="${releaseLink.setLicenseIds}">
-                <sw360:DisplayLicenseCollection licenseIds="${releaseLink.licenseIds}"
-                                                scopeGroupId="${concludedScopeGroupId}"/>
+                <sw360:DisplayCollection value="${releaseLink.licenseIds}" />
             </core_rt:if>
         </td>
         <td>

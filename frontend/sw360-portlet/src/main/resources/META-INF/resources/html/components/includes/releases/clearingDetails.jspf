@@ -29,8 +29,8 @@
         data-attachment-name-parameter-name="<%=PortalConstants.ATTACHMENT_NAME%>"
         data-spdx-license-info-parameter-name="<%=PortalConstants.SPDX_LICENSE_INFO%>">
     <colgroup>
-        <col style="width: 60%;"/>
-        <col style="width: 5.1rem;"/>
+        <col style="width: 40%;"/>
+        <col style="width: 20%;"/>
         <col style="width: 40%;"/>
     </colgroup>
     <thead>
@@ -268,15 +268,25 @@
 
         function printResult($row, data) {
             var $list = $('<ul></ul>'),
+                $otherList = $('<ul></ul>'),
                 $cell = $row.find('.result');
 
             $cell.html('');
-            $cell.append($('<span>', { text: data.license}));
+            $cell.append($('<div>', { text: data.license}));
             $cell.append($list);
 
             data.licenseIds.forEach(function(id) {
                 $list.append($('<li>', { text: id }));
             });
+
+            $cell.append($('<div>', { text: data.otherLicense}));
+            $cell.append($otherList);
+
+            if (data.otherLicenseIds) {
+                data.otherLicenseIds.forEach(function(id) {
+                    $otherList.append($('<li>', { text: id }));
+                });
+            }
         }
 
         function addTakeOverBtn($parent, releaseId, attachmentId, data) {

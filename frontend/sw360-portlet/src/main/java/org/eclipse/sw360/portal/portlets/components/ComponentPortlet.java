@@ -73,7 +73,6 @@ import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.apache.commons.lang.StringUtils;
 
 import javax.portlet.*;
-import javax.portlet.filter.ResourceRequestWrapper;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -93,6 +92,7 @@ import static java.lang.Math.min;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.CONTENT_TYPE_OPENXML_SPREADSHEET;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
+import static org.eclipse.sw360.datahandler.common.WrappedException.wrapException;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
 import static org.eclipse.sw360.portal.common.PortletUtils.getVerificationState;
@@ -549,7 +549,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         LicenseInfoService.Iface licenseInfoClient = thriftClients.makeLicenseInfoClient();
 
         Set<String> concludedLicenseIds = new HashSet<>();
-        LicenseNameWithText licenseWithText = null;
+        Set<String> mainLicenseNames = new HashSet<String>();
+        Set<String> otherLicenseNames = new HashSet<String>();
         try {
             Release release = componentClient.getReleaseById(releaseId, user);
             List<LicenseInfoParsingResult> licenseInfoResult = licenseInfoClient.getLicenseInfoForAttachment(release,
@@ -559,12 +560,13 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                         .flatMap(singleResult -> singleResult.getLicenseInfo().getConcludedLicenseIds().stream())
                         .collect(Collectors.toSet());
             } else if (attachmentName.endsWith(".xml")) {
-                licenseWithText = licenseInfoResult.stream()
+                List<LicenseNameWithText> licenseWithTexts = licenseInfoResult.stream()
                         .flatMap(result -> result.getLicenseInfo().getLicenseNamesWithTexts().stream())
-                        .filter(license -> license.getType().equals(LICENSE_TYPE_GLOBAL)
-                                && !license.getLicenseName().equals(SW360Constants.LICENSE_NAME_UNKNOWN)
+                        .filter(license -> !license.getLicenseName().equals(SW360Constants.LICENSE_NAME_UNKNOWN)
                                 && !license.getLicenseName().equals(SW360Constants.NA)) // exclude unknown and n/a
-                        .findFirst().orElse(null);
+                        .collect(Collectors.toList());
+                mainLicenseNames = licenseWithTexts.stream().filter(license -> license.getType().equals(LICENSE_TYPE_GLOBAL)).map(LicenseNameWithText::getLicenseName).collect(Collectors.toSet());
+                otherLicenseNames = licenseWithTexts.stream().filter(license -> !license.getType().equals(LICENSE_TYPE_GLOBAL)).map(LicenseNameWithText::getLicenseName).collect(Collectors.toSet());
             }
 
         } catch (TException e) {
@@ -578,19 +580,17 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             jsonGenerator.writeStartObject();
             if (concludedLicenseIds.size() > 0) {
                 jsonGenerator.writeStringField(LICENSE_PREFIX, LanguageUtil.get(resourceBundle,"concluded.license.ids"));
-                jsonGenerator.writeArrayFieldStart("licenseIds");
-                concludedLicenseIds.forEach(licenseId -> {
-                    try {
-                        jsonGenerator.writeString(licenseId);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
+                jsonGenerator.writeArrayFieldStart(LICENSE_IDS);
+                concludedLicenseIds.forEach(licenseId -> wrapException(() -> { jsonGenerator.writeString(licenseId); }));
                 jsonGenerator.writeEndArray();
-            } else if (licenseWithText != null) {
+            } else if (CommonUtils.isNotEmpty(mainLicenseNames)) {
                 jsonGenerator.writeStringField(LICENSE_PREFIX, LanguageUtil.get(resourceBundle,"main.license.id"));
-                jsonGenerator.writeArrayFieldStart("licenseIds");
-                jsonGenerator.writeString(licenseWithText.getLicenseSpdxId());
+                jsonGenerator.writeArrayFieldStart(LICENSE_IDS);
+                mainLicenseNames.forEach(licenseId -> wrapException(() -> { jsonGenerator.writeString(licenseId); }));
+                jsonGenerator.writeEndArray();
+                jsonGenerator.writeStringField("otherLicense", LanguageUtil.get(resourceBundle,"other.license.id"));
+                jsonGenerator.writeArrayFieldStart("otherLicenseIds");
+                otherLicenseNames.forEach(licenseId -> wrapException(() -> { jsonGenerator.writeString(licenseId); }));
                 jsonGenerator.writeEndArray();
             }
             jsonGenerator.writeEndObject();
@@ -612,13 +612,23 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         try {
             Release release = componentClient.getReleaseById(releaseId, user);
             JsonNode input = OBJECT_MAPPER.readValue(request.getParameter(SPDX_LICENSE_INFO), JsonNode.class);
-            JsonNode licenesIdsNode = input.get("licenseIds");
+            JsonNode licenesIdsNode = input.get(LICENSE_IDS);
             if (licenesIdsNode.isArray()) {
                 for (JsonNode objNode : licenesIdsNode) {
                     release.addToMainLicenseIds(objNode.asText());
                 }
             } else {
                 release.addToMainLicenseIds(licenesIdsNode.asText());
+            }
+            licenesIdsNode = input.get("otherLicenseIds");
+            if (null != licenesIdsNode) {
+                if (licenesIdsNode.isArray()) {
+                    for (JsonNode objNode : licenesIdsNode) {
+                        release.addToOtherLicenseIds(objNode.asText());
+                    }
+                } else {
+                    release.addToOtherLicenseIds(licenesIdsNode.asText());
+                }
             }
             result = componentClient.updateRelease(release, user);
         } catch (TException | IOException e) {

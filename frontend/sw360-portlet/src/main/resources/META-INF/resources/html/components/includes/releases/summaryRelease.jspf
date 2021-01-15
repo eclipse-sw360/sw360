@@ -73,7 +73,13 @@
         <tr>
             <td><liferay-ui:message key="main.licenses" />:</td>
             <td>
-                <sw360:DisplayLicenseCollection licenseIds="${release.mainLicenseIds}" scopeGroupId="${pageContext.getAttribute('scopeGroupId')}"/>
+                <sw360:DisplayCollection value="${release.mainLicenseIds}"/>
+            </td>
+        </tr>
+        <tr>
+            <td><liferay-ui:message key="other.licenses" />:</td>
+            <td>
+                <sw360:DisplayCollection value="${release.otherLicenseIds}"/>
             </td>
         </tr>
         <tr>
