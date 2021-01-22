@@ -15,6 +15,7 @@ import java.net.MalformedURLException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -24,6 +25,7 @@ import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangedFields;
+import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.ektorp.http.HttpClient;
 
@@ -53,7 +55,7 @@ public class ChangeLogsDatabaseHandler {
     public List<ChangeLogs> getChangeLogsByDocumentId(User user, String docId) {
         List<ChangeLogs> changeLogsByDocId = changeLogsRepository.getChangeLogsByDocId(docId);
         changeLogsByDocId.addAll(changeLogsRepository.getChangeLogsByParentDocId(docId));
-        changeLogsByDocId = changeLogsByDocId.stream().filter(changeLog -> isEmptyChangeLog(changeLog))
+        changeLogsByDocId = changeLogsByDocId.stream().filter(Objects::nonNull).filter(changeLog -> isNotEmptyChangeLog(changeLog))
                 .collect(Collectors.toList());
         Collections.sort(changeLogsByDocId, Comparator.comparing(ChangeLogs::getChangeTimestamp).reversed());
         changeLogsByDocId.stream().forEach(cl -> cl.setChangeTimestamp(cl.getChangeTimestamp().split(" ")[0]));
@@ -79,7 +81,7 @@ public class ChangeLogsDatabaseHandler {
                         || (oldFieldValue == null && newFieldValue == null)
                         || (oldFieldValue == null && setOfIgnoredFieldValues.contains(newFieldValue))
                         || (newFieldValue == null && setOfIgnoredFieldValues.contains(oldFieldValue))
-                        || newFieldValue.equals(oldFieldValue)) {
+                        || (oldFieldValue != null && newFieldValue != null && newFieldValue.equals(oldFieldValue))) {
                     return false;
                 }
                 return true;
@@ -90,7 +92,8 @@ public class ChangeLogsDatabaseHandler {
         return changeLog;
     }
 
-    private boolean isEmptyChangeLog(ChangeLogs changeLog) {
-        return CommonUtils.isNotEmpty(removeNullToEmtpyChanges(changeLog).getChanges());
+    private boolean isNotEmptyChangeLog(ChangeLogs changeLog) {
+        return changeLog.getOperation() == Operation.CREATE
+                || CommonUtils.isNotEmpty(removeNullToEmtpyChanges(changeLog).getChanges());
     }
 }
