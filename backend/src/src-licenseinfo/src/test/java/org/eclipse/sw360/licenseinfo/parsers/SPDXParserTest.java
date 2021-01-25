@@ -33,14 +33,15 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.spdx.rdfparser.SPDXDocumentFactory;
-import org.spdx.rdfparser.model.SpdxDocument;
+import org.w3c.dom.Document;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import java.io.InputStream;
 import java.util.*;
 
 import static org.eclipse.sw360.licenseinfo.TestHelper.*;
-import static org.eclipse.sw360.licenseinfo.parsers.SPDXParser.FILETYPE_SPDX_INTERNAL;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -132,9 +133,11 @@ public class SPDXParserTest {
                 .setFilename(exampleFile);
 
         InputStream input = makeAttachmentContentStream(exampleFile);
-        SpdxDocument spdxDocument = SPDXDocumentFactory.createSpdxDocument(input,
-                parser.getUriOfAttachment(attachmentContentStore.get(exampleFile)),
-                FILETYPE_SPDX_INTERNAL);
+        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+        dbFactory.setNamespaceAware(true);
+        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+        Document spdxDocument = dBuilder.parse(input);
+        spdxDocument.getDocumentElement().normalize();
 
         LicenseInfoParsingResult result = SPDXParserTools.getLicenseInfoFromSpdx(attachmentContent, true, spdxDocument);
         assertIsResultOfExample(result.getLicenseInfo(), exampleFile, expectedLicenses, numberOfCoyprights,
