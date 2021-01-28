@@ -374,7 +374,6 @@ public class ProjectDatabaseHandlerTest {
     public void testGetLinkedProjectsOfProjectForClonedProject() throws Exception {
         Project p = handler.getProjectById("P4", user1);
         Project clone = p.deepCopy();
-        clone.unsetId();
         clone.unsetRevision();
 
         List<ProjectLink> projectLinks = handler.getLinkedProjects(clone, false, user1);

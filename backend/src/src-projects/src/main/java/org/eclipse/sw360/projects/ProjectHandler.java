@@ -257,7 +257,7 @@ public class ProjectHandler implements ProjectService.Iface {
         assertNotNull(relations);
         assertUser(user);
 
-        return handler.getLinkedProjects(relations);
+        return handler.getLinkedProjects(relations, user);
     }
 
     @Override

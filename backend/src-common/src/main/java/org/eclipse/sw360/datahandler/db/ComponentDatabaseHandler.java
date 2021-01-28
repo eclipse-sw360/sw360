@@ -1588,17 +1588,16 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     // HELPER SERVICES //
     /////////////////////
 
-    List<ReleaseLink> getLinkedReleases(Project project, Map<String, Release> releaseMap, Deque<String> visitedIds) {
-        return getLinkedReleases(project.getReleaseIdToUsage(), releaseMap, visitedIds);
+    List<ReleaseLink> getLinkedReleases(Project project, Deque<String> visitedIds) {
+        return getLinkedReleases(project.getReleaseIdToUsage(), visitedIds);
     }
 
-    private List<ReleaseLink> getLinkedReleases(Map<String, ?> relations, Map<String, Release> releaseMap, Deque<String> visitedIds) {
-        return iterateReleaseRelationShips(relations, null, visitedIds, releaseMap);
+    private List<ReleaseLink> getLinkedReleases(Map<String, ?> relations, Deque<String> visitedIds) {
+        return iterateReleaseRelationShips(relations, null, visitedIds);
     }
 
     public List<ReleaseLink> getLinkedReleases(Map<String, ?> relations) {
-        final Map<String, Release> releaseMap = ThriftUtils.getIdMap(getDetailedReleasesForExport(relations.keySet()));
-        return getLinkedReleases(relations, releaseMap, new ArrayDeque<>());
+        return getLinkedReleases(relations, new ArrayDeque<>());
     }
 
     public List<Release> getAllReleases() {
@@ -1611,23 +1610,23 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     @NotNull
-    private List<ReleaseLink> iterateReleaseRelationShips(Map<String, ?> relations, String parentNodeId, Deque<String> visitedIds, Map<String, Release> releaseMap) {
+    private List<ReleaseLink> iterateReleaseRelationShips(Map<String, ?> relations, String parentNodeId, Deque<String> visitedIds) {
         List<ReleaseLink> out = new ArrayList<>();
 
         for (Map.Entry<String, ?> entry : relations.entrySet()) {
             String id = entry.getKey();
-            Optional<ReleaseLink> releaseLinkOptional = getFilledReleaseLink(id, entry.getValue(), parentNodeId, visitedIds, releaseMap);
+            Optional<ReleaseLink> releaseLinkOptional = getFilledReleaseLink(id, entry.getValue(), parentNodeId, visitedIds);
             releaseLinkOptional.ifPresent(out::add);
         }
         out.sort(SW360Utils.RELEASE_LINK_COMPARATOR);
         return out;
     }
 
-    private Optional<ReleaseLink> getFilledReleaseLink(String id, Object relation, String parentNodeId, Deque<String> visitedIds, Map<String, Release> releaseMap) {
+    private Optional<ReleaseLink> getFilledReleaseLink(String id, Object relation, String parentNodeId, Deque<String> visitedIds) {
         ReleaseLink releaseLink = null;
         if (!visitedIds.contains(id)) {
             visitedIds.push(id);
-            Release release = releaseMap.get(id);
+            Release release = releaseRepository.get(id);
             if (release != null) {
                 releaseLink = createReleaseLink(release);
                 fillValueFieldInReleaseLink(releaseLink, relation);
