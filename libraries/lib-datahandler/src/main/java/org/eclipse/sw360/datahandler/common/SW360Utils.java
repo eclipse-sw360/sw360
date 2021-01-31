@@ -216,6 +216,9 @@ public class SW360Utils {
     public static List<Attachment> getApprovedClxAttachmentForRelease(Release release) {
         Predicate<Attachment> isApprovedCLI = attachment -> CheckStatus.ACCEPTED.equals(attachment.getCheckStatus())
                 && AttachmentType.COMPONENT_LICENSE_INFO_XML.equals(attachment.getAttachmentType());
+        if (release.getAttachments() == null) {
+            return new ArrayList<Attachment>();
+        }
         return release.getAttachments().stream().filter(isApprovedCLI).collect(Collectors.toList());
     }
 
