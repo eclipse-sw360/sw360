@@ -98,13 +98,16 @@
                     value="<sw360:out value="${release.releaseDate}"/>"/>
             </div>
         </td>
-        <td></td>
+        <td>
+            <sw360:DisplayLicensesEdit id="<%=Release._Fields.MAIN_LICENSE_IDS.toString()%>"
+                                           licenseIds="${release.mainLicenseIds}"/>
+        </td>
     </tr>
 
     <tr>
         <td>
-            <sw360:DisplayMainLicensesEdit id="<%=Release._Fields.MAIN_LICENSE_IDS.toString()%>"
-                                           licenseIds="${release.mainLicenseIds}"/>
+            <sw360:DisplayLicensesEdit id="<%=Release._Fields.OTHER_LICENSE_IDS.toString()%>" main="false"
+                                           licenseIds="${release.otherLicenseIds}"/>
         </td>
 
         <td>

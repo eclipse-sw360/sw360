@@ -31,9 +31,14 @@ public class DisplayLicensesEdit extends NameSpaceAwareTag {
     private String id;
     private Set<String> licenseIds = new HashSet<>();
     private String namespace;
+    private boolean main = true;
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public void setMain(Boolean main) {
+        this.main = main;
     }
 
     public void setLicenseIds(Set<String> licenseIds) {
@@ -60,7 +65,7 @@ public class DisplayLicensesEdit extends NameSpaceAwareTag {
         ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         
         display.append("<div class=\"form-group\">");
-        display.append(String.format("<label for=\"%sDisplay\">" + LanguageUtil.get(resourceBundle,"licenses") + "</label>", id))
+        display.append(String.format("<label for=\"%sDisplay\">" + LanguageUtil.get(resourceBundle, main ? "main.licenses" : "other.licenses") + "</label>", id))
                 .append(String.format("<input type=\"hidden\" readonly=\"\" value=\"%s\" id=\"%s\" name=\"%s%s\"/>", licenseIdsStr, id, namespace, id))
                 .append(String.format("<input class=\"clickable licenseSearchDialogInteractive form-control\" data-id=\"%s\" type=\"text\" readonly=\"\" placeholder=\""+LanguageUtil.get(resourceBundle,"click.to.set.licenses")+"\" value=\"%s\" id=\"%sDisplay\" />", id, licenseIdsStr, id));
         display.append("</div>");

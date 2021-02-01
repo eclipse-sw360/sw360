@@ -39,7 +39,7 @@
             <sw360:DisplayEnum value="${releaseLink.releaseRelationship}" /></td>
         <td>
             <core_rt:if test="${releaseLink.setLicenseIds}">
-                <sw360:DisplayLicenseCollection licenseIds="${releaseLink.licenseIds}" scopeGroupId="${concludedScopeGroupId}" />
+                <sw360:DisplayCollection value="${releaseLink.licenseIds}" />
             </core_rt:if>
         </td>
         <td data-releaseclearingstate='<sw360:DisplayEnum value="${releaseLink.clearingState}" bare="true"/>' class="releaseClearingState"></td>
