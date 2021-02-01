@@ -64,7 +64,7 @@ public abstract class OutputGenerator<T> {
         this.outputVariant = variant;
     }
 
-    public abstract T generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project, Collection<ObligationParsingResult> obligationResults, User user, Map<String,String> externalIds, Map<String, ObligationStatusInfo> obligationsStatus) throws SW360Exception;
+    public abstract T generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project, Collection<ObligationParsingResult> obligationResults, User user, Map<String,String> externalIds, Map<String, ObligationStatusInfo> obligationsStatus, String fileName) throws SW360Exception;
 
     public String getOutputType() {
         return outputType;

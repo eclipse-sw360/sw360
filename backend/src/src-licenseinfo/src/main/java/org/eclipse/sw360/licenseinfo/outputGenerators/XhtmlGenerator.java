@@ -38,7 +38,7 @@ public class XhtmlGenerator extends OutputGenerator<String> {
     }
 
     @Override
-    public String generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project, Collection<ObligationParsingResult> obligationResults, User user, Map<String,String> externalIds, Map<String, ObligationStatusInfo> obligationsStatus) throws SW360Exception {
+    public String generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project, Collection<ObligationParsingResult> obligationResults, User user, Map<String,String> externalIds, Map<String, ObligationStatusInfo> obligationsStatus, String fileName) throws SW360Exception {
         String projectName = project.getName();
         String projectVersion = project.getVersion();
         String licenseInfoHeaderText = project.getLicenseInfoHeaderText();

@@ -482,6 +482,13 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         final String projectId = request.getParameter(PROJECT_ID);
         String isEmptyFile = request.getParameter(PortalConstants.LICENSE_INFO_EMPTY_FILE);
         String outputGenerator = request.getParameter(PortalConstants.LICENSE_INFO_SELECTED_OUTPUT_FORMAT);
+        String selectedTemplate = request.getParameter("tmplate");
+        String fileName = "";
+        if(CommonUtils.isNotNullEmptyOrWhitespace(CLEARING_REPORT_TEMPLATE_TO_FILENAMEMAPPING) && CommonUtils.isNotNullEmptyOrWhitespace(selectedTemplate)) {
+            Map<String, String> tmplateToFileName = Arrays.stream(PortalConstants.CLEARING_REPORT_TEMPLATE_TO_FILENAMEMAPPING.split(","))
+                    .collect(Collectors.toMap(k -> k.split(":")[0], v -> v.split(":")[1]));
+            fileName = tmplateToFileName.get(selectedTemplate);
+        }
         User user = UserCacheHolder.getUserFromRequest(request);
         ProjectService.Iface projClient = thriftClients.makeProjectClient();
         Project project = null;
@@ -495,7 +502,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         }
         if (YES.equals(isEmptyFile)) {
             try {
-                downloadEmptyLicenseInfo(request, response, project, user, outputGenerator);
+                downloadEmptyLicenseInfo(request, response, project, user, outputGenerator, fileName);
                 return;
             } catch (IOException | TException e) {
                 log.error("Error getting empty licenseInfo file for project with id " + projectId + " and generator " + outputGenerator, e);
@@ -564,7 +571,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         try {
             final LicenseInfoService.Iface licenseInfoClient = thriftClients.makeLicenseInfoClient();
             LicenseInfoFile licenseInfoFile = licenseInfoClient.getLicenseInfoFile(project, user, outputGenerator,
-                    releaseIdsToSelectedAttachmentIds, excludedLicensesPerAttachmentId, externalIds);
+                    releaseIdsToSelectedAttachmentIds, excludedLicensesPerAttachmentId, externalIds, fileName);
             saveLicenseInfoAttachmentUsages(project, user, filteredSelectedAttachmentIdsWithPath,
                     excludedLicensesPerAttachmentIdWithPath, includeConcludedLicenseList);
             saveSelectedReleaseAndProjectRelations(projectId, listOfSelectedRelationships, listOfSelectedProjectRelationships, isLinkedProjectPresent);
@@ -575,10 +582,10 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         }
     }
 
-    private void downloadEmptyLicenseInfo(ResourceRequest request, ResourceResponse response, Project project, User user, String outputGenerator) throws TException, IOException {
+    private void downloadEmptyLicenseInfo(ResourceRequest request, ResourceResponse response, Project project, User user, String outputGenerator, String fileName) throws TException, IOException {
         final LicenseInfoService.Iface licenseInfoClient = thriftClients.makeLicenseInfoClient();
         LicenseInfoFile licenseInfoFile = licenseInfoClient.getLicenseInfoFile(project, user, outputGenerator,
-                Collections.emptyMap(), Collections.emptyMap(), "");
+                Collections.emptyMap(), Collections.emptyMap(), "", fileName);
         sendLicenseInfoResponse(request, response, project, licenseInfoFile);
     }
 

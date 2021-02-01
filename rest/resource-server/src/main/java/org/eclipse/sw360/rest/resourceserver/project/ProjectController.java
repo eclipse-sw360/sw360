@@ -116,6 +116,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.wrapThriftOptiona
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapException;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.*;
 
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -517,6 +518,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
                                     @RequestParam("generatorClassName") String generatorClassName,
                                     @RequestParam("variant") String variant,
                                     @RequestParam(value = "externalIds", required=false) String externalIds,
+                                    @RequestParam(value = "template", required = false ) String template,
                                     HttpServletResponse response) throws TException, IOException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
@@ -576,7 +578,14 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
 			StringUtils.isBlank(projectVersion) ? "" : "-" + projectVersion, timestamp,
 			outputFormatInfo.getFileExtension());
 
-        final LicenseInfoFile licenseInfoFile = licenseInfoService.getLicenseInfoFile(sw360Project, sw360User, outputGeneratorClassNameWithVariant, selectedReleaseAndAttachmentIds, excludedLicensesPerAttachments, externalIds);
+        String fileName = "";
+        if (CommonUtils.isNotNullEmptyOrWhitespace(template) && CommonUtils.isNotNullEmptyOrWhitespace(REPORT_FILENAME_MAPPING)) {
+            Map<String, String> orgToTemplate = Arrays.stream(REPORT_FILENAME_MAPPING.split(","))
+                    .collect(Collectors.toMap(k -> k.split(":")[0], v -> v.split(":")[1]));
+            fileName = orgToTemplate.get(template);
+        }
+
+        final LicenseInfoFile licenseInfoFile = licenseInfoService.getLicenseInfoFile(sw360Project, sw360User, outputGeneratorClassNameWithVariant, selectedReleaseAndAttachmentIds, excludedLicensesPerAttachments, externalIds, fileName);
         byte[] byteContent = licenseInfoFile.bufferForGeneratedOutput().array();
         response.setContentType(outputFormatInfo.getMimeType());
         response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", filename));

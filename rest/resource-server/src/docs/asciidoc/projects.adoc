@@ -382,7 +382,7 @@ include::{snippets}/should_document_patch_releases/http-response.adoc[]
 [[resources-project-get-download-licenseinfo]]
 ==== Download License Info
 
-A `GET` request is used to download license info for the project.
+A `GET` request is used to download license info for the project. Please set the request parameter `&template=<TEMPLATE_NAME>` for variant `REPORT` to choose specific template.
 
 ===== Request parameter
 include::{snippets}/should_document_get_download_license_info/request-parameters.adoc[]

@@ -108,14 +108,15 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
                 new TextGenerator(DISCLOSURE, "License Disclosure as TEXT"),
                 new XhtmlGenerator(DISCLOSURE, "License Disclosure as XHTML"),
                 new DocxGenerator(DISCLOSURE, "License Disclosure as DOCX"),
-                new DocxGenerator(REPORT, "Project Clearing Report as DOCX")
+                new DocxGenerator(REPORT, "Project Clearing Report as DOCX"),
+                new JsonGenerator(REPORT, "Project Clearing Report as JSON")
         );
         // @formatter:on
     }
 
     @Override
     public LicenseInfoFile getLicenseInfoFile(Project project, User user, String outputGenerator,
-            Map<String, Map<String, Boolean>> releaseIdsToSelectedAttachmentIds, Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachment, String externalIds)
+            Map<String, Map<String, Boolean>> releaseIdsToSelectedAttachmentIds, Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachment, String externalIds, String fileName)
             throws TException {
         assertNotNull(project);
         assertNotNull(user);
@@ -154,7 +155,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
             filteredExtIdMap = extIdMap.entrySet().stream().filter(x->externalId.contains(x.getKey())).collect(Collectors.toMap(Entry::getKey, Entry::getValue));
         }
 
-        Object output = generator.generateOutputFile(projectLicenseInfoResults, project, obligationsResults, user, filteredExtIdMap, obligationsStatusInfoMap);
+        Object output = generator.generateOutputFile(projectLicenseInfoResults, project, obligationsResults, user, filteredExtIdMap, obligationsStatusInfoMap, fileName);
         if (output instanceof byte[]) {
             licenseInfoFile.setGeneratedOutput((byte[]) output);
         } else if (output instanceof String) {

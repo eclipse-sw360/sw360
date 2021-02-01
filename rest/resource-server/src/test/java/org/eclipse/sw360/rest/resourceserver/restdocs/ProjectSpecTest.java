@@ -342,7 +342,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         LicenseInfoFile licenseInfoFile = new LicenseInfoFile();
         licenseInfoFile.setGeneratedOutput(new byte[0]);
         given(this.licenseInfoMockService.getLicenseInfoFile(anyObject(), anyObject(), anyObject(), anyObject(),
-                anyObject(),anyObject())).willReturn(licenseInfoFile);
+                anyObject(),anyObject(), anyObject())).willReturn(licenseInfoFile);
 
         Source ownerSrc1 = Source.releaseId("9988776655");
         Source usedBySrc = Source.projectId(project.getId());
@@ -1172,7 +1172,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                                 + Arrays.asList("DocxGenerator", "XhtmlGenerator", "TextGenerator")),
                                 parameterWithName("variant").description("All the possible values for variants are "
                                         + Arrays.asList(OutputFormatVariant.values())),
-                                parameterWithName("externalIds").description("The external Ids of the project"))));
+                                parameterWithName("externalIds").description("The external Ids of the project")
+                                )));
     }
 
     @Test

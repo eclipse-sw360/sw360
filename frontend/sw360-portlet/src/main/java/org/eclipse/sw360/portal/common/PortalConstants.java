@@ -44,6 +44,8 @@ public class PortalConstants {
     public static final Boolean IS_PROJECT_OBLIGATIONS_ENABLED;
     public static final Boolean CUSTOM_WELCOME_PAGE_GUIDELINE;
     public static final UserGroup USER_ROLE_ALLOWED_TO_MERGE_OR_SPLIT_COMPONENT;
+    public static final String CLEARING_REPORT_TEMPLATE_TO_FILENAMEMAPPING;
+    public static final String CLEARING_REPORT_TEMPLATE_FORMAT;
 
     // DO NOT CHANGE THIS UNLESS YOU KNOW WHAT YOU ARE DOING !!!
     // - friendly url mapping files must be changed
@@ -609,6 +611,8 @@ public class PortalConstants {
         API_TOKEN_HASH_SALT = props.getProperty("rest.apitoken.hash.salt", "$2a$04$Software360RestApiSalt");
         API_WRITE_ACCESS_USERGROUP = UserGroup.valueOf(props.getProperty("rest.write.access.usergroup", UserGroup.ADMIN.name()));
         USER_ROLE_ALLOWED_TO_MERGE_OR_SPLIT_COMPONENT = UserGroup.valueOf(props.getProperty("user.role.allowed.to.merge.or.split.component", UserGroup.ADMIN.name()));
+        CLEARING_REPORT_TEMPLATE_TO_FILENAMEMAPPING = props.getProperty("org.eclipse.sw360.licensinfo.projectclearing.templatemapping", "");
+        CLEARING_REPORT_TEMPLATE_FORMAT = props.getProperty("org.eclipse.sw360.licensinfo.projectclearing.templateformat", "docx");
     }
 
     private PortalConstants() {
