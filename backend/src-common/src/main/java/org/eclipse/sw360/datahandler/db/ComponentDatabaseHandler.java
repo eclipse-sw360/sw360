@@ -694,7 +694,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             updateComponentCompletely(mergeTarget, sessionUser);
             // now, update source (before deletion so that attachments and releases and
             // stuff that has been migrated will not be deleted by component deletion!)
-            updateComponentCompletely(mergeSource, sessionUser);
+            updateComponentCompletelyWithoutDeletingAttachment(mergeSource, sessionUser);
             // now update some release fields related to the component (e.g. id and name)
             updateReleasesAfterMerge(targetComponentReleaseIds, srcComponentReleaseIds, mergeSelection, mergeTarget,
                     sessionUser);
@@ -855,6 +855,15 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         updateComponentInternal(component, actual, user);
 
+    }
+
+    private void updateComponentCompletelyWithoutDeletingAttachment(Component component, User user) throws SW360Exception {
+        // Prepare component for database
+        prepareComponent(component);
+
+        componentRepository.update(component);
+
+        sendMailNotificationsForComponentUpdate(component, user.getEmail());
     }
 
     public RequestStatus updateRelease(Release release, User user, Iterable<Release._Fields> immutableFields) throws SW360Exception {
@@ -1177,7 +1186,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             updateReleaseCompletely(mergeTarget, sessionUser, true, true, true);
             // now, update source (before deletion so that attachments and releases and
             // stuff that has been migrated will not be deleted by component deletion!)
-            updateReleaseCompletely(mergeSource, sessionUser, false, true, false);
+            updateReleaseCompletely(mergeSource, sessionUser, false, false, false);
 
             // updating references to source release
             // it is important to migrate the attachment usages first otherwise they will be delete during project update
