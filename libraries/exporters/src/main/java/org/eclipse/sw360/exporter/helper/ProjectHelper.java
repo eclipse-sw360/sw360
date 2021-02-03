@@ -18,6 +18,8 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.exporter.utils.SubTable;
 
+import com.google.common.collect.Sets;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -31,6 +33,7 @@ import static org.eclipse.sw360.exporter.ProjectExporter.PROJECT_RENDERED_FIELDS
 
 public class ProjectHelper implements ExporterHelper<Project> {
 
+    private static final String RELEASE_NOT_AVAILABLE = "Release not available";
     private final ProjectService.Iface projectClient;
     private final User user;
     private boolean extendedByReleases;
@@ -62,12 +65,25 @@ public class ProjectHelper implements ExporterHelper<Project> {
     private SubTable makeRowsWithReleases(Project project) throws SW360Exception {
         List<Release> releases = getReleases(project);
         SubTable table = new SubTable();
+        Set<String> releaseIdsNotAvaialbleInDB = Sets.difference(nullToEmptyMap(project.getReleaseIdToUsage()).keySet(),
+                releases.stream().map(Release::getId).collect(Collectors.toSet()));
 
         if (releases.size() > 0) {
             for (Release release : releases) {
                 List<String> currentRow = makeRowForProject(project);
                 currentRow.addAll(releaseHelper.makeRows(release).getRow(0));
                 table.addRow(currentRow);
+            }
+            for (String releaseId : releaseIdsNotAvaialbleInDB) {
+                List<String> projRowWithNotAvailableReleaseFields = makeRowForProject(project);
+                for (int i = 0; i < releaseHelper.getColumns(); i++) {
+                    if (i == 0) {
+                        projRowWithNotAvailableReleaseFields.add(releaseId);
+                        continue;
+                    }
+                    projRowWithNotAvailableReleaseFields.add(RELEASE_NOT_AVAILABLE);
+                }
+                table.addRow(projRowWithNotAvailableReleaseFields);
             }
         } else {
             List<String> projectRowWithEmptyReleaseFields = makeRowForProject(project);

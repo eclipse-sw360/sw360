@@ -48,6 +48,7 @@ public class ReleaseSummary extends DocumentSummary<Release> {
 
         Set<String> vendorIds = fullDocuments
                 .stream()
+                .filter(Objects::nonNull)
                 .map(Release::getVendorId)
                 .filter(Objects::nonNull)
                 .filter(s -> !s.isEmpty())
@@ -56,6 +57,7 @@ public class ReleaseSummary extends DocumentSummary<Release> {
 
         List<Release> documents = new ArrayList<>(fullDocuments.size());
         for (Release fullDocument : fullDocuments) {
+            if (fullDocument == null) continue;
             Release document = summary(type, fullDocument, vendorById::get);
             if (document != null) documents.add(document);
         }

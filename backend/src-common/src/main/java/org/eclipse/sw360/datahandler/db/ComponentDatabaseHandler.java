@@ -1715,7 +1715,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public List<Release> getDetailedReleasesForExport(Set<String> ids) {
-        return releaseRepository.makeSummary(SummaryType.DETAILED_EXPORT_SUMMARY, ids);
+        return releaseRepository.makeSummary(SummaryType.DETAILED_EXPORT_SUMMARY, ids, true);
     }
 
     public List<Release> getFullReleases(Set<String> ids) {
