@@ -19,6 +19,7 @@ import javax.servlet.jsp.JspWriter;
 import javax.servlet.jsp.tagext.SimpleTagSupport;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
@@ -30,6 +31,7 @@ public class DisplayOutputFormats extends SimpleTagSupport {
     private Collection<OutputFormatInfo> options;
     private String selected;
     private OutputFormatVariant variantToSkip;
+    private Collection<String> formatsToShow;
 
     public void setOptions(Collection<OutputFormatInfo> options) throws JspException {
         this.options = options;
@@ -43,6 +45,10 @@ public class DisplayOutputFormats extends SimpleTagSupport {
         this.variantToSkip = variantToSkip;
     }
 
+    public void setFormatsToShow(Collection<String> formatsToShow) {
+        this.formatsToShow = formatsToShow;
+    }
+
     public void doTag() throws JspException, IOException {
         writeOptions(options);
     }
@@ -50,7 +56,9 @@ public class DisplayOutputFormats extends SimpleTagSupport {
     private void writeOptions(Collection<OutputFormatInfo> options) throws IOException {
         JspWriter jspWriter = getJspContext().getOut();
         boolean isChecked=true;
-        options = options.stream().filter(ofInfo -> !ofInfo.getVariant().equals(variantToSkip)).collect(Collectors.toCollection(ArrayList::new));
+        options = options.stream().filter(ofInfo -> !ofInfo.getVariant().equals(variantToSkip))
+                .filter(ofInfo -> (Objects.isNull(formatsToShow)) || formatsToShow.contains(ofInfo.getFileExtension()))
+                .collect(Collectors.toCollection(ArrayList::new));
         for (OutputFormatInfo option : options) {
             String optionDescription = option.getDescription();
             String optionValue = option.getGeneratorClassName() + "::" + option.getVariant();

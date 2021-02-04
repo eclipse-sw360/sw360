@@ -50,10 +50,10 @@ public class Sw360LicenseInfoService {
 
     public LicenseInfoFile getLicenseInfoFile(Project project, User sw360User, String generatorClassNameWithVariant,
             Map<String, Map<String, Boolean>> selectedReleaseAndAttachmentIds,
-            Map<String, Set<LicenseNameWithText>> excludedLicenses, String externalIds) {
+            Map<String, Set<LicenseNameWithText>> excludedLicenses, String externalIds, String fileName) {
         try {
             LicenseInfoService.Iface sw360LicenseInfoClient = getThriftLicenseInfoClient();
-            return sw360LicenseInfoClient.getLicenseInfoFile(project, sw360User, generatorClassNameWithVariant, selectedReleaseAndAttachmentIds, excludedLicenses, externalIds);
+            return sw360LicenseInfoClient.getLicenseInfoFile(project, sw360User, generatorClassNameWithVariant, selectedReleaseAndAttachmentIds, excludedLicenses, externalIds, fileName);
         } catch (TException e) {
             throw new RuntimeException(e);
         }

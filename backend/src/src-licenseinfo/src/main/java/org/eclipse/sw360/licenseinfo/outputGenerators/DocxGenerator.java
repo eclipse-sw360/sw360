@@ -101,7 +101,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
     }
 
     @Override
-    public byte[] generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project, Collection<ObligationParsingResult> obligationResults, User user, Map<String, String> externalIds, Map<String, ObligationStatusInfo> obligationsStatus) throws SW360Exception {
+    public byte[] generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project, Collection<ObligationParsingResult> obligationResults, User user, Map<String, String> externalIds, Map<String, ObligationStatusInfo> obligationsStatus, String fileName) throws SW360Exception {
         String licenseInfoHeaderText = project.getLicenseInfoHeaderText();
 
         ByteArrayOutputStream docxOutputStream = new ByteArrayOutputStream();
@@ -126,7 +126,12 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                     }
                     break;
                 case REPORT:
-                    docxTemplateFile = CommonUtils.loadResource(DocxGenerator.class, DOCX_TEMPLATE_REPORT_FILE);
+                    if (CommonUtils.isNullEmptyOrWhitespace(fileName)) {
+                        docxTemplateFile = CommonUtils.loadResource(DocxGenerator.class, DOCX_TEMPLATE_REPORT_FILE);
+                    } else {
+                        docxTemplateFile = CommonUtils.loadResource(DocxGenerator.class,
+                                System.getProperty("file.separator") + fileName + "." + DOCX_OUTPUT_TYPE);
+                    }
                     xwpfDocument = new XWPFDocument(new ByteArrayInputStream(docxTemplateFile.get()));
                     if (docxTemplateFile.isPresent()) {
                         fillReportDocument(

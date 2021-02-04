@@ -8,6 +8,7 @@
   ~ SPDX-License-Identifier: EPL-2.0
   --%>
 <%@ page import="java.util.Map"%>
+<%@ page import="java.util.Arrays"%>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant" %>
 <%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
@@ -70,78 +71,100 @@
     <%@ include file="/html/utils/includes/pageSpinner.jspf" %>
 </core_rt:if>
 
+<c:set var="clReportTmplateMappings" value="<%=PortalConstants.CLEARING_REPORT_TEMPLATE_TO_FILENAMEMAPPING%>"/>
+<c:set var="clearingReportTemplate" value="${fn:split(clReportTmplateMappings, ',')}"/>
+
+<c:set var="templateFormats" value="<%=PortalConstants.CLEARING_REPORT_TEMPLATE_FORMAT%>"/>
+<c:set var="tmpFormat" value="${fn:split(templateFormats, ',')}"/>
+
 <div class="dialogs auto-dialogs">
-<div id="downloadLicenseInfoDialog" class="modal fade" tabindex="-1" role="dialog">
-<div class="modal-dialog modal-lg modal-dialog-centered modal-info" role="document">
-  <!-- <div class="modal-dialog" role="document"> -->
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><liferay-ui:message key="select.other.options" /></h5>
-        <button id="closeModalButton" type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body"
-                    style="position: relative; overflow-y: auto; max-height: 400px;">
-                    <c:if test="${not empty relations}">
-                        <div class="form-group form-check">
-                            <label for="projectRelation"
-                                class="font-weight-bold h3">Uncheck project
-                                release relationships to be excluded:</label>
-                            <c:forEach var="projectReleaseRelation" items="${relations}">
-                                <div class="checkbox form-check">
-                                    <label> <input name="releaseRelationSelection" type="checkbox"
-                                        <c:if test = "${empty usedProjectReleaseRelations}">checked="checked"</c:if>
-                                        <c:if test = "${not empty usedProjectReleaseRelations and (fn:contains(usedProjectReleaseRelations, projectReleaseRelation))}">checked="checked"</c:if>
-                                        value="${projectReleaseRelation}">
-                                        <sw360:DisplayEnum value='${projectReleaseRelation}' bare="true" /> </input>
-                                    </label>
-                                </div>
-                            </c:forEach>
-                        </div>
-                    </c:if>
-                    <c:if test="${not empty linkedProjectRelation}">
-                        <div class="form-group form-check">
-                            <label for="projectRelation"
-                                class="font-weight-bold h3">Uncheck Linked Project
-                                Relationships to be excluded:</label>
-                            <c:forEach var="projectRelation" items="${linkedProjectRelation}">
-                                <div class="checkbox form-check">
-                                    <label> <input name="projectRelationSelection" type="checkbox"
-                                        <c:if test = "${usedLinkedProjectRelation == null}">checked="checked"</c:if>
-                                        <c:if test = "${usedLinkedProjectRelation != null and (fn:contains(usedLinkedProjectRelation, projectRelation))}">checked="checked"</c:if>
-                                        value="${projectRelation}">
-                                        <sw360:DisplayEnum value='${projectRelation}' bare="true" /> </input>
-                                    </label>
-                                </div>
-                            </c:forEach>
-                        </div>
-                    </c:if>
-                    <c:if test="${not onlyClearingReport}">
-					    <c:if test="${not empty externalIds}">
-					        <div class="form-group form-check">
-						        <label for="externalIdLabel" class="font-weight-bold h3"><liferay-ui:message key="select.the.external.ids" />:</label>
-							        <c:forEach var="extId" items="${externalIds}">
-									    <div class="checkbox form-check">
-										    <label><input id="<%=PortalConstants.EXTERNAL_ID_SELECTED_KEYS%>" name="externalIdsSelection" type="checkbox" value="${extId}">
-									        <c:out value="${extId}" /></input></label>
-									   </div>
-							        </c:forEach>
-					       </div>
-					    </c:if>
-					    <div class="form-group form-check">
-						    <label for="outputFormatLabel" class="licenseInfoOpFormat font-weight-bold h3"><liferay-ui:message key="select.output.format" />:</label>
-						    <sw360:DisplayOutputFormats options='${licenseInfoOutputFormats}' variantToSkip="<%=OutputFormatVariant.REPORT%>"/>
-					    </div>
-                    </c:if>
-	  </div>
-      <div class="modal-footer">
-        <button id="downloadFileModal" type="button" value="Download" class="btn btn-primary"><liferay-ui:message key="download" /></button>
-        <button type="button" class="btn btn-secondary" data-dismiss="modal"><liferay-ui:message key="close" /></button>
-      </div>
-    </div>
-  </div>
-</div>
+	<div id="downloadLicenseInfoDialog" class="modal fade" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-lg modal-dialog-centered modal-info" role="document">
+			<!-- <div class="modal-dialog" role="document"> -->
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">
+						<liferay-ui:message key="select.other.options" />
+					</h5>
+					<button id="closeModalButton" type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body" style="position: relative; overflow-y: auto; max-height: 400px;">
+					<c:if test="${not empty relations}">
+						<div class="form-group form-check">
+							<label for="projectRelation" class="font-weight-bold h3">Uncheck project release relationships to be excluded:</label>
+							<c:forEach var="projectReleaseRelation" items="${relations}">
+								<div class="checkbox form-check">
+									<label> <input name="releaseRelationSelection" type="checkbox"
+										<c:if test = "${empty usedProjectReleaseRelations}">checked="checked"</c:if>
+										<c:if test = "${not empty usedProjectReleaseRelations and (fn:contains(usedProjectReleaseRelations, projectReleaseRelation))}">checked="checked"</c:if>
+										value="${projectReleaseRelation}"> <sw360:DisplayEnum value='${projectReleaseRelation}' bare="true" /> </input>
+									</label>
+								</div>
+							</c:forEach>
+						</div>
+					</c:if>
+					<c:if test="${not empty linkedProjectRelation}">
+						<div class="form-group form-check">
+							<label for="projectRelation" class="font-weight-bold h3">Uncheck Linked Project Relationships to be excluded:</label>
+							<c:forEach var="projectRelation" items="${linkedProjectRelation}">
+								<div class="checkbox form-check">
+									<label> <input name="projectRelationSelection" type="checkbox"
+										<c:if test = "${usedLinkedProjectRelation == null}">checked="checked"</c:if>
+										<c:if test = "${usedLinkedProjectRelation != null and (fn:contains(usedLinkedProjectRelation, projectRelation))}">checked="checked"</c:if>
+										value="${projectRelation}"> <sw360:DisplayEnum value='${projectRelation}' bare="true" /> </input>
+									</label>
+								</div>
+							</c:forEach>
+						</div>
+					</c:if>
+					<c:if test="${not onlyClearingReport}">
+						<c:if test="${not empty externalIds}">
+							<div class="form-group form-check">
+								<label for="externalIdLabel" class="font-weight-bold h3"><liferay-ui:message key="select.the.external.ids" />:</label>
+								<c:forEach var="extId" items="${externalIds}">
+									<div class="checkbox form-check">
+										<label><input id="<%=PortalConstants.EXTERNAL_ID_SELECTED_KEYS%>" name="externalIdsSelection" type="checkbox" value="${extId}">
+											<c:out value="${extId}" /></input></label>
+									</div>
+								</c:forEach>
+							</div>
+						</c:if>
+						<div class="form-group form-check">
+							<label for="outputFormatLabel"
+								class="licenseInfoOpFormat font-weight-bold h3"><liferay-ui:message key="select.output.format" />:</label>
+							<sw360:DisplayOutputFormats options='${licenseInfoOutputFormats}' variantToSkip="<%=OutputFormatVariant.REPORT%>" />
+						</div>
+					</c:if>
+					<c:if test="${onlyClearingReport eq 'true' and not empty clearingReportTemplate[0]}">
+						<label for="OrganisationSelection" class="font-weight-bold h3"><liferay-ui:message key="templates" />:</label>
+						<c:forEach var="clRepTemp" items="${clearingReportTemplate}">
+							<c:set var="org" value="${fn:split(clRepTemp, ':')}" />
+							<div class="radio form-check">
+								<label><input type="radio" name="org" value="${org[0]}" checked>${org[0]}</label>
+							</div>
+						</c:forEach>
+					</c:if>
+					<c:if test="${onlyClearingReport eq 'true' and not empty  tmpFormat[0]}">
+						<div class="form-group form-check">
+							<label for="outputFormatLabel" class="licenseInfoOpFormat font-weight-bold h3"><liferay-ui:message key="select.output.format" />:</label>
+							<sw360:DisplayOutputFormats options='${licenseInfoOutputFormats}' variantToSkip="<%=OutputFormatVariant.DISCLOSURE%>"
+								formatsToShow='<%=Arrays.asList(PortalConstants.CLEARING_REPORT_TEMPLATE_FORMAT.split(","))%>' />
+						</div>
+					</c:if>
+				</div>
+				<div class="modal-footer">
+					<button id="downloadFileModal" type="button" value="Download" class="btn btn-primary">
+						<liferay-ui:message key="download" />
+					</button>
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">
+						<liferay-ui:message key="close" />
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
 </div>
 
 <script>
@@ -259,6 +282,7 @@ require(['jquery', 'modules/dialog'], function($, dialog) {
     }
 
     function downloadClearingReportOnly(isEmptyFile) {
+        let licenseInfoSelectedOutputFormat = $('input[name="outputFormat"]:checked').val();
         if(isEmptyFile === "undefined" || !isEmptyFile) {
             let releaseRelations = [];
             let selectedProjectRelations = [];
@@ -271,10 +295,19 @@ require(['jquery', 'modules/dialog'], function($, dialog) {
                 selectedProjectRelations.push($(this).val());
             });
             var selectedProjectRelationsHidden = selectedProjectRelations.join();
-            $('#downloadLicenseInfoForm').append('<input id="licensInfoFileFormat" type="hidden" value="DocxGenerator::REPORT" name="<portlet:namespace/><%=PortalConstants.LICENSE_INFO_SELECTED_OUTPUT_FORMAT%>" />');
+            $('#downloadLicenseInfoForm').append('<input id="licensInfoFileFormat" type="hidden" name="<portlet:namespace/><%=PortalConstants.LICENSE_INFO_SELECTED_OUTPUT_FORMAT%>" />');
             $('#downloadLicenseInfoForm').append('<input id="isSubProjPresent" type="hidden" name="<portlet:namespace/><%=PortalConstants.IS_LINKED_PROJECT_PRESENT%>"/>');
             $('#downloadLicenseInfoForm').append('<input id="releaseRelationship" type="hidden" name="<portlet:namespace/><%=PortalConstants.SELECTED_PROJECT_RELEASE_RELATIONS%>"/>');
             $('#downloadLicenseInfoForm').append('<input id="selectedProjectRelations" type="hidden" name="<portlet:namespace/><%=PortalConstants.SELECTED_PROJECT_RELATIONS%>"/>');
+            $('#downloadLicenseInfoForm').append('<input id="template" type="hidden" name="<portlet:namespace/>tmplate"/>');
+            selectedtemplate = $("input[name='org']:checked").val();
+            $("#template").val(selectedtemplate);
+
+            if(licenseInfoSelectedOutputFormat){
+                $("#licensInfoFileFormat").val(licenseInfoSelectedOutputFormat);
+            } else {
+                $("#licensInfoFileFormat").val("DocxGenerator::REPORT");
+            }
             $("#isSubProjPresent").val(${not empty linkedProjectRelation});
             $("#releaseRelationship").val(releaseRelationsHidden);
             $("#selectedProjectRelations").val(selectedProjectRelationsHidden);
@@ -284,8 +317,9 @@ require(['jquery', 'modules/dialog'], function($, dialog) {
             let actionUrlaft = $('#downloadLicenseInfoForm').attr('action');
             $('#downloadLicenseInfoForm').submit();
         } else {
-            $('#downloadLicenseInfoForm').append('<input id="licensInfoFileFormat" type="hidden" value="DocxGenerator::REPORT" name="<portlet:namespace/><%=PortalConstants.LICENSE_INFO_SELECTED_OUTPUT_FORMAT%>" />');
+            $('#downloadLicenseInfoForm').append('<input id="licensInfoFileFormat" type="hidden" name="<portlet:namespace/><%=PortalConstants.LICENSE_INFO_SELECTED_OUTPUT_FORMAT%>" />');
             $('#downloadLicenseInfoForm').append('<input id="isEmptyFile" type="hidden" value="Yes" name="<portlet:namespace/><%=PortalConstants.LICENSE_INFO_EMPTY_FILE%>" />');
+            $("#licensInfoFileFormat").val(licenseInfoSelectedOutputFormat);
             let actionUrl = $('#downloadLicenseInfoForm').attr('action');
             cleanedActionUrl = removeUnusedParam(actionUrl);
             $('#downloadLicenseInfoForm').attr('action', cleanedActionUrl);
