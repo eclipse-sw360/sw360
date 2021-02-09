@@ -33,6 +33,7 @@ import org.eclipse.sw360.datahandler.thrift.cvesearch.UpdateType;
 import org.eclipse.sw360.datahandler.thrift.cvesearch.VulnerabilityUpdateStatus;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
+import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
@@ -434,9 +435,9 @@ public class PortletUtils {
     }
 
     public static void handlePaginationSortOrder(ResourceRequest request, PaginationParameters paginationParameters,
-            final ImmutableList<Project._Fields> projectFilteredFields, final int projectNoSort) {
+            final ImmutableList<? extends TFieldIdEnum> projectFilteredFields, final int projectNoSort) {
         if (!paginationParameters.getSortingColumn().isPresent()) {
-            for (Project._Fields filteredField : projectFilteredFields) {
+            for (TFieldIdEnum filteredField : projectFilteredFields) {
                 if (!isNullOrEmpty(request.getParameter(filteredField.toString()))) {
                     paginationParameters.setSortingColumn(Optional.of(projectNoSort));
                     break;
@@ -452,6 +453,37 @@ public class PortletUtils {
 
     public static Comparator<Project> compareByDescription(boolean isAscending) {
         Comparator<Project> comparator = Comparator.comparing(p -> nullToEmptyString(p.getDescription()));
+        return isAscending ? comparator : comparator.reversed();
+    }
+
+    public static Comparator<ModerationRequest> compareByTimeStamp(boolean isAscending) {
+        Comparator<ModerationRequest> comparator = Comparator.comparing(m -> m.getTimestamp());
+        return isAscending ? comparator : comparator.reversed();
+    }
+
+    public static Comparator<ModerationRequest> compareByComponentType(boolean isAscending) {
+        Comparator<ModerationRequest> comparator = Comparator.comparing(m -> nullToEmptyString(m.getComponentType()));
+        return isAscending ? comparator : comparator.reversed();
+    }
+
+    public static Comparator<ModerationRequest> compareByDocumentName(boolean isAscending) {
+        Comparator<ModerationRequest> comparator = Comparator.comparing(m -> nullToEmptyString(m.getDocumentName()));
+        return isAscending ? comparator : comparator.reversed();
+    }
+
+    public static Comparator<ModerationRequest> compareByRequestingUser(boolean isAscending) {
+        Comparator<ModerationRequest> comparator = Comparator.comparing(m -> nullToEmptyString(m.getRequestingUser()));
+        return isAscending ? comparator : comparator.reversed();
+    }
+
+    public static Comparator<ModerationRequest> compareByRequestingUserDepartment(boolean isAscending) {
+        Comparator<ModerationRequest> comparator = Comparator
+                .comparing(m -> nullToEmptyString(m.getRequestingUserDepartment()));
+        return isAscending ? comparator : comparator.reversed();
+    }
+
+    public static Comparator<ModerationRequest> compareByModerationState(boolean isAscending) {
+        Comparator<ModerationRequest> comparator = Comparator.comparing(m -> nullToEmptyString(m.getModerationState()));
         return isAscending ? comparator : comparator.reversed();
     }
 

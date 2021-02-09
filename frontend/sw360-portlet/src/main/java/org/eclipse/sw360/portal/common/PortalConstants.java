@@ -120,6 +120,8 @@ public class PortalConstants {
     public static final String CLOSED_MODERATION_REQUESTS = "closedModerationRequests";
     public static final String DELETE_MODERATION_REQUEST = "deleteModerationRequest";
     public static final String MODERATION_ACTIONS_ALLOWED = "moderationAllowed";
+    public static final String LOAD_OPEN_MODERATION_REQUEST = "loadOpenModerationRequest";
+    public static final String LOAD_CLOSED_MODERATION_REQUEST = "loadClosedModerationRequest";
 
     //! Specialized keys for clearing
     public static final String CLEARING_REQUEST = "clearingRequest";
@@ -136,7 +138,6 @@ public class PortalConstants {
     public static final String RE_OPEN_REQUEST = "reOpenRequest";
     public static final String LOAD_PROJECT_INFO = "loadProjectInfo";
     public static final String APPROVED_RELEASE_COUNT = "approvedReleaseCount";
-
 
     //! Specialized keys for components
     public static final String COMPONENT_PORTLET_NAME = PORTLET_NAME_PREFIX + "components";

@@ -41,11 +41,12 @@
     <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>"/>
     <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>"/>
 </liferay-portlet:renderURL>
-
-<jsp:useBean id="moderationRequests" type="java.util.List<org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest>"
-             scope="request"/>
-<jsp:useBean id="closedModerationRequests" type="java.util.List<org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest>"
-             scope="request"/>
+<portlet:resourceURL var="openModeraionRequestlisturl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.LOAD_OPEN_MODERATION_REQUEST%>"/>
+</portlet:resourceURL>
+<portlet:resourceURL var="closedModeraionRequestlisturl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.LOAD_CLOSED_MODERATION_REQUEST%>"/>
+</portlet:resourceURL>
 <jsp:useBean id="isUserAtLeastClearingAdmin" class="java.lang.String" scope="request" />
 <jsp:useBean id="clearingRequests" type="java.util.List<org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest>"
              scope="request"/>
@@ -141,8 +142,8 @@
 				<div class="col-auto">
 
 				</div>
-                <div class="col portlet-title text-truncate" title="<liferay-ui:message key="moderations" /> (${moderationRequests.size()}/${closedModerationRequests.size()})">
-					<liferay-ui:message key="moderations" /> (${moderationRequests.size()}/<span id="requestCounter">${closedModerationRequests.size()}</span>)
+                 <div class="col portlet-title text-truncate" title="<liferay-ui:message key="moderations" /> (0/0)">
+					<liferay-ui:message key="moderations" /> (0/<span id="requestCounter">0</span>)
 				</div>
             </div>
 
@@ -164,7 +165,18 @@
                             </table>
                         </div>
                         <div id="tab-ClosedMR" class="tab-pane">
-                            <table id="closedModerationsTable" class="table table-bordered"></table>
+                            <table id="closedModerationsTable" class="table table-bordered aligned-top">
+                            <colgroup>
+                                <col />
+                                <col />
+                                <col style="width: 25%;" />
+                                <col style="width: 20%;" />
+                                <col style="width: 20%;" />
+                                <col style="width: 35%;" />
+                                <col />
+                                <col style="width: 1.7rem;" />
+                            </colgroup>
+                            </table>
                         </div>
                         <div id="tab-OpenCR" class="tab-pane <core_rt:if test="${selectedTab == 'tab-OpenCR'}">active show</core_rt:if>">
                             <table id="clearingRequestsTable" class="table table-bordered">
@@ -190,23 +202,24 @@
 <script>
 AUI().use('liferay-portlet-url', function () {
     const buColIndex = 1, projectColIndex = 2, componentColIndex = 3, progressColIndex = 6, maxTextLength = 22;
-    require(['jquery', 'bridges/datatables', 'modules/dialog', 'modules/validation', 'modules/listgroup', 'utils/includes/quickfilter', 'utils/render', 'bridges/jquery-ui'], function($, datatables, dialog, validation, listgroup, quickfilter, render) {
+    require(['jquery', 'bridges/datatables', 'modules/dialog', 'modules/validation', 'modules/listgroup', 'utils/includes/quickfilter', 'utils/render', 'bridges/jquery-ui', 'utils/link'], function($, datatables, dialog, validation, listgroup, quickfilter, render, jqui, linkToutil) {
         var moderationsDataTable,
             closedModerationsDataTable,
             clearingRequestsDataTable,
-            closedClearingRequestsDataTable;
+            closedClearingRequestsDataTable,
+            moderationRequestsSize = 0,
+            closedModerationRequestsSize = 0;
 
         listgroup.initialize('requestTabs', $('#requestTabs').data('initial-tab') || 'tab-OpenMR');
 
-        moderationsDataTable = createModerationsTable("#moderationsTable", prepareModerationsData());
-        closedModerationsDataTable = createModerationsTable("#closedModerationsTable", prepareClosedModerationsData());
+        moderationsDataTable = createModerationsTable("#moderationsTable", '<%=openModeraionRequestlisturl%>');
+        closedModerationsDataTable = createModerationsTable("#closedModerationsTable", '<%=closedModeraionRequestlisturl%>');
         clearingRequestsDataTable = createClearingRequestsTable("#clearingRequestsTable", prepareClearingRequestsData());
         closedClearingRequestsDataTable = createClearingRequestsTable("#closedClearingRequestsTable", prepareClosedClearingRequestsData());
 
         quickfilter.addTable(moderationsDataTable);
         quickfilter.addTable(closedModerationsDataTable);
 
-        $('.TogglerModeratorsList').on('click', toggleModeratorsList );
         $('#closedModerationsTable').on('click', 'svg.delete', function(event) {
             var data = $(event.currentTarget).data();
             deleteModerationRequest(data.moderationRequest, data.documentName);
@@ -316,10 +329,14 @@ AUI().use('liferay-portlet-url', function () {
         });
 
         $(document).ready(function() {
+            docReady();
+        });
+
+        function docReady() {
             let tab = $('#requestTabs').find('a.active').attr('href');
             $('#date_range').hide();
             changePortletToolBar(tab);
-        });
+        }
 
         function changePortletToolBar(tab) {
             if (tab === '#tab-OpenCR' || tab === '#tab-ClosedCR') {
@@ -352,8 +369,8 @@ AUI().use('liferay-portlet-url', function () {
                     });
                 }
             } else {
-                $('.portlet-title').attr('title', '<liferay-ui:message key="moderations" /> (${moderationRequests.size()}/${closedModerationRequests.size()})');
-                $('.portlet-title').html('<liferay-ui:message key="moderations" /> (${moderationRequests.size()}/<span id="requestCounter">${closedModerationRequests.size()}</span>)');
+                $('.portlet-title').attr('title', '<liferay-ui:message key="moderations" /> (' + moderationRequestsSize + '/' + closedModerationRequestsSize +')');
+                $('.portlet-title').html('<liferay-ui:message key="moderations" /> (' + moderationRequestsSize + '/<span id="requestCounter">' + closedModerationRequestsSize +'</span>)');
                 $('#date-quickfilter').hide();
             }
         }
@@ -363,71 +380,54 @@ AUI().use('liferay-portlet-url', function () {
             filterChanged();
         })
 
-        function prepareModerationsData() {
-            var result = [];
-            <core_rt:forEach items="${moderationRequests}" var="moderation">
-                result.push({
-                    "DT_RowId": "${moderation.id}",
-                    "0": '<sw360:out value="${moderation.timestamp}"/>',
-                    "1": "<sw360:DisplayEnum value="${moderation.componentType}"/>",
-                    "2": "<sw360:DisplayModerationRequestLink moderationRequest="${moderation}"/>",
-                    "3": '<sw360:DisplayUserEmail email="${moderation.requestingUser}" bare="true"/>',
-                    "4": '<sw360:out value="${moderation.requestingUserDepartment}"/>',
-                    "5": '<sw360:DisplayUserEmailCollection value="${moderation.moderators}" bare="true"/>',
-                    "6": "<sw360:DisplayEnum value="${moderation.moderationState}"/>",
-                    "7": ''
-                });
-            </core_rt:forEach>
-            return result;
-        }
-
-        function prepareClosedModerationsData() {
-            var result = [];
-            <core_rt:forEach items="${closedModerationRequests}" var="moderation">
-                result.push({
-                    "DT_RowId": "${moderation.id}",
-                    "0": '<sw360:out value="${moderation.timestamp}"/>',
-                    "1": "<sw360:DisplayEnum value="${moderation.componentType}"/>",
-                    "2": "<sw360:DisplayModerationRequestLink moderationRequest="${moderation}"/>",
-                    "3": '<sw360:DisplayUserEmail email="${moderation.requestingUser}" bare="true"/>',
-                    "4": '<sw360:out value="${moderation.requestingUserDepartment}"/>',
-                    "5": '<sw360:DisplayUserEmailCollection value="${moderation.moderators}" bare="true"/>',
-                    "6": "<sw360:DisplayEnum value="${moderation.moderationState}"/>",
-                    <core_rt:if test="${isUserAtLeastClearingAdmin == 'Yes'}">
-                        "7": '<div class="actions"><svg class="delete lexicon-icon" data-moderation-request="<sw360:out value="${moderation.id}"/>" data-document-name="<sw360:out value="${moderation.documentName}"/>"><title><liferay-ui:message key="delete" /></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/></svg></div>'
-                    </core_rt:if>
-                    <core_rt:if test="${isUserAtLeastClearingAdmin != 'Yes'}">
-                        "7": '<span class="badge badge-success">READY</span>'
-                    </core_rt:if>
-
-                    });
-            </core_rt:forEach>
-            return result;
-        }
-
-        function createModerationsTable(tableId, tableData) {
+        function createModerationsTable(tableId, url) {
             return datatables.create(tableId, {
                 searching: true,
-                data: tableData,
+                bServerSide: true,
+                sAjaxSource: url,
                 columns: [
-                    {title: "<liferay-ui:message key="date" />", render: {display: render.renderTimestamp}, className: 'text-nowrap' },
-                    {title: "<liferay-ui:message key="type" />", className: 'text-nowrap'},
-                    {title: "<liferay-ui:message key="document.name" />"},
-                    {title: "<liferay-ui:message key="requesting.user" />"},
-                    {title: "<liferay-ui:message key="department" />"},
-                    {title: "<liferay-ui:message key="moderators" />", render: {display: renderModeratorsListExpandable}},
-                    {title: "<liferay-ui:message key="state" />", className: 'text-nowrap'},
-                    {title: "<liferay-ui:message key="actions" />", className: 'one action'}
+                    {title: "<liferay-ui:message key="date" />", data: "renderTimestamp", render: {display: render.renderTimestamp}, className: 'text-nowrap' },
+                    {title: "<liferay-ui:message key="type" />", data: "componentType", className: 'text-nowrap'},
+                    {title: "<liferay-ui:message key="document.name" />", render: {display: detailUrl}, data: "documentName"},
+                    {title: "<liferay-ui:message key="requesting.user" />", data: "requestingUser"},
+                    {title: "<liferay-ui:message key="department" />", data: "requestingUserDepartment"},
+                    {title: "<liferay-ui:message key="moderators" />","orderable": false , width: "10%", data: "moderators", render: {display: renderModeratorsListExpandable}},
+                    {title: "<liferay-ui:message key="state" />", data: "moderationState", className: 'text-nowrap'},
+                    {title: "<liferay-ui:message key="actions" />", data:"isClearingAdmin", "defaultContent": "", render: {display: closedModAction}, className: 'one action'}
                 ],
                 language: {
                     url: "<liferay-ui:message key="datatables.lang" />",
-                    //emptyTable: "<liferay-ui:message key="no.moderation.requests.found" />",
                     loadingRecords: "<liferay-ui:message key="loading" />"
                 },
-                initComplete: datatables.showPageContainer
+                fnDrawCallback: function(settings){
+                    closedModerationRequestsSize = settings.json.closedModerationRequests;
+                    moderationRequestsSize = settings.json.moderationRequests;
+                    datatables.showPageContainer;
+                    $(tableId + ' .TogglerModeratorsList').on('click', toggleModeratorsList );
+                    docReady();
+                },
+                "order": [[ 0, "desc" ]],
             }, [0,1,2,3,4,5,6], [7]);
         }
 
+        function closedModAction(isClearingAdmin, type, row) {
+            let deleteIcon = '<div class="actions"><svg class="delete lexicon-icon" data-moderation-request="' + row.id + '" data-document-name="' + row.documentName +'"><title><liferay-ui:message key="delete" /></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/></svg></div>';
+            let successIcon = '<span class="badge badge-success">READY</span>';
+            
+            if(isClearingAdmin) {
+                return deleteIcon;
+            }
+            else if(isClearingAdmin == false) {
+                return successIcon;
+            }
+            return "";
+        }
+
+        function detailUrl(name, type, row) {
+            let url = linkToutil.to('moderationRequest', 'edit', row.id);
+            let viewUrl = $("<a></a>").attr("href",url).css("word-break","break-word").text(name);
+            return viewUrl[0].outerHTML;
+        }
 
         function prepareClearingRequestsData() {
             var result = [];
