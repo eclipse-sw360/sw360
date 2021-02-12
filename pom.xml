@@ -698,7 +698,7 @@
             <id>ci</id>
             <properties>
                 <!-- second of two places for version setting: minor version -->
-                <patchlevel>0.${count}</patchlevel>
+                <patchlevel>1.${count}</patchlevel>
             </properties>
         </profile>
         <profile>
