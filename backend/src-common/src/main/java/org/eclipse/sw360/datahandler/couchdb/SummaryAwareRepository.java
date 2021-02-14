@@ -42,6 +42,16 @@ public class SummaryAwareRepository<T> extends DatabaseRepository<T> {
         return makeSummaryFromFullDocs(type, documents);
     }
 
+    public List<T> makeSummary(SummaryType type, Collection<String> ids, boolean ignoreNotFound) {
+        if (ids == null) {
+            return Collections.emptyList();
+        }
+
+        List<T> documents = get(ids, ignoreNotFound);
+
+        return makeSummaryFromFullDocs(type, documents);
+    }
+
     public List<T> makeSummaryFromFullDocs(SummaryType type, Collection<T> docs) {
         return summary.makeSummary(type, docs);
     }

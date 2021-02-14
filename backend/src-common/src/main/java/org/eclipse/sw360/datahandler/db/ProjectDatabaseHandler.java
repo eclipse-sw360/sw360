@@ -881,9 +881,9 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return project;
     }
 
-    public List<Project> getProjectsById(List<String> id, User user) {
+    public List<Project> getProjectsById(List<String> ids, User user) {
 
-        List<Project> projects = repository.makeSummaryFromFullDocs(SummaryType.SUMMARY, repository.get(id));
+        List<Project> projects = repository.makeSummaryFromFullDocs(SummaryType.SUMMARY, repository.get(ids, true));
 
         List<Project> output = new ArrayList<>();
         for (Project project : projects) {
