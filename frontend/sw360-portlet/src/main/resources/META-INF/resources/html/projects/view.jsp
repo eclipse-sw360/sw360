@@ -314,7 +314,7 @@
                         {title: "<liferay-ui:message key="description" />", data: "desc", render: {display: renderDescription}},
                         {title: "<liferay-ui:message key="project.responsible" />", data: "resp", render: {display: renderProjectResponsible}},
                         {title: "<liferay-ui:message key="state" />", data: "state", render: {display: renderStateBoxes} },
-                        {title: "<span title=\"<liferay-ui:message key="release.clearing.state" />\"><liferay-ui:message key="clearing.status" /></span>", data: "clearing" },
+                        {title: "<span title=\"<liferay-ui:message key="release.clearing.state" />\"><liferay-ui:message key="license.clearing" /></span>", data: "clearing" },
                         {title: "<liferay-ui:message key="actions" />", data: "id", render: {display: renderProjectActions}, className: "four actions" }
                     ],
                     drawCallback: function (oSettings) {
