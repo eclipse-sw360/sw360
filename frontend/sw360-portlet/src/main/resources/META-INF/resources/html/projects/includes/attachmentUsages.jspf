@@ -34,12 +34,28 @@
         >
         <thead>
         <tr>
-            <th colspan="8" class="headlabel"><liferay-ui:message key="linked.releases.and.projects" />
-            <core_rt:if test="${projectList.size() > 1 or (projectList.size() == 1 and not empty projectList.get(0).linkedReleases)}">
-                (<a href="#" id="expandAll" class="text-primary"><liferay-ui:message key="expand.all" /> </a>|
-                <a href="#" id="collapseAll" class="text-primary"> <liferay-ui:message key="collapse.all" /></a>)
-                <input id="nameSearch" type="input" placeholder="<liferay-ui:message key="search" />" class="float-right">
-            </core_rt:if>
+            <th colspan="8" class="headlabel">
+                <div class="row m-0">
+                <core_rt:if test="${projectList.size() > 1 or (projectList.size() == 1 and not empty projectList.get(0).linkedReleases)}">
+                    <div class="pr-2">
+                        <liferay-ui:message key="linked.releases.and.projects" />
+                    </div>
+                    <div>
+                        (<a href="#" id="expandAll" class="text-primary"><liferay-ui:message key="expand.all" /> </a>|
+                        <a href="#" id="collapseAll" class="text-primary"> <liferay-ui:message key="collapse.all" /></a>)
+                    </div>
+                    <div class="col form-group m-0">
+                        <select class="form-control form-control-sm mx-2 w-50" id="releaseFilter">
+                            <option value="" class="textlabel stackedLabel">-- <liferay-ui:message key="release.filter" /> -- </option>
+                            <option value="1" class="textlabel stackedLabel"><liferay-ui:message key="with.attachments" /></option>
+                            <option value="0" class="textlabel stackedLabel"><liferay-ui:message key="without.attachments" /></option>
+                        </select>
+                    </div>
+                    <div class="col form-group m-0">
+                        <input id="nameSearch" type="input" placeholder="<liferay-ui:message key="search" />" class="form-control form-control-sm w-50 float-right">
+                    </div>
+                </core_rt:if>
+                </div>
             </th>
         </tr>
         <tr>
@@ -131,6 +147,36 @@
             e.preventDefault();
             $('#AttachmentUsagesInfo').treetable(e.target.id);
             return false;
+        });
+
+        $('#releaseFilter').on('change', function(e) {
+            let $filter = $('#releaseFilter'),
+            filterVal = $('#releaseFilter').find(":selected").val(),
+            isFilterWithAttach = filterVal == '1',
+            isFilterWithoutAttach = filterVal == '0',
+            isClearFilter = filterVal == '';
+
+            $("#AttachmentUsagesInfo tbody").find('tr').each(function(index) {
+                let data = $(this).data();
+                if (isFilterWithoutAttach) {
+                    if (!data.ttParentId && $(this).hasClass('leaf')) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                } else if (isFilterWithAttach) {
+                    if (!data.ttParentId && $(this).hasClass('branch') && !data.ttParentprojectpath) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                } else if (isClearFilter && !data.ttParentId) {
+                    $(this).show();
+                }
+            });
+            if (isClearFilter || isFilterWithAttach) {
+                $('#AttachmentUsagesInfo').treetable('collapseAll');
+            }
         });
 
         function attachCheckboxEventHandlers(){
