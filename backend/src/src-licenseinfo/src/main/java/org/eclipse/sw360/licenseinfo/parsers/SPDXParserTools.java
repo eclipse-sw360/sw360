@@ -197,12 +197,7 @@ public class SPDXParserTools {
         }
 
         // Convert List to Array
-        int noChilds = childList.size();
-        Node[] childArray = new Node[noChilds];
-        for (int i = 0; i < noChilds; i++) {
-            childArray[i] = childList.get(i);
-        }
-        return childArray;
+        return (Node[]) childList.toArray(new Node[0]);
     }
 
     /*
