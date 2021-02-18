@@ -125,9 +125,8 @@
                         template.find("h3").html('<liferay-ui:message key="field.name"/> - <i>'+changes[i].fieldName+"</i>").parent().attr("id","heading-"+cardId)
                         .attr("aria-controls","collapse-"+cardId).attr("data-target","#collapse-"+cardId);
                         changesTable=$("#templateTable").clone(true,true).removeClass("d-none").removeAttr("id");
-                        changesTable.find("td:eq(0)").html(getFieldValueInPrettyFormat(changes[i].fieldValueOld,"text-danger"));
-                        changesTable.find("td:eq(1)").html(getFieldValueInPrettyFormat(changes[i].fieldValueNew,"text-success"));
-
+                        changeLogObjDifferentiator(changes[i].fieldValueOld, changesTable.find("td:eq(0)"), "text-danger",
+                                                   changes[i].fieldValueNew, changesTable.find("td:eq(1)"), "text-success", 1);
                         template.find("#tableContainer").append(changesTable).removeAttr("id").parent().attr("id","collapse-"+cardId)
                         .attr("aria-labelledby","heading-"+cardId).attr("data-parent","#template-"+cardId);;
                         cardsScreen.append(template);
@@ -218,24 +217,226 @@
                 return jsonStr;
             }
 
-            function getFieldValueInPrettyFormat(fieldValue,textclass)
+            function getFieldValueInPrettyFormat(fieldValue, textclass)
             {
-                let fieldJsonObj = null;
-                if(fieldValue !== null && fieldValue !== undefined )
-                {
-                    if(typeof fieldValue === 'object')
-                    {
-                        fieldJsonObj = fieldValue;
-                    }
-                    else
-                    {
-                        fieldJsonObj = JSON.parse(fieldValue);
-                    }
-                }
+                let fieldJsonObj = convertToJsonObject(fieldValue);
+
                 let jsonStr = JSON.stringify(fieldJsonObj, undefined, 5);
                 jsonStr = $($.parseHTML('<pre class="' + textclass + '" style="white-space: pre-wrap;word-break: break-all;"></pre>')).text(jsonStr)[0].outerHTML;
                 return jsonStr;
             }
+
+            function convertToJsonObject(fieldValue) {
+                if(fieldValue !== null && fieldValue !== undefined )
+                {
+                    if(typeof fieldValue === 'object')
+                    {
+                        return fieldValue;
+                    }
+                    else
+                    {
+                        return JSON.parse(fieldValue);
+                    }
+                }
+                return null;
+            }
+
+            function changeLogObjDifferentiator(fieldValueOld, oldChangesCard, oldChangesCardTextColor, fieldValueNew, newChangesCard, newChangesCardTextColor, indentlevel) {
+                let leftSpanHightlighter = "<span class='text-dark' style='background-color:#f9b2ba'></span>",
+                    rightSpanHighlighter = "<span class='text-dark' style='background-color:#a6f1b8'></span>"
+                fieldValueOld = convertToJsonObject(fieldValueOld);
+                fieldValueNew = convertToJsonObject(fieldValueNew);
+                let jsonStrOld = null,
+                    jsonStrNew = null;
+                if(fieldValueOld === null || fieldValueOld === undefined ||
+                        fieldValueNew === null || fieldValueNew === undefined )
+                {
+                    jsonStrOld = JSON.stringify(fieldValueOld, undefined, 5).replace(/\\n/g, '\n').replace(/\\r/g, '\r');
+                    jsonStrNew = JSON.stringify(fieldValueNew, undefined, 5).replace(/\\n/g, '\n').replace(/\\r/g, '\r');
+                }
+                else {
+                    if(Array.isArray(fieldValueOld) && Array.isArray(fieldValueNew)) {
+                        diffArray(fieldValueOld, fieldValueNew, leftSpanHightlighter, rightSpanHighlighter, 1);
+                        jsonStrOld = JSON.stringify(fieldValueOld, undefined, 5*indentlevel).replace(/\\"/g, '"').replace(/\\n/g, '\n').replace(/\\r/g, '\r');
+                        jsonStrNew = JSON.stringify(fieldValueNew, undefined, 5*indentlevel).replace(/\\"/g, '"').replace(/\\n/g, '\n').replace(/\\r/g, '\r');
+                    }
+                    else if(typeof fieldValueOld === 'object' && typeof fieldValueNew === 'object' ) {
+                        diffObject(fieldValueOld, fieldValueNew, leftSpanHightlighter, rightSpanHighlighter, indentlevel);
+                        jsonStrOld = JSON.stringify(fieldValueOld, undefined, 5*indentlevel).replace(/\\"/g, '"').replace(/\\n/g, '\n').replace(/\\r/g, '\r');
+                        jsonStrNew = JSON.stringify(fieldValueNew, undefined, 5*indentlevel).replace(/\\"/g, '"').replace(/\\n/g, '\n').replace(/\\r/g, '\r');
+                    } else if(typeof fieldValueOld === 'string' && typeof fieldValueNew === 'string') {
+                        let fieldValueOldUnchanged = fieldValueOld;
+                        fieldValueOld = diffString(fieldValueOld, fieldValueNew, leftSpanHightlighter);
+                        fieldValueNew = diffString(fieldValueNew, fieldValueOldUnchanged, rightSpanHighlighter);
+                        jsonStrOld = JSON.stringify(fieldValueOld, undefined, 5*indentlevel).replace(/\\"/g, '"').replace(/\\n/g, '\n').replace(/\\r/g, '\r');
+                        jsonStrNew = JSON.stringify(fieldValueNew, undefined, 5*indentlevel).replace(/\\"/g, '"').replace(/\\n/g, '\n').replace(/\\r/g, '\r');
+                    }
+                    else {
+                        jsonStrOld = escapeHTML(JSON.stringify(fieldValueOld, undefined, 5*indentlevel)).replace(/\\n/g, '\n').replace(/\\r/g, '\r');
+                        jsonStrNew = escapeHTML(JSON.stringify(fieldValueNew, undefined, 5*indentlevel)).replace(/\\n/g, '\n').replace(/\\r/g, '\r');
+                    }
+                }
+
+                jsonStrOld = $($.parseHTML('<pre class="' + oldChangesCardTextColor + '" style="white-space: pre-wrap;word-break: break-all;"></pre>')).html(jsonStrOld)[0].outerHTML;
+                oldChangesCard.html(jsonStrOld);
+
+                jsonStrNew = $($.parseHTML('<pre class="' + newChangesCardTextColor + '" style="white-space: pre-wrap;word-break: break-all;"></pre>')).html(jsonStrNew)[0].outerHTML;
+                newChangesCard.html(jsonStrNew);
+            }
+
+            function diffArray(fieldValueOld, fieldValueNew, leftSpanHightlighter, rightSpanHighlighter, indentlevel) {
+                let fieldValueOldTmp = new Array(),
+                    fieldValueNewTmp = new Array(),
+                    selector = "attachmentContentId",
+                    spaceForClosingBraces = "";
+
+                for(let i = 0 ;i < indentlevel; i++) {
+                    spaceForClosingBraces += "     ";
+                }
+
+                highlightArray(fieldValueOld, fieldValueOldTmp, fieldValueNew, fieldValueNewTmp, leftSpanHightlighter, rightSpanHighlighter,
+                        spaceForClosingBraces, selector, true, indentlevel);
+
+                highlightArray(fieldValueNew, fieldValueNewTmp, fieldValueOld, fieldValueOldTmp, rightSpanHighlighter, leftSpanHightlighter,
+                        spaceForClosingBraces, selector, false, indentlevel);
+
+                copyFromSourceToDestinationArray(fieldValueOldTmp, fieldValueOld);
+                copyFromSourceToDestinationArray(fieldValueNewTmp, fieldValueNew);
+            }
+
+            function highlightArray(primaryField, primaryFieldTmp, secondaryField, secondaryFieldTmp,
+                                    primarySpanHightlighter, secondarySpanHighlighter, spaceForClosingBraces,
+                                    selector, differentiateObject, indentlevel) {
+                for (let primaryValue of primaryField) {
+                    if(typeof primaryValue === 'object') {
+                        let matched = false;
+                        for(let secondaryValue of secondaryField) {
+                            if(secondaryValue[selector] === primaryValue[selector]) {
+                                matched = true;
+                                if(differentiateObject) {
+                                    diffObject(primaryValue, secondaryValue, primarySpanHightlighter, secondarySpanHighlighter, indentlevel);
+                                    primaryFieldTmp.push(primaryValue);
+                                    secondaryFieldTmp.push(secondaryValue);
+                                }
+                                break;
+                            }
+                        }
+                        if(!matched) {
+                            let jsonString = JSON.stringify(primaryValue, undefined, 5*indentlevel);
+                            jsonString = jsonString.substring(0, jsonString.length-1) + spaceForClosingBraces + jsonString.substring(jsonString.length-1);
+                            primaryFieldTmp.push($($.parseHTML(primarySpanHightlighter)).text(jsonString)[0].outerHTML);
+                        }
+                    } else {
+                        if(secondaryField.includes(primaryValue)) {
+                            primaryFieldTmp.push(primaryValue);
+                        } else {
+                            primaryFieldTmp.push($($.parseHTML(primarySpanHightlighter)).text(primaryValue)[0].outerHTML);
+                        }
+                    }
+                }
+            }
+
+            function copyFromSourceToDestinationArray(srcArr, destArr) {
+                destArr.length = 0;
+                for (obj of srcArr) {
+                    destArr.push(obj);
+                }
+            }
+
+            function diffObject(fieldValueOld, fieldValueNew, leftSpanHightlighter, rightSpanHighlighter, indentlevel) {
+                let spaceForClosingBraces = "";
+                for(let i = 0 ;i < indentlevel; i++) {
+                    spaceForClosingBraces += "     ";
+                }
+                highlightObject(fieldValueOld, fieldValueNew, leftSpanHightlighter, rightSpanHighlighter, true, spaceForClosingBraces, indentlevel);
+                highlightObject(fieldValueNew, fieldValueOld, rightSpanHighlighter, leftSpanHightlighter, false, spaceForClosingBraces, indentlevel);
+            }
+
+            function highlightObject(fieldValuePrimary, fieldValueSecondary, primarySpanHightlighter, secondarySpanHighlighter, differentiateCommonObject, spaceForClosingBraces, indentlevel) {
+                for(key in fieldValuePrimary) {
+                    if(fieldValueSecondary[key] === null || fieldValueSecondary[key] === undefined) {
+                        let highlighted = fieldValuePrimary[key];
+                        if(typeof fieldValuePrimary[key] === 'object') {
+                            highlighted = JSON.stringify(fieldValuePrimary[key], undefined, 5*(indentlevel+1));
+                            highlighted = highlighted.substring(0, highlighted.length-1) + spaceForClosingBraces + highlighted.substring(highlighted.length-1);
+                        }
+
+                        fieldValuePrimary[$($.parseHTML(primarySpanHightlighter)).text(key)[0].outerHTML] = 
+                            $($.parseHTML(primarySpanHightlighter)).text(highlighted)[0].outerHTML;
+                        delete fieldValuePrimary[key];
+                    } else if(differentiateCommonObject) {
+                        if(typeof fieldValuePrimary[key] === 'string' && typeof fieldValueSecondary[key] === 'string' ) {
+                            let fieldValuePrimaryKeyValueUnchanged = fieldValuePrimary[key];
+                            fieldValuePrimary[key] = diffString(fieldValuePrimary[key], fieldValueSecondary[key], primarySpanHightlighter);
+                            fieldValueSecondary[key] = diffString(fieldValueSecondary[key], fieldValuePrimaryKeyValueUnchanged, secondarySpanHighlighter);
+                        } else if(Array.isArray(fieldValuePrimary[key]) && Array.isArray(fieldValueSecondary[key])) {
+                            diffArray(fieldValuePrimary[key], fieldValueSecondary[key], primarySpanHightlighter, secondarySpanHighlighter, 1);
+                        }
+                        else {
+                            diffObject(fieldValuePrimary[key], fieldValueSecondary[key], primarySpanHightlighter, secondarySpanHighlighter, indentlevel+1)
+                        }
+                    }
+                }
+            }
+
+            function prepareDiffString(changesArrTmp, result, highLighter, val) {
+                if(changesArrTmp.length !== 0) {
+                    if(result.length != 0) {
+                        result += " ";
+                    }
+                    changesArrTmp.join(" ")
+                    result += $($.parseHTML(highLighter)).text(changesArrTmp.join(" "))[0].outerHTML;
+                }
+                if(result.length != 0) {
+                    result += " ";
+                }
+                result += escapeHTML(val);
+                changesArrTmp.length = 0;
+
+                return result;
+            }
+
+            function diffString(fieldValuePrimary, fieldValueSecondary, highLighter) {
+                if(fieldValuePrimary === fieldValueSecondary) {
+                    return escapeHTML(fieldValuePrimary);
+                }
+
+                let fieldValuePrimaryArr = fieldValuePrimary.split(" "),
+                    fieldValueSecondaryArr = fieldValueSecondary.split(" "),
+                    changesArrTmp = new Array(),
+                    i = 0,
+                    j = 0,
+                    result = "";
+
+                while(i < fieldValuePrimaryArr.length) {
+                    if(fieldValuePrimaryArr[i] === fieldValueSecondaryArr[j]) {
+                        result = prepareDiffString(changesArrTmp, result, highLighter, fieldValuePrimaryArr[i]);
+                        j++;
+                    } else {
+                        let index = fieldValueSecondaryArr.indexOf(fieldValuePrimaryArr[i]);
+                        if(index ===  -1) {
+                            changesArrTmp.push(fieldValuePrimaryArr[i]);
+                        } else {
+                            result = prepareDiffString(changesArrTmp, result, highLighter, fieldValuePrimaryArr[i]);
+                            j = index;
+                        }
+                    }
+                    i++;
+                }
+
+                if(changesArrTmp.length !== 0) {
+                    if(result.length != 0) {
+                        result += " ";
+                    }
+                    changesArrTmp.join(" ")
+                    result += $($.parseHTML(highLighter)).text(changesArrTmp.join(" "))[0].outerHTML;
+                }
+                return result;
+            }
+
+            function escapeHTML(obj) {
+                return $('<div/>').text(obj.toString()).html();
+            };
 
             changeLogTable = createChangeLogTable();
 
