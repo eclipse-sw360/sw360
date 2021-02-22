@@ -1,10 +1,13 @@
+[//]: # (Copyright Siemens AG, 2021. Part of the SW360 Portal Project)
+[//]: # (This program and the accompanying materials are made)
+[//]: # (available under the terms of the Eclipse Public License 2.0)
+[//]: # (which is available at https://www.eclipse.org/legal/epl-2.0/)
+[//]: # (SPDX-License-Identifier: EPL-2.0)
+
 ---
 name: Bug report
 about: Create a report to help us improve
-title: ''
 labels: bug
-assignees: ''
-
 ---
 
 <!-- Before filling this issue, please read the wiki (https://github.com/eclipse/sw360/wiki)
@@ -42,3 +45,5 @@ Logs generated under /var/log/tomcat/error.log
 #### Job logs
 
 Logs generated under Geeky Scan Details (Job history => click on agent's job id)
+
+
