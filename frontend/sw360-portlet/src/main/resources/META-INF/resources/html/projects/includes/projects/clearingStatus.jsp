@@ -45,6 +45,9 @@
 
 <div class="tab-content" id="pills-clearingStatusTab">
     <div class="tab-pane fade show active" id="pills-treeView" role="tabpanel" aria-labelledby="pills-tree-tab">
+    <div class="float-right mx-2">
+        <input type="search" id="search_table" class="form-control form-control-sm mb-1 float-right" placeholder="<liferay-ui:message key="search" />">
+    </div>
         <div id="clearingStatusTreeViewSpinner">
             <%@ include file="/html/utils/includes/pageSpinner.jspf" %>
         </div>
@@ -54,13 +57,44 @@
         >
             <thead>
                 <tr>
-                    <th style="width:40%"><liferay-ui:message key="name" /></th>
-                    <th style="width:7%"><liferay-ui:message key="type" /></th>
-                    <th style="width:7%"><liferay-ui:message key="relation" /></th>
-                    <th style="width:12%"><liferay-ui:message key="main.licenses" /></th>
-                    <th style="width:7%"><liferay-ui:message key="state" /></th>
-                    <th style="width:7%"><liferay-ui:message key="release.mainline.state" /></th>
-                    <th style="width:7%"><liferay-ui:message key="project.mainline.state" /></th>
+                    <th style="width:40%; cursor: pointer" class="sort"><liferay-ui:message key="name" /><clay:icon symbol="caret-double-l" /></th>
+                    <th style="width:7%; cursor: pointer" class="sort"><liferay-ui:message key="type" /><clay:icon symbol="caret-double-l" /></th>
+                    <th style="width:7%; cursor: pointer" class="sort"><liferay-ui:message key="relation" /><clay:icon symbol="caret-double-l" /></th>
+                    <th style="width:12%; cursor: pointer" class="sort"><liferay-ui:message key="main.licenses" /><clay:icon symbol="caret-double-l" /></th>
+                    <th style="width:7%" ><liferay-ui:message key="state" />
+                    <div class="dropdown d-inline text-capitalize" id="dropdown">
+                        <span title="<liferay-ui:message key="release.clearing.state" /> <liferay-ui:message key="filter " />" class="dropdown-toggle float-none" data-toggle="dropdown" id="configId">
+                            <clay:icon symbol="select-from-list" />
+                        </span>
+                        <ul class="dropdown-menu" id="dropdownmenu" name="<portlet:namespace/>roles"
+                            aria-labelledby="configId">
+                            <li class="dropdown-header"><liferay-ui:message key="release.clearing.state" /></li>
+                            <li><hr class="my-2" /></li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="new" data-releaseclearingstate="New"/>
+                                <label class="form-check-label" for="new"><liferay-ui:message key="new" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="reportApproved" data-releaseclearingstate="Report approved"/>
+                                <label class="form-check-label" for="reportApproved"><liferay-ui:message key="report.approved" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="reportAvailable" data-releaseclearingstate="Report available"/>
+                                <label class="form-check-label" for="reportAvailable"><liferay-ui:message key="report.available" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="sentToClearing" data-releaseclearingstate="Sent to clearing tool"/>
+                                <label class="form-check-label" for="sentToClearing"><liferay-ui:message key="sent.to.clearing.tool" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="underClearing" data-releaseclearingstate="Under clearing" />
+                                <label class="form-check-label" for="underClearing""><liferay-ui:message key="under.clearing" /></label>
+                            </li>
+                        </ul>
+                    </div>
+                    </th>
+                    <th style="width:7%; cursor: pointer" class="sort"><liferay-ui:message key="release.mainline.state" /><clay:icon symbol="caret-double-l" /></th>
+                    <th style="width:7%; cursor: pointer" class="sort"><liferay-ui:message key="project.mainline.state" /><clay:icon symbol="caret-double-l" /></th>
                     <th style="width:9%"><liferay-ui:message key="comment" /></th>
                     <th style="width:4%"><liferay-ui:message key="actions" /></th>
                </tr>
@@ -86,6 +120,7 @@ AUI().use('liferay-portlet-url', function () {
     var PortletURL = Liferay.PortletURL;
     require(['jquery', 'modules/ajax-treetable', 'utils/render', 'bridges/datatables'], function($, ajaxTreeTable, render, datatables) {
         var clearingStatuslisturl= '<%=clearingStatuslisturl%>';
+        var emptyMsg = '<liferay-ui:message key="no.linked.releases.or.projects" />';
         $.ajax({url: clearingStatuslisturl,
                 type: 'GET',
                 dataType: 'json'
@@ -94,6 +129,142 @@ AUI().use('liferay-portlet-url', function () {
             $("#clearingStatusSpinner").addClass("d-none");
             $("#clearingStatusTable").removeClass("d-none");
           });
+
+        $('#search_table').on('input', function() {
+            $("#dropdownmenu input[type=checkbox]:checked").each(function() {
+                $(this).prop('checked', false);
+            });
+            search_table($(this).val().trim());
+        });
+
+        function filterByClearingState() {
+            let isChecked, isPresent, checkedData = [];
+            $("#dropdownmenu input[type=checkbox]:checked").each(function() {
+                let val = $(this).data().releaseclearingstate;
+                isChecked = true;
+                if (val) {
+                    checkedData.push(val.trim().toLowerCase());
+                }
+            });
+
+            if (isChecked) {
+                $('#LinkedProjectsInfo tbody tr').each(function() {
+                    let relState = $(this).find('td:eq(4)').data().releaseclearingstate;
+                    if (relState && checkedData.includes(relState.trim().toLowerCase())) {
+                        showRow(relState, $(this));
+                        isPresent = true;
+                    } else {
+                        $(this).hide();
+                    }
+                });
+                if (!isPresent) {
+                    if (!$('#LinkedProjectsInfo tbody tr#noDataRow').length) {
+                        $('#LinkedProjectsInfo tbody tr:last').after('<tr id="noDataRow"><td colspan="8"> ' + emptyMsg + '</td></tr>');
+                    } else {
+                        $("#noDataRow").show();
+                    }
+                }
+            } else {
+                $("#noDataRow").remove();
+                $('#LinkedProjectsInfo tbody tr').show();
+            }
+        }
+
+        function showRow(value, $thiz) {
+            let parentId = $thiz.data().ttParentId;
+            while (parentId) {
+                let $parentRow = $('#LinkedProjectsInfo tbody tr[data-tt-id='+parentId+']');
+                $parentRow.show();
+                if (value) {
+                    $parentRow.removeClass('collapsed').addClass('expanded');
+                }
+                parentId = $parentRow.data().ttParentId;
+            }
+            $thiz.show();
+        }
+
+        $("#dropdownmenu input:checkbox").on('change', function() {
+            $('#search_table').val('');
+            search_table('');
+            filterByClearingState();
+        });
+
+        function search_table(value) {
+            let count = 0;
+            if (value === "" || value === undefined || value === null) {
+                $('#LinkedProjectsInfo tbody tr').show();
+                $("#noDataRow").remove();
+                return;
+            }
+            $('#LinkedProjectsInfo tbody tr').each(function() {
+                let match = false;
+                $(this).find('td').each(function(index) {
+                    // search for data in case of release/project clearing state
+                    let stateData = $(this).data();
+                    if (index === 4 &&
+                            ( (stateData.releaseclearingstate && stateData.releaseclearingstate.trim().toLowerCase().indexOf(value.toLowerCase()) >= 0)
+                          ||  (stateData.projectclearingstate && stateData.projectclearingstate.trim().toLowerCase().indexOf(value.toLowerCase()) >= 0)
+                          ||  (stateData.projectstate && stateData.projectstate.trim().toLowerCase().indexOf(value.toLowerCase()) >= 0) )) {
+                        match = true;
+                        return;
+                    }
+                    // disable search for empty string and Action (index 8) coulmn in table
+                    if (index !== 4 && index !== 8 && $(this).text().trim() && $(this).text().trim().toLowerCase().indexOf(value.toLowerCase()) >= 0) {
+                        match = true;
+                        return;
+                    }
+                });
+                if (match) {
+                    count++;
+                    $("#noDataRow").remove();
+                    showRow(value, $(this));
+                } else {
+                    $(this).hide();
+                }
+            });
+            if (!count) {
+                if (!$('#LinkedProjectsInfo tbody tr#noDataRow').length) {
+                    $('#LinkedProjectsInfo tbody tr:last').after('<tr id="noDataRow"><td colspan="8"> ' + emptyMsg + '</td></tr>');
+                } else {
+                    $("#noDataRow").show();
+                }
+            }
+        }
+
+        $('#LinkedProjectsInfo th.sort').click(function() {
+            let table = $(this).parents('table').eq(0),
+                rows = table.find('tr:gt(0)').toArray().sort(comparer($(this).index()));
+            this.asc = !this.asc;
+            $(table.find('th.sort svg path.text-primary')).each(function() {
+                $(this).removeClass('text-primary');
+            });
+            if (!this.asc) {
+                rows = rows.reverse();
+                $($(this).find('svg path.caret-double-l-bottom').get(0)).addClass('text-primary');
+            } else {
+                $($(this).find('svg path.caret-double-l-top').get(0)).addClass('text-primary');
+            }
+
+            for (let i = 0; i < rows.length; i++) {
+                table.append(rows[i])
+            }
+
+            $("#LinkedProjectsInfo tbody tr").each(function(index,key) {
+                let node = $("#LinkedProjectsInfo").treetable("node", $(this).attr('data-tt-id'));
+                $("#LinkedProjectsInfo").treetable("sortBranch", node);
+            });
+        });
+
+        function comparer(index) {
+            return function(a, b) {
+                let valA = getCellValue(a, index), valB = getCellValue(b, index);
+                return $.isNumeric(valA) && $.isNumeric(valB) ? valA - valB : valA.toString().trim().localeCompare(valB.toString().trim());
+            }
+        }
+
+        function getCellValue(row, index) {
+            return $(row).children('td').eq(index).text();
+        }
 
         function createClearingStatusTable(clearingStatusJsonData) {
             var clearingStatusTable;
