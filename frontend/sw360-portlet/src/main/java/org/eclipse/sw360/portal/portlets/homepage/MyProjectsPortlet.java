@@ -16,10 +16,12 @@ import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.util.PortalUtil;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
@@ -82,6 +84,9 @@ public class MyProjectsPortlet extends Sw360Portlet {
             Project._Fields.PROJECT_OWNER.toString(), Project._Fields.LEAD_ARCHITECT.toString(),
             Project._Fields.PROJECT_RESPONSIBLE.toString(), Project._Fields.SECURITY_RESPONSIBLES.toString());
 
+    private static final ImmutableList<String> listOfClearingState = ImmutableList.of(ProjectClearingState.OPEN.toString(),
+	ProjectClearingState.CLOSED.toString(), ProjectClearingState.IN_PROGRESS.toString());
+
     private static final int PROJECT_NO_SORT = -1;
     private static final int PROJECT_DT_ROW_NAME = 0;
     private static final int PROJECT_DT_ROW_DESCRIPTION = 1;
@@ -121,13 +126,19 @@ public class MyProjectsPortlet extends Sw360Portlet {
         PaginationParameters paginationParameters = PaginationParser.parametersFrom(originalServletRequest);
         PortletUtils.handlePaginationSortOrder(request, paginationParameters, projectFilteredFields, PROJECT_NO_SORT);
 
-        String rolesSelected = request.getParameter("roles");
-        List<Boolean> listOfRolesSelected = Arrays.stream(rolesSelected.split(","))
+        String rolesAndClearingStateSelected = request.getParameter("rolesandclearingstate");
+        List<Boolean> listOfRolesAndClearingStateSelected = Arrays.stream(rolesAndClearingStateSelected.split(","))
                 .map(role -> Boolean.parseBoolean(role)).collect(Collectors.toList());
         Boolean userChoice = Boolean.parseBoolean(request.getParameter("userChoice"));
         Map<String, Boolean> userRoles = new HashMap<>();
         for (int i = 0; i < listOfRoles.size(); i++) {
-            userRoles.put(listOfRoles.get(i), listOfRolesSelected.get(i));
+            userRoles.put(listOfRoles.get(i), listOfRolesAndClearingStateSelected.get(i));
+        }
+
+        Map<String, Boolean> clearingState = new HashMap<>();
+        int rolesSize= listOfRoles.size();
+        for (int j = 0; j < listOfClearingState.size(); j++) {
+            clearingState.put(listOfClearingState.get(j), listOfRolesAndClearingStateSelected.get(j+rolesSize));
         }
 
         try {
@@ -144,6 +155,7 @@ public class MyProjectsPortlet extends Sw360Portlet {
             log.error("Could not fetch myProjects from backend for user, " + user.getEmail(), e);
         }
         myProjects = getWithFilledClearingStateSummary(myProjects, user);
+        myProjects = getWithFilledClearingStatus(myProjects, clearingState);
 
         JSONArray jsonProjects = getProjectData(myProjects, paginationParameters, request);
         JSONObject jsonResult = JSONFactoryUtil.createJSONObject();
@@ -230,4 +242,27 @@ public class MyProjectsPortlet extends Sw360Portlet {
                 p -> p.getReleaseClearingStateSummary() != null ? p.getReleaseClearingStateSummary().approved : -1);
         return isAscending ? comparator : comparator.reversed();
     }
+
+    private List<Project> getWithFilledClearingStatus(List<Project> projects, Map<String, Boolean> clearingState ) {
+        if (!CommonUtils.isNullOrEmptyMap(clearingState)) {
+            Boolean open = clearingState.get(ProjectClearingState.OPEN.toString());
+            Boolean closed = clearingState.get(ProjectClearingState.CLOSED.toString());
+            Boolean inProgress = clearingState.get(ProjectClearingState.IN_PROGRESS.toString());
+
+			projects = projects.stream().filter(project -> {
+				if (open != null && open && ProjectClearingState.OPEN.equals(project.getClearingState())) {
+					return true;
+				} else if (closed != null && closed && ProjectClearingState.CLOSED.equals(project.getClearingState())) {
+					return true;
+				} else if (inProgress != null && inProgress
+						&& ProjectClearingState.IN_PROGRESS.equals(project.getClearingState())) {
+					return true;
+				}
+				return false;
+			}).collect(Collectors.toList());
+        }
+        return projects;
+    }
+
+
 }
