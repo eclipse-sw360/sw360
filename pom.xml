@@ -692,14 +692,14 @@
             </build>
         </profile>
         <profile>
-        <activation>
-            <activeByDefault>false</activeByDefault>
-        </activation>
-        <id>ci</id>
-        <properties>
-            <!-- second of two places for version setting: minor version -->
-            <patchlevel>0.${count}</patchlevel>
-        </properties>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <id>ci</id>
+            <properties>
+                <!-- second of two places for version setting: minor version -->
+                <patchlevel>1.${count}</patchlevel>
+            </properties>
         </profile>
         <profile>
             <activation>

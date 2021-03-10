@@ -61,18 +61,38 @@ spec:
         }
     }
 
+    environment {
+        COUNT = sh(
+                script: "printf \$(git rev-list `git rev-list --tags --no-walk --max-count=1`..HEAD --count)",
+                returnStdout: true
+        )
+    }
+
+    parameters {
+        booleanParam(
+            name: 'RELEASE',
+            defaultValue: false,
+            description: 'If true, it is a milestone build with a m1 version suffix, or, if false, an intermediate build with a version suffix based on the commit count')
+    }
     stages {
         stage('Deploy SW360') {
             steps {
                 container('sw360buildenv') {
+                    script {
+                        if (params.RELEASE) {
+                            VERSION_SUFFIX = "0-m1"
+                        } else {
+                            VERSION_SUFFIX = "0-" + COUNT
+                        }
+                    }
                     // FIXME: Removed the frontend from the build, because it does not build in the Container environment
                     // Plugin liferay-themes breaks the build
                     // FIXME: Removed backend utils form the build, it causes issues with signing the fat jar
                     sh """
-                        mvn --batch-mode -Peclipse-ci \
+                        mvn --batch-mode -Peclipse-ci -Pci \
                             clean deploy \
                             -pl '!frontend/sw360-portlet,!frontend/liferay-theme,!frontend,!backend/utils' \
-                            -DskipTests -DskipITs
+                            -DskipTests -DskipITs -Dcount=$VERSION_SUFFIX
                     """
                 }
             }
