@@ -15,7 +15,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
@@ -555,16 +554,19 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             Release release = componentClient.getReleaseById(releaseId, user);
             List<LicenseInfoParsingResult> licenseInfoResult = licenseInfoClient.getLicenseInfoForAttachment(release,
                     attachmentContentId, includeConcludedLicense, user);
+            List<LicenseNameWithText> licenseWithTexts = licenseInfoResult.stream()
+                    .flatMap(result -> result.getLicenseInfo().getLicenseNamesWithTexts().stream())
+                    .filter(license -> !license.getLicenseName().equalsIgnoreCase(SW360Constants.LICENSE_NAME_UNKNOWN)
+                            && !license.getLicenseName().equalsIgnoreCase(SW360Constants.NA)
+                            && !license.getLicenseName().equalsIgnoreCase(SW360Constants.NO_ASSERTION)) // exclude unknown, n/a and noassertion
+                    .collect(Collectors.toList());
             if (attachmentName.endsWith(".rdf")) {
                 concludedLicenseIds = licenseInfoResult.stream()
                         .flatMap(singleResult -> singleResult.getLicenseInfo().getConcludedLicenseIds().stream())
                         .collect(Collectors.toSet());
+                otherLicenseNames = licenseWithTexts.stream().map(LicenseNameWithText::getLicenseName).collect(Collectors.toSet());
+                otherLicenseNames.removeAll(concludedLicenseIds);
             } else if (attachmentName.endsWith(".xml")) {
-                List<LicenseNameWithText> licenseWithTexts = licenseInfoResult.stream()
-                        .flatMap(result -> result.getLicenseInfo().getLicenseNamesWithTexts().stream())
-                        .filter(license -> !license.getLicenseName().equals(SW360Constants.LICENSE_NAME_UNKNOWN)
-                                && !license.getLicenseName().equals(SW360Constants.NA)) // exclude unknown and n/a
-                        .collect(Collectors.toList());
                 mainLicenseNames = licenseWithTexts.stream().filter(license -> license.getType().equals(LICENSE_TYPE_GLOBAL)).map(LicenseNameWithText::getLicenseName).collect(Collectors.toSet());
                 otherLicenseNames = licenseWithTexts.stream().filter(license -> !license.getType().equals(LICENSE_TYPE_GLOBAL)).map(LicenseNameWithText::getLicenseName).collect(Collectors.toSet());
             }
@@ -588,11 +590,12 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 jsonGenerator.writeArrayFieldStart(LICENSE_IDS);
                 mainLicenseNames.forEach(licenseId -> wrapException(() -> { jsonGenerator.writeString(licenseId); }));
                 jsonGenerator.writeEndArray();
-                jsonGenerator.writeStringField("otherLicense", LanguageUtil.get(resourceBundle,"other.license.id"));
-                jsonGenerator.writeArrayFieldStart("otherLicenseIds");
-                otherLicenseNames.forEach(licenseId -> wrapException(() -> { jsonGenerator.writeString(licenseId); }));
-                jsonGenerator.writeEndArray();
             }
+            jsonGenerator.writeStringField("otherLicense", LanguageUtil.get(resourceBundle,"other.license.id"));
+            jsonGenerator.writeArrayFieldStart("otherLicenseIds");
+            otherLicenseNames.forEach(licenseId -> wrapException(() -> { jsonGenerator.writeString(licenseId); }));
+            jsonGenerator.writeEndArray();
+
             jsonGenerator.writeEndObject();
 
             jsonGenerator.close();
@@ -613,12 +616,14 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             Release release = componentClient.getReleaseById(releaseId, user);
             JsonNode input = OBJECT_MAPPER.readValue(request.getParameter(SPDX_LICENSE_INFO), JsonNode.class);
             JsonNode licenesIdsNode = input.get(LICENSE_IDS);
-            if (licenesIdsNode.isArray()) {
-                for (JsonNode objNode : licenesIdsNode) {
-                    release.addToMainLicenseIds(objNode.asText());
+            if (null != licenesIdsNode) {
+                if (licenesIdsNode.isArray()) {
+                    for (JsonNode objNode : licenesIdsNode) {
+                        release.addToMainLicenseIds(objNode.asText());
+                    }
+                } else {
+                    release.addToMainLicenseIds(licenesIdsNode.asText());
                 }
-            } else {
-                release.addToMainLicenseIds(licenesIdsNode.asText());
             }
             licenesIdsNode = input.get("otherLicenseIds");
             if (null != licenesIdsNode) {

@@ -275,9 +275,11 @@
             $cell.append($('<div>', { text: data.license}));
             $cell.append($list);
 
-            data.licenseIds.forEach(function(id) {
-                $list.append($('<li>', { text: id }));
-            });
+            if (data.licenseIds) {
+                data.licenseIds.forEach(function(id) {
+                    $list.append($('<li>', { text: id }));
+                });
+            }
 
             $cell.append($('<div>', { text: data.otherLicense}));
             $cell.append($otherList);

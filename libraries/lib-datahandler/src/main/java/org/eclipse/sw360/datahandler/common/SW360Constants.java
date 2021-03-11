@@ -46,6 +46,7 @@ public class SW360Constants {
     public static final String NA = "n/a";
     public static final String LICENSE_NAME_UNKNOWN = "License name unknown";
     public static final String OBLIGATION_TOPIC_UNKNOWN = "Obligation topic unknown";
+    public static final String NO_ASSERTION = "noassertion";
     // Proper values of the "type" member to deserialize to CouchDB
     public static final String TYPE_OBLIGATION = "obligation";
     public static final String TYPE_OBLIGATIONS = "obligations";
