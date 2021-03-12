@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.attachments;
 
+import com.cloudant.client.api.CloudantClient;
 import com.google.common.collect.ImmutableSet;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
@@ -18,7 +19,6 @@ import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.ektorp.http.HttpClient;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 
 import java.net.MalformedURLException;
@@ -43,10 +43,10 @@ public class AttachmentHandler implements AttachmentService.Iface {
     private final AttachmentDatabaseHandler handler;
 
     public AttachmentHandler() throws MalformedURLException {
-        handler = new AttachmentDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
+        handler = new AttachmentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
     }
 
-    public AttachmentHandler(Supplier<HttpClient> httpClient, String dbName, String attachmentDbName) throws MalformedURLException {
+    public AttachmentHandler(Supplier<CloudantClient> httpClient, String dbName, String attachmentDbName) throws MalformedURLException {
         handler = new AttachmentDatabaseHandler(httpClient, dbName, attachmentDbName);
     }
 

@@ -10,14 +10,17 @@
 
 package org.eclipse.sw360.moderation.db;
 
+import com.cloudant.client.api.CloudantClient;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
@@ -49,7 +52,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
-import org.ektorp.http.HttpClient;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.MalformedURLException;
@@ -82,12 +84,13 @@ public class ModerationDatabaseHandler {
     private final LicenseDatabaseHandler licenseDatabaseHandler;
     private final ProjectDatabaseHandler projectDatabaseHandler;
     private final ComponentDatabaseHandler componentDatabaseHandler;
-    private final DatabaseConnector db;
+    private final DatabaseConnectorCloudant db;
+    private DatabaseHandlerUtil dbHandlerUtil;
 
     private final MailUtil mailUtil = new MailUtil();
 
-    public ModerationDatabaseHandler(Supplier<HttpClient> httpClient, String dbName, String attachmentDbName) throws MalformedURLException {
-        db = new DatabaseConnector(httpClient, dbName);
+    public ModerationDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String attachmentDbName) throws MalformedURLException {
+        db = new DatabaseConnectorCloudant(httpClient, dbName);
 
         // Create the repository
         repository = new ModerationRequestRepository(db);
@@ -96,6 +99,15 @@ public class ModerationDatabaseHandler {
         licenseDatabaseHandler = new LicenseDatabaseHandler(httpClient, dbName);
         projectDatabaseHandler = new ProjectDatabaseHandler(httpClient, dbName, attachmentDbName);
         componentDatabaseHandler = new ComponentDatabaseHandler(httpClient, dbName, attachmentDbName);
+        DatabaseConnectorCloudant dbChangeLogs = new DatabaseConnectorCloudant(httpClient, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
+        this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
+    }
+
+    public ModerationDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String changeLogsDbName, String attachmentDbName) throws MalformedURLException {
+        this(httpClient, dbName, attachmentDbName);
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(httpClient, changeLogsDbName);
+        this.dbHandlerUtil = new DatabaseHandlerUtil(db);
+
     }
 
     public List<ModerationRequest> getRequestsByModerator(String moderator) {
@@ -312,7 +324,7 @@ public class ModerationDatabaseHandler {
             dbRequest.setCommentDecisionModerator(moderationComment);
             repository.update(dbRequest);
         }
-        DatabaseHandlerUtil.addChangeLogs(dbRequest, requestBefore, reviewer, Operation.MODERATION_ACCEPT,
+        dbHandlerUtil.addChangeLogs(dbRequest, requestBefore, reviewer, Operation.MODERATION_ACCEPT,
                 null, Lists.newArrayList(), dbRequest.getDocumentId(),null);
         sendMailNotificationsForAcceptedRequest(request);
     }

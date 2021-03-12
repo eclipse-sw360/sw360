@@ -10,6 +10,7 @@
 package org.eclipse.sw360.components;
 
 import org.eclipse.sw360.datahandler.TestUtils;
+import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.components.*;
@@ -42,7 +43,9 @@ public class ComponentHandlerTest {
     public void setUp() throws Exception {
         assertTestDbNames();
         deleteAllDatabases();
-        componentHandler = new ComponentHandler();
+        componentHandler = new ComponentHandler(DatabaseSettingsTest.getConfiguredClient(),
+                DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.COUCH_DB_DATABASE,
+                DatabaseSettingsTest.COUCH_CHANGELOGS, DatabaseSettingsTest.COUCH_DB_ATTACHMENTS);
     }
 
     @After

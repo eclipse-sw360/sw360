@@ -44,6 +44,7 @@ public class ProjectHandlerTest {
 
     private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;
     private static final String attachmentDbName = DatabaseSettingsTest.COUCH_DB_ATTACHMENTS;
+    private static final String changeLogDbName = DatabaseSettingsTest.COUCH_CHANGELOGS;
 
     private static final User user1 = new User().setEmail("user1").setDepartment("AB CD EF");
     private static final User user2 = new User().setEmail("user2").setDepartment("AB CD FE");
@@ -62,7 +63,7 @@ public class ProjectHandlerTest {
         projects.add(new Project().setId("P3").setName("Project3").setBusinessUnit("AB CD EF").setCreatedBy("user3").setReleaseIdToUsage(Collections.emptyMap()));
 
         // Create the database
-        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
+        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
 
         // Prepare the database
         DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
@@ -71,13 +72,13 @@ public class ProjectHandlerTest {
         }
 
         // Create the connector
-        handler = new ProjectHandler(DatabaseSettingsTest.getConfiguredHttpClient(), dbName, attachmentDbName);
+        handler = new ProjectHandler(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.getConfiguredHttpClient(), dbName, changeLogDbName, attachmentDbName);
     }
 
     @After
     public void tearDown() throws Exception {
         // Delete the database
-        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
+        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
     }
 
     @Test
@@ -220,9 +221,9 @@ public class ProjectHandlerTest {
     public void testUpdateProject2_1() throws Exception {
         ProjectModerator moderator = Mockito.mock(ProjectModerator.class);
 
-        ProjectDatabaseHandler handler = new ProjectDatabaseHandler(DatabaseSettingsTest.getConfiguredHttpClient(), dbName, attachmentDbName, moderator,
-                new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredHttpClient(), dbName, attachmentDbName),
-                new AttachmentDatabaseHandler(DatabaseSettingsTest.getConfiguredHttpClient(), dbName, attachmentDbName));
+        ProjectDatabaseHandler handler = new ProjectDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogDbName, attachmentDbName, moderator,
+                new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentDbName),
+                new AttachmentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentDbName));
         Project project2 = handler.getProjectById("P2", user1);
         project2.setName("Project2new");
 

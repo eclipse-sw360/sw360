@@ -9,13 +9,18 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.projects.UsedReleaseRelations;
-import org.ektorp.ViewQuery;
-import org.ektorp.support.View;
+
+import com.cloudant.client.api.model.DesignDocument.MapReduce;
+import com.cloudant.client.api.views.Key;
+import com.cloudant.client.api.views.UnpaginatedRequestBuilder;
+import com.cloudant.client.api.views.ViewRequestBuilder;
 
 /**
  * CRUD access for the RelationsUsageRepository class
@@ -24,13 +29,7 @@ import org.ektorp.support.View;
  *
  */
 
-@View(name = "all", map = "function(doc) { if (doc.type == 'usedReleaseRelation') emit(null, doc._id); }")
-public class RelationsUsageRepository extends DatabaseRepository<UsedReleaseRelations> {
-
-    public RelationsUsageRepository(DatabaseConnector db) {
-        super(UsedReleaseRelations.class, db);
-        initStandardDesignDocument();
-    }
+public class RelationsUsageRepository extends DatabaseRepositoryCloudantClient<UsedReleaseRelations> {
 
     private static final String BY_PROJECT_ID =
             "function(doc) {" +
@@ -39,9 +38,19 @@ public class RelationsUsageRepository extends DatabaseRepository<UsedReleaseRela
                     "  }" +
                     "}";
 
-    @View(name = "byProjectId", map = BY_PROJECT_ID)
+    private static final String ALL = "function(doc) { if (doc.type == 'usedReleaseRelation') emit(null, doc._id); }";
+
+    public RelationsUsageRepository(DatabaseConnectorCloudant db) {
+        super(db, UsedReleaseRelations.class);
+        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        views.put("byProjectId", createMapReduce(BY_PROJECT_ID, null));
+        views.put("all", createMapReduce(ALL, null));
+        initStandardDesignDocument(views, db);
+    }
+
     public List<UsedReleaseRelations> getUsedRelationsByProjectId(String projectId) {
-        ViewQuery viewQuery = createQuery("byProjectId").includeDocs(true).reduce(false).key(projectId);
-        return queryView(viewQuery);
+        ViewRequestBuilder viewQuery = getConnector().createQuery(UsedReleaseRelations.class, "byProjectId");
+        UnpaginatedRequestBuilder req = viewQuery.newRequest(Key.Type.STRING, Object.class).includeDocs(true).reduce(false).keys(projectId);
+        return queryView(req);
     }
 }

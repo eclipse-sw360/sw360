@@ -13,6 +13,8 @@ package org.eclipse.sw360.components.db;
 import com.google.common.collect.ImmutableMap;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
@@ -115,10 +117,10 @@ public class ProjectDatabaseHandlerTest {
         projects.add(project7);
 
         // Create the database
-        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
+        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
 
         // Prepare the database
-        DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
+        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName);
 
         for (Vendor vendor : vendors) {
             databaseConnector.add(vendor);
@@ -133,9 +135,9 @@ public class ProjectDatabaseHandlerTest {
             databaseConnector.add(project);
         }
 
-        ComponentDatabaseHandler componentHandler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredHttpClient(), dbName, attachmentsDbName);
-        AttachmentDatabaseHandler attachmentDatabaseHandler = new AttachmentDatabaseHandler(DatabaseSettingsTest.getConfiguredHttpClient(), dbName, attachmentsDbName);
-        handler = new ProjectDatabaseHandler(DatabaseSettingsTest.getConfiguredHttpClient(), dbName, attachmentsDbName, moderator, componentHandler, attachmentDatabaseHandler);
+        ComponentDatabaseHandler componentHandler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentsDbName);
+        AttachmentDatabaseHandler attachmentDatabaseHandler = new AttachmentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentsDbName);
+        handler = new ProjectDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentsDbName, moderator, componentHandler, attachmentDatabaseHandler);
     }
 
     private ProjectReleaseRelationship newDefaultProjectReleaseRelationship() {
@@ -144,7 +146,7 @@ public class ProjectDatabaseHandlerTest {
 
     @After
     public void tearDown() throws Exception {
-        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
+        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
     }
 
     @Test

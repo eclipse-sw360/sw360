@@ -13,8 +13,8 @@ package org.eclipse.sw360.vendors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.db.VendorRepository;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
@@ -29,7 +29,6 @@ import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
-import org.ektorp.http.HttpClient;
 
 import java.net.MalformedURLException;
 import java.util.HashSet;
@@ -37,6 +36,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import com.cloudant.client.api.CloudantClient;
 import com.google.common.collect.ImmutableSet;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
@@ -47,12 +47,12 @@ public class VendorDatabaseHandler {
     private static final Logger log = LogManager.getLogger(VendorDatabaseHandler.class);
     private final VendorRepository repository;
 
-    public VendorDatabaseHandler(Supplier<HttpClient> httpClient, String dbName) throws MalformedURLException {
-        DatabaseConnector db = new DatabaseConnector(httpClient, dbName);
+    public VendorDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException {
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(httpClient, dbName);
         repository = new VendorRepository(db);
     }
 
-    public VendorDatabaseHandler(DatabaseConnector db) throws MalformedURLException {
+    public VendorDatabaseHandler(DatabaseConnectorCloudant db) throws MalformedURLException {
         repository = new VendorRepository(db);
     }
 

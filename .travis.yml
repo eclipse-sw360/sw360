@@ -13,7 +13,7 @@
 # -----------------------------------------------------------------------------
 
 sudo: required
-dist: xenial
+dist: bionic
 language: java
 jdk: openjdk11
 addons:
@@ -22,6 +22,7 @@ addons:
       - docker-ce
 services:
   - docker
+  - couchdb
 
 cache:
   apt: true
@@ -31,8 +32,18 @@ cache:
 
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install -y couchdb
+  - sudo sed -i "/^\[admins\]/a travis = travis" /opt/couchdb/etc/local.ini
   - sudo service couchdb restart
+
+  # Create couchdb-test.properties in /etc/sw360 to run testcases
+  - sudo sed -i 's/^couchdb.user\s*=/& travis/' build-configuration/test-resources/couchdb-test.properties
+  - sudo sed -i 's/^couchdb.password\s*=/& travis/' build-configuration/test-resources/couchdb-test.properties
+
+
+  # Create databasetest.properties in /etc/sw360 to run testcases
+  - sudo sed -i -e '$acouchdb.username=travis' libraries/lib-datahandler/src/test/resources/databasetest.properties
+  - sudo sed -i -e '$acouchdb.password=travis' libraries/lib-datahandler/src/test/resources/databasetest.properties
+
   - ./scripts/install-thrift.sh --no-cleanup
 
 env:

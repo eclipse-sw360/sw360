@@ -9,12 +9,20 @@
  */
 package org.eclipse.sw360.datahandler.common;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Properties;
+import java.util.function.Supplier;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.ektorp.http.HttpClient;
 import org.ektorp.http.StdHttpClient;
 
-import java.net.MalformedURLException;
-import java.util.Properties;
-import java.util.function.Supplier;
+import com.cloudant.client.api.ClientBuilder;
+import com.cloudant.client.api.CloudantClient;
+import com.google.gson.GsonBuilder;
 
 /**
  * Constants for the database address
@@ -24,6 +32,7 @@ import java.util.function.Supplier;
  */
 public class DatabaseSettings {
 
+    private static final Logger log = LogManager.getLogger(DatabaseSettings.class);
     public static final String PROPERTIES_FILE_PATH = "/couchdb.properties";
 
     public static final String COUCH_DB_URL;
@@ -70,9 +79,31 @@ public class DatabaseSettings {
         return httpClientBuilder::build;
     }
 
+    public static Supplier<CloudantClient> getConfiguredClient() {
+        ClientBuilder clientBuilder = null;
+        GsonBuilder gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping();
+        for (Class<?> c : ThriftUtils.THRIFT_CLASSES) {
+            gson.registerTypeAdapter(c, new CustomThriftDeserializer());
+            gson.registerTypeAdapter(c, new CustomThriftSerializer());
+        }
+        for (Class<?> c : ThriftUtils.THRIFT_NESTED_CLASSES) {
+            gson.registerTypeAdapter(c, new CustomThriftSerializer());
+        }
+        try {
+            clientBuilder = ClientBuilder.url(new URL(COUCH_DB_URL)).gsonBuilder(gson);
+            if (!"".equals(COUCH_DB_USERNAME)) {
+                clientBuilder.username(COUCH_DB_USERNAME);
+            }
+            if (!"".equals(COUCH_DB_PASSWORD)) {
+                clientBuilder.password(COUCH_DB_PASSWORD);
+            }
+        } catch (MalformedURLException e) {
+            log.error("Error creating client", e);
+        }
+        return clientBuilder::build;
+    }
 
     private DatabaseSettings() {
         // Utility class with only static functions
     }
-
 }

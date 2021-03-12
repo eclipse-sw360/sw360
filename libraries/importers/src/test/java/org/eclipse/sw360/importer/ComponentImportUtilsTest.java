@@ -92,6 +92,7 @@ public class ComponentImportUtilsTest extends ComponentAndAttachmentAwareDBTest 
 
         assertThat(attachmentContentRepository.getAll(), Matchers.hasSize(2) );
         final AttachmentContent attachmentContent = attachmentClient.getAttachmentContent(getCreatedAttachmentContentId());
+        attachmentContent.setOnlyRemote(true);
 
         assertThat(attachmentContent, is(overwriter));
 

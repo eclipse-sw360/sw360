@@ -11,10 +11,10 @@
 package org.eclipse.sw360.licenses.db;
 
 import org.eclipse.sw360.components.summary.SummaryType;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
 import org.eclipse.sw360.datahandler.db.CustomPropertiesRepository;
 import org.eclipse.sw360.datahandler.db.ReleaseRepository;
 import org.eclipse.sw360.datahandler.db.VendorRepository;
@@ -28,13 +28,14 @@ import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.licenses.tools.SpdxConnector;
-
+import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.ektorp.DocumentOperationResult;
-import org.ektorp.http.HttpClient;
 import org.jetbrains.annotations.NotNull;
 
+import com.cloudant.client.api.CloudantClient;
+import com.cloudant.client.api.model.Response;
 import com.google.common.collect.Sets;
 
 import java.net.MalformedURLException;
@@ -57,7 +58,7 @@ public class LicenseDatabaseHandler {
     /**
      * Connection to the couchDB database
      */
-    private final DatabaseConnector db;
+    private final DatabaseConnectorCloudant db;
 
     /**
      * License Repository
@@ -67,13 +68,13 @@ public class LicenseDatabaseHandler {
     private final LicenseTypeRepository licenseTypeRepository;
     private final LicenseModerator moderator;
     private final CustomPropertiesRepository customPropertiesRepository;
-    private final DatabaseRepository[] repositories;
+    private final DatabaseRepositoryCloudantClient[] repositories;
 
     private final Logger log = LogManager.getLogger(LicenseDatabaseHandler.class);
 
-    public LicenseDatabaseHandler(Supplier<HttpClient> httpClient, String dbName) throws MalformedURLException {
+    public LicenseDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException {
         // Create the connector
-        db = new DatabaseConnector(httpClient, dbName);
+        db = new DatabaseConnectorCloudant(httpClient, dbName);
 
         // Create the repository
         licenseRepository = new LicenseRepository(db);
@@ -81,7 +82,7 @@ public class LicenseDatabaseHandler {
         licenseTypeRepository = new LicenseTypeRepository(db);
         customPropertiesRepository = new CustomPropertiesRepository(db);
 
-        repositories = new DatabaseRepository[]{
+        repositories = new DatabaseRepositoryCloudantClient[]{
                 licenseRepository,
                 licenseTypeRepository,
                 obligRepository,
@@ -478,7 +479,9 @@ public class LicenseDatabaseHandler {
         if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)){
             return null;
         }
-        final List<DocumentOperationResult> documentOperationResults = licenseTypeRepository.executeBulk(licenseTypes);
+        List<Response> documentOperationResults = licenseTypeRepository.executeBulk(licenseTypes);
+        documentOperationResults = documentOperationResults.stream()
+                .filter(res -> res.getError() != null || res.getStatusCode() != HttpStatus.SC_CREATED).collect(Collectors.toList());
         if (documentOperationResults.isEmpty()) {
             return licenseTypes;
         } else return null;
@@ -508,7 +511,9 @@ public class LicenseDatabaseHandler {
             prepareLicense(license);
         }
 
-        final List<DocumentOperationResult> documentOperationResults = licenseRepository.executeBulk(licenses);
+        List<Response> documentOperationResults = licenseRepository.executeBulk(licenses);
+        documentOperationResults = documentOperationResults.stream()
+                .filter(res -> res.getError() != null || res.getStatusCode() != HttpStatus.SC_CREATED).collect(Collectors.toList());
         if (documentOperationResults.isEmpty()) {
             return licenses;
         } else {
@@ -526,7 +531,9 @@ public class LicenseDatabaseHandler {
             prepareTodo(Oblig);
         }
 
-        final List<DocumentOperationResult> documentOperationResults = obligRepository.executeBulk(listOfObligations);
+        List<Response> documentOperationResults = obligRepository.executeBulk(listOfObligations);
+        documentOperationResults = documentOperationResults.stream()
+                .filter(res -> res.getError() != null || res.getStatusCode() != HttpStatus.SC_CREATED).collect(Collectors.toList());
         if (documentOperationResults.isEmpty()) {
             return listOfObligations;
         } else return null;
@@ -627,13 +634,13 @@ public class LicenseDatabaseHandler {
                 .setRequestStatus(RequestStatus.SUCCESS)
                 .setTotalElements(0)
                 .setTotalAffectedElements(0);
-        for(DatabaseRepository repository : repositories) {
+        for(DatabaseRepositoryCloudantClient repository : repositories) {
             result = addRequestSummaries(result, deleteAllDocuments(repository));
         }
         return result;
     }
 
-    private RequestSummary deleteAllDocuments(DatabaseRepository repository) {
+    private RequestSummary deleteAllDocuments(DatabaseRepositoryCloudantClient repository) {
         Set<String> allIds = repository.getAllIds();
         List<DocumentOperationResult> operationResults = repository.deleteIds(allIds);
         return getRequestSummary(allIds.size(), operationResults.size());

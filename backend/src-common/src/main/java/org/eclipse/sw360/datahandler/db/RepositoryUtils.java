@@ -9,12 +9,13 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
-import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.ektorp.DocumentOperationResult;
+
+import com.cloudant.client.api.model.Response;
 
 import java.util.*;
 
@@ -24,12 +25,12 @@ import java.util.*;
 public class RepositoryUtils {
 
     //This works with any repository
-    public static RequestSummary doBulk(Collection<?> objects, User user, DatabaseRepository<?> repository){
+    public static RequestSummary doBulk(Collection<?> objects, User user, DatabaseRepositoryCloudantClient<?> repository){
 
         RequestSummary requestSummary =  new RequestSummary();
         if(PermissionUtils.isAdmin(user)) {
             // Prepare component for database
-            final List<DocumentOperationResult> documentOperationResults = repository.executeBulk(objects);
+            final List<Response> documentOperationResults = repository.executeBulk(objects);
 
             requestSummary.setTotalElements(objects.size() );
             requestSummary.setTotalAffectedElements(objects.size() - documentOperationResults.size());
@@ -41,7 +42,7 @@ public class RepositoryUtils {
         return requestSummary;
     }
 
-    public Set<String> searchByExternalIds(DatabaseRepository<?> repository, String queryName, Map<String, Set<String>> externalIds) {
+    public Set<String> searchByExternalIds(DatabaseRepositoryCloudantClient<?> repository, String queryName, Map<String, Set<String>> externalIds) {
         Set<String> searchIds = new HashSet<>();
         for (Iterator<Map.Entry<String, Set<String>>> it = externalIds.entrySet().iterator(); it.hasNext(); ) {
             Map.Entry<String, Set<String>> externalId = it.next();

@@ -10,113 +10,143 @@
 
 package org.eclipse.sw360.datahandler.db;
 
-import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.cloudant.client.api.model.DesignDocument.MapReduce;
+import com.cloudant.client.api.views.Key;
+import com.cloudant.client.api.views.MultipleRequestBuilder;
+import com.cloudant.client.api.views.UnpaginatedRequestBuilder;
+import com.cloudant.client.api.views.ViewRequestBuilder;
+import com.cloudant.client.api.views.ViewResponse;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
+
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
-import org.ektorp.ComplexKey;
-import org.ektorp.ViewQuery;
-import org.ektorp.ViewResult;
 import org.ektorp.support.View;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@View(name = "all", map = "function(doc) { if (doc.type == 'attachmentUsage') emit(null, doc._id); }")
-public class AttachmentUsageRepository extends DatabaseRepository<AttachmentUsage> {
+public class AttachmentUsageRepository extends DatabaseRepositoryCloudantClient<AttachmentUsage> {
+    private static final String USAGESBYATTACHMENT =  "function(doc) { if (doc.type == 'attachmentUsage') emit([doc.owner.value_, doc.attachmentContentId], null); }";
+    private static final String USEDATTACHMENTS = "function(doc) { if (doc.type == 'attachmentUsage') emit(doc.usedBy.value_, null); }";
+    private static final String USAGESBYATTACHMENTUSAGETYPE = "function(doc) { if (doc.type == 'attachmentUsage') emit([doc.owner.value_, doc.attachmentContentId, doc.usageData != null ? doc.usageData.setField_ : null], null); }";
+    private static final String USEDATTACHMENTUSAGESTYPE = "function(doc) { if (doc.type == 'attachmentUsage') emit([doc.usedBy.value_, doc.usageData != null ? doc.usageData.setField_ : null], null); }";
+    private static final String REFERENCES_RELEASEID = "" +
+            "function(doc) { " +
+            "   if (doc.type == 'attachmentUsage') {" +
+            "       if(doc.owner && doc.owner.setField_ == 'RELEASE_ID') {" +
+            "           emit(doc.owner.value_, doc);" +
+            "       } else if(doc.usedBy && doc.usedBy.setField_ == 'RELEASE_ID') {" +
+            "           emit(doc.usedBy.value_, doc);" +
+            "       }" +
+            "   }" +
+            "}";
+    private static final String ALL = "function(doc) { if (doc.type == 'attachmentUsage') emit(null, doc._id); }";
 
-    public AttachmentUsageRepository(DatabaseConnector db) {
-        super(AttachmentUsage.class, db);
-        initStandardDesignDocument();
+    public AttachmentUsageRepository(DatabaseConnectorCloudant db) {
+        super(db, AttachmentUsage.class);
+        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        views.put("all", createMapReduce(ALL, null));
+        views.put("usagesByAttachment", createMapReduce(USAGESBYATTACHMENT, "_count"));
+        views.put("usedAttachments", createMapReduce(USEDATTACHMENTS, "_count"));
+        views.put("usagesByAttachmentUsageType", createMapReduce(USAGESBYATTACHMENTUSAGETYPE, "_count"));
+        views.put("usedAttachmentsUsageType", createMapReduce(USEDATTACHMENTUSAGESTYPE, "_count"));
+        views.put("referencesReleaseId", createMapReduce(REFERENCES_RELEASEID, null));
+        initStandardDesignDocument(views, db);
     }
 
-    @View(name = "usagesByAttachment", map = "function(doc) { if (doc.type == 'attachmentUsage') emit([doc.owner.value_, doc.attachmentContentId], null); }", reduce = "_count")
     public List<AttachmentUsage> getUsageForAttachment(String ownerId, String attachmentContentId) {
-        ViewQuery viewQuery = createQuery("usagesByAttachment").includeDocs(true).reduce(false)
-                .key(ComplexKey.of(ownerId, attachmentContentId));
-        return queryView(viewQuery);
+        ViewRequestBuilder viewQuery = getConnector().createQuery(AttachmentUsage.class, "usagesByAttachment");
+        UnpaginatedRequestBuilder reqBuilder = viewQuery.newRequest(Key.Type.COMPLEX, Object.class).keys(Key.complex(new String[] {ownerId, attachmentContentId})).includeDocs(true).reduce(false);
+        return queryView(reqBuilder);
     }
 
-    @View(name = "usedAttachments", map = "function(doc) { if (doc.type == 'attachmentUsage') emit(doc.usedBy.value_, null); }", reduce = "_count")
     public List<AttachmentUsage> getUsedAttachments(String usedById) {
-        ViewQuery viewQuery = createQuery("usedAttachments").includeDocs(true).reduce(false).key(usedById);
-        return queryView(viewQuery);
+        ViewRequestBuilder viewQuery = getConnector().createQuery(AttachmentUsage.class, "usedAttachments");
+        UnpaginatedRequestBuilder reqBuilder = viewQuery.newRequest(Key.Type.STRING, Object.class).includeDocs(true).reduce(false).keys(usedById);
+        return queryView(reqBuilder);
     }
 
-    @View(name = "usagesByAttachmentUsageType", map = "function(doc) { if (doc.type == 'attachmentUsage') emit([doc.owner.value_, doc.attachmentContentId, doc.usageData != null ? doc.usageData.setField_ : null], null); }", reduce = "_count")
     public List<AttachmentUsage> getUsageForAttachment(String ownerId, String attachmentContentId, String filter) {
-        ViewQuery viewQuery = createQuery("usagesByAttachmentUsageType").includeDocs(true).reduce(false)
-                .key(ComplexKey.of(ownerId, attachmentContentId, filter));
-        return queryView(viewQuery);
+        ViewRequestBuilder viewQuery = getConnector().createQuery(AttachmentUsage.class, "usagesByAttachmentUsageType");
+        UnpaginatedRequestBuilder reqBuilder = viewQuery.newRequest(Key.Type.COMPLEX, Object.class).includeDocs(true).reduce(false)
+                .keys(Key.complex(new String[] { ownerId, attachmentContentId, filter }));
+        return queryView(reqBuilder);
     }
 
-    @View(name = "usedAttachmentsUsageType", map = "function(doc) { if (doc.type == 'attachmentUsage') emit([doc.usedBy.value_, doc.usageData != null ? doc.usageData.setField_ : null], null); }", reduce = "_count")
     public List<AttachmentUsage> getUsedAttachments(String usedById, String filter) {
-        ViewQuery viewQuery = createQuery("usedAttachmentsUsageType").includeDocs(true).reduce(false).key(ComplexKey.of(usedById, filter));
-        return queryView(viewQuery);
+        ViewRequestBuilder viewQuery = getConnector().createQuery(AttachmentUsage.class, "usedAttachmentsUsageType");
+        UnpaginatedRequestBuilder reqBuilder = viewQuery.newRequest(Key.Type.COMPLEX, Object.class).includeDocs(true).reduce(false).keys(Key.complex(new String[] { usedById, filter }));
+        return queryView(reqBuilder);
     }
 
-    @View(name = "referencesReleaseId", map = "" + 
-        "function(doc) { " +
-        "   if (doc.type == 'attachmentUsage') {" +
-        "       if(doc.owner && doc.owner.setField_ == 'RELEASE_ID') {" +
-        "           emit(doc.owner.value_, doc);" +
-        "       } else if(doc.usedBy && doc.usedBy.setField_ == 'RELEASE_ID') {" +
-        "           emit(doc.usedBy.value_, doc);" +
-        "       }" +
-        "   }" +
-        "}")
     public List<AttachmentUsage> getUsagesByReleaseId(String releaseId) {
         return queryView("referencesReleaseId", releaseId);
     }
 
     public Map<Map<String, String>, Integer> getAttachmentUsageCount(Map<String, Set<String>> attachments, String filter) {
-        ViewQuery viewQuery = createUsagesByAttachmentQuery(filter);
-        List<ComplexKey> complexKeys = prepareKeys(attachments, filter);
-        ViewResult result = getConnector().queryView(viewQuery.reduce(true).group(true).keys(complexKeys));
-        // result is: { ..., rows: [ { key: [ "releaseId", "attachmentId" ], value: 3 }, ... ] }
-        return result.getRows().stream().collect(Collectors.toMap(row -> {
-            ArrayNode key = (ArrayNode) row.getKeyAsNode();
-            return ImmutableMap.of(key.get(0).asText(), key.get(1).asText());
-        }, row -> row.getValueAsInt()));
+        ViewRequestBuilder viewQuery = createUsagesByAttachmentQuery(filter);
+        List<String[]> complexKeysList = prepareKeys(attachments, filter);
+        Key.ComplexKey[] compexKeys = new Key.ComplexKey[complexKeysList.size()];
+        for (int i = 0; i < compexKeys.length; i++) {
+            Key.ComplexKey key = Key.complex(complexKeysList.get(i));
+            compexKeys[i] = key;
+        }
+        UnpaginatedRequestBuilder<com.cloudant.client.api.views.Key.ComplexKey, Object> reqBuilder = viewQuery.newRequest(Key.Type.COMPLEX, Object.class).reduce(true).group(true).keys(compexKeys);
+        ViewResponse<com.cloudant.client.api.views.Key.ComplexKey, Object> result = queryViewForComplexKeys(reqBuilder);
+
+        return result.getRows().stream().collect(Collectors.toMap(key -> {
+            String json = key.getKey().toJson();
+            String replace = json.replace("[","").replace("]","").replaceAll("\"","");
+            List<String> relIdAttachmentToUsageType = new ArrayList<String>(Arrays.asList(replace.split(",")));
+            return ImmutableMap.of(relIdAttachmentToUsageType.get(0), relIdAttachmentToUsageType.get(1));
+        }, val -> ((Double) val.getValue()).intValue()));
     }
+
 
     public List<AttachmentUsage> getUsageForAttachments(Map<String, Set<String>> attachments, String filter) {
-        ViewQuery viewQuery = createUsagesByAttachmentQuery(filter);
-        viewQuery.includeDocs(true).reduce(false);
-        List<ComplexKey> complexKeys = prepareKeys(attachments, filter);
-        return queryView(viewQuery.keys(complexKeys));
+        ViewRequestBuilder viewQuery = createUsagesByAttachmentQuery(filter);
+        @NotNull List<String[]> complexKeysList = prepareKeys(attachments, filter);
+        Key.ComplexKey[] compexKeys = new Key.ComplexKey[complexKeysList.size()];
+        for (int i = 0; i < compexKeys.length; i++) {
+            Key.ComplexKey key = Key.complex(complexKeysList.get(i));
+            compexKeys[i] = key;
+        }
+        MultipleRequestBuilder<com.cloudant.client.api.views.Key.ComplexKey, Object> reqBuilder = viewQuery.newMultipleRequest(Key.Type.COMPLEX, Object.class).includeDocs(true).reduce(false).keys(compexKeys);
+        return multiRequestqueryView(reqBuilder);
     }
 
-    private ViewQuery createUsagesByAttachmentQuery(String filter) {
-        ViewQuery viewQuery;
+    private ViewRequestBuilder createUsagesByAttachmentQuery(String filter) {
+        ViewRequestBuilder viewQuery;
         if (Strings.isNullOrEmpty(filter)) {
-            viewQuery = createQuery("usagesByAttachment");
+            viewQuery = getConnector().createQuery(AttachmentUsage.class, "usagesByAttachment");
         } else {
-            viewQuery = createQuery("usagesByAttachmentUsageType");
+            viewQuery = getConnector().createQuery(AttachmentUsage.class, "usagesByAttachmentUsageType");
         }
         return viewQuery;
     }
 
     @NotNull
-    private List<ComplexKey> prepareKeys(Map<String, Set<String>> attachments, String filter) {
-        List<ComplexKey> complexKeys = Lists.newArrayList();
-        for(Entry<String, Set<String>> entry : attachments.entrySet()) {
-            for(String attachmentId: entry.getValue()) {
+    private List<String[]> prepareKeys(Map<String, Set<String>> attachments, String filter) {
+        List<String[]> keys = Lists.newArrayList();
+        for (Entry<String, Set<String>> entry : attachments.entrySet()) {
+            for (String attachmentId : entry.getValue()) {
                 if (Strings.isNullOrEmpty(filter)) {
-                    complexKeys.add(ComplexKey.of(entry.getKey(), attachmentId));
+                    keys.add(new String[] { entry.getKey(), attachmentId });
                 } else {
-                    complexKeys.add(ComplexKey.of(entry.getKey(), attachmentId, filter));
+                    keys.add(new String[] { entry.getKey(), attachmentId, filter });
                 }
             }
         }
-        return complexKeys;
+        return keys;
     }
 }

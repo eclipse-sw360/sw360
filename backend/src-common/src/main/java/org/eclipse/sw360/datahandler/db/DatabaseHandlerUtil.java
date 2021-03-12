@@ -11,7 +11,6 @@ package org.eclipse.sw360.datahandler.db;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -34,6 +33,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -41,12 +41,13 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
 import org.apache.thrift.TFieldIdEnum;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.AttachmentMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.COTSDetailsMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ClearingInformationMixin;
@@ -55,7 +56,6 @@ import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.Obligatio
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ProjectReleaseRelationshipMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.RepositoryMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.VendorMixin;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -78,6 +78,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 
+import com.cloudant.client.api.CloudantClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -91,7 +92,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class DatabaseHandlerUtil {
     private static final Logger log = LogManager.getLogger(DatabaseHandlerUtil.class);
     public static final String SEPARATOR = " -> ";
-    private static ChangeLogsRepository changeLogRepository = getChangeLogsRepository();
+    private static ChangeLogsRepository changeLogRepository;
     private static ObjectMapper mapper = initAndGetObjectMapper();
     private static final String ATTACHMENT_ID = "attachmentId_";
     private static final String DOCUMENT_ID = "documentId_";
@@ -107,6 +108,10 @@ public class DatabaseHandlerUtil {
         ATTACHMENT_STORE_FILE_SYSTEM_PERMISSION = props.getProperty("attachment.store.file.system.permission",
                 "rwx------");
         IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED = Boolean.parseBoolean(props.getProperty("enable.attachment.store.to.file.system", "false"));
+    }
+
+    public DatabaseHandlerUtil(DatabaseConnectorCloudant db) {
+            changeLogRepository = new ChangeLogsRepository(db);
     }
 
     private static <T, R> Object[] getCyclicLinkPresenceAndLastElementInCycle(T obj, R handler, User user,
@@ -183,7 +188,7 @@ public class DatabaseHandlerUtil {
         return cyclicHierarchy;
     }
 
-    public static <T, R extends DatabaseRepository> boolean isAllIdInSetExists(Set<String> setOfIds, R repository) {
+    public static <T, R extends DatabaseRepositoryCloudantClient<T>> boolean isAllIdInSetExists(Set<String> setOfIds, R repository) {
         long nonExistingIdCount = 0;
         if (setOfIds != null) {
             nonExistingIdCount = setOfIds.stream()
@@ -309,20 +314,6 @@ public class DatabaseHandlerUtil {
         });
     }
 
-    public static ChangeLogsRepository getChangeLogsRepository() {
-        if (changeLogRepository == null) {
-            try {
-                changeLogRepository = new ChangeLogsRepository(new DatabaseConnector(
-                        DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_CHANGE_LOGS));
-            } catch (MalformedURLException exp) {
-                log.error("Error occured while creating changeLogRepository.", exp);
-                throw new RuntimeException(exp);
-            }
-        }
-
-        return changeLogRepository;
-    }
-
     /**
      * Register basic informations for the Document.
      */
@@ -413,7 +404,7 @@ public class DatabaseHandlerUtil {
     /**
      * Add Chaneglogs into the DB
      */
-    public static <T extends TBase> void addChangeLogs(T newDocVersion, T oldDocVersion, String userEdited,
+    public <T extends TBase> void addChangeLogs(T newDocVersion, T oldDocVersion, String userEdited,
             Operation operation, AttachmentConnector attachmentConnector, List<ChangeLogs> referenceDocLogList,
             String parentDocId, Operation parentOperation) {
         if (DatabaseSettings.COUCH_DB_DATABASE.contains("test")

@@ -223,7 +223,7 @@ public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
     private AttachmentConnector getAttachmentConnector() {
         if (attachmentConnector == null) {
             try {
-                attachmentConnector = new AttachmentConnector(DatabaseSettings.getConfiguredHttpClient(),
+                attachmentConnector = new AttachmentConnector(DatabaseSettings.getConfiguredClient(),
                         DatabaseSettings.COUCH_DB_ATTACHMENTS, Duration.durationOf(30, TimeUnit.SECONDS));
             } catch (MalformedURLException e) {
                 log.error("Could not create attachment connect for Moderator.", e);

@@ -20,7 +20,9 @@ Export-Package: \
 	com.github.ldriscoll.ektorplucene.*, \
 	org.apache.thrift.*, \
 	org.eclipse.sw360.datahandler.*, \
-	org.ektorp.*
+	org.ektorp.*, \
+	com.cloudant.*, \
+	com.google.gson.*
 
 Import-Package: \
 	com.fasterxml.jackson.*, \
@@ -31,13 +33,15 @@ Import-Package: \
 	org.apache.commons.csv.*, \
 	org.apache.commons.logging.*, \
 	org.apache.logging.log4j, \
-	org.slf4j.*
+	org.slf4j.*, \
 
 Conditional-Package: \
 	com.github.ldriscoll.ektorplucene.*, \
 	org.apache.http.*, \
 	org.apache.thrift.*, \
-	org.ektorp.*
+	org.ektorp.*, \
+	com.cloudant.*, \
+	com.google.gson.*
 
 Bundle-Classpath: \
 	.

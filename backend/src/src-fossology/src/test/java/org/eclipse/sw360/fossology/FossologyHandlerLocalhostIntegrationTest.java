@@ -12,9 +12,9 @@ package org.eclipse.sw360.fossology;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.eclipse.sw360.datahandler.TestUtils;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.FossologyUtils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.db.ConfigContainerRepository;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.eclipse.sw360.datahandler.common.DatabaseSettingsTest.COUCH_DB_CONFIG;
-import static org.eclipse.sw360.datahandler.common.DatabaseSettingsTest.getConfiguredHttpClient;
+import static org.eclipse.sw360.datahandler.common.DatabaseSettings.getConfiguredClient;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -84,7 +84,7 @@ public class FossologyHandlerLocalhostIntegrationTest {
         ObjectMapper objectMapper = new ObjectMapper();
 
         FossologyRestConfig restConfig = new FossologyRestConfig(
-                new ConfigContainerRepository(new DatabaseConnector(getConfiguredHttpClient(), COUCH_DB_CONFIG)));
+                new ConfigContainerRepository(new DatabaseConnectorCloudant(getConfiguredClient(), COUCH_DB_CONFIG)));
         Map<String, Set<String>> configKeyToValues = new HashMap<>();
         configKeyToValues.put(FossologyRestConfig.CONFIG_KEY_URL,
                 Stream.of(CONFIG_URL_VALUE).collect(Collectors.toSet()));

@@ -11,6 +11,8 @@ package org.eclipse.sw360.datahandler.couchdb;
 
 import org.eclipse.sw360.components.summary.DocumentSummary;
 import org.eclipse.sw360.components.summary.SummaryType;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import java.util.Collection;
@@ -22,12 +24,12 @@ import java.util.List;
  *
  * @author cedric.bodet@tngtech.com
  */
-public class SummaryAwareRepository<T> extends DatabaseRepository<T> {
+public class SummaryAwareRepository<T> extends DatabaseRepositoryCloudantClient<T> {
 
     protected final DocumentSummary<T> summary;
 
-    public SummaryAwareRepository(Class<T> type, DatabaseConnector databaseConnector, DocumentSummary<T> summary) {
-        super(type, databaseConnector);
+    public SummaryAwareRepository(Class<T> type, DatabaseConnectorCloudant databaseConnector, DocumentSummary<T> summary) {
+        super(databaseConnector, type);
 
         this.summary = summary;
     }

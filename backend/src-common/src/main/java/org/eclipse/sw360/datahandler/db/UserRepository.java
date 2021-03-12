@@ -10,15 +10,17 @@
 package org.eclipse.sw360.datahandler.db;
 
 import org.eclipse.sw360.components.summary.UserSummary;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.ektorp.support.View;
-import org.ektorp.support.Views;
+
+import com.cloudant.client.api.model.DesignDocument.MapReduce;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -29,34 +31,34 @@ import java.util.Set;
  * @author thomas.maier@evosoft.com
  */
 
-@Views({
-        @View(name = "all",
-                map = "function(doc) { if (doc.type == 'user') emit(null, doc._id) }"),
-        @View(name = "byExternalId",
-                map = "function(doc) { if (doc.type == 'user' && doc.externalid) emit(doc.externalid.toLowerCase(), doc._id) }"),
-        @View(name = "byApiToken",
-                map = "function(doc) { if (doc.type == 'user') " +
-                        "  for (var i in doc.restApiTokens) {" +
-                        "    emit(doc.restApiTokens[i].token, doc._id)" +
-                        "  }" +
-                        "}"),
-        @View(name = "byEmail",
-                map = "function(doc) { " +
-                        "  if (doc.type == 'user') {" +
-                        "    emit(doc.email, doc._id); " +
-                        "    if (doc.formerEmailAddresses && Array.isArray(doc.formerEmailAddresses)) {" +
-                        "      var arr = doc.formerEmailAddresses;" +
-                        "      for (var i = 0; i < arr.length; i++){" +
-                        "        emit(arr[i], doc._id);" +
-                        "      }" +
-                        "    }" +
-                        "  }" +
-                        "}"),
-})
 public class UserRepository extends SummaryAwareRepository<User> {
-    public UserRepository(DatabaseConnector databaseConnector) {
+    private static final String ALL = "function(doc) { if (doc.type == 'user') emit(null, doc._id) }";
+    private static final String BYEXTERNALID = "function(doc) { if (doc.type == 'user' && doc.externalid) emit(doc.externalid.toLowerCase(), doc._id) }";
+    private static final String BYAPITOKEN = "function(doc) { if (doc.type == 'user') " +
+            "  for (var i in doc.restApiTokens) {" +
+            "    emit(doc.restApiTokens[i].token, doc._id)" +
+            "  }" +
+            "}";
+    private static final String BYEMAIL = "function(doc) { " +
+            "  if (doc.type == 'user') {" +
+            "    emit(doc.email, doc._id); " +
+            "    if (doc.formerEmailAddresses && Array.isArray(doc.formerEmailAddresses)) {" +
+            "      var arr = doc.formerEmailAddresses;" +
+            "      for (var i = 0; i < arr.length; i++){" +
+            "        emit(arr[i], doc._id);" +
+            "      }" +
+            "    }" +
+            "  }" +
+            "}";
+
+    public UserRepository(DatabaseConnectorCloudant databaseConnector) {
         super(User.class, databaseConnector, new UserSummary());
-        initStandardDesignDocument();
+        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        views.put("all", createMapReduce(ALL, null));
+        views.put("byExternalId", createMapReduce(BYEXTERNALID, null));
+        views.put("byApiToken", createMapReduce(BYAPITOKEN, null));
+        views.put("byEmail", createMapReduce(BYEMAIL, null));
+        initStandardDesignDocument(views, databaseConnector);
     }
 
     @Override

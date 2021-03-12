@@ -9,10 +9,18 @@
  */
 package org.eclipse.sw360.datahandler.common;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.ektorp.http.HttpClient;
 import org.ektorp.http.StdHttpClient;
 
+import com.cloudant.client.api.ClientBuilder;
+import com.cloudant.client.api.CloudantClient;
+import com.google.gson.GsonBuilder;
+
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Properties;
 import java.util.function.Supplier;
 
@@ -21,6 +29,7 @@ import java.util.function.Supplier;
  */
 public class DatabaseSettingsTest {
 
+    private static final Logger log = LogManager.getLogger(DatabaseSettingsTest.class);
     public static final String PROPERTIES_FILE_PATH = "/couchdb-test.properties";
 
     public static final String COUCH_DB_URL;
@@ -30,6 +39,7 @@ public class DatabaseSettingsTest {
     public static final String COUCH_DB_CONFIG;
     public static final String COUCH_DB_USERS;
     public static final String COUCH_DB_VM;
+    public static final String COUCH_CHANGELOGS;
 
     private static final String COUCH_DB_USERNAME;
     private static final String COUCH_DB_PASSWORD;
@@ -46,6 +56,7 @@ public class DatabaseSettingsTest {
         COUCH_DB_CONFIG = props.getProperty("couchdb.config", "sw360_test_config");
         COUCH_DB_USERS = props.getProperty("couchdb.usersdb", "sw360_test_users");
         COUCH_DB_VM = props.getProperty("couchdb.vulnerability_management", "sw360_test_vm");
+        COUCH_CHANGELOGS = props.getProperty("couchdb.change_logs", "sw360_test_changelogs");
     }
 
     public static Supplier<HttpClient> getConfiguredHttpClient() throws MalformedURLException {
@@ -57,6 +68,30 @@ public class DatabaseSettingsTest {
             httpClientBuilder.password(COUCH_DB_PASSWORD);
         }
         return httpClientBuilder::build;
+    }
+
+    public static Supplier<CloudantClient> getConfiguredClient() {
+        ClientBuilder clientBuilder = null;
+        GsonBuilder gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping();
+        for (Class<?> c : ThriftUtils.THRIFT_CLASSES) {
+            gson.registerTypeAdapter(c, new CustomThriftDeserializer());
+            gson.registerTypeAdapter(c, new CustomThriftSerializer());
+        }
+        for (Class<?> c : ThriftUtils.THRIFT_NESTED_CLASSES) {
+            gson.registerTypeAdapter(c, new CustomThriftSerializer());
+        }
+        try {
+            clientBuilder = ClientBuilder.url(new URL(COUCH_DB_URL)).gsonBuilder(gson);
+            if (!"".equals(COUCH_DB_USERNAME)) {
+                clientBuilder.username(COUCH_DB_USERNAME);
+            }
+            if (!"".equals(COUCH_DB_PASSWORD)) {
+                clientBuilder.password(COUCH_DB_PASSWORD);
+            }
+        } catch (MalformedURLException e) {
+            log.error("Error creating client", e);
+        }
+        return clientBuilder::build;
     }
 
 

@@ -9,7 +9,7 @@
  */
 package org.eclipse.sw360.datahandler.couchdb;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -17,13 +17,14 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.ektorp.AttachmentInputStream;
-import org.ektorp.DocumentNotFoundException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import com.cloudant.client.org.lightcouch.NoDocumentException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,7 +44,7 @@ import static org.mockito.Mockito.*;
 @RunWith(MockitoJUnitRunner.class)
 public class AttachmentStreamConnectorTest {
     @Mock
-    public DatabaseConnector connector;
+    public DatabaseConnectorCloudant connector;
     @Mock
     private AttachmentContentDownloader attachmentContentDownloader;
 
@@ -173,7 +174,7 @@ public class AttachmentStreamConnectorTest {
         AttachmentInputStream part1 = mock(AttachmentInputStream.class);
         when(connector.getAttachment(attachmentId, "fil_part1")).thenReturn(part1);
 
-        when(connector.getAttachment(attachmentId, "fil_part2")).thenThrow(new DocumentNotFoundException(""));
+        when(connector.getAttachment(attachmentId, "fil_part2")).thenThrow(new NoDocumentException(""));
 
         when(part1.read()).thenReturn(1, -1);
         InputStream attachmentStream = attachmentStreamConnector.getAttachmentStream(attachment, dummyUser,

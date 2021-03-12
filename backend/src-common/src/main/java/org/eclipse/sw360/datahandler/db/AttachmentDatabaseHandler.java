@@ -9,24 +9,24 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
+import com.cloudant.client.api.CloudantClient;
+import com.cloudant.client.api.model.Response;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import org.apache.logging.log4j.Logger;
+import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
-import org.ektorp.BulkDeleteDocument;
-import org.ektorp.DocumentOperationResult;
-import org.ektorp.http.HttpClient;
 
 import java.net.MalformedURLException;
 import java.util.List;
@@ -46,7 +46,7 @@ import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.validateAttach
  * @author: alex.borodin@evosoft.com
  */
 public class AttachmentDatabaseHandler {
-    private final DatabaseConnector db;
+    private final DatabaseConnectorCloudant db;
     private final AttachmentContentRepository attachmentContentRepository;
     private final AttachmentConnector attachmentConnector;
     private final AttachmentUsageRepository attachmentUsageRepository;
@@ -56,13 +56,13 @@ public class AttachmentDatabaseHandler {
 
     private static final Logger log = LogManager.getLogger(AttachmentDatabaseHandler.class);
 
-    public AttachmentDatabaseHandler(Supplier<HttpClient> httpClient, String dbName, String attachmentDbName) throws MalformedURLException {
-        db = new DatabaseConnector(httpClient, attachmentDbName);
+    public AttachmentDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String attachmentDbName) throws MalformedURLException {
+        db = new DatabaseConnectorCloudant(httpClient, attachmentDbName);
         attachmentConnector = new AttachmentConnector(httpClient, attachmentDbName, durationOf(30, TimeUnit.SECONDS));
         attachmentContentRepository = new AttachmentContentRepository(db);
-        attachmentUsageRepository = new AttachmentUsageRepository(new DatabaseConnector(httpClient, dbName));
-        attachmentRepository = new AttachmentRepository(new DatabaseConnector(httpClient, dbName));
-        attachmentOwnerRepository = new AttachmentOwnerRepository(new DatabaseConnector(httpClient, dbName));
+        attachmentUsageRepository = new AttachmentUsageRepository(new DatabaseConnectorCloudant(httpClient, dbName));
+        attachmentRepository = new AttachmentRepository(new DatabaseConnectorCloudant(httpClient, dbName));
+        attachmentOwnerRepository = new AttachmentOwnerRepository(new DatabaseConnectorCloudant(httpClient, dbName));
     }
 
     public AttachmentConnector getAttachmentConnector(){
@@ -74,8 +74,8 @@ public class AttachmentDatabaseHandler {
         return attachmentContent;
     }
     public List<AttachmentContent> makeAttachmentContents(List<AttachmentContent> attachmentContents) throws TException {
-        final List<DocumentOperationResult> documentOperationResults = attachmentContentRepository.executeBulk(attachmentContents);
-        if (!documentOperationResults.isEmpty())
+        final List<Response> documentOperationResults = attachmentContentRepository.executeBulk(attachmentContents);
+        if (documentOperationResults.isEmpty())
             log.error("Failed Attachment store results " + documentOperationResults);
 
         return attachmentContents.stream().filter(AttachmentContent::isSetId).collect(Collectors.toList());
@@ -91,7 +91,7 @@ public class AttachmentDatabaseHandler {
         attachmentConnector.updateAttachmentContent(attachment);
     }
     public RequestSummary bulkDelete(List<String> ids) {
-        final List<DocumentOperationResult> documentOperationResults = attachmentContentRepository.deleteIds(ids);
+        final List<Response> documentOperationResults = attachmentContentRepository.deleteIds(ids);
         return CommonUtils.getRequestSummary(ids, documentOperationResults);
     }
     public RequestStatus deleteAttachmentContent(String attachmentId) throws TException {
@@ -147,7 +147,9 @@ public class AttachmentDatabaseHandler {
 
     public void makeAttachmentUsages(List<AttachmentUsage> attachmentUsages) throws TException {
         List<AttachmentUsage> sanitizedUsages = distinctAttachmentUsages(attachmentUsages);
-        List<DocumentOperationResult> results = attachmentUsageRepository.executeBulk(sanitizedUsages);
+        List<Response> results = attachmentUsageRepository.executeBulk(sanitizedUsages);
+        results = results.stream().filter(res -> res.getError() != null || res.getStatusCode() != HttpStatus.SC_CREATED)
+                .collect(Collectors.toList());
         if (!results.isEmpty()) {
             throw new SW360Exception("Some of the usage documents could not be created: " + results);
         }
@@ -185,19 +187,23 @@ public class AttachmentDatabaseHandler {
     }
 
     public void updateAttachmentUsages(List<AttachmentUsage> attachmentUsages) throws TException {
-        List<DocumentOperationResult> results = attachmentUsageRepository.executeBulk(attachmentUsages);
+        List<Response> results = attachmentUsageRepository.executeBulk(attachmentUsages);
+        results = results.stream().filter(res -> res.getError() != null || res.getStatusCode() != HttpStatus.SC_CREATED)
+                .collect(Collectors.toList());
         if (!results.isEmpty()) {
             throw new SW360Exception("Some of the usage documents could not be updated: " + results);
         }
     }
 
-    public void deleteAttachmentUsage(AttachmentUsage attachmentUsage) {
+    public void deleteAttachmentUsage(AttachmentUsage attachmentUsage) throws SW360Exception {
         attachmentUsageRepository.remove(attachmentUsage);
     }
 
     public void deleteAttachmentUsages(List<AttachmentUsage> attachmentUsages) throws SW360Exception {
-        List<DocumentOperationResult> results = attachmentUsageRepository.executeBulk(
-                attachmentUsages.stream().map(BulkDeleteDocument::of).collect(Collectors.toList()));
+        List<Response> results = attachmentUsageRepository.deleteIds(
+                attachmentUsages.stream().map(AttachmentUsage::getId).collect(Collectors.toList()));
+        results = results.stream().filter(res -> res.getError() != null || res.getStatusCode() != HttpStatus.SC_OK)
+                .collect(Collectors.toList());
         if (!results.isEmpty()) {
             throw new SW360Exception("Some of the usage documents could not be deleted: " + results);
         }

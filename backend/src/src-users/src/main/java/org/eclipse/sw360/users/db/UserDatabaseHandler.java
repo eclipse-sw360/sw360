@@ -9,6 +9,8 @@
  */
 package org.eclipse.sw360.users.db;
 
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.db.UserRepository;
 import org.eclipse.sw360.datahandler.db.UserSearchHandler;
@@ -18,6 +20,8 @@ import org.eclipse.sw360.datahandler.thrift.ThriftValidate;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.ektorp.http.HttpClient;
+
+import com.cloudant.client.api.CloudantClient;
 
 import java.io.IOException;
 import java.util.List;
@@ -35,15 +39,25 @@ public class UserDatabaseHandler {
     /**
      * Connection to the couchDB database
      */
-    private DatabaseConnector db;
+    private DatabaseConnectorCloudant db;
+    private DatabaseConnector dbConnector;
     private UserRepository repository;
     private UserSearchHandler userSearchHandler;
 
-    public UserDatabaseHandler(Supplier<HttpClient> httpClient, String dbName) throws IOException {
+    public UserDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws IOException {
         // Create the connector
-        db = new DatabaseConnector(httpClient, dbName);
+        db = new DatabaseConnectorCloudant(httpClient, dbName);
+        dbConnector = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), dbName);
         repository = new UserRepository(db);
-        userSearchHandler = new UserSearchHandler(db);
+        userSearchHandler = new UserSearchHandler(dbConnector);
+    }
+
+    public UserDatabaseHandler(Supplier<CloudantClient> httpClient,Supplier<HttpClient> client, String dbName) throws IOException {
+        // Create the connector
+        db = new DatabaseConnectorCloudant(httpClient, dbName);
+        dbConnector = new DatabaseConnector(client, dbName);
+        repository = new UserRepository(db);
+        userSearchHandler = new UserSearchHandler(dbConnector);
     }
 
     public User getByEmail(String email) {

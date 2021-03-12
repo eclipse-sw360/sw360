@@ -15,6 +15,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.assertUser;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.function.Supplier;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
@@ -23,6 +24,8 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogsService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+
+import com.cloudant.client.api.CloudantClient;
 
 /**
  * Implementation of the Thrift service
@@ -34,8 +37,11 @@ public class ChangeLogsHandler implements ChangeLogsService.Iface {
     private final ChangeLogsDatabaseHandler handler;
 
     ChangeLogsHandler() throws IOException {
-        handler = new ChangeLogsDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(),
-                DatabaseSettings.COUCH_DB_CHANGE_LOGS);
+        this(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_CHANGE_LOGS);
+    }
+
+    ChangeLogsHandler(Supplier<CloudantClient> client, String dbName) throws IOException {
+        handler = new ChangeLogsDatabaseHandler(client, dbName);
     }
 
     @Override

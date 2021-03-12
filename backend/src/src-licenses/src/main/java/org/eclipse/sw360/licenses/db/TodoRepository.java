@@ -9,10 +9,14 @@
  */
 package org.eclipse.sw360.licenses.db;
 
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
-import org.ektorp.support.View;
+
+import com.cloudant.client.api.model.DesignDocument.MapReduce;
 
 /**
  * CRUD access for the Obligation class
@@ -20,13 +24,15 @@ import org.ektorp.support.View;
  * @author cedric.bodet@tngtech.com
  * @author Johannes.Najjar@tngtech.com
  */
-@View(name = "all", map = "function(doc) { if (doc.type == 'obligation') emit(null, doc._id) }")
-public class TodoRepository extends DatabaseRepository<Obligation> {
+public class TodoRepository extends DatabaseRepositoryCloudantClient<Obligation> {
 
-    public TodoRepository(DatabaseConnector db) {
-        super(Obligation.class, db);
+    private static final String ALL = "function(doc) { if (doc.type == 'obligation') emit(null, doc._id) }";
 
-        initStandardDesignDocument();
+    public TodoRepository(DatabaseConnectorCloudant db) {
+        super(db, Obligation.class);
+        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        views.put("all", createMapReduce(ALL, null));
+        initStandardDesignDocument(views, db);
     }
 
 }

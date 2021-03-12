@@ -257,7 +257,7 @@ public class Sw360AttachmentService {
     private synchronized void makeConnector() throws TException {
         if (attachmentConnector == null) {
             try {
-                attachmentConnector = new AttachmentConnector(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_ATTACHMENTS, downloadTimeout);
+                attachmentConnector = new AttachmentConnector(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_ATTACHMENTS, downloadTimeout);
             } catch (MalformedURLException e) {
                 log.error("Invalid database address received...", e);
                 throw new TException(e);

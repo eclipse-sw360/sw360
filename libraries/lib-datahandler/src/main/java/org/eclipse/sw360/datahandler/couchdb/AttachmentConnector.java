@@ -9,9 +9,11 @@
  */
 package org.eclipse.sw360.datahandler.couchdb;
 
+import com.cloudant.client.api.CloudantClient;
 import com.google.common.collect.Sets;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -21,7 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -34,7 +35,6 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotEmpty;
 import static org.apache.commons.codec.digest.DigestUtils.sha1Hex;
 
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
-import org.ektorp.http.HttpClient;
 
 /**
  * Ektorp connector for uploading attachments
@@ -46,15 +46,15 @@ public class AttachmentConnector extends AttachmentStreamConnector {
 
     private static Logger log = LogManager.getLogger(AttachmentConnector.class);
 
-    public AttachmentConnector(DatabaseConnector connector, Duration downloadTimeout) {
-        super(connector, downloadTimeout);
+    public AttachmentConnector(DatabaseConnectorCloudant databaseConnectorCloudant, Duration downloadTimeout) {
+        super(databaseConnectorCloudant, downloadTimeout);
     }
 
     /**
      * @todo remove this mess of constructors and use dependency injection
      */
-    public AttachmentConnector(Supplier<HttpClient> httpClient, String dbName, Duration downloadTimeout) throws MalformedURLException {
-        this(new DatabaseConnector(httpClient.get(), dbName), downloadTimeout);
+    public AttachmentConnector(Supplier<CloudantClient> httpClient, String dbName, Duration downloadTimeout) throws MalformedURLException {
+        this(new DatabaseConnectorCloudant(httpClient, dbName), downloadTimeout);
     }
 
     /**
@@ -74,7 +74,7 @@ public class AttachmentConnector extends AttachmentStreamConnector {
     }
 
     public void deleteAttachment(String id) {
-        connector.deleteById(id);
+        connector.deleteById(AttachmentContent.class, id);
     }
 
     public void deleteAttachments(Collection<Attachment> attachments) {
@@ -83,7 +83,7 @@ public class AttachmentConnector extends AttachmentStreamConnector {
     }
 
     private void deleteAttachmentsByIds(Collection<String> attachmentContentIds) {
-        connector.deleteIds(attachmentContentIds, AttachmentContent.class);
+        connector.deleteIds(AttachmentContent.class, attachmentContentIds);
     }
 
     public Set<String> getAttachmentContentIds(Collection<Attachment> attachments) {

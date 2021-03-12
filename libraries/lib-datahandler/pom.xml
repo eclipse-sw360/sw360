@@ -152,6 +152,11 @@
             <groupId>org.ektorp</groupId>
             <artifactId>org.ektorp</artifactId>
         </dependency>
+	<dependency>
+            <groupId>com.cloudant</groupId>
+            <artifactId>cloudant-client</artifactId>
+            <version>2.19.1</version>
+	</dependency>
         <!-- Pull in newer versions of fasterxml (excluded by ektorp) -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

@@ -10,12 +10,17 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.CustomProperties;
-import org.ektorp.support.View;
 
+import com.cloudant.client.api.model.DesignDocument.MapReduce;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -23,25 +28,27 @@ import java.util.List;
  *
  * @author birgit.heydenreich@tngtech.com
  */
-@View(name = "all", map = "function(doc) { if (doc.type == 'customproperties') emit(null, doc._id) }")
-public class CustomPropertiesRepository extends DatabaseRepository<CustomProperties> {
+public class CustomPropertiesRepository extends DatabaseRepositoryCloudantClient<CustomProperties> {
 
+    private static final Logger log = LogManager.getLogger(CustomPropertiesRepository.class);
     private static final String CUSTOM_PROPERTIES_BY_DOCTYPE =
             "function(doc) {" +
                     "  if (doc.type == 'customproperties') {" +
                     "    emit(doc.documentType, doc);" +
                     "  }" +
                     "}";
+    private static final String ALL = "function(doc) { if (doc.type == 'customproperties') emit(null, doc._id) }";
 
-    public CustomPropertiesRepository(DatabaseConnector db) {
-        super(CustomProperties.class, db);
-        initStandardDesignDocument();
+    public CustomPropertiesRepository(DatabaseConnectorCloudant db) {
+        super(db, CustomProperties.class);
+        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        views.put("customPropertiesByDocType", createMapReduce(CUSTOM_PROPERTIES_BY_DOCTYPE, null));
+        views.put("all", createMapReduce(ALL, null));
+        initStandardDesignDocument(views, db);
     }
 
-    @View(name = "customPropertiesByDocType", map = CUSTOM_PROPERTIES_BY_DOCTYPE)
     public List<CustomProperties> getCustomProperties(String documentType) {
         List<CustomProperties> queryResults = queryByPrefix("customPropertiesByDocType", documentType);
-
         if (queryResults.size() > 1) {
             log.error("More than one customProperties object found for document type " + documentType);
         }

@@ -11,15 +11,16 @@ package org.eclipse.sw360.datahandler.db;
 
 import org.eclipse.sw360.components.summary.ComponentSummary;
 import org.eclipse.sw360.components.summary.SummaryType;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
-import org.ektorp.ViewQuery;
-import org.ektorp.support.View;
-import org.ektorp.support.Views;
+import com.cloudant.client.api.model.DesignDocument.MapReduce;
+import com.cloudant.client.api.views.Key;
+import com.cloudant.client.api.views.UnpaginatedRequestBuilder;
+import com.cloudant.client.api.views.ViewRequestBuilder;
 
 import java.util.*;
 
@@ -29,124 +30,124 @@ import java.util.*;
  * @author cedric.bodet@tngtech.com
  * @author Johannes.Najjar@tngtech.com
  */
-@Views({
-        @View(name = "all",
-                map = "function(doc) { if (doc.type == 'component') emit(null, doc) }"),
-        @View(name = "byCreatedOn",
-                map = "function(doc) { if(doc.type == 'component') { emit(doc.createdOn, doc) } }"),
-        @View(name = "usedAttachmentContents",
-                map = "function(doc) { " +
-                    "    if(doc.type == 'release' || doc.type == 'component' || doc.type == 'project') {" +
-                    "        for(var i in doc.attachments){" +
-                    "            emit(null, doc.attachments[i].attachmentContentId);" +
-                    "        }" +
-                    "    }" +
-                    "}"),
-        @View(name = "mycomponents",
-                map = "function(doc) {" +
-                    "  if (doc.type == 'component') {" +
-                    "    emit(doc.createdBy, doc);" +
-                    "  } " +
-                    "}"),
-        @View(name = "subscribers",
-                map = "function(doc) {" +
-                    "  if (doc.type == 'component') {" +
-                    "    for(var i in doc.subscribers) {" +
-                    "      emit(doc.subscribers[i], doc._id);" +
-                    "    }" +
-                    "  }" +
-                    "}"),
-        @View(name = "byname",
-                map = "function(doc) {" +
-                    "  if (doc.type == 'component') {" +
-                    "    emit(doc.name, doc._id);" +
-                    "  } " +
-                    "}"),
-        @View(name = "bynamelowercase",
-                map = "function(doc) {" +
-                    "  if (doc.type == 'component') {" +
-                    "    emit(doc.name.toLowerCase(), doc._id);" +
-                    "  } " +
-                    "}"),
-        @View(name = "fullbyname",
-                map = "function(doc) {" +
-                    "  if (doc.type == 'component') {" +
-                    "    emit(doc.name, doc);" +
-                    "  } " +
-                    "}"),
-        @View(name = "byLinkingRelease",
-                map = "function(doc) {" +
-                    "  if (doc.type == 'release') {" +
-                    "    for(var i in doc.releaseIdToRelationship) {" +
-                    "      emit(i, doc.componentId);" +
-                    "    }" +
-                    "  }" +
-                    "}"),
-        @View(name = "byFossologyId",
-                map = "function(doc) {\n" +
-                    "  if (doc.type == 'release') {\n" +
-                    "    if (Array.isArray(doc.externalToolProcesses)) {\n" +
-                    "      for (var i = 0; i < doc.externalToolProcesses.length; i++) {\n" +
-                    "        externalToolProcess = doc.externalToolProcesses[i];\n" +
-                    "        if (externalToolProcess.externalTool === 'FOSSOLOGY' && Array.isArray(externalToolProcess.processSteps)) {\n" +
-                    "          for (var j = 0; j < externalToolProcess.processSteps.length; j++) {\n" +
-                    "            processStep = externalToolProcess.processSteps[j];\n" +
-                    "            if (processStep.stepName === '01_upload' && processStep.processStepIdInTool > 0) {\n" +
-                    "              emit(processStep.processStepIdInTool, doc.componentId);\n" +
-                    "              break;\n" +
-                    "            }\n" +
-                    "          }\n" +
-                    "        }\n" +
-                    "      }\n" +
-                    "    }\n" +
-                    "  }\n" +
-                    "}"),
-        @View(name = "byExternalIds",
-                map = "function(doc) {" +
-                        "  if (doc.type == 'component') {" +
-                        "    for (var externalId in doc.externalIds) {" +
-                        "      try {" +
-                        "            var values = JSON.parse(doc.externalIds[externalId]);" +
-                        "            if(!isNaN(values)) {" +
-                        "               emit( [externalId, doc.externalIds[externalId]], doc._id);" +
-                        "               continue;" +
-                        "            }" +
-                        "            for (var idx in values) {" +
-                        "              emit( [externalId, values[idx]], doc._id);" +
-                        "            }" +
-                        "      } catch(error) {" +
-                        "          emit( [externalId, doc.externalIds[externalId]], doc._id);" +
-                        "      }" +
-                        "    }" +
-                        "  }" +
-                        "}"),
-        @View(name = "byDefaultVendorId",
-                map = "function(doc) {" +
-                        "  if (doc.type == 'component') {" +
-                        "       emit( doc.defaultVendorId , doc._id);" +
-                        "  }" +
-                        "}")
-})
 public class ComponentRepository extends SummaryAwareRepository<Component> {
+    private static final String ALL = "function(doc) { if (doc.type == 'component') emit(null, doc) }";
+    private static final String BYCREATEDON = "function(doc) { if(doc.type == 'component') { emit(doc.createdOn, doc) } }";
+    private static final String USEDATTACHMENTCONTENTS = "function(doc) { " +
+            "    if(doc.type == 'release' || doc.type == 'component' || doc.type == 'project') {" +
+            "        for(var i in doc.attachments){" +
+            "            emit(null, doc.attachments[i].attachmentContentId);" +
+            "        }" +
+            "    }" +
+            "}";
+    private static final String MYCOMPONENTS = "function(doc) {" +
+            "  if (doc.type == 'component') {" +
+            "    emit(doc.createdBy, doc);" +
+            "  } " +
+            "}";
+    private static final String SUBSCRIBERS = "function(doc) {" +
+            "  if (doc.type == 'component') {" +
+            "    for(var i in doc.subscribers) {" +
+            "      emit(doc.subscribers[i], doc._id);" +
+            "    }" +
+            "  }" +
+            "}";
+    private static final String BYNAME = "function(doc) {" +
+            "  if (doc.type == 'component') {" +
+            "    emit(doc.name, doc._id);" +
+            "  } " +
+            "}";
+    private static final String FULLBYNAME = "function(doc) {" +
+            "  if (doc.type == 'component') {" +
+            "    emit(doc.name, doc);" +
+            "  } " +
+            "}";
+    private static final String BYLINKINGRELEASE = "function(doc) {" +
+            "  if (doc.type == 'release') {" +
+            "    for(var i in doc.releaseIdToRelationship) {" +
+            "      emit(i, doc.componentId);" +
+            "    }" +
+            "  }" +
+            "}";
+    private static final String BYFOSSOLOGYID = "function(doc) {\n" +
+            "  if (doc.type == 'release') {\n" +
+            "    if (Array.isArray(doc.externalToolProcesses)) {\n" +
+            "      for (var i = 0; i < doc.externalToolProcesses.length; i++) {\n" +
+            "        externalToolProcess = doc.externalToolProcesses[i];\n" +
+            "        if (externalToolProcess.externalTool === 'FOSSOLOGY' && Array.isArray(externalToolProcess.processSteps)) {\n" +
+            "          for (var j = 0; j < externalToolProcess.processSteps.length; j++) {\n" +
+            "            processStep = externalToolProcess.processSteps[j];\n" +
+            "            if (processStep.stepName === '01_upload' && processStep.processStepIdInTool > 0) {\n" +
+            "              emit(processStep.processStepIdInTool, doc.componentId);\n" +
+            "              break;\n" +
+            "            }\n" +
+            "          }\n" +
+            "        }\n" +
+            "      }\n" +
+            "    }\n" +
+            "  }\n" +
+            "}";
+    private static final String BYEXTERNALIDS = "function(doc) {" +
+            "  if (doc.type == 'component') {" +
+            "    for (var externalId in doc.externalIds) {" +
+            "      try {" +
+            "            var values = JSON.parse(doc.externalIds[externalId]);" +
+            "            if(!isNaN(values)) {" +
+            "               emit( [externalId, doc.externalIds[externalId]], doc._id);" +
+            "               continue;" +
+            "            }" +
+            "            for (var idx in values) {" +
+            "              emit( [externalId, values[idx]], doc._id);" +
+            "            }" +
+            "      } catch(error) {" +
+            "          emit( [externalId, doc.externalIds[externalId]], doc._id);" +
+            "      }" +
+            "    }" +
+            "  }" +
+            "}";
+    private static final String BYDEFAULTVENDORID = "function(doc) {" +
+            "  if (doc.type == 'component') {" +
+            "       emit( doc.defaultVendorId , doc._id);" +
+            "  }" +
+            "}";
 
-    public ComponentRepository(DatabaseConnector db, ReleaseRepository releaseRepository, VendorRepository vendorRepository) {
+    private static final String BYNAMELOWERCASE = "function(doc) {" +
+            "  if (doc.type == 'component') {" +
+            "    emit(doc.name.toLowerCase(), doc._id);" +
+            "  } " +
+            "}";
+
+    public ComponentRepository(DatabaseConnectorCloudant db, ReleaseRepository releaseRepository, VendorRepository vendorRepository) {
         super(Component.class, db, new ComponentSummary(releaseRepository, vendorRepository));
-
-        initStandardDesignDocument();
+        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        views.put("all", createMapReduce(ALL, null));
+        views.put("byCreatedOn", createMapReduce(BYCREATEDON, null));
+        views.put("usedAttachmentContents", createMapReduce(USEDATTACHMENTCONTENTS, null));
+        views.put("mycomponents", createMapReduce(MYCOMPONENTS, null));
+        views.put("subscribers", createMapReduce(SUBSCRIBERS, null));
+        views.put("byname", createMapReduce(BYNAME, null));
+        views.put("fullbyname", createMapReduce(FULLBYNAME, null));
+        views.put("byLinkingRelease", createMapReduce(BYLINKINGRELEASE, null));
+        views.put("byFossologyId", createMapReduce(BYFOSSOLOGYID, null));
+        views.put("byExternalIds", createMapReduce(BYEXTERNALIDS, null));
+        views.put("byDefaultVendorId", createMapReduce(BYDEFAULTVENDORID, null));
+        views.put("bynamelowercase", createMapReduce(BYNAMELOWERCASE, null));
+        initStandardDesignDocument(views, db);
     }
 
     public List<Component> getRecentComponentsSummary(int limit, User user) {
-        ViewQuery query = createQuery("byCreatedOn").includeDocs(true).descending(true);
+        ViewRequestBuilder query = getConnector().createQuery(Component.class, "byCreatedOn");
+        UnpaginatedRequestBuilder<String, Object> unPagnReques = query.newRequest(Key.Type.STRING, Object.class).includeDocs(true).descending(true);
         if (limit >= 0){
-            query.limit(limit);
+            unPagnReques.limit(limit);
         }
-        List<Component> components = db.queryView(query, Component.class);
+        List<Component> components = queryView(unPagnReques);
 
         return makeSummaryWithPermissionsFromFullDocs(SummaryType.SUMMARY, components, user);
     }
 
     public Set<String> getUsedAttachmentContents() {
-        return queryForIdsAsValue(createQuery("usedAttachmentContents"));
+        return queryForIdsAsValue(getConnector().createQuery(Component.class, "usedAttachmentContents"));
     }
 
     public Collection<Component> getMyComponents(String user) {

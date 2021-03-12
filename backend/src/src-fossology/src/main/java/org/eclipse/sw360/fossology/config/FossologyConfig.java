@@ -11,9 +11,9 @@ package org.eclipse.sw360.fossology.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.db.ConfigContainerRepository;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 
@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.eclipse.sw360.datahandler.common.DatabaseSettings.COUCH_DB_ATTACHMENTS;
 import static org.eclipse.sw360.datahandler.common.DatabaseSettings.COUCH_DB_CONFIG;
-import static org.eclipse.sw360.datahandler.common.DatabaseSettings.getConfiguredHttpClient;
+import static org.eclipse.sw360.datahandler.common.DatabaseSettings.getConfiguredClient;
 import static org.eclipse.sw360.datahandler.common.Duration.durationOf;
 
 @Configuration
@@ -38,14 +38,14 @@ public class FossologyConfig {
 
     @Bean
     public ConfigContainerRepository configContainerRepository() throws MalformedURLException {
-        DatabaseConnector configContainerDatabaseConnector = new DatabaseConnector(getConfiguredHttpClient(),
+        DatabaseConnectorCloudant configContainerDatabaseConnector = new DatabaseConnectorCloudant(getConfiguredClient(),
                 COUCH_DB_CONFIG);
         return new ConfigContainerRepository(configContainerDatabaseConnector);
     }
 
     @Bean
     public AttachmentConnector attachmentConnector() throws MalformedURLException {
-        return new AttachmentConnector(getConfiguredHttpClient(), COUCH_DB_ATTACHMENTS, downloadTimeout);
+        return new AttachmentConnector(getConfiguredClient(), COUCH_DB_ATTACHMENTS, downloadTimeout);
     }
 
     @Bean

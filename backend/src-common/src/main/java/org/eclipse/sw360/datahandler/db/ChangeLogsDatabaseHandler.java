@@ -20,15 +20,15 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangedFields;
 import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.ektorp.http.HttpClient;
 
+import com.cloudant.client.api.CloudantClient;
 import com.google.common.collect.ImmutableSet;
 
 /**
@@ -37,7 +37,7 @@ import com.google.common.collect.ImmutableSet;
  * @author: jaideep.palit@siemens.com
  */
 public class ChangeLogsDatabaseHandler {
-    private final DatabaseConnector db;
+    private final DatabaseConnectorCloudant db;
     private final ChangeLogsRepository changeLogsRepository;
     private static final ImmutableSet<String> setOfIgnoredFieldValues = ImmutableSet.<String>builder()
             .add("\"\"")
@@ -47,8 +47,8 @@ public class ChangeLogsDatabaseHandler {
             .add("revision")
             .add("documentState").build();
 
-    public ChangeLogsDatabaseHandler(Supplier<HttpClient> httpClient, String dbName) throws MalformedURLException {
-        db = new DatabaseConnector(httpClient, dbName);
+    public ChangeLogsDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException {
+        db = new DatabaseConnectorCloudant(httpClient, dbName);
         changeLogsRepository = new ChangeLogsRepository(db);
     }
 

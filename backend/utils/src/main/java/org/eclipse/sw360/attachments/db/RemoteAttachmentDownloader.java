@@ -11,6 +11,7 @@
 package org.eclipse.sw360.attachments.db;
 
 import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
@@ -19,6 +20,8 @@ import org.eclipse.sw360.datahandler.db.AttachmentContentRepository;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.ektorp.http.HttpClient;
+
+import com.cloudant.client.api.CloudantClient;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,12 +44,12 @@ public class RemoteAttachmentDownloader {
 
     public static void main(String[] args) throws MalformedURLException {
         Duration downloadTimeout = durationOf(30, TimeUnit.SECONDS);
-        retrieveRemoteAttachments(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_ATTACHMENTS, downloadTimeout);
+        retrieveRemoteAttachments(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_ATTACHMENTS, downloadTimeout);
     }
 
-    public static int retrieveRemoteAttachments(Supplier<HttpClient> httpClient, String dbAttachments, Duration downloadTimeout) throws MalformedURLException {
+    public static int retrieveRemoteAttachments(Supplier<CloudantClient> httpClient, String dbAttachments, Duration downloadTimeout) throws MalformedURLException {
         AttachmentConnector attachmentConnector = new AttachmentConnector(httpClient, dbAttachments, downloadTimeout);
-        AttachmentContentRepository attachmentContentRepository = new AttachmentContentRepository(new DatabaseConnector(httpClient, dbAttachments));
+        AttachmentContentRepository attachmentContentRepository = new AttachmentContentRepository(new DatabaseConnectorCloudant(httpClient, dbAttachments));
 
         List<AttachmentContent> remoteAttachments = attachmentContentRepository.getOnlyRemoteAttachments();
         log.info("we have {} remote attachments to retrieve", remoteAttachments.size());
