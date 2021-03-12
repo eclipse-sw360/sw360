@@ -27,7 +27,7 @@
             <span title="Config" class="dropdown-toggle float-none" data-toggle="dropdown" id="configId">
                 <clay:icon symbol="select-from-list" />
             </span>
-            <ul class="dropdown-menu" id="dropdownmenu" name="<portlet:namespace/>roles"
+            <ul class="dropdown-menu" id="dropdownmenu" name="<portlet:namespace/>rolesandclearingstate"
                 aria-labelledby="configId">
                 <li class="dropdown-header">Role in Project</li>
                 <li><hr class="my-2" /></li>
@@ -65,6 +65,24 @@
                     <input type="checkbox" class="form-check-input ml-4" id="securityResponsible"
                     <core_rt:if test="${userRoles==null||userRoles.SECURITY_RESPONSIBLES}">checked="checked"</core_rt:if>>
                     <label class="form-check-label" for="securityResponsible">Security Responsible</label>
+                </li>
+                <li><hr class="my-2" /></li>
+                <li class="dropdown-header">Clearing State</li>
+                <li><hr class="my-2" /></li>
+                <li>
+                    <input type="checkbox" class="form-check-input ml-4" id="open"
+                    <core_rt:if test="${clearingState==null||clearingState.OPEN}">checked="checked"</core_rt:if> />
+                    <label class="form-check-label" for="open">Open</label>
+                </li>
+                <li>
+                    <input type="checkbox" class="form-check-input ml-4" id="closed"
+                    <core_rt:if test="${clearingState==null||clearingState.CLOSED}">checked="checked"</core_rt:if>>
+                    <label class="form-check-label" for="closed">Closed</label>
+                </li>
+                <li>
+                    <input type="checkbox" class="form-check-input ml-4" id="inProgress"
+                    <core_rt:if test="${clearingState==null||clearingState.IN_PROGRESS}">checked="checked"</core_rt:if>>
+                    <label class="form-check-label" for="inProgress">In Progress</label>
                 </li>
                 <li><hr class="my-2" /></li>
                 <li>
