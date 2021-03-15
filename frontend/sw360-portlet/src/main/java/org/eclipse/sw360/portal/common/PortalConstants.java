@@ -578,6 +578,8 @@ public class PortalConstants {
 
     public static final String EXTERNAL_ID_SELECTED_KEYS = "externalIds";
 
+    public static final String PREDEFINED_TAGS;
+
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);
 
@@ -613,6 +615,7 @@ public class PortalConstants {
         USER_ROLE_ALLOWED_TO_MERGE_OR_SPLIT_COMPONENT = UserGroup.valueOf(props.getProperty("user.role.allowed.to.merge.or.split.component", UserGroup.ADMIN.name()));
         CLEARING_REPORT_TEMPLATE_TO_FILENAMEMAPPING = props.getProperty("org.eclipse.sw360.licensinfo.projectclearing.templatemapping", "");
         CLEARING_REPORT_TEMPLATE_FORMAT = props.getProperty("org.eclipse.sw360.licensinfo.projectclearing.templateformat", "docx");
+        PREDEFINED_TAGS = props.getProperty("project.tag", "[]");
     }
 
     private PortalConstants() {

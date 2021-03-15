@@ -696,4 +696,11 @@ public class DatabaseHandlerUtil {
         }
         return mapper;
     }
+
+    public static String trimProjectTag(String projectTag) {
+        if (projectTag != null) {
+            projectTag = projectTag.replaceAll(",$", "");
+        }
+        return projectTag;
+    }
 }

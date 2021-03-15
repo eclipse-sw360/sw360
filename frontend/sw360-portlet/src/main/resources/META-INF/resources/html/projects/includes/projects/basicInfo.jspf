@@ -14,11 +14,14 @@
 <%@ page import="org.eclipse.sw360.datahandler.thrift.Visibility" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState" %>
 <%@ page import="static org.eclipse.sw360.datahandler.thrift.projects.projectsConstants.CLEARING_TEAM_UNKNOWN" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %> 
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+
+<style><%@include file="/css/utils/_tagautocomplete.scss"%></style>
 
 <core_rt:set var="clearingTeamsStringSet" value='<%=PortalConstants.SET_CLEARING_TEAMS_STRING%>'/>
 <core_rt:set var="preferredCountryCodes" value='<%=PortalConstants.PREFERRED_COUNTRY_CODES%>'/>
 <core_rt:set var="domain" value='<%=PortalConstants.DOMAIN%>'/>
+
 
 <table class="table edit-table three-columns" id="ProjectBasicInfo">
     <thead>
