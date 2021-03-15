@@ -80,19 +80,19 @@ spec:
                 container('sw360buildenv') {
                     script {
                         if (params.RELEASE) {
-                            VERSION_SUFFIX = "0-m1"
+                            VERSION_SUFFIX = "1.0-m1"
                         } else {
-                            VERSION_SUFFIX = "0-" + COUNT
+                            VERSION_SUFFIX = "1.0-" + COUNT
                         }
                     }
                     // FIXME: Removed the frontend from the build, because it does not build in the Container environment
                     // Plugin liferay-themes breaks the build
                     // FIXME: Removed backend utils form the build, it causes issues with signing the fat jar
                     sh """
-                        mvn --batch-mode -Peclipse-ci -Pci \
+                        mvn --batch-mode -Peclipse-ci \
                             clean deploy \
                             -pl '!frontend/sw360-portlet,!frontend/liferay-theme,!frontend,!backend/utils' \
-                            -DskipTests -DskipITs -Dcount=$VERSION_SUFFIX
+                            -DskipTests -DskipITs -Dpatchlevel=$VERSION_SUFFIX
                     """
                 }
             }
