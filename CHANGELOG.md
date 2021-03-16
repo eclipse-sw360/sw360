@@ -4,6 +4,81 @@ This is the changelog file of the sw360 project. It starts with the first releas
 
 https://github.com/sw360/sw360portal/releases
 
+## sw360-13.1.0-M1
+
+This time: client libraries. This release among other things brings the client libraries taken over from the sw360antenna project and moved them into the sw360 code base. The client libraries enable Java applications to communicate with a sw360 server via REST calls. Other notable contributions include:
+
+* Support for CouchDB 3.x
+* Massive speedup of SPDX import by switching to streaming based parsing for license information for large files
+* Single container setup (see `Dockerfile` in project root) for super easy deployment of sw360
+* More UI improvement on sorting and filtering in list views
+* Supporting multiple templates for the project clearing reports
+* REST: Manage used attachments for license info generation and better querying of vulnerabilities
+
+### Migrations
+
+For this version, no database migration is necessary.
+
+### Credits
+
+The following github users have contributed to the source code since the last release (in alphabetical order):
+
+```
+abdul.kapti@siemens-healthineers.com
+jaideep.palit@siemens.com
+kumar.ravindra@siemens.com
+kouki1.hama@toshiba.co.jp
+lars.geyer-blaumeiser@bosch.io
+michael.c.jaeger@siemens.com
+smruti.sahoo@siemens.com
+Stephanie.Neubauer@bosch.io
+```
+
+### Features Summary
+
+* `0b7818de` feat(MyProjectsUI):Add additional filter to MY PROJECTS homepage based on clearing state
+* `9e98dd3f` feat(ChangeLog): Highlight changes between old and new revision of Document
+* `eef05a1b` feat(ProjectUI): Sort & Filter for ClearingStatus TreeView table
+* `b6cd9df7` feat(Issue Template):Update issue templates for bug and feature
+* `fb15708c` feat(ui):Rename and Re-arrange the Tabs under Projects section
+* `98aa0859` feat(ProjectUI): Release Filter based on attachment availability
+* `29308987` feat(clearingreport): Feature to select template for Project Clearing report
+* `fc024b45` feat(ReleaseUi): Add other / detected license in release
+* `04139347` feat(ui-rest): Provide option in attachment usage to include/exclude concluded licenses during LicenseInfo Generation
+* `1f995bfa` feat(rest): Filter for get project vulnerabilities endpoint
+* `1d771d30` feat(rest): Added endpoint to get changel og by document id
+* `68ce3cf8` feat(ui): Display Id in summary page of project, component and release
+* `5f2a4089` feat(http-support): add http support library for sw360
+* `502d9087` feat(sw360Docker): Single container Docker for SW360
+* `948924f0` client(test): add failsafe plugin
+
+### Corrections
+
+* `7091c4b6` fix(spdxtools):Use toArray(new Node[0]) for shorter code and better performance
+* `8b4ebc00` fix(version): Increase minor version to ensure proper version sequence
+* `31909cce` fix(pom): Fix indentation of profile
+* `eefcf17f` fix(excelexport): Projects with linked releases excel export error
+* `2ed2ad80` fix(LicenseInfo): Optimized loading of license info, source code download, Clearing report page
+* `034f291c` fix(mergeComponentRelease): Attachments not linked properly from source component/Release
+* `c3830559` fix(spdx): import large spdx rdf files
+* `b08d2f44` fix(datahandler): Modified ektorp queryView call to support CouchDB 3
+* `d9756e6a` fix(Rest): Create/Update Release with name same as component name
+
+### Infrastructure, Docs and Refactorings
+
+* `306c2080` chore(eclipse): Change Jenkinsfile to run release or commit count builds
+* `948c7bac` chore(eclipse): Build on eclipse ci for deployment of java artifacts
+* `ba666266` refactor(client): missing license headers
+* `867372bd` refactor(http): Change http mockito to same version
+* `ba72cb7d` test(client): fix mockito dependency
+* `cfa8d512` refactor(pom): move version of purl to parent pom
+* `31a239eb` doc(client): add documentation of the sw360 data model
+* `cd3ac486` doc(http-support): Add site to http support
+* `4670fffe` refactor(client): Remove all antenna mentions
+* `b89e04ce` refactor(client): remove antenna http support and switch to sw360
+* `834c1c79` refactor(client): Refactor package name
+* `7a6f295c` refactor(client): Add dependencies to poms
+
 ## sw360-13.0.0-M1
 
 We tagged this release, because there are persons testing the current master and not seeing the migration script on the database required. The migration on the database came in because of changes on the obligations. After the major work on the obligations data model in the previous release, more work on the UI made a migration script necessary (number `042`). Please note that per our versioning convention, the database migration script makes the tag `13.0` not `12.1`.
@@ -40,7 +115,7 @@ external.Martin.Idel@bosch.io
 * `2496f037` feat(ClearingReport): Added hyperlink to release document in project clearing report, Changed Font Style (Arial) and Font Size (9) for table content
 * `bd07d53e` feat(CR-UI): Added Advaced filter for CR & fix # of components count
 
-### Corections
+### Corrections
 
 * `c18b42b9` fix(clearingreport): Error while downloading clearing report
 * `3ff60a09` fix(ExportSpreadSheet): Fixed ClassNotFoundException while export Spreadsheet
