@@ -40,6 +40,11 @@
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.LICENSE_TO_SOURCE_FILE%>"/>
 </portlet:resourceURL>
 
+<portlet:resourceURL var="addLicenseToReleaseUrl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.ADD_LICENSE_TO_RELEASE%>"/>
+    <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${docid}"/>
+</portlet:resourceURL>
+
 <c:set var="pageName" value="<%= request.getParameter("pagename") %>" />
 
 <%@include file="/html/projects/includes/projects/clearingRequest.jspf" %>
@@ -49,13 +54,16 @@
 
 <div class="tab-content" id="pills-clearingStatusTab">
     <div class="tab-pane fade show active" id="pills-treeView" role="tabpanel" aria-labelledby="pills-tree-tab">
+    <div class="btn-group mx-1" role="group">
+        <button type="button" class="btn btn-outline-dark" id="addLicenseToRelease"><liferay-ui:message key="add.license.info.to.release" /></button>
+    </div>
     <div class="float-right mx-2">
         <input type="search" id="search_table" class="form-control form-control-sm mb-1 float-right" placeholder="<liferay-ui:message key="search" />">
     </div>
         <div id="clearingStatusTreeViewSpinner">
             <%@ include file="/html/utils/includes/pageSpinner.jspf" %>
         </div>
-        <table class="table table-bordered d-none" id="LinkedProjectsInfo" data-load-node-url="<%=loadLinkedProjectsRowsURL%>"
+        <table class="table table-bordered mt-0 d-none" id="LinkedProjectsInfo" data-load-node-url="<%=loadLinkedProjectsRowsURL%>"
         data-portlet-namespace="<portlet:namespace/>" data-parent-branch-key="<%=PortalConstants.PARENT_BRANCH_ID%>"
         data-scope-group-id="${httpServletRequest.getAttribute('scopeGroupId')}"
         >
@@ -65,7 +73,6 @@
                         <div class="row px-2">
                             <liferay-ui:message key="name" />
                             <svg class="lexicon-icon lexicon-icon-caret-double-l mt-1"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#caret-double-l"/></svg>
-                            <%-- <clay:icon symbol="caret-double-l" /> --%>
                             <core_rt:if test="${projectList.size() > 1 or (projectList.size() == 1 and not empty projectList.get(0).linkedReleases)}">
                             <div id="toggle" class="d-none">
                                 (<a href="#" id="expandAll" class="text-primary"><liferay-ui:message key="expand.all" /> </a>|
@@ -683,7 +690,7 @@ AUI().use('liferay-portlet-url', function () {
                     }
                 },
                 error: function () {
-                    dialog.warn('<liferay-ui:message key="error.fetching.license.to.source.file.mapping" />!', error.statusText + ' (' + error.status + ').');
+                    dialog.warn('<liferay-ui:message key="error.fetching.license.to.source.file.mapping" />! <br>' + error.statusText + ' (' + error.status + ').');
                 }
             });
         }
@@ -696,7 +703,7 @@ AUI().use('liferay-portlet-url', function () {
             if (relId === releaseId) {
                 response.data.forEach(function (item, index) {
                     let licName = item.licName;
-                    if (licenseName.toUpperCase() === licName.toUpperCase()) {
+                    if (licenseName.toUpperCase() === licName.toUpperCase() && item.srcFiles) {
                         $(list).empty();
                         licType = item.licType;
                         let sourceFiles = item.srcFiles.split("\n");
@@ -708,6 +715,87 @@ AUI().use('liferay-portlet-url', function () {
             }
             dialog.info(response.relName,
                 '<liferay-ui:message key="file.name"/>: <b>' + response.attName + '</b><br><liferay-ui:message key="license.type"/>: <b>' + licType + '</b><br><liferay-ui:message key="license"/> <liferay-ui:message key="name"/>: <b>' + licenseName + '<b/><br>' + $(list)[0].outerHTML);
+        }
+
+        $("button#addLicenseToRelease").on("click", function(event) {
+            list = $('<ul id="releaseList" />');
+            $("#LinkedProjectsInfo tbody tr:not([id=noRecordRow],[data-tt-parent-id])").each(function() {
+                list.append('<li>' + $(this).find("td:first").text().trim() + '</li>');
+            });
+            addLicenseToLinkedRelease(list);
+        });
+
+        function addLicenseToLinkedRelease(releases) {
+            if (!$(releases).find('li').length) {
+                dialog.warn('<liferay-ui:message key="no.linked.releases.yet" />')
+                return;
+            }
+            function addLicenseToLinkedReleaseInternal(callback) {
+                jQuery.ajax({
+                    type: 'POST',
+                    url: '<%=addLicenseToReleaseUrl%>',
+                    cache: false,
+                    success: function (response) {
+                        callback();
+                        $("div.modal button:contains('<liferay-ui:message key="cancel" />')").text('<liferay-ui:message key="close" />');
+                        $("div.modal button:contains('<liferay-ui:message key="add" />')").attr('disabled', true);
+                        $("div.modal .modal-body p#addLicenseToReleaseInfo").remove();
+                        $("div.modal .modal-body ul#releaseList").remove();
+                        if (response && response.status) {
+                            oneList = $('<ul/>');
+                            multipleList = $('<ul/>');
+                            nilList = $('<ul/>');
+                            if (response.one) {
+                                let oneCli = response.one.split(",");
+                                oneCli.pop();
+                                oneCli.forEach(function (val, index) {
+                                    oneList.append('<li>' + val + '</li>');
+                                });
+                            }
+                            if (response.mul) {
+                                let mulCli = response.mul.split(",");
+                                mulCli.pop();
+                                mulCli.forEach(function (val, index) {
+                                    multipleList.append('<li>' + val + '</li>');
+                                });
+                            }
+                            if (response.nil) {
+                                let nilCli = response.nil.split(",");
+                                nilCli.pop();
+                                nilCli.forEach(function (val, index) {
+                                    nilList.append('<li>' + val + '</li>');
+                                });
+                            }
+                            if($(oneList).find('li').length) {
+                                $dialog.success('<liferay-ui:message key="success.please.reload.page.to.see.the.changes" />:' + $(oneList)[0].outerHTML);
+                            }
+                            if($(multipleList).find('li').length) {
+                                $dialog.warning('<liferay-ui:message key="multiple.approved.cli.are.found.in.the.release" />: ' + $(multipleList)[0].outerHTML);
+                            }
+                            if($(nilList).find('li').length) {
+                                $dialog.warning('<liferay-ui:message key="approved.cli.not.found.in.the.release" />:' + $(nilList)[0].outerHTML);
+                            }
+                            return;
+                        }
+                        $dialog.success('<liferay-ui:message key="success.please.reload.page.to.see.the.changes" />.');
+                    },
+                    error: function () {
+                        callback();
+                        $dialog.alert('<liferay-ui:message key="failed.to.add.licenses" />!');
+                    }
+                });
+            }
+            $dialog = dialog.confirm(
+                    'info',
+                    'question-circle',
+                    '<liferay-ui:message key="add.license" />?',
+                    '<p id="addLicenseToReleaseInfo"><liferay-ui:message key="do.you.really.want.to.add.licenses.to.all.the.directly.linked.releases" />? </p>' + $(releases)[0].outerHTML,
+                    '<liferay-ui:message key="add" />',
+                    undefined,
+                    function(submit, callback) {
+                        addLicenseToLinkedReleaseInternal(callback);
+                    }
+                );
         }
     });
 });
