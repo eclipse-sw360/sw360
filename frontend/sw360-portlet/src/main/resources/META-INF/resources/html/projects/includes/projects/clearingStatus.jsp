@@ -36,6 +36,10 @@
     <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${docid}"/>
 </portlet:resourceURL>
 
+<portlet:resourceURL var="licenseToSourceFileUrl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.LICENSE_TO_SOURCE_FILE%>"/>
+</portlet:resourceURL>
+
 <c:set var="pageName" value="<%= request.getParameter("pagename") %>" />
 
 <%@include file="/html/projects/includes/projects/clearingRequest.jspf" %>
@@ -57,14 +61,27 @@
         >
             <thead>
                 <tr>
-                    <th style="width:40%; cursor: pointer" class="sort"><liferay-ui:message key="name" /><clay:icon symbol="caret-double-l" /></th>
-                    <th style="width:7%; cursor: pointer" class="sort"><liferay-ui:message key="type" /><clay:icon symbol="caret-double-l" /></th>
+                    <th style="width:36%; cursor: pointer" class="sort">
+                        <div class="row px-2">
+                            <liferay-ui:message key="name" />
+                            <svg class="lexicon-icon lexicon-icon-caret-double-l mt-1"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#caret-double-l"/></svg>
+                            <%-- <clay:icon symbol="caret-double-l" /> --%>
+                            <core_rt:if test="${projectList.size() > 1 or (projectList.size() == 1 and not empty projectList.get(0).linkedReleases)}">
+                            <div id="toggle" class="d-none">
+                                (<a href="#" id="expandAll" class="text-primary"><liferay-ui:message key="expand.all" /> </a>|
+                                <a href="#" id="collapseAll" class="text-primary"> <liferay-ui:message key="collapse.all" /></a>)
+                            </div>
+                            </core_rt:if>
+                        </div>
+                    </th>
+                    <th style="width:6%; cursor: pointer" class="sort"><liferay-ui:message key="type" /><clay:icon symbol="caret-double-l" /></th>
                     <th style="width:7%; cursor: pointer" class="sort"><liferay-ui:message key="relation" /><clay:icon symbol="caret-double-l" /></th>
                     <th style="width:12%; cursor: pointer" class="sort"><liferay-ui:message key="main.licenses" /><clay:icon symbol="caret-double-l" /></th>
-                    <th style="width:7%" ><liferay-ui:message key="state" />
-                    <div class="dropdown d-inline text-capitalize" id="dropdown">
-                        <span title="<liferay-ui:message key="release.clearing.state" /> <liferay-ui:message key="filter " />" class="dropdown-toggle float-none" data-toggle="dropdown" id="configId">
-                            <clay:icon symbol="select-from-list" />
+                    <th style="width:11%"><liferay-ui:message key="other.licenses" /></th>
+                    <th style="width:6%">
+                    <div class="dropdown d-inline text-capitalize" id="stateFilterForTT">
+                        <span title="<liferay-ui:message key="release.clearing.state" /> <liferay-ui:message key="filter" />" class="dropdown-toggle float-none" data-toggle="dropdown" id="configId">
+                            <liferay-ui:message key="state" /> <clay:icon symbol="select-from-list" />
                         </span>
                         <ul class="dropdown-menu" id="dropdownmenu" name="<portlet:namespace/>roles"
                             aria-labelledby="configId">
@@ -72,31 +89,31 @@
                             <li><hr class="my-2" /></li>
                             <li>
                                 <input type="checkbox" class="form-check-input ml-4" id="new" data-releaseclearingstate="New"/>
-                                <label class="form-check-label" for="new"><liferay-ui:message key="new" /></label>
+                                <label class="mb-0"><liferay-ui:message key="new" /></label>
                             </li>
                             <li>
                                 <input type="checkbox" class="form-check-input ml-4" id="reportApproved" data-releaseclearingstate="Report approved"/>
-                                <label class="form-check-label" for="reportApproved"><liferay-ui:message key="report.approved" /></label>
+                                <label class="mb-0"><liferay-ui:message key="report.approved" /></label>
                             </li>
                             <li>
                                 <input type="checkbox" class="form-check-input ml-4" id="reportAvailable" data-releaseclearingstate="Report available"/>
-                                <label class="form-check-label" for="reportAvailable"><liferay-ui:message key="report.available" /></label>
+                                <label class="mb-0"><liferay-ui:message key="report.available" /></label>
                             </li>
                             <li>
                                 <input type="checkbox" class="form-check-input ml-4" id="sentToClearing" data-releaseclearingstate="Sent to clearing tool"/>
-                                <label class="form-check-label" for="sentToClearing"><liferay-ui:message key="sent.to.clearing.tool" /></label>
+                                <label class="mb-0"><liferay-ui:message key="sent.to.clearing.tool" /></label>
                             </li>
                             <li>
                                 <input type="checkbox" class="form-check-input ml-4" id="underClearing" data-releaseclearingstate="Under clearing" />
-                                <label class="form-check-label" for="underClearing""><liferay-ui:message key="under.clearing" /></label>
+                                <label class="mb-0"><liferay-ui:message key="under.clearing" /></label>
                             </li>
                         </ul>
                     </div>
                     </th>
-                    <th style="width:7%; cursor: pointer" class="sort"><liferay-ui:message key="release.mainline.state" /><clay:icon symbol="caret-double-l" /></th>
-                    <th style="width:7%; cursor: pointer" class="sort"><liferay-ui:message key="project.mainline.state" /><clay:icon symbol="caret-double-l" /></th>
+                    <th style="width:5%; cursor: pointer" class="sort"><liferay-ui:message key="release.mainline.state" /><clay:icon symbol="caret-double-l" /></th>
+                    <th style="width:5%; cursor: pointer" class="sort"><liferay-ui:message key="project.mainline.state" /><clay:icon symbol="caret-double-l" /></th>
                     <th style="width:9%"><liferay-ui:message key="comment" /></th>
-                    <th style="width:4%"><liferay-ui:message key="actions" /></th>
+                    <th style="width:3%"><liferay-ui:message key="actions" /></th>
                </tr>
            </thead>
            <tbody id="clearingStatusTreeViewTableBody">
@@ -113,14 +130,16 @@
         <table id="clearingStatusTable" class="table table-bordered d-none"></table>
     </div>
 </div>
+<div class="dialogs auto-dialogs"></div>
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
 AUI().use('liferay-portlet-url', function () {
     var PortletURL = Liferay.PortletURL;
-    require(['jquery', 'modules/ajax-treetable', 'utils/render', 'bridges/datatables'], function($, ajaxTreeTable, render, datatables) {
+    require(['jquery', 'modules/ajax-treetable', 'utils/render', 'bridges/datatables', 'modules/dialog', 'utils/render'], function($, ajaxTreeTable, render, datatables, dialog, render) {
         var clearingStatuslisturl= '<%=clearingStatuslisturl%>';
         var emptyMsg = '<liferay-ui:message key="no.linked.releases.or.projects" />';
+        var licenseToSourceFileMap = new Map();
         $.ajax({url: clearingStatuslisturl,
                 type: 'GET',
                 dataType: 'json'
@@ -131,15 +150,21 @@ AUI().use('liferay-portlet-url', function () {
           });
 
         $('#search_table').on('input', function() {
-            $("#dropdownmenu input[type=checkbox]:checked").each(function() {
+            $("div#stateFilterForTT #dropdownmenu input[type=checkbox]:checked").each(function() {
                 $(this).prop('checked', false);
             });
             search_table($(this).val().trim());
         });
 
+        $('a[href="#"]').click(function(e) {
+            e.preventDefault();
+            $('#LinkedProjectsInfo').treetable(e.target.id);
+            return false;
+        });
+
         function filterByClearingState() {
             let isChecked, isPresent, checkedData = [];
-            $("#dropdownmenu input[type=checkbox]:checked").each(function() {
+            $("div#stateFilterForTT #dropdownmenu input[type=checkbox]:checked").each(function() {
                 let val = $(this).data().releaseclearingstate;
                 isChecked = true;
                 if (val) {
@@ -149,7 +174,7 @@ AUI().use('liferay-portlet-url', function () {
 
             if (isChecked) {
                 $('#LinkedProjectsInfo tbody tr').each(function() {
-                    let relState = $(this).find('td:eq(4)').data().releaseclearingstate;
+                    let relState = $(this).find('td:eq(5)').data().releaseclearingstate;
                     if (relState && checkedData.includes(relState.trim().toLowerCase())) {
                         showRow(relState, $(this));
                         isPresent = true;
@@ -183,7 +208,7 @@ AUI().use('liferay-portlet-url', function () {
             $thiz.show();
         }
 
-        $("#dropdownmenu input:checkbox").on('change', function() {
+        $("div#stateFilterForTT input:checkbox").on('change', function() {
             $('#search_table').val('');
             search_table('');
             filterByClearingState();
@@ -201,7 +226,7 @@ AUI().use('liferay-portlet-url', function () {
                 $(this).find('td').each(function(index) {
                     // search for data in case of release/project clearing state
                     let stateData = $(this).data();
-                    if (index === 4 &&
+                    if (index === 5 &&
                             ( (stateData.releaseclearingstate && stateData.releaseclearingstate.trim().toLowerCase().indexOf(value.toLowerCase()) >= 0)
                           ||  (stateData.projectclearingstate && stateData.projectclearingstate.trim().toLowerCase().indexOf(value.toLowerCase()) >= 0)
                           ||  (stateData.projectstate && stateData.projectstate.trim().toLowerCase().indexOf(value.toLowerCase()) >= 0) )) {
@@ -209,7 +234,7 @@ AUI().use('liferay-portlet-url', function () {
                         return;
                     }
                     // disable search for empty string and Action (index 8) coulmn in table
-                    if (index !== 4 && index !== 8 && $(this).text().trim() && $(this).text().trim().toLowerCase().indexOf(value.toLowerCase()) >= 0) {
+                    if (index !== 5 && index !== 9 && $(this).text().trim() && $(this).text().trim().toLowerCase().indexOf(value.toLowerCase()) >= 0) {
                         match = true;
                         return;
                     }
@@ -277,12 +302,12 @@ AUI().use('liferay-portlet-url', function () {
                     {title: "<liferay-ui:message key="release.path" />", data : "releaseOrigin", "defaultContent": "", render: $.fn.dataTable.render.text() },
                     {title: "<liferay-ui:message key="relation" />", data : "relation", "defaultContent": ""},
                     {title: "<liferay-ui:message key="main.licenses" />", data : "mainLicenses", "defaultContent": "", render: {display: mainLicenseUrl}},
-                    {title: "<liferay-ui:message key="state" />", "data": function(row) {
+                    {title: "", "data": function(row) {
                         let ps=row.projectState;
                         let cs=row.clearingState;
-                        if(ps === null || ps === undefined) ps="0";
-                        if(cs === null || cs === undefined) cs="0";
-                        return ps + priorityOfClearingState(cs) + cs;
+                        if (ps === null || ps === undefined) ps="";
+                        if (cs === null || cs === undefined) cs="";
+                        return ps + cs;
                     }, render: {display: renderState}, "defaultContent": ""},
                     {title: "<liferay-ui:message key="release.mainline.state" />", data : "releaseMainlineState", "defaultContent": ""},
                     {title: "<liferay-ui:message key="project.mainline.state" />", data : "projectMainlineState", "defaultContent": ""},
@@ -299,15 +324,34 @@ AUI().use('liferay-portlet-url', function () {
                     ],
                 "order": [[ 0, "asc" ]],
                 fnDrawCallback: datatables.showPageContainer,
-            language: {
-                url: "<liferay-ui:message key="datatables.lang" />",
-                loadingRecords: "<liferay-ui:message key="loading" />"
-            }}, [0, 1, 2, 3, 4, 5, 6, 7, 8], undefined, true);
+                language: {
+                    url: "<liferay-ui:message key="datatables.lang" />",
+                    loadingRecords: "<liferay-ui:message key="loading" />"
+                },
+                initComplete: function() {
+                    this.api().columns([6]).every(function() {
+                        var column = this;
+                        var stateFilterForLT = $("div#stateFilterForTT").clone();
+                        $(stateFilterForLT).attr('id', 'stateFilterForLT');
+                        var select = $(stateFilterForLT)
+                            .appendTo($(column.header()))
+                            .on('change', function(event) {
+                                var values = $('input:checked', this).map(function(index, element) {
+                                    return $.fn.dataTable.util.escapeRegex($(element).data().releaseclearingstate);
+                                }).toArray().join('|');
+                                column.search(values.length > 0 ? '^(' + values + ')$' : '', true, false).draw();
+                            });
+                        $("div#stateFilterForLT #dropdownmenu").on('click', function(e) {
+                            e.stopPropagation();
+                        });
+                    });
+                }
+            }, [0, 1, 2, 3, 4, 5, 6, 7, 8], undefined, true);
             return clearingStatusTable;
         }
 
         $("#clearingStatusTable").on('init.dt', function() {
-            $('#pills-listView input').on('keyup change clear', function () {
+            $('#pills-listView input').on('keyup clear', function () {
                 $("#clearingStatusTable").DataTable().search($(this).val(), false, true).draw();
             });
         });
@@ -509,9 +553,25 @@ AUI().use('liferay-portlet-url', function () {
                 $(this).find(".releaseClearingState:eq(0)").each(function(){
                     $(this).html(renderClearingStateBox($(this).data("releaseclearingstate")));
                 });
+
+                $(this).find("td.actions").each(function() {
+                    renderLicenses($(this));
+                });
             });
             table.treetable("loadBranch", node, rows);
         }
+
+        function renderLicenses(thiz) {
+            let licType = $(thiz).find("svg[data-tag]").length ? $($(thiz).find("svg[data-tag]")[0]).data().tag.split("-")[1] : "";
+                licList = $(thiz).html().trim().split(", <br>");
+            if ((licType === "ol" || licType === "ml") && licList.length > 1) {
+                $(thiz).html(render.renderExpandableUrls(licList, 'License', 21));
+            }
+        }
+        /* Add event listener for opening and closing list of licenses */
+        $('#LinkedProjectsInfo tbody').on('click', 'td .TogglerLicenseList', function () {
+            render.toggleExpandableList($(this), 'License');
+        });
 
         var clearingStatuslistOnloadurl= '<%=clearingStatuslistOnloadurl%>';
         $.ajax({url: clearingStatuslistOnloadurl, success: function(resultTreeView){
@@ -520,6 +580,7 @@ AUI().use('liferay-portlet-url', function () {
             }
             else {
                 $("#noRecordRow").remove();
+                $("div#toggle").removeClass("d-none");
                 $("#clearingStatusTreeViewTableBody").html(resultTreeView);
 
                 $('#LinkedProjectsInfo').find(".editAction").each(function(){
@@ -537,7 +598,9 @@ AUI().use('liferay-portlet-url', function () {
                 $('#LinkedProjectsInfo').find(".releaseClearingState").each(function(){
                     $(this).html(renderClearingStateBox($(this).data("releaseclearingstate")));
                 });
-
+                $('#LinkedProjectsInfo tr').find("td.actions").each(function() {
+                    renderLicenses($(this));
+                });
             }
             $("#clearingStatusTreeViewSpinner").remove();
             $("#LinkedProjectsInfo").removeClass("d-none");
@@ -583,6 +646,68 @@ AUI().use('liferay-portlet-url', function () {
             portletURL.setParameter('<%=PortalConstants.EXTENDED_EXCEL_EXPORT%>', type === 'projectWithReleases' ? 'true' : 'false');
 
             window.location.href = portletURL.toString() + window.location.hash;
+        }
+
+        $("table").on("click", "svg.cursor[data-tag]", function(event) {
+            let releaseId = $(event.currentTarget).data().tag.split("-")[0],
+                index = $(event.currentTarget).data().tag.split("-")[2],
+                licenseArray = $(this).closest('td.actions').text().replace(/<liferay-ui:message key="view.file.list" />/g, '').split(","),
+                licenseName = licenseArray[index].trim();
+            if (index === "0" && licenseArray.length > 1) {
+                let subStrIndex = licenseName.indexOf('...') + 3;
+                licenseName = licenseName.substr(subStrIndex);
+            }
+            getLicenseToSourceFileMapping(releaseId, licenseName);
+        });
+
+        function getLicenseToSourceFileMapping(releaseId, licenseName) {
+            if (licenseToSourceFileMap.has(releaseId)) {
+                displayLicenseToSrcFileMapping(releaseId, licenseName, licenseToSourceFileMap.get(releaseId));
+                return;
+            }
+            jQuery.ajax({
+                type: 'GET',
+                url: '<%=licenseToSourceFileUrl%>',
+                cache: false,
+                data: {
+                    "<portlet:namespace/><%=PortalConstants.RELEASE_ID%>": releaseId
+                },
+                success: function (response) {
+                    if (response.status == 'success') {
+                        licenseToSourceFileMap.set(releaseId, response);
+                        let licenseToSourceFiles = response.data;
+                        displayLicenseToSrcFileMapping(releaseId, licenseName, response);
+                    }
+                    else {
+                        dialog.warn('<liferay-ui:message key="failed.to.load.source.file.with.error" />: <b>' + response.message + '!</b>');
+                    }
+                },
+                error: function () {
+                    dialog.warn('<liferay-ui:message key="error.fetching.license.to.source.file.mapping" />!', error.statusText + ' (' + error.status + ').');
+                }
+            });
+        }
+
+        function displayLicenseToSrcFileMapping(releaseId, licenseName, response) {
+            list = $('<ul/>');
+            let relId = response.relId,
+                licType = "";
+                list.append('<li><liferay-ui:message key="source.file.information.not.found.in.cli"/>!</li>');
+            if (relId === releaseId) {
+                response.data.forEach(function (item, index) {
+                    let licName = item.licName;
+                    if (licenseName.toUpperCase() === licName.toUpperCase()) {
+                        $(list).empty();
+                        licType = item.licType;
+                        let sourceFiles = item.srcFiles.split("\n");
+                        sourceFiles.forEach(function (file, index) {
+                            list.append('<li>' + file + '</li>');
+                        });
+                    }
+                });
+            }
+            dialog.info(response.relName,
+                '<liferay-ui:message key="file.name"/>: <b>' + response.attName + '</b><br><liferay-ui:message key="license.type"/>: <b>' + licType + '</b><br><liferay-ui:message key="license"/> <liferay-ui:message key="name"/>: <b>' + licenseName + '<b/><br>' + $(list)[0].outerHTML);
         }
     });
 });

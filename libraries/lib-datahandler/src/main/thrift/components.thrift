@@ -359,7 +359,8 @@ struct ReleaseLink{
     33: optional ComponentType componentType,
     100: optional set<string> licenseIds,
     101: optional set<string> licenseNames,
-    102: optional string comment
+    102: optional string comment,
+    103: optional set<string> otherLicenseIds
 }
 
 struct ReleaseClearingStatusData {

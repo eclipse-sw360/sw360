@@ -216,6 +216,7 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
                 "targets": 0,
                 "createdCell": function (td, cellData, rowData, row, col) {
                     $(td).attr('title', 'click the icon to toggle obligation text');
+                    $(td).css("cursor", "pointer");
                 }
             },
             {
@@ -286,6 +287,16 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
             .replace('<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>', page)
             .replace('<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>', id);
     }
+
+    /* Add event listener for opening and closing list of licenses */
+    $('#obligationsDetailTable tbody').on('click', 'td .TogglerLicenseList', function () {
+        render.toggleExpandableList($(this), 'License');
+    });
+
+    /* Add event listener for opening and closing list of releases */
+    $('#obligationsDetailTable tbody').on('click', 'td .TogglerReleaseList', function () {
+        render.toggleExpandableList($(this), 'Release');
+    });
 
     /* Add event listener for opening and closing individual child row */
     $('#obligationsDetailTable tbody').on('click', 'td.details-control', function () {

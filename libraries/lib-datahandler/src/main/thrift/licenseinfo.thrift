@@ -49,6 +49,7 @@ struct LicenseNameWithText {
     5: optional string licenseSpdxId,
     6: optional string type,
     7: optional set<ObligationAtProject> obligationsAtProject,
+    8: optional set<string> sourceFiles,
 }
 
 struct LicenseInfo {
