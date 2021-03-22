@@ -62,6 +62,12 @@ import java.util.*;
                     "    emit(doc.name, doc._id);" +
                     "  } " +
                     "}"),
+        @View(name = "bynamelowercase",
+                map = "function(doc) {" +
+                    "  if (doc.type == 'component') {" +
+                    "    emit(doc.name.toLowerCase(), doc._id);" +
+                    "  } " +
+                    "}"),
         @View(name = "fullbyname",
                 map = "function(doc) {" +
                     "  if (doc.type == 'component') {" +
@@ -167,7 +173,10 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
         return makeSummaryWithPermissionsFromFullDocs(SummaryType.SUMMARY, componentList, user);
     }
 
-    public Set<String> getComponentIdsByName(String name) {
+    public Set<String> getComponentIdsByName(String name, boolean caseInsenstive) {
+        if(caseInsenstive) {
+            return queryForIdsAsValue("bynamelowercase", name.toLowerCase());
+        }
         return queryForIdsAsValue("byname", name);
     }
 

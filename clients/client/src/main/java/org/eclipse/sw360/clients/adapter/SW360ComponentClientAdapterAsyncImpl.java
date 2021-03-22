@@ -17,6 +17,7 @@ import org.eclipse.sw360.clients.rest.SW360ComponentClient;
 import org.eclipse.sw360.clients.rest.resource.SW360HalResourceUtility;
 import org.eclipse.sw360.clients.rest.resource.components.ComponentSearchParams;
 import org.eclipse.sw360.clients.rest.resource.components.SW360Component;
+import org.eclipse.sw360.clients.rest.resource.components.SW360ComponentType;
 import org.eclipse.sw360.clients.rest.resource.components.SW360SparseComponent;
 import org.eclipse.sw360.clients.utils.FutureUtils;
 
@@ -39,6 +40,9 @@ class SW360ComponentClientAdapterAsyncImpl implements SW360ComponentClientAdapte
 
     @Override
     public CompletableFuture<SW360Component> createComponent(SW360Component component) {
+        if (component.getComponentType() == null) {
+            component.setComponentType(SW360ComponentType.OSS);
+        }
         return FutureUtils.wrapInFuture(() -> SW360ComponentAdapterUtils.validateComponent(component),
                 "Cannot create invalid component for " + component.getName())
                 .thenCompose(getComponentClient()::createComponent);
@@ -57,7 +61,7 @@ class SW360ComponentClientAdapterAsyncImpl implements SW360ComponentClientAdapte
         return getComponentClient().search(searchParams)
                 .thenCompose(components ->
                         components.getResult().stream()
-                                .filter(c -> c.getName().equals(componentName))
+                                .filter(c -> c.getName().equalsIgnoreCase(componentName))
                                 .map(c -> SW360HalResourceUtility.getLastIndexOfSelfLink(c.getLinks()).orElse(""))
                                 .map(this::getComponentById)
                                 .findFirst()
