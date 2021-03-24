@@ -36,9 +36,13 @@ public class HealthDatabaseHandler {
     }
 
     public Health getHealth() {
+        return getHealthOfDbs(DATABASES_TO_CHECK);
+    }
+
+    private Health getHealthOfDbs(Set<String> dbsTocheck) {
         final Health health = new Health().setDetails(new HashMap<>());
 
-        for (String database : DATABASES_TO_CHECK) {
+        for (String database : dbsTocheck) {
             try {
                 if (!db.checkIfDbExists(database)) {
                     health.getDetails().put(database, String.format("The database '%s' does not exist.", database));
@@ -51,9 +55,13 @@ public class HealthDatabaseHandler {
         if (health.getDetails().isEmpty()) {
             return health.setStatus(Status.UP);
         } else {
-            return health.getDetails().size() == DATABASES_TO_CHECK.size() ?
+            return health.getDetails().size() == dbsTocheck.size() ?
                     health.setStatus(Status.DOWN) :
                     health.setStatus(Status.ERROR);
         }
+    }
+
+    public Health getHealthOfSpecificDbs(Set<String> dbsToCheck) {
+        return getHealthOfDbs(dbsToCheck);
     }
 }

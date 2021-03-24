@@ -10,7 +10,7 @@
 
 package org.eclipse.sw360.moderation.testutil;
 
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.moderation.DocumentType;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
@@ -26,7 +26,7 @@ public class DatabaseTestSetup {
 
     public static void main(String[] args) throws MalformedURLException {
 
-        DatabaseConnector db = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE);
+        DatabaseConnector db = new DatabaseConnector(DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.COUCH_DB_DATABASE);
 
         Project project = new Project().setName("Test Project");
         project.addToModerators("user1");

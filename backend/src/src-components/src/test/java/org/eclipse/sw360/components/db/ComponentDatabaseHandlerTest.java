@@ -14,7 +14,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 import org.eclipse.sw360.datahandler.TestUtils;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.entitlement.ComponentModerator;
@@ -53,8 +53,8 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class ComponentDatabaseHandlerTest {
 
-    private static final String dbName = DatabaseSettings.COUCH_DB_DATABASE;
-    private static final String attachmentsDbName = DatabaseSettings.COUCH_DB_ATTACHMENTS;
+    private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;
+    private static final String attachmentsDbName = DatabaseSettingsTest.COUCH_DB_ATTACHMENTS;
 
     private static final String email1 = "cedric.bodet@tngtech.com";
     private static final String email2 = "johannes.najjar@tngtech.com";
@@ -129,10 +129,10 @@ public class ComponentDatabaseHandlerTest {
         releases.add(release2c);
 
         // Create the database
-        TestUtils.createDatabase(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
 
         // Prepare the database
-        DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
 
         for (Vendor vendor : vendors.values()) {
             databaseConnector.add(vendor);
@@ -147,12 +147,12 @@ public class ComponentDatabaseHandlerTest {
         componentMap= ThriftUtils.getIdMap(components);
 
         // Prepare the handler
-        handler = new ComponentDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), dbName, attachmentsDbName, moderator, releaseModerator, projectModerator);
+        handler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredHttpClient(), dbName, attachmentsDbName, moderator, releaseModerator, projectModerator);
     }
 
     @After
     public void tearDown() throws Exception {
-        TestUtils.deleteDatabase(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
     }
 
     @Test

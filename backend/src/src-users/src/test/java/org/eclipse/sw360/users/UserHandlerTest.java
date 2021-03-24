@@ -10,7 +10,7 @@
 package org.eclipse.sw360.users;
 
 import org.eclipse.sw360.datahandler.TestUtils;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.junit.After;
 import org.junit.Before;
@@ -21,7 +21,7 @@ import static org.junit.Assert.assertFalse;
 
 
 public class UserHandlerTest {
-    private static final String dbName = DatabaseSettings.COUCH_DB_USERS;
+    private static final String dbName = DatabaseSettingsTest.COUCH_DB_USERS;
 
     private static final String DUMMY_EMAIL_ADDRESS_1 = "dummy.user1@dummy.domain.tld";
     private static final String DUMMY_EMAIL_ADDRESS_2 = "dummy.user2@dummy.domain.tld";
@@ -33,7 +33,7 @@ public class UserHandlerTest {
     @Before
     public void setUp() throws Exception {
         // Create the database
-        TestUtils.createDatabase(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
 
         // Create the connector
         handler = new UserHandler();
@@ -42,7 +42,7 @@ public class UserHandlerTest {
     @After
     public void tearDown() throws Exception {
         // Delete the database
-        TestUtils.deleteDatabase(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
     }
 
     @Test

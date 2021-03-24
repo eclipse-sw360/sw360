@@ -14,7 +14,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.SetMultimap;
 
 import org.eclipse.sw360.datahandler.TestUtils;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.thrift.*;
@@ -45,9 +45,9 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class ProjectDatabaseHandlerTest {
 
-    private static final String dbName = DatabaseSettings.COUCH_DB_DATABASE;
-    private static final String attachmentDbName = DatabaseSettings.COUCH_DB_ATTACHMENTS;
-    private static final String attachmentsDbName = DatabaseSettings.COUCH_DB_ATTACHMENTS;
+    private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;
+    private static final String attachmentDbName = DatabaseSettingsTest.COUCH_DB_ATTACHMENTS;
+    private static final String attachmentsDbName = DatabaseSettingsTest.COUCH_DB_ATTACHMENTS;
 
     private static final User user1 = new User().setEmail("user1").setDepartment("AB CD EF");
     private static final User user2 = new User().setEmail("user2").setDepartment("AB CD FE");
@@ -104,10 +104,10 @@ public class ProjectDatabaseHandlerTest {
         releases.add(new Release().setId("r6").setComponentId("c1"));
 
         // Create the database
-        TestUtils.createDatabase(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
 
         // Prepare the database
-        DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
         for (Project project : projects) {
             databaseConnector.add(project);
         }
@@ -118,15 +118,15 @@ public class ProjectDatabaseHandlerTest {
 
         databaseConnector.add(new Component("comp1").setId("c1"));
 
-        componentHandler = new ComponentDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), dbName, attachmentsDbName);
-        attachmentDatabaseHandler = new AttachmentDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), dbName, attachmentsDbName);
-        handler = new ProjectDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), dbName, attachmentDbName, moderator, componentHandler, attachmentDatabaseHandler);
+        componentHandler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredHttpClient(), dbName, attachmentsDbName);
+        attachmentDatabaseHandler = new AttachmentDatabaseHandler(DatabaseSettingsTest.getConfiguredHttpClient(), dbName, attachmentsDbName);
+        handler = new ProjectDatabaseHandler(DatabaseSettingsTest.getConfiguredHttpClient(), dbName, attachmentDbName, moderator, componentHandler, attachmentDatabaseHandler);
     }
 
     @After
     public void tearDown() throws Exception {
         // Delete the database
-        TestUtils.deleteDatabase(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
     }
 
 

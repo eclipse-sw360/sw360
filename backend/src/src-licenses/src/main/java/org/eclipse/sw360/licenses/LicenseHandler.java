@@ -20,11 +20,13 @@ import org.eclipse.sw360.datahandler.thrift.CustomProperties;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.licenses.db.LicenseDatabaseHandler;
+import org.ektorp.http.HttpClient;
 import org.apache.thrift.TException;
 
 import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
 
@@ -39,6 +41,10 @@ public class LicenseHandler implements LicenseService.Iface {
 
     LicenseHandler() throws MalformedURLException {
         handler = new LicenseDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE);
+    }
+
+    LicenseHandler(Supplier<HttpClient> httpClient, String dbName) throws MalformedURLException {
+        handler = new LicenseDatabaseHandler(httpClient, dbName);
     }
 
     /////////////////////

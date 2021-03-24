@@ -14,6 +14,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
 
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseInstance;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseInstanceTracker;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -53,9 +54,9 @@ public class TestUtils {
     public static final String BLACK_HOLE_ADDRESS = "100::/64";
 
     private static final List<String> dbNames = ImmutableList.of(
-            DatabaseSettings.COUCH_DB_DATABASE,
-            DatabaseSettings.COUCH_DB_ATTACHMENTS,
-            DatabaseSettings.COUCH_DB_USERS);
+            DatabaseSettingsTest.COUCH_DB_DATABASE,
+            DatabaseSettingsTest.COUCH_DB_ATTACHMENTS,
+            DatabaseSettingsTest.COUCH_DB_USERS);
 
     static {
         assertTestDbNames();
@@ -70,7 +71,7 @@ public class TestUtils {
 
     public static void deleteAllDatabases() throws MalformedURLException {
         for (String dbName : dbNames) {
-            deleteDatabase(DatabaseSettings.getConfiguredHttpClient(), dbName);
+            deleteDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
         }
     }
 

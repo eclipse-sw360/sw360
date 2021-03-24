@@ -10,7 +10,7 @@
 package org.eclipse.sw360.licenses;
 
 import org.eclipse.sw360.datahandler.TestUtils;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -33,7 +33,7 @@ import static org.junit.Assert.*;
  */
 public class LicenseHandlerTest {
 
-    private static final String dbName = DatabaseSettings.COUCH_DB_DATABASE;
+    private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;
 
     private LicenseHandler handler;
     private User user;
@@ -54,13 +54,13 @@ public class LicenseHandlerTest {
     @Before
     public void setUp() throws Exception {
         // Create the database
-        TestUtils.createDatabase(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
 
         // Create all test entries
         createTestEntries();
 
         // Create the handler
-        handler = new LicenseHandler();
+        handler = new LicenseHandler(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
 
         // Create the user
         user = new User().setEmail("test@siemens.com").setDepartment("CT BE OP SWI OSS").setUserGroup(UserGroup.ADMIN);
@@ -69,7 +69,7 @@ public class LicenseHandlerTest {
     @After
     public void tearDown() throws Exception {
         // Delete the database
-        TestUtils.deleteDatabase(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
     }
 
     @Test
@@ -203,7 +203,7 @@ public class LicenseHandlerTest {
         obligs.put("T4", oblig4);
         obligs.put("T5", oblig5);
 
-        DatabaseConnector db = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        DatabaseConnector db = new DatabaseConnector(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
 
         // Add obligations to database
         for (Obligation oblig : obligs.values()) {

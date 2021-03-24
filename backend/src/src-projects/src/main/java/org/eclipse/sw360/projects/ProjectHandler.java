@@ -31,12 +31,14 @@ import org.eclipse.sw360.datahandler.thrift.projects.UsedReleaseRelations;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.ektorp.http.HttpClient;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
 
@@ -57,6 +59,11 @@ public class ProjectHandler implements ProjectService.Iface {
     ProjectHandler() throws IOException {
         handler = new ProjectDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
         searchHandler = new ProjectSearchHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE);
+    }
+
+    ProjectHandler(Supplier<HttpClient> httpClient, String dbName, String attchmntDbName) throws IOException {
+        handler = new ProjectDatabaseHandler(httpClient, dbName, attchmntDbName);
+        searchHandler = new ProjectSearchHandler(httpClient, dbName);
     }
 
     /////////////////////

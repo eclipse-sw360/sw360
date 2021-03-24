@@ -18,6 +18,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.ektorp.http.HttpClient;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 
 import java.net.MalformedURLException;
@@ -25,6 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
@@ -42,6 +44,10 @@ public class AttachmentHandler implements AttachmentService.Iface {
 
     public AttachmentHandler() throws MalformedURLException {
         handler = new AttachmentDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
+    }
+
+    public AttachmentHandler(Supplier<HttpClient> httpClient, String dbName, String attachmentDbName) throws MalformedURLException {
+        handler = new AttachmentDatabaseHandler(httpClient, dbName, attachmentDbName);
     }
 
     @Override
