@@ -177,7 +177,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             throw new RuntimeException("User cannot modify a closed project");
         } if (requestStatus == RequestStatus.INVALID_INPUT) {
             throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
-        } else if (requestStatus != RequestStatus.SUCCESS) {
+        } else if (requestStatus != RequestStatus.SENT_TO_MODERATOR && requestStatus != RequestStatus.SUCCESS) {
             throw new RuntimeException("sw360 project with name '" + project.getName() + " cannot be updated.");
         }
         return requestStatus;
