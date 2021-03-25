@@ -65,6 +65,7 @@ public class SW360Constants {
     public static final String TYPE_CLEARING = "clearing";
     public static final String TYPE_SEARCHRESULT = "searchResult";
     public static final String TYPE_CHANGELOG = "changeLog";
+    public static final String TYPE_VULNERABILITYDTO = "vulDTO";
 
     /**
      * Hashmap containing the name field for each type.

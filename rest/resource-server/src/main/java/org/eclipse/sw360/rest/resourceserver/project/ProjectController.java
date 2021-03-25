@@ -387,8 +387,9 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
 
     @RequestMapping(value = PROJECTS_URL + "/{id}/vulnerabilities", method = RequestMethod.GET)
     public ResponseEntity<Resources<Resource<VulnerabilityDTO>>> getVulnerabilitiesOfReleases(
+            Pageable pageable,
             @PathVariable("id") String id, @RequestParam(value = "priority") Optional<String> priority,
-            @RequestParam(value = "projectRelevance") Optional<String> projectRelevance) {
+            @RequestParam(value = "projectRelevance") Optional<String> projectRelevance, HttpServletRequest request) throws URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final List<VulnerabilityDTO> allVulnerabilityDTOs = vulnerabilityService.getVulnerabilitiesByProjectId(id, sw360User);
 
@@ -412,11 +413,26 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         }
 
         List<String> priorityList = priority.isPresent() ? Lists.newArrayList(priority.get().split(",")) : Lists.newArrayList();
+        List<String> projectRelevanceList = projectRelevance.isPresent() ? Lists.newArrayList(projectRelevance.get().split(",")) : Lists.newArrayList();
         final List<Resource<VulnerabilityDTO>> vulnResources = vulnerabilityResources.stream()
-                .filter(vulRes -> projectRelevance.isEmpty() || vulRes.getContent().getProjectRelevance().equals(projectRelevance.get()))
+                .filter(vulRes -> projectRelevance.isEmpty() || projectRelevanceList.contains(vulRes.getContent().getProjectRelevance()))
                 .filter(vulRes -> priority.isEmpty() || priorityList.contains(vulRes.getContent().getPriority()))
                 .collect(Collectors.toList());
-        final Resources<Resource<VulnerabilityDTO>> resources = restControllerHelper.createResources(vulnResources);
+
+        List<VulnerabilityDTO> vulDtos = vulnResources.stream().map(res -> res.getContent()).collect(Collectors.toList());
+        PaginationResult<VulnerabilityDTO> paginationResult = restControllerHelper.createPaginationResult(request, pageable, vulDtos, SW360Constants.TYPE_VULNERABILITYDTO);
+        List<Resource<VulnerabilityDTO>> paginatedVulnResources = Lists.newArrayList();
+        for (VulnerabilityDTO vd: paginationResult.getResources()) {
+            Resource<VulnerabilityDTO> vDTOResource = new Resource<>(vd);
+            paginatedVulnResources.add(vDTOResource);
+        }
+        Resources resources;
+        if (vulnResources.size() == 0) {
+            resources = restControllerHelper.emptyPageResource(VulnerabilityDTO.class, paginationResult);
+        } else {
+            resources = restControllerHelper.generatePagesResource(paginationResult, paginatedVulnResources);
+        }
+
         HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(resources, status);
     }

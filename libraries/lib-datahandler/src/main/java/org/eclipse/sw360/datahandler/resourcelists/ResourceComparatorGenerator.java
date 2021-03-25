@@ -19,6 +19,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 
 import java.util.*;
 
@@ -29,6 +30,7 @@ public class ResourceComparatorGenerator<T> {
     private static final Map<Release._Fields, Comparator<Release>> releaseMap = generateReleaseMap();
     private static final Map<SearchResult._Fields, Comparator<SearchResult>> searchResultMap = generateSearchResultMap();
     private static final Map<ChangeLogs._Fields, Comparator<ChangeLogs>> changeLogMap = generateChangeLogMap();
+    private static final Map<VulnerabilityDTO._Fields, Comparator<VulnerabilityDTO>> vDtoMap = generateVulDtoMap();
 
     private static Map<Component._Fields, Comparator<Component>> generateComponentMap() {
         Map<Component._Fields, Comparator<Component>> componentMap = new HashMap<>();
@@ -70,6 +72,15 @@ public class ResourceComparatorGenerator<T> {
         return Collections.unmodifiableMap(changeLogMap);
     }
 
+    private static Map<VulnerabilityDTO._Fields, Comparator<VulnerabilityDTO>> generateVulDtoMap() {
+        Map<VulnerabilityDTO._Fields, Comparator<VulnerabilityDTO>> vulDTOMap = new HashMap<>();
+        vulDTOMap.put(VulnerabilityDTO._Fields.EXTERNAL_ID, Comparator.comparing(VulnerabilityDTO::getExternalId, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        vulDTOMap.put(VulnerabilityDTO._Fields.TITLE, Comparator.comparing(VulnerabilityDTO::getTitle, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        vulDTOMap.put(VulnerabilityDTO._Fields.PRIORITY, Comparator.comparing(VulnerabilityDTO::getPriority, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        vulDTOMap.put(VulnerabilityDTO._Fields.PROJECT_RELEVANCE, Comparator.comparing(VulnerabilityDTO::getProjectRelevance, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        return Collections.unmodifiableMap(vulDTOMap);
+    }
+
     public Comparator<T> generateComparator(String type) throws ResourceClassNotFoundException {
         switch (type) {
             case SW360Constants.TYPE_COMPONENT:
@@ -82,6 +93,8 @@ public class ResourceComparatorGenerator<T> {
                 return (Comparator<T>)defaultSearchResultComparator();
             case SW360Constants.TYPE_CHANGELOG:
                 return (Comparator<T>)defaultChangeLogComparator();
+            case SW360Constants.TYPE_VULNERABILITYDTO:
+                return (Comparator<T>)defaultVulDtoComparator();
             default:
                 throw new ResourceClassNotFoundException("No default comparator for resource class with name " + type);
         }
@@ -138,6 +151,15 @@ public class ResourceComparatorGenerator<T> {
                     }
                 }
                 return generateChangeLogComparatorWithFields(type, changeLogs);
+            case SW360Constants.TYPE_VULNERABILITYDTO:
+                List<VulnerabilityDTO._Fields> vulDtos = new ArrayList<>();
+                for(String property : properties) {
+                    VulnerabilityDTO._Fields field = VulnerabilityDTO._Fields.findByName(property);
+                    if (field != null) {
+                        vulDtos.add(field);
+                    }
+                }
+                return generateVulDTOComparatorWithFields(type, vulDtos);
             default:
                 throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
         }
@@ -183,6 +205,15 @@ public class ResourceComparatorGenerator<T> {
         switch (type) {
             case SW360Constants.TYPE_CHANGELOG:
                 return (Comparator<T>)changeLogComparator(fields);
+            default:
+                throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
+        }
+    }
+
+    public Comparator<T> generateVulDTOComparatorWithFields(String type, List<VulnerabilityDTO._Fields> fields) throws ResourceClassNotFoundException {
+        switch (type) {
+            case SW360Constants.TYPE_VULNERABILITYDTO:
+                return (Comparator<T>)vulnDtoComparator(fields);
             default:
                 throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
         }
@@ -248,6 +279,18 @@ public class ResourceComparatorGenerator<T> {
         return comparator;
     }
 
+    private Comparator<VulnerabilityDTO> vulnDtoComparator(List<VulnerabilityDTO._Fields> fields) {
+        Comparator<VulnerabilityDTO> comparator = Comparator.comparing(x -> true);
+        for (VulnerabilityDTO._Fields field:fields) {
+            Comparator<VulnerabilityDTO> fieldComparator = vDtoMap.get(field);
+            if(fieldComparator != null) {
+                comparator = comparator.thenComparing(fieldComparator);
+            }
+        }
+        comparator = comparator.thenComparing(defaultVulDtoComparator());
+        return comparator;
+    }
+
     private Comparator<Component> defaultComponentComparator() {
         return componentMap.get(Component._Fields.NAME);
     }
@@ -266,5 +309,9 @@ public class ResourceComparatorGenerator<T> {
 
     private Comparator<ChangeLogs> defaultChangeLogComparator() {
         return changeLogMap.get(ChangeLogs._Fields.CHANGE_TIMESTAMP);
+    }
+
+    private Comparator<VulnerabilityDTO> defaultVulDtoComparator() {
+        return vDtoMap.get(VulnerabilityDTO._Fields.EXTERNAL_ID);
     }
 }
