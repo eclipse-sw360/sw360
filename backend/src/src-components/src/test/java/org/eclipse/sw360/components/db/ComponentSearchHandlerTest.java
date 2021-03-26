@@ -12,7 +12,7 @@ package org.eclipse.sw360.components.db;
 
 import com.google.common.collect.ImmutableSet;
 import org.eclipse.sw360.datahandler.TestUtils;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseInstance;
 import org.eclipse.sw360.datahandler.db.ComponentSearchHandler;
@@ -32,8 +32,8 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.core.Is.is;
 
 public class ComponentSearchHandlerTest {
-    private static final String url = DatabaseSettings.COUCH_DB_URL;
-    private static final String dbName = DatabaseSettings.COUCH_DB_DATABASE;
+    private static final String url = DatabaseSettingsTest.COUCH_DB_URL;
+    private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;
 
     private static final String email1 = "cedric.bodet@tngtech.com";
     private static final String email2 = "johannes.najjar@tngtech.com";
@@ -74,22 +74,22 @@ public class ComponentSearchHandlerTest {
         components.add(component3);
 
         // Create the database
-        TestUtils.createDatabase(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
 
         // Prepare the database
-        DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
 
         for (Component component : components) {
             databaseConnector.add(component);
         }
 
         // Prepare the handler
-        searchHandler = new ComponentSearchHandler(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        searchHandler = new ComponentSearchHandler(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
     }
 
     @After
     public void tearDown() throws Exception {
-        TestUtils.deleteDatabase(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
     }
 
     @Test

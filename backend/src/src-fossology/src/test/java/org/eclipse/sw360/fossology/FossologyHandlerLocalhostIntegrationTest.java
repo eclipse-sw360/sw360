@@ -41,8 +41,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.eclipse.sw360.datahandler.common.DatabaseSettings.COUCH_DB_CONFIG;
-import static org.eclipse.sw360.datahandler.common.DatabaseSettings.getConfiguredHttpClient;
+import static org.eclipse.sw360.datahandler.common.DatabaseSettingsTest.COUCH_DB_CONFIG;
+import static org.eclipse.sw360.datahandler.common.DatabaseSettingsTest.getConfiguredHttpClient;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;

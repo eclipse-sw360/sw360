@@ -58,7 +58,7 @@ public class ComponentHandler implements ComponentService.Iface {
         this(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS, thriftClients);
     }
 
-    ComponentHandler(Supplier<HttpClient> httpClient, String dbName, String attachmentDbName, ThriftClients thriftClients) throws IOException {
+    public ComponentHandler(Supplier<HttpClient> httpClient, String dbName, String attachmentDbName, ThriftClients thriftClients) throws IOException {
         handler = new ComponentDatabaseHandler(httpClient, dbName, attachmentDbName, thriftClients);
         componentSearchHandler = new ComponentSearchHandler(httpClient, dbName);
         releaseSearchHandler = new ReleaseSearchHandler(httpClient, dbName);

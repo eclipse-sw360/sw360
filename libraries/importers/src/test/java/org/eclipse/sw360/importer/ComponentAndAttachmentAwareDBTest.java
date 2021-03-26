@@ -14,7 +14,7 @@ import com.google.common.collect.FluentIterable;
 import org.eclipse.sw360.attachments.AttachmentHandler;
 import org.eclipse.sw360.datahandler.db.AttachmentContentRepository;
 import org.eclipse.sw360.components.ComponentHandler;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.common.ImportCSV;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
@@ -52,12 +52,12 @@ public class ComponentAndAttachmentAwareDBTest {
     protected User user;
 
     protected  static  DatabaseConnector getDBConnector(String couchDbDatabase) throws MalformedURLException {
-        return new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), couchDbDatabase);
+        return new DatabaseConnector(DatabaseSettingsTest.getConfiguredHttpClient(), couchDbDatabase);
     }
 
 
     protected static AttachmentContentRepository getAttachmentContentRepository() throws MalformedURLException {
-        return new AttachmentContentRepository(getDBConnector(DatabaseSettings.COUCH_DB_ATTACHMENTS));
+        return new AttachmentContentRepository(getDBConnector(DatabaseSettingsTest.COUCH_DB_ATTACHMENTS));
     }
 
     protected static FluentIterable<ComponentCSVRecord> getCompCSVRecordsFromTestFile(String fileName) throws IOException {
@@ -77,17 +77,17 @@ public class ComponentAndAttachmentAwareDBTest {
     }
 
     protected void deleteDatabases() throws MalformedURLException {
-        deleteDatabase(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_ATTACHMENTS);
-        deleteDatabase(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE);
+        deleteDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.COUCH_DB_ATTACHMENTS);
+        deleteDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.COUCH_DB_DATABASE);
     }
     protected static ThriftClients getThriftClients() throws TException, IOException {
         assertTestDbNames();
 
         ThriftClients thriftClients = failingMock(ThriftClients.class);
 
-        ComponentHandler componentHandler = new ComponentHandler(thriftClients);
-        VendorHandler vendorHandler = new VendorHandler();
-        AttachmentHandler attachmentHandler = new AttachmentHandler();
+        ComponentHandler componentHandler = new ComponentHandler(DatabaseSettingsTest.getConfiguredHttpClient(),DatabaseSettingsTest.COUCH_DB_DATABASE, DatabaseSettingsTest.COUCH_DB_ATTACHMENTS, thriftClients);
+        VendorHandler vendorHandler = new VendorHandler(DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.COUCH_DB_DATABASE);
+        AttachmentHandler attachmentHandler = new AttachmentHandler(DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.COUCH_DB_DATABASE, DatabaseSettingsTest.COUCH_DB_ATTACHMENTS);
 
         ModerationService.Iface moderationService = failingMock(ModerationService.Iface.class);
 

@@ -30,4 +30,6 @@ service HealthService {
     * Returns a single health of the thrift service and all running thrift services
     **/
     Health getHealth();
+
+    Health getHealthOfSpecificDbs(1: set<string> dbsToCheck);
 }

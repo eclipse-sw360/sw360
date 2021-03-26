@@ -16,6 +16,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
@@ -41,7 +42,7 @@ import static org.junit.Assert.assertThat;
 
 public class AttachmentHandlerTest {
 
-    private static final String dbName = DatabaseSettings.COUCH_DB_ATTACHMENTS;
+    private static final String dbName = DatabaseSettingsTest.COUCH_DB_ATTACHMENTS;
 
     private AttachmentHandler handler;
 
@@ -52,21 +53,21 @@ public class AttachmentHandlerTest {
     @Before
     public void setUp() throws Exception {
         // Create the database
-        TestUtils.createDatabase(DatabaseSettings.getConfiguredHttpClient(), dbName);
-        TestUtils.createDatabase(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE);
+        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
+        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.COUCH_DB_DATABASE);
 
-        DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
         databaseConnector.add(new AttachmentContent().setId("A1").setFilename("a.txt").setContentType("text"));
         databaseConnector.add(new AttachmentContent().setId("A2").setFilename("b.jpg").setContentType("image"));
 
-        handler = new AttachmentHandler();
+        handler = new AttachmentHandler(DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.COUCH_DB_DATABASE, dbName);
     }
 
     @After
     public void tearDown() throws Exception {
         // Delete the database
-        TestUtils.deleteDatabase(DatabaseSettings.getConfiguredHttpClient(), dbName);
-        TestUtils.deleteDatabase(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE);
+        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
+        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.COUCH_DB_DATABASE);
     }
 
     @Test

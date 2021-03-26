@@ -17,11 +17,13 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
+import org.ektorp.http.HttpClient;
 
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
 public class VendorHandler implements VendorService.Iface {
@@ -31,6 +33,12 @@ public class VendorHandler implements VendorService.Iface {
 
     public VendorHandler() throws IOException {
         DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE);
+        vendorDatabaseHandler = new VendorDatabaseHandler(databaseConnector);
+        vendorSearchHandler = new VendorSearchHandler(databaseConnector);     // Remove release id from component
+    }
+
+    public VendorHandler(Supplier<HttpClient> httpClient, String dbName) throws IOException {
+        DatabaseConnector databaseConnector = new DatabaseConnector(httpClient, dbName);
         vendorDatabaseHandler = new VendorDatabaseHandler(databaseConnector);
         vendorSearchHandler = new VendorSearchHandler(databaseConnector);     // Remove release id from component
     }

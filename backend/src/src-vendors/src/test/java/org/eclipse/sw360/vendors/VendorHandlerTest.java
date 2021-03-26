@@ -10,7 +10,7 @@
 package org.eclipse.sw360.vendors;
 
 import org.eclipse.sw360.datahandler.TestUtils;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseInstance;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -27,7 +27,7 @@ import static org.junit.Assert.assertNotNull;
 
 public class VendorHandlerTest {
 
-    private static final String dbName = DatabaseSettings.COUCH_DB_DATABASE;
+    private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;
 
     private VendorHandler vendorHandler;
     private List<Vendor> vendorList;
@@ -36,10 +36,10 @@ public class VendorHandlerTest {
     public void setUp() throws Exception {
 
         // Create the database
-        TestUtils.createDatabase(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
 
         // Prepare the database
-        DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
         vendorList = new ArrayList<>();
         vendorList.add(new Vendor().setShortname("Microsoft").setFullname("Microsoft Corporation").setUrl("http://www.microsoft.com"));
         vendorList.add(new Vendor().setShortname("Apache").setFullname("The Apache Software Foundation").setUrl("http://www.apache.org"));
@@ -49,13 +49,13 @@ public class VendorHandlerTest {
             databaseConnector.add(vendor);
         }
 
-        vendorHandler = new VendorHandler();
+        vendorHandler = new VendorHandler(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
     }
 
     @After
     public void tearDown() throws Exception {
         // Delete the database
-        TestUtils.deleteDatabase(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
     }
 
 
