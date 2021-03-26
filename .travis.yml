@@ -36,7 +36,6 @@ before_install:
   - ./scripts/install-thrift.sh --no-cleanup
 
 env:
-  GIT_COMMIT_COUNT="$(git rev-list  `git rev-list --tags --no-walk --max-count=1`..HEAD --count)"
   MVN_ARGS="package"
 install:
   mvn dependency:resolve || true
@@ -45,9 +44,9 @@ script:
 
 matrix:
   include:
-    - name: mvn package -Pci -Dcount=$GIT_COMMIT_COUNT
+    - name: mvn package
       env: MVN_ARGS="package"
-    - name: mvn validate -Pci -Dcount=$GIT_COMMIT_COUNT
+    - name: mvn validate
       env: MVN_ARGS="validate"
       before_install:
     - name: mvn dependency:analyze

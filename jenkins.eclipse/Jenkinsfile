@@ -80,9 +80,9 @@ spec:
                 container('sw360buildenv') {
                     script {
                         if (params.RELEASE) {
-                            VERSION_SUFFIX = "1.0-m1"
+                            VERSION_SUFFIX = "0-m1"
                         } else {
-                            VERSION_SUFFIX = "1.0-" + COUNT
+                            VERSION_SUFFIX = "0-" + COUNT
                         }
                     }
                     // FIXME: Removed the frontend from the build, because it does not build in the Container environment
