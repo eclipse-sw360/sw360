@@ -134,7 +134,7 @@
 <script>
     document.title = $("<span></span>").html("<sw360:out value='${component.name}'/> - " + document.title).text();
 
-    require(['jquery', 'modules/button', 'modules/listgroup', 'utils/link'], function($, button, listgroup, linkutil) {
+    require(['jquery', 'modules/button', 'modules/listgroup', 'utils/link', 'utils/includes/clipboard'], function($, button, listgroup, linkutil, clipboard) {
         listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
 
         $('#mergeButton').on('click', function(event) {
@@ -207,5 +207,11 @@
         if (window.history.replaceState) {
             window.history.replaceState(null, document.title, linkutil.to('component', 'show', "${component.id}"));
         }
+
+        $('#copyToClipboard').on('click', function(event) {
+            let textSelector = "table tr td#documentId",
+                textToCopy = $(textSelector).clone().children().remove().end().text().trim();
+            clipboard.copyToClipboard(textToCopy, textSelector);
+        });
 	});
 </script>

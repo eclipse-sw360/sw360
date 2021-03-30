@@ -188,7 +188,7 @@
 <script>
 	document.title = $("<span></span>").html("<sw360:out value='${component.name}'/> - " + document.title).text();
 
-    require(['jquery', 'components/includes/releases/linkProject', 'modules/button', 'modules/listgroup'], function($, linkProject, button, listgroup) {
+    require(['jquery', 'components/includes/releases/linkProject', 'modules/button', 'modules/listgroup', 'utils/includes/clipboard'], function($, linkProject, button, listgroup, clipboard) {
         linkProject.initialize();
         listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
 
@@ -240,6 +240,12 @@
                 });
                 button.finish($button);
             });
+        });
+
+        $('#copyToClipboard').on('click', function(event) {
+            let textSelector = "table tr td#documentId",
+            textToCopy = $(textSelector).clone().children().remove().end().text().trim();
+            clipboard.copyToClipboard(textToCopy, textSelector);
         });
 
         function doAjax(url, successCallback, errorCallback) {
