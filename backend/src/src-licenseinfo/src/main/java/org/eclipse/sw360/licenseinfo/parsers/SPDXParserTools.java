@@ -18,6 +18,11 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
 import org.apache.jena.ext.xerces.util.XMLChar;
 
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -117,6 +122,20 @@ public class SPDXParserTools {
         for (int i = 0; i < label.length(); i++) {
             // label contain invalid NCName
             if (!XMLChar.isNCName(label.charAt(i))) {
+                if (Util.splitNamespaceXML(label) == label.length()) {
+                    try {
+                        label = URLDecoder.decode(label, StandardCharsets.UTF_8.name());
+                        URL url = new URL(label);
+                        if (null != url.getRef()) {
+                            return url.getRef();
+                        } else {
+                            String path = url.getPath();
+                            return path.substring(path.lastIndexOf('/') + 1);
+                        }
+                    } catch (UnsupportedEncodingException | MalformedURLException e) {
+                      return "";
+                    }
+                }
                 return label.substring(Util.splitNamespaceXML(label));
             }
         }
