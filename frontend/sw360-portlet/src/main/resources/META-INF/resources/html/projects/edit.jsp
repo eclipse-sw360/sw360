@@ -65,6 +65,7 @@
     <core_rt:set var="addMode"  value="${empty project.id}" />
     <core_rt:set var="pageName"  value="<%= request.getParameter("pagename") %>" />
     <core_rt:set var="isProjectObligationsEnabled" value='<%=PortalConstants.IS_PROJECT_OBLIGATIONS_ENABLED%>'/>
+    <core_rt:set var="tagAutocomplete" value='<%=PortalConstants.PREDEFINED_TAGS%>'/>
 </c:catch>
 
 <%--These variables are used as a trick to allow referencing enum values in EL expressions below--%>
@@ -237,13 +238,15 @@
 
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-require(['jquery', 'modules/dialog', 'modules/listgroup', 'modules/validation', 'bridges/jquery-ui' ], function($, dialog, listgroup, validation) {
+require(['jquery', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup', 'modules/validation', 'bridges/jquery-ui' ], function($, autocomplete, dialog, listgroup, validation) {
     document.title = $("<span></span>").html("<sw360:ProjectName project="${project}"/> - " + document.title).text();
 
     listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
 
     validation.enableForm('#projectEditForm');
     validation.jumpToFailedTab('#projectEditForm');
+
+    autocomplete.prepareForMultipleHits('proj_tag', ${tagAutocomplete});
 
     $('#formSubmit').click(
         function () {

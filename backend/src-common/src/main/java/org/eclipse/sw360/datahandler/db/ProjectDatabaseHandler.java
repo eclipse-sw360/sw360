@@ -1370,6 +1370,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         project.setAdditionalData(DatabaseHandlerUtil.trimMapOfStringKeyStringValue(project.getAdditionalData()));
 
         project.setRoles(DatabaseHandlerUtil.trimMapOfStringKeySetValue(project.getRoles()));
+
+        project.setTag(DatabaseHandlerUtil.trimProjectTag(project.getTag()));
     }
 
     public List<Map<String, String>> getClearingStateInformationForListView(String projectId, User user)
