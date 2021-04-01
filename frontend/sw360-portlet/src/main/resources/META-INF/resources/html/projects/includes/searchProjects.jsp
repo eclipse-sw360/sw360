@@ -93,7 +93,7 @@
 </div>
 
 <script>
-    require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard', /* jquery-plugins,  'jquery-ui',*/ 'utils/link'], function($, dialog, datatables, keyboard, link) {
+    require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard', /* jquery-plugins,  'jquery-ui',*/ 'utils/link', 'utils/includes/clipboard'], function($, dialog, datatables, keyboard, link, clipboard) {
        var $dataTable,
             $dialog;
 
@@ -124,6 +124,12 @@
         });
         $('#projectSearchResultstable').on('change', 'input', function() {
             $dialog.enablePrimaryButtons($('#projectSearchResultstable input:checked').length > 0);
+        });
+
+        $('#copyToClipboard').on('click', function(event) {
+            let textSelector = "table tr td#documentId",
+            textToCopy = $(textSelector).clone().children().remove().end().text().trim();
+            clipboard.copyToClipboard(textToCopy, textSelector);
         });
 
         function showProjectDialog() {

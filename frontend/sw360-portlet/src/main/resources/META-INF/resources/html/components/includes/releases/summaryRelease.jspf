@@ -19,7 +19,11 @@
         </thead>
         <tr>
             <td><liferay-ui:message key="id" />:</td>
-            <td><sw360:out value="${release.id}"/></td>
+            <td id="documentId"><sw360:out value="${release.id}"/>
+                <button id="copyToClipboard" type="button" class="btn btn-sm" data-toggle="tooltip" title="<liferay-ui:message key="copy.to.clipboard" />">
+                    <clay:icon symbol="paste" />
+                </button>
+            </td>
         </tr>
         <tr>
             <td><liferay-ui:message key="cpe.id3" />:</td>
