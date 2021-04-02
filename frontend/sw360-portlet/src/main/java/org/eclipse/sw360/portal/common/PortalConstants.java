@@ -394,6 +394,7 @@ public class PortalConstants {
     public static final String SCHEDULE_ADMIN_PORTLET_NAME = PORTLET_NAME_PREFIX + "scheduleadmin";
     public static final String USER_ADMIN_PORTLET_NAME = PORTLET_NAME_PREFIX + "useradmin";
     public static final String TODOS_PORTLET_NAME = PORTLET_NAME_PREFIX + "todos";
+    public static final String OAUTH_CLIENT_PORTLET_NAME = PORTLET_NAME_PREFIX + "oauthclient";
 
     //! Keys for Home portlets
     public static final String MY_COMPONENTS_PORTLET_NAME = PORTLET_NAME_PREFIX + "mycomponents";

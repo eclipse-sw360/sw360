@@ -60,6 +60,10 @@
                 <a class="btn btn-secondary" href="${baseUrl}/../databasesanitation">
                     <clay:icon symbol="search"/> <liferay-ui:message key="database.sanitation" />
                 </a>
+
+                <a class="btn btn-secondary" href="${baseUrl}/../oauthclient">
+                    <clay:icon symbol="documents-and-media"/> <liferay-ui:message key="oauth.client" />
+                </a>
             </div>
         </div>
     </div>

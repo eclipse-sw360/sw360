@@ -13,15 +13,21 @@ define('utils/includes/clipboard', ['jquery'], function($) {
 const toast = '<div class="toast w-25 position-absolute fixed-top"> <div class="toast-header">'+Liferay.Language.get('copied')+'</div></div>';
 const Failedtoast = '<div class="toast w-25 position-absolute fixed-top"> <div class="toast-header">'+Liferay.Language.get('failed')+'</div></div>';
 
-    function copyToClipboard(text, textSelector) {
+    function copyToClipboard(text, textSelector, alterDefaultDisplay) {
         navigator.clipboard.writeText(text)
         .then(() => {
             $(textSelector).append(toast);
+            if(alterDefaultDisplay) {
+                removeWidthClassAndAddInlineDisplay(textSelector);
+            }
             $('.toast').toast({delay: 2000});
             $('.toast').toast('show');
         })
         .catch((error) => {
             $(textSelector).append(Failedtoast);
+            if(removeWidthClassAndAddInlineDisplay) {
+                removeWidthClassAndAddInlineDisplay(textSelector);
+            }
             $('.toast').toast({delay: 2000});
             $('.toast').toast('show');
         })
@@ -29,6 +35,11 @@ const Failedtoast = '<div class="toast w-25 position-absolute fixed-top"> <div c
         setTimeout(function() {
             $(textSelector+" .toast").remove();
         }, 2000);
+    }
+
+    function removeWidthClassAndAddInlineDisplay(textSelector) {
+        $(textSelector).find("div.toast:first").removeClass("w-25");
+        $(textSelector).find("div.toast-header:first").addClass("d-inline");
     }
 
 	return {
