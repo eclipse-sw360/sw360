@@ -327,6 +327,7 @@ public class ModerationDatabaseHandler {
         // Define moderators
         Set<String> moderators = new HashSet<>();
         CommonUtils.add(moderators, dbcomponent.getCreatedBy());
+        CommonUtils.addAll(moderators, dbcomponent.getModerators());
         CommonUtils.addAll(moderators, getUsersAtLeast(UserGroup.CLEARING_ADMIN));
 
         ModerationRequest request = createStubRequest(user, isDeleteRequest, component.getId(), moderators);
