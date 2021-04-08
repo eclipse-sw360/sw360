@@ -14,6 +14,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -50,6 +51,8 @@ public class HalResource<T> extends Resource<T> {
             ((Vulnerability) content).setType(null);
         } else if (content instanceof VulnerabilityDTO) {
             ((VulnerabilityDTO) content).setType(null);
+        } else if (content instanceof ClearingRequest) {
+            ((ClearingRequest) content).setType(null);
         }
     }
 

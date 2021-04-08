@@ -225,7 +225,7 @@ service ModerationService {
     /**
      * get clearing request by project Id
      **/
-    ClearingRequest getClearingRequestByProjectId(1: string projectId);
+    ClearingRequest getClearingRequestByProjectId(1: string projectId, 2: User user);
 
     /**
      * update clearing request for associated project deletion

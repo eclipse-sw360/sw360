@@ -106,7 +106,8 @@ public class ModerationDatabaseHandler {
         return repository.getRequestsByRequestingUser(user);
     }
 
-    public ClearingRequest getClearingRequestByProjectId(String projectId) {
+    public ClearingRequest getClearingRequestByProjectId(String projectId, User user) throws SW360Exception {
+        projectDatabaseHandler.getProjectById(projectId, user); // check if user have READ access to project.
         return clearingRequestRepository.getClearingRequestByProjectId(projectId);
     }
 

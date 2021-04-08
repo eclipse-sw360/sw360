@@ -88,7 +88,7 @@ public class ProjectModerator extends Moderator<Project._Fields, Project> {
     public ClearingRequest getClearingRequestByProjectId(String projectId, User user) {
         ModerationService.Iface client = thriftClients.makeModerationClient();
         try {
-            return client.getClearingRequestByProjectId(projectId);
+            return client.getClearingRequestByProjectId(projectId, user);
         } catch (TException e) {
             log.error("Could not find CR for Project: " + projectId + " by User " + user.getEmail(), e);
             return null;

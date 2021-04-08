@@ -209,10 +209,11 @@ public class ModerationHandler implements ModerationService.Iface {
     }
 
     @Override
-    public ClearingRequest getClearingRequestByProjectId(String projectId) throws TException {
+    public ClearingRequest getClearingRequestByProjectId(String projectId, User user) throws TException {
         assertId(projectId);
+        assertUser(user);
 
-        return handler.getClearingRequestByProjectId(projectId);
+        return handler.getClearingRequestByProjectId(projectId, user);
     }
 
     @Override

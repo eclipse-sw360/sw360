@@ -106,7 +106,7 @@
         <rest.deploy.dir>${base.deploy.dir}/tomcat</rest.deploy.dir>
 
         <!-- some mem optimization here -->
-        <argLine>-Dcatalina.home=${project.build.directory}/home -Xms64m -Xmx128m -XX:MaxPermSize=512m</argLine>
+        <argLine>-Dcatalina.home=${project.build.directory}/home -Xms128m -Xmx256m -XX:MaxPermSize=512m</argLine>
     </properties>
 
     <dependencyManagement>

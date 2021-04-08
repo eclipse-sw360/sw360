@@ -1,0 +1,44 @@
+//
+// Copyright Siemens AG, 2021. Part of the SW360 Portal Project.
+//
+// This program and the accompanying materials are made
+// available under the terms of the Eclipse Public License 2.0
+// which is available at https://www.eclipse.org/legal/epl-2.0/
+//
+// SPDX-License-Identifier: EPL-2.0
+//
+
+[[resources-clearingRequest]]
+=== ClearingRequest
+
+The ClearingRequest resource is used get the clearing request of a project
+
+
+[[resources-clearingRequest-by-id]]
+==== Get clearingRequest by id
+
+A `GET` request will display the ClearingRequest by id
+
+===== Response structure
+include::{snippets}/should_document_get_clearingrequest/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_clearingrequest/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_clearingrequest/http-response.adoc[]
+
+
+[[resources-clearingRequest-by-project-id]]
+==== Get clearingRequest by project id
+
+A `GET` request will display the ClearingRequest based on the project id
+
+===== Response structure
+include::{snippets}/should_document_get_clearingrequest_by_projectid/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_clearingrequest_by_projectid/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_clearingrequest_by_projectid/http-response.adoc[]
