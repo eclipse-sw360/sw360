@@ -93,6 +93,8 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
     private static final ImmutableMap<Release._Fields, String[]> mapOfBackwardCompatible_Field_OldFieldNames_NewFieldNames = ImmutableMap.<Release._Fields, String[]>builder()
             .put(Release._Fields.SOURCE_CODE_DOWNLOADURL, new String[] { "downloadurl", "sourceCodeDownloadurl" })
             .build();
+    private static final ImmutableMap<String, String> RESPONSE_BODY_FOR_MODERATION_REQUEST = ImmutableMap.<String, String>builder()
+            .put("message", "Moderation request is created").build();
 
     @NonNull
     private Sw360ReleaseService releaseService;
@@ -217,7 +219,9 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
             RequestStatus requestStatus = releaseService.deleteRelease(id, user);
             if(requestStatus == RequestStatus.SUCCESS) {
                 results.add(new MultiStatus(id, HttpStatus.OK));
-            } else if(requestStatus == RequestStatus.IN_USE) {
+            } else if (requestStatus == RequestStatus.SENT_TO_MODERATOR) {
+                results.add(new MultiStatus(id, HttpStatus.ACCEPTED));
+            } else if (requestStatus == RequestStatus.IN_USE) {
                 results.add(new MultiStatus(id, HttpStatus.CONFLICT));
             } else {
                 results.add(new MultiStatus(id, HttpStatus.INTERNAL_SERVER_ERROR));
@@ -236,8 +240,11 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
         Release updateRelease = setBackwardCompatibleFieldsInRelease(reqBodyMap);
         sw360Release = this.restControllerHelper.updateRelease(sw360Release, updateRelease);
         releaseService.setComponentNameAsReleaseName(sw360Release, user);
-        releaseService.updateRelease(sw360Release, user);
+        RequestStatus updateReleaseStatus = releaseService.updateRelease(sw360Release, user);
         HalResource<Release> halRelease = createHalReleaseResource(sw360Release, true);
+        if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
+            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        }
         return new ResponseEntity<>(halRelease, HttpStatus.OK);
     }
 
@@ -307,10 +314,11 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
 
         final Release release = releaseService.getReleaseForUserById(releaseId, sw360User);
         release.addToAttachments(attachment);
-        releaseService.updateRelease(release, sw360User);
-
-        final HalResource halRelease = createHalReleaseResource(release, true);
-
+        RequestStatus updateReleaseStatus = releaseService.updateRelease(release, sw360User);
+        HalResource halRelease = createHalReleaseResource(release, true);
+        if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
+            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        }
         return new ResponseEntity<>(halRelease, HttpStatus.OK);
     }
 
@@ -339,8 +347,12 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
         }
         log.debug("Deleting the following attachments from release " + releaseId + ": " + attachmentsToDelete);
         release.getAttachments().removeAll(attachmentsToDelete);
-        releaseService.updateRelease(release, user);
-        return new ResponseEntity<>(createHalReleaseResource(release, true), HttpStatus.OK);
+        RequestStatus updateReleaseStatus = releaseService.updateRelease(release, user);
+        HalResource<Release> halRelease = createHalReleaseResource(release, true);
+        if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
+            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        }
+        return new ResponseEntity<>(halRelease, HttpStatus.OK);
     }
 
     @RequestMapping(value = RELEASES_URL + "/{id}/checkFossologyProcessStatus", method = RequestMethod.GET)

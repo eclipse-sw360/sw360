@@ -135,6 +135,8 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
     private static final ImmutableMap<Project._Fields, String> mapOfProjectFieldsToRequestBody = ImmutableMap.<Project._Fields, String>builder()
             .put(Project._Fields.VISBILITY, "visibility")
             .put(Project._Fields.RELEASE_ID_TO_USAGE, "linkedReleases").build();
+    private static final ImmutableMap<String, String> RESPONSE_BODY_FOR_MODERATION_REQUEST = ImmutableMap.<String, String>builder()
+            .put("message", "Moderation request is created").build();
 
     @NonNull
     private final Sw360ProjectService projectService;
@@ -261,7 +263,11 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
     public ResponseEntity linkReleases(
             @PathVariable("id") String id,
             @RequestBody List<String> releaseURIs) throws URISyntaxException, TException {
-        addOrPatchReleasesToProject(id, releaseURIs, false);
+        RequestStatus linkReleasesStatus = addOrPatchReleasesToProject(id, releaseURIs, false);
+        HttpStatus status = HttpStatus.CREATED;
+        if (linkReleasesStatus == RequestStatus.SENT_TO_MODERATOR) {
+            return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        }
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
@@ -269,7 +275,10 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
     @RequestMapping(value = PROJECTS_URL + "/{id}/releases", method = RequestMethod.PATCH)
     public ResponseEntity patchReleases(@PathVariable("id") String id, @RequestBody List<String> releaseURIs)
             throws URISyntaxException, TException {
-        addOrPatchReleasesToProject(id, releaseURIs, true);
+        RequestStatus patchReleasesStatus = addOrPatchReleasesToProject(id, releaseURIs, true);
+        if (patchReleasesStatus == RequestStatus.SENT_TO_MODERATOR) {
+            return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        }
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
@@ -448,6 +457,9 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
             resources = restControllerHelper.createResources(vulnerabilityResources);
         }
         HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        if (requestStatus == RequestStatus.SENT_TO_MODERATOR) {
+            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        }
         return new ResponseEntity<>(resources, status);
     }
 
@@ -660,8 +672,11 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         mapper.registerModule(sw360Module);
         Project updateProject = mapper.convertValue(reqBodyMap, Project.class);
         sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap, mapOfProjectFieldsToRequestBody);
-        projectService.updateProject(sw360Project, user);
+        RequestStatus updateProjectStatus = projectService.updateProject(sw360Project, user);
         HalResource<Project> userHalResource = createHalProject(sw360Project, user);
+        if (updateProjectStatus == RequestStatus.SENT_TO_MODERATOR) {
+            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        }
         return new ResponseEntity<>(userHalResource, HttpStatus.OK);
     }
 
@@ -681,10 +696,13 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
 
         final Project project = projectService.getProjectForUserById(projectId, sw360User);
         project.addToAttachments(attachment);
-        projectService.updateProject(project, sw360User);
-
-        final HalResource<Project> halResource = createHalProject(project, sw360User);
-        return new ResponseEntity<>(halResource, HttpStatus.OK);
+        RequestStatus updateProjectStatus = projectService.updateProject(project, sw360User);
+        HttpStatus status = HttpStatus.OK;
+        HalResource<Project> halResource = createHalProject(project, sw360User);
+        if (updateProjectStatus == RequestStatus.SENT_TO_MODERATOR) {
+            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        }
+        return new ResponseEntity<>(halResource, status);
     }
 
     @RequestMapping(value = PROJECTS_URL + "/searchByExternalIds", method = RequestMethod.GET)
@@ -791,7 +809,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         return halProject;
     }
 
-    private void addOrPatchReleasesToProject(String id, List<String> releaseURIs, boolean patch)
+    private RequestStatus addOrPatchReleasesToProject(String id, List<String> releaseURIs, boolean patch)
             throws URISyntaxException, TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project project = projectService.getProjectForUserById(id, sw360User);
@@ -808,7 +826,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
                     new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.OPEN));
         }
         project.setReleaseIdToUsage(releaseIdToUsage);
-        projectService.updateProject(project, sw360User);
+        return projectService.updateProject(project, sw360User);
     }
 
     private HalResource<Project> createHalProjectResourceWithAllDetails(Project sw360Project, User sw360User,

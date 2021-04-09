@@ -51,6 +51,9 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
+import com.google.common.collect.ImmutableMap;
+
 import static com.google.common.base.Strings.isNullOrEmpty;
 
 import lombok.NonNull;
@@ -72,6 +75,8 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
 
     public static final String COMPONENTS_URL = "/components";
     private static final Logger log = LogManager.getLogger(ComponentController.class);
+    private static final ImmutableMap<String, String> RESPONSE_BODY_FOR_MODERATION_REQUEST = ImmutableMap.<String, String>builder()
+            .put("message", "Moderation request is created").build();
 
     @NonNull
     private final Sw360ComponentService componentService;
@@ -170,8 +175,11 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Component sw360Component = componentService.getComponentForUserById(id, user);
         sw360Component = this.restControllerHelper.updateComponent(sw360Component, updateComponent);
-        componentService.updateComponent(sw360Component, user);
+        RequestStatus updateComponentStatus = componentService.updateComponent(sw360Component, user);
         HalResource<Component> userHalResource = createHalComponent(sw360Component, user);
+        if (updateComponentStatus == RequestStatus.SENT_TO_MODERATOR) {
+            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        }
         return new ResponseEntity<>(userHalResource, HttpStatus.OK);
     }
 
@@ -187,6 +195,8 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
                 results.add(new MultiStatus(id, HttpStatus.OK));
             } else if(requestStatus == RequestStatus.IN_USE) {
                 results.add(new MultiStatus(id, HttpStatus.CONFLICT));
+            } else if (requestStatus == RequestStatus.SENT_TO_MODERATOR) {
+                results.add(new MultiStatus(id, HttpStatus.ACCEPTED));
             } else {
                 results.add(new MultiStatus(id, HttpStatus.INTERNAL_SERVER_ERROR));
             }
@@ -251,11 +261,12 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
 
         final Component component = componentService.getComponentForUserById(componentId, sw360User);
         component.addToAttachments(attachment);
-        componentService.updateComponent(component, sw360User);
-
-        final HalResource halRelease = createHalComponent(component, sw360User);
-
-        return new ResponseEntity<>(halRelease, HttpStatus.OK);
+        RequestStatus updateComponentStatus = componentService.updateComponent(component, sw360User);
+        HalResource halComponent = createHalComponent(component, sw360User);
+        if (updateComponentStatus == RequestStatus.SENT_TO_MODERATOR) {
+            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        }
+        return new ResponseEntity<>(halComponent, HttpStatus.OK);
     }
 
     @RequestMapping(value = COMPONENTS_URL + "/{componentId}/attachments/{attachmentId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
@@ -283,8 +294,12 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
         }
         log.debug("Deleting the following attachments from component " + componentId + ": " + attachmentsToDelete);
         component.getAttachments().removeAll(attachmentsToDelete);
-        componentService.updateComponent(component, user);
-        return new ResponseEntity<>(createHalComponent(component, user), HttpStatus.OK);
+        RequestStatus updateComponentStatus = componentService.updateComponent(component, user);
+        HalResource<Component> halComponent = createHalComponent(component, user);
+        if (updateComponentStatus == RequestStatus.SENT_TO_MODERATOR) {
+            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        }
+        return new ResponseEntity<>(halComponent, HttpStatus.OK);
     }
 
     @Override
