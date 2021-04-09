@@ -117,24 +117,13 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
             return null;
         }
 
-        LuceneQuery query = new LuceneQuery(function.searchView, function.searchFunction);
-        query.setQuery(queryString);
-        query.setIncludeDocs(includeDocs);
-        setQueryLimit(query);
-
         try {
-            return queryLucene(query);
-        } catch (DbAccessException e) {
-            log.error("Error querying database using _fti hook." + e.getMessage());
-            log.info("Trying to call lucene directly");
-            try {
-                LuceneResult callLuceneDirectly = callLuceneDirectly(function, queryString, includeDocs);
-                return callLuceneDirectly;
-            } catch (Exception exp) {
-                log.error("Error querying Lucene directly.", exp);
-            }
-            return null;
+            LuceneResult callLuceneDirectly = callLuceneDirectly(function, queryString, includeDocs);
+            return callLuceneDirectly;
+        } catch (Exception exp) {
+            log.error("Error querying Lucene directly.", exp);
         }
+        return null;
     }
 
     private LuceneResult callLuceneDirectly(LuceneSearchView function, String queryString, boolean includeDocs)
