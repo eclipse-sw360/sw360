@@ -20,12 +20,14 @@ import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
 import org.springframework.data.domain.Pageable;
 import org.apache.thrift.protocol.TSimpleJSONProtocol;
+import org.eclipse.sw360.commonIO.AttachmentFrontendUtils;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
+import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
@@ -687,8 +689,17 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
         Attachment attachment;
+        AttachmentStreamConnector attachmentStreamConnector = null;
+        String attachmentContentId = null;
+        String userEmail = null;
+
         try {
+            AttachmentFrontendUtils attachmentFrontendUtils = new AttachmentFrontendUtils();
+            attachmentStreamConnector = attachmentFrontendUtils.getConnector();
+            String fileName = newAttachment.getFilename();
+            userEmail = sw360User.getEmail();
             attachment = attachmentService.uploadAttachment(file, newAttachment, sw360User);
+            attachmentStreamConnector.saveAttachmentToFileSystem(projectId, userEmail, file.getInputStream(), fileName);
         } catch (IOException e) {
             log.error(e.getMessage());
             throw new RuntimeException(e);

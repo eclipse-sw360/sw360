@@ -65,6 +65,7 @@ public class SW360Constants {
     public static final String TYPE_CLEARING = "clearing";
     public static final String TYPE_SEARCHRESULT = "searchResult";
     public static final String TYPE_CHANGELOG = "changeLog";
+    public static final String DEFAULT_PATH = "/opt/sw360tempattachments";
 
     /**
      * Hashmap containing the name field for each type.
@@ -150,5 +151,4 @@ public class SW360Constants {
     private static Map.Entry<String, String> pair(TFieldIdEnum field, String displayName){
         return new AbstractMap.SimpleImmutableEntry<>(field.toString(), displayName);
     }
-
 }

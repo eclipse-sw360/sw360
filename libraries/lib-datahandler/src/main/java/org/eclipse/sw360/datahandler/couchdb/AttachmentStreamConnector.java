@@ -39,6 +39,14 @@ import java.util.zip.ZipOutputStream;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.getExtensionFromFileName;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 
+import org.eclipse.sw360.datahandler.common.SW360Constants;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.nio.file.Paths;
+
+import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+
 /**
  * Created by bodet on 03/02/15.
  *
@@ -269,5 +277,36 @@ public class AttachmentStreamConnector {
 
     private String getPartFileName(AttachmentContent attachment, int part) {
         return attachment.getFilename() + "_part" + part;
+    }
+
+    public void saveAttachmentToFileSystem(String Id, String user, InputStream stream, String filename) throws SW360Exception {
+        try {
+            OutputStream out =null;
+            final int BUFFER_SIZE = 1024;
+            String PATH = SW360Constants.DEFAULT_PATH;
+            String directoryName = PATH.concat("/"+user+"/"+Id);
+            File dir = new File(directoryName);
+            if(!dir.exists())
+            {
+                dir.mkdirs();
+            }
+            Paths.get(directoryName + File.separatorChar + filename);
+            File file = new File(directoryName + "/" +filename);
+            if(file != null) {
+                out = new FileOutputStream(file);
+            }
+            byte[] buf = new byte[BUFFER_SIZE];
+            int len;
+            while((len = stream.read(buf)) > 0) {
+                out.write(buf, 0, len);
+            }
+            stream.close();
+            out.close();
+
+        }catch(IOException ioe) {
+            String message = "Exception while saving the attachment in local file system.";
+            log.error(message, ioe);
+            throw new SW360Exception(message);
+        }
     }
 }
