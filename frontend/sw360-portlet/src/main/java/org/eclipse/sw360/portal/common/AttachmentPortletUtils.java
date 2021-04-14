@@ -185,26 +185,17 @@ public class AttachmentPortletUtils extends AttachmentFrontendUtils {
     private boolean uploadAttachmentPartFromRequest(PortletRequest request, String fileUploadName) throws IOException, TException {
         final UploadPortletRequest uploadPortletRequest = PortalUtil.getUploadPortletRequest(request);
         final InputStream stream = uploadPortletRequest.getFileAsStream(fileUploadName);
-        final InputStream attachmentStream = uploadPortletRequest.getFileAsStream(fileUploadName);
 
         final ResumableUpload resumableUpload = ResumableUpload.from(uploadPortletRequest);
         AttachmentContent attachment = null;
 
-        final User user = UserCacheHolder.getUserFromRequest(request);
-        String docId = request.getParameter(PortalConstants.DOCUMENT_ID);
-        String userEmail = user.getEmail();
-        String filename = null;
-
         if (resumableUpload.isValid()) {
             final AttachmentStreamConnector attachmentStreamConnector = getConnector();
-
             attachment = getAttachmentContent(resumableUpload, stream);
 
             if (attachment != null) {
                 try {
-                    filename = attachment.getFilename();
                     attachmentStreamConnector.uploadAttachmentPart(attachment, resumableUpload.getChunkNumber(), stream);
-                    attachmentStreamConnector.saveAttachmentToFileSystem(docId, userEmail, attachmentStream, filename);
                 } catch (TException e) {
                     log.error("Error saving attachment part", e);
                     return false;

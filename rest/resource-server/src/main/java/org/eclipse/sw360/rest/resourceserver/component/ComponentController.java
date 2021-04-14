@@ -12,9 +12,7 @@
 
 package org.eclipse.sw360.rest.resourceserver.component;
 
-import org.eclipse.sw360.commonIO.AttachmentFrontendUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
-import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
@@ -65,7 +63,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
@@ -253,25 +250,15 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
                                                                 @RequestPart("file") MultipartFile file,
                                                                 @RequestPart("attachment") Attachment newAttachment) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-
-        Attachment attachment;
-        AttachmentStreamConnector attachmentStreamConnector = null;
-        String attachmentContentId = null;
-        String userEmail = null;
-
+        final Component component = componentService.getComponentForUserById(componentId, sw360User);
+        Attachment attachment = null;
         try {
-            AttachmentFrontendUtils attachmentFrontendUtils = new AttachmentFrontendUtils();
-            attachmentStreamConnector = attachmentFrontendUtils.getConnector();
-            String fileName = newAttachment.getFilename();
-            userEmail = sw360User.getEmail();
             attachment = attachmentService.uploadAttachment(file, newAttachment, sw360User);
-            attachmentStreamConnector.saveAttachmentToFileSystem(componentId, userEmail, file.getInputStream(), fileName);
         } catch (IOException e) {
             log.error("failed to upload attachment", e);
             throw new RuntimeException("failed to upload attachment", e);
         }
 
-        final Component component = componentService.getComponentForUserById(componentId, sw360User);
         component.addToAttachments(attachment);
         RequestStatus updateComponentStatus = componentService.updateComponent(component, sw360User);
         HalResource halComponent = createHalComponent(component, sw360User);

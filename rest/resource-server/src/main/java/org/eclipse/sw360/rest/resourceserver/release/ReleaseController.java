@@ -16,10 +16,8 @@ import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.commonIO.AttachmentFrontendUtils;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
-import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
@@ -64,7 +62,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -306,25 +303,15 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
                                                               @RequestPart("file") MultipartFile file,
                                                               @RequestPart("attachment") Attachment newAttachment) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-
-        Attachment attachment;
-        AttachmentStreamConnector attachmentStreamConnector = null;
-        String attachmentContentId = null;
-        String userEmail = null;
-
+        final Release release = releaseService.getReleaseForUserById(releaseId, sw360User);
+        Attachment attachment = null;
         try {
-            AttachmentFrontendUtils attachmentFrontendUtils = new AttachmentFrontendUtils();
-            attachmentStreamConnector = attachmentFrontendUtils.getConnector();
-            String fileName = newAttachment.getFilename();
-            userEmail = sw360User.getEmail();
             attachment = attachmentService.uploadAttachment(file, newAttachment, sw360User);
-            attachmentStreamConnector.saveAttachmentToFileSystem(releaseId, userEmail, file.getInputStream(), fileName);
         } catch (IOException e) {
-            log.error(e.getMessage());
-            throw new RuntimeException(e);
+            log.error("failed to upload attachment", e);
+            throw new RuntimeException("failed to upload attachment", e);
         }
 
-        final Release release = releaseService.getReleaseForUserById(releaseId, sw360User);
         release.addToAttachments(attachment);
         RequestStatus updateReleaseStatus = releaseService.updateRelease(release, sw360User);
         HalResource halRelease = createHalReleaseResource(release, true);

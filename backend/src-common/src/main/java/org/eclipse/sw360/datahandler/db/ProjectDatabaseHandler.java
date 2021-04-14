@@ -369,6 +369,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         assertNotNull(project);
 
+        DatabaseHandlerUtil.saveAttachmentInFileSystem(attachmentConnector, actual.getAttachments(),
+                project.getAttachments(), user.getEmail(), project.getId());
         if (changeWouldResultInDuplicate(actual, project)) {
             return RequestStatus.DUPLICATE;
         } else if (duplicateAttachmentExist(project)) {
