@@ -250,8 +250,8 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
                                                                 @RequestPart("file") MultipartFile file,
                                                                 @RequestPart("attachment") Attachment newAttachment) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-
-        Attachment attachment;
+        final Component component = componentService.getComponentForUserById(componentId, sw360User);
+        Attachment attachment = null;
         try {
             attachment = attachmentService.uploadAttachment(file, newAttachment, sw360User);
         } catch (IOException e) {
@@ -259,7 +259,6 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
             throw new RuntimeException("failed to upload attachment", e);
         }
 
-        final Component component = componentService.getComponentForUserById(componentId, sw360User);
         component.addToAttachments(attachment);
         RequestStatus updateComponentStatus = componentService.updateComponent(component, sw360User);
         HalResource halComponent = createHalComponent(component, sw360User);

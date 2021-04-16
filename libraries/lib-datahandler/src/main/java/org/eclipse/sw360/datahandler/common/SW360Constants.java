@@ -151,5 +151,4 @@ public class SW360Constants {
     private static Map.Entry<String, String> pair(TFieldIdEnum field, String displayName){
         return new AbstractMap.SimpleImmutableEntry<>(field.toString(), displayName);
     }
-
 }

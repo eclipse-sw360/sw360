@@ -191,7 +191,6 @@ public class AttachmentPortletUtils extends AttachmentFrontendUtils {
 
         if (resumableUpload.isValid()) {
             final AttachmentStreamConnector attachmentStreamConnector = getConnector();
-
             attachment = getAttachmentContent(resumableUpload, stream);
 
             if (attachment != null) {

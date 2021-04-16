@@ -186,7 +186,7 @@ public class AttachmentStreamConnector {
         return attachmentContent;
     }
 
-    protected InputStream readAttachmentStream(AttachmentContent attachment) {
+    public InputStream readAttachmentStream(AttachmentContent attachment) {
         int partsCount = -1;
 
         if (attachment.isSetPartsCount()) {

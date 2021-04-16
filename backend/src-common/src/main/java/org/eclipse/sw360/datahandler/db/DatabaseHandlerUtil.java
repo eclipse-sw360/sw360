@@ -9,7 +9,16 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collection;
@@ -21,7 +30,10 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -45,6 +57,7 @@ import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.Repositor
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.VendorMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
@@ -70,6 +83,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * @author smruti.sahoo@siemens.com
+ * @author jaideep.palit@siemens.com
  *
  * Common class for database handlers to put the common/generic logic.
  */
@@ -79,6 +93,21 @@ public class DatabaseHandlerUtil {
     public static final String SEPARATOR = " -> ";
     private static ChangeLogsRepository changeLogRepository = getChangeLogsRepository();
     private static ObjectMapper mapper = initAndGetObjectMapper();
+    private static final String ATTACHMENT_ID = "attachmentId_";
+    private static final String DOCUMENT_ID = "documentId_";
+    public static final String PROPERTIES_FILE_PATH = "/sw360.properties";
+    private static final boolean IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED;
+    private static final String ATTACHMENT_STORE_FILE_SYSTEM_LOCATION;
+    private static final String ATTACHMENT_STORE_FILE_SYSTEM_PERMISSION;
+    private static ExecutorService ATTACHMENT_FILE_SYSTEM_STORE_THREAD_POOL = Executors.newFixedThreadPool(5);
+    static {
+        Properties props = CommonUtils.loadProperties(DatabaseSettings.class, PROPERTIES_FILE_PATH);
+        ATTACHMENT_STORE_FILE_SYSTEM_LOCATION = props.getProperty("attachment.store.file.system.location",
+                "/opt/sw360tempattachments");
+        ATTACHMENT_STORE_FILE_SYSTEM_PERMISSION = props.getProperty("attachment.store.file.system.permission",
+                "rwx------");
+        IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED = Boolean.parseBoolean(props.getProperty("enable.attachment.store.to.file.system", "false"));
+    }
 
     private static <T, R> Object[] getCyclicLinkPresenceAndLastElementInCycle(T obj, R handler, User user,
             Map<String, String> linkedPath) throws TException {
@@ -702,5 +731,77 @@ public class DatabaseHandlerUtil {
             projectTag = projectTag.replaceAll(",$", "");
         }
         return projectTag;
+    }
+
+    /**
+     * Execute Runnable To Save Attachment To File System
+     */
+    private static void executeRunnableToSaveAttachmentToFileSystem(InputStream content, String userEmail,
+            String documentId, String attachmentId, String fileName) {
+        Runnable fileHandlerRunnable = prepareFileHandlerRunnable(content, userEmail, documentId, attachmentId,
+                fileName);
+        ATTACHMENT_FILE_SYSTEM_STORE_THREAD_POOL.submit(fileHandlerRunnable);
+    }
+
+    /**
+     * Prepare Runnable to save attachment , set permissions and write to file
+     */
+    private static Runnable prepareFileHandlerRunnable(InputStream content, String userEmail, String documentId,
+            String attachmentId, String fileName) {
+        return () -> {
+            try {
+                Path outputDir = Paths.get(ATTACHMENT_STORE_FILE_SYSTEM_LOCATION, userEmail, DOCUMENT_ID + documentId,
+                        ATTACHMENT_ID + attachmentId);
+                Path outputFile = Paths.get(fileName);
+                Path outputFilePath = outputDir.resolve(outputFile);
+                log.info("Preparing to store attachment in file system" + outputFilePath);
+                if (!Files.exists(outputFile)) {
+                    Set<PosixFilePermission> perms = PosixFilePermissions
+                            .fromString(ATTACHMENT_STORE_FILE_SYSTEM_PERMISSION);
+                    FileAttribute<Set<PosixFilePermission>> fileAttribute = PosixFilePermissions.asFileAttribute(perms);
+                    Files.createDirectories(outputDir, fileAttribute);
+                    Files.createFile(outputFilePath, fileAttribute);
+                    try (OutputStream os = Files.newOutputStream(outputFilePath, StandardOpenOption.WRITE)) {
+                        os.write(content.readAllBytes());
+                        os.flush();
+                        content.close();
+                    }
+                }
+            } catch (Exception exp) {
+                log.warn("Error occured while writing to a file", exp);
+            }
+        };
+    }
+
+    /**
+     * Compare and find newly added attachments to be saved to File System
+     */
+    public static void saveAttachmentInFileSystem(AttachmentConnector attachmentConnector, Set<Attachment> before,
+            Set<Attachment> after, String userEmail, String documentId) {
+        if (!IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED) {
+            log.debug("Store attachment to file system is disabled");
+            return;
+        }
+
+        after = after == null ? new HashSet<>() : new HashSet<>(after);
+        before = before == null ? new HashSet<>() : new HashSet<>(before);
+        after.removeAll(before);
+        after.stream().filter(att -> CommonUtils.isNotNullEmptyOrWhitespace(att.getAttachmentContentId()))
+                .forEach(att -> {
+                    String attachmentContentId = att.getAttachmentContentId();
+                    AttachmentContent attachmentContent = null;
+                    try {
+                        attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
+                    } catch (SW360Exception e) {
+                        log.error(
+                                "Error occured while fetching Attachment content. During Update Project to store Attachment in fileSystem",
+                                e);
+                    }
+                    if (attachmentContent == null)
+                        return;
+                    executeRunnableToSaveAttachmentToFileSystem(
+                            attachmentConnector.readAttachmentStream(attachmentContent), userEmail, documentId,
+                            attachmentContentId, att.getFilename());
+                });
     }
 }

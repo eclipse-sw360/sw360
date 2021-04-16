@@ -252,6 +252,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                 new Release("Test Release", "1.0", component.getId())
                         .setId("1234567890"));
 
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
+                new User("admin@sw360.org", "sw360").setId("123456789"));
         given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(
                 new User("admin@sw360.org", "sw360").setId("123456789"));
         given(this.userServiceMock.getUserByEmail("jane@sw360.org")).willReturn(

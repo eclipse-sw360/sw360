@@ -303,16 +303,15 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
                                                               @RequestPart("file") MultipartFile file,
                                                               @RequestPart("attachment") Attachment newAttachment) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-
-        Attachment attachment;
+        final Release release = releaseService.getReleaseForUserById(releaseId, sw360User);
+        Attachment attachment = null;
         try {
             attachment = attachmentService.uploadAttachment(file, newAttachment, sw360User);
         } catch (IOException e) {
-            log.error(e.getMessage());
-            throw new RuntimeException(e);
+            log.error("failed to upload attachment", e);
+            throw new RuntimeException("failed to upload attachment", e);
         }
 
-        final Release release = releaseService.getReleaseForUserById(releaseId, sw360User);
         release.addToAttachments(attachment);
         RequestStatus updateReleaseStatus = releaseService.updateRelease(release, sw360User);
         HalResource halRelease = createHalReleaseResource(release, true);
