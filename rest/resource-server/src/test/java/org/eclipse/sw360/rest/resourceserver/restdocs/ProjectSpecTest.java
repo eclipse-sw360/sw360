@@ -878,15 +878,23 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 .param("priority", "1 - critical")
                 .param("priority", "2 - major")
                 .param("projectRelevance", "IRRELEVANT")
+                .param("page", "0")
+                .param("page_entries", "5")
+                .param("sort", "externalId,desc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
                         requestParameters(
                                 parameterWithName("priority").description("The priority of vulnerability. For example: `1 - critical`, `2 - major`"),
-                                parameterWithName("projectRelevance").description("The relevance of project of the vulnerability, possible values are: " + Arrays.asList(VulnerabilityRatingForProject.values()))
+                                parameterWithName("projectRelevance").description("The relevance of project of the vulnerability, possible values are: " + Arrays.asList(VulnerabilityRatingForProject.values())),
+                                parameterWithName("page").description("Page of vulnerabilities"),
+                                parameterWithName("page_entries").description("Amount of vulnerability page"),
+                                parameterWithName("sort").description("Defines order of the vulnerability. It can be done based on " + Arrays.asList(VulnerabilityDTO._Fields.EXTERNAL_ID.getFieldName(), VulnerabilityDTO._Fields.TITLE.getFieldName(), VulnerabilityDTO._Fields.PRIORITY.getFieldName(), VulnerabilityDTO._Fields.PROJECT_RELEVANCE.getFieldName()))
                         ),
                         links(
-                                linkWithRel("curies").description("Curies are used for online documentation")
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
                         ),
                         responseFields(
                                 fieldWithPath("_embedded.sw360:vulnerabilityDToes[]priority").description("The priority of vulnerability"),
@@ -896,7 +904,12 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("_embedded.sw360:vulnerabilityDToes[]intReleaseId").description("The release id"),
                                 fieldWithPath("_embedded.sw360:vulnerabilityDToes[]intReleaseName").description("The release name"),
                                 fieldWithPath("_embedded.sw360:vulnerabilityDToes").description("An array of <<resources-vulnerabilities, Vulnerability resources>>"),
-                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of vulnerability per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all existing vulnerability"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
                         )));
     }
 
