@@ -9,6 +9,8 @@
  */
 package org.eclipse.sw360.datahandler.permissions;
 
+import java.util.Set;
+
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
@@ -32,24 +34,48 @@ public class PermissionUtils {
         return isInGroup(user, UserGroup.USER);
     }
 
+    public static boolean isNormalUserBySecondaryRoles(Set<UserGroup> roles) {
+        return roles.contains(UserGroup.USER);
+    }
+
     public static boolean isAdmin(User user) {
         return isInGroup(user, UserGroup.SW360_ADMIN) || isInGroup(user, UserGroup.ADMIN);
+    }
+
+    public static boolean isAdminBySecondaryRoles(Set<UserGroup> roles) {
+        return roles.contains(UserGroup.SW360_ADMIN) || roles.contains(UserGroup.ADMIN);
     }
 
     public static boolean isClearingAdmin(User user) {
         return isInGroup(user, UserGroup.CLEARING_ADMIN) || isInGroup(user, UserGroup.CLEARING_EXPERT);
     }
 
+    public static boolean isClearingAdminBySecondaryRoles(Set<UserGroup> roles) {
+        return roles.contains(UserGroup.CLEARING_ADMIN) || roles.contains(UserGroup.CLEARING_EXPERT);
+    }
+
     public static boolean isClearingExpert(User user) {
         return isInGroup(user, UserGroup.CLEARING_EXPERT);
+    }
+
+    public static boolean isClearingExpertBySecondaryRoles(Set<UserGroup> roles) {
+        return roles.contains(UserGroup.CLEARING_EXPERT);
     }
 
     public static boolean isEccAdmin(User user) {
         return isInGroup(user, UserGroup.ECC_ADMIN);
     }
 
+    public static boolean isEccAdminBySecondaryRoles(Set<UserGroup> roles) {
+        return roles.contains(UserGroup.ECC_ADMIN);
+    }
+
     public static boolean isSecurityAdmin(User user) {
         return isInGroup(user, UserGroup.SECURITY_ADMIN);
+    }
+
+    public static boolean isSecurityAdminBySecondaryRoles(Set<UserGroup> roles) {
+        return roles.contains(UserGroup.SECURITY_ADMIN);
     }
 
     private static boolean isInGroup(User user, UserGroup userGroup) {
@@ -74,6 +100,28 @@ public class PermissionUtils {
                 return isAdmin(user);
             default:
                 throw new IllegalArgumentException("Unknown group: " + group);
+        }
+    }
+
+    public static boolean isUserAtLeastDesiredRoleInSecondaryGroup(UserGroup role, Set<UserGroup> secondaryRoles) {
+        switch (role) {
+            case USER:
+                return isNormalUserBySecondaryRoles(secondaryRoles) || isAdminBySecondaryRoles(secondaryRoles) ||
+                        isClearingAdminBySecondaryRoles(secondaryRoles) || isEccAdminBySecondaryRoles(secondaryRoles) || isSecurityAdminBySecondaryRoles(secondaryRoles);
+            case CLEARING_ADMIN:
+                return isClearingAdminBySecondaryRoles(secondaryRoles) || isAdminBySecondaryRoles(secondaryRoles);
+            case CLEARING_EXPERT:
+                return isClearingExpertBySecondaryRoles(secondaryRoles) || isAdminBySecondaryRoles(secondaryRoles);
+            case ECC_ADMIN:
+                return isEccAdminBySecondaryRoles(secondaryRoles) || isAdminBySecondaryRoles(secondaryRoles);
+            case SECURITY_ADMIN:
+                return isSecurityAdminBySecondaryRoles(secondaryRoles) || isAdminBySecondaryRoles(secondaryRoles);
+            case SW360_ADMIN:
+                return isAdminBySecondaryRoles(secondaryRoles);
+            case ADMIN:
+                return isAdminBySecondaryRoles(secondaryRoles);
+            default:
+                throw new IllegalArgumentException("Unknown role: " + role);
         }
     }
 

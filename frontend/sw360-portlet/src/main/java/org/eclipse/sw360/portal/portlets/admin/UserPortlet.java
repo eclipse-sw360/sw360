@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.portal.portlets.admin;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
@@ -23,6 +24,7 @@ import com.liferay.portal.kernel.upload.UploadPortletRequest;
 import com.liferay.portal.kernel.util.PortalUtil;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.portal.common.PortalConstants;
@@ -41,9 +43,13 @@ import org.osgi.service.component.annotations.ConfigurationPolicy;
 
 import java.io.*;
 import java.util.*;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.portlet.*;
 import javax.portlet.Portlet;
+import javax.servlet.http.HttpServletResponse;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.portal.common.PortalConstants.USER_ADMIN_PORTLET_NAME;
@@ -69,25 +75,34 @@ import static org.eclipse.sw360.portal.users.UserUtils.getRoleConstantFromUserGr
 )
 public class UserPortlet extends Sw360Portlet {
     private static final Logger log = LogManager.getLogger(UserPortlet.class);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    public static final Set<UserGroup> SET_OF_USERGROUP_EXLUDED = ImmutableSet.of(UserGroup.ADMIN);
 
     @Override
     public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
-
-        List<org.eclipse.sw360.datahandler.thrift.users.User> missingUsers = new ArrayList<>();
+        org.eclipse.sw360.datahandler.thrift.users.User requestingUser = UserCacheHolder.getUserFromRequest(request);
+        List<org.eclipse.sw360.datahandler.thrift.users.User> missingUsers;
         List<org.eclipse.sw360.datahandler.thrift.users.User> backEndUsers;
-
-        List<User> liferayUsers;
+        Set<String> setOfDepartments = new TreeSet<String>();
+        try {
+            UserService.Iface client = thriftClients.makeUserClient();
+            backEndUsers = CommonUtils.nullToEmptyList(client.getAllUsers());
+        } catch (TException e) {
+            log.error("Problem with user client", e);
+            backEndUsers = Collections.emptyList();
+        }
+        Map<String, org.eclipse.sw360.datahandler.thrift.users.User> mapOfBackEndUsers = backEndUsers.stream()
+                .collect(Collectors.toMap(user -> user.getEmail(), user -> user, (oldUser, newUser) -> newUser));
+        List<org.eclipse.sw360.datahandler.thrift.users.User> liferayUsers;
         List<User> liferayUsers2;
+        Set<String> lifeRayMails = new HashSet<String>();
         try {
             liferayUsers2 = UserLocalServiceUtil.getUsers(QueryUtil.ALL_POS, QueryUtil.ALL_POS);
         } catch (SystemException e) {
             log.error("Could not get user List from liferay", e);
             liferayUsers2 = Collections.emptyList();
         }
-        liferayUsers = FluentIterable.from(liferayUsers2).filter(new Predicate<User>() {
-            @Override
-            public boolean apply(User liferayUser) {
-
+        liferayUsers = liferayUsers2.stream().filter(liferayUser-> {
                 String firstName = liferayUser.getFirstName();
                 String lastName = liferayUser.getLastName();
                 String emailAddress = liferayUser.getEmailAddress();
@@ -130,40 +145,42 @@ public class UserPortlet extends Sw360Portlet {
                 String passwordHash = liferayUser.getPassword();
 
                 return !(isNullOrEmpty(firstName) || isNullOrEmpty(lastName) || isNullOrEmpty(emailAddress) || isNullOrEmpty(department) || isNullOrEmpty(userGroup) || isNullOrEmpty(gid) || isNullOrEmpty(passwordHash));
+        }).map(liferayUser -> {
+            String emailAddress = liferayUser.getEmailAddress();
+            String department = null;
+            List<String> primaryRoles = liferayUser.getRoles().stream().map(role -> role.getName())
+                    .collect(Collectors.toList());
+            try {
+                department = liferayUser.getOrganizations().get(0).getName();
+            } catch (PortalException pe) {
+                log.error("Error occured while retrieving Organisation name of the user. ", pe);
             }
-        }).toList();
+            org.eclipse.sw360.datahandler.thrift.users.User user = mapOfBackEndUsers.remove(emailAddress);
+            if (user == null)
+                return new org.eclipse.sw360.datahandler.thrift.users.User().setGivenname(liferayUser.getFirstName())
+                        .setLastname(liferayUser.getLastName()).setDepartment(department).setPrimaryRoles(primaryRoles)
+                        .setEmail(emailAddress);
+            user.setGivenname(liferayUser.getFirstName()).setLastname(liferayUser.getLastName())
+                    .setDepartment(department).setPrimaryRoles(primaryRoles);
+            setOfDepartments.add(department);
+            return user;
+        }).filter(Objects::nonNull).collect(Collectors.toList());
 
+        missingUsers = new ArrayList<>(mapOfBackEndUsers.values());
 
-        try {
-            UserService.Iface client = thriftClients.makeUserClient();
-            backEndUsers = CommonUtils.nullToEmptyList(client.searchUsers(null));
-        } catch (TException e) {
-            log.error("Problem with user client", e);
-            backEndUsers = Collections.emptyList();
-        }
+        Set<UserGroup> listofUserGroupOptions = new TreeSet<UserGroup>(Comparator.comparing(UserGroup::name));
 
-
-        if (backEndUsers.size() > 0) {
-
-            final ImmutableSet<String> lifeRayMails = FluentIterable.from(liferayUsers).transform(new Function<User, String>() {
-                @Override
-                public String apply(User input) {
-                    return input.getEmailAddress();
-                }
-            }).toSet();
-
-            missingUsers = FluentIterable.from(backEndUsers).filter(new Predicate<org.eclipse.sw360.datahandler.thrift.users.User>() {
-                @Override
-                public boolean apply(org.eclipse.sw360.datahandler.thrift.users.User input) {
-                    return !lifeRayMails.contains(input.getEmail());
-                }
-            }).toList();
-
-        }
+        Stream.of(UserGroup.values()).forEach(ug -> {
+            if (SET_OF_USERGROUP_EXLUDED.contains(ug)) {
+                return;
+            }
+            listofUserGroupOptions.add(ug);
+        });
 
         request.setAttribute(PortalConstants.USER_LIST, liferayUsers);
         request.setAttribute(PortalConstants.MISSING_USER_LIST, missingUsers);
-
+        request.setAttribute(PortalConstants.SECONDARY_GROUPS_LIST, setOfDepartments);
+        request.setAttribute(PortalConstants.SECONDARY_ROLES_OPTIONS, listofUserGroupOptions);
         // Proceed with page rendering
         super.doView(request, response);
     }
@@ -172,17 +189,58 @@ public class UserPortlet extends Sw360Portlet {
     @Override
     public void serveResource(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
         String action = request.getParameter(PortalConstants.ACTION);
-
         if (PortalConstants.USER_LIST.equals(action)) {
-
             try {
                 backUpUsers(request, response);
             } catch (SystemException | PortalException e) {
                 log.error("Something went wrong with the user backup", e);
             }
+        } else if (PortalConstants.EDIT_SECONDARY_GROUP_FOR_USER.equals(action)) {
+            editSecondaryGroupAndRolesForUser(request, response);
         }
     }
 
+    private void editSecondaryGroupAndRolesForUser(ResourceRequest request, ResourceResponse response)
+            throws UnsupportedEncodingException, IOException {
+        org.eclipse.sw360.datahandler.thrift.users.User requestingUser = UserCacheHolder.getUserFromRequest(request);
+        StringBuilder reqBodySb = new StringBuilder();
+        try (BufferedReader reader = request.getReader()) {
+            String readLine = null;
+            while ((readLine = reader.readLine()) != null) {
+                reqBodySb.append(readLine);
+            }
+        }
+        Map<String, Object> reqBody = OBJECT_MAPPER.readValue(reqBodySb.toString(), Map.class);
+        String email = reqBody.get("email").toString();
+        Map<String, List<String>> formData = (Map) reqBody.get("formData");
+        Map<String, Set<UserGroup>> secGroupAndRoles = formData.entrySet().stream()
+                .collect(Collectors.toMap(Entry::getKey, entry -> {
+                    List<String> rolesInString = entry.getValue();
+                    return rolesInString.stream().map(role -> {
+                        return UserGroup.valueOf(role);
+                    }).collect(Collectors.toSet());
+                }));
+
+        UserService.Iface client = thriftClients.makeUserClient();
+        RequestStatus updateUserStatus = null;
+        try {
+            org.eclipse.sw360.datahandler.thrift.users.User userByEmailToBeEdited = client.getByEmail(email);
+            secGroupAndRoles.remove(userByEmailToBeEdited.getDepartment());
+            userByEmailToBeEdited.setSecondaryDepartmentsAndRoles(secGroupAndRoles.isEmpty() ? null : secGroupAndRoles);
+            updateUserStatus = client.updateUser(userByEmailToBeEdited);
+        } catch (TException e) {
+            log.error("Error occured while getting user and updating it.", e);
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE,
+                    Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+            return;
+        }
+        if (updateUserStatus != RequestStatus.SUCCESS) {
+            log.error("Error occured while getting user and updating it.");
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE,
+                    Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+        }
+        response.setProperty(ResourceResponse.HTTP_STATUS_CODE, Integer.toString(HttpServletResponse.SC_OK));
+    }
 
     public void backUpUsers(ResourceRequest request, ResourceResponse response) throws IOException, SystemException, PortalException {
         List<User> liferayUsers;

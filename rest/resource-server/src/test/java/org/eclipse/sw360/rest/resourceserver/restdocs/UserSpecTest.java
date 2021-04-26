@@ -24,7 +24,11 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.mockito.BDDMockito.given;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
@@ -52,6 +56,15 @@ public class UserSpecTest extends TestRestDocsSpecBase {
     public void before() {
         List<User> userList = new ArrayList<>();
 
+        Map<String,Set<UserGroup>> secondaryDepartmentsAndRoles = new HashMap<String, Set<UserGroup>>();
+        Set<UserGroup> userGroups1 = new HashSet<>();
+        userGroups1.add(UserGroup.CLEARING_EXPERT);
+        userGroups1.add(UserGroup.ECC_ADMIN);
+        Set<UserGroup> userGroups2 = new HashSet<>();
+        userGroups2.add(UserGroup.SW360_ADMIN);
+        userGroups2.add(UserGroup.SECURITY_ADMIN);
+        secondaryDepartmentsAndRoles.put("DEPARTMENT1", userGroups1);
+        secondaryDepartmentsAndRoles.put("DEPARTMENT2", userGroups2);
         user = new User();
         user.setEmail("admin@sw360.org");
         user.setId("4784587578e87989");
@@ -62,6 +75,7 @@ public class UserSpecTest extends TestRestDocsSpecBase {
         user.setDepartment("SW360 Administration");
         user.setWantsMailNotification(true);
         user.setFormerEmailAddresses(Sets.newHashSet("admin_bachelor@sw360.org"));
+        user.setSecondaryDepartmentsAndRoles(secondaryDepartmentsAndRoles);
         userList.add(user);
 
         given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(user);
@@ -76,6 +90,7 @@ public class UserSpecTest extends TestRestDocsSpecBase {
         user2.setLastname("Doe");
         user2.setDepartment("SW360 BA");
         user2.setWantsMailNotification(false);
+        user.setSecondaryDepartmentsAndRoles(secondaryDepartmentsAndRoles);
         userList.add(user2);
 
         given(this.userServiceMock.getAllUsers()).willReturn(userList);
@@ -117,6 +132,7 @@ public class UserSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("givenName").description("The user's given name"),
                                 fieldWithPath("lastName").description("The user's last name"),
                                 fieldWithPath("department").description("The user's company department"),
+                                fieldWithPath("secondaryDepartmentsAndRoles").description("The user's secondary departments and roles"),
                                 fieldWithPath("formerEmailAddresses").description("The user's former email addresses"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
@@ -140,6 +156,7 @@ public class UserSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("givenName").description("The user's given name"),
                                 fieldWithPath("lastName").description("The user's last name"),
                                 fieldWithPath("department").description("The user's company department"),
+                                fieldWithPath("secondaryDepartmentsAndRoles").description("The user's secondary departments and roles"),
                                 fieldWithPath("formerEmailAddresses").description("The user's former email addresses"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));

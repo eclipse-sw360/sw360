@@ -198,7 +198,7 @@
             <div class="form-group">
                 <label class="mandatory" for="group"><liferay-ui:message key="group" /></label>
                 <input id="group" class="form-control" name="<portlet:namespace/><%=Project._Fields.BUSINESS_UNIT%>" type="text"
-                    placeholder="<liferay-ui:message key="enter.group" />" required
+                    placeholder="<liferay-ui:message key="enter.group" />" required disabled
                     value="<sw360:out value="${project.businessUnit}"/>"/>
                 <div class="invalid-feedback">
                         <liferay-ui:message key="please.enter.a.group" />

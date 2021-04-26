@@ -108,6 +108,9 @@ public class TestUtils {
         doReturn(true).when(user).isSetDepartment();
         doReturn(caller.getPackage().getName()).when(user).getDepartment();
 
+        doReturn(false).when(user).isSetSecondaryDepartmentsAndRoles();
+        doReturn(null).when(user).getSecondaryDepartmentsAndRoles();
+
         return user;
     }
 

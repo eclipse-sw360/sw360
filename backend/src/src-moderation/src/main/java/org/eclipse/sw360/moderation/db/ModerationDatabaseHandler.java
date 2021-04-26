@@ -57,12 +57,16 @@ import org.jetbrains.annotations.NotNull;
 
 import java.net.MalformedURLException;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.notEmptyOrNull;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.fail;
+import static org.eclipse.sw360.datahandler.common.SW360Utils.getBUFromOrganisation;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 
 /**
@@ -346,8 +350,7 @@ public class ModerationDatabaseHandler {
         Set<String> moderators = new HashSet<>();
         CommonUtils.add(moderators, dbcomponent.getCreatedBy());
         CommonUtils.addAll(moderators, dbcomponent.getModerators());
-        CommonUtils.addAll(moderators, getUsersAtLeast(UserGroup.CLEARING_ADMIN));
-
+        CommonUtils.addAll(moderators, getUsersAtLeast(UserGroup.CLEARING_ADMIN, null, false, true));
         ModerationRequest request = createStubRequest(user, isDeleteRequest, component.getId(), moderators);
 
         // Set meta-data
@@ -405,7 +408,8 @@ public class ModerationDatabaseHandler {
         Set<String> moderators = new HashSet<>();
         CommonUtils.add(moderators, release.getCreatedBy());
         CommonUtils.addAll(moderators, release.getModerators());
-        CommonUtils.addAll(moderators, getUsersAtLeast(UserGroup.CLEARING_ADMIN));
+        CommonUtils.addAll(moderators, getUsersAtLeast(UserGroup.CLEARING_ADMIN, null, false, true));
+
         return moderators;
     }
 
@@ -415,7 +419,7 @@ public class ModerationDatabaseHandler {
         Set<String> moderators = new HashSet<>();
         try{
             String department =  getDepartmentByUserEmail(release.getCreatedBy());
-            CommonUtils.addAll(moderators, getUsersAtLeast(UserGroup.ECC_ADMIN, department));
+            CommonUtils.addAll(moderators, getUsersAtLeast(UserGroup.ECC_ADMIN, department, false, true));
         } catch (TException e){
             log.error("Could not get users from database. ECC admins not added as moderators, since department is missing.");
         }
@@ -456,7 +460,7 @@ public class ModerationDatabaseHandler {
         }
 
         // Define moderators
-        Set<String> moderators = getProjectModerators(dbproject);
+        Set<String> moderators = getProjectModerators(dbproject, user.getDepartment());
         ModerationRequest request = createStubRequest(user, isDeleteRequest, project.getId(), moderators);
 
         // Set meta-data
@@ -471,14 +475,14 @@ public class ModerationDatabaseHandler {
     }
 
     @NotNull
-    private Set<String> getProjectModerators(Project project) {
+    private Set<String> getProjectModerators(Project project, String department) {
         Set<String> moderators = new HashSet<>();
         if (project.getClearingState() != ProjectClearingState.CLOSED){
             CommonUtils.add(moderators, project.getCreatedBy());
             CommonUtils.add(moderators, project.getProjectResponsible());
             CommonUtils.addAll(moderators, project.getModerators());
         }
-        CommonUtils.addAll(moderators, getUsersAtLeast(UserGroup.CLEARING_ADMIN));
+        CommonUtils.addAll(moderators, getUsersAtLeast(UserGroup.CLEARING_ADMIN, project.getBusinessUnit(), true, false));
         return moderators;
     }
 
@@ -528,12 +532,10 @@ public class ModerationDatabaseHandler {
     private Set<String> getLicenseModerators(String department) {
         List<User> sw360users = getAllSW360Users();
         //try first clearing admins or admins from same department
-        Set<String> moderators = sw360users
-                .stream()
-                .filter(user1 -> PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user1))
-                .filter(user1 -> user1.getDepartment().equals(department))
-                .map(User::getEmail)
+        Set<String> moderators = sw360users.stream()
+                .filter(getRelevantUserPredicate(UserGroup.CLEARING_ADMIN, department, true, true)).map(User::getEmail)
                 .collect(Collectors.toSet());
+
         //second choice are all clearing admins or admins in SW360
         if (moderators.size() == 0) {
             moderators = sw360users
@@ -546,35 +548,84 @@ public class ModerationDatabaseHandler {
     }
 
     private Set<String> getUsersAtLeast(UserGroup userGroup, String department) {
-        return getUsersAtLeast(userGroup, department, true);
+        return getUsersAtLeast(userGroup, department, false, false);
     }
 
-    private Set<String> getUsersAtLeast(UserGroup userGroup, String department, boolean defaultToAllUsersInGroup) {
-        List<User> sw360users = getAllSW360Users();
-        List<User> allRelevantUsers = sw360users
-                    .stream()
-                    .filter(user1 -> PermissionUtils.isUserAtLeast(userGroup, user1))
-                    .collect(Collectors.toList());
+    private Stream<User> getFilteredStreamOfProjectModeratorBasedOnSecondaryRole(UserGroup userGroup,
+            List<User> sw360users, String department) {
+        return sw360users.stream().filter(user -> {
+            String buFromOrganisation = getBUFromOrganisation(user.getDepartment());
+            if (!department.equals(buFromOrganisation)
+                    && !CommonUtils.isNullOrEmptyMap(user.getSecondaryDepartmentsAndRoles())) {
+                for (Entry<String, Set<UserGroup>> entry : user.getSecondaryDepartmentsAndRoles().entrySet()) {
+                    if (CommonUtils.isNotNullEmptyOrWhitespace(entry.getKey())) {
+                        String buFromSecondaryOrganisation = getBUFromOrganisation(entry.getKey());
+                        if (department.equals(buFromSecondaryOrganisation) && PermissionUtils
+                                .isUserAtLeastDesiredRoleInSecondaryGroup(userGroup, entry.getValue())) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        });
+    }
 
-        List<User> relevantUsersOfDepartment = Collections.emptyList();
-        if(department != null) {
-            relevantUsersOfDepartment = allRelevantUsers.stream()
-                    .filter(user -> user.getDepartment().equals(department))
-                    .collect(Collectors.toList());
+    private Set<String> getUsersAtLeast(UserGroup userGroup, String department,
+            boolean isFetchProjectModeratorBasedOnSecondaryRole, boolean isScanSecondaryGroup) {
+        List<User> sw360users = getAllSW360Users();
+        List<User> projectModeratorBasedOnSecondaryRole = Collections.emptyList();
+        if (isFetchProjectModeratorBasedOnSecondaryRole && department != null) {
+            projectModeratorBasedOnSecondaryRole = getFilteredStreamOfProjectModeratorBasedOnSecondaryRole(userGroup,
+                    sw360users, department).collect(Collectors.toList());
         }
 
-        List<User> defaultUsersList = defaultToAllUsersInGroup ? allRelevantUsers : Collections.emptyList();
-        List<User> resultingUsers = relevantUsersOfDepartment.isEmpty() ? defaultUsersList : relevantUsersOfDepartment;
+        List<User> allRelevantUsers = sw360users.stream().filter(getRelevantUserPredicate(userGroup, department,
+                isScanSecondaryGroup, !isFetchProjectModeratorBasedOnSecondaryRole)).collect(Collectors.toList());
 
-        Set<String> resultingUserEmails = resultingUsers.stream()
-                    .map(User::getEmail)
-                    .collect(Collectors.toSet());
+        allRelevantUsers.addAll(projectModeratorBasedOnSecondaryRole);
+
+        Set<String> resultingUserEmails = allRelevantUsers.stream().map(User::getEmail).collect(Collectors.toSet());
 
         return resultingUserEmails;
     }
 
     private Set<String> getUsersAtLeast(UserGroup userGroup){
         return getUsersAtLeast(userGroup, null);
+    }
+
+    private Predicate<User> getRelevantUserPredicate(UserGroup userGroup, String department,
+            boolean isScanSecondaryGroup, boolean isDepartmentFilterRequired) {
+        return user1 -> {
+            boolean isUserAtLeastByPrimaryGrpPass = PermissionUtils.isUserAtLeast(userGroup, user1);
+            boolean isUserAtLeastBySecGrpPass = false;
+            boolean isDepartmentFilterPassed = true;
+            if ((!isUserAtLeastByPrimaryGrpPass || department != null) && isScanSecondaryGroup) {
+                Set<UserGroup> allSecRoles = !CommonUtils.isNullOrEmptyMap(user1.getSecondaryDepartmentsAndRoles())
+                        ? user1.getSecondaryDepartmentsAndRoles().entrySet().stream()
+                                .flatMap(entry -> entry.getValue().stream()).collect(Collectors.toSet())
+                        : new HashSet<UserGroup>();
+                isUserAtLeastBySecGrpPass = PermissionUtils.isUserAtLeastDesiredRoleInSecondaryGroup(userGroup,
+                        allSecRoles);
+            }
+
+            if (isDepartmentFilterRequired && department != null) {
+                if (isUserAtLeastByPrimaryGrpPass && user1.getDepartment().equals(department)) {
+                    return true;
+                }
+
+                if (isUserAtLeastBySecGrpPass) {
+                    for (Entry<String, Set<UserGroup>> entry : user1.getSecondaryDepartmentsAndRoles().entrySet()) {
+                        if (PermissionUtils.isUserAtLeastDesiredRoleInSecondaryGroup(userGroup, entry.getValue())
+                                && department.equals(entry.getKey())) {
+                            return true;
+                        }
+                    }
+                }
+                isDepartmentFilterPassed = false;
+            }
+            return isDepartmentFilterPassed && (isUserAtLeastByPrimaryGrpPass || isUserAtLeastBySecGrpPass);
+        };
     }
 
     private List<User> getAllSW360Users() {

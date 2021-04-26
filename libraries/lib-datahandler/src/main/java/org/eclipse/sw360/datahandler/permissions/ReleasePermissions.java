@@ -10,12 +10,14 @@
 package org.eclipse.sw360.datahandler.permissions;
 
 import com.google.common.collect.Sets;
+
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -54,7 +56,11 @@ public class ReleasePermissions extends DocumentPermissions<Release> {
     @Override
     public boolean isActionAllowed(RequestedAction action) {
         if (action == RequestedAction.WRITE_ECC) {
-            return PermissionUtils.isUserAtLeast(UserGroup.ECC_ADMIN, user);
+            Set<UserGroup> allSecRoles = !CommonUtils.isNullOrEmptyMap(user.getSecondaryDepartmentsAndRoles())
+                    ? user.getSecondaryDepartmentsAndRoles().entrySet().stream().flatMap(entry -> entry.getValue().stream()).collect(Collectors.toSet())
+                    : new HashSet<UserGroup>();
+            return PermissionUtils.isUserAtLeast(UserGroup.ECC_ADMIN, user)
+                    || PermissionUtils.isUserAtLeastDesiredRoleInSecondaryGroup(UserGroup.ECC_ADMIN, allSecRoles);
         } else {
             return getStandardPermissions(action);
         }
@@ -73,5 +79,15 @@ public class ReleasePermissions extends DocumentPermissions<Release> {
     @Override
     protected Set<String> getAttachmentContentIds() {
         return attachmentContentIds;
+    }
+
+    protected Set<String> getUserEquivalentOwnerGroup() {
+        Set<String> departments = new HashSet<String>();
+        departments.add(user.getDepartment());
+        if (!CommonUtils.isNullOrEmptyMap(user.getSecondaryDepartmentsAndRoles())) {
+            departments.addAll(user.getSecondaryDepartmentsAndRoles().keySet());
+        }
+
+        return departments;
     }
 }
