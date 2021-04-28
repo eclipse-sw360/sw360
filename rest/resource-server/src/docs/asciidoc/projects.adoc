@@ -171,6 +171,22 @@ include::{snippets}/should_document_get_project_attachment_info/curl-request.ado
 ===== Example response
 include::{snippets}/should_document_get_project_attachment_info/http-response.adoc[]
 
+[[resources-project-attachment-info-update]]
+==== Update attachment info
+
+A `PATCH` request is used to update an attachment info
+
+===== Request structure
+include::{snippets}/should_document_update_project_attachment_info/request-fields.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_update_project_attachment_info/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_update_project_attachment_info/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_project_attachment_info/http-response.adoc[]
 
 [[resources-project-attachment-upload]]
 ==== Upload attachment to project

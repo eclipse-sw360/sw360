@@ -640,6 +640,23 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = PROJECTS_URL + "/{id}/attachment/{attachmentId}", method = RequestMethod.PATCH)
+    public ResponseEntity<Resource<Attachment>> patchProjectAttachmentInfo(@PathVariable("id") String id,
+            @PathVariable("attachmentId") String attachmentId, @RequestBody Attachment attachmentData)
+            throws TException {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+        Set<Attachment> attachments = sw360Project.getAttachments();
+        Attachment updatedAttachment = attachmentService.updateAttachment(attachments, attachmentData, attachmentId, sw360User);
+        RequestStatus updateProjectStatus = projectService.updateProject(sw360Project, sw360User);
+        if (updateProjectStatus == RequestStatus.SENT_TO_MODERATOR) {
+            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        }
+        Resource<Attachment> attachmentResource = new Resource<>(updatedAttachment);
+        return new ResponseEntity<>(attachmentResource, HttpStatus.OK);
+    }
+
     @RequestMapping(value = PROJECTS_URL + "/{projectId}/attachments/{attachmentId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public void downloadAttachmentFromProject(
             @PathVariable("projectId") String projectId,

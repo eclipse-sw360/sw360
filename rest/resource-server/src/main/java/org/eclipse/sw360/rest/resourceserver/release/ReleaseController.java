@@ -298,6 +298,23 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAuthority('WRITE')")
+    @PatchMapping(value = RELEASES_URL + "/{id}/attachment/{attachmentId}")
+    public ResponseEntity<Resource<Attachment>> patchReleaseAttachmentInfo(@PathVariable("id") String id,
+            @PathVariable("attachmentId") String attachmentId, @RequestBody Attachment attachmentData)
+            throws TException {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        final Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
+        Set<Attachment> attachments = sw360Release.getAttachments();
+        Attachment updatedAttachment = attachmentService.updateAttachment(attachments, attachmentData, attachmentId, sw360User);
+        RequestStatus updateReleaseStatus = releaseService.updateRelease(sw360Release, sw360User);
+        if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
+            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        }
+        Resource<Attachment> attachmentResource = new Resource<>(updatedAttachment);
+        return new ResponseEntity<>(attachmentResource, HttpStatus.OK);
+    }
+
     @PostMapping(value = RELEASES_URL + "/{releaseId}/attachments", consumes = {"multipart/mixed", "multipart/form-data"})
     public ResponseEntity<HalResource> addAttachmentToRelease(@PathVariable("releaseId") String releaseId,
                                                               @RequestPart("file") MultipartFile file,

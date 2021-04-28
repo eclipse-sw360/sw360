@@ -245,6 +245,23 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = COMPONENTS_URL + "/{id}/attachment/{attachmentId}", method = RequestMethod.PATCH)
+    public ResponseEntity<Resource<Attachment>> patchComponentAttachmentInfo(@PathVariable("id") String id,
+            @PathVariable("attachmentId") String attachmentId, @RequestBody Attachment attachmentData)
+            throws TException {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        final Component sw360Component = componentService.getComponentForUserById(id, sw360User);
+        Set<Attachment> attachments = sw360Component.getAttachments();
+        Attachment updatedAttachment = attachmentService.updateAttachment(attachments, attachmentData, attachmentId, sw360User);
+        RequestStatus updateComponentStatus = componentService.updateComponent(sw360Component, sw360User);
+        if (updateComponentStatus == RequestStatus.SENT_TO_MODERATOR) {
+            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        }
+        Resource<Attachment> attachmentResource = new Resource<>(updatedAttachment);
+        return new ResponseEntity<>(attachmentResource, HttpStatus.OK);
+    }
+
     @RequestMapping(value = COMPONENTS_URL + "/{componentId}/attachments", method = RequestMethod.POST, consumes = {"multipart/mixed", "multipart/form-data"})
     public ResponseEntity<HalResource> addAttachmentToComponent(@PathVariable("componentId") String componentId,
                                                                 @RequestPart("file") MultipartFile file,
