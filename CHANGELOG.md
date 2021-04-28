@@ -4,6 +4,57 @@ This is the changelog file of the sw360 project. It starts with the first releas
 
 https://github.com/sw360/sw360portal/releases
 
+## sw360-13.2.0-M1
+
+The reason for this tag is to have the last release before the ektorp framework to the new cloudant framework for access to the couchdb. This upcoming change will touch a large number of places in the code and thus a last release before this larger change will be merged.
+
+As per notable feature there is the new UI in the admin area to issue the OAuth client credentials for the OAuth legacy workflow for the REST API. Another feature is the storing of all attachments (at upload) also to a configurable location in the file system. This helps anti virus software to scan these instead of requesting them from the couchdb. Note that files are stored at the configured path with `user_mail/document_id` folder structure to quickly track down origin of viruses and malware.
+
+This milestone tag also chovers changes to the build infrastructure on the eclipse servers to prepare future releases.
+
+### Migrations
+
+For this version, no database migration is necessary.
+
+### Credits
+
+The following github users have contributed to the source code since the last release (in alphabetical order):
+
+```
+abdul.kapti@siemens-healthineers.com
+jaideep.palit@siemens.com
+kumar.ravindra@siemens.com
+kouki1.hama@toshiba.co.jp
+lars.geyer-blaumeiser@bosch.io
+michael.c.jaeger@siemens.com
+smruti.sahoo@siemens.com
+```
+
+### Features Summary
+
+* `d8021733` feat(AttachmentVirusScan): Store attachment to File System asynchronously, handle saving of large multi-part attachments. Fix test cases
+* `5c77743f` feat(AttachmentVirusScan):Store the attachment to local file system for virus scan.
+* `d97146a3` feat(REST): Added new Rest API endpoint for reading clearing request
+* `50f576a2` feat(OAuthClient): Create, update, delete OAuthClient from UI
+* `d4017345` feat(PredefinedTags):Predefined tags per group in the Projects Tag field.
+* `0c7fc59a` feat(UI): added button for copying document id to clipboard
+
+### Corrections
+
+* `d19d08d0` fix(rest): Added support for pagination and retrival using multi value `projectRelevance` param
+* `3419b4a6` fix(search): Removing support for `_fti` hook based lucene search for couchdb 1.x
+* `f783240a` fix(rest): Fix status code when moderation request is created as a part of an API call
+* `4f2c2121` fix(moderaion):add CommonUtils.addAll(moderators, dbcomponent.getModerators());
+* `8b867c19` fix(build): Fix issue with overwriting of patchlevel variable in pom.xml
+* `b9a38744` fix(test): Use test databases in maven test phase
+* `c68b4d4a` fix(OrtIntegration): Fix client to perform case insensitive search of component.
+* `784fbafc` fix(script): Utility script to recompute clearing state of release
+* `ce69b3bd` bug(eclipse): Quickfix for maven flatten pom problem
+
+### Infrastructure, Docs and Refactorings
+
+* `958a8a77` chore(tag) changing back pom.xml shapshot version tag
+
 ## sw360-13.1.0-M1
 
 This time: client libraries. This release among other things brings the client libraries taken over from the sw360antenna project and moved them into the sw360 code base. The client libraries enable Java applications to communicate with a sw360 server via REST calls. Other notable contributions include:
