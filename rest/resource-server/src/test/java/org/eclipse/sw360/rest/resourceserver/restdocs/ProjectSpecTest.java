@@ -13,6 +13,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
@@ -133,7 +134,9 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         Map<String, ProjectRelationship> linkedProjects = new HashMap<>();
         ProjectReleaseRelationship projectReleaseRelationship = new ProjectReleaseRelationship(CONTAINED, MAINLINE)
                 .setComment("Test Comment").setCreatedOn("2020-08-05").setCreatedBy("admin@sw360.org");
-
+        ProjectReleaseRelationship projectReleaseRelationshipResponseBody = projectReleaseRelationship.deepCopy()
+                .setComment("Test Comment").setMainlineState(MainlineState.SPECIFIC)
+                .setReleaseRelation(ReleaseRelationship.STANDALONE);
         Map<String, String> externalIds = new HashMap<>();
         externalIds.put("portal-id", "13319-XX3");
         externalIds.put("project-ext", "515432");
@@ -245,6 +248,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.searchProjectByName(eq(project.getName()), anyObject())).willReturn(projectListByName);
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), anyObject(), eq("false"))).willReturn(releaseIds);
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), anyObject(), eq("true"))).willReturn(releaseIdsTransitive);
+        given(this.projectServiceMock.updateProjectReleaseRelationship(anyObject(), anyObject(), anyObject())).willReturn(projectReleaseRelationshipResponseBody);
         given(this.projectServiceMock.convertToEmbeddedWithExternalIds(eq(project))).willReturn(
                 new Project("Emerald Web")
                         .setVersion("1.0.2")
@@ -1169,6 +1173,31 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     public void should_document_patch_releases() throws Exception {
         MockHttpServletRequestBuilder requestBuilder = patch("/api/projects/" + project.getId() + "/releases");
         add_patch_releases(requestBuilder);
+    }
+
+    @Test
+    public void should_document_update_project_release_relationship() throws Exception {
+        ProjectReleaseRelationship updateProjectReleaseRelationship = new ProjectReleaseRelationship()
+                .setComment("Test Comment").setMainlineState(MainlineState.SPECIFIC)
+                .setReleaseRelation(ReleaseRelationship.STANDALONE);
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        this.mockMvc
+                .perform(patch("/api/projects/376576/release/3765276512").contentType(MediaTypes.HAL_JSON)
+                        .content(this.objectMapper.writeValueAsString(updateProjectReleaseRelationship))
+                        .header("Authorization", "Bearer " + accessToken).accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                requestFields(
+                        fieldWithPath("releaseRelation").description("The relation of linked release. Possible Values are: "+Arrays.asList(ReleaseRelationship.values())),
+                        fieldWithPath("mainlineState").description("The mainlineState of linked release. Possible Values are: "+Arrays.asList(MainlineState.values())),
+                        fieldWithPath("comment").description("The Comment for linked release")),
+                responseFields(
+                        fieldWithPath("releaseRelation").description("The relation of linked release. Possible Values are: "+Arrays.asList(ReleaseRelationship.values())),
+                        fieldWithPath("mainlineState").description("The mainlineState of linked release. Possible Values are: "+Arrays.asList(MainlineState.values())),
+                        fieldWithPath("comment").description("The Comment for linked release"),
+                        fieldWithPath("createdOn").description("The date when release was linked to project"),
+                        fieldWithPath("createdBy").description("The email of user who linked release to project")
+                )));
     }
 
     @Test

@@ -31,6 +31,7 @@ import org.eclipse.sw360.rest.resourceserver.project.ProjectController;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
+import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
@@ -60,6 +61,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -102,6 +104,8 @@ public class RestControllerHelper<T> {
     private static final String PAGINATION_KEY_LAST = "last";
     private static final String PAGINATION_PARAM_PAGE = "page";
     public static final String PAGINATION_PARAM_PAGE_ENTRIES = "page_entries";
+    public static final ImmutableSet<ProjectReleaseRelationship._Fields> SET_OF_PROJECTRELEASERELATION_FIELDS_TO_IGNORE = ImmutableSet
+            .of(ProjectReleaseRelationship._Fields.CREATED_ON, ProjectReleaseRelationship._Fields.CREATED_BY);
 
     public User getSw360UserFromAuthentication() {
         try {
@@ -396,6 +400,18 @@ public class RestControllerHelper<T> {
             }
         }
         return releaseToUpdate;
+    }
+
+    public ProjectReleaseRelationship updateProjectReleaseRelationship(
+            ProjectReleaseRelationship actualProjectReleaseRelationship,
+            ProjectReleaseRelationship requestBodyProjectReleaseRelationship) {
+        for (ProjectReleaseRelationship._Fields field : ProjectReleaseRelationship._Fields.values()) {
+            Object fieldValue = requestBodyProjectReleaseRelationship.getFieldValue(field);
+            if (fieldValue != null && !SET_OF_PROJECTRELEASERELATION_FIELDS_TO_IGNORE.contains(field)) {
+                actualProjectReleaseRelationship.setFieldValue(field, fieldValue);
+            }
+        }
+        return actualProjectReleaseRelationship;
     }
 
     public Project convertToEmbeddedProject(Project project) {
