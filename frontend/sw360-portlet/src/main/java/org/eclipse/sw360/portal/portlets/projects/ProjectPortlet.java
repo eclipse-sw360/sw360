@@ -1213,8 +1213,14 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
     private void prepareStandardView(RenderRequest request) throws IOException {
         User user = UserCacheHolder.getUserFromRequest(request);
-        List<Organization> organizations = UserUtils.getOrganizations(request);
-        request.setAttribute(PortalConstants.ORGANIZATIONS, organizations);
+        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
+        try {
+            List<Project> projectList = projectClient.getAccessibleProjectsSummary(user);
+            Set<String> organizations = getProjectGroups(projectList);
+            request.setAttribute(PortalConstants.ORGANIZATIONS, organizations);
+        } catch(TException e) {
+            log.error("Error in getting the projectList from backend ", e);
+        }
         request.setAttribute(IS_USER_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user) ? YES : NO);
         for (Project._Fields filteredField : projectFilteredFields) {
             String parameter = request.getParameter(filteredField.toString());
@@ -2691,5 +2697,15 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             log.error("Cannot create moderation request", exception);
             response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "500");
         }
+    }
+
+    private Set<String> getProjectGroups(List<Project> projects) {
+        Set<String> businessUnit = new TreeSet<String>();
+        if (CommonUtils.isNotEmpty(projects)) {
+            for (Project project : projects) {
+                businessUnit.add(project.getBusinessUnit());
+            }
+        }
+        return businessUnit;
     }
 }
