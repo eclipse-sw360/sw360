@@ -15,6 +15,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
@@ -1966,12 +1967,26 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         HttpServletRequest originalServletRequest = PortalUtil.getOriginalServletRequest(PortalUtil.getHttpServletRequest(request));
         PaginationParameters paginationParameters = PaginationParser.parametersFrom(originalServletRequest);
         handlePaginationSortOrder(request, paginationParameters);
-        List<Component> componentList = getFilteredComponentList(request);
+        PaginationData pageData = new PaginationData();
+        pageData.setRowsPerPage(paginationParameters.getDisplayLength());
+        pageData.setDisplayStart(paginationParameters.getDisplayStart());
+        pageData.setAscending(paginationParameters.isAscending().get());
+        int sortParam = -1;
+        if (paginationParameters.getSortingColumn().isPresent()) {
+            sortParam = paginationParameters.getSortingColumn().get();
+            if (sortParam == 1 && Integer.valueOf(paginationParameters.getEcho()) == 1) {
+                pageData.setSortColumnNumber(-1);
+            }
+        } else {
+            pageData.setSortColumnNumber(sortParam);
+        }
 
-        JSONArray jsonComponents = getComponentData(componentList, paginationParameters);
+        Map<PaginationData, List<Component>> pageDataComponentList = getFilteredComponentList(request, pageData);
+
+        JSONArray jsonComponents = getComponentData(pageDataComponentList.values().iterator().next(), paginationParameters);
         JSONObject jsonResult = createJSONObject();
-        jsonResult.put(DATATABLE_RECORDS_TOTAL, componentList.size());
-        jsonResult.put(DATATABLE_RECORDS_FILTERED, componentList.size());
+        jsonResult.put(DATATABLE_RECORDS_TOTAL, pageDataComponentList.keySet().iterator().next().getTotalRowCount());
+        jsonResult.put(DATATABLE_RECORDS_FILTERED, pageDataComponentList.keySet().iterator().next().getTotalRowCount());
         jsonResult.put(DATATABLE_DISPLAY_DATA, jsonComponents);
 
         try {
@@ -1981,6 +1996,29 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "500");
         }
     }
+
+    private Map<PaginationData, List<Component>> getFilteredComponentList(PortletRequest request, PaginationData pageData) {
+        Map<String, Set<String>> filterMap = getComponentFilterMap(request);
+        List<Component> componentList;
+        Map<PaginationData, List<Component>> pageDataComponents = Maps.newHashMap();
+
+        try {
+            final User user = UserCacheHolder.getUserFromRequest(request);
+            ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+            if (filterMap.isEmpty()) {
+                pageDataComponents = componentClient.getRecentComponentsSummaryWithPagination(user, pageData);
+            } else {
+                componentList = componentClient.refineSearch(null, filterMap);
+                pageDataComponents.put(pageData.setTotalRowCount(componentList.size()), componentList);
+            }
+        } catch (TException e) {
+            log.error("Could not search components in backend ", e);
+            pageDataComponents = Collections.emptyMap();
+        }
+
+        return pageDataComponents;
+    }
+
 
     private void linkReleaseToProject(ResourceRequest request, ResourceResponse response) throws IOException {
         User user = UserCacheHolder.getUserFromRequest(request);
@@ -2026,7 +2064,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         VendorService.Iface vendorClient = thriftClients.makeVendorClient();
 
         JSONArray componentData = createJSONArray();
-        for (int i = componentParameters.getDisplayStart(); i < count; i++) {
+        for (int i = 0; i < count; i++) {
             JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
             Component comp = sortedComponents.get(i);
             jsonObject.put("id", comp.getId());

@@ -14,13 +14,18 @@ import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import com.cloudant.client.api.model.DesignDocument.MapReduce;
 import com.cloudant.client.api.views.Key;
 import com.cloudant.client.api.views.UnpaginatedRequestBuilder;
+import com.cloudant.client.api.views.ViewRequest;
 import com.cloudant.client.api.views.ViewRequestBuilder;
+import com.cloudant.client.api.views.ViewResponse;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import java.util.*;
 
@@ -55,6 +60,11 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
     private static final String BYNAME = "function(doc) {" +
             "  if (doc.type == 'component') {" +
             "    emit(doc.name, doc._id);" +
+            "  } " +
+            "}";
+    private static final String BYCOMPONENTTYPE = "function(doc) {" +
+            "  if (doc.type == 'component') {" +
+            "    emit(doc.componentType, doc._id);" +
             "  } " +
             "}";
     private static final String FULLBYNAME = "function(doc) {" +
@@ -117,6 +127,26 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
             "  } " +
             "}";
 
+    private static final String BYMAINLICENSE = "function(doc) {" +
+            "    if (doc.type == 'component') {" +
+            "      if(doc.mainLicenseIds) {" +
+            "            emit(doc.mainLicenseIds.join(), doc._id);" +
+            "      } else {" +
+            "            emit('', doc._id);" +
+            "      }" +
+            "    }" +
+            "}";
+
+    private static final String BYVENDOR = "function(doc) {" +
+            "    if (doc.type == 'component') {" +
+            "      if(doc.vendorNames) {" +
+            "          emit(doc.vendorNames.join(), doc._id);" +
+            "      } else {" +
+            "          emit('', doc._id);" +
+            "      }" +
+            "    }" +
+            "}";
+
     public ComponentRepository(DatabaseConnectorCloudant db, ReleaseRepository releaseRepository, VendorRepository vendorRepository) {
         super(Component.class, db, new ComponentSummary(releaseRepository, vendorRepository));
         Map<String, MapReduce> views = new HashMap<String, MapReduce>();
@@ -126,12 +156,15 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
         views.put("mycomponents", createMapReduce(MYCOMPONENTS, null));
         views.put("subscribers", createMapReduce(SUBSCRIBERS, null));
         views.put("byname", createMapReduce(BYNAME, null));
+        views.put("bycomponenttype", createMapReduce(BYCOMPONENTTYPE, null));
         views.put("fullbyname", createMapReduce(FULLBYNAME, null));
         views.put("byLinkingRelease", createMapReduce(BYLINKINGRELEASE, null));
         views.put("byFossologyId", createMapReduce(BYFOSSOLOGYID, null));
         views.put("byExternalIds", createMapReduce(BYEXTERNALIDS, null));
         views.put("byDefaultVendorId", createMapReduce(BYDEFAULTVENDORID, null));
         views.put("bynamelowercase", createMapReduce(BYNAMELOWERCASE, null));
+        views.put("bymainlicense", createMapReduce(BYMAINLICENSE, null));
+        views.put("byvendor", createMapReduce(BYVENDOR, null));
         initStandardDesignDocument(views, db);
     }
 
@@ -212,5 +245,61 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
         RepositoryUtils repositoryUtils = new RepositoryUtils();
         Set<String> searchIds = repositoryUtils.searchByExternalIds(this, "byExternalIds", externalIds);
         return new HashSet<>(get(searchIds));
+    }
+
+    public Map<PaginationData, List<Component>> getRecentComponentsSummary(User user, PaginationData pageData) {
+        final int rowsPerPage = pageData.getRowsPerPage();
+        Map<PaginationData, List<Component>> result = Maps.newHashMap();
+        List<Component> components = Lists.newArrayList();
+        final boolean ascending = pageData.isAscending();
+        final int sortColumnNo = pageData.getSortColumnNumber();
+
+        ViewRequestBuilder query;
+        switch (sortColumnNo) {
+        case -1:
+            query = getConnector().createQuery(Component.class, "byCreatedOn");
+            break;
+        case 0:
+            query = getConnector().createQuery(Component.class, "byvendor");
+            break;
+        case 1:
+            query = getConnector().createQuery(Component.class, "byname");
+            break;
+        case 2:
+            query = getConnector().createQuery(Component.class, "bymainlicense");
+            break;
+        case 3:
+            query = getConnector().createQuery(Component.class, "bycomponenttype");
+            break;
+        default:
+            query = getConnector().createQuery(Component.class, "all");
+            break;
+        }
+
+        ViewRequest<String, Object> request = null;
+        if (rowsPerPage == -1) {
+            request = query.newRequest(Key.Type.STRING, Object.class).descending(!ascending).includeDocs(true).build();
+        } else {
+            request = query.newPaginatedRequest(Key.Type.STRING, Object.class).rowsPerPage(rowsPerPage)
+                    .descending(!ascending).includeDocs(true).build();
+        }
+
+        ViewResponse<String, Object> response = null;
+        try {
+            response = request.getResponse();
+            int pageNo = pageData.getDisplayStart() / rowsPerPage;
+            int i = 1;
+            while (i <= pageNo) {
+                response = response.nextPage();
+                i++;
+            }
+            components = response.getDocsAs(Component.class);
+        } catch (Exception e) {
+            log.error("Error getting recent components", e);
+        }
+        components = makeSummaryWithPermissionsFromFullDocs(SummaryType.SUMMARY, components, user);
+        pageData.setTotalRowCount(response.getTotalRowCount());
+        result.put(pageData, components);
+        return result;
     }
 }

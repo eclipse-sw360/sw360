@@ -2254,4 +2254,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }).collect(Collectors.toList());
         updateReleases(releasesToUpdate, user);
     }
+
+    public Map<PaginationData, List<Component>> getRecentComponentsSummaryWithPagination(User user,
+            PaginationData pageData) {
+          return componentRepository.getRecentComponentsSummary(user, pageData);
+    }
 }

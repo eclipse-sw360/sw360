@@ -29,6 +29,7 @@ typedef sw360.ObligationStatus ObligationStatus
 typedef sw360.SW360Exception SW360Exception
 typedef sw360.ClearingRequestState ClearingState
 typedef sw360.Comment Comment
+typedef sw360.PaginationData PaginationData
 typedef components.Release Release
 typedef components.ReleaseClearingStateSummary ReleaseClearingStateSummary
 typedef users.User User

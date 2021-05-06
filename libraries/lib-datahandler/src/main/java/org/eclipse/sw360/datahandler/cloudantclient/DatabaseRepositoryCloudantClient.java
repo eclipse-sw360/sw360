@@ -40,7 +40,7 @@ import com.google.common.collect.Lists;
  */
 public class DatabaseRepositoryCloudantClient<T> {
 
-    private final Logger log = LogManager.getLogger(DatabaseConnectorCloudant.class);
+    protected final Logger log = LogManager.getLogger(DatabaseConnectorCloudant.class);
     private static final char HIGH_VALUE_UNICODE_CHARACTER = '\uFFF0';
 
     private final Class<T> type;

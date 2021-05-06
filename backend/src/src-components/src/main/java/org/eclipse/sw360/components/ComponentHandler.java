@@ -521,4 +521,10 @@ public class ComponentHandler implements ComponentService.Iface {
         assertUser(user);
         return handler.getAllReleases();
     }
+
+    @Override
+    public Map<PaginationData, List<Component>> getRecentComponentsSummaryWithPagination(User user,
+            PaginationData pageData) throws TException {
+        return handler.getRecentComponentsSummaryWithPagination(user, pageData);
+    }
 }

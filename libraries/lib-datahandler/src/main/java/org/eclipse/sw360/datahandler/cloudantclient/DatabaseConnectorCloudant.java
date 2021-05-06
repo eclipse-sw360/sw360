@@ -49,11 +49,8 @@ import com.google.common.collect.Sets;
 public class DatabaseConnectorCloudant {
     
     private final Logger log = LogManager.getLogger(DatabaseConnectorCloudant.class);
-    private static final ImmutableList<String> typesWithNonMatchingStructName = ImmutableList
-            .of("moderation", "attachment", "usedReleaseRelation");
-
     private static final ImmutableList<String> entitiesWithNonMatchingStructType = ImmutableList
-            .of("ModerationRequest", "AttachmentContent", "UsedReleaseRelations", "License");
+            .of("moderation", "attachment", "usedReleaseRelation");
 
     private final String dbName;
     private final DatabaseInstanceCloudant instance;
@@ -120,25 +117,22 @@ public class DatabaseConnectorCloudant {
 
     public <T> T get(Class<T> type, String id) {
         try {
-            String typeName = type.getSimpleName();
-            if (entitiesWithNonMatchingStructType.contains(typeName)) {
-                T obj = (T) database.find(type, id);
-                String extractedType = null;
-                Field[] f = obj.getClass().getDeclaredFields();
-                for (Field fi : f) {
-                    if (fi.getName().equalsIgnoreCase("type")) {
-                        extractedType = (String) fi.get(obj);
-                    }
+            T obj = (T) database.find(type, id);
+            String extractedType = null;
+            Field[] f = obj.getClass().getDeclaredFields();
+            for (Field fi : f) {
+                if (fi.getName().equalsIgnoreCase("type")) {
+                    extractedType = (String) fi.get(obj);
                 }
-                if (extractedType != null) {
-                    String entityType = extractedType.toLowerCase();
-                    if (!typesWithNonMatchingStructName.stream().map(x -> x.toLowerCase())
-                            .anyMatch(tye -> tye.contains(entityType))
-                            && !typeName.equalsIgnoreCase(extractedType)) {
-                        return null;
-                    } else {
-                        return obj;
-                    }
+            }
+            if (extractedType != null) {
+                final String entityType = extractedType.toLowerCase();
+                if (!entitiesWithNonMatchingStructType.stream().map(x -> x.toLowerCase())
+                        .anyMatch(tye -> tye.contains(entityType))
+                        && !type.getSimpleName().equalsIgnoreCase(extractedType)) {
+                    return null;
+                } else {
+                    return obj;
                 }
             }
             return database.find(type, id);

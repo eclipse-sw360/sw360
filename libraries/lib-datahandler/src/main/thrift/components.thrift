@@ -25,6 +25,7 @@ typedef sw360.ReleaseRelationship ReleaseRelationship
 typedef sw360.MainlineState MainlineState
 typedef sw360.ProjectReleaseRelationship ProjectReleaseRelationship
 typedef sw360.SW360Exception SW360Exception
+typedef sw360.PaginationData PaginationData
 typedef attachments.Attachment Attachment
 typedef attachments.FilledAttachment FilledAttachment
 typedef users.User User
@@ -386,6 +387,11 @@ service ComponentService {
      * all components being returned
      **/
     list<Component> getRecentComponentsSummary(1: i32 limit, 2: User user);
+
+    /**
+     * summary of all components reverse ordered by `createdOn` being returned with pagination
+     **/
+    map<PaginationData, list<Component>> getRecentComponentsSummaryWithPagination(1: User user, 2: PaginationData pageData);
 
     /**
      * total number of components in the DB, irrespective of whether the user may see them or not
