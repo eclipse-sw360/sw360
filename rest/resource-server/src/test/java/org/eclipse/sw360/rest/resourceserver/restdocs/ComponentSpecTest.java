@@ -16,6 +16,8 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -94,12 +96,27 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         attachmentList.add(attachment2);
         attachmentResources.add(new Resource<>(attachment2));
 
+        Set<Attachment> setOfAttachment = new HashSet<Attachment>();
+        Attachment att1 = new Attachment("1234", "test.zip").setAttachmentType(AttachmentType.SOURCE)
+                .setCreatedBy("user@sw360.org").setSha1("da373e491d312365483589ee9457bc316783").setCreatedOn("2021-04-27")
+                .setCreatedTeam("DEPARTMENT");
+        Attachment att2 = att1.deepCopy().setAttachmentType(AttachmentType.BINARY).setCreatedComment("Created Comment")
+                .setCheckStatus(CheckStatus.ACCEPTED).setCheckedComment("Checked Comment").setCheckedOn("2021-04-27")
+                .setCheckedBy("admin@sw360.org").setCheckedTeam("DEPARTMENT1");
+
         given(this.attachmentServiceMock.getAttachmentContent(anyObject())).willReturn(new AttachmentContent().setId("1231231254").setFilename("spring-core-4.3.4.RELEASE.jar").setContentType("binary"));
         given(this.attachmentServiceMock.getResourcesFromList(anyObject())).willReturn(new Resources<>(attachmentResources));
         given(this.attachmentServiceMock.uploadAttachment(anyObject(), anyObject(), anyObject())).willReturn(attachment);
         given(this.attachmentServiceMock.filterAttachmentsToRemove(any(), any(), any())).willReturn(Collections.singleton(attachment));
+        given(this.attachmentServiceMock.updateAttachment(anyObject(), anyObject(), anyObject(), anyObject())).willReturn(att2);
+
         Map<String, Set<String>> externalIds = new HashMap<>();
         externalIds.put("component-id-key", ImmutableSet.of("1831A3", "c77321"));
+
+        Component testComponent = new Component().setAttachments(setOfAttachment).setId("98745")
+                .setName("Test Component").setComponentType(ComponentType.CODE_SNIPPET)
+                .setCreatedOn("2021-04-27").setCreatedBy("admin@sw360.org")
+                .setCategories(ImmutableSet.of("java", "javascript", "sql"));
 
         List<Component> componentList = new ArrayList<>();
         Set<Component> usedByComponent = new HashSet<>();
@@ -174,6 +191,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
         given(this.componentServiceMock.getComponentsForUser(anyObject())).willReturn(componentList);
         given(this.componentServiceMock.getComponentForUserById(eq("17653524"), anyObject())).willReturn(angularComponent);
+        given(this.componentServiceMock.getComponentForUserById(eq("98745"), anyObject())).willReturn(testComponent);
         given(this.componentServiceMock.getProjectsByComponentId(eq("17653524"), anyObject())).willReturn(projectList);
         given(this.componentServiceMock.getUsingComponentsForComponent(eq("17653524"), anyObject())).willReturn(usedByComponent);
         given(this.componentServiceMock.searchComponentByName(eq(angularComponent.getName()))).willReturn(componentListByName);
@@ -521,6 +539,40 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("_embedded.sw360:attachments[]sha1").description("The attachment sha1 value"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
+    }
+
+    @Test
+    public void should_document_update_component_attachment_info() throws Exception {
+        Attachment updateAttachment = new Attachment().setAttachmentType(AttachmentType.BINARY)
+                .setCreatedComment("Created Comment").setCheckStatus(CheckStatus.ACCEPTED)
+                .setCheckedComment("Checked Comment");
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        this.mockMvc
+                .perform(patch("/api/components/98745/attachment/1234").contentType(MediaTypes.HAL_JSON)
+                        .content(this.objectMapper.writeValueAsString(updateAttachment))
+                        .header("Authorization", "Bearer " + accessToken).accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                requestFields(
+                        fieldWithPath("attachmentType").description("The type of Attachment. Possible Values are: "+Arrays.asList(AttachmentType.values())),
+                        fieldWithPath("createdComment").description("The upload Comment of Attachment"),
+                        fieldWithPath("checkStatus").description("The checkStatus of Attachment. Possible Values are: "+Arrays.asList(CheckStatus.values())),
+                        fieldWithPath("checkedComment").description("The checked Comment of Attachment")),
+                responseFields(
+                        fieldWithPath("filename").description("The attachment filename"),
+                        fieldWithPath("sha1").description("The attachment sha1 value"),
+                        fieldWithPath("attachmentType").description("The type of attachment. Possible Values are: "+Arrays.asList(AttachmentType.values())),
+                        fieldWithPath("createdBy").description("The email of user who uploaded the attachment"),
+                        fieldWithPath("createdTeam").description("The department of user who uploaded the attachment"),
+                        fieldWithPath("createdOn").description("The date when attachment was uploaded"),
+                        fieldWithPath("createdComment").description("The upload Comment of attachment"),
+                        fieldWithPath("checkStatus").description("The checkStatus of attachment. Possible Values are: "+Arrays.asList(CheckStatus.values())),
+                        fieldWithPath("checkedComment").description("The checked comment of attachment"),
+                        fieldWithPath("checkedBy").description("The email of user who checked the attachment"),
+                        fieldWithPath("checkedTeam").description("The department of user who checked the attachment"),
+                        fieldWithPath("checkedOn").description("The date when attachment was checked"),
+                        fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                )));
     }
 
     @Test

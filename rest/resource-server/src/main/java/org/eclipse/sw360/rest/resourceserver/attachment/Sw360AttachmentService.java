@@ -20,8 +20,10 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.commonIO.AttachmentFrontendUtils;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.Duration;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -32,6 +34,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.core.ThriftServiceProvider;
@@ -54,6 +57,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -249,6 +253,19 @@ public class Sw360AttachmentService {
         return attachmentClient.getUsedAttachments(Source.projectId(projectId), null);
     }
 
+    public Attachment updateAttachment(Set<Attachment> attachments, Attachment newData, String attachmentId, User user) {
+        if (CommonUtils.isNotEmpty(attachments)) {
+            Optional<Attachment> matchingAttachment = attachments.stream()
+                    .filter(att -> att.attachmentContentId.equals(attachmentId)).findFirst();
+            if (matchingAttachment.isPresent()) {
+                Attachment actualAtt = matchingAttachment.get();
+                updateAttachment(actualAtt, newData, user);
+                return actualAtt;
+            }
+        }
+        throw new ResourceNotFoundException("Requested Attachment Not Found");
+    }
+
     private AttachmentConnector getConnector() throws TException {
         if (attachmentConnector == null) makeConnector();
         return attachmentConnector;
@@ -267,5 +284,34 @@ public class Sw360AttachmentService {
 
     private AttachmentService.Iface getThriftAttachmentClient() throws TTransportException {
         return thriftAttachmentServiceProvider.getService(thriftServerUrl);
+    }
+
+    private void updateAttachment(Attachment attachmentToUpdate, Attachment reqBodyAttachment, User user) {
+        AttachmentType attachmentType = reqBodyAttachment.getAttachmentType();
+        String createdComment = reqBodyAttachment.getCreatedComment();
+        CheckStatus checkStatus = reqBodyAttachment.getCheckStatus();
+        if (attachmentType != null) {
+            attachmentToUpdate.setAttachmentType(attachmentType);
+        }
+        if (createdComment != null) {
+            attachmentToUpdate.setCreatedComment(createdComment);
+        }
+        if (checkStatus != null) {
+            attachmentToUpdate.setCheckStatus(checkStatus);
+            String checkedComment = reqBodyAttachment.getCheckedComment();
+            if (checkStatus != CheckStatus.NOTCHECKED) {
+                if (checkedComment != null) {
+                    attachmentToUpdate.setCheckedComment(checkedComment);
+                }
+                attachmentToUpdate.setCheckedBy(user.getEmail());
+                attachmentToUpdate.setCheckedTeam(user.getDepartment());
+                attachmentToUpdate.setCheckedOn(SW360Utils.getCreatedOn());
+            } else {
+                attachmentToUpdate.unsetCheckedBy();
+                attachmentToUpdate.unsetCheckedTeam();
+                attachmentToUpdate.setCheckedComment("");
+                attachmentToUpdate.unsetCheckedOn();
+            }
+        }
     }
 }

@@ -125,6 +125,14 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         List<AttachmentInfo> attachmentInfos = new ArrayList<>();
         attachmentInfos.add(attachmentInfo);
 
+        Set<Attachment> setOfAttachment = new HashSet<Attachment>();
+        Attachment att1 = new Attachment("1234", "test.zip").setAttachmentType(AttachmentType.SOURCE)
+                .setCreatedBy("user@sw360.org").setSha1("da373e491d312365483589ee9457bc316783").setCreatedOn("2021-04-27")
+                .setCreatedTeam("DEPARTMENT");
+        Attachment att2 = att1.deepCopy().setAttachmentType(AttachmentType.BINARY).setCreatedComment("Created Comment")
+                .setCheckStatus(CheckStatus.ACCEPTED).setCheckedComment("Checked Comment").setCheckedOn("2021-04-27")
+                .setCheckedBy("admin@sw360.org").setCheckedTeam("DEPARTMENT1");
+
         Source owner = new Source();
         attachmentInfo.setOwner(owner);
 
@@ -135,6 +143,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         given(this.attachmentServiceMock.getResourcesFromList(anyObject())).willReturn(new Resources<>(attachmentResources));
         given(this.attachmentServiceMock.uploadAttachment(anyObject(), anyObject(), anyObject())).willReturn(attachment);
         given(this.attachmentServiceMock.filterAttachmentsToRemove(any(), any(), any())).willReturn(Collections.singleton(attachment));
+        given(this.attachmentServiceMock.updateAttachment(anyObject(), anyObject(), anyObject(), anyObject())).willReturn(att2);
 
         Map<String, Set<String>> externalIds = new HashMap<>();
         externalIds.put("mainline-id-component", new HashSet<>(Arrays.asList("1432", "4876")));
@@ -155,6 +164,9 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         component.setVendorNames(new HashSet<>(Collections.singletonList("Google")));
         component.setModerators(new HashSet<>(Arrays.asList("admin@sw360.org", "john@sw360.org")));
         usedByComponent.add(component);
+
+        Release testRelease = new Release().setAttachments(setOfAttachment).setId("98745").setName("Test Release")
+                .setVersion("2").setComponentId("17653524").setCreatedOn("2021-04-27").setCreatedBy("admin@sw360.org");
 
         List<Release> releaseList = new ArrayList<>();
         release = new Release();
@@ -236,6 +248,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
         given(this.releaseServiceMock.getReleasesForUser(anyObject())).willReturn(releaseList);
         given(this.releaseServiceMock.getReleaseForUserById(eq(release.getId()), anyObject())).willReturn(release);
+        given(this.releaseServiceMock.getReleaseForUserById(eq(testRelease.getId()), anyObject())).willReturn(testRelease);
         given(this.releaseServiceMock.getProjectsByRelease(eq(release.getId()), anyObject())).willReturn(projectList);
         given(this.releaseServiceMock.getUsingComponentsForRelease(eq(release.getId()), anyObject())).willReturn(usedByComponent);
         given(this.releaseServiceMock.deleteRelease(eq(release.getId()), anyObject())).willReturn(RequestStatus.SUCCESS);
@@ -524,6 +537,40 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("_embedded.sw360:attachments[]sha1").description("The attachment sha1 value"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
+    }
+
+    @Test
+    public void should_document_update_release_attachment_info() throws Exception {
+        Attachment updateAttachment = new Attachment().setAttachmentType(AttachmentType.BINARY)
+                .setCreatedComment("Created Comment").setCheckStatus(CheckStatus.ACCEPTED)
+                .setCheckedComment("Checked Comment");
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        this.mockMvc
+                .perform(patch("/api/releases/98745/attachment/1234").contentType(MediaTypes.HAL_JSON)
+                        .content(this.objectMapper.writeValueAsString(updateAttachment))
+                        .header("Authorization", "Bearer " + accessToken).accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                requestFields(
+                        fieldWithPath("attachmentType").description("The type of Attachment. Possible Values are: "+Arrays.asList(AttachmentType.values())),
+                        fieldWithPath("createdComment").description("The upload Comment of Attachment"),
+                        fieldWithPath("checkStatus").description("The checkStatus of Attachment. Possible Values are: "+Arrays.asList(CheckStatus.values())),
+                        fieldWithPath("checkedComment").description("The checked Comment of Attachment")),
+                responseFields(
+                        fieldWithPath("filename").description("The attachment filename"),
+                        fieldWithPath("sha1").description("The attachment sha1 value"),
+                        fieldWithPath("attachmentType").description("The type of attachment. Possible Values are: "+Arrays.asList(AttachmentType.values())),
+                        fieldWithPath("createdBy").description("The email of user who uploaded the attachment"),
+                        fieldWithPath("createdTeam").description("The department of user who uploaded the attachment"),
+                        fieldWithPath("createdOn").description("The date when attachment was uploaded"),
+                        fieldWithPath("createdComment").description("The upload Comment of attachment"),
+                        fieldWithPath("checkStatus").description("The checkStatus of attachment. Possible Values are: "+Arrays.asList(CheckStatus.values())),
+                        fieldWithPath("checkedComment").description("The checked comment of attachment"),
+                        fieldWithPath("checkedBy").description("The email of user who checked the attachment"),
+                        fieldWithPath("checkedTeam").description("The department of user who checked the attachment"),
+                        fieldWithPath("checkedOn").description("The date when attachment was checked"),
+                        fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                )));
     }
 
     @Test
