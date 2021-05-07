@@ -110,9 +110,9 @@
                                     <option value=""
                                             <core_rt:if test="${empty businessUnit}"> selected="selected"</core_rt:if>></option>
                                     <core_rt:forEach items="${organizations}" var="org">
-                                        <option value="<sw360:out value="${org.name}"/>"
-                                                <core_rt:if test="${org.name == businessUnit}"> selected="selected"</core_rt:if>
-                                        ><sw360:out value="${org.name}"/></option>
+                                        <option value="<sw360:out value="${org}"/>"
+                                                <core_rt:if test="${org == businessUnit}"> selected="selected"</core_rt:if>
+                                        ><sw360:out value="${org}"/></option>
                                     </core_rt:forEach>
                                 </select>
                             </div>
