@@ -4,6 +4,29 @@ This is the changelog file of the sw360 project. It starts with the first releas
 
 https://github.com/sw360/sw360portal/releases
 
+## sw360-13.3.0-M1
+
+This tag is applied to have the migration from cloudant to ektorp in one single step. Ektorp is a Java library which provides an object oriented interface to the (REST-based) access to couchdb. It has been used in sw360 from day 1. Now we concluded to replace ektorp: it does not support paging; having our server growing larger and lager and serving more and more users, receiving results sets from a couchdb view without paging is a pain. And it did not look like it will be supported, because the ektorp project looks calm now (last commit to master in 2017). Among the available options for replacing ektorp, we choose the java-client from the open source project cloudant (version 2.19.1, see https://github.com/cloudant/java-cloudant). It supports paging and offers potentially other interesting features (caching, compatibility with MongoDB, etc.).
+
+### Migrations
+
+For this version, no database migration is necessary.
+
+### Credits
+
+The following github users have contributed to the source code since the last release (in alphabetical order):
+
+```
+smruti.sahoo@siemens.com
+```
+
+Please note that also many other persons usually contribute to the project with reviews, testing, documentations, conversations or presentations.
+
+### Infrastructure
+
+* `0e22d55e` feat(components-pagination): paginated view response for components
+* `fd95a2cf` feat(cloudant): Migrating from ektorp to cloudant java client
+
 ## sw360-13.2.0-M1
 
 The reason for this tag is to have the last release before the ektorp framework to the new cloudant framework for access to the couchdb. This upcoming change will touch a large number of places in the code and thus a last release before this larger change will be merged.
