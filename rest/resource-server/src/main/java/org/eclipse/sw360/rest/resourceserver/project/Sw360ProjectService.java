@@ -22,15 +22,18 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
@@ -55,6 +58,8 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+import com.google.common.collect.ImmutableMap;
+
 import static com.google.common.base.Strings.nullToEmpty;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
 
@@ -69,6 +74,8 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -334,6 +341,25 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             }
         });
         return relList;
+    }
+
+    public ProjectReleaseRelationship updateProjectReleaseRelationship(
+            Map<String, ProjectReleaseRelationship> releaseIdToUsage,
+            ProjectReleaseRelationship requestBodyProjectReleaseRelationship, String releaseId) {
+        if (!CommonUtils.isNullOrEmptyMap(releaseIdToUsage)) {
+            Optional<Entry<String, ProjectReleaseRelationship>> actualProjectReleaseRelationshipEntry = releaseIdToUsage
+                    .entrySet().stream().filter(entry -> CommonUtils.isNotNullEmptyOrWhitespace(entry.getKey())
+                            && entry.getKey().equals(releaseId))
+                    .findFirst();
+            if (actualProjectReleaseRelationshipEntry.isPresent()) {
+                ProjectReleaseRelationship actualProjectReleaseRelationship = actualProjectReleaseRelationshipEntry
+                        .get().getValue();
+                rch.updateProjectReleaseRelationship(actualProjectReleaseRelationship,
+                        requestBodyProjectReleaseRelationship);
+                return actualProjectReleaseRelationship;
+            }
+        }
+        throw new ResourceNotFoundException("Requested Release Not Found");
     }
 
     @PreDestroy
