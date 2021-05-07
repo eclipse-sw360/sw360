@@ -221,6 +221,14 @@
 		}
 	}
 
+    table {
+        td {
+            svg.cursor {
+               cursor: pointer;
+            }
+        }
+    }
+
 	.stateBox {
 	    height: 25px;
 	    padding: 0 4px;

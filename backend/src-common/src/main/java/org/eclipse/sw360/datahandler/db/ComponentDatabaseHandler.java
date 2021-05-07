@@ -1662,6 +1662,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 if (release.isSetMainLicenseIds()) {
                     releaseLink.setLicenseIds(release.getMainLicenseIds());
                 }
+                if (release.isSetOtherLicenseIds()) {
+                    releaseLink.setOtherLicenseIds(release.getOtherLicenseIds());
+                }
             } else {
                 log.error("Broken ReleaseLink in release with id: " + parentNodeId + ". Linked release with id " + id + " was not in the release cache");
             }

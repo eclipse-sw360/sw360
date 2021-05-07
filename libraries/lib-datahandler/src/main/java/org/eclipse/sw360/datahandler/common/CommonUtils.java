@@ -65,6 +65,8 @@ public class CommonUtils {
 
     public static final Joiner COMMA_JOINER = Joiner.on(", ");
 
+    public static final Joiner NEW_LINE_JOINER = Joiner.on(", <br>");
+
     private static final Comparator<CheckStatus> CHECK_STATUS_COMPARATOR = Comparator.comparingInt(cs -> {
         switch (cs) {
             case ACCEPTED:

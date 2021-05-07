@@ -59,7 +59,17 @@ define('utils/render', [
 
         var $container = $('<div/>', {
             style: 'display: flex;'
-        }),
+            }),
+            $toggler = $('<div/>', {
+                'class': 'Toggler' + urlType + 'List',
+                'style': 'margin-right: 0.25rem; cursor: pointer;'
+            }),
+            $togglerOn = $('<div/>', {
+                'class': 'Toggler_on'
+            }).html('&#x25BC'),
+            $togglerOff = $('<div/>', {
+                'class': 'Toggler_off'
+            }).html('&#x25BA'),
             $collapsed = $('<div/>', {
                 'class': urlType + 'ListHidden'
             }).text(cutUrlList(urls, truncate, delimiter)),
@@ -67,8 +77,10 @@ define('utils/render', [
                 'class': urlType + 'ListShown'
             }).html(urls);
 
+        $togglerOn.hide();
         $expanded.hide();
-        $container.append($collapsed, $expanded);
+        $toggler.append($togglerOff, $togglerOn);
+        $container.append($toggler, $collapsed, $expanded);
         return $container[0].outerHTML;
     }
 
@@ -97,17 +109,25 @@ define('utils/render', [
     }
 
     function expandExpandableList(thisObj, type) {
-        let listHidden = thisObj.find('.' + type + 'ListHidden'),
+	    let toggler_off = thisObj.find('.Toggler_off'),
+            toggler_on = thisObj.find('.Toggler_on'),
+            listHidden = thisObj.find('.' + type + 'ListHidden'),
             listShown = thisObj.find('.' + type + 'ListShown');
 
+        toggler_off.hide()
+        toggler_on.show();
         listHidden.hide();
         listShown.show();
     }
 
     function collapseExpandableList(thisObj, type) {
-        let listHidden = thisObj.find('.' + type + 'ListHidden'),
+	    let toggler_off = thisObj.find('.Toggler_off'),
+            toggler_on = thisObj.find('.Toggler_on'),
+            listHidden = thisObj.find('.' + type + 'ListHidden'),
             listShown = thisObj.find('.' + type + 'ListShown');
 
+        toggler_off.show()
+        toggler_on.hide();
         listShown.hide();
         listHidden.show();
     }

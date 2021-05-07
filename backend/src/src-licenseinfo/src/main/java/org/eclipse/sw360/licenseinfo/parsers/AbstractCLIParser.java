@@ -15,6 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
@@ -53,6 +54,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Constants.OBLIGATION_TOP
 public abstract class AbstractCLIParser extends LicenseInfoParser {
     private static final String LICENSE_CONTENT_ELEMENT_NAME = "Content";
     private static final String LICENSE_ACKNOWLEDGEMENTS_ELEMENT_NAME = "Acknowledgements";
+    private static final String SOURCE_FILES_ELEMENT_NAME = "Files";
     protected static final String XML_FILE_EXTENSION = ".xml";
     private static final String LICENSENAME_ATTRIBUTE_NAME = "name";
     private static final String SPDX_IDENTIFIER_ATTRIBUTE_NAME = "spdxidentifier";
@@ -148,6 +150,11 @@ public abstract class AbstractCLIParser extends LicenseInfoParser {
     }
 
     protected LicenseNameWithText getLicenseNameWithTextFromLicenseNode(Node node) {
+        Set<String> files = new HashSet<String>();
+        String sourceFiles = findNamedSubelement(node, SOURCE_FILES_ELEMENT_NAME).map(AbstractCLIParser::normalizeEscapedXhtml).orElse(null);
+        if (CommonUtils.isNotNullEmptyOrWhitespace(sourceFiles)) {
+            files.addAll(Arrays.asList(sourceFiles.split(" ")));
+        }
         return new LicenseNameWithText()
                 .setLicenseText(findNamedSubelement(node, LICENSE_CONTENT_ELEMENT_NAME)
                         .map(AbstractCLIParser::normalizeEscapedXhtml)
@@ -163,7 +170,8 @@ public abstract class AbstractCLIParser extends LicenseInfoParser {
                         .orElse(SPDX_IDENTIFIER_UNKNOWN))
                 .setType(findNamedAttribute(node, TYPE_ATTRIBUTE_NAME)
                         .map(Node::getNodeValue)
-                        .orElse(TYPE_UNKNOWN));
+                        .orElse(TYPE_UNKNOWN))
+                .setSourceFiles(files);
     }
 
     protected ObligationAtProject getObligationFromObligationNode(Node node) {

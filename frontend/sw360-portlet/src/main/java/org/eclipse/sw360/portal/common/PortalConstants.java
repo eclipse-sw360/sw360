@@ -474,6 +474,7 @@ public class PortalConstants {
     public static final String LIST_CLEARING_STATUS = "listClearingStatus";
     public static final String CLEARING_STATUS_ON_LOAD = "clearingStatusOnLoad";
     public static final String PROJECT_CHECK_FOR_ATTACHMENTS = "verifyAttachmentExistance";
+    public static final String LICENSE_TO_SOURCE_FILE = "licenseToSourceFile";
 
     //component actions
     public static final String ADD_VENDOR = "add_vendor";

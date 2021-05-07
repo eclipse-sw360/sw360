@@ -37,9 +37,14 @@
         </td>
         <td>
             <sw360:DisplayEnum value="${releaseLink.releaseRelationship}" /></td>
-        <td>
+        <td class="actions">
             <core_rt:if test="${releaseLink.setLicenseIds}">
-                <sw360:DisplayCollection value="${releaseLink.licenseIds}" />
+                <sw360:DisplayLicenseCollection licenseIds="${releaseLink.licenseIds}" releaseId="${releaseLink.id}" scopeGroupId="${pageContext.getAttribute('scopeGroupId')}" icon="info-circle"/>
+            </core_rt:if>
+        </td>
+        <td class="actions">
+            <core_rt:if test="${releaseLink.setOtherLicenseIds}">
+                <sw360:DisplayLicenseCollection licenseIds="${releaseLink.otherLicenseIds}" releaseId="${releaseLink.id}" scopeGroupId="${pageContext.getAttribute('scopeGroupId')}" icon="info-circle"/>
             </core_rt:if>
         </td>
         <td data-releaseclearingstate='<sw360:DisplayEnum value="${releaseLink.clearingState}" bare="true"/>' class="releaseClearingState"></td>
