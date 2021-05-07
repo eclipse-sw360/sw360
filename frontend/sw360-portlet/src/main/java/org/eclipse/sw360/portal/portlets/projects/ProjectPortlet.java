@@ -1981,6 +1981,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 request.setAttribute(PROJECT, newProject);
                 putDirectlyLinkedProjectsInRequest(request, newProject, user);
                 putDirectlyLinkedReleasesInRequest(request, newProject);
+                newProject.unsetId();
                 request.setAttribute(USING_PROJECTS, Collections.emptySet());
                 request.setAttribute(ALL_USING_PROJECTS_COUNT, 0);
                 request.setAttribute(SOURCE_PROJECT_ID, id);
@@ -2193,6 +2194,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                     () -> attachmentClient.getUsedAttachments(Source.projectId(sourceProjectId), null));
             attachmentUsages.forEach(attachmentUsage -> {
                 attachmentUsage.unsetId();
+                attachmentUsage.unsetRevision();
                 attachmentUsage.setUsedBy(Source.projectId(newProjectId));
                 if (attachmentUsage.isSetUsageData()
                         && attachmentUsage.getUsageData().getSetField().equals(UsageData._Fields.LICENSE_INFO)

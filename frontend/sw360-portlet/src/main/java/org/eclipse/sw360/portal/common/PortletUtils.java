@@ -306,7 +306,6 @@ public class PortletUtils {
         Project newProject = project.deepCopy();
 
         //new DB object
-        newProject.unsetId();
         newProject.unsetRevision();
 
         //new Owner
