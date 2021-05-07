@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.datahandler.couchdb;
 
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
@@ -29,7 +30,7 @@ import static org.mockito.Mockito.*;
 public class AttachmentConnectorTest {
 
     @Mock
-    DatabaseConnector connector;
+    DatabaseConnectorCloudant connector;
 
     AttachmentConnector attachmentConnector;
 
@@ -65,7 +66,7 @@ public class AttachmentConnectorTest {
         deletedIds.add("a2cid");
 
         attachmentConnector.deleteAttachmentDifference(before, after);
-        verify(connector).deleteIds(deletedIds, AttachmentContent.class);
+        verify(connector).deleteIds(AttachmentContent.class, deletedIds);
     }
 
     @Test
@@ -93,7 +94,7 @@ public class AttachmentConnectorTest {
         expectedIdsToDelete.add("a2");
 
         attachmentConnector.deleteAttachmentDifference(before, after);
-        verify(connector).deleteIds(expectedIdsToDelete, AttachmentContent.class);
+        verify(connector).deleteIds(AttachmentContent.class, expectedIdsToDelete);
     }
 
 

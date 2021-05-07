@@ -17,9 +17,13 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.users.db.UserDatabaseHandler;
+import org.ektorp.http.HttpClient;
+
+import com.cloudant.client.api.CloudantClient;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.function.Supplier;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotEmpty;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
@@ -36,7 +40,11 @@ public class UserHandler implements UserService.Iface {
     private UserDatabaseHandler db;
 
     public UserHandler() throws IOException {
-        db = new UserDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_USERS);
+        db = new UserDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_USERS);
+    }
+
+    public UserHandler(Supplier<CloudantClient> client, Supplier<HttpClient> httpclient, String userDbName) throws IOException {
+        db = new UserDatabaseHandler(client, httpclient, userDbName);
     }
 
     @Override

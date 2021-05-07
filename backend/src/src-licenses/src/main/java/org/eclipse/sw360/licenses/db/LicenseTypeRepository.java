@@ -10,19 +10,25 @@
  */
 package org.eclipse.sw360.licenses.db;
 
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
-import org.ektorp.support.View;
+
+import com.cloudant.client.api.model.DesignDocument.MapReduce;
 
 /**
  * @author johannes.najjar@tngtech.com
  */
-@View(name = "all", map = "function(doc) { if (doc.type == 'licenseType') emit(null, doc._id) }")
-public class LicenseTypeRepository extends DatabaseRepository<LicenseType> {
-    public LicenseTypeRepository(DatabaseConnector db) {
-        super(LicenseType.class, db);
+public class LicenseTypeRepository extends DatabaseRepositoryCloudantClient<LicenseType> {
+    private static final String ALL = "function(doc) { if (doc.type == 'licenseType') emit(null, doc._id) }";
 
-        initStandardDesignDocument();
+    public LicenseTypeRepository(DatabaseConnectorCloudant db) {
+        super(db, LicenseType.class);
+        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        views.put("all", createMapReduce(ALL, null));
+        initStandardDesignDocument(views, db);
     }
 }

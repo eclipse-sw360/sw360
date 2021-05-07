@@ -10,18 +10,21 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
+import com.cloudant.client.api.CloudantClient;
+import com.cloudant.client.api.model.Response;
 import com.google.common.collect.*;
 
 import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.components.summary.SummaryType;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.entitlement.ComponentModerator;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.entitlement.ReleaseModerator;
@@ -57,8 +60,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.spdx.SpdxBOMImporter;
 import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
-import org.ektorp.DocumentOperationResult;
-import org.ektorp.http.HttpClient;
 import org.jetbrains.annotations.NotNull;
 import org.spdx.rdfparser.InvalidSPDXAnalysisException;
 
@@ -107,6 +108,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private final VendorRepository vendorRepository;
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
+    private DatabaseHandlerUtil dbHandlerUtil;
 
     private final AttachmentConnector attachmentConnector;
     /**
@@ -138,9 +140,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     ClearingInformation._Fields.REQUEST_ID, ClearingInformation._Fields.ADDITIONAL_REQUEST_INFO,
                     ClearingInformation._Fields.EXTERNAL_SUPPLIER_ID, ClearingInformation._Fields.EVALUATED,
                     ClearingInformation._Fields.PROC_START);
-    public ComponentDatabaseHandler(Supplier<HttpClient> httpClient, String dbName, String attachmentDbName, ComponentModerator moderator, ReleaseModerator releaseModerator, ProjectModerator projectModerator) throws MalformedURLException {
+    public ComponentDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String attachmentDbName, ComponentModerator moderator, ReleaseModerator releaseModerator, ProjectModerator projectModerator) throws MalformedURLException {
         super(httpClient, dbName, attachmentDbName);
-        DatabaseConnector db = new DatabaseConnector(httpClient, dbName);
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(httpClient, dbName);
 
         // Create the repositories
         vendorRepository = new VendorRepository(db);
@@ -156,14 +158,27 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         // Create the attachment connector
         attachmentConnector = new AttachmentConnector(httpClient, attachmentDbName, durationOf(30, TimeUnit.SECONDS));
+        DatabaseConnectorCloudant dbChangeLogs = new DatabaseConnectorCloudant(httpClient, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
+        this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
+    }
+
+    public ComponentDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String changeLogsDbName, String attachmentDbName, ComponentModerator moderator, ReleaseModerator releaseModerator, ProjectModerator projectModerator) throws MalformedURLException {
+        this(httpClient, dbName, attachmentDbName, moderator, releaseModerator, projectModerator);
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(httpClient, changeLogsDbName);
+        this.dbHandlerUtil = new DatabaseHandlerUtil(db);
     }
 
 
-    public ComponentDatabaseHandler(Supplier<HttpClient> httpClient, String dbName, String attachmentDbName) throws MalformedURLException {
-        this(httpClient, dbName, attachmentDbName, new ComponentModerator(), new ReleaseModerator(), new ProjectModerator());
+    public ComponentDatabaseHandler(Supplier<CloudantClient> supplier, String dbName, String attachmentDbName) throws MalformedURLException {
+        this(supplier, dbName, attachmentDbName, new ComponentModerator(), new ReleaseModerator(), new ProjectModerator());
+    }
+    public ComponentDatabaseHandler(Supplier<CloudantClient> supplier, String dbName, String changelogsDbName, String attachmentDbName) throws MalformedURLException {
+        this(supplier, dbName, attachmentDbName, new ComponentModerator(), new ReleaseModerator(), new ProjectModerator());
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(supplier, changelogsDbName);
+        this.dbHandlerUtil = new DatabaseHandlerUtil(db);
     }
 
-    public ComponentDatabaseHandler(Supplier<HttpClient> httpClient, String dbName, String attachmentDbName, ThriftClients thriftClients) throws MalformedURLException {
+    public ComponentDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String changeLogsDbName, String attachmentDbName, ThriftClients thriftClients) throws MalformedURLException {
         this(httpClient, dbName, attachmentDbName, new ComponentModerator(thriftClients), new ReleaseModerator(thriftClients), new ProjectModerator(thriftClients));
     }
 
@@ -353,7 +368,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         // Add the component to the database and return ID
         componentRepository.add(component);
         sendMailNotificationsForNewComponent(component, user);
-        DatabaseHandlerUtil.addChangeLogs(component, null, user, Operation.CREATE, attachmentConnector,
+        dbHandlerUtil.addChangeLogs(component, null, user, Operation.CREATE, attachmentConnector,
                 Lists.newArrayList(), null, null);
         return new AddDocumentRequestSummary()
                 .setRequestStatus(AddDocumentRequestStatus.SUCCESS)
@@ -431,9 +446,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         componentRepository.update(component);
 
         sendMailNotificationsForNewRelease(release, user.getEmail());
-        DatabaseHandlerUtil.addChangeLogs(release, null, user.getEmail(), Operation.CREATE, attachmentConnector,
+        dbHandlerUtil.addChangeLogs(release, null, user.getEmail(), Operation.CREATE, attachmentConnector,
                 Lists.newArrayList(), null, null);
-        DatabaseHandlerUtil.addChangeLogs(component, oldComponent, user.getEmail(), Operation.UPDATE,
+        dbHandlerUtil.addChangeLogs(component, oldComponent, user.getEmail(), Operation.UPDATE,
                 attachmentConnector, Lists.newArrayList(), release.getId(), Operation.RELEASE_CREATE);
         return new AddDocumentRequestSummary()
                 .setRequestStatus(AddDocumentRequestStatus.SUCCESS)
@@ -547,7 +562,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             if (isComponentNameChanged) {
                 updateComponentDependentFieldsForRelease(component,referenceDocLogList,user.getEmail());
             }
-            DatabaseHandlerUtil.addChangeLogs(component, actual, user.getEmail(), Operation.UPDATE, attachmentConnector,
+            dbHandlerUtil.addChangeLogs(component, actual, user.getEmail(), Operation.UPDATE, attachmentConnector,
                     referenceDocLogList, null, null);
         } else {
             return moderator.updateComponent(component, user);
@@ -708,9 +723,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             log.error("Cannot merge component [" + mergeSource.getId() + "] into [" + mergeTarget.getId() + "]. Releases after merge: " + releaseIds, e);
             return RequestStatus.FAILURE;
         }
-        DatabaseHandlerUtil.addChangeLogs(mergeTarget, mergeTargetOriginal, sessionUser.getEmail(), Operation.UPDATE,
+        dbHandlerUtil.addChangeLogs(mergeTarget, mergeTargetOriginal, sessionUser.getEmail(), Operation.UPDATE,
                 attachmentConnector, Lists.newArrayList(), null, Operation.MERGE_COMPONENT);
-        DatabaseHandlerUtil.addChangeLogs(null, mergeSource, sessionUser.getEmail(), Operation.DELETE, null,
+        dbHandlerUtil.addChangeLogs(null, mergeSource, sessionUser.getEmail(), Operation.DELETE, null,
                 Lists.newArrayList(), mergeTargetId, Operation.MERGE_COMPONENT);
         return RequestStatus.SUCCESS;
     }
@@ -835,7 +850,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 }
                 r.setComponentId(mergeTarget.getId());
                 r.setName(mergeSelection.getName());
-                DatabaseHandlerUtil.addChangeLogs(r, releaseBefore, sessionUser.getEmail(), Operation.UPDATE,
+                dbHandlerUtil.addChangeLogs(r, releaseBefore, sessionUser.getEmail(), Operation.UPDATE,
                             attachmentConnector, Lists.newArrayList(), mergeTarget.getId(), Operation.MERGE_COMPONENT);
                 return r;
             }).collect(Collectors.toList());
@@ -933,9 +948,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 attachmentConnector.deleteAttachmentDifference(nullToEmptySet(actual.getAttachments()),
                         nullToEmptySet(release.getAttachments()));
                 sendMailNotificationsForReleaseUpdate(release, user.getEmail());
-                DatabaseHandlerUtil.addChangeLogs(release, actual, user.getEmail(), Operation.UPDATE,
+                dbHandlerUtil.addChangeLogs(release, actual, user.getEmail(), Operation.UPDATE,
                         attachmentConnector, referenceDocLogList, null, null);
-                DatabaseHandlerUtil.addChangeLogs(updatedComponent, oldComponent, user.getEmail(), Operation.UPDATE,
+                dbHandlerUtil.addChangeLogs(updatedComponent, oldComponent, user.getEmail(), Operation.UPDATE,
                         attachmentConnector, Lists.newArrayList(), release.getId(), Operation.RELEASE_UPDATE);
                 Runnable clearingRequestRunnable = addCrCommentForAttachmentUpdatesInRelease(actual, CommonUtils.nullToEmptySet(release.getAttachments()), user);
                 Thread crUpdateThread = new Thread(clearingRequestRunnable);
@@ -1100,9 +1115,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         RequestSummary requestSummary = new RequestSummary();
         if (PermissionUtils.isAdmin(user)) {
             // Prepare component for database
-            final List<DocumentOperationResult> documentOperationResults = componentRepository.executeBulk(storedReleases);
+            final List<Response> documentOperationResults = componentRepository.executeBulk(storedReleases);
 
-            if (documentOperationResults.isEmpty()) {
+            if (!documentOperationResults.isEmpty()) {
 
                 final List<Component> componentList = componentRepository.get(storedReleases
                         .stream()
@@ -1209,9 +1224,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return RequestStatus.FAILURE;
         }
 
-        DatabaseHandlerUtil.addChangeLogs(mergeTarget, mergeTargetOriginal, sessionUser.getEmail(), Operation.UPDATE,
+        dbHandlerUtil.addChangeLogs(mergeTarget, mergeTargetOriginal, sessionUser.getEmail(), Operation.UPDATE,
                 attachmentConnector, Lists.newArrayList(), null, Operation.MERGE_RELEASE);
-        DatabaseHandlerUtil.addChangeLogs(null, mergeSource, sessionUser.getEmail(), Operation.DELETE, null,
+        dbHandlerUtil.addChangeLogs(null, mergeSource, sessionUser.getEmail(), Operation.DELETE, null,
                 Lists.newArrayList(), mergeTargetId, Operation.MERGE_RELEASE);
         return RequestStatus.SUCCESS;
     }
@@ -1403,7 +1418,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }
             projectClient.updateProject(project, sessionUser);
 
-            DatabaseHandlerUtil.addChangeLogs(project, projectBefore, sessionUser.getEmail(), Operation.UPDATE,
+            dbHandlerUtil.addChangeLogs(project, projectBefore, sessionUser.getEmail(), Operation.UPDATE,
                     attachmentConnector, Lists.newArrayList(), mergeTargetId, Operation.MERGE_RELEASE);
         }
     }
@@ -1433,7 +1448,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 release.putToReleaseIdToRelationship(mergeTargetId, relationship);
             }
             updateReleaseCompletely(release, sessionUser, false, false, false);
-            DatabaseHandlerUtil.addChangeLogs(release, releaseBefore, sessionUser.getEmail(), Operation.UPDATE,
+            dbHandlerUtil.addChangeLogs(release, releaseBefore, sessionUser.getEmail(), Operation.UPDATE,
                     attachmentConnector, Lists.newArrayList(), mergeTargetId, Operation.MERGE_RELEASE);
         }
     }
@@ -1447,7 +1462,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 ReleaseVulnerabilityRelation relationBefore = relation.deepCopy();
                 relation.setReleaseId(mergeTargetId);
                 vulnerabilityService.updateReleaseVulnerabilityRelation(relation, sessionUser);
-                DatabaseHandlerUtil.addChangeLogs(relation, relationBefore, sessionUser.getEmail(), Operation.UPDATE,
+                dbHandlerUtil.addChangeLogs(relation, relationBefore, sessionUser.getEmail(), Operation.UPDATE,
                         attachmentConnector, Lists.newArrayList(), mergeTargetId, Operation.MERGE_RELEASE);
             }
         }
@@ -1467,7 +1482,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 }
             }
             vulnerabilityService.updateProjectVulnerabilityRating(rating, sessionUser);
-            DatabaseHandlerUtil.addChangeLogs(rating, ratingBefore, sessionUser.getEmail(), Operation.UPDATE,
+            dbHandlerUtil.addChangeLogs(rating, ratingBefore, sessionUser.getEmail(), Operation.UPDATE,
                     attachmentConnector, Lists.newArrayList(), mergeTargetId, Operation.MERGE_RELEASE);
         }
     }
@@ -1482,7 +1497,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         recomputeReleaseDependentFields(component, null);
         updateComponentCompletely(component, sessionUser);
 
-        DatabaseHandlerUtil.addChangeLogs(component, componentBefore, sessionUser.getEmail(), Operation.UPDATE,
+        dbHandlerUtil.addChangeLogs(component, componentBefore, sessionUser.getEmail(), Operation.UPDATE,
                 attachmentConnector, Lists.newArrayList(), release.getId(), Operation.MERGE_RELEASE);
     }
 
@@ -1512,7 +1527,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             attachmentDatabaseHandler.deleteUsagesBy(Source.componentId(id));
             componentRepository.remove(component);
             moderator.notifyModeratorOnDelete(id);
-            DatabaseHandlerUtil.addChangeLogs(null, component, user.getEmail(), Operation.DELETE, attachmentConnector,
+            dbHandlerUtil.addChangeLogs(null, component, user.getEmail(), Operation.DELETE, attachmentConnector,
                     Lists.newArrayList(), null, null);
             return RequestStatus.SUCCESS;
         } else {
@@ -1577,9 +1592,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             // Remove release id from component
             removeReleaseId(id, release.componentId);
             Component componentAfter=removeReleaseAndCleanUp(release);
-            DatabaseHandlerUtil.addChangeLogs(null, release, user.getEmail(), Operation.DELETE, attachmentConnector,
+            dbHandlerUtil.addChangeLogs(null, release, user.getEmail(), Operation.DELETE, attachmentConnector,
                     Lists.newArrayList(), null, null);
-            DatabaseHandlerUtil.addChangeLogs(componentAfter, componentBefore, user.getEmail(), Operation.UPDATE,
+            dbHandlerUtil.addChangeLogs(componentAfter, componentBefore, user.getEmail(), Operation.UPDATE,
                     attachmentConnector, Lists.newArrayList(), release.getId(), Operation.RELEASE_DELETE);
             return RequestStatus.SUCCESS;
         } else {
@@ -1998,9 +2013,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         if (isUpdated) {
             sendMailNotificationsForComponentUpdate(targetComponentFromDB, user.getEmail());
             sendMailNotificationsForComponentUpdate(srcComponentFromDB, user.getEmail());
-            DatabaseHandlerUtil.addChangeLogs(srcComponentFromDB, srcComponentFromDBOriginal, user.getEmail(),
+            dbHandlerUtil.addChangeLogs(srcComponentFromDB, srcComponentFromDBOriginal, user.getEmail(),
                     Operation.UPDATE, null, Lists.newArrayList(), null, Operation.SPLIT_COMPONENT);
-            DatabaseHandlerUtil.addChangeLogs(targetComponentFromDB, targetComponentFromDBOriginal, user.getEmail(),
+            dbHandlerUtil.addChangeLogs(targetComponentFromDB, targetComponentFromDBOriginal, user.getEmail(),
                     Operation.UPDATE, null, Lists.newArrayList(), null,
                     Operation.SPLIT_COMPONENT);
         }
@@ -2233,10 +2248,15 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }
             r.setComponentId(targetComponentFromDB.getId());
             r.setName(targetComponentFromDB.getName());
-            DatabaseHandlerUtil.addChangeLogs(r, releaseBefore, user.getEmail(), Operation.UPDATE, attachmentConnector,
+            dbHandlerUtil.addChangeLogs(r, releaseBefore, user.getEmail(), Operation.UPDATE, attachmentConnector,
                     Lists.newArrayList(), srcComponentFromDB.getId(), Operation.SPLIT_COMPONENT);
             return r;
         }).collect(Collectors.toList());
         updateReleases(releasesToUpdate, user);
+    }
+
+    public Map<PaginationData, List<Component>> getRecentComponentsSummaryWithPagination(User user,
+            PaginationData pageData) {
+          return componentRepository.getRecentComponentsSummary(user, pageData);
     }
 }

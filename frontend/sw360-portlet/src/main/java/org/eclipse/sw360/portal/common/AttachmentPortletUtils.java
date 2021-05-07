@@ -10,6 +10,7 @@
 
 package org.eclipse.sw360.portal.common;
 
+import com.cloudant.client.org.lightcouch.NoDocumentException;
 import com.liferay.portal.kernel.portlet.PortletResponseUtil;
 import com.liferay.portal.kernel.servlet.HttpHeaders;
 import com.liferay.portal.kernel.upload.UploadPortletRequest;
@@ -31,7 +32,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
-import org.ektorp.DocumentNotFoundException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -314,7 +314,7 @@ public class AttachmentPortletUtils extends AttachmentFrontendUtils {
         } catch (SW360Exception e) {
             log.error("cannot check if part already exists", e);
             return false;
-        } catch (IOException | DocumentNotFoundException ignored) {
+        } catch (IOException | NoDocumentException ignored) {
             return false;
         }
     }

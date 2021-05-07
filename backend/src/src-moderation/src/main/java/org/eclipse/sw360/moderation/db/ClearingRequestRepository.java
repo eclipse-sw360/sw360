@@ -10,23 +10,26 @@
 
 package org.eclipse.sw360.moderation.db;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
-import org.ektorp.support.View;
+
+import com.cloudant.client.api.model.DesignDocument.MapReduce;
 
 /**
  * CRUD access for the ClearingRequest class
  *
  * @author abdul.mannankapti@siemens.com
  */
-@View(name = "all", map = "function(doc) { if (doc.type == 'clearingRequest') emit(null, doc._id) }")
-public class ClearingRequestRepository extends DatabaseRepository<ClearingRequest> {
+public class ClearingRequestRepository extends DatabaseRepositoryCloudantClient<ClearingRequest> {
+    private static final String ALL = "function(doc) { if (doc.type == 'clearingRequest') emit(null, doc._id) }";
 
     private static final String BY_PROJECT_ID = "function(doc) { " +
             "  if (doc.type == 'clearingRequest') {" +
@@ -55,13 +58,16 @@ public class ClearingRequestRepository extends DatabaseRepository<ClearingReques
             "    }" +
             "}";
 
-    public ClearingRequestRepository(DatabaseConnector db) {
-        super(ClearingRequest.class, db);
-
-        initStandardDesignDocument();
+    public ClearingRequestRepository(DatabaseConnectorCloudant db) {
+        super(db, ClearingRequest.class);
+        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        views.put("all", createMapReduce(ALL, null));
+        views.put("byProjectId", createMapReduce(BY_PROJECT_ID, null));
+        views.put("myClearingRequests", createMapReduce(MY_CLEARING_REQUESTS, null));
+        views.put("byBusinessUnit", createMapReduce(BY_BUSINESS_UNIT, null));
+        initStandardDesignDocument(views, db);
     }
 
-    @View(name = "byProjectId", map = BY_PROJECT_ID)
     public ClearingRequest getClearingRequestByProjectId(String projectId) {
         List<ClearingRequest> requests = queryView("byProjectId", projectId);
         if (CommonUtils.isNotEmpty(requests)) {
@@ -72,12 +78,10 @@ public class ClearingRequestRepository extends DatabaseRepository<ClearingReques
         return null;
     }
 
-    @View(name = "myClearingRequests", map = MY_CLEARING_REQUESTS)
     public Set<ClearingRequest> getMyClearingRequests(String user) {
         return new HashSet<ClearingRequest>(queryView("myClearingRequests", user));
     }
 
-    @View(name = "byBusinessUnit", map = BY_BUSINESS_UNIT)
     public Set<ClearingRequest> getClearingRequestsByBU(String businessUnit) {
         return new HashSet<ClearingRequest>(queryView("byBusinessUnit", businessUnit));
     }

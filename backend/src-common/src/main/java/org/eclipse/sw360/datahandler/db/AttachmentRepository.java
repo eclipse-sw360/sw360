@@ -9,41 +9,46 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.ektorp.ViewQuery;
-import org.ektorp.support.View;
-import org.ektorp.support.Views;
 
+import com.cloudant.client.api.model.DesignDocument.MapReduce;
+import com.cloudant.client.api.views.Key;
+import com.cloudant.client.api.views.UnpaginatedRequestBuilder;
+import com.cloudant.client.api.views.ViewRequestBuilder;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
-@Views({
-        @View(name = "byid",
-                map = "function(doc) { if (doc.type == 'project' || doc.type == 'component' || doc.type == 'release') { " +
-                        "for(var i in doc.attachments) { " +
-                        "emit(doc.attachments[i].attachmentContentId, doc.attachments[i]); } } }"),
-        @View(name = "bysha1",
-                map = "function(doc) { if (doc.type == 'project' || doc.type == 'component' || doc.type == 'release') { " +
-                        "for(var i in doc.attachments) { " +
-                        "emit(doc.attachments[i].sha1, doc.attachments[i]); } } }")
-})
+public class AttachmentRepository extends DatabaseRepositoryCloudantClient<Attachment> {
+    private static final String BYID_VIEW_NAME = "function(doc) { if (doc.type == 'project' || doc.type == 'component' || doc.type == 'release') { "
+            + "for(var i in doc.attachments) { "
+            + "emit(doc.attachments[i].attachmentContentId, doc.attachments[i]); } } }";
 
-public class AttachmentRepository extends DatabaseRepository<Attachment> {
+    private static final String BYSHA1_VIEW_NAME = "function(doc) { if (doc.type == 'project' || doc.type == 'component' || doc.type == 'release') { " +
+            "for(var i in doc.attachments) { " +
+            "emit(doc.attachments[i].sha1, doc.attachments[i]); } } }";
 
-    public AttachmentRepository(DatabaseConnector db) {
-        super(Attachment.class, db);
-        initStandardDesignDocument();
+    public AttachmentRepository(DatabaseConnectorCloudant db) {
+        super(db, Attachment.class);
+        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        views.put("byid", createMapReduce(BYID_VIEW_NAME, null));
+        views.put("bysha1", createMapReduce(BYSHA1_VIEW_NAME, null));
+        initStandardDesignDocument(views, db);
     }
 
     public List<Attachment> getAttachmentsByIds(Set<String> ids) {
-        ViewQuery viewQuery = createQuery("byid").includeDocs(false).keys(ids);
-        return queryView(viewQuery);
+        ViewRequestBuilder viewQuery = getConnector().createQuery(Attachment.class, "byid");
+        UnpaginatedRequestBuilder req = viewQuery.newRequest(Key.Type.STRING, Object.class).includeDocs(false).keys((String[]) ids.toArray());
+        return queryView(req);
     }
 
     public List<Attachment> getAttachmentsBySha1s(Set<String> sha1s) {
-        ViewQuery viewQuery = createQuery("bysha1").includeDocs(false).keys(sha1s);
-        return queryView(viewQuery);
+        ViewRequestBuilder viewQuery = getConnector().createQuery(Attachment.class, "bysha1");
+        UnpaginatedRequestBuilder req = viewQuery.newRequest(Key.Type.STRING, Object.class).includeDocs(false).keys((String[]) sha1s.toArray());
+        return queryView(req);
     }
 }

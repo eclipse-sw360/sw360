@@ -10,6 +10,7 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
+import com.cloudant.client.api.CloudantClient;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.collect.*;
@@ -17,10 +18,10 @@ import com.google.common.collect.*;
 import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.businessrules.ReleaseClearingStateSummaryComputer;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.*;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
@@ -43,7 +44,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.spdx.SpdxBOMImporter;
 import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
-import org.ektorp.http.HttpClient;
 import org.spdx.rdfparser.InvalidSPDXAnalysisException;
 
 import java.io.IOException;
@@ -92,6 +92,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private final RelationsUsageRepository relUsageRepository;
     private final ReleaseRepository releaseRepository;
     private final VendorRepository vendorRepository;
+    private DatabaseHandlerUtil dbHandlerUtil;
     private final MailUtil mailUtil = new MailUtil();
 
     // this caching structure is only used for filling clearing state summaries and
@@ -121,18 +122,33 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private Map<String, Project> cachedAllProjectsIdMap;
     private Instant cachedAllProjectsIdMapLoadingInstant;
 
-    public ProjectDatabaseHandler(Supplier<HttpClient> httpClient, String dbName, String attachmentDbName) throws MalformedURLException {
+    public ProjectDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String attachmentDbName) throws MalformedURLException {
         this(httpClient, dbName, attachmentDbName, new ProjectModerator(),
                 new ComponentDatabaseHandler(httpClient,dbName,attachmentDbName),
                 new AttachmentDatabaseHandler(httpClient, dbName, attachmentDbName));
     }
 
+    public ProjectDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String changeLogDbName, String attachmentDbName) throws MalformedURLException {
+        this(httpClient, dbName, changeLogDbName, attachmentDbName, new ProjectModerator(),
+                new ComponentDatabaseHandler(httpClient,dbName,attachmentDbName),
+                new AttachmentDatabaseHandler(httpClient, dbName, attachmentDbName));
+    }
+
     @VisibleForTesting
-    public ProjectDatabaseHandler(Supplier<HttpClient> httpClient, String dbName, String attachmentDbName, ProjectModerator moderator,
+    public ProjectDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String changeLogsDbName, String attachmentDbName, ProjectModerator moderator,
+                                  ComponentDatabaseHandler componentDatabaseHandler,
+                                  AttachmentDatabaseHandler attachmentDatabaseHandler) throws MalformedURLException {
+        this(httpClient, dbName, attachmentDbName, moderator, componentDatabaseHandler, attachmentDatabaseHandler);
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(httpClient, changeLogsDbName);
+        this.dbHandlerUtil = new DatabaseHandlerUtil(db);
+    }
+
+    @VisibleForTesting
+    public ProjectDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String attachmentDbName, ProjectModerator moderator,
                                   ComponentDatabaseHandler componentDatabaseHandler,
                                   AttachmentDatabaseHandler attachmentDatabaseHandler) throws MalformedURLException {
         super(attachmentDatabaseHandler);
-        DatabaseConnector db = new DatabaseConnector(httpClient, dbName);
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(httpClient, dbName);
 
         // Create the repositories
         repository = new ProjectRepository(db);
@@ -149,6 +165,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         attachmentConnector = new AttachmentConnector(httpClient, attachmentDbName, Duration.durationOf(30, TimeUnit.SECONDS));
 
         this.componentDatabaseHandler = componentDatabaseHandler;
+        DatabaseConnectorCloudant dbChangelogs = new DatabaseConnectorCloudant(httpClient, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
+        this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangelogs);
     }
 
     /////////////////////
@@ -341,7 +359,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         // Add project to database and return ID
         repository.add(project);
 
-        DatabaseHandlerUtil.addChangeLogs(project, null, user.getEmail(), Operation.CREATE, null, Lists.newArrayList(),
+        dbHandlerUtil.addChangeLogs(project, null, user.getEmail(), Operation.CREATE, null, Lists.newArrayList(),
                 null, null);
         sendMailNotificationsForNewProject(project, user.getEmail());
         return new AddDocumentRequestSummary().setId(project.getId()).setRequestStatus(AddDocumentRequestStatus.SUCCESS);
@@ -403,7 +421,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 addCommentToClearingRequest(project, actual, user);
             }
             sendMailNotificationsForProjectUpdate(project, user.getEmail());
-            DatabaseHandlerUtil.addChangeLogs(project, actual, user.getEmail(), Operation.UPDATE, attachmentConnector,
+            dbHandlerUtil.addChangeLogs(project, actual, user.getEmail(), Operation.UPDATE, attachmentConnector,
                     referenceDocLogList, null, null);
             return RequestStatus.SUCCESS;
         } else {
@@ -543,9 +561,9 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         project.setLinkedObligationId(obligation.getId());
         repository.update(project);
         project.unsetLinkedObligationId();
-        DatabaseHandlerUtil.addChangeLogs(obligation, null, user.getEmail(), Operation.CREATE, attachmentConnector,
+        dbHandlerUtil.addChangeLogs(obligation, null, user.getEmail(), Operation.CREATE, attachmentConnector,
                 Lists.newArrayList(), obligation.getProjectId(), Operation.PROJECT_UPDATE);
-        DatabaseHandlerUtil.addChangeLogs(getProjectById(obligation.getProjectId(), user), project, user.getEmail(),
+        dbHandlerUtil.addChangeLogs(getProjectById(obligation.getProjectId(), user), project, user.getEmail(),
                 Operation.UPDATE, attachmentConnector, Lists.newArrayList(), null, Operation.OBLIGATION_ADD);
 
         return RequestStatus.SUCCESS;
@@ -556,7 +574,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         ObligationList projectObligationbefore = obligationRepository.get(obligation.getId());
         if (isWriteActionAllowedOnProject(project, user)) {
             obligationRepository.update(obligation);
-            DatabaseHandlerUtil.addChangeLogs(obligation, projectObligationbefore, user.getEmail(), Operation.UPDATE,
+            dbHandlerUtil.addChangeLogs(obligation, projectObligationbefore, user.getEmail(), Operation.UPDATE,
                     attachmentConnector, Lists.newArrayList(), obligation.getProjectId(), Operation.PROJECT_UPDATE);
             return RequestStatus.SUCCESS;
         }
@@ -710,7 +728,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         // Remove the project if the user is allowed to do it by himself
         if (makePermission(project, user).isActionAllowed(RequestedAction.DELETE)) {
             removeProjectAndCleanUp(project, user);
-            DatabaseHandlerUtil.addChangeLogs(null, project, user.getEmail(), Operation.DELETE, attachmentConnector,
+            dbHandlerUtil.addChangeLogs(null, project, user.getEmail(), Operation.DELETE, attachmentConnector,
                     Lists.newArrayList(), null, null);
             return RequestStatus.SUCCESS;
         } else {

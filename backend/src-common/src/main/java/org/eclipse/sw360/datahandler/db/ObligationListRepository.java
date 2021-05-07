@@ -9,20 +9,23 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.ektorp.support.View;
+
+import com.cloudant.client.api.model.DesignDocument.MapReduce;
 
 /**
  * CRUD access for the Project class
  *
  * @author abdul.mannankapti@siemens.com
  */
-@View(name = "all", map = "function(doc) { if (doc.type == 'obligationList') emit(null, doc._id) }")
-public class ObligationListRepository extends DatabaseRepository<ObligationList> {
+public class ObligationListRepository extends DatabaseRepositoryCloudantClient<ObligationList> {
 
     private static final String BY_PROJECT_ID =
             "function(doc) {" +
@@ -31,13 +34,16 @@ public class ObligationListRepository extends DatabaseRepository<ObligationList>
                     "  }" +
                     "}";
 
+    private static final String ALL = "function(doc) { if (doc.type == 'obligationList') emit(null, doc._id) }";
 
-    public ObligationListRepository(DatabaseConnector db) {
-        super(ObligationList.class, db);
-        initStandardDesignDocument();
+    public ObligationListRepository(DatabaseConnectorCloudant db) {
+        super(db, ObligationList.class);
+        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        views.put("byProjectId", createMapReduce(BY_PROJECT_ID, null));
+        views.put("all", createMapReduce(ALL, null));
+        initStandardDesignDocument(views, db);
     }
 
-    @View(name = "byProjectId", map = BY_PROJECT_ID)
     public Optional<ObligationList> getObligationByProjectid(String projectId) {
         return queryView("byProjectId", projectId).stream().findFirst();
     }

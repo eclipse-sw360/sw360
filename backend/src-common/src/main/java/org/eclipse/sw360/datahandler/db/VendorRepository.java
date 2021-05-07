@@ -9,29 +9,32 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
+import static com.google.common.base.Strings.isNullOrEmpty;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 
-import org.ektorp.support.View;
-
-import static com.google.common.base.Strings.isNullOrEmpty;
+import com.cloudant.client.api.model.DesignDocument.MapReduce;
 
 /**
  * CRUD access for the Vendor class
  *
- * @author cedric.bodet@tngtech.com
- * @author Johannes.Najjar@tngtech.com
  */
-@View(name = "all", map = "function(doc) { if (doc.type == 'vendor') emit(null, doc._id) }")
-public class VendorRepository extends DatabaseRepository<Vendor> {
+public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
 
-    public VendorRepository(DatabaseConnector db) {
-        super(Vendor.class, db);
+    private static final String ALL = "function(doc) { if (doc.type == 'vendor') emit(null, doc._id) }";
 
-        initStandardDesignDocument();
+    public VendorRepository(DatabaseConnectorCloudant db) {
+        super(db, Vendor.class);
+        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        views.put("all", createMapReduce(ALL, null));
+        initStandardDesignDocument(views, db);
     }
 
     public void fillVendor(Component component) {

@@ -33,16 +33,16 @@ public class UserHandlerTest {
     @Before
     public void setUp() throws Exception {
         // Create the database
-        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
+        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
 
         // Create the connector
-        handler = new UserHandler();
+        handler = new UserHandler(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
     }
 
     @After
     public void tearDown() throws Exception {
         // Delete the database
-        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
+        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
     }
 
     @Test

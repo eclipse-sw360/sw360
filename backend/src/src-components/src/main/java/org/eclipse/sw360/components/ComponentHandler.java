@@ -23,6 +23,8 @@ import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.ektorp.http.HttpClient;
 
+import com.cloudant.client.api.CloudantClient;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -44,22 +46,22 @@ public class ComponentHandler implements ComponentService.Iface {
     private final ReleaseSearchHandler releaseSearchHandler;
 
     public ComponentHandler() throws IOException {
-        this(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
+        this(DatabaseSettings.getConfiguredClient(), DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_CHANGE_LOGS, DatabaseSettings.COUCH_DB_ATTACHMENTS);
     }
 
-    ComponentHandler(Supplier<HttpClient> httpClient, String dbName, String attachmentDbName) throws IOException {
-        handler = new ComponentDatabaseHandler(httpClient, dbName, attachmentDbName);
-        componentSearchHandler = new ComponentSearchHandler(httpClient, dbName);
-        releaseSearchHandler = new ReleaseSearchHandler(httpClient, dbName);
+    public ComponentHandler(Supplier<CloudantClient> httpClient, Supplier<HttpClient> client, String dbName, String changeLogsDBName, String attachmentDbName) throws IOException {
+        handler = new ComponentDatabaseHandler(httpClient, dbName, changeLogsDBName, attachmentDbName);
+        componentSearchHandler = new ComponentSearchHandler(client, dbName);
+        releaseSearchHandler = new ReleaseSearchHandler(client, dbName);
     }
 
     // TODO use dependency injection instead of this constructors mess
     public ComponentHandler(ThriftClients thriftClients) throws IOException {
-        this(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS, thriftClients);
+        this(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_CHANGE_LOGS, DatabaseSettings.COUCH_DB_ATTACHMENTS, thriftClients);
     }
 
-    public ComponentHandler(Supplier<HttpClient> httpClient, String dbName, String attachmentDbName, ThriftClients thriftClients) throws IOException {
-        handler = new ComponentDatabaseHandler(httpClient, dbName, attachmentDbName, thriftClients);
+    public ComponentHandler(Supplier<HttpClient> httpClient, Supplier<CloudantClient> client, String dbName, String changeLogsDBName, String attachmentDbName, ThriftClients thriftClients) throws IOException {
+        handler = new ComponentDatabaseHandler(client, dbName, changeLogsDBName, attachmentDbName, thriftClients);
         componentSearchHandler = new ComponentSearchHandler(httpClient, dbName);
         releaseSearchHandler = new ReleaseSearchHandler(httpClient, dbName);
     }
@@ -518,5 +520,11 @@ public class ComponentHandler implements ComponentService.Iface {
     public List<Release> getAllReleasesForUser(User user) throws TException {
         assertUser(user);
         return handler.getAllReleases();
+    }
+
+    @Override
+    public Map<PaginationData, List<Component>> getRecentComponentsSummaryWithPagination(User user,
+            PaginationData pageData) throws TException {
+        return handler.getRecentComponentsSummaryWithPagination(user, pageData);
     }
 }

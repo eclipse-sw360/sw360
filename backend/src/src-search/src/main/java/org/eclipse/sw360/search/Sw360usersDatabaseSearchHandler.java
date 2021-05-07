@@ -13,13 +13,19 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.search.db.AbstractDatabaseSearchHandler;
+import org.ektorp.http.HttpClient;
 
 import java.io.IOException;
+import java.util.function.Supplier;
 
 public class Sw360usersDatabaseSearchHandler extends AbstractDatabaseSearchHandler {
 
     public Sw360usersDatabaseSearchHandler() throws IOException {
         super(DatabaseSettings.COUCH_DB_USERS);
+    }
+
+    public Sw360usersDatabaseSearchHandler(Supplier<HttpClient> hclient, String dbName) throws IOException {
+        super(hclient, dbName);
     }
 
     @Override

@@ -11,7 +11,7 @@ package org.eclipse.sw360.licenses;
 
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenses.*;
@@ -54,13 +54,13 @@ public class LicenseHandlerTest {
     @Before
     public void setUp() throws Exception {
         // Create the database
-        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
+        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
 
         // Create all test entries
         createTestEntries();
 
         // Create the handler
-        handler = new LicenseHandler(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
+        handler = new LicenseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName);
 
         // Create the user
         user = new User().setEmail("test@siemens.com").setDepartment("CT BE OP SWI OSS").setUserGroup(UserGroup.ADMIN);
@@ -69,7 +69,7 @@ public class LicenseHandlerTest {
     @After
     public void tearDown() throws Exception {
         // Delete the database
-        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
+        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
     }
 
     @Test
@@ -203,7 +203,7 @@ public class LicenseHandlerTest {
         obligs.put("T4", oblig4);
         obligs.put("T5", oblig5);
 
-        DatabaseConnector db = new DatabaseConnector(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName);
 
         // Add obligations to database
         for (Obligation oblig : obligs.values()) {

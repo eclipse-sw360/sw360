@@ -10,19 +10,23 @@
 
 package org.eclipse.sw360.datahandler.db;
 
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.ektorp.DocumentOperationResult;
-import org.ektorp.ViewQuery;
-import org.ektorp.support.View;
-import org.ektorp.support.Views;
 
+import com.cloudant.client.api.model.Response;
+import com.cloudant.client.api.model.DesignDocument.MapReduce;
+import com.cloudant.client.api.views.Key;
+import com.cloudant.client.api.views.UnpaginatedRequestBuilder;
+import com.cloudant.client.api.views.ViewRequestBuilder;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -33,22 +37,23 @@ import java.util.stream.Collectors;
  * @author Johannes.Najjar@tngtech.com
  * @author daniele.fognini@tngtech.com
  */
-@Views({
-        @View(name = "all", map = "function(doc) { if (doc.type == 'attachment') emit(null, doc._id) }"),
-        @View(name = "onlyRemotes", map = "function(doc) { if(doc.type == 'attachment' && doc.onlyRemote) { emit(null, doc) } }")
-})
-public class AttachmentContentRepository extends DatabaseRepository<AttachmentContent> {
+public class AttachmentContentRepository extends DatabaseRepositoryCloudantClient<AttachmentContent> {
 
-    public AttachmentContentRepository(DatabaseConnector db) {
-        super(AttachmentContent.class, db);
+    private static final String ALL = "function(doc) { if (doc.type == 'attachment') emit(null, doc._id) }";
+    private static final String ONLYREMOTES = "function(doc) { if(doc.type == 'attachment' && doc.onlyRemote) { emit(null, doc) } }";
 
-        initStandardDesignDocument();
+    public AttachmentContentRepository(DatabaseConnectorCloudant db) {
+        super(db, AttachmentContent.class);
+        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        views.put("onlyRemotes", createMapReduce(ONLYREMOTES, null));
+        views.put("all", createMapReduce(ALL, null));
+        initStandardDesignDocument(views, db);
     }
 
     public List<AttachmentContent> getOnlyRemoteAttachments() {
-        ViewQuery query = createQuery("onlyRemotes");
-        query.includeDocs(false);
-        return queryView(query);
+        ViewRequestBuilder query = getConnector().createQuery(AttachmentContent.class, "onlyRemotes");
+        UnpaginatedRequestBuilder req = query.newRequest(Key.Type.STRING, Object.class).includeDocs(true);
+        return queryView(req);
     }
 
     public RequestSummary vacuumAttachmentDB(User user, final Set<String> usedIds) {
@@ -64,8 +69,8 @@ public class AttachmentContentRepository extends DatabaseRepository<AttachmentCo
         requestSummary.setTotalElements(allAttachmentContents.size());
         requestSummary.setTotalAffectedElements(unusedAttachmentContents.size());
 
-        final List<DocumentOperationResult> documentOperationResults = deleteBulk(unusedAttachmentContents);
-        if (documentOperationResults.isEmpty()) {
+        final List<Response> documentOperationResults = getConnector().deleteBulk(unusedAttachmentContents);
+        if (unusedAttachmentContents.isEmpty() || !documentOperationResults.isEmpty()) {
             requestSummary.setRequestStatus(RequestStatus.SUCCESS);
         }else{
             requestSummary.setRequestStatus(RequestStatus.FAILURE);

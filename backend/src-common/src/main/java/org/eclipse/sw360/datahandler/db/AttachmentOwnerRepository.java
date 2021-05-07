@@ -9,36 +9,38 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.Source;
-import org.ektorp.ViewQuery;
-import org.ektorp.support.View;
-import org.ektorp.support.Views;
 
+import com.cloudant.client.api.model.DesignDocument.MapReduce;
+import com.cloudant.client.api.views.Key;
+import com.cloudant.client.api.views.UnpaginatedRequestBuilder;
+import com.cloudant.client.api.views.ViewRequestBuilder;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
-@Views({
-        @View(name = "attachmentOwner",
-                map = "function(doc) { if (doc.type == 'project' || doc.type == 'component' || doc.type == 'release') { " +
-                        "for(var i in doc.attachments) { " +
-                            "var source;" +
-                            "if (doc.type == 'project') {source = {projectId: doc._id}}" +
-                            "if (doc.type == 'component') {source = {componentId: doc._id}}" +
-                            "if (doc.type == 'release') {source = {releaseId: doc._id}}" +
-                        "emit(doc.attachments[i].attachmentContentId, source); } } }")
-})
+public class AttachmentOwnerRepository extends DatabaseRepositoryCloudantClient<Source> {
+    private static final String ATTACHMENTOWNER_VIEW_NAME = "function(doc) { if (doc.type == 'project' || doc.type == 'component' || doc.type == 'release') { "
+            + "for(var i in doc.attachments) { " + "var source;"
+            + "if (doc.type == 'project') {source = {projectId: doc._id}}"
+            + "if (doc.type == 'component') {source = {componentId: doc._id}}"
+            + "if (doc.type == 'release') {source = {releaseId: doc._id}}"
+            + "emit(doc.attachments[i].attachmentContentId, source); } } }";
 
-public class AttachmentOwnerRepository extends DatabaseRepository<Source> {
-
-    public AttachmentOwnerRepository(DatabaseConnector db) {
-        super(Source.class, db);
-        initStandardDesignDocument();
+    public AttachmentOwnerRepository(DatabaseConnectorCloudant db) {
+        super(db, Source.class);
+        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        views.put("attachmentOwner", createMapReduce(ATTACHMENTOWNER_VIEW_NAME, null));
+        initStandardDesignDocument(views, db);
     }
 
     public List<Source> getOwnersByIds(Set<String> ids) {
-        ViewQuery viewQuery = createQuery("attachmentOwner").includeDocs(false).keys(ids);
-        return queryView(viewQuery);
+        ViewRequestBuilder viewQuery = getConnector().createQuery(Source.class, "attachmentOwner");
+        UnpaginatedRequestBuilder req = viewQuery.newRequest(Key.Type.STRING, Object.class).includeDocs(false).keys((String[]) ids.toArray());
+        return queryView(req);
     }
 }

@@ -10,6 +10,7 @@
  */
 package org.eclipse.sw360.search;
 
+import com.cloudant.client.api.CloudantClient;
 import com.google.common.collect.Lists;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,12 +21,14 @@ import org.eclipse.sw360.datahandler.thrift.search.SearchService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.search.db.AbstractDatabaseSearchHandler;
 import org.eclipse.sw360.search.db.Sw360dbDatabaseSearchHandler;
+import org.ektorp.http.HttpClient;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * Implementation of the Thrift service
@@ -44,6 +47,10 @@ public class SearchHandler implements SearchService.Iface {
         dbSw360users = new Sw360usersDatabaseSearchHandler();
     }
 
+    public SearchHandler(Supplier<HttpClient> hclient, Supplier<CloudantClient> cclient, String dbName) throws IOException {
+        dbSw360db = new Sw360dbDatabaseSearchHandler(hclient, cclient, dbName);
+        dbSw360users = new Sw360usersDatabaseSearchHandler(hclient, dbName);
+    }
 
     @Override
     public List<SearchResult> searchFiltered(String text, User user, List<String> typeMask) throws TException {

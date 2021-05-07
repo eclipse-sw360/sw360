@@ -42,29 +42,29 @@ public class HealthHandlerTest {
     @Test
     public void testGetHealth() throws MalformedURLException {
         for (String database : DATABASES_TO_CHECK) {
-            TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), database);
+            TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), database);
         }
 
         HealthHandler healthHandler = new HealthHandler(DatabaseSettingsTest.getConfiguredHttpClient());
-        final Health health = healthHandler.getHealth();
+        final Health health = healthHandler.getHealthOfSpecificDbs(DATABASES_TO_CHECK);
         assertEquals(Status.UP, health.status);
         assertEquals(new HashMap<>(), health.getDetails());
 
         for (String database : DATABASES_TO_CHECK) {
-            TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), database);
+            TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), database);
         }
     }
 
     @Test
     public void testGetHealthWithPartialDBMissing() throws MalformedURLException {
         final String couchDbDatabase = DatabaseSettingsTest.COUCH_DB_DATABASE;
-        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), couchDbDatabase);
+        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), couchDbDatabase);
 
         HealthHandler healthHandler = new HealthHandler(DatabaseSettingsTest.getConfiguredHttpClient());
         final Health health = healthHandler.getHealthOfSpecificDbs(DATABASES_TO_CHECK);
         assertEquals(Status.ERROR, health.getStatus());
         assertEquals(DATABASES_TO_CHECK.size() -1, health.getDetails().size());
 
-        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), couchDbDatabase);
+        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), couchDbDatabase);
     }
 }

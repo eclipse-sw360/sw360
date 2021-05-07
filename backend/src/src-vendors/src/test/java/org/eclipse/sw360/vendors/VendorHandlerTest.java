@@ -36,7 +36,7 @@ public class VendorHandlerTest {
     public void setUp() throws Exception {
 
         // Create the database
-        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
+        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
 
         // Prepare the database
         DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
@@ -49,13 +49,13 @@ public class VendorHandlerTest {
             databaseConnector.add(vendor);
         }
 
-        vendorHandler = new VendorHandler(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
+        vendorHandler = new VendorHandler(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
     }
 
     @After
     public void tearDown() throws Exception {
         // Delete the database
-        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
+        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
     }
 
 

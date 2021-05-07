@@ -12,12 +12,15 @@ package org.eclipse.sw360.moderation.db;
 
 import org.eclipse.sw360.components.summary.ModerationRequestSummary;
 import org.eclipse.sw360.components.summary.SummaryType;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
-import org.ektorp.support.View;
 
+import com.cloudant.client.api.model.DesignDocument.MapReduce;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * CRUD access for the ModerationRequest class
@@ -25,8 +28,8 @@ import java.util.List;
  * @author cedric.bodet@tngtech.com
  * @author Johannes.Najjar@tngtech.com
  */
-@View(name = "all", map = "function(doc) { if (doc.type == 'moderation') emit(null, doc._id) }")
 public class ModerationRequestRepository extends SummaryAwareRepository<ModerationRequest> {
+    private static final String ALL = "function(doc) { if (doc.type == 'moderation') emit(null, doc._id) }";
 
     private static final String DOCUMENTS_VIEW = "function(doc) { " +
             "  if (doc.type == 'moderation') {" +
@@ -48,23 +51,24 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
             "  }" +
             "}";
 
-    public ModerationRequestRepository(DatabaseConnector db) {
+    public ModerationRequestRepository(DatabaseConnectorCloudant db) {
         super(ModerationRequest.class, db, new ModerationRequestSummary());
-
-        initStandardDesignDocument();
+        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        views.put("all", createMapReduce(ALL, null));
+        views.put("documents", createMapReduce(DOCUMENTS_VIEW, null));
+        views.put("moderators", createMapReduce(MODERATORS_VIEW, null));
+        views.put("users", createMapReduce(USERS_VIEW, null));
+        initStandardDesignDocument(views, db);
     }
 
-    @View(name = "documents", map = DOCUMENTS_VIEW)
     public List<ModerationRequest> getRequestsByDocumentId(String documentId) {
         return queryView("documents", documentId);
     }
 
-    @View(name = "moderators", map = MODERATORS_VIEW)
     public List<ModerationRequest> getRequestsByModerator(String moderator) {
         return makeSummaryFromFullDocs(SummaryType.SHORT, queryView("moderators", moderator));
     }
 
-    @View(name = "users", map = USERS_VIEW)
     public List<ModerationRequest> getRequestsByRequestingUser(String user) {
         return makeSummaryFromFullDocs(SummaryType.SHORT, queryView("users", user));
     }

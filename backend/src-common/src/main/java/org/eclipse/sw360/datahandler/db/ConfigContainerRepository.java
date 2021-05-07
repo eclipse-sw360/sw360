@@ -9,34 +9,40 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.ConfigContainer;
 import org.eclipse.sw360.datahandler.thrift.ConfigFor;
 
-import org.ektorp.ViewQuery;
-import org.ektorp.support.View;
-import org.ektorp.support.Views;
+import com.cloudant.client.api.model.DesignDocument.MapReduce;
+import com.cloudant.client.api.views.Key;
+import com.cloudant.client.api.views.UnpaginatedRequestBuilder;
+import com.cloudant.client.api.views.ViewRequestBuilder;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-@Views({ @View(name = "all", map = "function(doc) { emit(null, doc._id); }"),
-        @View(name = "byId", map = "function(doc) { emit(doc._id, doc); }"),
-        @View(name = "byConfigFor", map = "function(doc) { emit(doc.configFor, doc); }") })
-public class ConfigContainerRepository extends DatabaseRepository<ConfigContainer> {
+public class ConfigContainerRepository extends DatabaseRepositoryCloudantClient<ConfigContainer> {
+    private static final String ALL = "function(doc) { emit(null, doc._id); }";
+    private static final String BYID = "function(doc) { emit(doc._id, doc); }";
+    private static final String BYCONFIGFOR = "function(doc) { emit(doc.configFor, doc); }";
 
-    public ConfigContainerRepository(DatabaseConnector databaseConnector) {
-        super(ConfigContainer.class, databaseConnector);
-
-        initStandardDesignDocument();
+    public ConfigContainerRepository(DatabaseConnectorCloudant databaseConnector) {
+        super(databaseConnector, ConfigContainer.class);
+        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        views.put("all", createMapReduce(ALL, null));
+        views.put("byId", createMapReduce(BYID, null));
+        views.put("byConfigFor", createMapReduce(BYCONFIGFOR, null));
+        initStandardDesignDocument(views, databaseConnector);
     }
 
     public ConfigContainer getByConfigFor(ConfigFor configFor) {
-        ViewQuery query = createQuery("byConfigFor");
-        query.setIgnoreNotFound(true);
-        query.key(configFor);
+        ViewRequestBuilder query = getConnector().createQuery(ConfigContainer.class, "byConfigFor");
+        UnpaginatedRequestBuilder reqBuilder = query.newRequest(Key.Type.STRING, Object.class)
+                .keys(configFor.toString()).includeDocs(true);
 
-        List<ConfigContainer> configs = db.queryView(query, ConfigContainer.class);
+        List<ConfigContainer> configs = queryView(reqBuilder);
         if (configs.size() != 1) {
             throw new IllegalStateException(
                     "There are " + configs.size() + " configuration objects in the couch db for type " + configFor

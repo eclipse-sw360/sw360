@@ -10,6 +10,7 @@
 package org.eclipse.sw360.vendors;
 
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.db.VendorSearchHandler;
@@ -18,6 +19,8 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.ektorp.http.HttpClient;
+
+import com.cloudant.client.api.CloudantClient;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -32,15 +35,17 @@ public class VendorHandler implements VendorService.Iface {
     private final VendorSearchHandler vendorSearchHandler;
 
     public VendorHandler() throws IOException {
-        DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE);
+        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
+        DatabaseConnector databaseConnectorNative = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE);
         vendorDatabaseHandler = new VendorDatabaseHandler(databaseConnector);
-        vendorSearchHandler = new VendorSearchHandler(databaseConnector);     // Remove release id from component
+        vendorSearchHandler = new VendorSearchHandler(databaseConnectorNative);     // Remove release id from component
     }
 
-    public VendorHandler(Supplier<HttpClient> httpClient, String dbName) throws IOException {
-        DatabaseConnector databaseConnector = new DatabaseConnector(httpClient, dbName);
+    public VendorHandler(Supplier<CloudantClient> httpClient,Supplier<HttpClient> clientlient, String dbName) throws IOException {
+        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(httpClient, dbName);
+        DatabaseConnector databaseConnectorNative = new DatabaseConnector(clientlient, DatabaseSettings.COUCH_DB_DATABASE);
         vendorDatabaseHandler = new VendorDatabaseHandler(databaseConnector);
-        vendorSearchHandler = new VendorSearchHandler(databaseConnector);     // Remove release id from component
+        vendorSearchHandler = new VendorSearchHandler(databaseConnectorNative);     // Remove release id from component
     }
 
     @Override

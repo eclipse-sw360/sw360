@@ -12,13 +12,14 @@ package org.eclipse.sw360.datahandler.db;
 
 import org.eclipse.sw360.components.summary.ProjectSummary;
 import org.eclipse.sw360.components.summary.SummaryType;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.ektorp.support.View;
 import org.jetbrains.annotations.NotNull;
+
+import com.cloudant.client.api.model.DesignDocument.MapReduce;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -34,8 +35,8 @@ import static org.eclipse.sw360.datahandler.common.SW360Utils.getBUFromOrganisat
  * @author thomas.maier@evosoft.com
  * @author ksoranko@verifa.io
  */
-@View(name = "all", map = "function(doc) { if (doc.type == 'project') emit(null, doc._id) }")
 public class ProjectRepository extends SummaryAwareRepository<Project> {
+    private static final String ALL = "function(doc) { if (doc.type == 'project') emit(null, doc._id) }";
 
     private static final String MY_PROJECTS_VIEW =
             "function(doc) {" +
@@ -160,12 +161,23 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
                     "  }" +
                     "}";
 
-    public ProjectRepository(DatabaseConnector db) {
+    public ProjectRepository(DatabaseConnectorCloudant db) {
         super(Project.class, db, new ProjectSummary());
-        initStandardDesignDocument();
+        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        views.put("byname", createMapReduce(BY_NAME_VIEW, null));
+        views.put("byreleaseid", createMapReduce(BY_RELEASE_ID_VIEW, null));
+        views.put("fullbyreleaseid", createMapReduce(FULL_BY_RELEASE_ID_VIEW, null));
+        views.put("bylinkingprojectid", createMapReduce(BY_LINKING_PROJECT_ID_VIEW, null));
+        views.put("fullbylinkingprojectid", createMapReduce(FULL_BY_LINKING_PROJECT_ID_VIEW, null));
+        views.put("myprojects", createMapReduce(MY_PROJECTS_VIEW, null));
+        views.put("fullmyprojects", createMapReduce(FULL_MY_PROJECTS_VIEW, null));
+        views.put("buprojects", createMapReduce(BU_PROJECTS_VIEW, null));
+        views.put("fullbuprojects", createMapReduce(FULL_BU_PROJECTS_VIEW, null));
+        views.put("byexternalids", createMapReduce(BY_EXTERNAL_IDS, null));
+        views.put("all", createMapReduce(ALL, null));
+        initStandardDesignDocument(views, db);
     }
 
-    @View(name = "byname", map = BY_NAME_VIEW)
     public List<Project> searchByName(String name, User user, SummaryType summaryType) {
         Set<String> searchIds = queryForIdsByPrefix("byname", name);
         return makeSummaryFromFullDocs(summaryType, filterAccessibleProjectsByIds(user, searchIds));
@@ -179,7 +191,6 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         return makeSummaryFromFullDocs(SummaryType.SHORT, projectsMatchingNameAndVersion);
     }
 
-    @View(name = "byreleaseid", map = BY_RELEASE_ID_VIEW)
     public Set<Project> searchByReleaseId(String id, User user) {
         return searchByReleaseId(Collections.singleton(id), user);
     }
@@ -194,7 +205,6 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         return searchIds.size();
     }
 
-    @View(name = "fullbyreleaseid", map = FULL_BY_RELEASE_ID_VIEW)
     public Set<Project> searchByReleaseId(String id) {
         return new HashSet<>(queryView("fullbyreleaseid", id));
     }
@@ -203,29 +213,24 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         return new HashSet<>(queryByIds("fullbyreleaseid", ids));
     }
 
-    @View(name = "bylinkingprojectid", map = BY_LINKING_PROJECT_ID_VIEW)
     public Set<Project> searchByLinkingProjectId(String id, User user) {
         Set<String> searchIds = queryForIdsByPrefix("bylinkingprojectid", id);
         return getAccessibleProjectSummary(user, searchIds);
     }
 
-    @View(name = "bylinkingprojectid", map = BY_LINKING_PROJECT_ID_VIEW)
     public int getCountByProjectId(String id) {
         Set<String> searchIds = queryForIdsByPrefix("bylinkingprojectid", id);
         return searchIds.size();
     }
 
-    @View(name = "fullbylinkingprojectid", map = FULL_BY_LINKING_PROJECT_ID_VIEW)
     public Set<Project> searchByLinkingProjectId(String id) {
         return new HashSet<>(queryView("bylinkingprojectid", id));
     }
 
-    @View(name = "myprojects", map = MY_PROJECTS_VIEW)
     private Set<String> getMyProjectsIds(String user) {
         return queryForIds("myprojects", user);
     }
 
-    @View(name = "fullmyprojects", map = FULL_MY_PROJECTS_VIEW)
     private Set<Project> getMyProjects(String user) {
         return new HashSet<Project>(queryView("fullmyprojects", user));
     }
@@ -238,21 +243,18 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         return new ArrayList<>(getMyProjects(user));
     }
 
-    @View(name = "buprojects", map = BU_PROJECTS_VIEW)
     private Set<String> getBUProjectsIds(String organisation) {
         // Filter BU to first three blocks
         String bu = getBUFromOrganisation(organisation);
         return queryForIdsByPrefix("buprojects", bu);
     }
 
-    @View(name = "fullbuprojects", map = FULL_BU_PROJECTS_VIEW)
     public List<Project> getBUProjects(String organisation) {
         // Filter BU to first three blocks
         String bu = getBUFromOrganisation(organisation);
         return queryByPrefix("buprojects", bu);
     }
 
-    @View(name = "byexternalids", map = BY_EXTERNAL_IDS)
     public Set<Project> searchByExternalIds(Map<String, Set<String>> externalIds, User user) {
         RepositoryUtils repositoryUtils = new RepositoryUtils();
         Set<String> searchIds = repositoryUtils.searchByExternalIds(this, "byexternalids", externalIds);

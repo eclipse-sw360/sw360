@@ -13,6 +13,7 @@ package org.eclipse.sw360.datahandler.couchdb;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.ConcatClosingInputStream;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
@@ -21,8 +22,8 @@ import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.ektorp.AttachmentInputStream;
-import org.ektorp.DocumentNotFoundException;
+
+import com.cloudant.client.org.lightcouch.NoDocumentException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,7 +49,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 public class AttachmentStreamConnector {
     private static Logger log = LogManager.getLogger(AttachmentStreamConnector.class);
 
-    protected final DatabaseConnector connector;
+    protected final DatabaseConnectorCloudant connector;
     private final AttachmentContentDownloader attachmentContentDownloader;
     private final Duration downloadTimeout;
 
@@ -58,14 +59,14 @@ public class AttachmentStreamConnector {
      * @todo remove this mess of constructors and use dependency injection
      */
     public AttachmentStreamConnector(Duration downloadTimeout) throws MalformedURLException {
-        this(new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient().get(), DatabaseSettings.COUCH_DB_ATTACHMENTS), downloadTimeout);
+        this(new DatabaseConnectorCloudant(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_ATTACHMENTS), downloadTimeout);
     }
 
-    public AttachmentStreamConnector(DatabaseConnector connector, Duration downloadTimeout) {
+    public AttachmentStreamConnector(DatabaseConnectorCloudant connector, Duration downloadTimeout) {
         this(connector, new AttachmentContentDownloader(), downloadTimeout);
     }
 
-    public AttachmentStreamConnector(DatabaseConnector connector, AttachmentContentDownloader attachmentContentDownloader, Duration downloadTimeout) {
+    public AttachmentStreamConnector(DatabaseConnectorCloudant connector, AttachmentContentDownloader attachmentContentDownloader, Duration downloadTimeout) {
         this.connector = connector;
         this.attachmentContentDownloader = attachmentContentDownloader;
         this.downloadTimeout = downloadTimeout;
@@ -216,7 +217,7 @@ public class AttachmentStreamConnector {
                 part++;
                 try {
                     return connector.getAttachment(attachmentId, partFileName);
-                } catch (DocumentNotFoundException e) {
+                } catch (NoDocumentException e) {
                     log.error("Cannot find part " + (part - 1) + " of attachment " + attachmentId, e);
                     return null;
                 }
@@ -253,9 +254,7 @@ public class AttachmentStreamConnector {
     private void addAttachmentTo(String attachmentContentId, String filename, InputStream stream) {
         String contentType = "application/octet-stream";
 
-        AttachmentInputStream attachmentInputStream = new AttachmentInputStream(filename, stream, contentType);
-        String revision = connector.getCurrentRevision(attachmentContentId);
-        connector.createAttachment(attachmentContentId, revision, attachmentInputStream);
+        connector.createAttachment(attachmentContentId, filename, stream, contentType);
     }
 
     /**
@@ -263,7 +262,6 @@ public class AttachmentStreamConnector {
      */
     public InputStream getAttachmentPartStream(AttachmentContent attachment, int part) throws SW360Exception {
         assertNotNull(attachment);
-
         return connector.getAttachment(attachment.getId(), getPartFileName(attachment, part));
     }
 

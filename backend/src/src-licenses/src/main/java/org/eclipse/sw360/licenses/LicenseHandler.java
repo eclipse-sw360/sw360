@@ -21,6 +21,9 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.licenses.db.LicenseDatabaseHandler;
 import org.ektorp.http.HttpClient;
+
+import com.cloudant.client.api.CloudantClient;
+
 import org.apache.thrift.TException;
 
 import java.net.MalformedURLException;
@@ -40,10 +43,10 @@ public class LicenseHandler implements LicenseService.Iface {
     LicenseDatabaseHandler handler;
 
     LicenseHandler() throws MalformedURLException {
-        handler = new LicenseDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE);
+        handler = new LicenseDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
     }
 
-    LicenseHandler(Supplier<HttpClient> httpClient, String dbName) throws MalformedURLException {
+    LicenseHandler(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException {
         handler = new LicenseDatabaseHandler(httpClient, dbName);
     }
 

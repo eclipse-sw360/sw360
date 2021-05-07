@@ -11,7 +11,6 @@ package org.eclipse.sw360.datahandler.db;
 
 import com.google.common.collect.Sets;
 
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
@@ -43,7 +42,7 @@ public class AttachmentDatabaseHandlerTest {
         // only need the parameters to call the constructor
         // when this changes, the database has to be created before and deleted
         // afterwards - see e.g. ProjectDatabaseHandlerTest
-        uut = new AttachmentDatabaseHandler(DatabaseSettingsTest.getConfiguredHttpClient(), dbName, attachmentsDbName);
+        uut = new AttachmentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentsDbName);
     }
 
     @Test
