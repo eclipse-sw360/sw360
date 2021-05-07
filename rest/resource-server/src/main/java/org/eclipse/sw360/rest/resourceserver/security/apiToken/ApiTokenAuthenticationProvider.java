@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.CredentialsExpiredException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
@@ -61,6 +62,9 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
         String tokenFromAuthentication = (String) authentication.getCredentials();
         String tokenHash = BCrypt.hashpw(tokenFromAuthentication, API_TOKEN_HASH_SALT);
         User sw360User = getUserFromTokenHash(tokenHash);
+        if (sw360User == null || sw360User.isDeactivated()) {
+            throw new DisabledException("User is deactivated");
+        }
         Optional<RestApiToken> restApiToken = getApiTokenFromUser(tokenHash, sw360User);
 
         if (restApiToken.isPresent()) {

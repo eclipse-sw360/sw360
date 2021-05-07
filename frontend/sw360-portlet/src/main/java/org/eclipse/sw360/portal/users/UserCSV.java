@@ -65,6 +65,42 @@ public class UserCSV {
         return wantsMailNotification;
     }
 
+    public void setGivenname(String givenname) {
+        this.givenname = givenname;
+    }
+
+    public void setLastname(String lastname) {
+        this.lastname = lastname;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public void setDepartment(String department) {
+        this.department = department;
+    }
+
+    public void setGroup(String group) {
+        this.group = group;
+    }
+
+    public void setGid(String gid) {
+        this.gid = gid;
+    }
+
+    public void setMale(boolean isMale) {
+        this.isMale = isMale;
+    }
+
+    public void setHash(String hash) {
+        this.hash = hash;
+    }
+
+    public void setWantsMailNotification(boolean wantsMailNotification) {
+        this.wantsMailNotification = wantsMailNotification;
+    }
+
     public UserCSV(CSVRecord record) {
         givenname = record.get(0);
         lastname = record.get(1);
@@ -77,6 +113,9 @@ public class UserCSV {
         if (record.size() > 8) {
             wantsMailNotification = Boolean.parseBoolean((record.get(8)));
         }
+    }
+
+    public UserCSV() {
     }
 
     public User addLifeRayUser(PortletRequest request) throws PortalException, SystemException {

@@ -14,6 +14,7 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.db.UserRepository;
 import org.eclipse.sw360.datahandler.db.UserSearchHandler;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftValidate;
@@ -25,6 +26,8 @@ import com.cloudant.client.api.CloudantClient;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
@@ -110,5 +113,21 @@ public class UserDatabaseHandler {
 
     public User getByApiToken(String token) {
         return repository.getByApiToken(token);
+    }
+
+    public Set<String> getUserDepartments() {
+        return repository.getUserDepartments();
+    }
+
+    public Set<String> getUserEmails() {
+        return repository.getUserEmails();
+    }
+
+    public List<User> search(String text, Map<String, Set<String>> subQueryRestrictions) {
+        return userSearchHandler.search(text, subQueryRestrictions);
+    }
+
+    public Map<PaginationData, List<User>> getUsersWithPagination(PaginationData pageData) {
+        return repository.getUsersWithPagination(pageData);
     }
 }

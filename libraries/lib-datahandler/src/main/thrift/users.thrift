@@ -13,6 +13,7 @@ namespace java org.eclipse.sw360.datahandler.thrift.users
 namespace php sw360.thrift.users
 
 typedef sw360.RequestStatus RequestStatus
+typedef sw360.PaginationData PaginationData
 
 enum UserGroup {
     USER = 0,
@@ -59,7 +60,8 @@ struct User {
     20: optional list<RestApiToken> restApiTokens,
     21: optional map<string, bool> myProjectsPreferenceSelection,
     22: optional map<string, set<UserGroup>> secondaryDepartmentsAndRoles,
-    23: optional list<string> primaryRoles
+    23: optional list<string> primaryRoles,
+    24: optional bool deactivated
 }
 
 struct RestApiToken {
@@ -122,4 +124,23 @@ service UserService {
      **/
     string getDepartmentByEmail(1:string email);
 
+    /**
+     * get list of users with pagination
+     **/
+    map<PaginationData, list<User>> getUsersWithPagination(1: User user, 2: PaginationData pageData);
+
+    /**
+     * search users in database
+     **/
+    list<User> refineSearch(1: string text, 2: map<string, set<string>> subQueryRestrictions);
+
+    /**
+     * get departments of all user
+     **/
+    set<string> getUserDepartments();
+
+    /**
+     * get email of all user
+     **/
+    set<string> getUserEmails();
 }

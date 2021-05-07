@@ -48,6 +48,9 @@ public class ErrorMessages {
     public static final String DOCUMENT_NOT_AVAILABLE = "The requested document is not available.";
     public static final String LICENSE_SHORTNAME_TAKEN = "License shortname is already taken.";
     public static final String UPDATE_FAILED_SANITY_CHECK = "Document update has been rejected; cannot delete all linked releases or projects at once.";
+    public static final String ERROR_USER_UPDATE = "Error while updating user information. It could be new user email or global id is used by another user";
+    public static final String ERROR_USER_CREATE = "Error while creating user record. It could be new user email or global id is used by another user";
+    public static final String ERROR_USER_ACTIVATE_DEACTIVATE = "Error while activating or deactivating user record.";
     public static final String REST_API_TOKEN_ERROR = "Token could not generated/deleted. Please verify if the service is available.";
     public static final String REST_API_TOKEN_NAME_DUPLICATE = "Token name already exists.";
     public static final String REST_API_EXPIRE_DATE_NOT_VALID = "Your selected token expiration date is not valid.";
@@ -99,6 +102,9 @@ public class ErrorMessages {
             .add(ERROR_GETTING_CLEARING_REQUEST)
             .add(LICENSE_TYPE_DUPLICATE)
             .add(LICENSE_TYPE_ACCESS_DENIED)
+            .add(ERROR_USER_CREATE)
+            .add(ERROR_USER_UPDATE)
+            .add(ERROR_USER_ACTIVATE_DEACTIVATE)
             .build();
 
     private ErrorMessages() {

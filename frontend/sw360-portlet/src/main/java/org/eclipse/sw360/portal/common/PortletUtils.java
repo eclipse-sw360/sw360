@@ -420,6 +420,23 @@ public class PortletUtils {
         return getMapWithJoinedValueFromRequest(request, PortalConstants.EXTERNAL_ID_KEY, PortalConstants.EXTERNAL_ID_VALUE);
     }
 
+    public static Map<String, Set<UserGroup>> getSecondaryDepartmentAndRolesMapFromRequest(PortletRequest request, String primaryDepartment) {
+        Map<String, Set<String>> customMap = getCustomMapFromRequest(request, PortalConstants.USER_SECONDARY_GROUP_KEY,
+                PortalConstants.USER_SECONDARY_GROUP_VALUES);
+        if (!CommonUtils.isNullOrEmptyMap(customMap)) {
+            customMap.remove(primaryDepartment);
+            return customMap.entrySet().stream().collect(Collectors.toMap(entry -> entry.getKey(), entry -> {
+                Set<String> userGroups = entry.getValue();
+                if (CommonUtils.isNotEmpty(userGroups)) {
+                    return userGroups.stream().map(grp -> UserGroup.valueOf(grp)).collect(Collectors.toSet());
+                }
+                return new HashSet<>();
+            }));
+        }
+
+        return null;
+    }
+
     public static Map<String,String> getAdditionalDataMapFromRequest(PortletRequest request) {
         return getMapFromRequest(request, PortalConstants.ADDITIONAL_DATA_KEY, PortalConstants.ADDITIONAL_DATA_VALUE);
     }

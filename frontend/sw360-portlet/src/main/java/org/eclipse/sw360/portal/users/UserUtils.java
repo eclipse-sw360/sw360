@@ -101,7 +101,7 @@ public class UserUtils {
     }
 
     @NotNull
-    private static Set<String> prepareFormerEmailAddresses(org.eclipse.sw360.datahandler.thrift.users.User thriftUser, String email) {
+    public static Set<String> prepareFormerEmailAddresses(org.eclipse.sw360.datahandler.thrift.users.User thriftUser, String email) {
         Set<String> formerEmailAddresses = nullToEmptySet(thriftUser.getFormerEmailAddresses()).stream()
                 .filter(e -> !e.equals(email)) // make sure the current email is not in the former addresses
                 .collect(Collectors.toCollection(HashSet::new));

@@ -59,9 +59,8 @@
                     <hr/>
                     <form id="createClearingRequestForm">
                         <div class="form-group">
-                            <label for="clearingTeamEmail" class="mandatory"><liferay-ui:message key="please.enter.the.clearing.team.email.id" />:</label>
-                            <input id="clearingTeamEmail" type="email" class="form-control" data-name="comment" rows="4" placeholder="<liferay-ui:message key='enter.clearing.team.email' />" required/>
-                            <div class="invalid-feedback">
+                            <sw360:DisplayUserEdit id="clearingTeamEmail" email="" description="please.enter.the.clearing.team.email.id" multiUsers="false"/>
+                            <div class="invalid-feedback" id="clearingTeamEmailErrorMsg">
                                 <liferay-ui:message key="email.should.be.in.valid.format" />
                             </div>
                         </div>
@@ -157,6 +156,8 @@
 </div>
 
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
+<jsp:include page="/html/utils/includes/searchAndSelectUsers.jsp" />
+<jsp:include page="/html/utils/includes/searchUsers.jsp" />
 <script>
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;
@@ -285,10 +286,14 @@
                 let selectedDate = $("#requestedClearingDate").val(),
                     emailId = $("#clearingTeamEmail").val(),
                     isCritical = $("#priority:checked").val(),
-                    $form = $('#createClearingRequestForm');
+                    $form = $('#createClearingRequestForm'),
+                    isEmailValid = validation.isValidEmail(emailId);
                 $form.addClass('was-validated');
-                if (!validation.isValidEmail(emailId)) {
-                    $("#clearingTeamEmail").addClass("is-invalid");
+                if (isEmailValid) {
+                    $("#clearingTeamEmailErrorMsg").hide();
+                }
+                if (!isEmailValid) {
+                    $("#clearingTeamEmailErrorMsg").show();
                     callback();
                 } else if ((isCritical && !validation.isValidDate(selectedDate, 0)) || (!isCritical && !validation.isValidDate(selectedDate, pcdLimit))) {
                     $("#requestedClearingDate").addClass("is-invalid");
@@ -303,6 +308,7 @@
                 $('#createClearingRequestDialog #createClearingRequestForm').removeClass('was-validated');
                 $("#requestedClearingDate").removeClass("is-invalid");
                 $("#clearingTeamEmail").removeClass("is-invalid");
+                $("#clearingTeamEmail").val("");
             });
         }
 
@@ -365,6 +371,14 @@
             return portletUrl
                 .replace('<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>', page)
                 .replace('<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>', id);
+        }
+        
+        let clearingTeamEmailEditable = $("#clearingTeamEmail");
+        if (clearingTeamEmailEditable) {
+            clearingTeamEmailEditable.parents("div:eq(0)").find("label:eq(0)").addClass("mandatory");
+            $("#clearingTeamEmailDisplay").click(function(){
+                $("#clearingTeamEmailErrorMsg").hide();
+            });
         }
         });
     });

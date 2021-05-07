@@ -45,7 +45,7 @@ public class DisplayMapOfSecondaryGroupAndRoles extends SimpleTagSupport {
         }
     }
 
-    private static String getMapAsString(Map<String, Set<UserGroup>> map) {
+    public static String getMapAsString(Map<String, Set<UserGroup>> map) {
         StringBuilder sb = new StringBuilder();
         sb.append("<ul class=\"mapDisplayRootItem\">");
         map.forEach((entryKey, entryValue) -> sb.append(getGroupAndRolesString(entryKey, entryValue)));

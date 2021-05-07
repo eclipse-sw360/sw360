@@ -19,13 +19,13 @@ import java.util.function.Consumer;
 
 import javax.servlet.http.HttpServletRequest;
 
-class HttpServletRequestAdapter implements RequestAdapter {
+public class HttpServletRequestAdapter implements RequestAdapter {
     // this constant is supposed to be defined in WebKeys according to docs found online, but it's not
     private static final String COMPANY_ID = "COMPANY_ID";
 
     private HttpServletRequest request;
 
-    HttpServletRequestAdapter(HttpServletRequest request) {
+    public HttpServletRequestAdapter(HttpServletRequest request) {
         this.request = request;
     }
 
