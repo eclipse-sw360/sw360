@@ -296,4 +296,9 @@ service AttachmentService {
      * Returns all attachments usages by release id
      */
     list<AttachmentUsage> getAttachmentUsagesByReleaseId(1: string releaseId);
+
+    /**
+     * calls deleteAttachmentAndDirectory for identifying the file and delete
+     */
+    RequestStatus deleteOldAttachmentFromFileSystem();
 }

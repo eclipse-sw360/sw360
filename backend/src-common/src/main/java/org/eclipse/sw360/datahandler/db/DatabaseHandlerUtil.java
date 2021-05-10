@@ -9,16 +9,24 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
@@ -57,6 +65,7 @@ import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ProjectRe
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.RepositoryMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.VendorMixin;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
@@ -101,6 +110,7 @@ public class DatabaseHandlerUtil {
     private static final String ATTACHMENT_STORE_FILE_SYSTEM_LOCATION;
     private static final String ATTACHMENT_STORE_FILE_SYSTEM_PERMISSION;
     private static ExecutorService ATTACHMENT_FILE_SYSTEM_STORE_THREAD_POOL = Executors.newFixedThreadPool(5);
+    private static final String ATTACHMENT_DELETE_NO_OF_DAYS;
     static {
         Properties props = CommonUtils.loadProperties(DatabaseSettings.class, PROPERTIES_FILE_PATH);
         ATTACHMENT_STORE_FILE_SYSTEM_LOCATION = props.getProperty("attachment.store.file.system.location",
@@ -108,6 +118,8 @@ public class DatabaseHandlerUtil {
         ATTACHMENT_STORE_FILE_SYSTEM_PERMISSION = props.getProperty("attachment.store.file.system.permission",
                 "rwx------");
         IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED = Boolean.parseBoolean(props.getProperty("enable.attachment.store.to.file.system", "false"));
+        ATTACHMENT_DELETE_NO_OF_DAYS = props.getProperty("attachemnt.delete.no.of.days",
+                "30");
     }
 
     public DatabaseHandlerUtil(DatabaseConnectorCloudant db) {
@@ -794,5 +806,48 @@ public class DatabaseHandlerUtil {
                             attachmentConnector.readAttachmentStream(attachmentContent), userEmail, documentId,
                             attachmentContentId, att.getFilename());
                 });
+    }
+
+    public static RequestStatus deleteOldAttachmentFromFileSystem() {
+        int noOfDays = Integer.parseInt(ATTACHMENT_DELETE_NO_OF_DAYS);
+        RequestStatus status = null;
+        LocalDate todayDate = LocalDate.now();
+        LocalDate thresholdDateForAttachmentDelete = todayDate.minusDays(noOfDays);
+        Date thresholdDate = Date.from(thresholdDateForAttachmentDelete.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        try {
+            deleteAttachmentAndDirectory(ATTACHMENT_STORE_FILE_SYSTEM_LOCATION, thresholdDate);
+            status = RequestStatus.SUCCESS;
+        } catch (IOException e) {
+            log.error("Unable to delete attachment. ", e);
+            status = RequestStatus.FAILURE;
+        }
+        return status;
+    }
+
+    public static void deleteAttachmentAndDirectory(String directoryFilePath, Date thresholdDate) throws IOException {
+        Path directory = Paths.get(directoryFilePath);
+        if (Files.exists(directory)) {
+            Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path path, BasicFileAttributes basicFileAttributes) throws IOException {
+                    File file = path.toFile();
+                    long fileLastModifiedDate = file.lastModified();
+                    Date modifieddate = new Date(fileLastModifiedDate);
+                    if (thresholdDate.after(modifieddate)) {
+                        Files.delete(path);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+                @Override
+                public FileVisitResult postVisitDirectory(Path directory, IOException ioException) throws IOException {
+                    DirectoryStream<Path> stream = Files.newDirectoryStream(directory);
+                    boolean isFolderEmpty = !stream.iterator().hasNext();
+                    if (isFolderEmpty) {
+                        Files.delete(directory);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        }
     }
 }

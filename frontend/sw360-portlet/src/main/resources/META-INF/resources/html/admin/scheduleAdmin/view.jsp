@@ -31,6 +31,18 @@
 <portlet:actionURL var="unscheduleAllServicesURL" name="unscheduleAllServices">
 </portlet:actionURL>
 
+<portlet:actionURL var="scheduleDeleteAttachmentURL" name="scheduleDeleteAttachment">
+</portlet:actionURL>
+
+<portlet:actionURL var="unscheduleDeleteAttachmentURL" name="unscheduleDeleteAttachment">
+</portlet:actionURL>
+
+<portlet:actionURL var="triggerDeleteAttachmentURL" name="triggerDeleteAttachment">
+</portlet:actionURL>
+
+<portlet:actionURL var="triggerCveSearchURL" name="triggerCveSearch">
+</portlet:actionURL>
+
 <div class="container">
     <div class="row portlet-toolbar">
         <div class="col-auto">
@@ -66,6 +78,42 @@
                 <div class="form-group">
                     <button type="button" class="btn btn-primary" onclick="window.location.href='<%=scheduleCvesearchURL%>'" <core_rt:if test="${cveSearchIsScheduled}">disabled</core_rt:if>><liferay-ui:message key="schedule.cve.service" /></button>
                     <button type="button" class="btn btn-light" onclick="window.location.href='<%=unscheduleCvesearchURL%>'" <core_rt:if test="${not cveSearchIsScheduled}">disabled</core_rt:if>><liferay-ui:message key="cancel.cve.service" /></button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-6">
+            <h4><liferay-ui:message key="attachment.deletion.from.local.fs" /></h4>
+             <table class="table bordered-table">
+                <tr>
+                    <th><liferay-ui:message key="schedule.offset" /></th>
+                     <td><sw360:out value="${deleteAttachmentOffset} (hh:mm:ss)" /></td>
+                </tr>
+                <tr>
+                    <th><liferay-ui:message key="interval" /></th>
+                    <td><sw360:out value="${deleteAttachmentInterval} (hh:mm:ss)" /></td>
+                </tr>
+                <tr>
+                    <th><liferay-ui:message key="next.synchronization" /></th>
+                     <td><sw360:out value="${deleteAttachmentNextSync}"/></td>
+                </tr>
+            </table>
+            <form class="form mt-3">
+                <div class="form-group">
+                    <button type="button" class="btn btn-primary" onclick="window.location.href='<%=scheduleDeleteAttachmentURL%>'"<core_rt:if test="${deleteAttachmentIsScheduled}">disabled</core_rt:if>><liferay-ui:message key="schedule.attachment.deletion.from.local.fs" /></button>
+                    <button type="button" class="btn btn-light" onclick="window.location.href='<%=unscheduleDeleteAttachmentURL%>'"<core_rt:if test="${not deleteAttachmentIsScheduled}">disabled</core_rt:if>><liferay-ui:message key="cancel.scheduled.attachment.deletion.from.local.fs" /></button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="row">
+        <div>
+            <h4><liferay-ui:message key="manual.triggering.of.scheduled.services" /></h4>
+            <form class="form mt-3">
+                <div class="form-group">
+                    <button type="button" class="btn btn-primary" onclick="window.location.href='<%=triggerDeleteAttachmentURL%>'"><liferay-ui:message key="attachment.deletion.from.local.fs" /></button>
+                    <button type="button" class="btn btn-primary" onclick="window.location.href='<%=triggerCveSearchURL%>'"><liferay-ui:message key="cve.search" /></button>
                 </div>
             </form>
         </div>

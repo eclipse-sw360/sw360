@@ -352,6 +352,11 @@ public class PortalConstants {
     public static final String CVESEARCH_INTERVAL = "cvesearchInterval";
     public static final String CVESEARCH_NEXT_SYNC = "cvesearchNextSync";
 
+    public static final String DELETE_ATTACHMENT_IS_SCHEDULED = "deleteAttachmentIsScheduled";
+    public static final String DELETE_ATTACHMENT_OFFSET = "deleteAttachmentOffset";
+    public static final String DELETE_ATTACHMENT_INTERVAL = "deleteAttachmentInterval";
+    public static final String DELETE_ATTACHMENT_NEXT_SYNC = "deleteAttachmentNextSync";
+
     //! Specialized keys for licenseInfo
     public static final String LICENSE_INFO_OUTPUT_FORMATS = "licenseInfoOutputFormats";
     public static final String LICENSE_INFO_SELECTED_OUTPUT_FORMAT = "licenseInfoSelectedOutputFormat";

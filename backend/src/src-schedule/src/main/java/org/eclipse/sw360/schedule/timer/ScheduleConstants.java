@@ -36,7 +36,10 @@ public class ScheduleConstants {
     public static final String AUTOSTART_PROPERTY_NAME = "autostart";
     public static final String CVESEARCH_OFFSET_DEFAULT  = 0 + "" ; // default 00:00 am, in seconds
     public static final String CVESEARCH_INTERVAL_DEFAULT  = (24*60*60)+"" ; // default 24h, in seconds
-
+    public static final String DELETE_ATTACHMENT_OFFSET_DEFAULT  = "0"; // default 00:00 am, in seconds
+    public static final String DELETE_ATTACHMENT_INTERVAL_DEFAULT  = (24*60*60) + "" ; // default 24h, in seconds
+    public static final String DELETE_ATTACHMENT_OFFSET_PROPERTY_NAME = "schedule.delete.attachment.firstOffset.seconds";
+    public static final String DELETE_ATTACHMENT_INTERVAL_PROPERTY_NAME = "schedule.delete.attachment.interval.seconds";
 
     // scheduler properties
     public static final ConcurrentHashMap<String, Integer> SYNC_FIRST_RUN_OFFSET_SEC = new ConcurrentHashMap<>();
@@ -69,8 +72,29 @@ public class ScheduleConstants {
             invalidConfiguredServices.add(ThriftClients.CVESEARCH_SERVICE);
         }
 
+        if(! props.containsKey(DELETE_ATTACHMENT_OFFSET_PROPERTY_NAME)){
+            log.debug("Property " + DELETE_ATTACHMENT_OFFSET_PROPERTY_NAME + " not set. Using default value.");
+        }
+        String deleteAttachmentOffset  = props.getProperty(DELETE_ATTACHMENT_OFFSET_PROPERTY_NAME, DELETE_ATTACHMENT_OFFSET_DEFAULT);
+        try {
+            SYNC_FIRST_RUN_OFFSET_SEC.put(ThriftClients.DELETE_ATTACHMENT_SERVICE, Integer.parseInt(deleteAttachmentOffset));
+        } catch (NumberFormatException nfe){
+            log.error("Property " + DELETE_ATTACHMENT_OFFSET_PROPERTY_NAME + " is not an integer.");
+            invalidConfiguredServices.add(ThriftClients.DELETE_ATTACHMENT_SERVICE);
+        }
+
+        if(! props.containsKey(DELETE_ATTACHMENT_INTERVAL_PROPERTY_NAME)){
+            log.debug("Property "+ DELETE_ATTACHMENT_INTERVAL_PROPERTY_NAME + " not set. Using default value.");
+        }
+        String deleteAttachmentInterval  = props.getProperty(DELETE_ATTACHMENT_INTERVAL_PROPERTY_NAME, DELETE_ATTACHMENT_INTERVAL_DEFAULT);
+        try {
+            SYNC_INTERVAL_SEC.put(ThriftClients.DELETE_ATTACHMENT_SERVICE, Integer.parseInt(deleteAttachmentInterval));
+        } catch (NumberFormatException nfe){
+            log.error("Property " + DELETE_ATTACHMENT_INTERVAL_PROPERTY_NAME + " is not an integer.");
+            invalidConfiguredServices.add(ThriftClients.DELETE_ATTACHMENT_SERVICE);
+        }
+
         String autostartServicesString = props.getProperty(AUTOSTART_PROPERTY_NAME, "");
         autostartServices = autostartServicesString.split(",");
     }
-
 }
