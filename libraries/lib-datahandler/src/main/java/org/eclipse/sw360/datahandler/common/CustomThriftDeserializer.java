@@ -26,6 +26,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.internal.LinkedTreeMap;
 
@@ -56,6 +57,14 @@ public class CustomThriftDeserializer implements JsonDeserializer<TBase> {
     @Override
     public TBase deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
             throws JsonParseException {
+        if (json.isJsonObject()) {
+            JsonObject jObj = json.getAsJsonObject();
+            if (jObj.has("issetBitfield")) {
+                jObj.add("__isset_bitfield", jObj.get("issetBitfield"));
+            }
+            json = jObj.getAsJsonObject();
+        }
+
         Gson gson = new Gson();
         if (typeOfT.getTypeName().equals("org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage")) {
             AttachmentUsage tbase = gson.fromJson(json, typeOfT);

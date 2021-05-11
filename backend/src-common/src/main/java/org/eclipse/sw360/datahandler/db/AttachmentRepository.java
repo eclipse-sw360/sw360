@@ -14,8 +14,6 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantCl
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 
 import com.cloudant.client.api.model.DesignDocument.MapReduce;
-import com.cloudant.client.api.views.Key;
-import com.cloudant.client.api.views.UnpaginatedRequestBuilder;
 import com.cloudant.client.api.views.ViewRequestBuilder;
 
 import java.util.HashMap;
@@ -42,13 +40,11 @@ public class AttachmentRepository extends DatabaseRepositoryCloudantClient<Attac
 
     public List<Attachment> getAttachmentsByIds(Set<String> ids) {
         ViewRequestBuilder viewQuery = getConnector().createQuery(Attachment.class, "byid");
-        UnpaginatedRequestBuilder req = viewQuery.newRequest(Key.Type.STRING, Object.class).includeDocs(false).keys((String[]) ids.toArray());
-        return queryView(req);
+        return queryViewForAttchmnt(buildRequest(viewQuery, ids));
     }
 
     public List<Attachment> getAttachmentsBySha1s(Set<String> sha1s) {
         ViewRequestBuilder viewQuery = getConnector().createQuery(Attachment.class, "bysha1");
-        UnpaginatedRequestBuilder req = viewQuery.newRequest(Key.Type.STRING, Object.class).includeDocs(false).keys((String[]) sha1s.toArray());
-        return queryView(req);
+        return queryViewForAttchmnt(buildRequest(viewQuery, sha1s));
     }
 }
