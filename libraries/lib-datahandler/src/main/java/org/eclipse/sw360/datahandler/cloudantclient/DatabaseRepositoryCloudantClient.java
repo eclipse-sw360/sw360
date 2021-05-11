@@ -20,6 +20,8 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.datahandler.thrift.Source;
+import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 
 import com.cloudant.client.api.DesignDocumentManager;
 import com.cloudant.client.api.model.DesignDocument;
@@ -29,10 +31,12 @@ import com.cloudant.client.api.views.Key;
 import com.cloudant.client.api.views.Key.ComplexKey;
 import com.cloudant.client.api.views.MultipleRequestBuilder;
 import com.cloudant.client.api.views.UnpaginatedRequestBuilder;
+import com.cloudant.client.api.views.ViewRequest;
 import com.cloudant.client.api.views.ViewRequestBuilder;
 import com.cloudant.client.api.views.ViewResponse;
 import com.cloudant.client.org.lightcouch.NoDocumentException;
 import com.google.common.collect.Lists;
+import com.google.gson.Gson;
 
 /**
  * Access the database in a CRUD manner, for a generic class
@@ -75,9 +79,13 @@ public class DatabaseRepositoryCloudantClient<T> {
     }
 
     public List<T> queryByIds(String viewName, Collection<String> ids) {
+        String[] idStrs = new String[ids.size()];
+        int index = 0;
+        for (String str : ids)
+            idStrs[index++] = str;
         ViewRequestBuilder query = connector.createQuery(type, viewName);
         UnpaginatedRequestBuilder reqBuilder = query.newRequest(Key.Type.STRING, Object.class).includeDocs(true)
-                .keys((String[]) ids.toArray());
+                .keys(idStrs);
         return queryView(reqBuilder);
     }
 
@@ -234,6 +242,38 @@ public class DatabaseRepositoryCloudantClient<T> {
         return docList;
     }
 
+    public List<Source> queryViewForSource(ViewRequest req) {
+        List<Source> sources = Lists.newArrayList();
+        Gson gson = new Gson();
+        try {
+            ViewResponse<String, Object> response = req.getResponse();
+            for (ViewResponse.Row row : response.getRows()) {
+                Map<String, String> srcMap = gson.fromJson(new Gson().toJson(row.getValue()), Map.class);
+                Source._Fields type = Source._Fields.findByName(srcMap.keySet().iterator().next());
+                Source source = new Source(type, srcMap.values().iterator().next().toString());
+                sources.add(source);
+            }
+        } catch (NoDocumentException | IOException e) {
+            log.warn("Error in getting source", e);
+        }
+        return sources;
+    }
+
+    public List<Attachment> queryViewForAttchmnt(ViewRequest req) {
+        List<Attachment> attchmnts = Lists.newArrayList();
+        Gson gson = new Gson();
+        try {
+            ViewResponse<String, Object> response = req.getResponse();
+            for (ViewResponse.Row row : response.getRows()) {
+                Attachment value = gson.fromJson(new Gson().toJson(row.getValue()), Attachment.class);
+                attchmnts.add(value);
+            }
+        } catch (NoDocumentException | IOException e) {
+            log.warn("Error in getting attachment", e);
+        }
+        return attchmnts;
+    }
+
     public ViewResponse queryQueryResponse(UnpaginatedRequestBuilder req) {
         ViewResponse viewResp = null;
         try {
@@ -276,6 +316,14 @@ public class DatabaseRepositoryCloudantClient<T> {
             log.error("Error executing query view with complex keys", e);
         }
         return responses;
+    }
+
+    public ViewRequest buildRequest(ViewRequestBuilder viewQuery, Collection<String> ids) {
+        String[] idStrs = new String[ids.size()];
+        int index = 0;
+        for (String str : ids)
+            idStrs[index++] = str;
+        return viewQuery.newRequest(Key.Type.STRING, Object.class).includeDocs(false).keys(idStrs).build();
     }
 
     public boolean add(T doc) {

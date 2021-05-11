@@ -14,8 +14,6 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantCl
 import org.eclipse.sw360.datahandler.thrift.Source;
 
 import com.cloudant.client.api.model.DesignDocument.MapReduce;
-import com.cloudant.client.api.views.Key;
-import com.cloudant.client.api.views.UnpaginatedRequestBuilder;
 import com.cloudant.client.api.views.ViewRequestBuilder;
 
 import java.util.HashMap;
@@ -40,7 +38,6 @@ public class AttachmentOwnerRepository extends DatabaseRepositoryCloudantClient<
 
     public List<Source> getOwnersByIds(Set<String> ids) {
         ViewRequestBuilder viewQuery = getConnector().createQuery(Source.class, "attachmentOwner");
-        UnpaginatedRequestBuilder req = viewQuery.newRequest(Key.Type.STRING, Object.class).includeDocs(false).keys((String[]) ids.toArray());
-        return queryView(req);
+        return queryViewForSource(buildRequest(viewQuery, ids));
     }
 }
