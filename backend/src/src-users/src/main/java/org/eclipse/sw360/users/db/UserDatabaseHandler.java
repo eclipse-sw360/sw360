@@ -49,7 +49,7 @@ public class UserDatabaseHandler {
         db = new DatabaseConnectorCloudant(httpClient, dbName);
         dbConnector = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), dbName);
         repository = new UserRepository(db);
-        userSearchHandler = new UserSearchHandler(dbConnector);
+        userSearchHandler = new UserSearchHandler(dbConnector, httpClient);
     }
 
     public UserDatabaseHandler(Supplier<CloudantClient> httpClient,Supplier<HttpClient> client, String dbName) throws IOException {
@@ -57,7 +57,7 @@ public class UserDatabaseHandler {
         db = new DatabaseConnectorCloudant(httpClient, dbName);
         dbConnector = new DatabaseConnector(client, dbName);
         repository = new UserRepository(db);
-        userSearchHandler = new UserSearchHandler(dbConnector);
+        userSearchHandler = new UserSearchHandler(dbConnector, httpClient);
     }
 
     public User getByEmail(String email) {

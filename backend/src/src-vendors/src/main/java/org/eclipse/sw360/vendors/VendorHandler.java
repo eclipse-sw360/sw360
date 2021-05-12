@@ -38,14 +38,14 @@ public class VendorHandler implements VendorService.Iface {
         DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
         DatabaseConnector databaseConnectorNative = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE);
         vendorDatabaseHandler = new VendorDatabaseHandler(databaseConnector);
-        vendorSearchHandler = new VendorSearchHandler(databaseConnectorNative);     // Remove release id from component
+        vendorSearchHandler = new VendorSearchHandler(databaseConnectorNative, DatabaseSettings.getConfiguredClient());     // Remove release id from component
     }
 
     public VendorHandler(Supplier<CloudantClient> httpClient,Supplier<HttpClient> clientlient, String dbName) throws IOException {
         DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(httpClient, dbName);
         DatabaseConnector databaseConnectorNative = new DatabaseConnector(clientlient, DatabaseSettings.COUCH_DB_DATABASE);
         vendorDatabaseHandler = new VendorDatabaseHandler(databaseConnector);
-        vendorSearchHandler = new VendorSearchHandler(databaseConnectorNative);     // Remove release id from component
+        vendorSearchHandler = new VendorSearchHandler(databaseConnectorNative, httpClient);     // Remove release id from component
     }
 
     @Override

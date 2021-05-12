@@ -20,12 +20,12 @@ import java.net.URL;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.ektorp.DbAccessException;
 import org.ektorp.http.HttpClient;
 import org.ektorp.http.URI;
 import org.ektorp.support.DesignDocument;
@@ -35,6 +35,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import com.cloudant.client.api.CloudantClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
@@ -54,7 +56,7 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
     private static final Joiner AND = Joiner.on(" AND ");
     private static final Joiner OR = Joiner.on(" OR ");
 
-    private final DatabaseConnector connector;
+    private final DatabaseConnectorCloudant connector;
 
     private static final List<String> LUCENE_SPECIAL_CHARACTERS = Arrays.asList("[\\\\\\+\\-\\!\\~\\*\\?\\\"\\^\\:\\(\\)\\{\\}\\[\\]]", "\\&\\&", "\\|\\|");
     private String dbNameForLuceneSearch;
@@ -66,18 +68,19 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
     /**
      * URL/DbName constructor
      */
-    public LuceneAwareDatabaseConnector(Supplier<HttpClient> httpClient, String dbName) throws IOException {
-        this(new DatabaseConnector(httpClient, dbName));
+
+    public LuceneAwareDatabaseConnector(Supplier<HttpClient> httpClient, Supplier<CloudantClient> cClient, String dbName) throws IOException {
+        this(new DatabaseConnector(httpClient, dbName), cClient);
     }
 
     /**
      * Constructor using a Database connector
      */
-    public LuceneAwareDatabaseConnector(DatabaseConnector connector) throws IOException {
+    public LuceneAwareDatabaseConnector(DatabaseConnector connector, Supplier<CloudantClient> cClient) throws IOException {
         super(connector.getDbName(), connector.getInstance());
-        this.connector = connector;
         this.dbNameForLuceneSearch = connector.getDbName();
         setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
+        this.connector = new DatabaseConnectorCloudant(cClient, connector.getDbName());
     }
 
     public boolean addView(LuceneSearchView function) {

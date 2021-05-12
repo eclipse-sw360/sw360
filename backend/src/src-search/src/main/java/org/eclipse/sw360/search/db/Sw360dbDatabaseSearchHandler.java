@@ -36,7 +36,7 @@ public class Sw360dbDatabaseSearchHandler extends AbstractDatabaseSearchHandler 
     }
 
     public Sw360dbDatabaseSearchHandler(Supplier<HttpClient> client, Supplier<CloudantClient> cclient, String dbName) throws IOException {
-        super(client, dbName);
+        super(client, cclient, dbName);
         projectRepository = new ProjectRepository(
                 new DatabaseConnectorCloudant(cclient, dbName));
     }
