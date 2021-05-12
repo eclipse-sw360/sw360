@@ -84,7 +84,7 @@ public class SW360Constants {
                     .put(TYPE_VENDOR, "fullname")
                     .put(TYPE_COMPONENT, "name")
                     .put(TYPE_RELEASE, "name version")
-                    .put(TYPE_PROJECT, "name")
+                    .put(TYPE_PROJECT, "name version")
                     .build();
 
     public static final Collection<AttachmentType> LICENSE_INFO_ATTACHMENT_TYPES = Arrays.asList(AttachmentType.COMPONENT_LICENSE_INFO_XML, AttachmentType.COMPONENT_LICENSE_INFO_COMBINED);
