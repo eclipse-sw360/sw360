@@ -28,8 +28,6 @@ import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projects.UsedReleaseRelations;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.ektorp.http.HttpClient;
 
@@ -60,17 +58,17 @@ public class ProjectHandler implements ProjectService.Iface {
 
     ProjectHandler() throws IOException {
         handler = new ProjectDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
-        searchHandler = new ProjectSearchHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE);
+        searchHandler = new ProjectSearchHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
     }
 
     ProjectHandler(Supplier<CloudantClient> httpClient, String dbName, String attchmntDbName) throws IOException {
         handler = new ProjectDatabaseHandler(httpClient, dbName, attchmntDbName);
-        searchHandler = new ProjectSearchHandler(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        searchHandler = new ProjectSearchHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), dbName);
     }
 
     ProjectHandler(Supplier<CloudantClient> cClient,Supplier<HttpClient> hClient, String dbName, String changeLogsDbName, String attchmntDbName) throws IOException {
         handler = new ProjectDatabaseHandler(cClient, dbName, changeLogsDbName, attchmntDbName);
-        searchHandler = new ProjectSearchHandler(hClient, dbName);
+        searchHandler = new ProjectSearchHandler(hClient, cClient, dbName);
     }
 
     /////////////////////

@@ -16,6 +16,8 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.ektorp.http.HttpClient;
 
+import com.cloudant.client.api.CloudantClient;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -79,8 +81,8 @@ public class ProjectSearchHandler {
 
     private final LuceneAwareDatabaseConnector connector;
 
-    public ProjectSearchHandler(Supplier<HttpClient> httpClient, String dbName) throws IOException {
-        connector = new LuceneAwareDatabaseConnector(httpClient, dbName);
+    public ProjectSearchHandler(Supplier<HttpClient> httpClient, Supplier<CloudantClient> cCLient, String dbName) throws IOException {
+        connector = new LuceneAwareDatabaseConnector(httpClient, cCLient, dbName);
         connector.addView(luceneSearchView);
         connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
     }

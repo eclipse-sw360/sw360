@@ -14,6 +14,8 @@ import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneSearchView;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.ektorp.http.HttpClient;
 
+import com.cloudant.client.api.CloudantClient;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.function.Supplier;
@@ -41,8 +43,8 @@ public class ReleaseSearchHandler {
 
     private final LuceneAwareDatabaseConnector connector;
 
-    public ReleaseSearchHandler(Supplier<HttpClient> httpClient, String dbName) throws IOException {
-        connector = new LuceneAwareDatabaseConnector(httpClient, dbName);
+    public ReleaseSearchHandler(Supplier<HttpClient> httpClient, Supplier<CloudantClient> cClient, String dbName) throws IOException {
+        connector = new LuceneAwareDatabaseConnector(httpClient, cClient, dbName);
         connector.addView(luceneSearchView);
     }
 

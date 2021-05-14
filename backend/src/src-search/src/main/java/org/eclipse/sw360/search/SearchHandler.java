@@ -49,7 +49,7 @@ public class SearchHandler implements SearchService.Iface {
 
     public SearchHandler(Supplier<HttpClient> hclient, Supplier<CloudantClient> cclient, String dbName) throws IOException {
         dbSw360db = new Sw360dbDatabaseSearchHandler(hclient, cclient, dbName);
-        dbSw360users = new Sw360usersDatabaseSearchHandler(hclient, dbName);
+        dbSw360users = new Sw360usersDatabaseSearchHandler(hclient, cclient, dbName);
     }
 
     @Override

@@ -14,8 +14,11 @@ import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneSearchView;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 
+import com.cloudant.client.api.CloudantClient;
+
 import java.io.IOException;
 import java.util.List;
+import java.util.function.Supplier;
 
 import static org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector.prepareWildcardQuery;
 
@@ -41,9 +44,9 @@ public class VendorSearchHandler {
 
     private final LuceneAwareDatabaseConnector connector;
 
-    public VendorSearchHandler(DatabaseConnector databaseConnector) throws IOException {
+    public VendorSearchHandler(DatabaseConnector databaseConnector, Supplier<CloudantClient> cClient) throws IOException {
         // Creates the database connector and adds the lucene search view
-        connector = new LuceneAwareDatabaseConnector(databaseConnector);
+        connector = new LuceneAwareDatabaseConnector(databaseConnector, cClient);
         connector.addView(luceneSearchView);
     }
 

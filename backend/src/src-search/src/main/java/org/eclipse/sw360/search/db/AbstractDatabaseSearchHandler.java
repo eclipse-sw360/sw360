@@ -10,6 +10,7 @@
  */
 package org.eclipse.sw360.search.db;
 
+import com.cloudant.client.api.CloudantClient;
 import com.github.ldriscoll.ektorplucene.LuceneResult;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
@@ -62,14 +63,14 @@ public abstract class AbstractDatabaseSearchHandler {
 
     public AbstractDatabaseSearchHandler(String dbName) throws IOException {
         // Create the database connector and add the search view to couchDB
-        connector = new LuceneAwareDatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        connector = new LuceneAwareDatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), dbName);
         connector.addView(luceneSearchView);
         connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
     }
 
-    public AbstractDatabaseSearchHandler(Supplier<HttpClient> client, String dbName) throws IOException {
+    public AbstractDatabaseSearchHandler(Supplier<HttpClient> client, Supplier<CloudantClient> cclient, String dbName) throws IOException {
         // Create the database connector and add the search view to couchDB
-        connector = new LuceneAwareDatabaseConnector(client, dbName);
+        connector = new LuceneAwareDatabaseConnector(client, cclient, dbName);
         connector.addView(luceneSearchView);
         connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
     }
