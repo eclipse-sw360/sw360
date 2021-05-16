@@ -12,8 +12,10 @@ package org.eclipse.sw360.moderation;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.db.ModerationSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.Comment;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RemoveModeratorRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -27,8 +29,10 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.moderation.db.ModerationDatabaseHandler;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
@@ -44,11 +48,11 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
 public class ModerationHandler implements ModerationService.Iface {
 
     private final ModerationDatabaseHandler handler;
-    /*private final DocumentDatabaseHandler documentHandler;*/
+    private final ModerationSearchHandler modSearchHandler;
 
-    public ModerationHandler() throws MalformedURLException {
+    public ModerationHandler() throws IOException {
         handler = new ModerationDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
-        /*documentHandler = new DocumentDatabaseHandler(DatabaseSettings.COUCH_DB_URL, DatabaseSettings.COUCH_DB_DATABASE);*/
+        modSearchHandler = new ModerationSearchHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
     }
 
     @Override
@@ -281,5 +285,29 @@ public class ModerationHandler implements ModerationService.Iface {
         assertUser(user);
 
         return handler.addCommentToClearingRequest(id, comment, user);
+    }
+
+    @Override
+    public List<ModerationRequest> refineSearch(String text, Map<String, Set<String>> subQueryRestrictions)
+            throws TException {
+        return modSearchHandler.search(text, subQueryRestrictions);
+    }
+
+    @Override
+    public Map<String, Long> getCountByModerationState() throws TException {
+        return handler.getCountByModerationState();
+    }
+
+    @Override
+    public Map<PaginationData, List<ModerationRequest>> getRequestsByModeratorWithPagination(User user,
+            PaginationData pageData, boolean open) throws TException {
+        assertUser(user);
+
+        return handler.getRequestsByModerator(user.getEmail(), pageData, open);
+    }
+
+    @Override
+    public Set<String> getRequestingUserDepts() {
+        return handler.getRequestingUserDepts();
     }
 }

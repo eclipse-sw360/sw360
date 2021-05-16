@@ -14,8 +14,7 @@ import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.eclipse.sw360.projects.Sw360ThriftServlet;
 
-import java.net.MalformedURLException;
-
+import java.io.IOException;
 /**
  * Thrift Servlet instantiation
  *
@@ -25,7 +24,7 @@ import java.net.MalformedURLException;
  */
 public class ModerationServlet extends Sw360ThriftServlet {
 
-    public ModerationServlet() throws MalformedURLException {
+    public ModerationServlet() throws IOException {
         // Create a service processor using the provided handler
         super(new ModerationService.Processor<ModerationHandler>(new ModerationHandler()), new TCompactProtocol.Factory());
     }

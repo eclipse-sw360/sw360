@@ -433,11 +433,11 @@ public class PortletUtils {
     }
 
     public static void handlePaginationSortOrder(ResourceRequest request, PaginationParameters paginationParameters,
-            final ImmutableList<Project._Fields> projectFilteredFields, final int projectNoSort) {
+            final ImmutableList<? extends TFieldIdEnum> entityilteredFields, final int entityNoSort) {
         if (!paginationParameters.getSortingColumn().isPresent()) {
-            for (Project._Fields filteredField : projectFilteredFields) {
+            for (TFieldIdEnum filteredField : entityilteredFields) {
                 if (!isNullOrEmpty(request.getParameter(filteredField.toString()))) {
-                    paginationParameters.setSortingColumn(Optional.of(projectNoSort));
+                    paginationParameters.setSortingColumn(Optional.of(entityNoSort));
                     break;
                 }
             }
