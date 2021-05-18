@@ -202,8 +202,14 @@ public class DatabaseRepositoryCloudantClient<T> {
         Set<String[]> complexKeys = keys.entrySet().stream().map(DatabaseRepositoryCloudantClient::createComplexKeys)
                 .flatMap(Collection::stream).collect(Collectors.toSet());
         ViewRequestBuilder query = connector.createQuery(type, queryName);
+        Key.ComplexKey[] complexKys = new Key.ComplexKey[complexKeys.size()];
+        int index = 0;
+        for (String[] keyArr : complexKeys) {
+            Key.ComplexKey key = Key.complex(keyArr);
+            complexKys[index++] = key;
+        }
         UnpaginatedRequestBuilder reqBuild = query.newRequest(Key.Type.COMPLEX, Object.class)
-                .keys((com.cloudant.client.api.views.Key.ComplexKey[]) complexKeys.toArray());
+                .keys(complexKys);
         return queryForIds(reqBuild);
     }
 
@@ -308,7 +314,7 @@ public class DatabaseRepositoryCloudantClient<T> {
     }
 
     public ViewResponse<ComplexKey, Object> queryViewForComplexKeys(
-            UnpaginatedRequestBuilder<com.cloudant.client.api.views.Key.ComplexKey, Object> req) {
+            UnpaginatedRequestBuilder<Key.ComplexKey, Object> req) {
         ViewResponse<ComplexKey, Object> responses = null;
         try {
             responses = req.build().getResponse();

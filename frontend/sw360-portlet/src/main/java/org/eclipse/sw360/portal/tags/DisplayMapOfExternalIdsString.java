@@ -18,6 +18,8 @@ import javax.servlet.jsp.tagext.SimpleTagSupport;
 import java.io.IOException;
 import java.util.*;
 
+import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
+
 /**
  * This displays a map
  *
@@ -25,6 +27,7 @@ import java.util.*;
  */
 public class DisplayMapOfExternalIdsString extends SimpleTagSupport {
 
+    private static final String NULL_STRING = "null";
     private Map<String, String> value;
     private Map<String, String> autoFillValue;
 
@@ -64,11 +67,15 @@ public class DisplayMapOfExternalIdsString extends SimpleTagSupport {
         ObjectMapper mapper = new ObjectMapper();
         Set<String> externalIdValueSet = new TreeSet<>();
         try {
-            externalIdValueSet = mapper.readValue(externalIdValues, Set.class);
+            if(externalIdValues.equals(NULL_STRING)) {
+                externalIdValueSet.add(NULL_STRING);
+            } else {
+                externalIdValueSet = mapper.readValue(externalIdValues, Set.class);
+            }
         } catch (IOException e) {
             externalIdValueSet.add(externalIdValues);
         }
-        externalIdValueSet.forEach( e ->
+        nullToEmptySet(externalIdValueSet).forEach( e ->
                 sb.append("<li><span class=\"mapDisplayChildItemLeft\">")
                   .append(StringEscapeUtils.escapeXml(externalIdKey))
                   .append("</span><span class=\"mapDisplayChildItemRight\"> ")
