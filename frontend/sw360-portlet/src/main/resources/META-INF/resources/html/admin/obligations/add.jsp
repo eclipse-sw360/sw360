@@ -90,6 +90,10 @@
                                         <select class="form-control" id="obligationLevel" name="<portlet:namespace/><%=Obligation._Fields.OBLIGATION_LEVEL%>">
                                             <sw360:DisplayEnumOptions type="<%=ObligationLevel.class%>" selected="${todo.obligationLevel}"/>
                                         </select>
+                                        <small class="form-text">
+                                             <sw360:DisplayEnumInfo type="<%=ObligationLevel.class%>"/>
+                                              <liferay-ui:message key="learn.more.about.obligation.level"/>
+                                        </small>
                                      </div>
                                     </td>
                                 </tr>
