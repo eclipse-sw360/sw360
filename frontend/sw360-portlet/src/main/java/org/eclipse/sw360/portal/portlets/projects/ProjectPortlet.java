@@ -92,6 +92,7 @@ import static com.liferay.portal.kernel.json.JSONFactoryUtil.createJSONObject;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.CONTENT_TYPE_OPENXML_SPREADSHEET;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
+import static org.eclipse.sw360.datahandler.common.WrappedException.wrapException;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
 import static org.eclipse.sw360.portal.portlets.projects.ProjectPortletUtils.isUsageEquivalent;
@@ -239,6 +240,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             serveClearingStatusonLoad(request, response);
         } else if (PortalConstants.LICENSE_TO_SOURCE_FILE.equals(action)) {
             serveLicenseToSourceFileMapping(request, response);
+        } else if (PortalConstants.ADD_LICENSE_TO_RELEASE.equals(action)) {
+            addLicenseToLinkedReleases(request, response);
         } else if (isGenericAction(action)) {
             dealWithGenericAction(request, response, action);
         } else if (PortalConstants.LOAD_CHANGE_LOGS.equals(action) || PortalConstants.VIEW_CHANGE_LOGS.equals(action)) {
@@ -2466,7 +2469,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         try {
             release = componentClient.getReleaseById(releaseId, user);
             final List<Attachment> filteredAttachments = SW360Utils.getApprovedClxAttachmentForRelease(release);
-            if (filteredAttachments.size() == 1) {
+            if (filteredAttachments.size() == 1 && filteredAttachments.get(0).getFilename().endsWith(".xml")) {
                 final Attachment filteredAttachment = filteredAttachments.get(0);
                 final String attachmentContentId = filteredAttachment.getAttachmentContentId();
 
@@ -2505,8 +2508,10 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 jsonResult.put(SW360Constants.STATUS, SW360Constants.FAILURE);
                 if (filteredAttachments.size() > 1) {
                     jsonResult.put(SW360Constants.MESSAGE, LanguageUtil.get(resourceBundle, "multiple.approved.cli.are.found.in.the.release"));
-                } else {
+                } else if (filteredAttachments.isEmpty()) {
                     jsonResult.put(SW360Constants.MESSAGE, LanguageUtil.get(resourceBundle, "approved.cli.not.found.in.the.release"));
+                } else {
+                    jsonResult.put(SW360Constants.MESSAGE, LanguageUtil.get(resourceBundle, "source.file.information.not.found.in.cli"));
                 }
             }
         } catch (TException e) {
@@ -2518,6 +2523,83 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             writeJSON(request, response, jsonResult);
         } catch (IOException e) {
             log.error("Error rendering license to source file mapping", e);
+        }
+    }
+
+    private void addLicenseToLinkedReleases(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
+        ProjectService.Iface client = thriftClients.makeProjectClient();
+        ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        LicenseInfoService.Iface licenseInfoClient = thriftClients.makeLicenseInfoClient();
+        final User user = UserCacheHolder.getUserFromRequest(request);
+        final String projectId = request.getParameter(PROJECT_ID);
+        final JSONObject jsonResult = createJSONObject();
+
+        try {
+            Project project = client.getProjectById(projectId, user);
+            Set<String> releaseIds = CommonUtils.getNullToEmptyKeyset(project.getReleaseIdToUsage());
+            StringBuilder oneCLI = new StringBuilder();
+            StringBuilder multipleCLI = new StringBuilder();
+            StringBuilder noCLI = new StringBuilder();
+            Predicate<LicenseNameWithText> filterLicense = license -> (LICENSE_TYPE_GLOBAL.equals(license.getType()));
+            Predicate<LicenseInfoParsingResult> filterLicenseResult = result -> (null != result.getLicenseInfo() && null != result.getLicenseInfo().getLicenseNamesWithTexts());
+            Predicate<LicenseInfoParsingResult> filterConcludedLicense = result -> (null != result.getLicenseInfo() && null != result.getLicenseInfo().getConcludedLicenseIds());
+
+            for (String releaseId : releaseIds) {
+                Release release = componentClient.getReleaseById(releaseId, user);
+                List<Attachment> filteredAttachments = SW360Utils.getApprovedClxAttachmentForRelease(release);
+                Set<String> mainLicenses = release.getMainLicenseIds() == null ? new HashSet<String>() : release.getMainLicenseIds();
+                Set<String> otherLicenses = release.getOtherLicenseIds() == null ? new HashSet<String>() : release.getOtherLicenseIds();
+
+                if (filteredAttachments.size() == 1) {
+                    final Attachment attachment = filteredAttachments.get(0);
+                    final String attachmentName = attachment.getFilename();
+                    oneCLI.append(CommonUtils.nullToEmptyString(printName(release))).append(",");
+                    List<LicenseInfoParsingResult> licenseInfoResult = licenseInfoClient.getLicenseInfoForAttachment(release,
+                            attachment.getAttachmentContentId(), true, user);
+                    List<LicenseNameWithText> licenseWithTexts = licenseInfoResult.stream()
+                            .filter(filterLicenseResult)
+                            .flatMap(result -> result.getLicenseInfo().getLicenseNamesWithTexts().stream())
+                            .filter(license -> !license.getLicenseName().equalsIgnoreCase(SW360Constants.LICENSE_NAME_UNKNOWN)
+                                    && !license.getLicenseName().equalsIgnoreCase(SW360Constants.NA)
+                                    && !license.getLicenseName().equalsIgnoreCase(SW360Constants.NO_ASSERTION)) // exclude unknown, n/a and noassertion
+                            .collect(Collectors.toList());
+                    if (attachmentName.endsWith(".rdf")) {
+                        mainLicenses.addAll(licenseInfoResult.stream()
+                                .filter(filterConcludedLicense)
+                                .flatMap(singleResult -> singleResult.getLicenseInfo().getConcludedLicenseIds().stream())
+                                .collect(Collectors.toSet()));
+                        otherLicenses.addAll(licenseWithTexts.stream().map(LicenseNameWithText::getLicenseName).collect(Collectors.toSet()));
+                        otherLicenses.removeAll(mainLicenses);
+                    } else if (attachmentName.endsWith(".xml")) {
+                        mainLicenses.addAll(licenseWithTexts.stream()
+                                .filter(filterLicense)
+                                .map(LicenseNameWithText::getLicenseName).collect(Collectors.toSet()));
+                        otherLicenses.addAll(licenseWithTexts.stream()
+                                .filter(filterLicense.negate())
+                                .map(LicenseNameWithText::getLicenseName).collect(Collectors.toSet()));
+                    }
+                } else {
+                    jsonResult.put(SW360Constants.STATUS, SW360Constants.FAILURE);
+                    if (filteredAttachments.size() > 1) {
+                        multipleCLI.append(CommonUtils.nullToEmptyString(printName(release))).append(",");
+                    } else {
+                        noCLI.append(CommonUtils.nullToEmptyString(printName(release))).append(",");
+                    }
+                }
+                release.setMainLicenseIds(mainLicenses);
+                release.setOtherLicenseIds(otherLicenses);
+                componentClient.updateRelease(release, user);
+            }
+            jsonResult.put("one", oneCLI);
+            jsonResult.put("mul", multipleCLI);
+            jsonResult.put("nil", noCLI);
+        } catch (Exception e) {
+            log.error(String.format("Error while adding license info to linked releases for project: %s ", projectId), e);
+        }
+        try {
+            writeJSON(request, response, jsonResult);
+        } catch (IOException e) {
+            log.error("Error sending response for license info to linked releases message", e);
         }
     }
 
