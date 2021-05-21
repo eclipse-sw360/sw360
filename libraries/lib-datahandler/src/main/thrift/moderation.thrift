@@ -224,7 +224,7 @@ service ModerationService {
     set<ClearingRequest> getMyClearingRequests(1: User user);
 
     /**
-     * get list of clearing requests where user is requesting user or clearing team
+     * get list of clearing requests by business unit
      **/
     set<ClearingRequest> getClearingRequestsByBU(1: string businessUnit);
 
@@ -267,4 +267,9 @@ service ModerationService {
      * get requesting users departments
      **/
     set<string> getRequestingUserDepts();
+
+    /**
+     * get the count of CR with priority 'critical'
+     **/
+    i32 getCriticalClearingRequestCount();
 }

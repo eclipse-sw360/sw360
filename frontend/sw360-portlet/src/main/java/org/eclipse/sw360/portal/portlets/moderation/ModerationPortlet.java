@@ -32,6 +32,8 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.DateRange;
 import org.eclipse.sw360.datahandler.permissions.DocumentPermissions;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
@@ -469,7 +471,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             request.setAttribute(CLEARING_REQUEST, clearingRequest);
             request.setAttribute(WRITE_ACCESS_USER, false);
             request.setAttribute(IS_CLEARING_EXPERT, isPrimaryRoleOfUserAtLeastClearingExpert);
-
+            Integer approvedReleaseCount = 0;
             if (CommonUtils.isNotNullEmptyOrWhitespace(clearingRequest.getProjectId()) ) {
                 ProjectService.Iface projectClient = thriftClients.makeProjectClient();
                 Project project = projectClient.getProjectById(clearingRequest.getProjectId(), UserCacheHolder.getUserFromRequest(request));
@@ -486,14 +488,19 @@ public class ModerationPortlet extends FossologyAwarePortlet {
                 request.setAttribute(WRITE_ACCESS_USER, projectPermission.isActionAllowed(RequestedAction.WRITE));
 
                 List<Project> projects = getWithFilledClearingStateSummary(projectClient, Lists.newArrayList(project), user);
-                Integer approvedReleaseCount = 0;
                 Project projWithCsSummary = projects.get(0);
                 if (null != projWithCsSummary && null != projWithCsSummary.getReleaseClearingStateSummary()) {
                     ReleaseClearingStateSummary summary = projWithCsSummary.getReleaseClearingStateSummary();
                     approvedReleaseCount = summary.getApproved() + summary.getReportAvailable();
                 }
-                request.setAttribute(APPROVED_RELEASE_COUNT, approvedReleaseCount);
             }
+            if (clearingRequest.getTimestampOfDecision() > 1) {
+                Integer criticalCount = client.getCriticalClearingRequestCount();
+                request.setAttribute(CRITICAL_CR_COUNT, criticalCount);
+            }
+            String dateLimit = CommonUtils.nullToEmptyString(ModerationPortletUtils.loadPreferredClearingDateLimit(request, user));
+            request.setAttribute(CUSTOM_FIELD_PREFERRED_CLEARING_DATE_LIMIT, dateLimit);
+            request.setAttribute(APPROVED_RELEASE_COUNT, approvedReleaseCount);
             addClearingBreadcrumb(request, response, clearingId);
         } catch (TException e) {
             log.error("Error fetching clearing request from backend!", e);
@@ -503,13 +510,21 @@ public class ModerationPortlet extends FossologyAwarePortlet {
 
     @UsedAsLiferayAction
     public void updateClearingRequest(ActionRequest request, ActionResponse response) throws PortletException, IOException {
-        RequestStatus requestStatus = requestStatus = ModerationPortletUtils.updateClearingRequest(request, log);
-        if (RequestStatus.SUCCESS.equals(requestStatus)) {
+        AddDocumentRequestSummary requestSummary = ModerationPortletUtils.updateClearingRequest(request, log);
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+
+        if (AddDocumentRequestStatus.SUCCESS.equals(requestSummary.getRequestStatus())) {
+            String successMsg = new StringBuilder(LanguageUtil.get(resourceBundle, "clearing.request")).append(" ")
+                    .append(requestSummary.getId()).append(" ").append(LanguageUtil.get(resourceBundle, "updated.successfully")).toString();
+            SessionMessages.add(request, "request_processed", successMsg);
+            response.setRenderParameter(CLEARING_REQUEST_ID, request.getParameter(CLEARING_REQUEST_ID));
+            response.setRenderParameter(PAGENAME, PAGENAME_DETAIL_CLEARING_REQUEST);
+        } else if (AddDocumentRequestStatus.FAILURE.equals(requestSummary.getRequestStatus())) {
+            String errorMsg = LanguageUtil.get(resourceBundle, requestSummary.getMessage().replace(' ', '.').toLowerCase());
+            setSW360SessionError(request, errorMsg);
             response.setRenderParameter(CLEARING_REQUEST_ID, request.getParameter(CLEARING_REQUEST_ID));
             response.setRenderParameter(PAGENAME, PAGENAME_DETAIL_CLEARING_REQUEST);
         }
-        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
-        setSessionMessage(request, requestStatus, LanguageUtil.get(resourceBundle,"clearing.request"), "update");
     }
 
     private void declineModerationRequest(User user, ModerationRequest moderationRequest, RenderRequest request) throws TException {

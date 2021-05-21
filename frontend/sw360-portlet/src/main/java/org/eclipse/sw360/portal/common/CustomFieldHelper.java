@@ -43,6 +43,7 @@ import java.util.Optional;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 import static org.eclipse.sw360.portal.common.PortalConstants.CUSTOM_FIELD_COMPONENTS_VIEW_SIZE;
+import static org.eclipse.sw360.portal.common.PortalConstants.CUSTOM_FIELD_PREFERRED_CLEARING_DATE_LIMIT;
 import static org.eclipse.sw360.portal.common.PortalConstants.CUSTOM_FIELD_PROJECT_GROUP_FILTER;
 import static org.eclipse.sw360.portal.common.PortalConstants.CUSTOM_FIELD_VULNERABILITIES_VIEW_SIZE;
 
@@ -167,6 +168,7 @@ public class CustomFieldHelper {
         ensureUserCustomFieldExists(liferayUser, CUSTOM_FIELD_PROJECT_GROUP_FILTER, ExpandoColumnConstants.STRING);
         ensureUserCustomFieldExists(liferayUser, CUSTOM_FIELD_COMPONENTS_VIEW_SIZE, ExpandoColumnConstants.INTEGER);
         ensureUserCustomFieldExists(liferayUser, CUSTOM_FIELD_VULNERABILITIES_VIEW_SIZE, ExpandoColumnConstants.INTEGER);
+        ensureUserCustomFieldExists(liferayUser, CUSTOM_FIELD_PREFERRED_CLEARING_DATE_LIMIT, ExpandoColumnConstants.INTEGER);
         return liferayUser.getExpandoBridge();
     }
 

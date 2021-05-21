@@ -218,7 +218,7 @@ define('modules/dialog', [
 		var $dialogs = $('body .auto-dialogs:first'),
 			$dialog = $(
 				'<div id="confirmDialog" class="modal fade" tabindex="-1" role="dialog">' +
-					'<div class="modal-dialog modal-lg modal-dialog-centered" role="document">' +
+					'<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">' +
 						'<div class="modal-content">' +
 							'<div class="modal-header">' +
 								'<h5 class="modal-title"></h5>' +
@@ -313,7 +313,7 @@ define('modules/dialog', [
 		var $dialogs = $('body .auto-dialogs:first'),
 			$dialog = $(
 				'<div id="warningDialog" class="modal fade" tabindex="-1" role="dialog">' +
-					'<div class="modal-dialog modal-lg modal-dialog-centered modal-warning" role="document">' +
+					'<div class="modal-dialog modal-lg modal-dialog-centered modal-warning modal-dialog-scrollable" role="document">' +
 						'<div class="modal-content">' +
 							'<div class="modal-header">' +
 								'<h5 class="modal-title">' +

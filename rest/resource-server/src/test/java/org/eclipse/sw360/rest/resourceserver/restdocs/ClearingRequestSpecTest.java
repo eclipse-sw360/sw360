@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.ClearingRequestPriority;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
 import org.eclipse.sw360.datahandler.thrift.Comment;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
@@ -63,6 +64,7 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
         clearingRequest.setRequestedClearingDate("10-07-2020");
         clearingRequest.setRequestingUser("test.admin@sw60.org");
         clearingRequest.setRequestingUserComment("testing comment");
+        clearingRequest.setPriority(ClearingRequestPriority.LOW);
 
         List<Comment> comments = new ArrayList<Comment>();
         Comment comment = new Comment();
@@ -94,6 +96,7 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("requestedClearingDate").description("The requested clearing date of releases"),
                                 fieldWithPath("requestingUser").description("The user who created the clearing request"),
                                 fieldWithPath("requestingUserComment").description("The comment from requesting user"),
+                                fieldWithPath("priority").description("The priorityof clearing request. Possible values are:  " + Arrays.asList(ClearingRequestPriority.values())),
                                 fieldWithPath("comments[]").description("The clearing request comment"),
                                 fieldWithPath("comments[]text").description("The clearing request comment text"),
                                 fieldWithPath("comments[]commentedBy").description("The user who added the comment on clearing request")
@@ -119,6 +122,7 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("requestedClearingDate").description("The requested clearing date of releases"),
                                 fieldWithPath("requestingUser").description("The user who created the clearing request"),
                                 fieldWithPath("requestingUserComment").description("The comment from requesting user"),
+                                fieldWithPath("priority").description("The priorityof clearing request. Possible values are:  " + Arrays.asList(ClearingRequestPriority.values())),
                                 fieldWithPath("comments[]").description("The clearing request comment"),
                                 fieldWithPath("comments[]text").description("The clearing request comment text"),
                                 fieldWithPath("comments[]commentedBy").description("The user who added the comment on clearing request")
