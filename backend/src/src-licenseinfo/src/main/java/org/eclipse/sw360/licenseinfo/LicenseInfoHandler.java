@@ -367,7 +367,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
 
         if (CommonUtils.isNotNullEmptyOrWhitespace(project.getLinkedObligationId())) {
             ObligationList obligation = projectDatabaseHandler.getLinkedObligations(project.getLinkedObligationId(), user);
-            obligationStatusMap = obligation.getLinkedObligationStatus();
+            obligationStatusMap = CommonUtils.nullToEmptyMap(obligation.getLinkedObligationStatus());
             releaseIdToAcceptedCLI.putAll(SW360Utils.getReleaseIdtoAcceptedCLIMappings(obligationStatusMap));
         }
 
