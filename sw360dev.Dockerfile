@@ -9,15 +9,18 @@
 
 # This can be used to compile SW360 via:
 # $ docker build -f sw360dev.Dockerfile -t sw360/sw360dev --rm=true --force-rm=true .
-# $ docker run -i -v $(pwd):/sw360portal -w /sw360portal --net=host sw360/sw360dev su-exec $(id -u):$(id -g) mvn package -DskipTests
+# $ docker run -i -v $(pwd):/sw360portal -w /sw360portal --net=host -u $(id -u):$(id -g) sw360/sw360dev mvn package -DskipTests
 
-FROM maven:3.5.0-jdk-8-alpine
+FROM maven:3.6.3-openjdk-11-slim
 MAINTAINER Maximilian Huber <maximilian.huber@tngtech.com>
 
 ADD scripts/install-thrift.sh /install-thrift.sh
 RUN set -x \
- &&  apk --update add su-exec git \
+ && apt-get update && apt-get install -y --no-install-recommends git \
  && /install-thrift.sh \
- && rm -rf /var/cache/apk/*
+ && apt-get purge -y --auto-remove build-essential libboost-dev libboost-test-dev libboost-program-options-dev libevent-dev automake libtool flex bison pkg-config g++ libssl-dev \
+ && apt-get install -y --no-install-recommends libfl2 \
+ && apt-get -y clean \
+ && rm -rf /var/lib/apt/lists/* /var/cache/debconf/*
 
 CMD /bin/bash

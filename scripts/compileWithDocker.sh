@@ -25,6 +25,8 @@ docker run -i \
     -v "$DIR":/sw360portal \
     -w /sw360portal \
     --net=host \
+    -u $(id -u):$(id -g) \
+    --env MAVEN_CONFIG="/sw360portal/.m2" \
+    --env MAVEN_OPTS="$MAVEN_OPTS -Duser.home=/sw360portal" \
     sw360/sw360dev \
-    su-exec $(id -u):$(id -g) \
     mvn package -DskipTests
