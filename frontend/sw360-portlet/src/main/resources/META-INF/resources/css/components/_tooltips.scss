@@ -805,3 +805,28 @@
     content: "";
     display: none;
 }
+
+/** ObligationLevel **/
+.sw360-tt-ObligationLevel:hover:after {
+	content: attr(data-content);
+	position: absolute;
+	z-index: 1;
+	bottom: 100%;
+	right: 50%;
+}
+
+.sw360-tt-ObligationLevel-ORGANISATION_OBLIGATION:hover:after {
+    content: attr(data-content);
+}
+
+.sw360-tt-ObligationLevel-PROJECT_OBLIGATION:hover:after {
+    content: attr(data-content);
+}
+
+.sw360-tt-ObligationLevel-COMPONENT_OBLIGATION:hover:after {
+    content: attr(data-content);
+}
+
+.sw360-tt-ObligationLevel-LICENSE_OBLIGATION:hover:after {
+    content: attr(data-content);
+}
