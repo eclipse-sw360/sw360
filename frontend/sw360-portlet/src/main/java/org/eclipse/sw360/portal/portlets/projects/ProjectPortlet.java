@@ -290,7 +290,11 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             final ProjectService.Iface client = thriftClients.makeProjectClient();
             final User user = UserCacheHolder.getUserFromRequest(request);
             obligation = client.getLinkedObligations(obligationId, user);
-            obligation.getLinkedObligationStatus().remove(topic);
+            Map<java.lang.String, ObligationStatusInfo> obligationStatusInfo = obligation.getLinkedObligationStatus();
+            if (null == obligationStatusInfo) {
+                return;
+            }
+            obligationStatusInfo.remove(topic);
             status = client.updateLinkedObligations(obligation, user);
         } catch (TException exception) {
             log.error("Failed to delete obligation: "+ obligationId +" with topic: " + topic, exception);
@@ -2318,7 +2322,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             releases = getLinkedReleases(CommonUtils.getNullToEmptyKeyset(project.getReleaseIdToUsage()), user);
                 if (CommonUtils.isNotNullEmptyOrWhitespace(project.getLinkedObligationId())) {
                     obligation = projectClient.getLinkedObligations(project.getLinkedObligationId(), user);
-                    obligationStatusMap = obligation.getLinkedObligationStatus();
+                    obligationStatusMap = CommonUtils.nullToEmptyMap(obligation.getLinkedObligationStatus());
                     setObligationsFromAdminSection(obligationStatusMap, request, project);
                     if (!CommonUtils.isNotEmpty(releases)) {
                         return null;

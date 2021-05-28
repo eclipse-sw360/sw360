@@ -223,6 +223,9 @@ public class SW360Utils {
     }
 
     public static Map<String, String> getReleaseIdtoAcceptedCLIMappings(Map<String, ObligationStatusInfo> obligationStatusMap) {
+        if (null == obligationStatusMap) {
+            return Maps.newHashMap();
+        }
         return obligationStatusMap.values().stream().flatMap(e -> (e.getReleaseIdToAcceptedCLI() != null ? e.getReleaseIdToAcceptedCLI() : new HashMap<String,String>()).entrySet().stream())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldValue, newValue) -> oldValue));
     }
