@@ -70,6 +70,10 @@ public class ThriftEnumUtils {
             .put(ObligationType.OBLIGATION, "Obligation")
             .build();
 
+    private static final ImmutableMap<Quadratic,String> MAP_QUADRATIC_STRING = ImmutableMap.of(
+            Quadratic.NA, "(n/a)",
+            Quadratic.YES, "yes");
+
     private static final ImmutableMap<Ternary,String> MAP_TERNARY_STRING = ImmutableMap.of(
             Ternary.UNDEFINED, "undefined",
             Ternary.NO, "no",
@@ -295,6 +299,7 @@ public class ThriftEnumUtils {
     public static final ImmutableMap<Class<? extends TEnum>, Map<? extends TEnum, String>>
             MAP_ENUMTYPE_MAP = ImmutableMap.<Class<? extends TEnum>, Map<? extends TEnum, String>>builder()
             .put(ComponentType.class, MAP_COMPONENT_TYPE_STRING)
+            .put(Quadratic.class, MAP_QUADRATIC_STRING)
             .put(Ternary.class, MAP_TERNARY_STRING)
             .put(DateRange.class, MAP_DATE_RANGE_STRING)
             .put(ProjectType.class, MAP_PROJECT_TYPE_STRING)

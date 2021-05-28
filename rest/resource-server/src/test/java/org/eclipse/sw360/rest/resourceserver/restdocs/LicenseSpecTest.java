@@ -111,6 +111,8 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("additionalData").description("A place to store additional data used by external tools"),
                                 fieldWithPath("text").description("The license's original text"),
                                 fieldWithPath("checked").description("The information, whether the license is already checked, optional and defaults to true"),
+                                fieldWithPath("OSIApproved").description("The OSI aprroved information"),
+                                fieldWithPath("FSFLibre").description("The FSF libre information"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }

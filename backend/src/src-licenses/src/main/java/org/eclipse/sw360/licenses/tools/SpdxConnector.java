@@ -14,6 +14,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.Quadratic;
 import org.spdx.compare.LicenseCompareHelper;
 import org.spdx.compare.SpdxCompareException;
 import org.spdx.rdfparser.InvalidSPDXAnalysisException;
@@ -51,11 +52,16 @@ public class SpdxConnector {
     }
 
     public static Optional<License> getSpdxLicenseAsSW360License(SpdxListedLicense spdxListedLicense){
+        Quadratic isOSIApproved = spdxListedLicense.isOsiApproved() ? Quadratic.YES : Quadratic.NA;
+        Quadratic isFSFLibre = spdxListedLicense.isFsfLibre() ? Quadratic.YES : Quadratic.NA;
+
         License license = new License()
                 .setId(spdxListedLicense.getLicenseId())
                 .setShortname(spdxListedLicense.getLicenseId())
                 .setFullname(spdxListedLicense.getName())
                 .setText(spdxListedLicense.getLicenseText())
+                .setOSIApproved(isOSIApproved)
+                .setFSFLibre(isFSFLibre)
                 .setExternalLicenseLink("https://spdx.org/licenses/" + spdxListedLicense.getLicenseId()+ ".html")
                 .setExternalIds(Collections.singletonMap("SPDX-License-Identifier", spdxListedLicense.getLicenseId()));
         return Optional.of(license);
