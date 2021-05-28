@@ -1,0 +1,80 @@
+//
+// Copyright Siemens AG, 2021. Part of the SW360 Portal Obligation.
+//
+// This program and the accompanying materials are made
+// available under the terms of the Eclipse Public License 2.0
+// which is available at https://www.eclipse.org/legal/epl-2.0/
+//
+// SPDX-License-Identifier: EPL-2.0
+//
+
+[[resources-obligations]]
+=== Obligations
+
+The Obligations resource is used to list, create and delete obligations.
+
+
+[[resources-obligations-list]]
+==== Listing obligations
+
+A `GET` request will list all of the service's obligations.
+
+===== Response structure
+include::{snippets}/should_document_get_obligations/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_obligations/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_obligations/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_obligations/links.adoc[]
+
+
+[[resources-obligation-get]]
+==== Get a single obligation
+
+A `GET` request will get a single obligation.
+
+===== Response structure
+include::{snippets}/should_document_get_obligation/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_obligation/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_obligation/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_obligation/links.adoc[]
+
+
+[[resources-obligations-create]]
+==== Creating a obligation
+
+A `POST` request is used to create a obligation
+
+===== Request structure
+include::{snippets}/should_document_create_obligation/request-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_create_obligation/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_create_obligation/http-response.adoc[]
+
+
+[[resources-obligations-delete]]
+==== Delete a obligation
+
+A `DELETE` request is used to delete an existing obligation
+
+===== Response structure
+include::{snippets}/should_document_delete_obligations/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_delete_obligations/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_delete_obligations/http-response.adoc[]

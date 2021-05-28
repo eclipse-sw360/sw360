@@ -50,6 +50,7 @@ public class ThriftValidate {
         assertNotNull(oblig);
         assertNotEmpty(oblig.getText());
         assertNotNull(oblig.getTitle());
+        assertNotNull(oblig.getObligationLevel());
 
         if (oblig.whitelist == null) {
             oblig.setWhitelist(Collections.emptySet());

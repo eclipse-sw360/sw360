@@ -16,15 +16,22 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+
+import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -54,6 +61,55 @@ public class Sw360LicenseService {
             }
         }
         return null;
+    }
+
+    public RequestStatus updateLicenseToDB(License license, Set<String> obligationIds, User sw360User) throws TException {
+        LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+        if (obligationIds.isEmpty()){
+            license.unsetObligations();
+        } else {
+            List<String> obligationIdList = new ArrayList<>(obligationIds);
+            List<Obligation> obligations = sw360LicenseClient.getObligationsByIds(obligationIdList);
+            checkObligationLevel(obligations, sw360User);
+            license.setObligationDatabaseIds(obligationIds);
+            license.setObligations(obligations);
+        }
+        return sw360LicenseClient.updateLicense(license, sw360User, sw360User);
+    }
+
+    public void checkObligationIds(Set<String> obligationIds) throws TException {
+        if (obligationIds.isEmpty()) {
+            throw new HttpMessageNotReadableException("Cannot update because no obliagtion id input");
+        }
+        LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+        ArrayList<String> obligationIdsIncorrect = new ArrayList<>();
+        for (String obligationId : obligationIds) {
+            if (isNullEmptyOrWhitespace(obligationId)) {
+                throw new HttpMessageNotReadableException("Obligation id cannot be empty");
+            }
+            try {
+                sw360LicenseClient.getObligationsById(obligationId);
+            } catch (Exception e) {
+                obligationIdsIncorrect.add(obligationId);
+            }
+        }
+        if (!obligationIdsIncorrect.isEmpty()) {
+            throw new HttpMessageNotReadableException("Obligation ids " + obligationIdsIncorrect + " incorrect");
+        }
+    }
+
+    public void checkObligationLevel(List<Obligation> obligations, User sw360User) {
+        List<String> obligationsLevelIncorrect = new ArrayList<>();
+        for (Obligation oblig : obligations) {
+            if (oblig.getObligationLevel().toString().equals("LICENSE_OBLIGATION")) {
+                oblig.addToWhitelist(sw360User.getDepartment());
+            } else {
+                obligationsLevelIncorrect.add(oblig.getId());
+            }
+        }
+        if (!obligationsLevelIncorrect.isEmpty()) {
+            throw new HttpMessageNotReadableException("Obligation with ids: " + obligationsLevelIncorrect + " level is not License Obligation");
+        }
     }
 
     private LicenseService.Iface getThriftLicenseClient() throws TTransportException {
