@@ -21,7 +21,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.licenses.*;
 import org.apache.commons.csv.CSVRecord;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
-import org.eclipse.sw360.datahandler.thrift.Ternary;
+import org.eclipse.sw360.datahandler.thrift.Quadratic;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -266,16 +266,16 @@ public class ConvertRecord {
                 license.setLicenseType(licenseType);
             }
 
-            String gplv2CompatString = record.get(3);
-            if (!Strings.isNullOrEmpty(gplv2CompatString) && !"NULL".equals(gplv2CompatString)) {
-                Ternary gplv2Compat = ThriftEnumUtils.stringToEnum(gplv2CompatString, Ternary.class);
-                license.setGPLv2Compat(gplv2Compat);
+            String osiApprovedString = record.get(3);
+            if (!Strings.isNullOrEmpty(osiApprovedString) && !"NULL".equals(osiApprovedString)) {
+                Quadratic osiApproved = ThriftEnumUtils.stringToEnum(osiApprovedString, Quadratic.class);
+                license.setOSIApproved(osiApproved);
             }
 
-            String gplv3CompatString = record.get(4);
-            if (!Strings.isNullOrEmpty(gplv3CompatString) && !"NULL".equals(gplv3CompatString)) {
-                Ternary gplv3Compat = ThriftEnumUtils.stringToEnum(gplv3CompatString, Ternary.class);
-                license.setGPLv3Compat(gplv3Compat);
+            String fsfLibreString = record.get(4);
+            if (!Strings.isNullOrEmpty(fsfLibreString) && !"NULL".equals(fsfLibreString)) {
+                Quadratic fsfLibre = ThriftEnumUtils.stringToEnum(fsfLibreString, Quadratic.class);
+                license.setFSFLibre(fsfLibre);
             }
 
             String reviewdate = record.get(5);
@@ -318,13 +318,13 @@ public class ConvertRecord {
             @Override
             public Function<License, List<String>> transformer() {
                 return license -> {
-                    final ArrayList<String> out = new ArrayList<>(8);
+                    final ArrayList<String> out = new ArrayList<>(10);
                     out.add(CommonUtils.nullToEmptyString(license.getId()));
                     out.add(CommonUtils.nullToEmptyString(license.getFullname()));
                     out.add(license.isSetLicenseType() ? ((Integer) license.getLicenseType().getLicenseTypeId()).toString() :
                             CommonUtils.nullToEmptyString(license.getLicenseTypeDatabaseId()));
-                    out.add(license.isSetGPLv2Compat() ? (license.getGPLv2Compat()).toString() : "");
-                    out.add(license.isSetGPLv3Compat() ? (license.getGPLv3Compat()).toString() : "");
+		    out.add(license.isSetOSIApproved() ? (license.getOSIApproved()).toString() : "");
+		    out.add(license.isSetFSFLibre() ? (license.getFSFLibre()).toString() : "");
                     out.add(CommonUtils.nullToEmptyString(license.getReviewdate()));
                     out.add(CommonUtils.nullToEmptyString(license.getText()));
                     out.add(CommonUtils.nullToEmptyString(license.getExternalLicenseLink()));
@@ -339,7 +339,7 @@ public class ConvertRecord {
 
             @Override
             public List<String> headers() {
-                return ImmutableList.of("Identifier", "Fullname", "Type", "Gplv2compat", "Gplv3compat", "reviewdate", "Text", "External Link", "External IDs");
+                return ImmutableList.of("Identifier", "Fullname", "Type", "OSI Approved", "FSF Free/Libre", "reviewdate", "Text", "External Link", "External IDs");
             }
         };
     }

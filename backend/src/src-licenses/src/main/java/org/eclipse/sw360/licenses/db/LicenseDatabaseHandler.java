@@ -408,10 +408,10 @@ public class LicenseDatabaseHandler {
         license.unsetShortname();
         license.setLicenseTypeDatabaseId(inputLicense.getLicenseTypeDatabaseId());
         license.unsetLicenseType();
-        license.setGPLv2Compat(Optional.ofNullable(inputLicense.getGPLv2Compat())
-                .orElse(Ternary.UNDEFINED));
-        license.setGPLv3Compat(Optional.ofNullable(inputLicense.getGPLv3Compat())
-                .orElse(Ternary.UNDEFINED));
+        license.setOSIApproved(Optional.ofNullable(inputLicense.getOSIApproved())
+                .orElse(Quadratic.NA));
+        license.setFSFLibre(Optional.ofNullable(inputLicense.getFSFLibre())
+                .orElse(Quadratic.NA));
         license.setExternalLicenseLink(inputLicense.getExternalLicenseLink());
         license.setChecked(inputLicense.isChecked());
         license.setObligationDatabaseIds(inputLicense.getObligationDatabaseIds());
