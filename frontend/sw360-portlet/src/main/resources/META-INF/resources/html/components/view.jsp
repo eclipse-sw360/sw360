@@ -61,7 +61,7 @@
 
 <liferay-portlet:renderURL var="friendlyLicenseURL" portletName="sw360_portlet_licenses">
     <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>"/>
-    <portlet:param name="<%=PortalConstants.LICENSE_ID%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>"/>
+    <portlet:param name="<%=PortalConstants.LICENSE_ID%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_LICENSE_ID%>"/>
 </liferay-portlet:renderURL>
 
 <div class="container" style="display: none;">
@@ -280,6 +280,12 @@
                     .replace('<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>', id);
             }
 
+            function replaceLicenseUrlParameter(portletUrl, id, page) {
+                return portletUrl
+                    .replace('<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>', page)
+                    .replace('<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_LICENSE_ID%>', id);
+	        }
+
             // create and render data table
             function createComponentsTable() {
                 let columns = [
@@ -347,7 +353,7 @@
                     .replace(/components/g, "licenses");// DIRTY WORKAROUND
 
                 for (var i = 0; i < lics.length; i++) {
-                    links[i] = render.linkTo(replaceFriendlyUrlParameter(licensePortletURL.toString(), lics[i], '<%=PortalConstants.PAGENAME_DETAIL%>'), lics[i]);
+                    links[i] = replaceLicenseUrlParameter(render.linkTo(licensePortletURL.toString(), lics[i]), encodeURIComponent(lics[i]), '<%=PortalConstants.PAGENAME_DETAIL%>');
                 }
 
                 if(type == 'display') {
