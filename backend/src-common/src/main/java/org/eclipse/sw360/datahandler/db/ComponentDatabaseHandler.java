@@ -1507,8 +1507,13 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
 
     public RequestStatus deleteComponent(String id, User user) throws SW360Exception {
-        Component component = componentRepository.get(id);
-        assertNotNull(component);
+        Component component = new Component();
+        try {
+            component = componentRepository.get(id);
+            assertNotNull(component);
+        } catch (Exception e) {
+            return RequestStatus.INVALID_INPUT;
+        }
 
         final Set<String> releaseIds = component.getReleaseIds();
         if (releaseIds!=null && releaseIds.size()>0) return RequestStatus.IN_USE;
