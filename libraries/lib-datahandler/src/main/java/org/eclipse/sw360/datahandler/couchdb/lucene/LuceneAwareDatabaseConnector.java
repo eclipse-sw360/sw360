@@ -244,7 +244,7 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
         final Function<String, String> addType = input -> {
             if (fieldName.equals("businessUnit") || fieldName.equals("tag") || fieldName.equals("projectResponsible") || fieldName.equals("createdBy")) {
                 return fieldName + ":\"" + input + "\"";
-            } if (fieldName.equals("createdOn")) {
+            } if (fieldName.equals("createdOn") || fieldName.equals("timestamp")) {
                 return fieldName + "<date>:" + input;
             } else {
                 return fieldName + ":" + input;

@@ -46,6 +46,8 @@ public class PortalConstants {
     public static final UserGroup USER_ROLE_ALLOWED_TO_MERGE_OR_SPLIT_COMPONENT;
     public static final String CLEARING_REPORT_TEMPLATE_TO_FILENAMEMAPPING;
     public static final String CLEARING_REPORT_TEMPLATE_FORMAT;
+    public static final String LOAD_OPEN_MODERATION_REQUEST = "loadOpenModerationRequest";
+    public static final String LOAD_CLOSED_MODERATION_REQUEST = "loadClosedModerationRequest";
 
     // DO NOT CHANGE THIS UNLESS YOU KNOW WHAT YOU ARE DOING !!!
     // - friendly url mapping files must be changed
@@ -120,6 +122,7 @@ public class PortalConstants {
     public static final String CLOSED_MODERATION_REQUESTS = "closedModerationRequests";
     public static final String DELETE_MODERATION_REQUEST = "deleteModerationRequest";
     public static final String MODERATION_ACTIONS_ALLOWED = "moderationAllowed";
+    public static final String MODERATION_REQUESTING_USER_DEPARTMENTS = "requestingUserDepartments";
 
     //! Specialized keys for clearing
     public static final String CLEARING_REQUEST = "clearingRequest";

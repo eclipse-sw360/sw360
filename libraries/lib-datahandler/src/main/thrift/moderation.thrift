@@ -22,6 +22,7 @@ typedef sw360.RequestStatus RequestStatus
 typedef sw360.RemoveModeratorRequestStatus RemoveModeratorStatus
 typedef sw360.ModerationState ModerationState
 typedef sw360.Comment Comment
+typedef sw360.PaginationData PaginationData
 typedef components.Component Component
 typedef components.Release Release
 typedef projects.Project Project
@@ -193,6 +194,11 @@ service ModerationService {
     list<ModerationRequest> getRequestsByModerator(1: User user);
 
     /**
+     * get list of moderation requests based on moderation state(open/closed) where user is one of the moderators, with pagination
+     **/
+    map<PaginationData, list<ModerationRequest>> getRequestsByModeratorWithPagination(1: User user, 2: PaginationData pageData, 3: bool open);
+
+    /**
      * get list of moderation requests where user is requesting user
      **/
     list<ModerationRequest> getRequestsByRequestingUser(1: User user);
@@ -246,4 +252,19 @@ service ModerationService {
      * add comment to clearing request
      **/
     RequestStatus addCommentToClearingRequest(1: string id, 2: Comment comment, 3: User user);
+
+    /**
+     * search moderation requests in database that match subQueryRestrictions
+     **/
+    list<ModerationRequest> refineSearch(1: string text, 2: map<string, set<string>> subQueryRestrictions);
+
+    /**
+     * get count of moderation requests by moderation state
+     **/
+    map<string, i64> getCountByModerationState();
+
+    /**
+     * get requesting users departments
+     **/
+    set<string> getRequestingUserDepts();
 }

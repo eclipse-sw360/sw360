@@ -29,6 +29,7 @@ import org.eclipse.sw360.datahandler.thrift.ClearingRequestEmailTemplate;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
 import org.eclipse.sw360.datahandler.thrift.Comment;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
@@ -112,6 +113,10 @@ public class ModerationDatabaseHandler {
 
     public List<ModerationRequest> getRequestsByModerator(String moderator) {
         return repository.getRequestsByModerator(moderator);
+    }
+
+    public Map<PaginationData, List<ModerationRequest>> getRequestsByModerator(String moderator, PaginationData pageData, boolean open) {
+        return repository.getRequestsByModerator(moderator, pageData, open);
     }
 
     public List<ModerationRequest> getRequestsByRequestingUser(String user) {
@@ -619,6 +624,14 @@ public class ModerationDatabaseHandler {
 
         return request;
 
+    }
+
+    public Map<String, Long> getCountByModerationState() {
+        return repository.getCountByModerationState();
+    }
+
+    public Set<String> getRequestingUserDepts() {
+        return repository.getRequestingUserDepts();
     }
 
     private void sendMailForNewCommentInCR(ClearingRequest cr, Comment comment, User user) throws SW360Exception {
