@@ -393,9 +393,9 @@ public class RestControllerHelper<T> {
     }
 
     public Release updateRelease(Release releaseToUpdate, Release requestBodyRelease) {
-        for(Release._Fields field:Release._Fields.values()) {
+        for (Release._Fields field : Release._Fields.values()) {
             Object fieldValue = requestBodyRelease.getFieldValue(field);
-            if(fieldValue != null) {
+            if (fieldValue != null) {
                 releaseToUpdate.setFieldValue(field, fieldValue);
             }
         }
