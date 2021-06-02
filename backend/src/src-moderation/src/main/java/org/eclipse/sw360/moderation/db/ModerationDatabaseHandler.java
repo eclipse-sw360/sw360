@@ -626,8 +626,8 @@ public class ModerationDatabaseHandler {
 
     }
 
-    public Map<String, Long> getCountByModerationState() {
-        return repository.getCountByModerationState();
+    public Map<String, Long> getCountByModerationState(String moderator) {
+        return repository.getCountByModerationState(moderator);
     }
 
     public Set<String> getRequestingUserDepts() {

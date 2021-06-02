@@ -120,6 +120,7 @@ public class PortalConstants {
     public static final String MODERATION_REQUEST = "moderationRequest";
     public static final String MODERATION_REQUESTS = "moderationRequests";
     public static final String CLOSED_MODERATION_REQUESTS = "closedModerationRequests";
+    public static final String OPEN_MODERATION_REQUESTS = "openModerationRequests";
     public static final String DELETE_MODERATION_REQUEST = "deleteModerationRequest";
     public static final String MODERATION_ACTIONS_ALLOWED = "moderationAllowed";
     public static final String MODERATION_REQUESTING_USER_DEPARTMENTS = "requestingUserDepartments";

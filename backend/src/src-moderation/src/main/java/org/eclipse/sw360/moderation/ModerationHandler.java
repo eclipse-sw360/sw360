@@ -294,8 +294,9 @@ public class ModerationHandler implements ModerationService.Iface {
     }
 
     @Override
-    public Map<String, Long> getCountByModerationState() throws TException {
-        return handler.getCountByModerationState();
+    public Map<String, Long> getCountByModerationState(User user) throws TException {
+        assertUser(user);
+        return handler.getCountByModerationState(user.getEmail());
     }
 
     @Override

@@ -20,15 +20,17 @@ import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 
 import com.cloudant.client.api.model.DesignDocument.MapReduce;
 import com.cloudant.client.api.views.Key;
+import com.cloudant.client.api.views.Key.ComplexKey;
 import com.cloudant.client.api.views.ViewRequest;
 import com.cloudant.client.api.views.ViewRequestBuilder;
 import com.cloudant.client.api.views.ViewResponse;
-import com.cloudant.client.api.views.ViewResponse.Row;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,15 +67,19 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
             "    }" +
             "}";
 
-    private static final String USERS_VIEW_OPEN = "function(doc) { " +
-            "  if (doc.type == 'moderation' && (doc.moderationState === 'INPROGRESS' || doc.moderationState === 'PENDING')) {" +
-            "    emit(doc.requestingUser, doc);" +
+    private static final String USERS_VIEW_OPEN = "function(doc) {" +
+            "    if (doc.type == 'moderation' && (doc.moderationState === 'INPROGRESS' || doc.moderationState === 'PENDING')) {" +
+            "      for(var i in doc.moderators) {" +
+            "        emit([doc.moderators[i], doc.requestingUser], doc);" +
+            "      }" +
             "    }" +
             "}";
 
-    private static final String USERS_VIEW_CLOSED = "function(doc) { " +
-            "  if (doc.type == 'moderation' && (doc.moderationState === 'APPROVED' || doc.moderationState === 'REJECTED')) {" +
-            "    emit(doc.requestingUser, doc);" +
+    private static final String USERS_VIEW_CLOSED = "function(doc) {" +
+            "    if (doc.type == 'moderation' && (doc.moderationState === 'APPROVED' || doc.moderationState === 'REJECTED')) {" +
+            "      for(var i in doc.moderators) {" +
+            "        emit([doc.moderators[i], doc.requestingUser], doc);" +
+            "      }" +
             "    }" +
             "}";
 
@@ -85,95 +91,122 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
             "  }" +
             "}";
 
-    private static final String MODERATORS_VIEW_FOR_SORTING_OPEN = "function(doc) {" +
-            "  if (doc.type == 'moderation' && (doc.moderationState === 'INPROGRESS' || doc.moderationState === 'PENDING')) {" +
-            "      if(doc.moderators) {" +
-            "            emit(doc.moderators.join(), doc);" +
-            "      } else {" +
-            "            emit('', doc);" +
+    private static final String MODERATORS_VIEW_FOR_SORTING_OPEN = "function (doc) {" +
+            "	if (doc.type == 'moderation' && (doc.moderationState === 'INPROGRESS' || doc.moderationState === 'PENDING')) {" +
+            "		if (doc.moderators) {" +
+            "			for (var i in doc.moderators) {" +
+            "				emit([doc.moderators[i], doc.moderators.join()], doc);" +
+            "			}" +
+            "		} else {" +
+            "			emit('', doc);" +
+            "		}" +
+            "	}" +
+            "}";
+
+    private static final String MODERATORS_VIEW_FOR_SORTING_CLOSED = "function (doc) {" +
+            "	if (doc.type == 'moderation' && (doc.moderationState === 'APPROVED' || doc.moderationState === 'REJECTED')) {" +
+            "		if (doc.moderators) {" +
+            "			for (var i in doc.moderators) {" +
+            "				emit([doc.moderators[i], doc.moderators.join()], doc);" +
+            "			}" +
+            "		} else {" +
+            "			emit('', doc);" +
+            "		}" +
+            "	}" +
+            "}";
+
+    private static final String BYDATE_OPEN = "function (doc) {" +
+            "	if (doc.type == 'moderation' && (doc.moderationState === 'INPROGRESS' || doc.moderationState === 'PENDING')) {" +
+            "		var date = new Date(doc.timestamp);" +
+            "		for (var i in doc.moderators) {" +
+            "			emit([doc.moderators[i], date], doc);" +
+            "		}" +
+            "	}" +
+            "}";
+
+    private static final String BYDATE_CLOSED = "function (doc) {" +
+            "	if (doc.type == 'moderation' && (doc.moderationState === 'APPROVED' || doc.moderationState === 'REJECTED')) {" +
+            "		var date = new Date(doc.timestamp);" +
+            "		for (var i in doc.moderators) {" +
+            "			emit([doc.moderators[i], date], doc);" +
+            "		}" +
+            "	}" +
+            "}";
+
+    private static final String BYDOCUMENTNAME_OPEN = "function(doc) {" +
+            "    if (doc.type == 'moderation' && (doc.moderationState === 'INPROGRESS' || doc.moderationState === 'PENDING')) {" +
+            "      for(var i in doc.moderators)" +
+            "      {" +
+            "        emit([doc.moderators[i], doc.documentName], doc);" +
             "      }" +
-            "  }" +
+            "    }" +
             "}";
 
-    private static final String MODERATORS_VIEW_FOR_SORTING_CLOSED = "function(doc) {" +
-            "  if (doc.type == 'moderation' && (doc.moderationState === 'APPROVED' || doc.moderationState === 'REJECTED')) {" +
-            "      if(doc.moderators) {" +
-            "            emit(doc.moderators.join(), doc);" +
-            "      } else {" +
-            "            emit('', doc);" +
+    private static final String BYDOCUMENTNAME_CLOSED = "function(doc) {" +
+            "    if (doc.type == 'moderation' && (doc.moderationState === 'APPROVED' || doc.moderationState === 'REJECTED')) {" +
+            "      for(var i in doc.moderators)" +
+            "      {" +
+            "        emit([doc.moderators[i], doc.documentName], doc);" +
             "      }" +
-            "  }" +
-            "}";
-
-    private static final String BYDATE_OPEN = "function(doc) { " +
-            "  if (doc.type == 'moderation' && (doc.moderationState === 'INPROGRESS' || doc.moderationState === 'PENDING')) {" +
-            "    emit(new Date(doc.timestamp), doc);" +
             "    }" +
             "}";
 
-    private static final String BYDATE_CLOSED = "function(doc) { " +
-            "  if (doc.type == 'moderation'  && (doc.moderationState === 'APPROVED' || doc.moderationState === 'REJECTED')) {" +
-            "    emit(new Date(doc.timestamp), doc);" +
+    private static final String BYMODERATIONSTATE_OPEN = "function(doc) {" +
+            "    if (doc.type == 'moderation' && (doc.moderationState === 'INPROGRESS' || doc.moderationState === 'PENDING')) {" +
+            "      for(var i in doc.moderators)" +
+            "        emit([doc.moderators[i], doc.moderationState], doc);" +
             "    }" +
             "}";
 
-    private static final String BYDOCUMENTNAME_OPEN = "function(doc) { " +
-            "  if (doc.type == 'moderation' && (doc.moderationState === 'INPROGRESS' || doc.moderationState === 'PENDING')) {" +
-            "    emit(doc.documentName, doc);" +
+    private static final String BYMODERATIONSTATE_CLOSED = "function(doc) {" +
+            "    if (doc.type == 'moderation' && (doc.moderationState === 'APPROVED' || doc.moderationState === 'REJECTED')) {" +
+            "      for(var i in doc.moderators)" +
+            "        emit([doc.moderators[i], doc.moderationState], doc);" +
             "    }" +
             "}";
 
-    private static final String BYDOCUMENTNAME_CLOSED = "function(doc) { " +
-            "  if (doc.type == 'moderation' && (doc.moderationState === 'APPROVED' || doc.moderationState === 'REJECTED')) {" +
-            "    emit(doc.documentName, doc);" +
+    private static final String BYCOMPONENTTYPE_OPEN = "function(doc) {" +
+            "    if (doc.type == 'moderation' && (doc.moderationState === 'INPROGRESS' || doc.moderationState === 'PENDING')) {" +
+            "      for(var i in doc.moderators) {" +
+            "        emit([doc.moderators[i], doc.componentType], doc);" +
+            "      }" +
             "    }" +
             "}";
 
-    private static final String BYMODERATIONTATE_OPEN = "function(doc) { " +
-            "  if (doc.type == 'moderation' && (doc.moderationState === 'INPROGRESS' || doc.moderationState === 'PENDING')) {" +
-            "    emit(doc.moderationState, doc);" +
+    private static final String BYCOMPONENTTYPE_CLOSED = "function(doc) {" +
+            "    if (doc.type == 'moderation' && (doc.moderationState === 'APPROVED' || doc.moderationState === 'REJECTED')) {" +
+            "      for(var i in doc.moderators) {" +
+            "        emit([doc.moderators[i], doc.componentType], doc);" +
+            "      }" +
             "    }" +
             "}";
 
-    private static final String BYMODERATIONTATE_CLOSED = "function(doc) { " +
-            "  if (doc.type == 'moderation' && (doc.moderationState === 'APPROVED' || doc.moderationState === 'REJECTED')) {" +
-            "    emit(doc.moderationState, doc);" +
+    private static final String BYREQUESTINGUSERDEPRTMENT_OPEN = "function(doc) {" +
+            "    if (doc.type == 'moderation' && (doc.moderationState === 'INPROGRESS' || doc.moderationState === 'PENDING')) {" +
+            "      for(var i in doc.moderators)" +
+            "        emit([doc.moderators[i], doc.requestingUserDepartment], doc);" +
             "    }" +
             "}";
 
-    private static final String BYCOMPONENTTYPE_OPEN = "function(doc) { " +
-            "  if (doc.type == 'moderation' && (doc.moderationState === 'INPROGRESS' || doc.moderationState === 'PENDING')) {" +
-            "    emit(doc.componentType, doc);" +
-            "    }" +
-            "}";
-
-    private static final String BYCOMPONENTTYPE_CLOSED = "function(doc) { " +
-            "  if (doc.type == 'moderation' && (doc.moderationState === 'APPROVED' || doc.moderationState === 'REJECTED')) {" +
-            "    emit(doc.componentType, doc);" +
-            "    }" +
-            "}";
-
-    private static final String BYREQUESTINGUSERDEPRTMENT_OPEN = "function(doc) { " +
-            "  if (doc.type == 'moderation' && (doc.moderationState === 'INPROGRESS' || doc.moderationState === 'PENDING')) {" +
-            "    emit(doc.requestingUserDepartment, doc);" +
-            "    }" +
-            "}";
-
-    private static final String BYREQUESTINGUSERDEPRTMENT_CLOSED = "function(doc) { " +
-            "  if (doc.type == 'moderation' && (doc.moderationState === 'APPROVED' || doc.moderationState === 'REJECTED')) {" +
-            "    emit(doc.requestingUserDepartment, doc);" +
+    private static final String BYREQUESTINGUSERDEPRTMENT_CLOSED = "function(doc) {" +
+            "    if (doc.type == 'moderation' && (doc.moderationState === 'APPROVED' || doc.moderationState === 'REJECTED')) {" +
+            "      for(var i in doc.moderators)" +
+            "        emit([doc.moderators[i], doc.requestingUserDepartment], doc);" +
             "    }" +
             "}";
 
     private static final String COUNTBYMODERATIONSTATE = "function(doc) {" +
-            "  if (doc.type == 'moderation') {" +
-            "    var moderationState = doc.moderationState;" +
-            "    if(moderationState === \"INPROGRESS\" || moderationState === \"PENDING\") {" +
-            "      emit(\"OPEN\", null);" +
-            "    } else {" +
-            "      emit(\"CLOSED\", null);" +
+            "    if (doc.type == 'moderation') {" +
+            "        var moderationState = doc.moderationState;" +
+            "        for(var i in doc.moderators)" +
+            "        {" +
+            "          if (moderationState === \"INPROGRESS\" || moderationState === \"PENDING\") {" +
+            "            emit([doc.moderators[i], \"OPEN\"], null);" +
+            "          } else {" +
+            "            emit([doc.moderators[i], \"CLOSED\"], null);" +
+            "          }" +
+            "        }" +
             "    }" +
-            "  }" +
             "}";
 
     public ModerationRequestRepository(DatabaseConnectorCloudant db) {
@@ -191,8 +224,8 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         views.put("closedRequestsBydate", createMapReduce(BYDATE_CLOSED, null));
         views.put("openRequestsBydocumentname", createMapReduce(BYDOCUMENTNAME_OPEN, null));
         views.put("closedRequestsBydocumentname", createMapReduce(BYDOCUMENTNAME_CLOSED, null));
-        views.put("openRequestsBymoderationstate", createMapReduce(BYMODERATIONTATE_OPEN, null));
-        views.put("closedRequestsBymoderationstate", createMapReduce(BYMODERATIONTATE_CLOSED, null));
+        views.put("openRequestsBymoderationstate", createMapReduce(BYMODERATIONSTATE_OPEN, null));
+        views.put("closedRequestsBymoderationstate", createMapReduce(BYMODERATIONSTATE_CLOSED, null));
         views.put("openRequestsBycomponenttype", createMapReduce(BYCOMPONENTTYPE_OPEN, null));
         views.put("closedRequestsBycomponenttype", createMapReduce(BYCOMPONENTTYPE_CLOSED, null));
         views.put("openRequestsbyrequestinguserdept", createMapReduce(BYREQUESTINGUSERDEPRTMENT_OPEN, null));
@@ -220,7 +253,8 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         return paginatedModerations;
     }
 
-    private Map<PaginationData, List<ModerationRequest>> queryViewWithPagination(String moderator, PaginationData pageData, boolean open) {
+    private Map<PaginationData, List<ModerationRequest>> queryViewWithPagination(String moderator,
+            PaginationData pageData, boolean open) {
         final int rowsPerPage = pageData.getRowsPerPage();
         Map<PaginationData, List<ModerationRequest>> result = Maps.newHashMap();
         List<ModerationRequest> modReqs = Lists.newArrayList();
@@ -264,15 +298,17 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
             query = getConnector().createQuery(ModerationRequest.class, open ? "allOpenRequests" : "allClosedRequests");
             break;
         }
-        ViewRequest<String, Object> request = null;
+        ViewRequest<ComplexKey, Object> request = null;
+        List<ComplexKey> keys = prepareKeys(moderator, ascending);
         if (rowsPerPage == -1) {
-            request = query.newRequest(Key.Type.STRING, Object.class).descending(!ascending).includeDocs(true).build();
+            request = query.newRequest(Key.Type.COMPLEX, Object.class).descending(!ascending).startKey(keys.get(0))
+                    .endKey(keys.get(1)).includeDocs(true).build();
         } else {
-            request = query.newPaginatedRequest(Key.Type.STRING, Object.class).rowsPerPage(rowsPerPage)
-                    .descending(!ascending).includeDocs(true).build();
+            request = query.newPaginatedRequest(Key.Type.COMPLEX, Object.class).startKey(keys.get(0))
+                    .endKey(keys.get(1)).rowsPerPage(rowsPerPage).descending(!ascending).includeDocs(true).build();
         }
 
-        ViewResponse<String, Object> response = null;
+        ViewResponse<ComplexKey, Object> response = null;
         try {
             response = request.getResponse();
             int pageNo = pageData.getDisplayStart() / rowsPerPage;
@@ -281,31 +317,49 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
                 response = response.nextPage();
                 i++;
             }
-            modReqs = response.getDocsAs(ModerationRequest.class);
+            if (response != null) {
+                modReqs = response.getDocsAs(ModerationRequest.class);
+            }
         } catch (Exception e) {
             log.error("Error getting recent components", e);
         }
-        pageData.setTotalRowCount(response.getTotalRowCount());
+        final long totalRowCount = response == null ? 0 : response.getTotalRowCount();
+        pageData.setTotalRowCount(totalRowCount);
         result.put(pageData, modReqs);
         return result;
+    }
+
+    private List<ComplexKey> prepareKeys(String moderator, boolean ascending) {
+        ComplexKey startKey, endKey;
+        if (ascending) {
+            startKey = Key.complex(new String[] { moderator });
+            endKey = Key.complex(new String[] { moderator, "\ufff0" });
+        } else {
+            startKey = Key.complex(new String[] { moderator, "\ufff0" });
+            endKey = Key.complex(new String[] { moderator });
+        }
+        return List.of(startKey, endKey);
     }
 
     public List<ModerationRequest> getRequestsByRequestingUser(String user) {
         return makeSummaryFromFullDocs(SummaryType.SHORT, queryView("users", user));
     }
 
-    public Map<String, Long> getCountByModerationState() {
+    public Map<String, Long> getCountByModerationState(String moderator) {
         Map<String, Long> countByModerationState = Maps.newHashMap();
-        ViewRequest<String, Long> countReq = getConnector()
-                .createQuery(ModerationRequest.class, "countByModerationState").newRequest(Key.Type.STRING, Long.class)
-                .group(true).reduce(true).build();
-        List<Row<String, Long>> rows;
+        List<ComplexKey> keys = prepareKeys(moderator, true);
+        ViewRequest<ComplexKey, Long> countReq = getConnector()
+                .createQuery(ModerationRequest.class, "countByModerationState").newRequest(Key.Type.COMPLEX, Long.class)
+                .startKey(keys.get(0)).endKey(keys.get(1)).group(true).groupLevel(2).reduce(true).build();
         try {
-            if (countReq.getResponse() != null) {
-                rows = countReq.getResponse().getRows();
-                for (Row<String, Long> row : rows) {
-                    countByModerationState.put(row.getKey(), row.getValue());
-                }
+            ViewResponse<ComplexKey, Long> response = countReq.getResponse();
+            if (null != response) {
+                countByModerationState = response.getRows().stream().collect(Collectors.toMap(key -> {
+                    String json = key.getKey().toJson();
+                    String replace = json.replace("[", "").replace("]", "").replaceAll("\"", "");
+                    List<String> moderatorToModStatus = new ArrayList<String>(Arrays.asList(replace.split(",")));
+                    return moderatorToModStatus.get(1);
+                }, val -> val.getValue()));
             }
         } catch (IOException e) {
             log.error("Error getting count of moderation requests based on moderation state", e);

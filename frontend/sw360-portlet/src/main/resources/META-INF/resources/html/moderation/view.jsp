@@ -261,8 +261,8 @@ AUI().use('liferay-portlet-url', function () {
             closedModerationsDataTable,
             clearingRequestsDataTable,
             closedClearingRequestsDataTable,
-            moderationRequestsSize = 0,
             closedModerationRequestsSize = 0,
+            openedModerationRequestsSize = 0,
             requestingUserDepartments;
 
         listgroup.initialize('requestTabs', $('#requestTabs').data('initial-tab') || 'tab-OpenMR');
@@ -456,8 +456,8 @@ AUI().use('liferay-portlet-url', function () {
                     });
                 }
             } else {
-                $('.portlet-title').attr('title', '<liferay-ui:message key="moderations" /> (' + closedModerationRequestsSize + '/' + moderationRequestsSize +')');
-                $('.portlet-title').html('<liferay-ui:message key="moderations" /> (' + closedModerationRequestsSize + '/<span id="requestCounter">' + moderationRequestsSize +'</span>)');
+                $('.portlet-title').attr('title', '<liferay-ui:message key="moderations" /> (' + openedModerationRequestsSize + '/' + closedModerationRequestsSize +')');
+                $('.portlet-title').html('<liferay-ui:message key="moderations" /> (' + openedModerationRequestsSize + '/<span id="requestCounter">' + closedModerationRequestsSize +'</span>)');
                 $('#date-quickfilter').hide();
                 $('#general_quick_filter').hide();
                 $('#adv_search_mod_req').show();
@@ -489,10 +489,10 @@ AUI().use('liferay-portlet-url', function () {
                     loadingRecords: "<liferay-ui:message key="loading" />"
                 },
                 fnDrawCallback: function(settings){
+                    openedModerationRequestsSize = settings.json.openModerationRequests;
                     closedModerationRequestsSize = settings.json.closedModerationRequests;
-                    moderationRequestsSize = settings.json.moderationRequests;
                     requestingUserDepartments = settings.json.requestingUserDepartments;
-                    populateRequestingUsersDept(requestingUserDepartments);
+                    populateRequestingUsersDept(requestingUserDepartments.sort());
                     datatables.showPageContainer;
                     $(tableId + ' .TogglerModeratorsList').on('click', toggleModeratorsList );
                     docReady();

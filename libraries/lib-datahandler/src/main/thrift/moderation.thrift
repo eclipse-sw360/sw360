@@ -261,7 +261,7 @@ service ModerationService {
     /**
      * get count of moderation requests by moderation state
      **/
-    map<string, i64> getCountByModerationState();
+    map<string, i64> getCountByModerationState(1: User user);
 
     /**
      * get requesting users departments
