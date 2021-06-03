@@ -376,24 +376,48 @@ include::{snippets}/should_document_update_project/http-response.adoc[]
 [[resources-project-link-releases]]
 ==== Link Releases to the project
 
-A `POST` request is used to link releases to the project. Please pass an array of release ids to be linked as request body.
+A `POST` request is used to link releases to the project. Please pass an array of release ids or a map of release id to usage to be linked as request body.
 
-===== Example request
+===== Request structure 1
+Pass an array of release ids to be linked as request body.
+
+===== Example request 1
 include::{snippets}/should_document_link_releases/curl-request.adoc[]
 
-===== Example response
+===== Example response 1
 include::{snippets}/should_document_link_releases/http-response.adoc[]
+
+===== Request structure 2
+Pass a map of release id to usage to be linked as request body.
+
+===== Example request 2
+include::{snippets}/should_document_link_releases_with_project_release_relation/curl-request.adoc[]
+
+===== Example response 2
+include::{snippets}/should_document_link_releases_with_project_release_relation/http-response.adoc[]
 
 [[resources-project-patch-releases]]
 ==== Patch Releases to the project
 
-A `PATCH` request to append new releases to existing releases in a project
+A `PATCH` request to append new releases to existing releases in a project. Please pass an array of release ids or a map of release id to usage to be linked as request body.
 
-===== Example request
+===== Request structure 1
+Pass an array of release ids to be linked as request body.
+
+===== Example request 1
 include::{snippets}/should_document_patch_releases/curl-request.adoc[]
 
-===== Example response
+===== Example response 1
 include::{snippets}/should_document_patch_releases/http-response.adoc[]
+
+===== Request structure 2
+Pass a map of release id to usage to be linked as request body.
+
+===== Example request 2
+include::{snippets}/should_document_patch_releases_with_project_release_relation/curl-request.adoc[]
+
+===== Example response 2
+include::{snippets}/should_document_patch_releases_with_project_release_relation/http-response.adoc[]
 
 [[resources-project-patch-release-usage]]
 ==== Update Project Release Relationship
