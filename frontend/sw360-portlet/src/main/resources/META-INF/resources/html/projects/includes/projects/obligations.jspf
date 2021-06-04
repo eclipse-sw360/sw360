@@ -40,7 +40,9 @@
                 <th class="more-info">
                     <span title="<liferay-ui:message key="expand.all" />" data-show="false">&#x25BA</span>
                 </th>
-                <th><liferay-ui:message key="license.obligation" /></th>
+                <th>
+                    <span title="<liferay-ui:message key="ObligationLevel-LICENSE_OBLIGATION" />"><liferay-ui:message key="license.obligation" /></span>
+                </th>
                 <th><liferay-ui:message key="licenses" /></th>
                 <th><liferay-ui:message key="releases" /></th>
                 <th><liferay-ui:message key="status" /></th>
@@ -73,7 +75,9 @@
                 <th class="comp-more-info">
                     <span title="<liferay-ui:message key="expand.all" />" data-show="false">&#x25BA</span>
                 </th>
-                <th><liferay-ui:message key="component.obligation" /></th>
+                <th>
+                    <span title="<liferay-ui:message key="ObligationLevel-COMPONENT_OBLIGATION" />"><liferay-ui:message key="component.obligation" /></span>
+                </th>
                 <th><liferay-ui:message key="status" /></th>
                 <th><liferay-ui:message key="type" /></th>
                 <th><liferay-ui:message key="id" /></th>
@@ -102,7 +106,9 @@
                 <th class="project-more-info">
                     <span title="<liferay-ui:message key="expand.all" />" data-show="false">&#x25BA</span>
                 </th>
-                <th><liferay-ui:message key="project.obligation" /></th>
+                <th>
+                    <span title="<liferay-ui:message key="ObligationLevel-PROJECT_OBLIGATION" />"><liferay-ui:message key="project.obligation" /></span>
+                </th>
                 <th><liferay-ui:message key="status" /></th>
                 <th><liferay-ui:message key="type" /></th>
                 <th><liferay-ui:message key="id" /></th>
@@ -131,7 +137,9 @@
                 <th class="org-more-info">
                     <span title="<liferay-ui:message key="expand.all" />" data-show="false">&#x25BA</span>
                 </th>
-                <th><liferay-ui:message key="organisation.obligation" /></th>
+                <th>
+                    <span title="<liferay-ui:message key="ObligationLevel-ORGANISATION_OBLIGATION" />"><liferay-ui:message key="organisation.obligation" /></span>
+                </th>
                 <th><liferay-ui:message key="status" /></th>
                 <th><liferay-ui:message key="type" /></th>
                 <th><liferay-ui:message key="id" /></th>
