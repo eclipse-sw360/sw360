@@ -27,6 +27,7 @@ import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -238,6 +239,7 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Release sw360Release = releaseService.getReleaseForUserById(id, user);
         Release updateRelease = setBackwardCompatibleFieldsInRelease(reqBodyMap);
+        updateRelease.setClearingState(sw360Release.getClearingState());
         sw360Release = this.restControllerHelper.updateRelease(sw360Release, updateRelease);
         releaseService.setComponentNameAsReleaseName(sw360Release, user);
         RequestStatus updateReleaseStatus = releaseService.updateRelease(sw360Release, user);
@@ -279,6 +281,7 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
             release.setMainLicenseIds(mainLicenseIds);
         }
 
+        release.unsetClearingState();
         Release sw360Release = releaseService.createRelease(release, sw360User);
         HalResource<Release> halResource = createHalReleaseResource(sw360Release, true);
 
