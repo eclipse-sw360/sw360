@@ -42,6 +42,7 @@ import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
+import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,6 +59,7 @@ import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTExcepti
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -80,6 +82,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
     @NonNull
     private final Sw360ProjectService projectService;
+    private final Sw360LicenseService licenseService;
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
@@ -158,6 +161,21 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     public RequestStatus updateRelease(Release release, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         rch.checkForCyclicOrInvalidDependencies(sw360ComponentClient, release, sw360User);
+
+        List <String> licenseIncorrect = new ArrayList<>();
+        if (!release.getMainLicenseIds().isEmpty()) {
+            for (String licenseId : release.getMainLicenseIds()) {
+                try {
+                    licenseService.getLicenseById(licenseId);
+                } catch (Exception e) {
+                    licenseIncorrect.add(licenseId);
+                }
+            }
+        }
+        if (!licenseIncorrect.isEmpty()) {
+            throw new HttpMessageNotReadableException("License with ids " + licenseIncorrect + " not existed.");
+        }
+
         RequestStatus requestStatus = sw360ComponentClient.updateRelease(release, sw360User);
         if (requestStatus == RequestStatus.INVALID_INPUT) {
             throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
