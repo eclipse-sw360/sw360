@@ -62,6 +62,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
@@ -1226,9 +1227,21 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
+    public void should_document_link_releases_with_project_release_relation() throws Exception {
+        MockHttpServletRequestBuilder requestBuilder = post("/api/projects/" + project.getId() + "/releases");
+        add_patch_releases_with_project_release_relation(requestBuilder);
+    }
+
+    @Test
     public void should_document_patch_releases() throws Exception {
         MockHttpServletRequestBuilder requestBuilder = patch("/api/projects/" + project.getId() + "/releases");
         add_patch_releases(requestBuilder);
+    }
+
+    @Test
+    public void should_document_patch_releases_with_project_release_relation() throws Exception {
+        MockHttpServletRequestBuilder requestBuilder = patch("/api/projects/" + project.getId() + "/releases");
+        add_patch_releases_with_project_release_relation(requestBuilder);
     }
 
     @Test
@@ -1337,6 +1350,22 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         this.mockMvc.perform(requestBuilder.contentType(MediaTypes.HAL_JSON)
                 .content(this.objectMapper.writeValueAsString(releaseIds))
+                .header("Authorization", "Bearer " + accessToken)).andExpect(status().isCreated());
+    }
+
+    private void add_patch_releases_with_project_release_relation(MockHttpServletRequestBuilder requestBuilder)
+            throws Exception {
+        ProjectReleaseRelationship projectReleaseRelationship1 = new ProjectReleaseRelationship(
+                ReleaseRelationship.REFERRED, MAINLINE);
+        ProjectReleaseRelationship projectReleaseRelationship2 = new ProjectReleaseRelationship(
+                ReleaseRelationship.STANDALONE, MainlineState.SPECIFIC).setComment("Test Comment 2");
+
+        ImmutableMap<String, ProjectReleaseRelationship> releaseIdToUsage = ImmutableMap
+                .<String, ProjectReleaseRelationship>builder().put("12345", projectReleaseRelationship1)
+                .put("54321", projectReleaseRelationship2).build();
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        this.mockMvc.perform(requestBuilder.contentType(MediaTypes.HAL_JSON)
+                .content(this.objectMapper.writeValueAsString(releaseIdToUsage))
                 .header("Authorization", "Bearer " + accessToken)).andExpect(status().isCreated());
     }
 }
