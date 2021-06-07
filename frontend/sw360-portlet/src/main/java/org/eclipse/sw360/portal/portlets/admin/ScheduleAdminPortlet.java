@@ -74,6 +74,15 @@ public class ScheduleAdminPortlet extends Sw360Portlet {
             request.setAttribute(PortalConstants.CVESEARCH_INTERVAL, CommonUtils.formatTime(intervalInSeconds));
             String nextSync = scheduleClient.getNextSync(ThriftClients.CVESEARCH_SERVICE);
             request.setAttribute(PortalConstants.CVESEARCH_NEXT_SYNC, nextSync);
+
+            boolean isDeleteAttachmentScheduled = isDeleteAttachmentScheduled(scheduleClient, user);
+            request.setAttribute(PortalConstants.DELETE_ATTACHMENT_IS_SCHEDULED, isDeleteAttachmentScheduled);
+            int offsetInSecondsForDeleteAttachment = scheduleClient.getFirstRunOffset(ThriftClients.DELETE_ATTACHMENT_SERVICE);
+            request.setAttribute(PortalConstants.DELETE_ATTACHMENT_OFFSET, CommonUtils.formatTime(offsetInSecondsForDeleteAttachment));
+            int intervalInSecondsForDeleteAttachment = scheduleClient.getInterval(ThriftClients.DELETE_ATTACHMENT_SERVICE);
+            request.setAttribute(PortalConstants.DELETE_ATTACHMENT_INTERVAL, CommonUtils.formatTime(intervalInSecondsForDeleteAttachment));
+            String nextSyncForDeleteAttachment = scheduleClient.getNextSync(ThriftClients.DELETE_ATTACHMENT_SERVICE);
+            request.setAttribute(PortalConstants.DELETE_ATTACHMENT_NEXT_SYNC, nextSyncForDeleteAttachment);
         } catch (TException te) {
             log.error(te.getMessage());
         }
@@ -131,6 +140,62 @@ public class ScheduleAdminPortlet extends Sw360Portlet {
             setSessionMessage(request, requestStatus, "Every task", "unschedule");
         } catch (TException e) {
             log.error(e);
+        }
+    }
+
+    private boolean isDeleteAttachmentScheduled(ScheduleService.Iface scheduleClient, User user) throws TException {
+        RequestStatusWithBoolean requestStatus = scheduleClient.isServiceScheduled(ThriftClients.DELETE_ATTACHMENT_SERVICE, user);
+        if(RequestStatus.SUCCESS.equals(requestStatus.getRequestStatus())){
+            return requestStatus.isAnswerPositive();
+        } else {
+            throw new SW360Exception("Backend query for schedule status of deleteAttachment failed.");
+        }
+    }
+
+    @UsedAsLiferayAction
+    public void scheduleDeleteAttachment(ActionRequest request, ActionResponse response) throws PortletException, IOException {
+        try {
+            RequestSummary requestSummary =
+                    new ThriftClients().makeScheduleClient().scheduleService(ThriftClients.DELETE_ATTACHMENT_SERVICE);
+            setSessionMessage(request, requestSummary.getRequestStatus(), "Task", "schedule");
+        } catch (TException e) {
+            log.error("Unable to Schedule the delete attachment service. ", e);
+            e.printStackTrace();
+        }
+    }
+
+    @UsedAsLiferayAction
+    public void unscheduleDeleteAttachment(ActionRequest request, ActionResponse response) throws PortletException, IOException {
+        try {
+            User user = UserCacheHolder.getUserFromRequest(request);
+            RequestStatus requestStatus =
+                    new ThriftClients().makeScheduleClient().unscheduleService(ThriftClients.DELETE_ATTACHMENT_SERVICE, user);
+            setSessionMessage(request, requestStatus, "Task", "unschedule");
+        } catch (TException e) {
+            log.error("Unable to Unschedule the delete attachment service. ", e);
+            e.printStackTrace();
+        }
+    }
+
+    @UsedAsLiferayAction
+    public void triggerDeleteAttachment(ActionRequest request, ActionResponse response) throws PortletException, IOException {
+        try {
+            RequestStatus requestStatus = new ThriftClients().makeAttachmentClient().deleteOldAttachmentFromFileSystem();
+            setSessionMessage(request, requestStatus, "Task", "perform");
+        } catch (TException e) {
+            log.error("Unable to Manually trigger the  delete attachment service. ", e);
+            e.printStackTrace();
+        }
+    }
+
+    @UsedAsLiferayAction
+    public void triggerCveSearch(ActionRequest request, ActionResponse response) throws PortletException, IOException {
+        try {
+            RequestStatus requestStatus = new ThriftClients().makeCvesearchClient().update();
+            setSessionMessage(request, requestStatus, "Task", "perform");
+        } catch (TException e) {
+            log.error("Unable to Manually trigger the  CVE search service. ", e);
+            e.printStackTrace();
         }
     }
 }

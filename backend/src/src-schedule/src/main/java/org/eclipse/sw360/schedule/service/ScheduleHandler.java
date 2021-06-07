@@ -69,6 +69,9 @@ public class ScheduleHandler implements ScheduleService.Iface {
             case ThriftClients.CVESEARCH_SERVICE:
                 successSync = wrapSupplierException(() -> thriftClients.makeCvesearchClient().update(), serviceName);
                 break;
+            case ThriftClients.DELETE_ATTACHMENT_SERVICE:
+                successSync = wrapSupplierException(() -> thriftClients.makeAttachmentClient().deleteOldAttachmentFromFileSystem(), serviceName);
+                break;
             default:
                 log.error("Could not schedule service: " + serviceName + ". Reason: service is not registered in ThriftClients.");
         }

@@ -271,4 +271,7 @@ public class AttachmentDatabaseHandler {
     public List<AttachmentUsage> getAttachmentUsagesByReleaseId(String releaseId) {
         return attachmentUsageRepository.getUsagesByReleaseId(releaseId);
     }
+    public RequestStatus deleteOldAttachmentFromFileSystem() throws TException {
+        return DatabaseHandlerUtil.deleteOldAttachmentFromFileSystem();
+    }
 }

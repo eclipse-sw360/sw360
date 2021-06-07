@@ -243,4 +243,8 @@ public class AttachmentHandler implements AttachmentService.Iface {
         return handler.getAttachmentUsagesByReleaseId(releaseId);
     }
 
+    @Override
+    public RequestStatus deleteOldAttachmentFromFileSystem() throws TException {
+        return handler.deleteOldAttachmentFromFileSystem();
+    }
 }
