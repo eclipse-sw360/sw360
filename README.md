@@ -2,7 +2,7 @@
 [![Build Status](https://travis-ci.org/eclipse/sw360.svg?branch=master)](https://travis-ci.org/eclipse/sw360)
 [![Slack Channel](https://img.shields.io/badge/slack-sw360chat-blue.svg?longCache=true&logo=slack)](https://join.slack.com/t/sw360chat/shared_invite/enQtNzg5NDQxMTQyNjA5LThiMjBlNTRmOWI0ZjJhYjc0OTk3ODM4MjBmOGRhMWRmN2QzOGVmMzQwYzAzN2JkMmVkZTI1ZjRhNmJlNTY4ZGI)
 [![Changelog](https://badgen.net/badge/changelog/%E2%98%85/blue)](https://github.com/eclipse/sw360/blob/master/CHANGELOG.md)
-[![version](https://img.shields.io/badge/version-13.0.0-blue)](https://github.com/eclipse/sw360/releases/tag/sw360-13.0.0-M1)
+[![version](https://img.shields.io/badge/version-13.4.0-blue)](https://github.com/eclipse/sw360/releases/tag/sw360-13.4.0-M1)
 
 ### SW360 Portal
 
@@ -23,7 +23,7 @@ It is comprised of one frontend (portal) part, backend (services) part and addit
 * Database: we store software components and metadata about them in CouchDB.
 * Rest: this REST API provides access to project resources for external integration.
 
-The reference platform is the Ubuntu server 18.04 (which is an LTS version). However, it runs well on other OSes (see below).
+The reference platform is the Ubuntu server 20.04 (which is an LTS version) as it is supported in sw360vagrant. However, it runs well on other OSes (see below).
 
 ### Project structure
 
@@ -38,8 +38,8 @@ This is a multi module maven file. please consider that we have the following mo
 ### Required software
 
 * Java 11, tested with OpenJDK
-* CouchDB, at least 2.1 (tested, may work with other releases of CouchDB as well)
-* Liferay Portal CE 7.3.3 GA4
+* CouchDB, at least 2.1 (tested, may work with other releases of CouchDB as well), runs best with 3.1.1
+* Liferay Portal CE 7.3.3 GA4 or 7.3.4 GA5
 * Apache Tomcat 9.0.X (which is bundled with Liferay)
 * couchdb-lucene for search, please refer to installation details in the wiki, because a patch is required
 
@@ -51,6 +51,7 @@ In addition, the Liferay instance must provide the following dependecies via OSG
 * Apache Commons IO 2.6
 * Apache Commons Lang 2.4
 * Apache Commons Logging 1.2
+* Apache Commons Compress 1.20
 * Google Gson 2.8.5
 * Google Guava 21.0
 * Jackson Annotations 2.9.8
@@ -68,7 +69,7 @@ http://maven.apache.org/download.html#Installation
 
 Then, you must install Apache Tomcat, CouchDB. And, Java of course.
 
-The software is tested with with debian 8, debian 9, ubuntu 16.04, ubuntu 18.04, macosx 10.8 - 10.14. We run Liferay with PostgreSQL 9.X or 10 as the Liferay CE requires, but HSQL (provided with the liferay bundle) runs also OK.
+The software is tested with with debian 8, debian 9, ubuntu 16.04, ubuntu 18.04, ubuntu 20.04 macosx 10.8 - 10.15. We run Liferay with PostgreSQL 9.X or 10 as the Liferay CE requires, but HSQL (provided with the liferay bundle) runs also OK.
 
 ### PROBLEMS
 
@@ -119,10 +120,10 @@ You may also specify the paths using these properties:
   - backend artifacts: `backend.deploy.dir`
   - rest artifacts: `rest.deploy.dir`
   - liferay artifacts (frontend, libraries): `liferay.deploy.dir`
-Be aware that you have to deploy the liferay artifacts in the Liferay auto-deploy folder.
+Be aware that you have to deploy the Liferay artifacts in the Liferay auto-deploy folder.
 On the other hand you must not deploy rest and backend artifacts to the auto-deploy folder.
 
-**Note:** the test framework for the REST API needs the tests running in order to generate the API documentation. So, for building the REST API artefacts, please switch in the rest subprojects and execute:
+**Note:** the test framework for the REST API needs the tests running in order to generate the API documentation. So, for building the REST API artefacts, please switch in the rest sub projects and execute:
 
 ```
 mvn package -P deploy -Dbase.deploy.dir=. -Dliferay.deploy.dir=${LIFERAY_INSTALL}/deploy -Dbackend.deploy.dir=${LIFERAY_INSTALL}/tomcat-9.0.17/webapps -Drest.deploy.dir=${LIFERAY_INSTALL}/tomcat-9.0.17/webapps
@@ -130,7 +131,7 @@ mvn package -P deploy -Dbase.deploy.dir=. -Dliferay.deploy.dir=${LIFERAY_INSTALL
 
 ### Liferay Configuration
 
-You should provide below property configuration based on his/her liferay deployment
+You should provide below property configuration based on his/her Liferay deployment
 environment as found in the master pom.xml file.
 
 Please note that you should run the Liferay installation procedures as found on the
