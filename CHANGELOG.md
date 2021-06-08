@@ -4,6 +4,58 @@ This is the changelog file of the sw360 project. It starts with the first releas
 
 https://github.com/sw360/sw360portal/releases
 
+## sw360-13.4.0-M1
+
+This tag covers many corrections and bug fixes after the 13.3 release. Th eproductive use of 13.3 has revealed a number of issues resulting from the big persistence layer switch.
+
+This release provides also features, however, some smaller news are there, for example, new REST endpoints or new functions in the UI.
+
+### Migrations
+
+For this version, no database migration is necessary.
+
+### Credits
+
+The following github users have contributed to the source code since the last release (in alphabetical order):
+
+```
+abdul.kapti@siemens-healthineers.com
+jaideep.palit@siemens.com
+kumar.ravindra@siemens.com
+michael.c.jaeger@siemens.com
+nam1.nguyenphuong@toshiba.co.jp
+smruti.sahoo@siemens.com
+yosuke.yamada.no@hitachi.com
+```
+
+Please note that also many other persons usually contribute to the project with reviews, testing, documentations, conversations or presentations.
+
+### Features
+
+* `3089008c` feat(rest): Support map of release id to usage as request body in addition to previous array of release id for
+* `df2f6dad` feat(VirusScanSchedulerService): Scheduler Service for deletion of attachment from local FS
+* `276650a9` feat(ObligationHelpTextforProject): Provide the different obligation help text from the Projects Screen
+* `ec37c480` feat(moderations): Pagination in requests tab for moderations
+* `0d739556` feat(obligationlevelhelptext):Provide info text for different obligation Level
+* `83282112` feat(ProjectUI): feature to add License Info to linked releases from License Clearing tab
+* `afdac6f5` feat(ProjectVersion): Added the project version in the search Project filter
+* `4b1a1b3f` feat(ProjectUI): Fixed copy of projects removes linked subprojects
+* `d44b63ba` feat(ProjectGroupFilter):Filter the projects in Advanced Search based on Projects Group
+* `4140a8ad` feat(rest): Added new endpoints to update attachment info of Project, Component, Release
+* `96443359` feat(rest): Added rest endpoint to update project-release-relationship information of linked releases in a project
+* `756190b4` feat(ProjectUI): feature to display the source files linked with the licenses
+
+### Corrections
+
+* `ef27ad5d` fix(rest): Auto-set release clearing state
+* `debfe70d` Fix: Rest interface can not handle licenses which do not exist in the database #534
+* `2d56d0b4` fix: Wrong error handling when deleting multiple components #851 nam1.nguyenphuong@toshiba.co.jp
+* `9a31049d` fix(script): Build failure of sw360dev.Dockerfile and compileWithDocker.sh
+* `9f32b882` fix(readmeossdownload): Null pointer while downloading readme_oss
+* `f0aa5cbf` fix(ui/rest): Issue fetching releases by external ids and null value in external id breaks the release view
+* `baaa9f42` fix(search): search releases while linking to project
+* `00083ea8` fix(backend): Issues with boolean and timestamp field deserialization and get attachment info REST
+
 ## sw360-13.3.0-M1
 
 This tag is applied to have the migration from cloudant to ektorp in one single step. Ektorp is a Java library which provides an object oriented interface to the (REST-based) access to couchdb. It has been used in sw360 from day 1. Now we concluded to replace ektorp: it does not support paging; having our server growing larger and lager and serving more and more users, receiving results sets from a couchdb view without paging is a pain. And it did not look like it will be supported, because the ektorp project looks calm now (last commit to master in 2017). Among the available options for replacing ektorp, we choose the java-client from the open source project cloudant (version 2.19.1, see https://github.com/cloudant/java-cloudant). It supports paging and offers potentially other interesting features (caching, compatibility with MongoDB, etc.).
