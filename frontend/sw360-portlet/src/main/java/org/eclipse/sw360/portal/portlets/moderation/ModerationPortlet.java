@@ -185,15 +185,19 @@ public class ModerationPortlet extends FossologyAwarePortlet {
         }
         JSONArray jsonOpenModerations = getModerationData(moderations, paginationParameters, request, open);
         JSONObject jsonResult = createJSONObject();
-        jsonResult.put(DATATABLE_RECORDS_TOTAL, pgDt.getTotalRowCount());
-        jsonResult.put(DATATABLE_RECORDS_FILTERED, pgDt.getTotalRowCount());
-        jsonResult.put(DATATABLE_DISPLAY_DATA, jsonOpenModerations);
-        final Map<String, Long> countByModerationState = getCountByModerationState();
-        long totalNoOfRequests = countByModerationState.values().stream().mapToLong(Long::longValue).sum();
+        final Map<String, Long> countByModerationState = getCountByModerationState(request);
+        long openModRequestCount = countByModerationState.get("OPEN") == null ? 0
+                : countByModerationState.get("OPEN");
         long closedModRequestCount = countByModerationState.get("CLOSED") == null ? 0
                 : countByModerationState.get("CLOSED");
-        jsonResult.put(MODERATION_REQUESTS, totalNoOfRequests);
+        Map<String, Set<String>> filterMap = getModerationFilterMap(request);
+        long noOfRecords = filterMap.isEmpty() ? (open ? openModRequestCount : closedModRequestCount)
+                : pgDt.getTotalRowCount();
+        jsonResult.put(DATATABLE_RECORDS_TOTAL, noOfRecords);
+        jsonResult.put(DATATABLE_RECORDS_FILTERED, noOfRecords);
+        jsonResult.put(DATATABLE_DISPLAY_DATA, jsonOpenModerations);
         jsonResult.put(CLOSED_MODERATION_REQUESTS, closedModRequestCount);
+        jsonResult.put(OPEN_MODERATION_REQUESTS, openModRequestCount);
         jsonResult.put(MODERATION_REQUESTING_USER_DEPARTMENTS, getRequestingUserDepts());
         try {
             writeJSON(request, response, jsonResult);
@@ -202,11 +206,12 @@ public class ModerationPortlet extends FossologyAwarePortlet {
         }
     }
 
-    private Map<String, Long> getCountByModerationState() {
+    private Map<String, Long> getCountByModerationState(ResourceRequest request) {
         Map<String, Long> countByModerationState = Maps.newHashMap();
         ModerationService.Iface client = thriftClients.makeModerationClient();
+        User user = UserCacheHolder.getUserFromRequest(request);
         try {
-            countByModerationState = client.getCountByModerationState();
+            countByModerationState = client.getCountByModerationState(user);
         } catch (TException e) {
             log.error("Error geeting moderation requests count", e);
         }
@@ -291,6 +296,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
                 moderationRequestsWithPageData = client.getRequestsByModeratorWithPagination(user, pageData, open);
             } else {
                 List<ModerationRequest> moderations = client.refineSearch(null, filterMap);
+                moderations = moderations.stream().filter(mr -> mr.getModerators().contains(user.getEmail())).collect(Collectors.toList());
                 Map<Boolean, List<ModerationRequest>> partitionedModerationRequests = moderations.stream()
                         .collect(Collectors.groupingBy(ModerationPortletUtils::isOpenModerationRequest));
                 List<ModerationRequest> requests = CommonUtils.nullToEmptyList(partitionedModerationRequests.get(open));
