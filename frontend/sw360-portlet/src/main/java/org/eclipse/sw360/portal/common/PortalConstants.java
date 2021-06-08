@@ -299,6 +299,9 @@ public class PortalConstants {
 
     public static final String FOSSOLOGY_PORTLET_NAME = PORTLET_NAME_PREFIX + "fossology";
     public static final String USER_LIST = "userList";
+    public static final String SECONDARY_GROUPS_LIST = "secGrpsKeys";
+    public static final String EDIT_SECONDARY_GROUP_FOR_USER = "editSecondaryGroupForUser";
+    public static final String SECONDARY_ROLES_OPTIONS = "secondaryRolesOptions";
     public static final String MISSING_USER_LIST = "missingUserList";
     public static final String GET_CLEARING_STATE_SUMMARY = "getClearingStateSummary";
     public static final String PROJECT_LINK_TABLE_MODE = "projectLinkTableMode";

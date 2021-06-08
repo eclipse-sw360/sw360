@@ -57,7 +57,9 @@ struct User {
     13: optional map<string, bool> notificationPreferences,
     14: optional set<string> formerEmailAddresses,
     20: optional list<RestApiToken> restApiTokens,
-    21: optional map<string, bool> myProjectsPreferenceSelection
+    21: optional map<string, bool> myProjectsPreferenceSelection,
+    22: optional map<string, set<UserGroup>> secondaryDepartmentsAndRoles,
+    23: optional list<string> primaryRoles
 }
 
 struct RestApiToken {

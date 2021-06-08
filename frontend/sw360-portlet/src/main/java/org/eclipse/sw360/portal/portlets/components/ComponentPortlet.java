@@ -784,8 +784,13 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 request.setAttribute(COMPONENT_PURL, "");
             }
 
+            Set<UserGroup> allSecRoles = !CommonUtils.isNullOrEmptyMap(user.getSecondaryDepartmentsAndRoles())
+                    ? user.getSecondaryDepartmentsAndRoles().entrySet().stream().flatMap(entry -> entry.getValue().stream()).collect(Collectors.toSet())
+                    : new HashSet<UserGroup>();
+
             request.setAttribute(COMPONENT, component);
-            request.setAttribute(IS_USER_AT_LEAST_ECC_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.ECC_ADMIN, user) ? "Yes" : "No");
+            request.setAttribute(IS_USER_AT_LEAST_ECC_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.ECC_ADMIN, user)
+                    || PermissionUtils.isUserAtLeastDesiredRoleInSecondaryGroup(UserGroup.ECC_ADMIN, allSecRoles) ? "Yes" : "No");
 
         } catch (TException e) {
             log.error("Error fetching release from backend!", e);
@@ -1298,8 +1303,13 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 request.setAttribute(IS_USER_ALLOWED_TO_MERGE, PermissionUtils.isUserAtLeast(USER_ROLE_ALLOWED_TO_MERGE_OR_SPLIT_COMPONENT, user));
 
                 // get vulnerabilities
-                putVulnerabilitiesInRequestComponent(request, id, user);
-                request.setAttribute(VULNERABILITY_VERIFICATION_EDITABLE, PermissionUtils.isUserAtLeast(UserGroup.SECURITY_ADMIN, user));
+                Set<UserGroup> allSecRoles = !CommonUtils.isNullOrEmptyMap(user.getSecondaryDepartmentsAndRoles())
+                        ? user.getSecondaryDepartmentsAndRoles().entrySet().stream().flatMap(entry -> entry.getValue().stream()).collect(Collectors.toSet())
+                        : new HashSet<UserGroup>();
+                boolean isVulEditable = PermissionUtils.isUserAtLeast(UserGroup.SECURITY_ADMIN, user)
+                        || PermissionUtils.isUserAtLeastDesiredRoleInSecondaryGroup(UserGroup.SECURITY_ADMIN, allSecRoles);
+                putVulnerabilitiesInRequestComponent(request, id, user, isVulEditable);
+                request.setAttribute(VULNERABILITY_VERIFICATION_EDITABLE, isVulEditable);
 
                 addComponentBreadcrumb(request, response, component);
             } catch (TException e) {
@@ -1375,9 +1385,13 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 if (isNullOrEmpty(id)) {
                     id = release.getComponentId();
                 }
-
-                putVulnerabilitiesInRequestRelease(request, releaseId, user);
-                request.setAttribute(VULNERABILITY_VERIFICATION_EDITABLE, PermissionUtils.isUserAtLeast(UserGroup.SECURITY_ADMIN, user));
+                Set<UserGroup> allSecRoles = !CommonUtils.isNullOrEmptyMap(user.getSecondaryDepartmentsAndRoles())
+                        ? user.getSecondaryDepartmentsAndRoles().entrySet().stream().flatMap(entry -> entry.getValue().stream()).collect(Collectors.toSet())
+                        : new HashSet<UserGroup>();
+                boolean isVulEditable = PermissionUtils.isUserAtLeast(UserGroup.SECURITY_ADMIN, user)
+                        || PermissionUtils.isUserAtLeastDesiredRoleInSecondaryGroup(UserGroup.SECURITY_ADMIN, allSecRoles);
+                putVulnerabilitiesInRequestRelease(request, releaseId, user, isVulEditable);
+                request.setAttribute(VULNERABILITY_VERIFICATION_EDITABLE, isVulEditable);
             }
 
             component = client.getComponentById(id, user);
@@ -1444,10 +1458,10 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 e -> e.getComment());
     }
 
-    private void putVulnerabilitiesInRequestRelease(RenderRequest request, String releaseId, User user) throws TException {
+    private void putVulnerabilitiesInRequestRelease(RenderRequest request, String releaseId, User user, boolean isVulEditable) throws TException {
         VulnerabilityService.Iface vulClient = thriftClients.makeVulnerabilityClient();
         List<VulnerabilityDTO> vuls;
-        if (PermissionUtils.isUserAtLeast(UserGroup.SECURITY_ADMIN, user)) {
+        if (isVulEditable) {
             vuls = vulClient.getVulnerabilitiesByReleaseId(releaseId, user);
         } else {
             vuls = vulClient.getVulnerabilitiesByReleaseIdWithoutIncorrect(releaseId, user);
@@ -1456,10 +1470,10 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         putVulnerabilitiesInRequest(request, vuls, user);
     }
 
-    private void putVulnerabilitiesInRequestComponent(RenderRequest request, String componentId, User user) throws TException{
+    private void putVulnerabilitiesInRequestComponent(RenderRequest request, String componentId, User user, boolean isVulEditable) throws TException{
         VulnerabilityService.Iface vulClient = thriftClients.makeVulnerabilityClient();
         List<VulnerabilityDTO> vuls;
-        if (PermissionUtils.isUserAtLeast(UserGroup.SECURITY_ADMIN, user)) {
+        if (isVulEditable) {
             vuls = vulClient.getVulnerabilitiesByComponentId(componentId, user);
         } else {
             vuls = vulClient.getVulnerabilitiesByComponentIdWithoutIncorrect(componentId, user);
@@ -1507,7 +1521,11 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 .collect(Collectors.toSet())
                 .size();
         request.setAttribute(NUMBER_OF_CHECKED_OR_UNCHECKED_VULNERABILITIES, numberOfCorrectVuls);
-        if (PermissionUtils.isAdmin(UserCacheHolder.getUserFromRequest(request))) {
+        User userFromRequest = UserCacheHolder.getUserFromRequest(request);
+        Set<UserGroup> allSecRoles = !CommonUtils.isNullOrEmptyMap(userFromRequest.getSecondaryDepartmentsAndRoles())
+                ? userFromRequest.getSecondaryDepartmentsAndRoles().entrySet().stream().flatMap(entry -> entry.getValue().stream()).collect(Collectors.toSet())
+                : new HashSet<UserGroup>();
+        if (PermissionUtils.isAdmin(userFromRequest) || PermissionUtils.isAdminBySecondaryRoles(allSecRoles)) {
             long numberOfIncorrectVuls = vuls.stream()
                     .filter(v -> VerificationState.INCORRECT.equals(getVerificationState(v)))
                     .map(VulnerabilityDTO::getExternalId)

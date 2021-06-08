@@ -15,6 +15,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -69,4 +70,14 @@ public class ComponentPermissions extends DocumentPermissions<Component> {
         return attachmentContentIds;
     }
 
+    @Override
+    protected Set<String> getUserEquivalentOwnerGroup(){
+        Set<String> departments = new HashSet<String>();
+        departments.add(user.getDepartment());
+        if (!CommonUtils.isNullOrEmptyMap(user.getSecondaryDepartmentsAndRoles())) {
+            departments.addAll(user.getSecondaryDepartmentsAndRoles().keySet());
+        }
+
+        return departments;
+    }
 }

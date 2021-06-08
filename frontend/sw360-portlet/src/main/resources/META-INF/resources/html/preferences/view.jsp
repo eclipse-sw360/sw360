@@ -107,7 +107,7 @@
                             <td><sw360:DisplayUserEmail email="${sw360User.email}" bare="true"/></td>
                         </tr>
                         <tr>
-                            <td><liferay-ui:message key="group" />:</td>
+                            <td><liferay-ui:message key="primary.department" />:</td>
                             <td><sw360:out value="${sw360User.department}"/></td>
                         </tr>
                         <tr>
@@ -115,8 +115,12 @@
                             <td><sw360:out value="${sw360User.externalid}"/></td>
                         </tr>
                         <tr>
-                            <td><liferay-ui:message key="role" />:</td>
+                            <td><liferay-ui:message key="primary.department.role" />:</td>
                             <td><sw360:DisplayEnum value="${sw360User.userGroup}"/></td>
+                        </tr>
+                        <tr>
+                            <td><liferay-ui:message key="secondary.departments.and.roles" />:</td>
+                            <td><sw360:DisplayMapOfSecondaryGroupAndRoles value="${sw360User.secondaryDepartmentsAndRoles}"/></td>
                         </tr>
                     </table>
                 </div>
