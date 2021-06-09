@@ -172,7 +172,7 @@ public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
                 if (!documentAdditions.isSet(field) ||
                         !((Map<String, S>) documentAdditions.getFieldValue(field)).containsKey(entry.getKey())) {
                     //if it's not in documentAdditions, entry must be deleted, not updated
-                    ((HashMap<String, S>) document.getFieldValue(field)).remove(entry.getKey());
+                    ((Map<String, S>) document.getFieldValue(field)).remove(entry.getKey());
                 }
             }
         }
@@ -199,7 +199,7 @@ public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
                 if (!documentAdditions.isSet(field) ||
                         !((Map<String, ProjectReleaseRelationship>) documentAdditions.getFieldValue(field)).containsKey(entry.getKey())) {
                     //if it's not in documentAdditions, entry must be deleted, not updated
-                    ((HashMap<String, ProjectReleaseRelationship>) document.getFieldValue(field)).remove(entry.getKey());
+                    ((Map<String, ProjectReleaseRelationship>) document.getFieldValue(field)).remove(entry.getKey());
                 }
             }
         }
