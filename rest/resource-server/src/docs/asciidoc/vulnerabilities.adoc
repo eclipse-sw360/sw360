@@ -48,3 +48,81 @@ include::{snippets}/should_document_get_vulnerability/http-response.adoc[]
 
 ===== Links
 include::{snippets}/should_document_get_vulnerability/links.adoc[]
+
+
+[[resources-vulnerability-create]]
+==== Create a vulnerability
+
+A `POST` request to create a vulnerability
+
+===== Request structure
+include::{snippets}/should_document_create_vulnerability/request-fields.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_create_vulnerability/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_create_vulnerability/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_create_vulnerability/http-response.adoc[]
+
+
+[[resources-vulnerability-update]]
+==== Update a vulnerability
+
+A `PATCH` request to update a vulnerability
+
+===== Request structure
+include::{snippets}/should_document_update_vulnerability/request-fields.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_update_vulnerability/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_update_vulnerability/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_vulnerability/http-response.adoc[]
+
+
+[[resources-vulnerability-delete]]
+==== Delete a vulnerability
+
+A `DELETE` request to delete a vulnerability
+
+===== Example request
+include::{snippets}/should_document_delete_vulnerability/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_delete_vulnerability/http-response.adoc[]
+
+
+[[resources-vulnerability-release-relation-create]]
+==== Create a release vulnerability relation
+
+A `POST` request to create a vulnerability
+
+===== Request structure
+include::{snippets}/should_document_create_release_vulnerability_relation/request-fields.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_create_release_vulnerability_relation/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_create_release_vulnerability_relation/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_create_release_vulnerability_relation/http-response.adoc[]
+
+
+[[resources-vulnerability-release-relation-delete]]
+==== Delete a release vulnerability relation
+
+A `DELETE` request to delete a release vulnerability relation
+
+===== Example request
+include::{snippets}/should_document_delete_release_vulnerability_relation/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_delete_release_vulnerability_relation/http-response.adoc[]

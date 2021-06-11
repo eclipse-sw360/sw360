@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 
 import org.eclipse.sw360.datahandler.thrift.Comment;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.VerificationStateInfo;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
@@ -35,6 +36,9 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.CVEReference;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VendorAdvisory;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.eclipse.sw360.rest.resourceserver.core.serializer.JsonProjectRelationSerializer;
@@ -48,14 +52,14 @@ import java.util.Map;
 import java.util.Set;
 
 @Configuration
-class JacksonCustomizations {
+public class JacksonCustomizations {
     @Bean
     public Module sw360Module() {
         return new Sw360Module();
     }
 
     @SuppressWarnings("serial")
-    static class Sw360Module extends SimpleModule {
+    public static class Sw360Module extends SimpleModule {
         public Sw360Module() {
             setMixInAnnotation(MultiStatus.class, MultiStatusMixin.class);
             setMixInAnnotation(Project.class, Sw360Module.ProjectMixin.class);
@@ -81,6 +85,8 @@ class JacksonCustomizations {
             setMixInAnnotation(ClearingRequest.class, Sw360Module.ClearingRequestMixin.class);
             setMixInAnnotation(Comment.class, Sw360Module.CommentMixin.class);
             setMixInAnnotation(ProjectReleaseRelationship.class, Sw360Module.ProjectReleaseRelationshipMixin.class);
+            setMixInAnnotation(ReleaseVulnerabilityRelation.class, Sw360Module.ReleaseVulnerabilityRelationMixin.class);
+            setMixInAnnotation(VerificationStateInfo.class, Sw360Module.VerificationStateInfoMixin.class);
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -934,6 +940,113 @@ class JacksonCustomizations {
             "setCreatedBy"
         })
         public static abstract class ProjectReleaseRelationshipMixin extends ProjectReleaseRelationship {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+            "setId",
+            "setType",
+            "setRevision",
+            "setYear",
+            "setNumber",
+            "type"
+        })
+        public static abstract class CVEReferenceMixin extends CVEReference {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+            "setId",
+            "setType",
+            "setRevision",
+            "setName",
+            "setVendor",
+            "setUrl",
+            "type"
+        })
+        public static abstract class VendorAdvisoryMixin extends VendorAdvisory {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "revision",
+                "id",
+                "type",
+                "setType",
+                "setId",
+                "setRevision",
+                "setLastExternalUpdate",
+                "referencesSize",
+                "setCveReferences",
+                "cveReferencesSize",
+                "setDescription",
+                "setImpact",
+                "setMatchedBy",
+                "setLegalNotice",
+                "setUsedNeedle",
+                "setReferences",
+                "setPriority",
+                "setAction",
+                "impactSize",
+                "setExternalId",
+                "setPublishDate",
+                "setTitle",
+                "setLastUpdateDate",
+                "setPriorityText",
+                "cveReferencesIterator",
+                "setCveFurtherMetaDataPerSource",
+                "setAssignedExtComponentIds",
+                "referencesIterator",
+                "setVulnerableConfiguration",
+                "setExtendedDescription",
+                "vulnerableConfigurationSize",
+                "assignedExtComponentIdsSize",
+                "assignedExtComponentIdsIterator",
+                "vendorAdvisoriesIterator",
+                "vendorAdvisoriesSize",
+                "setVendorAdvisories",
+                "cveFurtherMetaDataPerSourceSize",
+                "setCvss",
+                "setCwe",
+                "setIsSetCvss",
+                "setCvssTime",
+                "setAccess",
+                "accessSize",
+                "isSetCvss"
+        })
+        public static abstract class VulnerabilityMixinForCreateUpdate extends Vulnerability {
+            @Override
+            @JsonProperty("id")
+            abstract public String getId();
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+            "id",
+            "revision",
+            "type",
+            "setId",
+            "setRevision",
+            "setType",
+            "setVerificationStateInfo",
+            "setVulnerabilityId",
+            "verificationStateInfoSize",
+            "verificationStateInfoIterator",
+            "setMatchedBy",
+            "setUsedNeedle",
+            "setReleaseId"
+        })
+        public static abstract class ReleaseVulnerabilityRelationMixin extends ReleaseVulnerabilityRelation {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+            "setCheckedBy",
+            "setCheckedOn",
+            "setComment",
+            "setVerificationState"
+        })
+        public static abstract class VerificationStateInfoMixin extends VerificationStateInfo {
         }
     }
 }
