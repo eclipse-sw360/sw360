@@ -50,14 +50,6 @@
         <td><sw360:DisplayUserEmail email="${project.createdBy}"/></td>
     </tr>
     <tr>
-        <td><liferay-ui:message key="homepage" />:</td>
-        <td><sw360:DisplayLink target="${project.homepage}"/></td>
-    </tr>
-    <tr>
-        <td><liferay-ui:message key="wiki" />:</td>
-        <td><sw360:DisplayLink target="${project.wiki}"/></td>
-    </tr>
-    <tr>
         <td><liferay-ui:message key="project.type" />:</td>
         <td><sw360:DisplayEnum value="${project.projectType}"/></td>
     </tr>
@@ -76,6 +68,10 @@
     <tr>
         <td><liferay-ui:message key="additional.data" />:</td>
         <td><sw360:DisplayMap value="${project.additionalData}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="external.urls" />:</td>
+        <td><sw360:DisplayMapOfExternalUrls value="${project.externalUrls}"/></td>
     </tr>
 </table>
 

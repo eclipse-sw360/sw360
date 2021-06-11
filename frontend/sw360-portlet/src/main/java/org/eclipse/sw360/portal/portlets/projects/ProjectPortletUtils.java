@@ -27,7 +27,6 @@ import org.eclipse.sw360.portal.common.CustomFieldHelper;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.common.PortletUtils;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
-import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
@@ -110,6 +109,9 @@ public class ProjectPortletUtils {
                     break;
                 case ADDITIONAL_DATA:
                     project.setAdditionalData(PortletUtils.getAdditionalDataMapFromRequest(request));
+                    break;
+                case EXTERNAL_URLS:
+                    project.setExternalUrls(PortletUtils.getExternalUrlMapFromRequest(request));
                     break;
                 default:
                     setFieldValue(request, project, field);

@@ -251,8 +251,10 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         linkedReleases.put("5578999", projectReleaseRelationship);
         project2.setReleaseIdToUsage(linkedReleases);
         project2.setExternalIds(externalIds2);
-        project2.setWiki("http://test_wiki_url.com");
-        project2.setHomepage("http://test_homepage_url.com");
+        Map<String, String> externalURLs = new HashMap<>();
+        externalURLs.put("homepage", "http://test_wiki_url.com");
+        externalURLs.put("wiki", "http://test_wiki_url.com");
+        project2.setExternalUrls(externalURLs);
         project2.setPhaseOutSince("2020-06-02");
         project2.setClearingTeam("Unknown");
         project2.setContributors(new HashSet<>(Arrays.asList("admin@sw360.org", "jane@sw360.org")));
@@ -604,7 +606,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("_embedded.sw360:projects[]_embedded.createdBy").description("The user who created this project"),
                                 fieldWithPath("_embedded.sw360:projects[]_embedded.clearingTeam").description("The clearingTeam of the project"),
                                 fieldWithPath("_embedded.sw360:projects[]_embedded.homepage").description("The homepage url of the project"),
-                                fieldWithPath("_embedded.sw360:projects[]_embedded.wiki").description("The user who created this project"),
+                                fieldWithPath("_embedded.sw360:projects[]_embedded.wiki").description("The wiki url of the project"),
                                 fieldWithPath("_embedded.sw360:projects[]_embedded.sw360:moderators").description("An array of all project moderators with email"),
                                 fieldWithPath("_embedded.sw360:projects[]_embedded.sw360:contributors").description("An array of all project contributors with email"),
                                 fieldWithPath("_embedded.sw360:projects[]_embedded.sw360:attachments").description("An array of all project attachments"),
@@ -1368,4 +1370,5 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 .content(this.objectMapper.writeValueAsString(releaseIdToUsage))
                 .header("Authorization", "Bearer " + accessToken)).andExpect(status().isCreated());
     }
+
 }

@@ -13,8 +13,6 @@ package org.eclipse.sw360.portal.common;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -273,6 +271,7 @@ public class PortalConstants {
     public static final String COMPONENT_OBLIGATIONS = "componentLevelObligations";
     public static final String LICENSE_OBLIGATIONS = "licenseLevelObligations";
     public static final Set<String> PROJECT_EXTERNAL_ID_KEYS;
+    public static final Set<String> PROJECT_EXTERNAL_URL_KEYS;
     public static final String PROJECT_SELECTED_ATTACHMENT_USAGES = "selectedAttachmentUsages";
     public static final String PROJECT_SELECTED_ATTACHMENT_USAGES_SHADOWS = "selectedAttachmentUsagesShadows";
     public static final String LICENSE_INFO_ATTACHMENT_USAGES = "licInfoAttUsages";
@@ -564,6 +563,8 @@ public class PortalConstants {
     public static final String EXTERNAL_ID_VALUE = "externalIdValue";
     public static final String ADDITIONAL_DATA_KEY = "additionalDataKey";
     public static final String ADDITIONAL_DATA_VALUE = "additionalDataValue";
+    public static final String EXTERNAL_URL_KEY = "externalUrlKey";
+    public static final String EXTERNAL_URL_VALUE = "externalUrlValue";
 
     //! request status
     public static final String REQUEST_STATUS = "request_status";
@@ -608,6 +609,7 @@ public class PortalConstants {
         STATE = props.getProperty("state","[ \"Active\", \"Phase out\", \"Unknown\"]");
         PROJECT_TYPE = props.getProperty("project.type","[ \"Customer Project\", \"Internal Project\", \"Product\", \"Service\", \"Inner Source\"]");
         PROJECT_EXTERNAL_ID_KEYS = CommonUtils.splitToSet(props.getProperty("project.externalkeys", "internal.id"));
+        PROJECT_EXTERNAL_URL_KEYS = CommonUtils.splitToSet(props.getProperty("project.externalurls", "homepage,wiki,clearing"));
         LICENSE_IDENTIFIERS = props.getProperty("license.identifiers", "[]");
         COMPONENT_CATEGORIES = props.getProperty("component.categories", "[ \"framework\", \"SDK\", \"big-data\", \"build-management\", \"cloud\", \"content\", \"database\", \"graphics\", \"http\", \"javaee\", \"library\", \"mail\", \"mobile\", \"security\", \"testing\", \"virtual-machine\", \"web-framework\", \"xml\"]");
         COMPONENT_EXTERNAL_ID_KEYS = CommonUtils.splitToSet(props.getProperty("component.externalkeys", "com.github.id,com.gitlab.id,purl.id"));

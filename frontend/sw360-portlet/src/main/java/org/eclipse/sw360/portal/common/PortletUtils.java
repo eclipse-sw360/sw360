@@ -424,6 +424,10 @@ public class PortletUtils {
         return getMapFromRequest(request, PortalConstants.ADDITIONAL_DATA_KEY, PortalConstants.ADDITIONAL_DATA_VALUE);
     }
 
+    public static Map<String,String> getExternalUrlMapFromRequest(PortletRequest request) {
+        return getMapWithJoinedValueFromRequest(request, PortalConstants.EXTERNAL_URL_KEY, PortalConstants.EXTERNAL_URL_VALUE);
+    }
+
     public static int getProjectDataCount(PaginationParameters projectParameters, int maxSize) {
         if (projectParameters.getDisplayLength() == -1) {
             return maxSize;
