@@ -82,6 +82,13 @@ public class LicenseHandler implements LicenseService.Iface {
     }
 
     @Override
+    public RequestStatus addLicenseType(LicenseType licenseType, User user) throws TException {
+        assertNotNull(licenseType);
+
+        return handler.addLicenseType(licenseType, user);
+    }
+
+    @Override
     public List<LicenseType> addLicenseTypes(List<LicenseType> licenseTypes, User user) throws TException {
         return handler.addLicenseTypes(licenseTypes, user);
     }
@@ -265,4 +272,16 @@ public class LicenseHandler implements LicenseService.Iface {
         return handler.deleteObligations(id, user);
     }
 
+    @Override
+    public RequestStatus deleteLicenseType(String id, User user) throws TException {
+        assertId(id);
+        assertUser(user);
+        return handler.deleteLicenseType(id, user);
+    }
+
+    @Override
+    public int checkLicenseTypeInUse(String id) throws TException {
+        assertId(id);
+        return handler.checkLicenseTypeInUse(id);
+    }
 }

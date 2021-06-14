@@ -16,19 +16,30 @@ import java.util.Map;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
-
 import com.cloudant.client.api.model.DesignDocument.MapReduce;
+import org.ektorp.support.View;
+import org.ektorp.support.Views;
+
+import java.util.List;
 
 /**
  * @author johannes.najjar@tngtech.com
  */
+
 public class LicenseTypeRepository extends DatabaseRepositoryCloudantClient<LicenseType> {
     private static final String ALL = "function(doc) { if (doc.type == 'licenseType') emit(null, doc._id) }";
+    private static final String BYLICENSETYPE = "function(doc) { if(doc.type == 'licenseType') { emit(doc.licenseType, doc) } }";
 
     public LicenseTypeRepository(DatabaseConnectorCloudant db) {
         super(db, LicenseType.class);
         Map<String, MapReduce> views = new HashMap<String, MapReduce>();
         views.put("all", createMapReduce(ALL, null));
+        views.put("bylicensetype", createMapReduce(BYLICENSETYPE, null));
         initStandardDesignDocument(views, db);
     }
+
+    public List<LicenseType> searchByLicenseType(String name) {
+        return queryByPrefix("bylicensetype", name);
+    }
+
 }
