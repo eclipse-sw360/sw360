@@ -26,6 +26,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import com.cloudant.client.api.DesignDocumentManager;
 import com.cloudant.client.api.model.DesignDocument;
 import com.cloudant.client.api.model.DesignDocument.MapReduce;
+import com.cloudant.client.api.query.JsonIndex;
 import com.cloudant.client.api.model.Response;
 import com.cloudant.client.api.views.Key;
 import com.cloudant.client.api.views.Key.ComplexKey;
@@ -72,6 +73,11 @@ public class DatabaseRepositoryCloudantClient<T> {
             mr.setReduce(reduce);
         }
         return mr;
+    }
+
+    public void createIndex(String indexName, String[] fields, DatabaseConnectorCloudant db) {
+        String indexDefinition = JsonIndex.builder().name(indexName).desc(fields).definition();
+        db.createIndex(indexDefinition);
     }
 
     protected DatabaseConnectorCloudant getConnector() {

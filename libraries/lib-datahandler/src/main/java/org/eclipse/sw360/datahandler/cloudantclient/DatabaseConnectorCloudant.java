@@ -34,6 +34,7 @@ import com.cloudant.client.api.CloudantClient;
 import com.cloudant.client.api.Database;
 import com.cloudant.client.api.DesignDocumentManager;
 import com.cloudant.client.api.model.Response;
+import com.cloudant.client.api.query.QueryResult;
 import com.cloudant.client.api.views.Key;
 import com.cloudant.client.api.views.ViewRequestBuilder;
 import com.cloudant.client.api.views.ViewResponse.Row;
@@ -269,5 +270,13 @@ public class DatabaseConnectorCloudant {
 
     public DesignDocumentManager getDesignDocumentManager() {
         return database.getDesignDocumentManager();
+    }
+
+    public void createIndex(String indexDefinition) {
+        database.createIndex(indexDefinition);
+    }
+
+    public <T> QueryResult<T> getQueryResult(String query, Class<T> type) {
+        return database.query(query, type);
     }
 }
