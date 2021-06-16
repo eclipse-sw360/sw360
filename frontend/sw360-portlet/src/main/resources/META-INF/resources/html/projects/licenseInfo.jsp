@@ -62,6 +62,12 @@
         <div class="row">
             <div class="col" >
             <button id="selectVariantAndDownload" type="button" class="btn btn-primary"><liferay-ui:message key="download" /></button>
+             <div class="nav nav-pills justify-content-center bg-light font-weight-bold d-inline-flex" id="pills-tab" role="tablist">
+		        <a class="nav-item nav-link active" id="pills-showall-tab" data-toggle="pill" href="#pills-showallView" role="tab" aria-controls="pills-showallView" aria-selected="true">
+			    <liferay-ui:message key="show.all" /></a>
+			    <a class="nav-item nav-link" id="pills-onlyapproved-tab" data-toggle="pill" href="#pills-onlyapprovedView" role="tab" aria-controls="pills-onlyapprovedView" aria-selected="false">
+			    <liferay-ui:message key="only.approved" /></a>
+		     </div>
                 <form id="downloadLicenseInfoForm" class="form-inline" name="downloadLicenseInfoForm" action="<%=downloadLicenseInfoURL%>" method="post">
                     <%@include file="/html/projects/includes/attachmentSelectTable.jspf" %>
                 </form>
