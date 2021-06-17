@@ -572,6 +572,7 @@ public class PortalConstants {
     public static final String FRIENDLY_URL_PREFIX = "friendlyUrl";
     public static final String FRIENDLY_URL_PLACEHOLDER_PAGENAME = FRIENDLY_URL_PREFIX + "Pagename";
     public static final String FRIENDLY_URL_PLACEHOLDER_ID = FRIENDLY_URL_PREFIX + "Id";
+    public static final String FRIENDLY_URL_PLACEHOLDER_LICENSE_ID = FRIENDLY_URL_PREFIX + "license.Id";
 
     // datatables attributes for pagination
     public static final String DATATABLE_DISPLAY_DATA = "aaData";
