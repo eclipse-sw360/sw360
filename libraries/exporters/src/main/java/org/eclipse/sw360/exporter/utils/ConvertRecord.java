@@ -323,8 +323,8 @@ public class ConvertRecord {
                     out.add(CommonUtils.nullToEmptyString(license.getFullname()));
                     out.add(license.isSetLicenseType() ? ((Integer) license.getLicenseType().getLicenseTypeId()).toString() :
                             CommonUtils.nullToEmptyString(license.getLicenseTypeDatabaseId()));
-		    out.add(license.isSetOSIApproved() ? (license.getOSIApproved()).toString() : "");
-		    out.add(license.isSetFSFLibre() ? (license.getFSFLibre()).toString() : "");
+                    out.add(license.isSetOSIApproved() ? (license.getOSIApproved()).toString() : "");
+                    out.add(license.isSetFSFLibre() ? (license.getFSFLibre()).toString() : "");
                     out.add(CommonUtils.nullToEmptyString(license.getReviewdate()));
                     out.add(CommonUtils.nullToEmptyString(license.getText()));
                     out.add(CommonUtils.nullToEmptyString(license.getExternalLicenseLink()));

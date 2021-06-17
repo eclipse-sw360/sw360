@@ -57,7 +57,7 @@ public class DisplayBoolean extends SimpleTagSupport {
             out.print("&nbsp;"+LanguageUtil.get(resourceBundle,"yes"));
             out.print("</span>");
         } else {
-            String text = (name != null && name.equals("Quadratic")) ? "(n/a)" : "no";
+            String text = "Quadratic".equalsIgnoreCase(name) ? "(n/a)" : "no";
             out.print("<span class=\"text-danger\">");
             out.print("<svg class=\"lexicon-icon\"><title>"+LanguageUtil.get(resourceBundle,"no")+"</title><use href=\"/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#times-circle\"/></svg>");
             out.print("&nbsp;"+LanguageUtil.get(resourceBundle, text));
