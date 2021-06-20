@@ -19,8 +19,8 @@ This very clear approach enables a number of issues, please keep the following g
 
 - Duplicate entries need to be removed
 - Separating vendor from components names and release tags brings clarity to component naming
-- Interaction with other systems is a must today. As such we need to support the CPE standard which also implement this 3-parts separation
-- Having the clear modeling of data enables better search and filtering abilities of the component catalogue.
+- Interaction with other systems is a must today. As such we need to support external ids such as the CPE standard which also implement this 3-parts separation
+- Having the clear modelling of data enables better search and filtering abilities of the component catalogue.
 
 ## Checklist
 
@@ -79,7 +79,7 @@ There is a Java component called Logback ([<span style="color:red">&#8599;</span
 
 There is a component that is available on NuGet by the name 'Json.NET' and the id 'Newtonsoft.Json'. On the component homepage [<span style="color:red">&#8599;</span> http://www.newtonsoft.com/json](http://www.newtonsoft.com/json) it is called 'Json.NET'.
 
-On Mainline Portal the component is listed as
+Just some examples of naming and how it could be improved:
 
 - 14 x Vendor = 'Open Source Software', Name = 'Json.NET' => **wrong**!
 - 1 x Vendor = 'Newtonsoft', Name = 'Json.NET (COTS)' => **wrong**!
@@ -87,18 +87,18 @@ On Mainline Portal the component is listed as
 - 1 x Vendor = 'CodePlex', Name = Json.NET' => **wrong**!
 - 4 x Vendor = 'Open Source Software', Name = 'Newtonsoft Json.NET' => **wrong**!
 
-The proper identification (Vendor = 'Newtonsoft', Name = 'Json.NET') has never been used!
+The proper identification (Vendor = 'Newtonsoft', Name = 'Json.NET') has to be used!
 
 ### Oracle JavaBeans Activation Framework
 
-On Mainline Portal the component is listed as
+Just some examples of naming and how it could be improved:
 
 - 3 x Vendor = 'Open Source Software', Name = 'Activation' => **wrong**!
 - 3 x Vendor = 'Open Source Software', Name = 'Oracle JavaBeans Activation Framework'
 
 ### Oracle Java Mail
 
-On Mainline Portal the component is listed as
+Just some examples of naming and how it could be improved:
 
 - 3 x Vendor = 'Open Source Software', Name = 'Mail' => **wrong**!
 - 5 x Vendor = 'Open Source Software', Name = 'Oracle JavaMail API' => **wrong**!
@@ -106,7 +106,7 @@ On Mainline Portal the component is listed as
 
 ### Moment.js
 
-On Mainline Portal the component is listed as
+Just some examples of naming and how it could be improved:
 
 - 7 x Vendor = 'GitHub', Name = 'moment' => **wrong**!
 - 2 x Vendor = 'Open Source Software', Name = 'moment' => **wrong**!
@@ -115,17 +115,4 @@ On Mainline Portal the component is listed as
 - 3 x Vendor = 'Open Source Software', Name = 'Moment.js'
 
 Just look on the community homepage: there is the name in bold letters:
-
-Moment.js – why is it so difficult to use this name?
-
-
-
-
-
-
-
-
-
-
-
-
+Moment.js – consider this name.

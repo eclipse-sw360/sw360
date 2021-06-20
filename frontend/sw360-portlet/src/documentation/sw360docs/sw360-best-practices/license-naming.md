@@ -21,7 +21,7 @@ Short identifier to be used to identify a license or exception match to licenses
 - Short identifiers have no spaces in them
 - Short identifiers consist of an abbreviation based on a common short name or acronym for the license or exception
 - Where applicable, the abbreviation will be followed by a dash and then the version number, in X.Y format
-- Where applicable, and if possible, the short identifier should be harmonized with other well-known open source naming sources (i.e., OSI, Fedora, etc.)
+- Where applicable, and if possible, the short identifier should be harmonised with other well-known open source naming sources (i.e., OSI, Fedora, etc.)
 - Short identifiers should be as short in length as possible while staying consistent with all other naming criteria
 
 This lead to expressions like "Apache-2.0" or "GPL-2.0".
@@ -36,7 +36,7 @@ Linking this library statically or dynamically with other modules is making a co
 As a special exception, the copyright holders of this library give you permission to link this library with independent modules to produce an executable, regardless of the license terms of these independent modules, and to copy and distribute the resulting executable under terms of your choice, provided that you also meet, for each linked independent module, the terms and conditions of the license of that module. An independent module is a module which is not derived from or based on this library. If you modify this library, you may
 
 ## Dual Licenses
-There is the need to have a dual license text. Fossology offers the dual license tag for this. The idea is to use this tag also for more than two licenses.
+There is the need to have a dual license text. FOSSology offers the dual license tag for this. The idea is to use this tag also for more than two licenses.
 
 Consider the following example:
 
@@ -67,7 +67,7 @@ The fact that it is "LGPL-3.0+" is confusing for these texts. It should be chang
 ## Examples for Renaming
 | Example Licence Short Name | Corrected Licence Short Name | Remarks |
 | --- | --- | --- |
-| BSD-3-Clause-Farin Urlaub | BSD-3-Clause-farin-urlaub | no empty spaes |
+| BSD-3-Clause-Farin Urlaub | BSD-3-Clause-farin-urlaub | no empty spaces |
 | GPL-2.0+_Variant Old address | GPL-2.0+-variant-old-address | no underscore |
 | --Freeware | Freeware-variant-dumbumchong | no prefix dashes |
 | BSD-3-Clause\IBM | ... | do not use slashes (back and forward) |
