@@ -41,9 +41,23 @@
 
         <resumable.js.version>1.1.0</resumable.js.version>
 
-        <artifact.deploy.dir>${liferay.deploy.dir}</artifact.deploy.dir>
+	<artifact.deploy.dir>${liferay.deploy.dir}</artifact.deploy.dir>
     </properties>
 
+    <profiles>
+    <profile>
+         <id>help-docs</id>
+         <activation>
+             <property>
+                  <name>help-docs</name>
+                  <value>true</value>
+             </property>
+         </activation>
+	 <properties>
+		<packagePhase>prepare-package</packagePhase>
+	 </properties>
+   </profile>
+   </profiles>
     <build>
 	<finalName>org.eclipse.sw360.portlet-${project.version}</finalName>
         <plugins>
@@ -113,6 +127,23 @@
                     </archive>
                 </configuration>
             </plugin>
+	<plugin>
+	    <groupId>com.github.fabienbarbero</groupId>
+	    <artifactId>mkdocs-maven-plugin</artifactId>
+	    <version>1.1.1</version>
+	    <executions>
+		<execution>
+		    <id>generate-mkdocs</id>
+		    <phase>${packagePhase}</phase>
+		    <goals>
+		        <goal>build</goal>
+		    </goals>
+		    <configuration>
+		        <configFile>${basedir}/src/documentation/mkdocs.yml</configFile>
+		    </configuration>
+		</execution>
+	    </executions>
+	</plugin>
         </plugins>
     </build>
 

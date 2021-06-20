@@ -119,6 +119,7 @@
 		<div class="powered-by">
 			<@liferay.language key="powered-by" />
 			<a href="http://www.github.com/eclipse/sw360" rel="external" target="_blank">SW360</a> |
+			<a href="/resource/mkdocs/index.html" rel="external" target="_blank">SW360 Docs</a> |
 			<a href="/resource/docs/api-guide.html" rel="external" target="_blank">REST API Docs</a> |
 			<a href="https://github.com/eclipse/sw360/issues" rel="external" target="_blank"> Report an issue.</a>
 		</div>
