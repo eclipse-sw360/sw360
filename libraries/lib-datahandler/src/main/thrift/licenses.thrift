@@ -86,8 +86,8 @@ struct License {
     // Additional informations
 	12: optional string reviewdate,
 
-	15: optional Quadratic OSIApproved = sw360.Quadratic.NA,
-	16: optional Quadratic FSFLibre = sw360.Quadratic.NA,
+	17: optional Quadratic OSIApproved = sw360.Quadratic.NA,
+	18: optional Quadratic FSFLibre = sw360.Quadratic.NA,
 
     20: optional list<Obligation> obligations,
     21: optional set<string> obligationDatabaseIds,
