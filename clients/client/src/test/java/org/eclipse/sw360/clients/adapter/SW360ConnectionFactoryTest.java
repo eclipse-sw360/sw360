@@ -125,4 +125,15 @@ public class SW360ConnectionFactoryTest {
         checkClient(projectAdapterSync.getProjectClient());
         checkSyncAdapter(projectAdapterSync, projectAdapterAsync);
     }
+
+    @Test
+    public void testVulnerabilityAdapter() {
+        SW360Connection sw360Connection = newConnection();
+        SW360VulnerabilityClientAdapterAsync vulnerabilityAdapterAsync = sw360Connection.getVulnerabilityAdapterAsync();
+        SW360VulnerabilityClientAdapter vulnerabilityAdapterSync = sw360Connection.getVulnerabilityAdapter();
+
+        checkClient(vulnerabilityAdapterAsync.getVulnerabilityClient());
+        checkClient(vulnerabilityAdapterSync.getVulnerabilityClient());
+        checkSyncAdapter(vulnerabilityAdapterSync, vulnerabilityAdapterAsync);
+    }
 }
