@@ -126,7 +126,7 @@ define('modules/validation', [ 'jquery' ], function($) {
 		    if (!time && time !== 0) {
 		        return false; // NaN value, Invalid date
 		    }
-		    if (greaterThanDays) {
+		    if (typeof greaterThanDays === "number") {
 		        currentDate.setHours(0, 0, 0, 0);
 		        let currentTime = currentDate.getTime() + (greaterThanDays * 24 * 60 * 60 * 1000);
 		        if (currentTime > time)
@@ -141,6 +141,14 @@ define('modules/validation', [ 'jquery' ], function($) {
 		    }
 		    const mailformat = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
 		    return emailId.match(mailformat) ? true : false;
-		}
+		},
+
+        changeDisabledDate: function(val) {
+            if (val) {
+                $('.datepicker').data('datepicker').settings.minDate = val;
+            } else {
+                $('.datepicker').data('datepicker').settings.minDate = 0;
+            }
+        }
 	};
 });

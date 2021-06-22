@@ -140,7 +140,7 @@ public class PortalConstants {
     public static final String RE_OPEN_REQUEST = "reOpenRequest";
     public static final String LOAD_PROJECT_INFO = "loadProjectInfo";
     public static final String APPROVED_RELEASE_COUNT = "approvedReleaseCount";
-
+    public static final String CRITICAL_CR_COUNT = "criticalCrCount";
 
     //! Specialized keys for components
     public static final String COMPONENT_PORTLET_NAME = PORTLET_NAME_PREFIX + "components";
@@ -351,6 +351,7 @@ public class PortalConstants {
     public static final String CUSTOM_FIELD_PROJECT_GROUP_FILTER = "ProjectGroupFilter";
     public static final String CUSTOM_FIELD_COMPONENTS_VIEW_SIZE = "ComponentsViewSize";
     public static final String CUSTOM_FIELD_VULNERABILITIES_VIEW_SIZE = "VulnerabilitiesViewSize";
+    public static final String CUSTOM_FIELD_PREFERRED_CLEARING_DATE_LIMIT = "PreferredClearingDateLimit";
 
     //! Specialized keys for scheduling
     public static final String CVESEARCH_IS_SCHEDULED = "cveSearchIsScheduled";

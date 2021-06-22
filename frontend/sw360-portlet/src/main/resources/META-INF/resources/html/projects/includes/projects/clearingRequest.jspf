@@ -11,9 +11,11 @@
 <portlet:defineObjects />
 <liferay-theme:defineObjects />
 
-<%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
-<%@ page import="org.eclipse.sw360.datahandler.thrift.projects.Project"%>
-<%@ page import="javax.portlet.PortletRequest"%>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.ClearingRequestPriority"%>
+
+<jsp:useBean id="PreferredClearingDateLimit" class="java.lang.String" scope="request" />
+<jsp:useBean id="criticalCrCount" class="java.lang.Integer" scope="request" />
 
 <portlet:resourceURL var="createClearingRequestURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.CREATE_CLEARING_REQUEST%>'/>
@@ -31,7 +33,7 @@
 
 <div class="dialogs auto-dialogs">
     <div id="createClearingRequestDialog" class="modal fade" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-info" role="document">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-info mw-100 w-75" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
@@ -67,9 +69,18 @@
                             <label for="requestedClearingDate" class="mandatory"><liferay-ui:message key="preferred.clearing.date" />:</label>
                             <input class="datepicker form-control" id="requestedClearingDate" type="text" pattern="\d{4}-\d{2}-\d{2}" placeholder="<liferay-ui:message key='preferred.clearing.date.yyyy.mm.dd' />" required/>
                             <div class="invalid-feedback">
-                                <liferay-ui:message key="date.should.be.in.valid.format" /> & <liferay-ui:message key="greater.than.7.days.from.today" />
+                                <liferay-ui:message key="date.should.be.valid" />
                             </div>
                         </div>
+                        <core_rt:if test="${criticalCrCount lt 2}">
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input id="priority" type="checkbox" class="form-check-input" name="<portlet:namespace/><%=ClearingRequest._Fields.PRIORITY%>" >
+                                <label class="form-check-label" for="priority"><liferay-ui:message key="critical" /></label>
+                                <div class="alert alert-info"><liferay-ui:message key="in.case.you.need.the.clearing.at.an.earlier.date.then.the.preferred.date.that.is.available.please.check.the.critical.checkbox.and.reselect.the.preferred.clearing.date"/>.</div>
+                            </div>
+                        </div>
+                        </core_rt:if>
                         <div class="form-group">
                             <label for="clearingRequestComment"><liferay-ui:message key="please.comment.your.request" />:</label>
                             <textarea id="clearingRequestComment" class="form-control" data-name="comment" rows="4" placeholder="<liferay-ui:message key='comment.your.request' />"></textarea>
@@ -85,7 +96,7 @@
     </div>
 
     <div id="viewClearingRequestDialog" class="modal" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-info" role="document">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-info mw-100 w-50" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
@@ -123,9 +134,17 @@
                                 <th><liferay-ui:message key="agreed.clearing.date" />:</th>
                                 <td><span data-name="agreedDate"></span></td>
                             </tr>
+                            <tr data-hide="hidePriority">
+                                <th><liferay-ui:message key="priority" />:</th>
+                                <td><span data-name="priority"></span></td>
+                            </tr>
                             <tr>
                                 <th><liferay-ui:message key="request.status" />:</th>
                                 <td><span data-name="status"></span></td>
+                            </tr>
+                            <tr data-hide="hideClosedOn">
+                                <th><liferay-ui:message key="request.closed.on" />:</th>
+                                <td><span data-name="closedOn"></span></td>
                             </tr>
                         </table>
                 </div>
@@ -161,6 +180,17 @@
             viewClearingRequest($(this));
         });
 
+        validation.enableForm('#createClearingRequestForm');
+        let pcdLimit = ${PreferredClearingDateLimit};
+
+        $("#priority").change(function() {
+            if (this.checked) {
+                validation.changeDisabledDate(0);
+            } else {
+                validation.changeDisabledDate(pcdLimit);
+            }
+        });
+
         function createClearingRequest(thisObj, cBtnData) {
             <core_rt:choose>
             <core_rt:when test="${pageName eq 'detail'}" >
@@ -185,7 +215,8 @@
                         projectId : projectId,
                         requestedClearingDate : $("#requestedClearingDate").val(),
                         clearingTeam : $("#clearingTeamEmail").val(),
-                        requestingUserComment : $("#clearingRequestComment").val()
+                        requestingUserComment : $("#clearingRequestComment").val(),
+                        priority : $("#priority:checked").val() ? "<%=ClearingRequestPriority.CRITICAL%>" : "<%=ClearingRequestPriority.LOW%>"
                     };
                 dataObj[name] = JSON.stringify(crData);
                 jQuery.ajax({
@@ -195,12 +226,12 @@
                     data: dataObj,
                     success: function (status) {
                         callback();
-                        $('#createClearingRequestDialog #createClearingrequestButton').prop("disabled", true).hide();
                         if (!status || status.length == 0 || Object.getOwnPropertyNames(status).length == 0) {
                             $dialog.alert('<liferay-ui:message key="failed.to.create.clearing.request" />');
                         } else {
                             var statusData = JSON.parse(status);
                             if (statusData.result == "SUCCESS") {
+                                $('#createClearingRequestDialog #createClearingrequestButton').prop("disabled", true).hide();
                                 $dialog.success('<liferay-ui:message key="clearing.request" /> <b>'
                                         + statusData.clearingId + "</b> <liferay-ui:message key='created.successfully' />! <br><liferay-ui:message key='clearing.team.will.confirm.on.the.agreed.clearing.date' />.");
                                 <core_rt:choose>
@@ -212,7 +243,7 @@
                                     $(thisObj).removeClass('createClearingRequest').addClass('viewClearingRequest text-warning').attr('data-clearing-request-id', statusData.clearingId).attr('title','<liferay-ui:message key="view.clearing.request" />');
                                 </core_rt:otherwise>
                                 </core_rt:choose>
-                            } else if (statusData.result == "FAILURE") {
+                            } else if (statusData.result == "FAILURE" || statusData.result == "DUPLICATE") {
                                 $dialog.alert(statusData.message);
                             } else {
                                 $dialog.alert('<liferay-ui:message key="failed.to.create.clearing.request" />');
@@ -221,14 +252,13 @@
                     },
                     error: function () {
                         callback();
-                        $('#createClearingRequestDialog #createClearingrequestButton').prop("disabled", true).hide();
                         $dialog.alert('<liferay-ui:message key="error.creating.clearing.request" />');
                     }
                 });
             }
 
             $('.datepicker').datepicker({
-                minDate: 7,
+                minDate: pcdLimit,
                 changeMonth: true,
                 changeYear: true,
                 dateFormat: "yy-mm-dd"
@@ -254,28 +284,25 @@
             }, function(submit, callback) {
                 let selectedDate = $("#requestedClearingDate").val(),
                     emailId = $("#clearingTeamEmail").val(),
+                    isCritical = $("#priority:checked").val(),
                     $form = $('#createClearingRequestForm');
-                $form.removeClass('was-validated');
+                $form.addClass('was-validated');
                 if (!validation.isValidEmail(emailId)) {
-                    $form.addClass('was-validated');
-                    $dialog.alert('<liferay-ui:message key="email.should.be.in.valid.format" />');
+                    $("#clearingTeamEmail").addClass("is-invalid");
                     callback();
-                    setTimeout(function() {
-                        $("#createClearingRequestDialog .alert-danger").hide();
-                    }, 5000);
-                } else if (!validation.isValidDate(selectedDate, 7)) {
-                    $form.addClass('was-validated');
-                    $dialog.alert('<liferay-ui:message key="date.should.be.in.valid.format" /> & <liferay-ui:message key="greater.than.7.days.from.today" />');
+                } else if ((isCritical && !validation.isValidDate(selectedDate, 0)) || (!isCritical && !validation.isValidDate(selectedDate, pcdLimit))) {
+                    $("#requestedClearingDate").addClass("is-invalid");
+                    $("#clearingTeamEmail").removeClass("is-invalid");
                     callback();
-                    setTimeout(function() {
-                        $("#createClearingRequestDialog .alert-danger").hide();
-                    }, 5000);
                 } else {
-                    $form.addClass('was-validated');
+                    $("#requestedClearingDate").removeClass("is-invalid");
+                    $("#clearingTeamEmail").removeClass("is-invalid");
                     createClearingRequestInternal(callback);
                 }
             }, function() {
                 $('#createClearingRequestDialog #createClearingRequestForm').removeClass('was-validated');
+                $("#requestedClearingDate").removeClass("is-invalid");
+                $("#clearingTeamEmail").removeClass("is-invalid");
             });
         }
 
@@ -321,6 +348,10 @@
                             agreedDate: resultData.agreedClearingDate,
                             status: resultData.clearingState,
                             submittedOn: render.renderTimestamp(resultData.timestamp),
+                            priority: resultData.priority,
+                            closedOn: render.renderTimestamp(resultData.timestampOfDecision),
+                            hideClosedOn: (resultData.timestampOfDecision) ? false : true,
+                            hidePriority: (resultData.timestampOfDecision) ? true : false
                         }, undefined, undefined, undefined, true);
                     }
                 },

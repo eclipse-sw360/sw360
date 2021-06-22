@@ -28,6 +28,7 @@ typedef sw360.ProjectReleaseRelationship ProjectReleaseRelationship
 typedef sw360.ObligationStatus ObligationStatus
 typedef sw360.SW360Exception SW360Exception
 typedef sw360.ClearingRequestState ClearingState
+typedef sw360.ClearingRequestPriority ClearingPriority
 typedef sw360.Comment Comment
 typedef sw360.PaginationData PaginationData
 typedef components.Release Release
@@ -221,7 +222,8 @@ struct ClearingRequest {
     15: optional i64 timestampOfDecision,
     16: optional list<Comment> comments,
     17: optional i64 modifiedOn,
-    18: optional list<i64> reOpenOn
+    18: optional list<i64> reOpenOn,
+    19: optional ClearingPriority priority
 }
 
 service ProjectService {

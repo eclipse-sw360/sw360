@@ -15,6 +15,9 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.ClearingRequestPriority;
 import org.eclipse.sw360.datahandler.thrift.Comment;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -23,6 +26,7 @@ import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.portal.common.CustomFieldHelper;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 
@@ -34,6 +38,7 @@ import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
 import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
 
 import static java.lang.Integer.parseInt;
+import static org.eclipse.sw360.portal.common.PortalConstants.CUSTOM_FIELD_PREFERRED_CLEARING_DATE_LIMIT;
 
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
@@ -50,6 +55,11 @@ public class ModerationPortletUtils {
         // Utility class with only static functions
     }
 
+    public static Integer loadPreferredClearingDateLimit(PortletRequest request, User user) {
+        Integer limit = CustomFieldHelper.loadField(Integer.class, request, user, CUSTOM_FIELD_PREFERRED_CLEARING_DATE_LIMIT).orElse(0);
+        // returning default value 7 (days) if variable is not set
+        return limit < 1 ? 7 : limit;
+    }
 
     public static RequestStatus deleteModerationRequest(PortletRequest request, Logger log) {
         String id = request.getParameter(PortalConstants.MODERATION_ID);
@@ -82,55 +92,96 @@ public class ModerationPortletUtils {
         return RequestStatus.FAILURE;
     }
 
-    public static RequestStatus updateClearingRequest(PortletRequest request, Logger log) {
+    public static AddDocumentRequestSummary updateClearingRequest(PortletRequest request, Logger log) {
         String id = request.getParameter(PortalConstants.CLEARING_REQUEST_ID);
         User user = UserCacheHolder.getUserFromRequest(request);
         String isReOpen = request.getParameter(PortalConstants.RE_OPEN_REQUEST);
-        if (CommonUtils.isNotNullEmptyOrWhitespace(isReOpen) && Boolean.parseBoolean(isReOpen)) {
-            return reOpenClearingRequest(id, request, user);
-        }
-        String agreedDate = request.getParameter(ClearingRequest._Fields.AGREED_CLEARING_DATE.toString());
-        String status = request.getParameter(ClearingRequest._Fields.CLEARING_STATE.toString());
+        AddDocumentRequestSummary requestSummary = new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.FAILURE);
         if (null != id) {
+            if (CommonUtils.isNotNullEmptyOrWhitespace(isReOpen) && Boolean.parseBoolean(isReOpen)) {
+                return reOpenClearingRequest(id, request, user);
+            }
             try {
+                String isClearingExpertEdit = request.getParameter(PortalConstants.IS_CLEARING_EXPERT);
                 ModerationService.Iface client = new ThriftClients().makeModerationClient();
                 ClearingRequest clearingRequest = client.getClearingRequestByIdForEdit(id, user);
-                if (CommonUtils.isNotNullEmptyOrWhitespace(agreedDate) && !SW360Utils.isValidDate(agreedDate, DateTimeFormatter.ISO_LOCAL_DATE, 0)) {
-                    log.warn("Invalid agreed clearing date: " + agreedDate + " is entered, by user: "+ user.getEmail());
-                    return RequestStatus.FAILURE;
+                String clearingTeam = request.getParameter(ClearingRequest._Fields.CLEARING_TEAM.toString());
+                if (CommonUtils.isNullEmptyOrWhitespace(clearingTeam)) {
+                    log.warn("Invalid clearingTeam email: " + clearingTeam + " is entered, by user: "+ user.getEmail());
+                    return requestSummary.setMessage("Invalid clearingTeam email");
                 }
-                clearingRequest.setAgreedClearingDate(CommonUtils.nullToEmptyString(agreedDate));
-                clearingRequest.setClearingState(ClearingRequestState.findByValue(parseInt(status)));
+                clearingRequest.setClearingTeam(clearingTeam);
+                if (CommonUtils.isNotNullEmptyOrWhitespace(isClearingExpertEdit) && Boolean.parseBoolean(isClearingExpertEdit)) {
+                    String agreedDate = request.getParameter(ClearingRequest._Fields.AGREED_CLEARING_DATE.toString());
+                    String status = request.getParameter(ClearingRequest._Fields.CLEARING_STATE.toString());
+                    String priority = request.getParameter(ClearingRequest._Fields.PRIORITY.toString());
+                    if (CommonUtils.isNotNullEmptyOrWhitespace(agreedDate) && !agreedDate.equals(clearingRequest.getAgreedClearingDate())
+                            && !SW360Utils.isValidDate(agreedDate, DateTimeFormatter.ISO_LOCAL_DATE, 0)) {
+                        log.warn("Invalid agreed clearing date: " + agreedDate + " is entered, by user: "+ user.getEmail());
+                        return requestSummary.setMessage("Invalid agreed clearing date");
+                    }
+                    clearingRequest.setAgreedClearingDate(CommonUtils.nullToEmptyString(agreedDate));
+                    clearingRequest.setClearingState(ClearingRequestState.findByValue(parseInt(status)));
+                    clearingRequest.setPriority(ClearingRequestPriority.findByValue(parseInt(priority)));
+                }
                 LiferayPortletURL projectUrl = getProjectPortletUrl(request, clearingRequest.getProjectId());
-                return client.updateClearingRequest(clearingRequest, user, CommonUtils.nullToEmptyString(projectUrl));
+                RequestStatus status = client.updateClearingRequest(clearingRequest, user, CommonUtils.nullToEmptyString(projectUrl));
+                if (RequestStatus.SUCCESS.equals(status)) {
+                    return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.SUCCESS).setId(id);
+                } else {
+                    return requestSummary.setMessage("Failed to update clearing request");
+                }
             } catch (TException e) {
                 log.error("Failed to update clearing request", e);
             }
         }
         log.error("Invalid clearing request Id.");
-        return RequestStatus.FAILURE;
+        return requestSummary.setMessage("Invalid clearing request id");
     }
 
-    private static RequestStatus reOpenClearingRequest(String id, PortletRequest request, User user) {
+    private static AddDocumentRequestSummary reOpenClearingRequest(String id, PortletRequest request, User user) {
+        AddDocumentRequestSummary requestSummary = new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.FAILURE);
         try {
-            String preferredDate = request.getParameter(ClearingRequest._Fields.REQUESTED_CLEARING_DATE.toString());
-            if (!SW360Utils.isValidDate(preferredDate, DateTimeFormatter.ISO_LOCAL_DATE, 7)) {
-                log.warn("Invalid requested clearing date: " + preferredDate + " is entered, by user: "+ user.getEmail());
-                return RequestStatus.FAILURE;
-            }
             ModerationService.Iface client = new ThriftClients().makeModerationClient();
+            Integer criticalCount = client.getCriticalClearingRequestCount();
+            String preferredDate = request.getParameter(ClearingRequest._Fields.REQUESTED_CLEARING_DATE.toString());
+            String commentText = request.getParameter(ClearingRequest._Fields.REQUESTING_USER_COMMENT.toString());
+            String priority = (criticalCount > 1) ? "" : request.getParameter(ClearingRequest._Fields.PRIORITY.toString());
+            Integer dateLimit = ModerationPortletUtils.loadPreferredClearingDateLimit(request, user);
+            dateLimit = (CommonUtils.isNotNullEmptyOrWhitespace(priority) && criticalCount < 2) ? 0 : (dateLimit < 1) ? 7 : dateLimit;
+            if (!SW360Utils.isValidDate(preferredDate, DateTimeFormatter.ISO_LOCAL_DATE, dateLimit)) {
+                log.warn("Invalid requested clearing date: " + preferredDate + " is entered, by user: "+ user.getEmail());
+                return requestSummary.setMessage("Invalid requested clearing date");
+            }
             ClearingRequest clearingRequest = client.getClearingRequestByIdForEdit(id, user);
+            if (CommonUtils.isNotNullEmptyOrWhitespace(commentText)) {
+                commentText = "Reopen comment:\n" + commentText;
+                Comment comment = new Comment(commentText, user.getEmail());
+                comment.setAutoGenerated(true);
+                comment.setCommentedOn(System.currentTimeMillis());
+                clearingRequest.addToComments(comment);
+            }
             clearingRequest.setRequestedClearingDate(preferredDate);
             clearingRequest.unsetAgreedClearingDate();
             clearingRequest.setClearingState(ClearingRequestState.NEW);
             clearingRequest.unsetTimestampOfDecision();
+            if (CommonUtils.isNotNullEmptyOrWhitespace(priority)) {
+                clearingRequest.setPriority(ClearingRequestPriority.CRITICAL);
+            } else {
+                clearingRequest.setPriority(ClearingRequestPriority.LOW);
+            }
             clearingRequest.addToReOpenOn(System.currentTimeMillis());
             LiferayPortletURL projectUrl = getProjectPortletUrl(request, clearingRequest.getProjectId());
-            return client.updateClearingRequest(clearingRequest, user, CommonUtils.nullToEmptyString(projectUrl));
+            RequestStatus status = client.updateClearingRequest(clearingRequest, user, CommonUtils.nullToEmptyString(projectUrl));
+            if (RequestStatus.SUCCESS.equals(status)) {
+                return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.SUCCESS).setId(id);
+            } else {
+                return requestSummary.setMessage("Failed to reopen clearing request");
+            }
         } catch (TException e) {
             log.error("Failed to re-open clearing request", e);
         }
-        return RequestStatus.FAILURE;
+        return requestSummary.setMessage("Failed to reopen clearing request");
     }
 
     private static LiferayPortletURL getProjectPortletUrl(PortletRequest request, String projectId) {

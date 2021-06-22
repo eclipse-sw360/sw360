@@ -203,12 +203,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         if (CommonUtils.isNotNullEmptyOrWhitespace(project.getClearingRequestId())) {
             log.warn("Clearing request is already present for the project: " + project.getId());
-            return requestSummary.setRequestStatus(AddDocumentRequestStatus.DUPLICATE).setId(project.getClearingRequestId());
-        }
-
-        if (!SW360Utils.isValidDate(clearingRequest.getRequestedClearingDate(), DateTimeFormatter.ISO_LOCAL_DATE, 7)) {
-            log.warn("Invalid requested clearing date: " + clearingRequest.getRequestedClearingDate() + " is entered, by user: "+ user.getEmail());
-            return requestSummary.setMessage("Invalid requested clearing date");
+            return requestSummary.setRequestStatus(AddDocumentRequestStatus.DUPLICATE)
+                    .setId(project.getClearingRequestId()).setMessage("Clearing request already present for project");
         }
 
         if (!(ProjectClearingState.CLOSED.equals(project.getClearingState()) || Visibility.PRIVATE.equals(project.getVisbility()))) {

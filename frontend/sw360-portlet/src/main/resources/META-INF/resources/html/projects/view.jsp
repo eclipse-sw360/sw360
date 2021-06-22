@@ -10,7 +10,6 @@
   --%>
 <%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.projects.Project" %>
-<%@ page import="org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest" %>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 <%@ page import="javax.portlet.PortletRequest" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectType" %>

@@ -8,7 +8,6 @@
   ~ SPDX-License-Identifier: EPL-2.0
   --%>
 
-<%@page import="org.eclipse.sw360.datahandler.thrift.ClearingRequestState"%>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
 <%@ page import="org.eclipse.sw360.datahandler.thrift.ModerationState" %>
@@ -17,6 +16,8 @@
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.DateRange" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.ClearingRequestState"%>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.ClearingRequestPriority"%>
 <%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
 <%@ page import="javax.portlet.PortletRequest" %>
 <%@ page import ="java.util.Date" %>
@@ -177,10 +178,7 @@
                         <label for="date_type"><liferay-ui:message key="priority" />:</label>
                         <select class="form-control form-control-sm cr_filter" id="cr_priority">
                             <option value="" class="textlabel stackedLabel" ></option>
-                            <option value="P0" class="textlabel stackedLabel">P0</option>
-                            <option value="P1" class="textlabel stackedLabel">P1</option>
-                            <option value="P2" class="textlabel stackedLabel">P2</option>
-                            <option value="P3" class="textlabel stackedLabel">P3</option>
+                            <sw360:DisplayEnumOptions type="<%=ClearingRequestPriority.class%>" useStringValues="true"/>
                         </select>
                     </div>
                     <div class="form-group">
@@ -255,7 +253,7 @@
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
 AUI().use('liferay-portlet-url', function () {
-    const buColIndex = 1, projectColIndex = 2, componentColIndex = 3, progressColIndex = 6, maxTextLength = 22;
+    const buColIndex = 1, projectColIndex = 2, componentColIndex = 3, progressColIndex = 7, maxTextLength = 22;
     require(['jquery', 'bridges/datatables', 'modules/dialog', 'modules/validation', 'modules/listgroup', 'utils/includes/quickfilter', 'utils/render', 'bridges/jquery-ui', 'utils/link'], function($, datatables, dialog, validation, listgroup, quickfilter, render, jqui, linkToutil) {
         var moderationsDataTable,
             closedModerationsDataTable,
@@ -319,16 +317,16 @@ AUI().use('liferay-portlet-url', function () {
             let $priority = $('#cr_priority'),
                 $babl = $('#ba_bl'),
                 $status = $('#cr_status'),
-                crPriority = $priority.find(":selected").val(),
+                crPriority = $priority.find(":selected").text(),
                 babl = $babl.find(":selected").val(),
                 crStatus = $status.find(":selected").text(),
                 tab = $('#requestTabs').find('a.active').attr('href');
 
             if (tab === '#tab-OpenCR') {
                 clearingRequestsDataTable
-                .column(0).search(crPriority)
                 .column(1).search(babl)
                 .column(4).search(crStatus)
+                .column(5).search(crPriority)
                 .draw();
             } else if (tab === '#tab-ClosedCR') {
                 closedClearingRequestsDataTable
@@ -375,16 +373,16 @@ AUI().use('liferay-portlet-url', function () {
                         }
                         today.setHours(0,0,0,0);
                         let filterDate = new Date("1970-01-01"); // use data for the date column
-                        if (dateType === "<%=ClearingRequest._Fields.TIMESTAMP%>" && data[8] && days <= 0) {
-                            filterDate = new Date( data[8] );
-                        } else if (dateType === "<%=ClearingRequest._Fields.REQUESTED_CLEARING_DATE%>" && data[9]) {
+                        if (dateType === "<%=ClearingRequest._Fields.TIMESTAMP%>" && data[9] && days <= 0) {
                             filterDate = new Date( data[9] );
-                        } else if (dateType === "<%=ClearingRequest._Fields.AGREED_CLEARING_DATE%>" && data[10]) {
+                        } else if (dateType === "<%=ClearingRequest._Fields.REQUESTED_CLEARING_DATE%>" && data[10]) {
                             filterDate = new Date( data[10] );
-                        }  else if (dateType === "<%=ClearingRequest._Fields.MODIFIED_ON%>" && data[11] && days <= 0) {
+                        } else if (dateType === "<%=ClearingRequest._Fields.AGREED_CLEARING_DATE%>" && data[11]) {
                             filterDate = new Date( data[11] );
-                        }  else if (dateType === "<%=ClearingRequest._Fields.TIMESTAMP_OF_DECISION%>" && data[12] && days <= 0) {
+                        } else if (dateType === "<%=ClearingRequest._Fields.MODIFIED_ON%>" && data[12] && days <= 0) {
                             filterDate = new Date( data[12] );
+                        } else if (dateType === "<%=ClearingRequest._Fields.TIMESTAMP_OF_DECISION%>" && data[13] && days <= 0) {
+                            filterDate = new Date( data[13] );
                         }
                         filterDate.setHours(0,0,0,0);
 
@@ -543,18 +541,19 @@ AUI().use('liferay-portlet-url', function () {
                     "2": "<liferay-ui:message key="not.loaded.yet" />",
                     "3": "<liferay-ui:message key="not.loaded.yet" />",
                     "4": "<sw360:DisplayEnum value="${request.clearingState}"/>",
-                    "5": '<sw360:DisplayUserEmail email="${request.requestingUser}" />',
-                    "6": "<liferay-ui:message key="not.loaded.yet" />",
-                    "7": '<sw360:DisplayUserEmail email="${request.clearingTeam}" />',
-                    "8": '<fmt:formatDate value="${createdOn}" pattern="yyyy-MM-dd"/>',
-                    "9": '<sw360:out value="${request.requestedClearingDate}"/>',
-                    "10": '<sw360:out value="${request.agreedClearingDate}"/>',
-                    "11": '',
-                    <core_rt:if test="${request.modifiedOn > 0}">
-                        "11": '<fmt:formatDate value="${modifiedOn}" pattern="yyyy-MM-dd"/>',
-                    </core_rt:if>
+                    "5": "<sw360:DisplayEnum value="${request.priority}"/>",
+                    "6": '<sw360:DisplayUserEmail email="${request.requestingUser}" />',
+                    "7": "<liferay-ui:message key="not.loaded.yet" />",
+                    "8": '<sw360:DisplayUserEmail email="${request.clearingTeam}" />',
+                    "9": '<fmt:formatDate value="${createdOn}" pattern="yyyy-MM-dd"/>',
+                    "10": '<sw360:out value="${request.requestedClearingDate}"/>',
+                    "11": '<sw360:out value="${request.agreedClearingDate}"/>',
                     "12": '',
-                    "13": "${request.projectId}",
+                    <core_rt:if test="${request.modifiedOn > 0}">
+                        "12": '<fmt:formatDate value="${modifiedOn}" pattern="yyyy-MM-dd"/>',
+                    </core_rt:if>
+                    "13": '',
+                    "14": "${request.projectId}",
                 });
             </core_rt:forEach>
             return result;
@@ -575,25 +574,26 @@ AUI().use('liferay-portlet-url', function () {
                     "2": "<liferay-ui:message key="not.loaded.yet" />",
                     "3": "<liferay-ui:message key="not.loaded.yet" />",
                     "4": "<sw360:DisplayEnum value="${request.clearingState}"/>",
-                    "5": '<sw360:DisplayUserEmail email="${request.requestingUser}" />',
-                    "6": "<liferay-ui:message key="not.loaded.yet" />",
-                    "7": '<sw360:DisplayUserEmail email="${request.clearingTeam}" />',
-                    "8": '<fmt:formatDate value="${createdOn}" pattern="yyyy-MM-dd"/>',
-                    "9": '<sw360:out value="${request.requestedClearingDate}"/>',
-                    "10": '<sw360:out value="${request.agreedClearingDate}"/>',
-                    "11": '',
+                    "5": "<sw360:DisplayEnum value="${request.priority}"/>",
+                    "6": '<sw360:DisplayUserEmail email="${request.requestingUser}" />',
+                    "7": "<liferay-ui:message key="not.loaded.yet" />",
+                    "8": '<sw360:DisplayUserEmail email="${request.clearingTeam}" />',
+                    "9": '<fmt:formatDate value="${createdOn}" pattern="yyyy-MM-dd"/>',
+                    "10": '<sw360:out value="${request.requestedClearingDate}"/>',
+                    "11": '<sw360:out value="${request.agreedClearingDate}"/>',
+                    "12": '',
                     <core_rt:if test="${request.modifiedOn > 0}">
-                        "11": '<fmt:formatDate value="${modifiedOn}" pattern="yyyy-MM-dd"/>',
+                        "12": '<fmt:formatDate value="${modifiedOn}" pattern="yyyy-MM-dd"/>',
                     </core_rt:if>
-                    "12": '<fmt:formatDate value="${closedOn}" pattern="yyyy-MM-dd"/>',
-                    "13": "${request.projectId}",
+                    "13": '<fmt:formatDate value="${closedOn}" pattern="yyyy-MM-dd"/>',
+                    "14": "${request.projectId}",
                 });
             </core_rt:forEach>
             return result;
         }
 
         function createClearingRequestsTable(tableId, tableData) {
-            let hiddenCol = (tableId === '#clearingRequestsTable') ? [8, 9, 10, 11, 12] : [3, 6, 11];
+            let hiddenCol = (tableId === '#clearingRequestsTable') ? [8, 9, 10, 11, 12, 13] : [3, 5, 7, 12];
             return datatables.create(tableId, {
                 searching: true,
                 deferRender: false, // do not change this value
@@ -604,10 +604,11 @@ AUI().use('liferay-portlet-url', function () {
                     {title: "<liferay-ui:message key="project" />", width: "15%" },
                     {title: "<liferay-ui:message key="open.components" />", width: "8%" },
                     {title: "<liferay-ui:message key="status" />", width: "10%" },
+                    {title: "<liferay-ui:message key="priority" />", width: "7%" },
                     {title: "<liferay-ui:message key="requesting.user" />", className: 'text-nowrap', width: "10%" },
-                    {title: "<liferay-ui:message key="clearing.progress" />", className: 'text-nowrap', width: "21%" },
+                    {title: "<liferay-ui:message key="clearing.progress" />", className: 'text-nowrap', width: "30%" },
                     {title: "<liferay-ui:message key="clearing.team" />", className: 'text-nowrap', width: "15%" },
-                    {title: "<liferay-ui:message key="created.on" />", className: 'text-nowrap', width: "7%" },
+                    {title: "<liferay-ui:message key="created.on" />", className: 'text-nowrap', width: "8%" },
                     {title: "<liferay-ui:message key="preferred.clearing.date" />", width: "8%" },
                     {title: "<liferay-ui:message key="agreed.clearing.date" />", width: "7%" },
                     {title: "<liferay-ui:message key="modified.on" />", width: "7%" },
@@ -623,6 +624,21 @@ AUI().use('liferay-portlet-url', function () {
                         type: 'natural-nohtml'
                     },
                     {
+                        targets: [5],
+                        "createdCell": function (td, cellData, rowData, row, col) {
+                            $(td).addClass('font-weight-bold');
+                            if (rowData[5].includes("sw360-tt-ClearingRequestPriority-LOW")) {
+                                $(td).addClass('text-success');
+                            } else if (rowData[5].includes("sw360-tt-ClearingRequestPriority-MEDIUM")) {
+                                $(td).addClass('text-primary');
+                            } else if (rowData[5].includes("sw360-tt-ClearingRequestPriority-HIGH")) {
+                                $(td).addClass('text-warning');
+                            } else if (rowData[5].includes("sw360-tt-ClearingRequestPriority-CRITICAL")) {
+                                $(td).addClass('text-danger');
+                            }
+                        }                     
+                    },
+                    {
                         "targets": hiddenCol,
                         "visible": false
                     }
@@ -632,31 +648,12 @@ AUI().use('liferay-portlet-url', function () {
                     datatables.showPageContainer;
                     loadProjectDetails(tableId, tableData);
                 }
-            }, [0,1,2,3,4,5,7,8,9,10,11,12], [6,13]);
+            }, [0,1,2,3,4,5,6,8,9,10,11,12,13], [7,14]);
         }
 
         function renderClearingRequestUrl(tableData, type, row) {
-            let portletURL = '<%=friendlyClearingURL%>',
-                rcd = row[9],
-                span =  document.createElement('span'),
-                isClosed = row[4].includes('sw360-tt-ClearingRequestState-CLOSED') || row[4].includes('sw360-tt-ClearingRequestState-REJECTED'),
-                url = render.linkTo(replaceFriendlyUrlParameter(portletURL.toString(), row.DT_RowId, '<%=PortalConstants.PAGENAME_DETAIL_CLEARING_REQUEST%>'), "", row.DT_RowId);
-            if (!isClosed) {
-                span.setAttribute("class","align-top badge");
-                if (validation.isValidDate(rcd, 21)) { // green --> greater than 21 days
-                    $(span).html('P3').addClass('badge-info');
-                } else if (validation.isValidDate(rcd, 14)) { // yellow --> greater than 14 days but less than 21 days
-                    $(span).html('P2').addClass('badge-primary');
-                } else if (validation.isValidDate(rcd, 7)) { // orange --> greater than 7 days but less than 14 days
-                    $(span).html('P1').addClass('badge-warning');
-                } else if (validation.isValidDate(rcd, 1)) { // red --> greater than today but less than 7 days
-                    $(span).html('P0').addClass('badge-danger');
-                } else { // red --> today
-                    $(span).html('P0').addClass('badge-danger');
-                }
-                return url + " &nbsp; " + $(span)[0].outerHTML;
-            }
-            return url;
+            let portletURL = '<%=friendlyClearingURL%>';
+            return render.linkTo(replaceFriendlyUrlParameter(portletURL.toString(), row.DT_RowId, '<%=PortalConstants.PAGENAME_DETAIL_CLEARING_REQUEST%>'), "", row.DT_RowId);
         }
 
         function renderLinkToProject(id, name) {
@@ -672,8 +669,9 @@ AUI().use('liferay-portlet-url', function () {
         }
 
         function renderClearingRequestAction(tableData, type, row) {
-            let email = extractEmailFromHTMLElement(row[7]);
-            if (row[13] && (email === '${user.emailAddress}' || ${isClearingExpert})) {
+            let clearingTeam = extractEmailFromHTMLElement(row[8]),
+                requestingUser = extractEmailFromHTMLElement(row[6]);
+            if (row[14] && (clearingTeam === '${user.emailAddress}' || requestingUser === '${user.emailAddress}' || ${isClearingExpert})) {
                 let portletURL = '<%=friendlyClearingURL%>';
                 return render.linkTo(replaceFriendlyUrlParameter(portletURL.toString(), row.DT_RowId, '<%=PortalConstants.PAGENAME_EDIT_CLEARING_REQUEST%>'),
                         "",
@@ -704,20 +702,34 @@ AUI().use('liferay-portlet-url', function () {
                     $projCell = $(tableId).find('tr#'+value.DT_RowId).find('td:eq('+projectColIndex+')'),
                     $compCell = $(tableId).find('tr#'+value.DT_RowId).find('td:eq('+componentColIndex+')'),
                     $progressCell = $(tableId).find('tr#'+value.DT_RowId).find('td:eq('+progressColIndex+')');
-                if (value[13]) {
-                    projectIds.push(value[13]);
+                if (value[14]) {
+                    projectIds.push(value[14]);
                     $buCell.html('<liferay-ui:message key="loading" />');
                     $projCell.html('<liferay-ui:message key="loading" />');
                     if (isOpenCrTable) {
                         $compCell.html('<liferay-ui:message key="loading" />');
                         $progressCell.html('<liferay-ui:message key="loading" />');
                     }
-                    value[13] = "";
+                    value[14] = "";
                 } else {
                     crIds.push(value.DT_RowId);
                 }
             }
+            if (projectIds.length > 25) {
+                let i, j, temp, chunk = 25;
+                setTimeout(function() {
+                    for (i = 0, j = projectIds.length; i < j; i += chunk) {
+                        temp = projectIds.slice(i, i + chunk);
+                        loadProjectDetailsAjaxCall(tableId, tableData, temp, isOpenCrTable, crIds);
+                    }
+                }, 1000);
+            } else {
+                loadProjectDetailsAjaxCall(tableId, tableData, projectIds, isOpenCrTable, crIds);
+            }
+        }
 
+        function loadProjectDetailsAjaxCall(tableId, tableData, projectIds, isOpenCrTable, crIds) {
+            console.log("triggering the backend call: "+ isOpenCrTable);
             $.ajax({
                 type: 'POST',
                 url: '<%=loadProjectDetailsAjaxURL%>',
@@ -780,7 +792,6 @@ AUI().use('liferay-portlet-url', function () {
                         buCell.data(response[i].bu);
                         projCell.data(renderLinkToProject(response[i].id, projName));
                         if (isOpenCrTable) {
-                            crIdCell.data (crId + ' ' + $(crIdCell.node()).find('span.badge').text());
                             compCell.data(totalCount - approvedCount);
                             if (!totalCount || $(table.cell('#'+crId, 4).node()).find('span.sw360-tt-ClearingRequestState-NEW').text()) {
                                 progressCell.data('<liferay-ui:message key="not.available" />');
@@ -876,14 +887,16 @@ AUI().use('liferay-portlet-url', function () {
     });
 
     function extractEmailFromHTMLElement(link) {
-        var dummyHTML = document.createElement('div');
-        dummyHTML.innerHTML = link;
-        return dummyHTML.textContent;
+        return $(link).prop('href').substr('7');
     }
 
     function cutModeratorsList(moderators) {
-        var firstEmail = extractEmailFromHTMLElement(moderators.split(",")[0]);
-        return  firstEmail.substring(0,20) + "...";
+        if (moderators) {
+            var firstEmail = extractEmailFromHTMLElement(moderators.split(",")[0]);
+            return  firstEmail.substring(0, 20) + "...";
+        } else {
+            return "";
+        }
     }
 
     function renderModeratorsListExpandable(moderators) {

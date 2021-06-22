@@ -292,6 +292,13 @@ public class ThriftEnumUtils {
             .put(ClearingRequestState.ON_HOLD, "On Hold")
             .build();
 
+    private static final ImmutableMap<ClearingRequestPriority, String> MAP_CLEARING_REQUEST_PRIORITY_STRING = ImmutableMap.of(
+            ClearingRequestPriority.LOW, "Low",
+            ClearingRequestPriority.MEDIUM, "Medium",
+            ClearingRequestPriority.HIGH, "High",
+            ClearingRequestPriority.CRITICAL, "Critical"
+    );
+
     public static final ImmutableMap<Class<? extends TEnum>, Map<? extends TEnum, String>>
             MAP_ENUMTYPE_MAP = ImmutableMap.<Class<? extends TEnum>, Map<? extends TEnum, String>>builder()
             .put(ComponentType.class, MAP_COMPONENT_TYPE_STRING)
@@ -320,6 +327,7 @@ public class ThriftEnumUtils {
             .put(ClearingRequestState.class, MAP_CLEARING_REQUEST_STATE_STRING)
             .put(ObligationLevel.class, MAP_OBLIGATION_LEVEL_STRING)
             .put(ObligationType.class, MAP_OBLIGATION_TYPE_STRING)
+            .put(ClearingRequestPriority.class, MAP_CLEARING_REQUEST_PRIORITY_STRING)
             .build();
 
     public static String enumToString(TEnum value) {
