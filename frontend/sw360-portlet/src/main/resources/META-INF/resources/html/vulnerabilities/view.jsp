@@ -108,6 +108,16 @@
             vulnerabilityTable = createVulnerabilityTable();
             quickfilter.addTable(vulnerabilityTable);
 
+            vulnerabilityTable.on('preDraw', function() {
+                $('[role="tooltip"]').css("display", "none");
+                $('#vulnerabilitiesTable .info-text').tooltip("close");
+            });
+
+            vulnerabilityTable.on('draw', function() {
+                $('[role="tooltip"]').css("display", "none");
+                $('#vulnerabilitiesTable .info-text').tooltip("close");
+            });
+
             var viewSize = $('#vulnerabilitiesTable').data().viewSize;
             $('#viewSizeBtn [data-name="count"]').text(viewSize > 0 ? '<liferay-ui:message key="latest" /> ' + viewSize : '<liferay-ui:message key="all" />');
             $('#viewSizeBtn + div > a').on('click', function(event) {
@@ -215,18 +225,6 @@
                     },
                     initComplete: datatables.showPageContainer
                 }, [0, 1, 2, 3, 4]);
-
-                $('#vulnerabilitiesTable .info-text').tooltip({
-                    delay: 0,
-                    track: true,
-                    fade: 250,
-                    classes: {
-                        "ui-tooltip": "ui-corner-all ui-widget-shadow info-text"
-                    },
-                    content: function () {
-                        return $('<textarea/>').html($(this).prop('title')).val();
-                    }
-                });
 
                 return table;
             }

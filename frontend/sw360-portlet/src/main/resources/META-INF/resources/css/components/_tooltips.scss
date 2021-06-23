@@ -14,10 +14,10 @@
 
 .info-text {
     ol.formatedMessageForVul {
-        list-style: none;
+        list-style-type: decimal;
+        margin-left: -0.6rem;
 
         li:before {
-            content: "- ";
             margin-left: -0.6rem;
         }
 
@@ -46,6 +46,13 @@
             font-style: italic;
         }
     }
+}
+
+.info-text.ui-widget.ui-widget-content {
+    max-width: 500px;
+    max-height: 300px;
+    overflow-x: auto;
+    overflow-y: auto;
 }
 
 .sw360-tt:hover:after {
