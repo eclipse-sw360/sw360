@@ -54,6 +54,9 @@ include::{snippets}/should_document_get_license/links.adoc[]
 
 A `POST` request will link obligations to a license.
 
+===== Request structure
+Pass an array of release ids to be linked as request body.
+
 ===== Example request
 include::{snippets}/should_document_link_obligation/curl-request.adoc[]
 
@@ -64,6 +67,9 @@ include::{snippets}/should_document_link_obligation/http-response.adoc[]
 ==== UnLink obligations to license
 
 A `PATCH` request will unlink obligations to a license.
+
+===== Request structure
+Pass an array of release ids to be unlinked as request body.
 
 ===== Example request
 include::{snippets}/should_document_unlink_obligation/curl-request.adoc[]

@@ -24,6 +24,7 @@ import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 
 import java.util.List;
 
@@ -54,10 +55,16 @@ public class Sw360ObligationService {
 
     public Obligation createObligation(Obligation obligation, User sw360User) {
         try {
-            LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-            String obligationId = sw360LicenseClient.addObligations(obligation, sw360User);
-            obligation.setId(obligationId);
-            return obligation;
+            if (obligation.getTitle() != null && !obligation.getTitle().trim().isEmpty()
+            && obligation.getText() != null && !obligation.getText().trim().isEmpty()
+            && obligation.getObligationLevel() != null) {
+                LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+                String obligationId = sw360LicenseClient.addObligations(obligation, sw360User);
+                obligation.setId(obligationId);
+                return obligation;
+            } else {
+                throw new HttpMessageNotReadableException("Obligation Title, Text, Level are required. Obligation Title, Text cannot contain only space character.");
+            }
         } catch (TException e) {
             throw new RuntimeException(e);
         }
@@ -66,18 +73,6 @@ public class Sw360ObligationService {
     public RequestStatus deleteObligation(String obligationId, User sw360User) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
         return sw360LicenseClient.deleteObligations(obligationId, sw360User);
-    }
-
-    public void deleteAllObligations(User sw360User) {
-        try {
-            LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-            List<Obligation> obligations = sw360LicenseClient.getObligations();
-            for (Obligation obligation : obligations) {
-                sw360LicenseClient.deleteObligations(obligation.getId(), sw360User);
-            }
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private LicenseService.Iface getThriftLicenseClient() throws TTransportException {

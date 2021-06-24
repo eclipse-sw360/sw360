@@ -534,14 +534,9 @@ public class RestControllerHelper<T> {
     }
 
     public Obligation convertToEmbeddedObligation(Obligation obligation) {
-        Obligation embeddedObligation = convertToEmbeddedObligation(obligation.getTitle());
-        embeddedObligation.setId(obligation.getId());
-        return embeddedObligation;
-    }
-
-    public Obligation convertToEmbeddedObligation(String title) {
         Obligation embeddedObligation = new Obligation();
-        embeddedObligation.setTitle(title);
+        embeddedObligation.setTitle(obligation.getTitle());
+        embeddedObligation.setId(obligation.getId());
         embeddedObligation.setType(null);
         return embeddedObligation;
     }

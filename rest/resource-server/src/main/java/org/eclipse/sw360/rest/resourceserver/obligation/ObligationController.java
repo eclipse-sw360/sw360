@@ -33,6 +33,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -69,9 +70,13 @@ public class ObligationController implements ResourceProcessor<RepositoryLinksRe
     @RequestMapping(value = OBLIGATION_URL + "/{id}", method = RequestMethod.GET)
     public ResponseEntity<Resource<Obligation>> getObligation(
             @PathVariable("id") String id) {
-        Obligation sw360Obligation = obligationService.getObligationById(id);
-        HalResource<Obligation> halResource = createHalObligation(sw360Obligation);
-        return new ResponseEntity<>(halResource, HttpStatus.OK);
+        try {
+            Obligation sw360Obligation = obligationService.getObligationById(id);
+            HalResource<Obligation> halResource = createHalObligation(sw360Obligation);
+            return new ResponseEntity<>(halResource, HttpStatus.OK);
+        } catch (Exception e) {
+            throw new ResourceNotFoundException("Obligation does not exists! id=" + id);
+        }
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
@@ -95,12 +100,17 @@ public class ObligationController implements ResourceProcessor<RepositoryLinksRe
             @PathVariable("ids") List<String> idsToDelete) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         List<MultiStatus> results = new ArrayList<>();
-        for(String id:idsToDelete) {
-            RequestStatus requestStatus = obligationService.deleteObligation(id, user);
-            if(requestStatus == RequestStatus.SUCCESS) {
-                results.add(new MultiStatus(id, HttpStatus.OK));
-            } else {
-                results.add(new MultiStatus(id, HttpStatus.INTERNAL_SERVER_ERROR));
+        for(String id : idsToDelete) {
+            try {
+                Obligation obligation = obligationService.getObligationById(id);
+                RequestStatus requestStatus = obligationService.deleteObligation(obligation.getId(), user);
+                if(requestStatus == RequestStatus.SUCCESS) {
+                    results.add(new MultiStatus(id, HttpStatus.OK));
+                } else {
+                    results.add(new MultiStatus(id, HttpStatus.INTERNAL_SERVER_ERROR));
+                }
+            } catch (Exception e) {
+                results.add(new MultiStatus(id, HttpStatus.BAD_REQUEST));
             }
         }
         return new ResponseEntity<>(results, HttpStatus.MULTI_STATUS);

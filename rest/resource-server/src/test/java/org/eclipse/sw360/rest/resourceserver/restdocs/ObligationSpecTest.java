@@ -126,8 +126,8 @@ public class ObligationSpecTest extends TestRestDocsSpecBase {
                         responseFields(
                                 fieldWithPath("title").description("The title of the obligation"),
                                 fieldWithPath("text").description("The text of the obligation"),
-                                fieldWithPath("obligationLevel").description("The level of the obligation"),
-                                fieldWithPath("obligationType").description("The type of the obligation"),
+                                fieldWithPath("obligationLevel").description("The level of the obligation: [ORGANISATION_OBLIGATION, PROJECT_OBLIGATION, COMPONENT_OBLIGATION, LICENSE_OBLIGATION]"),
+                                fieldWithPath("obligationType").description("The type of the obligation: [PERMISSION, RISK, EXCEPTION, RESTRICTION, OBLIGATION]"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
@@ -151,14 +151,14 @@ public class ObligationSpecTest extends TestRestDocsSpecBase {
                         requestFields(
                                 fieldWithPath("title").description("The title of the obligation"),
                                 fieldWithPath("text").description("The text of the obligation"),
-                                fieldWithPath("obligationLevel").description("The level of the obligation"),
-                                fieldWithPath("obligationType").description("The type of the obligation")
+                                fieldWithPath("obligationLevel").description("The level of the obligation: [COMPONENT_OBLIGATION, ORGANISATION_OBLIGATION, PROJECT_OBLIGATION, LICENSE_OBLIGATION]"),
+                                fieldWithPath("obligationType").description("The type of the obligation: [RESTRICTION, OBLIGATION, PERMISSION, EXCEPTION, RISK]")
                         ),
                         responseFields(
                                 fieldWithPath("title").description("The title of the obligation"),
                                 fieldWithPath("text").description("The text of the obligation"),
-                                fieldWithPath("obligationLevel").description("The level of the obligation"),
-                                fieldWithPath("obligationType").description("The type of the obligation"),
+                                fieldWithPath("obligationLevel").description("The level of the obligation: [COMPONENT_OBLIGATION, ORGANISATION_OBLIGATION, PROJECT_OBLIGATION, LICENSE_OBLIGATION]"),
+                                fieldWithPath("obligationType").description("The type of the obligation: [RESTRICTION, OBLIGATION, PERMISSION, EXCEPTION, RISK]"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
