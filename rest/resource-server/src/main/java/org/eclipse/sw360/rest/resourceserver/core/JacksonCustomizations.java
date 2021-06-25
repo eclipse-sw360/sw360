@@ -27,6 +27,7 @@ import org.eclipse.sw360.datahandler.thrift.changelogs.ChangedFields;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ReferenceDocData;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
@@ -65,6 +66,7 @@ class JacksonCustomizations {
             setMixInAnnotation(Attachment.class, Sw360Module.AttachmentMixin.class);
             setMixInAnnotation(Vendor.class, Sw360Module.VendorMixin.class);
             setMixInAnnotation(License.class, Sw360Module.LicenseMixin.class);
+            setMixInAnnotation(Obligation.class, Sw360Module.ObligationMixin.class);
             setMixInAnnotation(Vulnerability.class, Sw360Module.VulnerabilityMixin.class);
             setMixInAnnotation(VulnerabilityDTO.class, Sw360Module.VulnerabilityDTOMixin.class);
             setMixInAnnotation(EccInformation.class, Sw360Module.EccInformationMixin.class);
@@ -549,6 +551,43 @@ class JacksonCustomizations {
             @Override
             @JsonProperty("shortName")
             abstract public String getShortname();
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "id",
+                "revision",
+                "whitelist",
+                "whitelistSize",
+                "whitelistIterator",
+                "development",
+                "distribution",
+                "customPropertyToValueSize",
+                "developmentString",
+                "distributionString",
+                "externalIds",
+                "externalIdsSize",
+                "comments",
+                "additionalData",
+                "additionalDataSize",
+                "setId",
+                "setRevision",
+                "setType",
+                "setText",
+                "setWhitelist",
+                "setDevelopment",
+                "setDistribution",
+                "setTitle",
+                "setCustomPropertyToValue",
+                "setDevelopmentString",
+                "setDistributionString",
+                "setExternalIds",
+                "setComments",
+                "setObligationLevel",
+                "setObligationType",
+                "setAdditionalData"
+        })
+        static abstract class ObligationMixin extends Obligation {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)

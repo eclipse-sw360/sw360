@@ -48,3 +48,31 @@ include::{snippets}/should_document_get_license/http-response.adoc[]
 
 ===== Links
 include::{snippets}/should_document_get_license/links.adoc[]
+
+[[resources-license-link-obligation]]
+==== Link obligations to license
+
+A `POST` request will link obligations to a license.
+
+===== Request structure
+Pass an array of release ids to be linked as request body.
+
+===== Example request
+include::{snippets}/should_document_link_obligation/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_link_obligation/http-response.adoc[]
+
+[[resources-license-unlink-obligation]]
+==== UnLink obligations to license
+
+A `PATCH` request will unlink obligations to a license.
+
+===== Request structure
+Pass an array of release ids to be unlinked as request body.
+
+===== Example request
+include::{snippets}/should_document_unlink_obligation/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_unlink_obligation/http-response.adoc[]
