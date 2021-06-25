@@ -166,7 +166,7 @@ public class ObligationSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_delete_obligations() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        mockMvc.perform(delete("/api/obligations/" + obligation.getId())
+        mockMvc.perform(delete("/api/obligations/" + obligation.getId() + ",1234,5678")
                 .header("Authorization", "Bearer " + accessToken)
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isMultiStatus())

@@ -71,6 +71,9 @@ include::{snippets}/should_document_create_obligation/http-response.adoc[]
 
 A `DELETE` request is used to delete an existing obligation
 
+===== Request structure
+Pass a list of obligation ids to be deleted as request parameter.
+
 ===== Response structure
 include::{snippets}/should_document_delete_obligations/response-fields.adoc[]
 

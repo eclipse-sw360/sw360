@@ -110,7 +110,7 @@ public class ObligationController implements ResourceProcessor<RepositoryLinksRe
                     results.add(new MultiStatus(id, HttpStatus.INTERNAL_SERVER_ERROR));
                 }
             } catch (Exception e) {
-                results.add(new MultiStatus(id, HttpStatus.BAD_REQUEST));
+                results.add(new MultiStatus(id, HttpStatus.NOT_FOUND));
             }
         }
         return new ResponseEntity<>(results, HttpStatus.MULTI_STATUS);
