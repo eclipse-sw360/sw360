@@ -2559,9 +2559,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         try {
             Project project = client.getProjectById(projectId, user);
             Set<String> releaseIds = CommonUtils.getNullToEmptyKeyset(project.getReleaseIdToUsage());
-            StringBuilder oneCLI = new StringBuilder();
-            StringBuilder multipleCLI = new StringBuilder();
-            StringBuilder noCLI = new StringBuilder();
+            List<Release> oneCLI = new ArrayList<Release>();
+            List<Release> multipleCLI = new ArrayList<Release>();
+            List<Release> noCLI = new ArrayList<Release>();
             Predicate<LicenseNameWithText> filterLicense = license -> (LICENSE_TYPE_GLOBAL.equals(license.getType()));
             Predicate<LicenseInfoParsingResult> filterLicenseResult = result -> (null != result.getLicenseInfo() && null != result.getLicenseInfo().getLicenseNamesWithTexts());
             Predicate<LicenseInfoParsingResult> filterConcludedLicense = result -> (null != result.getLicenseInfo() && null != result.getLicenseInfo().getConcludedLicenseIds());
@@ -2575,7 +2575,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 if (filteredAttachments.size() == 1) {
                     final Attachment attachment = filteredAttachments.get(0);
                     final String attachmentName = attachment.getFilename();
-                    oneCLI.append(CommonUtils.nullToEmptyString(printName(release))).append(",");
+                    oneCLI.add(release);
                     List<LicenseInfoParsingResult> licenseInfoResult = licenseInfoClient.getLicenseInfoForAttachment(release,
                             attachment.getAttachmentContentId(), true, user);
                     List<LicenseNameWithText> licenseWithTexts = licenseInfoResult.stream()
@@ -2603,9 +2603,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 } else {
                     jsonResult.put(SW360Constants.STATUS, SW360Constants.FAILURE);
                     if (filteredAttachments.size() > 1) {
-                        multipleCLI.append(CommonUtils.nullToEmptyString(printName(release))).append(",");
+                        multipleCLI.add(release);
                     } else {
-                        noCLI.append(CommonUtils.nullToEmptyString(printName(release))).append(",");
+                        noCLI.add(release);
                     }
                 }
                 release.setMainLicenseIds(mainLicenses);
