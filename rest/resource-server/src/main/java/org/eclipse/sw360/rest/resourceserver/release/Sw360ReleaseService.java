@@ -163,7 +163,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         rch.checkForCyclicOrInvalidDependencies(sw360ComponentClient, release, sw360User);
 
         List <String> licenseIncorrect = new ArrayList<>();
-        if (!release.getMainLicenseIds().isEmpty()) {
+        if (release.isSetMainLicenseIds() && !release.getMainLicenseIds().isEmpty()) {
             for (String licenseId : release.getMainLicenseIds()) {
                 try {
                     licenseService.getLicenseById(licenseId);
