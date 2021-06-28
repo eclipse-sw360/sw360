@@ -133,10 +133,6 @@ struct Project {
     139: optional string deliveryChannels,
     140: optional string remarksAdditionalRequirements,
 
-    // Urls for the project
-    50: optional string homepage,
-    52: optional string wiki,
-
     // Information for ModerationRequests
     70: optional DocumentState documentState,
     80: optional string clearingRequestId,
@@ -148,6 +144,9 @@ struct Project {
     // linked release obligations
     102: optional string linkedObligationId,
     200: optional map<RequestedAction, bool> permissions,
+
+    // Urls for the project
+    201: optional map<string, string> externalUrls,
 }
 
 struct ProjectLink {
