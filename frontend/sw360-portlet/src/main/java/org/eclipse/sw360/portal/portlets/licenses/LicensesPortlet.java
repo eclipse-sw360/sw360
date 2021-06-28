@@ -77,24 +77,7 @@ public class LicensesPortlet extends Sw360Portlet {
 
     private static final Logger log = LogManager.getLogger(LicensesPortlet.class);
 
-    /**
-     * Excel exporter
-     */
-    private final LicenseExporter exporter;
     private List<LicenseType> licenseTypes;
-
-    public LicensesPortlet() throws TException {
-        Function<Logger,List<LicenseType>> getLicenseTypes = log -> {
-            LicenseService.Iface client = thriftClients.makeLicenseClient();
-            try {
-                return client.getLicenseTypes();
-            } catch (TException e){
-                log.error("Error getting license type list.", e);
-                return Collections.emptyList();
-            }
-        };
-        exporter = new LicenseExporter(getLicenseTypes);
-    }
 
     //! Serve resource and helpers
     @Override
@@ -126,6 +109,18 @@ public class LicensesPortlet extends Sw360Portlet {
     }
 
     private void exportExcel(ResourceRequest request, ResourceResponse response) {
+        // Get the latest license types list before export
+        Function<Logger,List<LicenseType>> getLicenseTypes = log -> {
+            LicenseService.Iface client = thriftClients.makeLicenseClient();
+            try {
+                return client.getLicenseTypes();
+            } catch (TException e) {
+                log.error("Error getting license type list.", e);
+                return Collections.emptyList();
+            }
+        };
+        LicenseExporter exporter = new LicenseExporter(getLicenseTypes);
+
         try {
             LicenseService.Iface client = thriftClients.makeLicenseClient();
             List<License> licenses = client.getLicenseSummaryForExport();

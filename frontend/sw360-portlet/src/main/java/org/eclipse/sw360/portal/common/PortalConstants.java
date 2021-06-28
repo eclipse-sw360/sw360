@@ -207,6 +207,9 @@ public class PortalConstants {
     public static final String LOAD_LICENSE_OBLIGATIONS = "load_license_obligations";
     public static final String UNUSED_RELEASES = "unusedReleases";
 
+    //! Specialized keys for license types
+    public static final String LICENSE_TYPE_LIST = "licenseTypeList";
+
     //! Specialized keys for attachments
     public static final String ATTACHMENTS = "attachments";
     public static final String ATTACHMENT_NAME = "attachmentName";
@@ -407,6 +410,7 @@ public class PortalConstants {
     public static final String USER_ADMIN_PORTLET_NAME = PORTLET_NAME_PREFIX + "useradmin";
     public static final String TODOS_PORTLET_NAME = PORTLET_NAME_PREFIX + "todos";
     public static final String OAUTH_CLIENT_PORTLET_NAME = PORTLET_NAME_PREFIX + "oauthclient";
+    public static final String LICENSE_TYPE_PORTLET_NAME = PORTLET_NAME_PREFIX + "licensetypes";
 
     //! Keys for Home portlets
     public static final String MY_COMPONENTS_PORTLET_NAME = PORTLET_NAME_PREFIX + "mycomponents";
@@ -526,6 +530,10 @@ public class PortalConstants {
 
     // oblig actions
     public static final String REMOVE_TODO = "removeTodo";
+
+    // license type actions
+    public static final String REMOVE_LICENSE_TYPE = "removeLicenseType";
+    public static final String CHECK_LICENSE_TYPE_IN_USE = "checkLicenseTypeInUse";
 
     // user actions
     public static final String USER_PREFIX = "user";

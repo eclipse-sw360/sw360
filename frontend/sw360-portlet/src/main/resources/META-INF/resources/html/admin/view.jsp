@@ -37,6 +37,10 @@
                     <clay:icon symbol="document"/> <liferay-ui:message key="licenses" />
                 </a>
 
+                <a class="btn btn-secondary" href="${baseUrl}/../license-types">
+                    <clay:icon symbol="categories"/> <liferay-ui:message key="license.types" />
+                </a>
+
                 <a class="btn btn-secondary" href="${baseUrl}/../obligations">
                     <clay:icon symbol="list"/> <liferay-ui:message key="obligations" />
                 </a>
@@ -53,12 +57,12 @@
                     <clay:icon symbol="import-export"/> <liferay-ui:message key="import.export" />
                 </a>
 
-                <a class="btn btn-secondary" href="${baseUrl}/../attachmentcleanup">
-                    <clay:icon symbol="filter"/> <liferay-ui:message key="attachment.cleanup" />
-                </a>
-
                 <a class="btn btn-secondary" href="${baseUrl}/../databasesanitation">
                     <clay:icon symbol="search"/> <liferay-ui:message key="database.sanitation" />
+                </a>
+
+                <a class="btn btn-secondary" href="${baseUrl}/../attachmentcleanup">
+                    <clay:icon symbol="filter"/> <liferay-ui:message key="attachment.cleanup" />
                 </a>
 
                 <a class="btn btn-secondary" href="${baseUrl}/../oauthclient">

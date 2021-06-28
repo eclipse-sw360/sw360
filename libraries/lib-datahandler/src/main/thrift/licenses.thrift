@@ -21,6 +21,7 @@ typedef sw360.DocumentState DocumentState
 typedef sw360.CustomProperties CustomProperties
 typedef sw360.RequestSummary RequestSummary
 typedef sw360.Ternary Ternary
+typedef i32 int
 
 enum ObligationLevel {
     ORGANISATION_OBLIGATION = 0,
@@ -134,6 +135,11 @@ service LicenseService {
     RequestStatus addObligationsToLicense(1: set<Obligation> obligations, 2: License license, 3: User user);
 
     /**
+     * Add a new license type object to database
+     **/
+    RequestStatus addLicenseType(1:LicenseType licenseType, 2: User user);
+
+    /**
      * Update given license,
      * user is used to check permissions, requesting user's department is used to set whitelists
      **/
@@ -244,4 +250,14 @@ service LicenseService {
      * delete obligation from database if user has permissions
      **/
     RequestStatus deleteObligations(1: string id, 2: User user);
+
+    /**
+     * delete license type from database if user has permissions
+     **/
+    RequestStatus deleteLicenseType(1: string id, 2: User user);
+
+    /**
+     * Check license type is in using by license
+     **/
+    int checkLicenseTypeInUse(1: string id);
 }

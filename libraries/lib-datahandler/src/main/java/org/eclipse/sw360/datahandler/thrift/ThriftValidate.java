@@ -60,6 +60,15 @@ public class ThriftValidate {
         oblig.setType(TYPE_OBLIGATION);
     }
 
+    public static void prepareLicenseType(LicenseType licenseType) throws SW360Exception {
+        // Check required fields
+        assertNotNull(licenseType);
+        assertNotEmpty(licenseType.getLicenseType());
+
+        // Check type
+        licenseType.setType(TYPE_LICENSETYPE);
+    }
+
     public static void prepareLicense(License license) throws SW360Exception {
         // Check required fields
         assertNotNull(license);
