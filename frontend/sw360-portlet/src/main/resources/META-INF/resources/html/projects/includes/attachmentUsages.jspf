@@ -47,6 +47,7 @@
                     <div class="col form-group m-0">
                         <select class="form-control form-control-sm mx-2 w-50" id="releaseFilter">
                             <option value="" class="textlabel stackedLabel">-- <liferay-ui:message key="release.filter" /> -- </option>
+                            <option value="2" class="textlabel stackedLabel"><liferay-ui:message key="with.cli.attachments" /></option>
                             <option value="1" class="textlabel stackedLabel"><liferay-ui:message key="with.attachments" /></option>
                             <option value="0" class="textlabel stackedLabel"><liferay-ui:message key="without.attachments" /></option>
                         </select>
@@ -154,6 +155,7 @@
             filterVal = $('#releaseFilter').find(":selected").val(),
             isFilterWithAttach = filterVal == '1',
             isFilterWithoutAttach = filterVal == '0',
+            isFilterCliAttach = filterVal == '2',
             isClearFilter = filterVal == '';
 
             $("#AttachmentUsagesInfo tbody").find('tr').each(function(index) {
@@ -166,6 +168,12 @@
                     }
                 } else if (isFilterWithAttach) {
                     if (!data.ttParentId && $(this).hasClass('branch') && !data.ttParentprojectpath) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                } else if (isFilterCliAttach) {
+                    if (!data.ttParentId && $(this).hasClass('branch') && !data.ttParentprojectpath && data.isCliPresent) {
                         $(this).show();
                     } else {
                         $(this).hide();
