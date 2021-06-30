@@ -20,7 +20,25 @@
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 
+<ul class="nav nav-tabs font-weight-bold border-bottom" role="tablist">
+    <li class="nav-item border rounded border-bottom-0">
+        <a class="nav-link active" id="licObl-tab" data-toggle="tab" href="#licObl" role="tab" aria-controls="licObl" aria-selected="true"><liferay-ui:message key="license.obligation" /></a>
+    </li>
+    <li class="nav-item border rounded border-bottom-0">
+        <a class="nav-link" id="compObl-tab" data-toggle="tab" href="#compObl" role="tab" aria-controls="compObl" aria-selected="false"><liferay-ui:message key="component.obligation" /></a>
+    </li>
+    <li class="nav-item border rounded border-bottom-0">
+        <a class="nav-link" id="projObl-tab" data-toggle="tab" href="#projObl" role="tab" aria-controls="projObl" aria-selected="false"><liferay-ui:message key="project.obligation" /></a>
+    </li>
+    <li class="nav-item border rounded border-bottom-0">
+        <a class="nav-link" id="orgObl-tab" data-toggle="tab" href="#orgObl" role="tab" aria-controls="orgObl" aria-selected="false"><liferay-ui:message key="organisation.obligation" /></a>
+    </li>
+</ul>
+
+
+<div class="tab-content">
 <!-- Obligation View -->
+<div class="tab-pane fade show active" id="licObl" role="tabpanel" aria-labelledby="licObl-tab">
 <div id="obligation-view">
     <table id="obligationsDetailTable" class="table table-bordered" >
         <colgroup>
@@ -41,7 +59,7 @@
                     <span title="<liferay-ui:message key="expand.all" />" data-show="false">&#x25BA</span>
                 </th>
                 <th>
-                    <span title="<liferay-ui:message key="ObligationLevel-LICENSE_OBLIGATION" />"><liferay-ui:message key="license.obligation" /></span>
+                    <span title="<liferay-ui:message key="ObligationLevel-LICENSE_OBLIGATION" />"><liferay-ui:message key="license.obligation" /> <clay:icon symbol="info-circle" /></span>
                 </th>
                 <th><liferay-ui:message key="licenses" /></th>
                 <th><liferay-ui:message key="releases" /></th>
@@ -57,8 +75,9 @@
         </tbody>
     </table>
 </div>
-<br><hr>
+</div>
 <!-- Comp Obligation View -->
+<div class="tab-pane fade" id="compObl" role="tabpanel" aria-labelledby="compObl-tab">
 <div id="comp-obligation-view">
     <table id="comp-obligationsDetailTable" class="table table-bordered" >
         <colgroup>
@@ -76,7 +95,7 @@
                     <span title="<liferay-ui:message key="expand.all" />" data-show="false">&#x25BA</span>
                 </th>
                 <th>
-                    <span title="<liferay-ui:message key="ObligationLevel-COMPONENT_OBLIGATION" />"><liferay-ui:message key="component.obligation" /></span>
+                    <span title="<liferay-ui:message key="ObligationLevel-COMPONENT_OBLIGATION" />"><liferay-ui:message key="component.obligation" /> <clay:icon symbol="info-circle" /></span>
                 </th>
                 <th><liferay-ui:message key="status" /></th>
                 <th><liferay-ui:message key="type" /></th>
@@ -88,8 +107,9 @@
         </tbody>
     </table>
 </div>
-<br><hr>
+</div>
 <!-- Project Obligation View -->
+<div class="tab-pane fade" id="projObl" role="tabpanel" aria-labelledby="projObl-tab">
 <div id="project-obligation-view">
     <table id="project-obligationsDetailTable" class="table table-bordered" >
         <colgroup>
@@ -107,7 +127,7 @@
                     <span title="<liferay-ui:message key="expand.all" />" data-show="false">&#x25BA</span>
                 </th>
                 <th>
-                    <span title="<liferay-ui:message key="ObligationLevel-PROJECT_OBLIGATION" />"><liferay-ui:message key="project.obligation" /></span>
+                    <span title="<liferay-ui:message key="ObligationLevel-PROJECT_OBLIGATION" />"><liferay-ui:message key="project.obligation" /> <clay:icon symbol="info-circle" /></span>
                 </th>
                 <th><liferay-ui:message key="status" /></th>
                 <th><liferay-ui:message key="type" /></th>
@@ -119,8 +139,9 @@
         </tbody>
     </table>
 </div>
-<br><hr>
+</div>
 <!-- Org Obligation View -->
+<div class="tab-pane fade" id="orgObl" role="tabpanel" aria-labelledby="orgObl-tab">
 <div id="org-obligation-view">
     <table id="org-obligationsDetailTable" class="table table-bordered" >
         <colgroup>
@@ -138,7 +159,7 @@
                     <span title="<liferay-ui:message key="expand.all" />" data-show="false">&#x25BA</span>
                 </th>
                 <th>
-                    <span title="<liferay-ui:message key="ObligationLevel-ORGANISATION_OBLIGATION" />"><liferay-ui:message key="organisation.obligation" /></span>
+                    <span title="<liferay-ui:message key="ObligationLevel-ORGANISATION_OBLIGATION" />"><liferay-ui:message key="organisation.obligation" /> <clay:icon symbol="info-circle" /></span>
                 </th>
                 <th><liferay-ui:message key="status" /></th>
                 <th><liferay-ui:message key="type" /></th>
@@ -150,6 +171,9 @@
         </tbody>
     </table>
 </div>
+</div>
+</div>
+
 <script>
 require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatables, render) {
     var obligationJSON = [],

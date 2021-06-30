@@ -719,14 +719,12 @@ AUI().use('liferay-portlet-url', function () {
 
         $("button#addLicenseToRelease").on("click", function(event) {
             list = $('<ul id="releaseList" />');
-            $("#LinkedProjectsInfo tbody tr:not([id=noRecordRow],[data-tt-parent-id])").each(function() {
-                list.append('<li>' + $(this).find("td:first").text().trim() + '</li>');
-            });
-            addLicenseToLinkedRelease(list);
+            let releaseCount = $("#LinkedProjectsInfo tbody tr:not([id=noRecordRow],[data-tt-parent-id])").length;
+            addLicenseToLinkedRelease(releaseCount);
         });
 
-        function addLicenseToLinkedRelease(releases) {
-            if (!$(releases).find('li').length) {
+        function addLicenseToLinkedRelease(releaseCount) {
+            if (!releaseCount) {
                 dialog.warn('<liferay-ui:message key="no.linked.releases.yet" />')
                 return;
             }
@@ -745,39 +743,39 @@ AUI().use('liferay-portlet-url', function () {
                             oneList = $('<ul/>');
                             multipleList = $('<ul/>');
                             nilList = $('<ul/>');
-                            if (response.one) {
-                                let oneCli = response.one.split(",");
-                                oneCli.pop();
-                                oneCli.forEach(function (val, index) {
-                                    oneList.append('<li>' + val + '</li>');
+                            if (response.one.length) {
+                                response.one.forEach(function(rel, index) {
+                                    let url = makeReleaseViewUrl(rel.id),
+                                        viewUrl = $("<a/>").attr({href: url, target: "_blank"}).css("word-break", "break-word").text(rel.name + rel.version);
+                                    oneList.append('<li>' + viewUrl[0].outerHTML + '</li>');
                                 });
                             }
-                            if (response.mul) {
-                                let mulCli = response.mul.split(",");
-                                mulCli.pop();
-                                mulCli.forEach(function (val, index) {
-                                    multipleList.append('<li>' + val + '</li>');
+                            if (response.mul.length) {
+                                response.mul.forEach(function(rel, index) {
+                                    let url = makeReleaseViewUrl(rel.id),
+                                        viewUrl = $("<a/>").attr({href: url, target: "_blank"}).css("word-break", "break-word").text(rel.name + rel.version);
+                                    multipleList.append('<li>' + viewUrl[0].outerHTML + '</li>');
                                 });
                             }
-                            if (response.nil) {
-                                let nilCli = response.nil.split(",");
-                                nilCli.pop();
-                                nilCli.forEach(function (val, index) {
-                                    nilList.append('<li>' + val + '</li>');
+                            if (response.nil.length) {
+                                response.nil.forEach(function(rel, index) {
+                                    let url = makeReleaseViewUrl(rel.id),
+                                        viewUrl = $("<a/>").attr({href: url, target: "_blank"}).css("word-break", "break-word").text(rel.name + rel.version);
+                                    nilList.append('<li>' + viewUrl[0].outerHTML + '</li>');
                                 });
                             }
-                            if($(oneList).find('li').length) {
-                                $dialog.success('<liferay-ui:message key="success.please.reload.page.to.see.the.changes" />:' + $(oneList)[0].outerHTML);
+                            if ($(multipleList).find('li').length) {
+                                $dialog.warning('<liferay-ui:message key="multiple.approved.cli.are.found.in.the.release" />: <b>' + $(multipleList).find('li').length + '</b>' + multipleList[0].outerHTML);
                             }
-                            if($(multipleList).find('li').length) {
-                                $dialog.warning('<liferay-ui:message key="multiple.approved.cli.are.found.in.the.release" />: ' + $(multipleList)[0].outerHTML);
+                            if ($(nilList).find('li').length) {
+                                $dialog.warning('<liferay-ui:message key="approved.cli.not.found.in.the.release" />: <b>' + $(nilList).find('li').length + '</b>' + nilList[0].outerHTML);
                             }
-                            if($(nilList).find('li').length) {
-                                $dialog.warning('<liferay-ui:message key="approved.cli.not.found.in.the.release" />:' + $(nilList)[0].outerHTML);
+                            if ($(oneList).find('li').length) {
+                                $dialog.success('<liferay-ui:message key="success.please.reload.page.to.see.the.changes" />: <b>' + $(oneList).find('li').length + '</b>');
                             }
                             return;
                         }
-                        $dialog.success('<liferay-ui:message key="success.please.reload.page.to.see.the.changes" />.');
+                        $dialog.success('<liferay-ui:message key="success.please.reload.page.to.see.the.changes" />: <b>' + response.one.length + '</b>');
                     },
                     error: function () {
                         callback();
@@ -788,8 +786,8 @@ AUI().use('liferay-portlet-url', function () {
             $dialog = dialog.confirm(
                     'info',
                     'question-circle',
-                    '<liferay-ui:message key="add.license" />?',
-                    '<p id="addLicenseToReleaseInfo"><liferay-ui:message key="do.you.really.want.to.add.licenses.to.all.the.directly.linked.releases" />? </p>' + $(releases)[0].outerHTML,
+                    '<liferay-ui:message key="add.license.info.to.release" />?',
+                    '<p id="addLicenseToReleaseInfo"><liferay-ui:message key="do.you.really.want.to.add.license.info.to.all.the.directly.linked.releases" />?</p>',
                     '<liferay-ui:message key="add" />',
                     undefined,
                     function(submit, callback) {
