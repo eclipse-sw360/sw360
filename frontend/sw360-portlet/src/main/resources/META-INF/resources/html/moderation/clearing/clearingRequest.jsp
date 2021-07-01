@@ -18,6 +18,7 @@
 
 <%@page import="org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest"%>
 <%@page import="org.eclipse.sw360.datahandler.thrift.ClearingRequestState"%>
+<%@page import="org.eclipse.sw360.datahandler.thrift.ClearingRequestPriority"%>
 <%@page import="org.eclipse.sw360.portal.common.PortalConstants"%>
 
 <portlet:defineObjects/>
@@ -29,13 +30,34 @@
 <jsp:useBean id="isClearingExpert" type="java.lang.Boolean" scope="request"/>
 <jsp:useBean id="printDate" class="java.util.Date"/>
 <jsp:useBean id="approvedReleaseCount" class="java.lang.Integer" scope="request" />
+<jsp:useBean id="PreferredClearingDateLimit" class="java.lang.String" scope="request" />
+
 
 <core_rt:if test="${not empty clearingRequest.id}">
 
 <core_rt:set var="clearingRequestId"  value="${clearingRequest.id}" />
+<core_rt:set var="pageName"  value="<%=request.getParameter("pagename") %>" />
+<core_rt:set var="user" value="<%=themeDisplay.getUser()%>"/>
+<core_rt:set var="isProjectPresent" value='${not empty clearingRequest.projectId}'/>
+<core_rt:set var="isRequestingUser" value='${clearingRequest.requestingUser eq user.emailAddress}'/>
+<core_rt:set var="isClearingTeam" value='${clearingRequest.clearingTeam eq user.emailAddress or (isClearingExpert and writeAccessUser)}'/>
+<core_rt:set var="isClosedOrRejected" value="${clearingRequest.clearingState eq 'CLOSED' or clearingRequest.clearingState eq 'REJECTED' or empty clearingRequest.projectId}"/>
+<core_rt:set var="isEditable" value="${not isClosedOrRejected and pageName eq 'editClearingRequest'}"/>
+<core_rt:set var="isEditableForRequestingUser" value="${isRequestingUser and isEditable}"/>
+<core_rt:set var="isEditableForClearingTeam" value="${isClearingTeam and isEditable}"/>
+<core_rt:set var="isProgressBarVisible" value="${not isClosedOrRejected and clearingRequest.clearingState ne 'NEW' and project.releaseIdToUsageSize gt 0}"/>
+<core_rt:set var="isCRreOpened" value="${not empty clearingRequest.reOpenOn and clearingRequest.reOpenOn.size() gt 0}"/>
+<core_rt:set var="isReOpenButtonVisible" value="${isProjectPresent and isClosedOrRejected and (isClearingTeam or isRequestingUser)}" />
+<core_rt:set var="criticalCount" value="3"/>
+
+<core_rt:if test="${clearingRequest.isSetTimestampOfDecision() and clearingRequest.timestampOfDecision > 0}">
+<jsp:useBean id="criticalCrCount" class="java.lang.Integer" scope="request" />
+    <core_rt:set var="criticalCount" value="${criticalCrCount}"/>
+</core_rt:if>
 
 <portlet:actionURL var="updateClearingRequestURL" name="updateClearingRequest">
     <portlet:param name="<%=PortalConstants.CLEARING_REQUEST_ID%>" value="${clearingRequestId}"/>
+    <portlet:param name="<%=PortalConstants.IS_CLEARING_EXPERT%>" value="${isEditableForClearingTeam}"/>
 </portlet:actionURL>
 
 <portlet:renderURL var="cancelURL">
@@ -53,22 +75,11 @@
     <portlet:param name="<%=PortalConstants.CLEARING_REQUEST_ID%>" value="${clearingRequestId}"/>
 </portlet:resourceURL>
 
-<core_rt:set var="pageName"  value="<%=request.getParameter("pagename") %>" />
-<core_rt:set var="user" value="<%=themeDisplay.getUser()%>"/>
-<core_rt:set var="isProjectPresent" value='${not empty clearingRequest.projectId}'/>
-<core_rt:set var="isRequestingUser" value='${clearingRequest.requestingUser eq user.emailAddress}'/>
-<core_rt:set var="isClearingTeam" value='${clearingRequest.clearingTeam eq user.emailAddress or (isClearingExpert and writeAccessUser)}'/>
-<core_rt:set var="isClosedOrRejected" value="${clearingRequest.clearingState eq 'CLOSED' or clearingRequest.clearingState eq 'REJECTED' or empty clearingRequest.projectId}"/>
-<core_rt:set var="isEditableForClearingTeam" value="${isClearingTeam and not isClosedOrRejected and pageName eq 'editClearingRequest'}"/>
-<core_rt:set var="isProgressBarVisible" value="${not isClosedOrRejected and clearingRequest.clearingState ne 'NEW' and project.releaseIdToUsageSize gt 0}"/>
-<core_rt:set var="isCRreOpened" value="${not empty clearingRequest.reOpenOn and clearingRequest.reOpenOn.size() gt 0}"/>
-<core_rt:set var="isReOpenButtonVisible" value="${isProjectPresent and isClosedOrRejected and (isClearingTeam or isRequestingUser)}" />
-
 <div class="container" id="clearing-request">
 <div class="row portlet-toolbar">
     <div class="col-auto">
         <div class="btn-toolbar" role="toolbar">
-            <core_rt:if test="${pageName eq 'detailClearingRequest' and isProjectPresent and isClearingTeam and not isClosedOrRejected}">
+            <core_rt:if test="${pageName eq 'detailClearingRequest' and isProjectPresent and not isClosedOrRejected and (isClearingTeam or isRequestingUser)}">
                 <div class="btn-group" role="group">
                     <button type="button" class="btn btn-primary" onclick="window.location.href='<%=editlURL%>' + window.location.hash"><liferay-ui:message key="edit.request" /></button>
                 </div>
@@ -78,7 +89,7 @@
                     <button type="button" id="reOpenRequest" class="btn btn-primary"><liferay-ui:message key="reopen.request" /></button>
                 </div>
             </core_rt:if>
-            <core_rt:if test="${isEditableForClearingTeam}">
+            <core_rt:if test="${isEditable}">
 	           <div class="btn-group" role="group">
 	               <button type="button" id="formSubmit" class="btn btn-primary"><liferay-ui:message key="update.request" /></button>
 	           </div>
@@ -154,7 +165,9 @@
                                             </tr>
                                             <tr>
                                                 <td><label class="form-group"><liferay-ui:message key="requester.comment" />:</label></td>
-                                                <td><sw360:out value="${clearingRequest.requestingUserComment}" bare="true"/></td>
+                                                <td>
+                                                    <div class="comment-text"><sw360:out value="${clearingRequest.requestingUserComment}" stripNewlines="false"/></div>
+                                                </td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -188,12 +201,46 @@
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td><label class="form-group"><liferay-ui:message key="clearing.team" />:</label></td>
-                                                <td><sw360:DisplayUserEmail email="${clearingRequest.clearingTeam}" /></td>
+                                                <td><label class="form-group"><liferay-ui:message key="priority" />:</label></td>
+                                                <td>
+                                                <core_rt:choose>
+                                                    <core_rt:when test="${isEditableForClearingTeam}">
+                                                        <select class="form-control"
+                                                            name="<portlet:namespace/><%=ClearingRequest._Fields.PRIORITY%>">
+                                                            <sw360:DisplayEnumOptions type="<%=ClearingRequestPriority.class%>" selected="${clearingRequest.priority}"/>
+                                                        </select>
+                                                        <small class="form-text">
+                                                            <sw360:DisplayEnumInfo type="<%=ClearingRequestPriority.class%>"/>
+                                                            <liferay-ui:message key="learn.more.about.clearing.request.priority" />
+                                                        </small>
+                                                    </core_rt:when>
+                                                    <core_rt:otherwise>
+                                                        <sw360:DisplayEnum value="${clearingRequest.priority}"/>
+                                                    </core_rt:otherwise>
+                                                </core_rt:choose>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td><label class="form-group <core_rt:if test='${isEditableForClearingTeam or isEditableForRequestingUser}'>mandatory</core_rt:if>"><liferay-ui:message key="clearing.team" />:</label></td>
+                                                <td>
+                                                <core_rt:choose>
+                                                    <core_rt:when test="${isEditableForClearingTeam or isEditableForRequestingUser}">
+                                                        <input class="form-control" required="true"
+                                                            name="<portlet:namespace/><%=ClearingRequest._Fields.CLEARING_TEAM%>" type="email" mandatory
+                                                            value="<sw360:out value="${clearingRequest.clearingTeam}"/>" placeholder="<liferay-ui:message key='clearing.team' />" />
+                                                        <div class="invalid-feedback">
+                                                            <liferay-ui:message key="email.should.be.in.valid.format" />
+                                                        </div>
+                                                    </core_rt:when>
+                                                    <core_rt:otherwise>
+                                                        <sw360:out value="${clearingRequest.clearingTeam}" bare="true"/>
+                                                    </core_rt:otherwise>
+                                                </core_rt:choose>
+                                                </td>
                                             </tr>
                                             <tr>
                                                 <td>
-                                                    <label class="form-group <core_rt:if test='${isEditableForClearingTeam}'> </core_rt:if>"><liferay-ui:message key="agreed.clearing.date" />:</label>
+                                                    <label class="form-group"><liferay-ui:message key="agreed.clearing.date" />:</label>
                                                 </td>
                                                 <td>
                                                 <core_rt:choose>
@@ -201,6 +248,9 @@
                                                         <input class="form-control datepicker"
                                                             name="<portlet:namespace/><%=ClearingRequest._Fields.AGREED_CLEARING_DATE%>" type="text" pattern="\d{4}-\d{2}-\d{2}"
                                                             value="<sw360:out value="${clearingRequest.agreedClearingDate}"/>" placeholder="<liferay-ui:message key='agreed.clearing.date.yyyy.mm.dd' />" />
+                                                        <div class="invalid-feedback">
+                                                            <liferay-ui:message key="date.should.be.valid" />!
+                                                        </div>
                                                     </core_rt:when>
                                                     <core_rt:otherwise>
                                                         <sw360:out value="${clearingRequest.agreedClearingDate}" bare="true"/>
@@ -324,7 +374,7 @@
 <div class="dialogs auto-dialogs">
 <core_rt:if test="${isReOpenButtonVisible}">
     <div id="reOpenClearingRequestDialog" class="modal fade" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-info" role="document">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-info mw-100 w-75" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
@@ -343,8 +393,21 @@
                             <label for="requestedClearingDate" class="mandatory"><liferay-ui:message key="preferred.clearing.date" />:</label>
                             <input class="datepicker form-control" id="requestedClearingDate" name="<portlet:namespace/><%=ClearingRequest._Fields.REQUESTED_CLEARING_DATE%>" type="text" pattern="\d{4}-\d{2}-\d{2}" placeholder="<liferay-ui:message key='preferred.clearing.date.yyyy.mm.dd' />" required/>
                             <div class="invalid-feedback">
-                                <liferay-ui:message key="date.should.be.in.valid.format" /> & <liferay-ui:message key="greater.than.7.days.from.today" />
+                                <liferay-ui:message key="date.should.be.valid" />!
                             </div>
+                        </div>
+                        <core_rt:if test="${criticalCount lt 2}">
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input id="priority" type="checkbox" class="form-check-input" name="<portlet:namespace/><%=ClearingRequest._Fields.PRIORITY%>" >
+                                <label class="form-check-label" for="priority"><liferay-ui:message key="critical" /></label>
+                                <div class="alert alert-info"><liferay-ui:message key="in.case.you.need.the.clearing.at.an.earlier.date.then.the.preferred.date.that.is.available.please.check.the.critical.checkbox.and.reselect.the.preferred.clearing.date"/>.</div>
+                            </div>
+                        </div>
+                       </core_rt:if>
+                        <div class="form-group">
+                            <label for="clearingRequestComment"><liferay-ui:message key="please.comment.your.request" />:</label>
+                            <textarea id="clearingRequestComment" class="form-control" name="<portlet:namespace/><%=ClearingRequest._Fields.REQUESTING_USER_COMMENT%>" rows="4" placeholder="<liferay-ui:message key='comment.your.request' />..."></textarea>
                         </div>
                     </form>
                 </div>
@@ -361,27 +424,27 @@
 <script>
 require(['jquery', 'modules/dialog', 'modules/validation', 'modules/button', 'bridges/jquery-ui' ], function($, dialog, validation, button) {
     validation.enableForm('#updateCRForm');
-    validation.jumpToFailedTab('#updateCRForm');
+    let pcdLimit = ${PreferredClearingDateLimit};
 
     $('#formSubmit').click(
         function() {
+            let $form = $("#updateCRForm"),
+                $emailId = $form.find("input[type=email]"),
+                $acDate = $form.find("input[type=text]");
+            $form.addClass('was-validated');
+            if (!validation.isValidEmail($emailId.val())) {
+                $emailId.addClass("is-invalid");
+                return;
+            }
+            $emailId.removeClass("is-invalid");
+            if ($acDate.val() && !validation.isValidDate($acDate.val(), 0)) {
+                $acDate.addClass("is-invalid");
+                return;                
+            }
+            $acDate.removeClass("is-invalid");
             $('#updateCRForm').submit();
         }
     );
-
-    $('.datepicker').datepicker({
-        <core_rt:choose>
-            <core_rt:when test="${isReOpenButtonVisible}">
-                minDate: 7,
-            </core_rt:when>
-            <core_rt:otherwise>
-                minDate: new Date(),
-            </core_rt:otherwise>
-        </core_rt:choose>
-        changeMonth: true,
-        changeYear: true,
-        dateFormat: "yy-mm-dd"
-    });
 
     $("#commentSearch").on("keyup", function(event) {
         let value = this.value.toLowerCase().trim();
@@ -403,13 +466,13 @@ require(['jquery', 'modules/dialog', 'modules/validation', 'modules/button', 'br
     }
 
     $(document).ready(function() {
-        if ("${isProgressBarVisible}" == "true") {
+        if ("${isProgressBarVisible}" === "true") {
         let totalRelease = "${project.releaseIdToUsageSize}",
-            approvedReleaseCount =  "${approvedReleaseCount}",
+            approvedReleaseCount = "${approvedReleaseCount}",
             $progressBar = $("#crProgress"),
             $td = $("#crProgress").closest("tr").find("td:eq(1)");
 
-            if(approvedReleaseCount == 0) {
+            if(approvedReleaseCount === "0") {
                 let progressText = "(0/"+totalRelease+") "+"<liferay-ui:message key="none.of.the.directly.linked.releases.are.cleared" />";
                 $progressBar.find('span').text("0%").removeClass('text-dark').addClass('text-danger');
                 $progressBar.attr("aria-valuenow", "0").css({"width": "0%", "overflow": "visible"}).removeClass('text-dark').addClass('text-danger');
@@ -428,10 +491,27 @@ require(['jquery', 'modules/dialog', 'modules/validation', 'modules/button', 'br
             }
         }
 
+        $('.datepicker').datepicker({
+            <core_rt:choose>
+                <core_rt:when test="${isReOpenButtonVisible}">
+                    minDate: pcdLimit,
+                </core_rt:when>
+                <core_rt:otherwise>
+                    minDate: new Date(),
+                </core_rt:otherwise>
+            </core_rt:choose>
+            changeMonth: true,
+            changeYear: true,
+            dateFormat: "yy-mm-dd"
+        });
+
         $("#clearingCommentsTable tbody tr").not(":first").each(function(index) {
             let innerHtml = unEscapeHtmlTextFormatting($(this).find('td .comment-text').html());
             $(this).find('.comment-text').html(innerHtml);
         });
+
+        let requestorComment = unEscapeHtmlTextFormatting($("#clearingRequestData tbody tr td .comment-text").html());
+        $("#clearingRequestData tbody tr td .comment-text").html(requestorComment);
 
         let anchor = $("a.breadcrumb-link"),
             href = $(anchor).attr("href"),
@@ -502,21 +582,27 @@ require(['jquery', 'modules/dialog', 'modules/validation', 'modules/button', 'br
         });
     });
 
+    $("#priority").change(function() {
+        if (this.checked) {
+        	validation.changeDisabledDate(0);
+        } else {
+        	validation.changeDisabledDate(pcdLimit);
+        }
+    });
+
     /* Add event listener for re opening the CR */
     $("#reOpenRequest").on("click", function (event) {
     $dialog = dialog.open('#reOpenClearingRequestDialog', {
     }, function(submit, callback) {
         let selectedDate = $("#requestedClearingDate").val(),
+            isCritical = $("#priority:checked").val(),
             $form = $('#reOpenClearingRequestForm');
         $form.removeClass('was-validated');
-        if (!validation.isValidDate(selectedDate, 7)) {
-            $form.addClass('was-validated');
-            $dialog.alert('<liferay-ui:message key="date.should.be.in.valid.format" /> & <liferay-ui:message key="greater.than.7.days.from.today" />');
+        if ((isCritical && !validation.isValidDate(selectedDate, 0)) || (!isCritical && !validation.isValidDate(selectedDate, pcdLimit))) {
+            $("#requestedClearingDate").addClass("is-invalid");
             callback();
-            setTimeout(function() {
-                $("#reOpenClearingRequestDialog .alert-danger").hide();
-            }, 5000);
         } else {
+            $("#requestedClearingDate").removeClass("is-invalid");
             $form.addClass('was-validated');
             $form.append('<input type="hidden" value="true" name="<portlet:namespace/><%=PortalConstants.RE_OPEN_REQUEST%>"/>');
             $form.submit();
@@ -524,11 +610,11 @@ require(['jquery', 'modules/dialog', 'modules/validation', 'modules/button', 'br
     }, function() {
         $('#reOpenClearingRequestDialog #reOpenClearingRequestForm').removeClass('was-validated');
     });
+    });
 
     function displayErrorMessage(message) {
         $("#addCommentStatusMessage").html(message).show().delay(5000).fadeOut();
     }
-    });
 });
 </script>
 </core_rt:if>

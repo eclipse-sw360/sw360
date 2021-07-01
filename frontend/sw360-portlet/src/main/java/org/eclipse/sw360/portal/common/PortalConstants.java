@@ -13,8 +13,6 @@ package org.eclipse.sw360.portal.common;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -140,7 +138,7 @@ public class PortalConstants {
     public static final String RE_OPEN_REQUEST = "reOpenRequest";
     public static final String LOAD_PROJECT_INFO = "loadProjectInfo";
     public static final String APPROVED_RELEASE_COUNT = "approvedReleaseCount";
-
+    public static final String CRITICAL_CR_COUNT = "criticalCrCount";
 
     //! Specialized keys for components
     public static final String COMPONENT_PORTLET_NAME = PORTLET_NAME_PREFIX + "components";
@@ -209,6 +207,9 @@ public class PortalConstants {
     public static final String LOAD_LICENSE_OBLIGATIONS = "load_license_obligations";
     public static final String UNUSED_RELEASES = "unusedReleases";
 
+    //! Specialized keys for license types
+    public static final String LICENSE_TYPE_LIST = "licenseTypeList";
+
     //! Specialized keys for attachments
     public static final String ATTACHMENTS = "attachments";
     public static final String ATTACHMENT_NAME = "attachmentName";
@@ -273,6 +274,7 @@ public class PortalConstants {
     public static final String COMPONENT_OBLIGATIONS = "componentLevelObligations";
     public static final String LICENSE_OBLIGATIONS = "licenseLevelObligations";
     public static final Set<String> PROJECT_EXTERNAL_ID_KEYS;
+    public static final Set<String> PROJECT_EXTERNAL_URL_KEYS;
     public static final String PROJECT_SELECTED_ATTACHMENT_USAGES = "selectedAttachmentUsages";
     public static final String PROJECT_SELECTED_ATTACHMENT_USAGES_SHADOWS = "selectedAttachmentUsagesShadows";
     public static final String LICENSE_INFO_ATTACHMENT_USAGES = "licInfoAttUsages";
@@ -351,6 +353,7 @@ public class PortalConstants {
     public static final String CUSTOM_FIELD_PROJECT_GROUP_FILTER = "ProjectGroupFilter";
     public static final String CUSTOM_FIELD_COMPONENTS_VIEW_SIZE = "ComponentsViewSize";
     public static final String CUSTOM_FIELD_VULNERABILITIES_VIEW_SIZE = "VulnerabilitiesViewSize";
+    public static final String CUSTOM_FIELD_PREFERRED_CLEARING_DATE_LIMIT = "PreferredClearingDateLimit";
 
     //! Specialized keys for scheduling
     public static final String CVESEARCH_IS_SCHEDULED = "cveSearchIsScheduled";
@@ -407,6 +410,7 @@ public class PortalConstants {
     public static final String USER_ADMIN_PORTLET_NAME = PORTLET_NAME_PREFIX + "useradmin";
     public static final String TODOS_PORTLET_NAME = PORTLET_NAME_PREFIX + "todos";
     public static final String OAUTH_CLIENT_PORTLET_NAME = PORTLET_NAME_PREFIX + "oauthclient";
+    public static final String LICENSE_TYPE_PORTLET_NAME = PORTLET_NAME_PREFIX + "licensetypes";
 
     //! Keys for Home portlets
     public static final String MY_COMPONENTS_PORTLET_NAME = PORTLET_NAME_PREFIX + "mycomponents";
@@ -527,6 +531,10 @@ public class PortalConstants {
     // oblig actions
     public static final String REMOVE_TODO = "removeTodo";
 
+    // license type actions
+    public static final String REMOVE_LICENSE_TYPE = "removeLicenseType";
+    public static final String CHECK_LICENSE_TYPE_IN_USE = "checkLicenseTypeInUse";
+
     // user actions
     public static final String USER_PREFIX = "user";
     public static final String USER_SEARCH = USER_PREFIX + "search";
@@ -563,6 +571,8 @@ public class PortalConstants {
     public static final String EXTERNAL_ID_VALUE = "externalIdValue";
     public static final String ADDITIONAL_DATA_KEY = "additionalDataKey";
     public static final String ADDITIONAL_DATA_VALUE = "additionalDataValue";
+    public static final String EXTERNAL_URL_KEY = "externalUrlKey";
+    public static final String EXTERNAL_URL_VALUE = "externalUrlValue";
 
     //! request status
     public static final String REQUEST_STATUS = "request_status";
@@ -572,6 +582,7 @@ public class PortalConstants {
     public static final String FRIENDLY_URL_PREFIX = "friendlyUrl";
     public static final String FRIENDLY_URL_PLACEHOLDER_PAGENAME = FRIENDLY_URL_PREFIX + "Pagename";
     public static final String FRIENDLY_URL_PLACEHOLDER_ID = FRIENDLY_URL_PREFIX + "Id";
+    public static final String FRIENDLY_URL_PLACEHOLDER_LICENSE_ID = FRIENDLY_URL_PREFIX + "license.Id";
 
     // datatables attributes for pagination
     public static final String DATATABLE_DISPLAY_DATA = "aaData";
@@ -606,6 +617,7 @@ public class PortalConstants {
         STATE = props.getProperty("state","[ \"Active\", \"Phase out\", \"Unknown\"]");
         PROJECT_TYPE = props.getProperty("project.type","[ \"Customer Project\", \"Internal Project\", \"Product\", \"Service\", \"Inner Source\"]");
         PROJECT_EXTERNAL_ID_KEYS = CommonUtils.splitToSet(props.getProperty("project.externalkeys", "internal.id"));
+        PROJECT_EXTERNAL_URL_KEYS = CommonUtils.splitToSet(props.getProperty("project.externalurls", "homepage,wiki,clearing"));
         LICENSE_IDENTIFIERS = props.getProperty("license.identifiers", "[]");
         COMPONENT_CATEGORIES = props.getProperty("component.categories", "[ \"framework\", \"SDK\", \"big-data\", \"build-management\", \"cloud\", \"content\", \"database\", \"graphics\", \"http\", \"javaee\", \"library\", \"mail\", \"mobile\", \"security\", \"testing\", \"virtual-machine\", \"web-framework\", \"xml\"]");
         COMPONENT_EXTERNAL_ID_KEYS = CommonUtils.splitToSet(props.getProperty("component.externalkeys", "com.github.id,com.gitlab.id,purl.id"));

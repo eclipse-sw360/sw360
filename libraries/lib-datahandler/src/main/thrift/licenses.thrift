@@ -21,6 +21,8 @@ typedef sw360.DocumentState DocumentState
 typedef sw360.CustomProperties CustomProperties
 typedef sw360.RequestSummary RequestSummary
 typedef sw360.Quadratic Quadratic
+typedef i32 int
+
 
 enum ObligationLevel {
     ORGANISATION_OBLIGATION = 0,
@@ -130,6 +132,11 @@ service LicenseService {
     * Add an existing obligation to a license or generate moderation request if user has no permission
     **/
     RequestStatus addObligationsToLicense(1: set<Obligation> obligations, 2: License license, 3: User user);
+
+    /**
+     * Add a new license type object to database
+     **/
+    RequestStatus addLicenseType(1:LicenseType licenseType, 2: User user);
 
     /**
      * Update given license,
@@ -242,4 +249,14 @@ service LicenseService {
      * delete obligation from database if user has permissions
      **/
     RequestStatus deleteObligations(1: string id, 2: User user);
+
+    /**
+     * delete license type from database if user has permissions
+     **/
+    RequestStatus deleteLicenseType(1: string id, 2: User user);
+
+    /**
+     * Check license type is in using by license
+     **/
+    int checkLicenseTypeInUse(1: string id);
 }

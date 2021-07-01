@@ -75,25 +75,6 @@
         </td>
         <td>
             <div class="form-group">
-                <label for="proj_url"><liferay-ui:message key="homepage.url" /></label>
-                <input class="form-control" id="proj_url" name="<portlet:namespace/><%=Project._Fields.HOMEPAGE%>"
-                    type="URL"
-                    value="<sw360:out value="${project.homepage}"/>" placeholder="<liferay-ui:message key="enter.home.url" />"/>
-            </div>
-        </td>
-        <td>
-            <div class="form-group">
-                <label for="proj_wiki"><liferay-ui:message key="wiki.url" /></label>
-                <input class="form-control" id="proj_wiki" name="<portlet:namespace/><%=Project._Fields.WIKI%>"
-                    type="URL"
-                    value="<sw360:out value="${project.wiki}"/>" placeholder="<liferay-ui:message key="enter.wiki.url" />"/>
-            </div>
-        </td>
-    </tr>
-
-    <tr>
-        <td>
-            <div class="form-group">
                 <label class="mandatory" for="proj_projecttype"><liferay-ui:message key="project.type" /></label>
                 <select class="form-control" id="proj_projecttype"
                         name="<portlet:namespace/><%=Project._Fields.PROJECT_TYPE%>"
@@ -118,6 +99,8 @@
                     value="<sw360:out value="${project.tag}"/>" placeholder="<liferay-ui:message key="enter.one.word.tag" />"/>
             </div>
         </td>
+    </tr>
+    <tr>
         <td>
             <div class="form-group">
                 <label for="proj_desc"><liferay-ui:message key="description" /></label>
@@ -126,8 +109,6 @@
                         placeholder="<liferay-ui:message key="enter.description" />"><sw360:out value="${project.description}" stripNewlines="false"/></textarea>
             </div>
         </td>
-    </tr>
-    <tr>
         <td>
             <div class="form-group">
                 <label for="proj_domain"><liferay-ui:message key="domain" /></label>
@@ -147,10 +128,6 @@
                     </core_rt:forEach>
                 </select>
             </div>
-        </td>
-        <td>
-        </td>
-        <td>
         </td>
     </tr>
     <tr>
@@ -185,6 +162,10 @@
         <td></td>
     </tr>
 </table>
+
+<core_rt:set var="externalUrlsSet" value="${project.externalUrls.entrySet()}"/>
+<core_rt:set var="externalUrlKeys" value="<%=PortalConstants.PROJECT_EXTERNAL_URL_KEYS%>"/>
+<%@include file="/html/utils/includes/editExternalUrls.jsp" %>
 
 <table class="table edit-table three-columns" id="ProjectRolesInfo">
     <thead>
@@ -266,7 +247,6 @@
         <td></td>
     </tr>
 </table>
-
 
 <core_rt:set var="keys" value="<%=PortalConstants.PROJECT_ROLES%>"/>
 <core_rt:set var="mapTitle" value="Additional Roles"/>

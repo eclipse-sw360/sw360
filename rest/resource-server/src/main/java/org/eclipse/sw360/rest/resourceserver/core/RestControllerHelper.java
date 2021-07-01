@@ -16,6 +16,7 @@ import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -33,6 +34,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.rest.resourceserver.obligation.ObligationController;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
@@ -508,6 +510,35 @@ public class RestControllerHelper<T> {
         embeddedUser.setEmail(user.getEmail());
         embeddedUser.setType(null);
         return embeddedUser;
+    }
+
+    public void addEmbeddedObligations(HalResource<License> halLicense, List<Obligation> obligations) {
+        for (Obligation obligation : obligations) {
+            HalResource<Obligation> obligationHalResource = addEmbeddedObligation(obligation);
+            halLicense.addEmbeddedResource("sw360:obligations", obligationHalResource);
+        }
+    }
+
+    public HalResource<Obligation> addEmbeddedObligation(Obligation obligation) {
+        Obligation embeddedObligation = convertToEmbeddedObligation(obligation);
+        HalResource<Obligation> halObligation = new HalResource<>(embeddedObligation);
+        try {
+            Link obligationSelfLink = linkTo(UserController.class)
+                    .slash("api" + ObligationController.OBLIGATION_URL + "/" + obligation.getId()).withSelfRel();
+            halObligation.add(obligationSelfLink);
+            return halObligation;
+        } catch (Exception e) {
+            LOGGER.error("cannot create self link for obligation with id: " +obligation.getId());
+        }
+        return null;
+    }
+
+    public Obligation convertToEmbeddedObligation(Obligation obligation) {
+        Obligation embeddedObligation = new Obligation();
+        embeddedObligation.setTitle(obligation.getTitle());
+        embeddedObligation.setId(obligation.getId());
+        embeddedObligation.setType(null);
+        return embeddedObligation;
     }
 
     public Vendor convertToEmbeddedVendor(Vendor vendor) {

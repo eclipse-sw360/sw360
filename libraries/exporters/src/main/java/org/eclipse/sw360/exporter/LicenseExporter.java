@@ -43,27 +43,23 @@ public class LicenseExporter extends ExcelExporter<License, LicenseExporter.Lice
         private Supplier<List<LicenseType>> getLicenseTypes;
         private HashMap<String, String> formattedStringToTypeId = new HashMap<>();
         int indexOfTypeOrId;
+        private int licenseTypesSize;
 
         public LicenseHelper(Supplier<List<LicenseType>> getLicenseTypes) {
             this.getLicenseTypes = getLicenseTypes;
             converter = licenseSerializer();
             indexOfTypeOrId = converter.headers().indexOf("Type");
+            licenseTypesSize = getLicenseTypes.get().size();
         }
 
         public void fillLicenseTypeIdToFormattedString() {
             formattedStringToTypeId.put("","");
             List<LicenseType> licenseTypes = getLicenseTypes.get();
             for (LicenseType licenseType: licenseTypes) {
-                String formattedLicenseType = getFormattedStringForLicenseType(licenseType);
-                formattedStringToTypeId.put(String.valueOf(licenseType.getLicenseTypeId()),
-                        formattedLicenseType);
-                formattedStringToTypeId.put(String.valueOf(licenseType.getId()),
-                        formattedLicenseType);
+                String type = licenseType.getLicenseType();
+                formattedStringToTypeId.put(String.valueOf(licenseType.getLicenseTypeId()), type);
+                formattedStringToTypeId.put(String.valueOf(licenseType.getId()), type);
             }
-        }
-
-        private String getFormattedStringForLicenseType(LicenseType licenseType) {
-            return licenseType.getLicenseTypeId() + ": " + licenseType.getLicenseType();
         }
 
         @Override
@@ -77,7 +73,9 @@ public class LicenseExporter extends ExcelExporter<License, LicenseExporter.Lice
         }
 
         private List<String> formatRow(List<String> row) {
-            if(formattedStringToTypeId.size() == 0) {
+            int formattedSize = formattedStringToTypeId.size();
+            int formattedLicenseTypesSize = formattedSize == 0 ? 0 : (formattedSize - 1) / 2;
+            if(formattedSize == 0 || formattedLicenseTypesSize != licenseTypesSize) {
                 fillLicenseTypeIdToFormattedString();
             }
 

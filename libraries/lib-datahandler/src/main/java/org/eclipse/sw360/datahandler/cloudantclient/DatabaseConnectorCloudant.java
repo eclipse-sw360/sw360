@@ -34,6 +34,7 @@ import com.cloudant.client.api.CloudantClient;
 import com.cloudant.client.api.Database;
 import com.cloudant.client.api.DesignDocumentManager;
 import com.cloudant.client.api.model.Response;
+import com.cloudant.client.api.query.QueryResult;
 import com.cloudant.client.api.views.Key;
 import com.cloudant.client.api.views.ViewRequestBuilder;
 import com.cloudant.client.api.views.ViewResponse.Row;
@@ -123,19 +124,18 @@ public class DatabaseConnectorCloudant {
             for (Field fi : f) {
                 if (fi.getName().equalsIgnoreCase("type")) {
                     extractedType = (String) fi.get(obj);
+                    break;
                 }
             }
             if (extractedType != null) {
                 final String entityType = extractedType.toLowerCase();
-                if (!entitiesWithNonMatchingStructType.stream().map(x -> x.toLowerCase())
-                        .anyMatch(tye -> tye.contains(entityType))
+                if (!entitiesWithNonMatchingStructType.stream().map(String::toLowerCase)
+                        .anyMatch(tye -> tye.equals(entityType))
                         && !type.getSimpleName().equalsIgnoreCase(extractedType)) {
                     return null;
-                } else {
-                    return obj;
                 }
             }
-            return database.find(type, id);
+            return obj;
         } catch (Exception e) {
             log.error("Error fetching document of type " + type.getSimpleName() + " with id " + id + " : "
                     + e.getMessage());
@@ -269,5 +269,13 @@ public class DatabaseConnectorCloudant {
 
     public DesignDocumentManager getDesignDocumentManager() {
         return database.getDesignDocumentManager();
+    }
+
+    public void createIndex(String indexDefinition) {
+        database.createIndex(indexDefinition);
+    }
+
+    public <T> QueryResult<T> getQueryResult(String query, Class<T> type) {
+        return database.query(query, type);
     }
 }

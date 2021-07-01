@@ -380,6 +380,27 @@
     content: attr(data-content);
 }
 
+/** Clearing Request Priority **/
+.sw360-tt-ClearingRequestPriority:hover:after {
+    content: attr(data-content);
+}
+
+.sw360-tt-ClearingRequestPriority-CRITICAL:hover:after {
+    content: attr(data-content);
+}
+
+.sw360-tt-ClearingRequestPriority-HIGH:hover:after {
+    content: attr(data-content);
+}
+
+.sw360-tt-ClearingRequestPriority-MEDIUM:hover:after {
+    content: attr(data-content);
+}
+
+.sw360-tt-ClearingRequestPriority-LOW:hover:after {
+    content: attr(data-content);
+}
+
 /** ProjectRelationShip **/
 .sw360-tt-ProjectRelationship:hover:after {
     content: attr(data-content);

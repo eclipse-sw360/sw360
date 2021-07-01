@@ -28,6 +28,7 @@ typedef sw360.ProjectReleaseRelationship ProjectReleaseRelationship
 typedef sw360.ObligationStatus ObligationStatus
 typedef sw360.SW360Exception SW360Exception
 typedef sw360.ClearingRequestState ClearingState
+typedef sw360.ClearingRequestPriority ClearingPriority
 typedef sw360.Comment Comment
 typedef sw360.PaginationData PaginationData
 typedef components.Release Release
@@ -132,10 +133,6 @@ struct Project {
     139: optional string deliveryChannels,
     140: optional string remarksAdditionalRequirements,
 
-    // Urls for the project
-    50: optional string homepage,
-    52: optional string wiki,
-
     // Information for ModerationRequests
     70: optional DocumentState documentState,
     80: optional string clearingRequestId,
@@ -147,6 +144,9 @@ struct Project {
     // linked release obligations
     102: optional string linkedObligationId,
     200: optional map<RequestedAction, bool> permissions,
+
+    // Urls for the project
+    201: optional map<string, string> externalUrls,
 }
 
 struct ProjectLink {
@@ -221,7 +221,8 @@ struct ClearingRequest {
     15: optional i64 timestampOfDecision,
     16: optional list<Comment> comments,
     17: optional i64 modifiedOn,
-    18: optional list<i64> reOpenOn
+    18: optional list<i64> reOpenOn,
+    19: optional ClearingPriority priority
 }
 
 service ProjectService {

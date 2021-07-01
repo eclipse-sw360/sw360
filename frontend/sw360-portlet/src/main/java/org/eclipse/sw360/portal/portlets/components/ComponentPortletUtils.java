@@ -14,6 +14,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
+import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -170,6 +171,10 @@ public abstract class ComponentPortletUtils {
         setFieldValue(request, oblig, Obligation._Fields.OBLIGATION_TYPE);
     }
 
+    public static void updateLicenseTypeFromRequest(PortletRequest request, LicenseType licenseType) {
+        setFieldValue(request, licenseType, LicenseType._Fields.LICENSE_TYPE);
+    }
+
     private static void updateLinkedReleaseFromRequest(PortletRequest request, Map<String, ReleaseRelationship> linkedReleases) {
         linkedReleases.clear();
         String[] ids = request.getParameterValues(Release._Fields.RELEASE_ID_TO_RELATIONSHIP.toString() + ReleaseLink._Fields.ID.toString());
@@ -210,6 +215,10 @@ public abstract class ComponentPortletUtils {
 
     private static void setFieldValue(PortletRequest request, Obligation oblig, Obligation._Fields field) {
         PortletUtils.setFieldValue(request, oblig, field, Obligation.metaDataMap.get(field), "");
+    }
+
+    private static void setFieldValue(PortletRequest request, LicenseType licenseType, LicenseType._Fields field) {
+        PortletUtils.setFieldValue(request, licenseType, field, LicenseType.metaDataMap.get(field), "");
     }
 
     public static RequestStatus deleteRelease(PortletRequest request, Logger log) {

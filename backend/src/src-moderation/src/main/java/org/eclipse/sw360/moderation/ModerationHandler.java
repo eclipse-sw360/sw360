@@ -30,7 +30,6 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.moderation.db.ModerationDatabaseHandler;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -232,6 +231,11 @@ public class ModerationHandler implements ModerationService.Iface {
         assertNotEmpty(businessUnit);
 
         return handler.getClearingRequestsByBU(businessUnit);
+    }
+
+    @Override
+    public int getCriticalClearingRequestCount() throws TException {
+        return handler.getCriticalClearingRequestCount();
     }
 
     @Override

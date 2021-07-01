@@ -29,7 +29,25 @@
 
 <%-- <core_rt:set var="obligationsActionSet" value='<%=PortalConstants.PROJECT_OBLIGATIONS_ACTION_SET%>'/> --%>
 
+<ul class="nav nav-tabs font-weight-bold border-bottom" role="tablist">
+    <li class="nav-item border rounded border-bottom-0">
+        <a class="nav-link active" id="licObl-tab" data-toggle="tab" href="#licObl" role="tab" aria-controls="licObl" aria-selected="true"><liferay-ui:message key="license.obligation" /></a>
+    </li>
+    <li class="nav-item border rounded border-bottom-0">
+        <a class="nav-link" id="compObl-tab" data-toggle="tab" href="#compObl" role="tab" aria-controls="compObl" aria-selected="false"><liferay-ui:message key="component.obligation" /></a>
+    </li>
+    <li class="nav-item border rounded border-bottom-0">
+        <a class="nav-link" id="projObl-tab" data-toggle="tab" href="#projObl" role="tab" aria-controls="projObl" aria-selected="false"><liferay-ui:message key="project.obligation" /></a>
+    </li>
+    <li class="nav-item border rounded border-bottom-0">
+        <a class="nav-link" id="orgObl-tab" data-toggle="tab" href="#orgObl" role="tab" aria-controls="orgObl" aria-selected="false"><liferay-ui:message key="organisation.obligation" /></a>
+    </li>
+</ul>
+
+
 <!-- Obligation Edit -->
+<div class="tab-content">
+<div class="tab-pane fade show active" id="licObl" role="tabpanel" aria-labelledby="licObl-tab">
 <div id="obligation-edit">
     <table id="editObligationsTable" class="table table-bordered" >
         <colgroup>
@@ -49,7 +67,9 @@
                 <th class="more-info">
                     <span title="Expand all" data-show="false">&#x25BA</span>
                 </th>
-                <th><liferay-ui:message key="license.obligation" /></th>
+                <th>
+                    <span title="<liferay-ui:message key="ObligationLevel-LICENSE_OBLIGATION" />"><liferay-ui:message key="license.obligation" /> <clay:icon symbol="info-circle" /></span>
+                </th>
                 <th><liferay-ui:message key="licenses" /></th>
                 <th><liferay-ui:message key="releases" /></th>
                 <th><liferay-ui:message key="status" /></th>
@@ -64,8 +84,9 @@
         </tbody>
     </table>
 </div>
-<br><hr>
+</div>
 <!-- Comp Obligation View -->
+<div class="tab-pane fade" id="compObl" role="tabpanel" aria-labelledby="compObl-tab">
 <div id="comp-obligation-edit">
     <table id="comp-editObligationsTable" class="table table-bordered" >
         <colgroup>
@@ -82,7 +103,9 @@
                 <th class="comp-more-info">
                     <span title="<liferay-ui:message key="expand.all" />" data-show="false">&#x25BA</span>
                 </th>
-                <th><liferay-ui:message key="component.obligation" /></th>
+                <th>
+                    <span title="<liferay-ui:message key="ObligationLevel-COMPONENT_OBLIGATION" />"><liferay-ui:message key="component.obligation" /> <clay:icon symbol="info-circle" /></span>
+                </th>
                 <th><liferay-ui:message key="status" /></th>
                 <th><liferay-ui:message key="type" /></th>
                 <th><liferay-ui:message key="id" /></th>
@@ -93,8 +116,9 @@
         </tbody>
     </table>
 </div>
-<br><hr>
+</div>
 <!-- Project Obligation View -->
+<div class="tab-pane fade" id="projObl" role="tabpanel" aria-labelledby="projObl-tab">
 <div id="project-obligation-edit">
     <table id="project-editObligationsTable" class="table table-bordered" >
         <colgroup>
@@ -111,7 +135,9 @@
                 <th class="project-more-info">
                     <span title="<liferay-ui:message key="expand.all" />" data-show="false">&#x25BA</span>
                 </th>
-                <th><liferay-ui:message key="project.obligation" /></th>
+                <th>
+                    <span title="<liferay-ui:message key="ObligationLevel-PROJECT_OBLIGATION" />"><liferay-ui:message key="project.obligation" /> <clay:icon symbol="info-circle" /></span>
+                </th>
                 <th><liferay-ui:message key="status" /></th>
                 <th><liferay-ui:message key="type" /></th>
                 <th><liferay-ui:message key="id" /></th>
@@ -122,8 +148,9 @@
         </tbody>
     </table>
 </div>
-<br><hr>
+</div>
 <!-- Org Obligation View -->
+<div class="tab-pane fade" id="orgObl" role="tabpanel" aria-labelledby="orgObl-tab">
 <div id="org-obligation-edit">
     <table id="org-editObligationsTable" class="table table-bordered" >
         <colgroup>
@@ -140,7 +167,9 @@
                 <th class="org-more-info">
                     <span title="<liferay-ui:message key="expand.all" />" data-show="false">&#x25BA</span>
                 </th>
-                <th><liferay-ui:message key="organisation.obligation" /></th>
+                <th>
+                    <span title="<liferay-ui:message key="ObligationLevel-ORGANISATION_OBLIGATION" />"><liferay-ui:message key="organisation.obligation" /> <clay:icon symbol="info-circle" /></span>
+                </th>
                 <th><liferay-ui:message key="status" /></th>
                 <th><liferay-ui:message key="type" /></th>
                 <th><liferay-ui:message key="id" /></th>
@@ -151,6 +180,9 @@
         </tbody>
     </table>
 </div>
+</div>
+</div>
+
 <div id="spinnerForLicenseObligation" class="d-none">
     <div id="spinnerElem" style="max-height:60vh">
        <%@ include file="/html/utils/includes/pageSpinner.jspf" %>
@@ -483,7 +515,6 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
             obligationMap.set(mapKey, mapValue);
         });
 
-        
         for (const [key, value] of obligationMap.entries()) {
             jsonObject[key] = value;
         }

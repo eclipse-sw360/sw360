@@ -50,6 +50,7 @@ public class ThriftValidate {
         assertNotNull(oblig);
         assertNotEmpty(oblig.getText());
         assertNotNull(oblig.getTitle());
+        assertNotNull(oblig.getObligationLevel());
 
         if (oblig.whitelist == null) {
             oblig.setWhitelist(Collections.emptySet());
@@ -57,6 +58,15 @@ public class ThriftValidate {
 
         // Check type
         oblig.setType(TYPE_OBLIGATION);
+    }
+
+    public static void prepareLicenseType(LicenseType licenseType) throws SW360Exception {
+        // Check required fields
+        assertNotNull(licenseType);
+        assertNotEmpty(licenseType.getLicenseType());
+
+        // Check type
+        licenseType.setType(TYPE_LICENSETYPE);
     }
 
     public static void prepareLicense(License license) throws SW360Exception {

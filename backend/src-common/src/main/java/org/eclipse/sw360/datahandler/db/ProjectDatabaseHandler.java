@@ -118,7 +118,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Project._Fields.CLEARING_SUMMARY, Project._Fields.SPECIAL_RISKS_OSS, Project._Fields.GENERAL_RISKS3RD_PARTY,
             Project._Fields.SPECIAL_RISKS3RD_PARTY, Project._Fields.DELIVERY_CHANNELS,
             Project._Fields.REMARKS_ADDITIONAL_REQUIREMENTS, Project._Fields.OBLIGATIONS_TEXT,
-            Project._Fields.LICENSE_INFO_HEADER_TEXT, Project._Fields.WIKI, Project._Fields.HOMEPAGE);
+            Project._Fields.LICENSE_INFO_HEADER_TEXT);
     private Map<String, Project> cachedAllProjectsIdMap;
     private Instant cachedAllProjectsIdMapLoadingInstant;
 
@@ -203,12 +203,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         if (CommonUtils.isNotNullEmptyOrWhitespace(project.getClearingRequestId())) {
             log.warn("Clearing request is already present for the project: " + project.getId());
-            return requestSummary.setRequestStatus(AddDocumentRequestStatus.DUPLICATE).setId(project.getClearingRequestId());
-        }
-
-        if (!SW360Utils.isValidDate(clearingRequest.getRequestedClearingDate(), DateTimeFormatter.ISO_LOCAL_DATE, 7)) {
-            log.warn("Invalid requested clearing date: " + clearingRequest.getRequestedClearingDate() + " is entered, by user: "+ user.getEmail());
-            return requestSummary.setMessage("Invalid requested clearing date");
+            return requestSummary.setRequestStatus(AddDocumentRequestStatus.DUPLICATE)
+                    .setId(project.getClearingRequestId()).setMessage("Clearing request already present for project");
         }
 
         if (!(ProjectClearingState.CLOSED.equals(project.getClearingState()) || Visibility.PRIVATE.equals(project.getVisbility()))) {

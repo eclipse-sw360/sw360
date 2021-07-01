@@ -18,7 +18,6 @@ import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
 import com.google.common.collect.*;
 import com.liferay.portal.kernel.json.*;
-import com.liferay.portal.kernel.model.Organization;
 import com.liferay.portal.kernel.portlet.LiferayPortletURL;
 import com.liferay.portal.kernel.portlet.PortletResponseUtil;
 import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
@@ -58,9 +57,9 @@ import org.eclipse.sw360.portal.common.*;
 import org.eclipse.sw360.portal.common.datatables.PaginationParser;
 import org.eclipse.sw360.portal.common.datatables.data.PaginationParameters;
 import org.eclipse.sw360.portal.portlets.FossologyAwarePortlet;
+import org.eclipse.sw360.portal.portlets.moderation.ModerationPortletUtils;
 import org.eclipse.sw360.portal.users.LifeRayUserSession;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
-import org.eclipse.sw360.portal.users.UserUtils;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -78,12 +77,12 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URLConnection;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.*;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Strings.nullToEmpty;
@@ -92,7 +91,6 @@ import static com.liferay.portal.kernel.json.JSONFactoryUtil.createJSONObject;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.CONTENT_TYPE_OPENXML_SPREADSHEET;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
-import static org.eclipse.sw360.datahandler.common.WrappedException.wrapException;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
 import static org.eclipse.sw360.portal.portlets.projects.ProjectPortletUtils.isUsageEquivalent;
@@ -341,11 +339,21 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             clearingRequest = OBJECT_MAPPER.convertValue(crNode, ClearingRequest.class);
             clearingRequest.setRequestingUser(user.getEmail());
             clearingRequest.setClearingState(ClearingRequestState.NEW);
+            ModerationService.Iface modClient = thriftClients.makeModerationClient();
+            Integer criticalCount = modClient.getCriticalClearingRequestCount();
+            clearingRequest.setPriority(criticalCount > 1 ? null : clearingRequest.getPriority());
             LiferayPortletURL projectUrl = createDetailLinkTemplate(request);
             projectUrl.setParameter(PROJECT_ID, clearingRequest.getProjectId());
             projectUrl.setParameter(PAGENAME, PAGENAME_DETAIL);
             ProjectService.Iface client = thriftClients.makeProjectClient();
-            requestSummary = client.createClearingRequest(clearingRequest, user, projectUrl.toString());
+            Integer dateLimit = ModerationPortletUtils.loadPreferredClearingDateLimit(request, user);
+            dateLimit = (ClearingRequestPriority.CRITICAL.equals(clearingRequest.getPriority()) && criticalCount < 2) ? 0 : (dateLimit < 1) ? 7 : dateLimit;
+            if (!SW360Utils.isValidDate(clearingRequest.getRequestedClearingDate(), DateTimeFormatter.ISO_LOCAL_DATE, dateLimit)) {
+                log.warn("Invalid requested clearing date: " + clearingRequest.getRequestedClearingDate() + " is entered, by user: "+ user.getEmail());
+                requestSummary = new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.FAILURE).setMessage("Invalid requested clearing date");
+            } else {
+                requestSummary = client.createClearingRequest(clearingRequest, user, projectUrl.toString());
+            }
         } catch (IOException | TException e) {
             log.error("Error creating clearing request for project: " + clearingRequest.getProjectId(), e);
             response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "500");
@@ -355,9 +363,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             JsonGenerator jsonGenerator = JSON_FACTORY.createGenerator(response.getWriter());
             jsonGenerator.writeStartObject();
             jsonGenerator.writeStringField(RESULT, requestSummary.getRequestStatus().toString());
-            if (AddDocumentRequestStatus.FAILURE.equals(requestSummary.getRequestStatus())) {
+            if (!AddDocumentRequestStatus.SUCCESS.equals(requestSummary.getRequestStatus())) {
                 ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
-                jsonGenerator.writeStringField("message", LanguageUtil.get(resourceBundle, requestSummary.getMessage().replace(' ','.').toLowerCase()));
+                jsonGenerator.writeStringField(SW360Constants.MESSAGE, LanguageUtil.get(resourceBundle, requestSummary.getMessage().replace(' ','.').toLowerCase()));
             } else {
                 jsonGenerator.writeStringField(CLEARING_REQUEST_ID, requestSummary.getId());
             }
@@ -1223,10 +1231,15 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     private void prepareStandardView(RenderRequest request) throws IOException {
         User user = UserCacheHolder.getUserFromRequest(request);
         ProjectService.Iface projectClient = thriftClients.makeProjectClient();
+        ModerationService.Iface modClient = thriftClients.makeModerationClient();
         try {
             List<Project> projectList = projectClient.getAccessibleProjectsSummary(user);
             Set<String> organizations = getProjectGroups(projectList);
             request.setAttribute(PortalConstants.ORGANIZATIONS, organizations);
+            String dateLimit = CommonUtils.nullToEmptyString(ModerationPortletUtils.loadPreferredClearingDateLimit(request, UserCacheHolder.getUserFromRequest(request)));
+            request.setAttribute(CUSTOM_FIELD_PREFERRED_CLEARING_DATE_LIMIT, dateLimit);
+            Integer criticalCount = modClient.getCriticalClearingRequestCount();
+            request.setAttribute(CRITICAL_CR_COUNT, criticalCount);
         } catch(TException e) {
             log.error("Error in getting the projectList from backend ", e);
         }
@@ -1335,6 +1348,11 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 addProjectBreadcrumb(request, response, project);
                 request.setAttribute(IS_USER_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user) ? YES : NO);
                 request.setAttribute(IS_PROJECT_MEMBER, SW360Utils.isModeratorOrCreator(project, user));
+                String dateLimit = CommonUtils.nullToEmptyString(ModerationPortletUtils.loadPreferredClearingDateLimit(request, UserCacheHolder.getUserFromRequest(request)));
+                request.setAttribute(CUSTOM_FIELD_PREFERRED_CLEARING_DATE_LIMIT, dateLimit);
+                ModerationService.Iface modClient = thriftClients.makeModerationClient();
+                Integer criticalCount = modClient.getCriticalClearingRequestCount();
+                request.setAttribute(CRITICAL_CR_COUNT, criticalCount);
             } catch (SW360Exception sw360Exp) {
                 setSessionErrorBasedOnErrorCode(request, sw360Exp.getErrorCode());
             } catch (TException e) {
@@ -2541,9 +2559,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         try {
             Project project = client.getProjectById(projectId, user);
             Set<String> releaseIds = CommonUtils.getNullToEmptyKeyset(project.getReleaseIdToUsage());
-            StringBuilder oneCLI = new StringBuilder();
-            StringBuilder multipleCLI = new StringBuilder();
-            StringBuilder noCLI = new StringBuilder();
+            List<Release> oneCLI = new ArrayList<Release>();
+            List<Release> multipleCLI = new ArrayList<Release>();
+            List<Release> noCLI = new ArrayList<Release>();
             Predicate<LicenseNameWithText> filterLicense = license -> (LICENSE_TYPE_GLOBAL.equals(license.getType()));
             Predicate<LicenseInfoParsingResult> filterLicenseResult = result -> (null != result.getLicenseInfo() && null != result.getLicenseInfo().getLicenseNamesWithTexts());
             Predicate<LicenseInfoParsingResult> filterConcludedLicense = result -> (null != result.getLicenseInfo() && null != result.getLicenseInfo().getConcludedLicenseIds());
@@ -2557,7 +2575,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 if (filteredAttachments.size() == 1) {
                     final Attachment attachment = filteredAttachments.get(0);
                     final String attachmentName = attachment.getFilename();
-                    oneCLI.append(CommonUtils.nullToEmptyString(printName(release))).append(",");
+                    oneCLI.add(release);
                     List<LicenseInfoParsingResult> licenseInfoResult = licenseInfoClient.getLicenseInfoForAttachment(release,
                             attachment.getAttachmentContentId(), true, user);
                     List<LicenseNameWithText> licenseWithTexts = licenseInfoResult.stream()
@@ -2585,9 +2603,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 } else {
                     jsonResult.put(SW360Constants.STATUS, SW360Constants.FAILURE);
                     if (filteredAttachments.size() > 1) {
-                        multipleCLI.append(CommonUtils.nullToEmptyString(printName(release))).append(",");
+                        multipleCLI.add(release);
                     } else {
-                        noCLI.append(CommonUtils.nullToEmptyString(printName(release))).append(",");
+                        noCLI.add(release);
                     }
                 }
                 release.setMainLicenseIds(mainLicenses);

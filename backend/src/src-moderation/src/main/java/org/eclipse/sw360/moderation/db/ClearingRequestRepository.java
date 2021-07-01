@@ -19,6 +19,7 @@ import java.util.Set;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.thrift.ClearingRequestPriority;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 
 import com.cloudant.client.api.model.DesignDocument.MapReduce;
@@ -58,6 +59,12 @@ public class ClearingRequestRepository extends DatabaseRepositoryCloudantClient<
             "    }" +
             "}";
 
+    private static final String BY_PRIORITY = "function(doc) { " +
+            "  if (doc.type == 'clearingRequest') {" +
+            "    emit(doc.priority, doc);" +
+            "    }" +
+            "}";
+
     public ClearingRequestRepository(DatabaseConnectorCloudant db) {
         super(db, ClearingRequest.class);
         Map<String, MapReduce> views = new HashMap<String, MapReduce>();
@@ -65,6 +72,7 @@ public class ClearingRequestRepository extends DatabaseRepositoryCloudantClient<
         views.put("byProjectId", createMapReduce(BY_PROJECT_ID, null));
         views.put("myClearingRequests", createMapReduce(MY_CLEARING_REQUESTS, null));
         views.put("byBusinessUnit", createMapReduce(BY_BUSINESS_UNIT, null));
+        views.put("byPriority", createMapReduce(BY_PRIORITY, null));
         initStandardDesignDocument(views, db);
     }
 
@@ -84,5 +92,9 @@ public class ClearingRequestRepository extends DatabaseRepositoryCloudantClient<
 
     public Set<ClearingRequest> getClearingRequestsByBU(String businessUnit) {
         return new HashSet<ClearingRequest>(queryView("byBusinessUnit", businessUnit));
+    }
+
+    public Integer getCriticalClearingRequestCount() {
+        return new HashSet<ClearingRequest>(queryView("byPriority", ClearingRequestPriority.CRITICAL.name())).size();
     }
 }

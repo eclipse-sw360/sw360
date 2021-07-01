@@ -127,8 +127,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
     private static final TSerializer THRIFT_JSON_SERIALIZER = new TSerializer(new TSimpleJSONProtocol.Factory());
     private static final ImmutableMap<Project._Fields, String> mapOfFieldsTobeEmbedded = ImmutableMap.<Project._Fields, String>builder()
             .put(Project._Fields.CLEARING_TEAM, "clearingTeam")
-            .put(Project._Fields.HOMEPAGE, "homepage")
-            .put(Project._Fields.WIKI, "wiki")
+            .put(Project._Fields.EXTERNAL_URLS, "externalUrls")
             .put(Project._Fields.MODERATORS, "sw360:moderators")
             .put(Project._Fields.CONTRIBUTORS,"sw360:contributors")
             .put(Project._Fields.ATTACHMENTS,"sw360:attachments").build();
@@ -918,9 +917,21 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         HalResource<Project> halProject = new HalResource<>(sw360Project);
         halProject.addEmbeddedResource("createdBy", sw360Project.getCreatedBy());
 
+        List<String> obsolateFields = List.of("homepage", "wiki");
         for (Entry<Project._Fields, String> field : mapOfFieldsTobeEmbedded.entrySet()) {
-            restControllerHelper.addEmbeddedFields(field.getValue(), sw360Project.getFieldValue(field.getKey()),
-                    halProject);
+            if (Project._Fields.EXTERNAL_URLS.equals(field.getKey())) {
+                Map<String, String> externalUrls = CommonUtils
+                        .nullToEmptyMap((Map<String, String>) sw360Project.getFieldValue(field.getKey()));
+                restControllerHelper.addEmbeddedFields(obsolateFields.get(0),
+                        externalUrls.get(obsolateFields.get(0)) == null ? "" : externalUrls.get(obsolateFields.get(0)),
+                        halProject);
+                restControllerHelper.addEmbeddedFields(obsolateFields.get(1),
+                        externalUrls.get(obsolateFields.get(1)) == null ? "" : externalUrls.get(obsolateFields.get(1)),
+                        halProject);
+            } else {
+                restControllerHelper.addEmbeddedFields(field.getValue(), sw360Project.getFieldValue(field.getKey()),
+                        halProject);
+            }
         }
 
         return halProject;

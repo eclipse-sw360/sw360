@@ -79,6 +79,7 @@ public class ResourceServerConfiguration extends WebSecurityConfigurerAdapter im
                 .antMatchers(HttpMethod.GET, "/api/**").hasAuthority("READ")
                 .antMatchers(HttpMethod.POST, "/api/**").hasAuthority("WRITE")
                 .antMatchers(HttpMethod.PUT, "/api/**").hasAuthority("WRITE")
+                .antMatchers(HttpMethod.DELETE, "/api/**").hasAuthority("WRITE")
                 .antMatchers(HttpMethod.PATCH, "/api/**").hasAuthority("WRITE").and()
                 .csrf().disable();
     }

@@ -140,6 +140,10 @@ public class ModerationDatabaseHandler {
         return new HashSet<ClearingRequest>(clearingRequestRepository.getClearingRequestsByBU(businessUnit));
     }
 
+    public Integer getCriticalClearingRequestCount() {
+        return clearingRequestRepository.getCriticalClearingRequestCount();
+    }
+
     public ModerationRequest getRequest(String requestId) {
         ModerationRequest moderationRequest = repository.get(requestId);
         return moderationRequest;
@@ -199,15 +203,14 @@ public class ModerationDatabaseHandler {
             if (request.getTimestampOfDecision() < 1 && (ClearingRequestState.CLOSED.equals(request.getClearingState())
                     || ClearingRequestState.REJECTED.equals(request.getClearingState()))) {
                 request.setTimestampOfDecision(System.currentTimeMillis());
+                request.unsetPriority();
             }
             ClearingRequest currentRequest = getClearingRequestByIdForEdit(request.getId(), user);
-            StringBuilder commentText = new StringBuilder("Clearing Request is ");
+            StringBuilder commentText = new StringBuilder("Clearing Request is updated: ");
             if (!currentRequest.getClearingState().equals(request.getClearingState())) {
                 if (ClearingRequestState.CLOSED.equals(currentRequest.getClearingState())
                         || ClearingRequestState.REJECTED.equals(currentRequest.getClearingState())) {
-                    commentText.append("re-opened.");
-                } else {
-                    commentText.append("updated.");
+                    commentText = new StringBuilder("Clearing Request is re-opened: ");
                 }
                 commentText = commentText.append("\n\tStatus changed from: <b>")
                         .append(ThriftEnumUtils.enumToString(currentRequest.getClearingState())).append("</b> to <b>")
@@ -216,9 +219,23 @@ public class ModerationDatabaseHandler {
             String oldAgreedClDate = CommonUtils.nullToEmptyString(currentRequest.getAgreedClearingDate());
             String newAgreedClDate = CommonUtils.nullToEmptyString(request.getAgreedClearingDate());
             if (!oldAgreedClDate.equals(newAgreedClDate)) {
-                commentText = commentText.append("updated.\n\tAgreed Clearing Date changed from: <b>")
+                commentText = commentText.append("\n\tAgreed Clearing Date changed from: <b>")
                         .append(StringUtils.defaultIfBlank(oldAgreedClDate, "NULL")).append("</b> to <b>")
                         .append(StringUtils.defaultIfBlank(newAgreedClDate, "NULL")).append("</b>");
+            }
+            String oldClearingTeam = CommonUtils.nullToEmptyString(currentRequest.getClearingTeam());
+            String newClearingTeam = CommonUtils.nullToEmptyString(request.getClearingTeam());
+            if (!oldClearingTeam.equals(newClearingTeam)) {
+                commentText = commentText.append("\n\tClearing Team changed from: <b>")
+                        .append(StringUtils.defaultIfBlank(oldClearingTeam, "NULL")).append("</b> to <b>")
+                        .append(StringUtils.defaultIfBlank(newClearingTeam, "NULL")).append("</b>");
+            }
+            String oldPriority = CommonUtils.nullToEmptyString(currentRequest.getPriority());
+            String newPriority = CommonUtils.nullToEmptyString(request.getPriority());
+            if (!oldPriority.equals(newPriority)) {
+                commentText = commentText.append("\n\tPriority changed from: <b>")
+                        .append(StringUtils.defaultIfBlank(oldPriority, "NULL")).append("</b> to <b>")
+                        .append(StringUtils.defaultIfBlank(newPriority, "NULL")).append("</b>");
             }
             Comment comment = new Comment().setText(commentText.toString());
             comment.setCommentedBy(user.getEmail());
@@ -246,6 +263,7 @@ public class ModerationDatabaseHandler {
         clearingRequest.unsetProjectId();
         clearingRequest.addToComments(comment);
         clearingRequest.setModifiedOn(System.currentTimeMillis());
+        clearingRequest.unsetPriority();
         clearingRequestRepository.update(clearingRequest);
     }
 
