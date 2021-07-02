@@ -115,6 +115,29 @@ define('bridges/datatables', [
 					"<'row'<'col-auto'i><'col'p>>"; // line below table
 			}
 
+			config.drawCallback = function () {
+				$('.info-text').tooltip({
+					track: true,
+					classes: {
+						"ui-tooltip": "ui-corner-all ui-widget-shadow info-text"
+					},
+					content: function () {
+						return $('<textarea/>').html($(this).prop('title')).val();
+					},
+					'data-html': 'true',
+					close: function (event, ui) {
+						ui.tooltip.hover(function () {
+							$(this).stop(true).fadeTo(100, 1);
+						},
+						function () {
+							$(this).fadeOut('100', function () {
+								$(this).remove();
+							});
+						});
+					}
+				});
+			}
+
 			return $(selector).DataTable(config);
 		},
 		destroy: function(selector) {

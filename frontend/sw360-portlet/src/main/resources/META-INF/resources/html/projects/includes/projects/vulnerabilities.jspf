@@ -127,6 +127,16 @@
             $('#vulnerabilityTable th [data-action="select-all"]').prop('checked', !($('#vulnerabilityTable td :checkbox:not(:checked)').length > 0));
         });
 
+        vulnerabilityTable.on('preDraw', function() {
+            $('[role="tooltip"]').css("display", "none");
+            $('#vulnerabilityTable .info-text').tooltip("close");
+        });
+
+        vulnerabilityTable.on('draw', function() {
+            $('[role="tooltip"]').css("display", "none");
+            $('#vulnerabilityTable .info-text').tooltip("close");
+        });
+
         var viewSize = $('#vulnerabilityTable').data() ? $('#vulnerabilityTable').data().viewSize : 0;
         $('#btnShowVulnerabilityCount [data-name="count"]').text(viewSize > 0 ? '<liferay-ui:message key="latest" /> ' + viewSize : '<liferay-ui:message key="all" />');
         $('#btnShowVulnerabilityCount + div > a').on('click', function(event) {
@@ -210,18 +220,6 @@
                    datatable.enableCheckboxForSelection(table, 0);
                 });
             }
-
-            $('#vulnerabilityTable .info-text').tooltip({
-                delay: 0,
-                track: true,
-                fade: 250,
-                classes: {
-                     "ui-tooltip": "ui-corner-all ui-widget-shadow info-text"
-                },
-                content: function () {
-                    return $('<textarea/>').html($(this).prop('title')).val();
-                }
-            });
 
             return table;
         }
