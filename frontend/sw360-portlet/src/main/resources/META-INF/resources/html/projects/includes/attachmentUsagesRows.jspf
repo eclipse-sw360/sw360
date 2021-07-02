@@ -62,7 +62,8 @@
             <td>
                 <a href="<sw360:DisplayReleaseLink releaseId="${releaseLink.id}" bare="true" scopeGroupId="${concludedScopeGroupId}" />">
                     <sw360:out value="${releaseLink.longName}" maxChar="60"/>
-                </a>
+                </a>&nbsp;&nbsp;
+                <span class="badge badge-danger" title="<liferay-ui:message key="cli.count" />" >0</span>
             </td>
             <td>
 		<sw360:DisplayEnum value="${releaseLink.releaseRelationship}"/>
@@ -89,6 +90,20 @@
                 </td>
                 <td>
                     <sw360:DisplayEnumShort value="${attachment.attachmentType}"/>
+                    <core_rt:if test="${attachment.attachmentType eq 'COMPONENT_LICENSE_INFO_XML'}">
+                    <script>
+                        parId = "${releaseLink.nodeId}",
+                        $tr = $('tr[data-tt-id='+parId+']');
+                        $tr.attr('data-is-cli-present', "true");
+                        count = parseInt($tr.find('span.badge').text()) +1;
+                        $tr.find('span.badge').text(count);
+                        if (count === 1) {
+                            $tr.find('span.badge').removeClass('badge-danger').addClass('badge-success');
+                        } else if (count === 2) {
+                            $tr.find('span.badge').removeClass('badge-success').addClass('badge-primary');
+                        }
+                    </script>
+                    </core_rt:if>
                 </td>
                 <td>
                     <input type="checkbox"
