@@ -75,7 +75,7 @@ processThrift() {
                       --without-perl --without-php --without-php_extension --without-python --without-py3 --without-ruby \
                       --without-haskell --without-go --without-d --without-haskell --without-php --without-ruby \
                       --without-python --without-erlang --without-perl --without-c_sharp --without-d --without-php \
-                      --without-go --without-lua --without-nodejs --without-cl
+                      --without-go --without-lua --without-nodejs --without-cl --without-dotnetcore --without-swift --without-rs
       fi
       if [ "$1" == true ]; then
         make
