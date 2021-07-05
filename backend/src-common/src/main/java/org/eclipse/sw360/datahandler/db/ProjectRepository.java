@@ -13,6 +13,7 @@ package org.eclipse.sw360.datahandler.db;
 import org.eclipse.sw360.components.summary.ProjectSummary;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -291,12 +292,19 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
 
     @NotNull
     private Set<Project> filterAccessibleProjectsByIds(User user, Set<String> searchIds) {
-        final Set<Project> accessibleProjects = getAccessibleProjects(user);
-
         final Set<Project> output = new HashSet<>();
-        for (Project accessibleProject : accessibleProjects) {
-            if (searchIds.contains(accessibleProject.getId())) output.add(accessibleProject);
-        }
+        searchIds.stream().filter(CommonUtils::isNotNullEmptyOrWhitespace).forEach(searchId -> {
+            Project project = get(searchId);
+            if (project != null) {
+                if (ProjectPermissions.isVisible(user).test(project)) {
+                    output.add(project);
+                } else {
+                    log.warn("Project with Id - " + searchId + " not visisble to user - " + user.getEmail());
+                }
+            } else {
+                log.warn("Error occured while fetching Project with Id - " + searchId);
+            }
+        });
 
         return output;
     }
