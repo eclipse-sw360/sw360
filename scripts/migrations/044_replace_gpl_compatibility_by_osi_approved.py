@@ -100,7 +100,7 @@ def run():
 
     print '\n'
     print '------------------------------------------'
-    print 'Please check log file "043_replace_gpl_compatibility_by_osi_approved.log" in this directory for details'
+    print 'Please check log file "044_replace_gpl_compatibility_by_osi_approved.log" in this directory for details'
     print '------------------------------------------'
 
 # --------------------------------
