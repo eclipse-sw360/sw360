@@ -348,7 +348,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             ProjectService.Iface client = thriftClients.makeProjectClient();
             Integer dateLimit = ModerationPortletUtils.loadPreferredClearingDateLimit(request, user);
             dateLimit = (ClearingRequestPriority.CRITICAL.equals(clearingRequest.getPriority()) && criticalCount < 2) ? 0 : (dateLimit < 1) ? 7 : dateLimit;
-            if (!SW360Utils.isValidDate(clearingRequest.getRequestedClearingDate(), DateTimeFormatter.ISO_LOCAL_DATE, dateLimit)) {
+            if (!SW360Utils.isValidDate(clearingRequest.getRequestedClearingDate(), DateTimeFormatter.ISO_LOCAL_DATE, Long.valueOf(dateLimit))) {
                 log.warn("Invalid requested clearing date: " + clearingRequest.getRequestedClearingDate() + " is entered, by user: "+ user.getEmail());
                 requestSummary = new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.FAILURE).setMessage("Invalid requested clearing date");
             } else {

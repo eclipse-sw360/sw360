@@ -326,7 +326,9 @@ public class ModerationPortlet extends FossologyAwarePortlet {
         User user = UserCacheHolder.getUserFromRequest(request);
         List<Project> projects;
         String ids[] = request.getParameterValues("projectIds[]");
+        Boolean isOpenCr = Boolean.parseBoolean(request.getParameter("isOpenCr"));
         if (ids == null || ids.length == 0) {
+            log.warn("Invalid project Ids!");
             JSONArray jsonResponse = createJSONArray();
             writeJSON(request, response, jsonResponse);
         } else {
@@ -338,7 +340,9 @@ public class ModerationPortlet extends FossologyAwarePortlet {
                 projects = Collections.emptyList();
             }
 
-            projects = getWithFilledClearingStateSummary(client, projects, user);
+            if (isOpenCr) {
+                projects = getWithFilledClearingStateSummary(client, projects, user);
+            }
 
             JSONArray jsonResponse = createJSONArray();
             ThriftJsonSerializer thriftJsonSerializer = new ThriftJsonSerializer();
@@ -348,8 +352,10 @@ public class ModerationPortlet extends FossologyAwarePortlet {
                     row.put("id", project.getId());
                     row.put("crId", project.getClearingRequestId());
                     row.put("name", SW360Utils.printName(project));
-                    row.put("clearing", JsonHelpers.toJson(project.getReleaseClearingStateSummary(), thriftJsonSerializer));
-                    String babl = project.getAdditionalData().get("BA BL");
+                    if (isOpenCr && null != project.getReleaseClearingStateSummary()) {
+                        row.put("clearing", JsonHelpers.toJson(project.getReleaseClearingStateSummary(), thriftJsonSerializer));
+                    }
+                    String babl = CommonUtils.nullToEmptyMap(project.getAdditionalData()).get("BA BL");
                     row.put("bu", CommonUtils.isNotNullEmptyOrWhitespace(babl) ? babl : CommonUtils.nullToEmptyString(project.getBusinessUnit()));
                     jsonResponse.put(row);
                 } catch (JSONException e) {
@@ -475,6 +481,10 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             if (CommonUtils.isNotNullEmptyOrWhitespace(clearingRequest.getProjectId()) ) {
                 ProjectService.Iface projectClient = thriftClients.makeProjectClient();
                 Project project = projectClient.getProjectById(clearingRequest.getProjectId(), UserCacheHolder.getUserFromRequest(request));
+                String babl = CommonUtils.nullToEmptyMap(project.getAdditionalData()).get("BA BL");
+                if (CommonUtils.isNotNullEmptyOrWhitespace(babl)) {
+                    project.setBusinessUnit(babl);
+                }
                 request.setAttribute(PROJECT, project);
 
                 DocumentPermissions<Project> projectPermission = makePermission(project, user);

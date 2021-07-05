@@ -116,7 +116,7 @@ public class ModerationPortletUtils {
                     String status = request.getParameter(ClearingRequest._Fields.CLEARING_STATE.toString());
                     String priority = request.getParameter(ClearingRequest._Fields.PRIORITY.toString());
                     if (CommonUtils.isNotNullEmptyOrWhitespace(agreedDate) && !agreedDate.equals(clearingRequest.getAgreedClearingDate())
-                            && !SW360Utils.isValidDate(agreedDate, DateTimeFormatter.ISO_LOCAL_DATE, 0)) {
+                            && !SW360Utils.isValidDate(agreedDate, DateTimeFormatter.ISO_LOCAL_DATE, null)) {
                         log.warn("Invalid agreed clearing date: " + agreedDate + " is entered, by user: "+ user.getEmail());
                         return requestSummary.setMessage("Invalid agreed clearing date");
                     }
@@ -149,7 +149,7 @@ public class ModerationPortletUtils {
             String priority = (criticalCount > 1) ? "" : request.getParameter(ClearingRequest._Fields.PRIORITY.toString());
             Integer dateLimit = ModerationPortletUtils.loadPreferredClearingDateLimit(request, user);
             dateLimit = (CommonUtils.isNotNullEmptyOrWhitespace(priority) && criticalCount < 2) ? 0 : (dateLimit < 1) ? 7 : dateLimit;
-            if (!SW360Utils.isValidDate(preferredDate, DateTimeFormatter.ISO_LOCAL_DATE, dateLimit)) {
+            if (!SW360Utils.isValidDate(preferredDate, DateTimeFormatter.ISO_LOCAL_DATE, Long.valueOf(dateLimit))) {
                 log.warn("Invalid requested clearing date: " + preferredDate + " is entered, by user: "+ user.getEmail());
                 return requestSummary.setMessage("Invalid requested clearing date");
             }

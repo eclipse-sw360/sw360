@@ -715,7 +715,7 @@ AUI().use('liferay-portlet-url', function () {
                     crIds.push(value.DT_RowId);
                 }
             }
-            if (projectIds.length > 25) {
+            if (isOpenCrTable && projectIds.length > 25) {
                 let i, j, temp, chunk = 25;
                 setTimeout(function() {
                     for (i = 0, j = projectIds.length; i < j; i += chunk) {
@@ -729,13 +729,13 @@ AUI().use('liferay-portlet-url', function () {
         }
 
         function loadProjectDetailsAjaxCall(tableId, tableData, projectIds, isOpenCrTable, crIds) {
-            console.log("triggering the backend call: "+ isOpenCrTable);
             $.ajax({
                 type: 'POST',
                 url: '<%=loadProjectDetailsAjaxURL%>',
                 cache: false,
                 data: {
-                    "<portlet:namespace/>projectIds": projectIds
+                    "<portlet:namespace/>projectIds": projectIds,
+                    "<portlet:namespace/>isOpenCr": isOpenCrTable
                 },
                 success: function (response) {
                     function d(v) { return v == undefined ? 0 : v; }
@@ -784,14 +784,14 @@ AUI().use('liferay-portlet-url', function () {
                             projCell = table.cell('#'+crId, projectColIndex),
                             compCell = table.cell('#'+crId, componentColIndex),
                             progressCell = table.cell('#'+crId, progressColIndex),
-                            projName = response[i].name,
-                            clearing = response[i].clearing,
-                            totalCount = d(clearing.newRelease) + d(clearing.underClearing) + d(clearing.sentToClearingTool) + d(clearing.reportAvailable) + d(clearing.approved),
-                            approvedCount = d(clearing.reportAvailable) + d(clearing.approved);
+                            projName = response[i].name;
 
                         buCell.data(response[i].bu);
                         projCell.data(renderLinkToProject(response[i].id, projName));
                         if (isOpenCrTable) {
+                            let clearing = response[i].clearing,
+                                totalCount = d(clearing.newRelease) + d(clearing.underClearing) + d(clearing.sentToClearingTool) + d(clearing.reportAvailable) + d(clearing.approved),
+                                approvedCount = d(clearing.reportAvailable) + d(clearing.approved);
                             compCell.data(totalCount - approvedCount);
                             if (!totalCount || $(table.cell('#'+crId, 4).node()).find('span.sw360-tt-ClearingRequestState-NEW').text()) {
                                 progressCell.data('<liferay-ui:message key="not.available" />');
