@@ -493,6 +493,8 @@ public class RestControllerHelper<T> {
         License embeddedLicense = new License();
         embeddedLicense.setId(license.getId());
         embeddedLicense.setFullname(license.getFullname());
+        embeddedLicense.unsetOSIApproved();
+        embeddedLicense.unsetFSFLibre();
         embeddedLicense.setType(null);
         return embeddedLicense;
     }
