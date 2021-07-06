@@ -31,6 +31,7 @@ public class DisplayBoolean extends SimpleTagSupport {
 
     private boolean value;
     private boolean defined = true;
+    private String name = null;
 
     public void setValue(boolean value) {
         this.value = value;
@@ -38,6 +39,10 @@ public class DisplayBoolean extends SimpleTagSupport {
 
     public void setDefined(boolean defined) {
         this.defined = defined;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public void doTag() throws JspException, IOException {
@@ -52,9 +57,10 @@ public class DisplayBoolean extends SimpleTagSupport {
             out.print("&nbsp;"+LanguageUtil.get(resourceBundle,"yes"));
             out.print("</span>");
         } else {
+            String text = "Quadratic".equalsIgnoreCase(name) ? "(n/a)" : "no";
             out.print("<span class=\"text-danger\">");
             out.print("<svg class=\"lexicon-icon\"><title>"+LanguageUtil.get(resourceBundle,"no")+"</title><use href=\"/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#times-circle\"/></svg>");
-            out.print("&nbsp;"+LanguageUtil.get(resourceBundle,"no"));
+            out.print("&nbsp;"+LanguageUtil.get(resourceBundle, text));
             out.print("</span>");
         }
     }

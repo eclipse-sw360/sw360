@@ -28,7 +28,8 @@ public class LicenseSummary extends DocumentSummary<License> {
 
         switch (type) {
             case EXPORT_SUMMARY:
-                copyField(document, copy, _Fields.GPLV2_COMPAT);
+                copyField(document, copy, _Fields.OSIAPPROVED);
+                copyField(document, copy, _Fields.FSFLIBRE);
                 copyField(document, copy, _Fields.REVIEWDATE);
             case SUMMARY:
                 copyField(document, copy, _Fields.LICENSE_TYPE);

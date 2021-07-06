@@ -12,6 +12,11 @@
 namespace java org.eclipse.sw360.datahandler.thrift
 namespace php sw360.thrift
 
+enum Quadratic {
+    NA = 0,
+    YES = 1
+}
+
 enum Ternary {
     UNDEFINED = 0,
     NO = 1,
