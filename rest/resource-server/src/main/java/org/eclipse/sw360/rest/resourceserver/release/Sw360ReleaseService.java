@@ -101,6 +101,8 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         Release releaseById = null;
         try {
             releaseById = sw360ComponentClient.getReleaseById(releaseId, sw360User);
+            Map<String, String> sortedAdditionalData = CommonUtils.getSortedMap(releaseById.getAdditionalData(), true);
+            releaseById.setAdditionalData(sortedAdditionalData);
         } catch (SW360Exception sw360Exp) {
             if (sw360Exp.getErrorCode() == 404) {
                 throw new ResourceNotFoundException("Release does not exists! id=" + releaseId);
@@ -130,6 +132,8 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         AddDocumentRequestSummary documentRequestSummary = sw360ComponentClient.addRelease(release, sw360User);
         if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.SUCCESS) {
             release.setId(documentRequestSummary.getId());
+            Map<String, String> sortedAdditionalData = CommonUtils.getSortedMap(release.getAdditionalData(), true);
+            release.setAdditionalData(sortedAdditionalData);
             return release;
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
             throw new DataIntegrityViolationException("sw360 release with name '" + SW360Utils.printName(release) + "' already exists.");

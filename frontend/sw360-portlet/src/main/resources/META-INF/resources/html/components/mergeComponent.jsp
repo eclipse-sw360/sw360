@@ -220,7 +220,7 @@
             $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="mailing.list" />', data.componentTarget.mailinglist, data.componentSource.mailinglist));
             $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="description" />', data.componentTarget.description, data.componentSource.description));
             $stepElement.append(wizard.createMapMergeLine('<liferay-ui:message key="external.ids" />', data.componentTarget.externalIds, data.componentSource.externalIds));
-            $stepElement.append(wizard.createMapMergeLine('<liferay-ui:message key="additional.data" />', data.componentTarget.additionalData, data.componentSource.additionalData));
+            $stepElement.append(wizard.createMapMergeLine('<liferay-ui:message key="additional.data" />', wizard.convertObjectToSortedMap(data.componentTarget.additionalData), wizard.convertObjectToSortedMap(data.componentSource.additionalData)));
 
             $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="roles" />'));
             $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="component.owner" />', data.componentTarget.componentOwner, data.componentSource.componentOwner));
@@ -356,7 +356,7 @@
             $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="mailing.list" />', data.componentSelection.mailinglist));
             $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="description" />', data.componentSelection.description));
             $stepElement.append(wizard.createMapDisplayLine('<liferay-ui:message key="external.ids" />', data.componentSelection.externalIds));
-            $stepElement.append(wizard.createMapDisplayLine('<liferay-ui:message key="additional.data" />', data.componentSelection.additionalData));
+            $stepElement.append(wizard.createMapDisplayLine('<liferay-ui:message key="additional.data" />', wizard.convertObjectToSortedMap(data.componentSelection.additionalData)));
 
             $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="roles" />'));
             $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="component.owner" />', data.componentSelection.componentOwner));

@@ -120,28 +120,37 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
             keys = [],
             existInBoth = [];
 
-        target = target == null ? {} : target;
-        source = source == null ? {} : source;
+        if (target == null) {
+            target = new Map();
+        } else {
+            target = target instanceof Map ? target : new Map(Object.entries(target));
+        }
+        if (source == null) {
+            source = new Map();
+        } else {
+            source = source instanceof Map ? source : new Map(Object.entries(source));
+        }
         detailFormatter = detailFormatter || function(element) { return element; };
 
         result = $($.parseHTML('<fieldset id="' + normalizePropName(propName) + '" class="merge block">' +
                                '    <h4>' + propName + '</h4>' +
                                '</fieldset>'));
 
-        $.each(target, function(key, value) {
-            if (!source[key]) {
+        target.forEach((value, key) => {
+            if(!source.get(key)) {
                 let lineSrcEmpty = mergeWizard.createSingleMergeLine(key, value, '', detailFormatter);
                 $(lineSrcEmpty).attr("id", normalizePropName(propName+key));
                 result.append(lineSrcEmpty);
             } else {
-                let lineSrcNotEmpty = mergeWizard.createSingleMergeLine(key, value, source[key], detailFormatter);
+                let lineSrcNotEmpty = mergeWizard.createSingleMergeLine(key, value, source.get(key), detailFormatter);
                 $(lineSrcNotEmpty).attr("id", normalizePropName(propName+key));
                 result.append(lineSrcNotEmpty);
                 existInBoth.push(key);
             }
             keys.push(key);
         });
-        $.each(source, function(key, value) {
+
+        source.forEach((value, key) => {
             if ($.inArray(key, existInBoth) === -1) {
                 let lineNotExistInBoth = mergeWizard.createSingleMergeLine(key, '', value, detailFormatter);
                 $(lineNotExistInBoth).attr("id", normalizePropName(propName+key))
@@ -316,14 +325,18 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
     mergeWizard.createMapDisplayLine = function createMapDisplayLine(propName, values, detailFormatter) {
         var result;
 
-        values = values == null ? {} : values;
+        if (values == null) {
+            values = new Map();
+        } else {
+            values = values instanceof Map ? values : new Map(Object.entries(values));
+        }
         detailFormatter = detailFormatter || function(element) { return element; };
 
         result = $($.parseHTML('<fieldset id="' + normalizePropName(propName) + '" class="display block">' +
                                '    <h4>' + propName + '</h4>' +
                                '</fieldset>'));
 
-        $.each(values, function(key, value) {
+        values.forEach((value, key) => {
             result.append(mergeWizard.createSingleDisplayLine(key, value, detailFormatter));
         });
 
@@ -584,6 +597,11 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
 
         return result;
     };
+
+    mergeWizard.convertObjectToSortedMap = function convertObjectToSortedMap(obj) {
+        let unsortedMap = new Map(Object.entries(obj));
+        return new Map([...unsortedMap.entries()].sort());
+    }
 
     // private
 

@@ -97,6 +97,24 @@ public class CommonUtils {
         return collection != null ? CASE_INSENSITIVE_ORDERING.immutableSortedCopy(collection) : ImmutableList.<String>of();
     }
 
+    /**
+     * Returns a sorted map containing the elements of the given unsorted map.
+     * The map is sorted follow the order.
+     */
+    public static Map<String, String> getSortedMap(Map<String, String> unsortedMap, boolean isAscending) {
+        if(unsortedMap == null && unsortedMap.size() <= 1) {
+            return unsortedMap;
+        }
+        Map<String, String> sortedMap;
+        if(isAscending) {
+            sortedMap = new TreeMap<String, String>(unsortedMap);
+        } else {
+            sortedMap = new TreeMap<String, String>(Collections.reverseOrder());
+            sortedMap.putAll(unsortedMap);
+        }
+        return sortedMap;
+    }
+
     public static String joinStrings(Iterable<String> strings) {
         return strings != null ? COMMA_JOINER.join(strings) : "";
     }

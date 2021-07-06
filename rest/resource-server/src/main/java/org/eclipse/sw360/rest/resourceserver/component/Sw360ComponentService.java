@@ -42,6 +42,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.eclipse.sw360.datahandler.common.CommonUtils.getSortedMap;
+
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360ComponentService implements AwareOfRestServices<Component> {
@@ -62,7 +64,10 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
     public Release getReleaseById(String id, User sw360User) {
         try {
             ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-            return sw360ComponentClient.getReleaseById(id, sw360User);
+            Release release = sw360ComponentClient.getReleaseById(id, sw360User);
+            Map<String, String> sortedAdditionalData = getSortedMap(release.getAdditionalData(), true);
+            release.setAdditionalData(sortedAdditionalData);
+            return release;
         } catch (TException e) {
             throw new RuntimeException(e);
         }
@@ -70,7 +75,10 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
 
     public Component getComponentForUserById(String componentId, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        return sw360ComponentClient.getComponentById(componentId, sw360User);
+        Component component = sw360ComponentClient.getComponentById(componentId, sw360User);
+        Map<String, String> sortedAdditionalData = getSortedMap(component.getAdditionalData(), true);
+        component.setAdditionalData(sortedAdditionalData);
+        return component;
     }
 
     public Set<Project> getProjectsByComponentId(String componentId, User sw360User) throws TException {
@@ -105,6 +113,8 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
         if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.SUCCESS) {
             component.setId(documentRequestSummary.getId());
             component.setCreatedBy(sw360User.getEmail());
+            Map<String, String> sortedAdditionalData = getSortedMap(component.getAdditionalData(), true);
+            component.setAdditionalData(sortedAdditionalData);
             return component;
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
             throw new DataIntegrityViolationException("sw360 component with name '" + component.getName() + "' already exists.");
