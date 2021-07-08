@@ -658,6 +658,10 @@ public class JacksonCustomizations {
             abstract public String getIntReleaseId();
 
             @Override
+            @JsonProperty("projectAction")
+            abstract public String getAction();
+
+            @Override
             @JsonProperty("intReleaseName")
             abstract public String getIntReleaseName();
 
