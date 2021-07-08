@@ -102,11 +102,11 @@ public class CommonUtils {
      * The map is sorted follow the order.
      */
     public static Map<String, String> getSortedMap(Map<String, String> unsortedMap, boolean isAscending) {
-        if(unsortedMap == null && unsortedMap.size() <= 1) {
+        if (unsortedMap == null && unsortedMap.size() <= 1) {
             return unsortedMap;
         }
         Map<String, String> sortedMap;
-        if(isAscending) {
+        if (isAscending) {
             sortedMap = new TreeMap<String, String>(unsortedMap);
         } else {
             sortedMap = new TreeMap<String, String>(Collections.reverseOrder());

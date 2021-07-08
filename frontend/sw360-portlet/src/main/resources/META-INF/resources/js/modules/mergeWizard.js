@@ -137,7 +137,7 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
                                '</fieldset>'));
 
         target.forEach((value, key) => {
-            if(!source.get(key)) {
+            if (!source.get(key)) {
                 let lineSrcEmpty = mergeWizard.createSingleMergeLine(key, value, '', detailFormatter);
                 $(lineSrcEmpty).attr("id", normalizePropName(propName+key));
                 result.append(lineSrcEmpty);
