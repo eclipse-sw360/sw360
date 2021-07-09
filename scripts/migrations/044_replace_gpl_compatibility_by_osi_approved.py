@@ -27,6 +27,8 @@ import time
 # constants
 # ---------------------------------------
 
+DRY_RUN = True
+
 COUCHSERVER = "http://localhost:5984/"
 DBNAME = 'sw360db'
 
@@ -63,6 +65,11 @@ def replaceFieldsInLicenseModeration(moderation):
 def run():
     log = {}
     # migrate licenses
+    if DRY_RUN:
+        print '------------------------------------------'
+        print 'Running in DRY mode'
+        print '------------------------------------------'
+        print '\n'
     print('On raw licenses: replace GPL compatibility fields by OSI approved and FSF libre fields.')
     licenses = db.find(all_licenses)
     licenses_len = len(licenses)
@@ -72,10 +79,11 @@ def run():
     license_log['totalCount'] = licenses_len
     license_log['replaceFieldsList'] = []
     for license in licenses:
-        db.save(replaceFields(license))
-        replaceFieldsList = {}
-        replaceFieldsList['id'] = license.get('_id')
-        license_log['replaceFieldsList'].append(replaceFieldsList)
+        if not DRY_RUN:
+            db.save(replaceFields(license))
+            replaceFieldsList = {}
+            replaceFieldsList['id'] = license.get('_id')
+            license_log['replaceFieldsList'].append(replaceFieldsList)
 
     # migrate moderations related to licenses
     print('In license moderations: replace GPL compatibility fields by OSI approved and FSF libre fields.')
@@ -87,14 +95,15 @@ def run():
     moderation_log['totalCount'] = moderations_len
     moderation_log['replaceFieldsInLicenseModerationList'] = []
     for moderation in moderations_with_license_stuff:
-        db.save(replaceFieldsInLicenseModeration(moderation))
-        replaceFieldsInLicenseModerationList = {}
-        replaceFieldsInLicenseModerationList['id'] = moderation.get('_id')
-        log['replaceFieldsInLicenseModerationList'].append(replaceFieldsInLicenseModerationList)
+        if not DRY_RUN:
+            db.save(replaceFieldsInLicenseModeration(moderation))
+            replaceFieldsInLicenseModerationList = {}
+            replaceFieldsInLicenseModerationList['id'] = moderation.get('_id')
+            log['replaceFieldsInLicenseModerationList'].append(replaceFieldsInLicenseModerationList)
     
     log['licenses'] = license_log
     log['moderations'] = moderation_log
-    logFile = open('043_replace_gpl_compatibility_by_osi_approved.log', 'w')
+    logFile = open('044_replace_gpl_compatibility_by_osi_approved.log', 'w')
     json.dump(log, logFile, indent = 4, sort_keys = True)
     logFile.close()
 
