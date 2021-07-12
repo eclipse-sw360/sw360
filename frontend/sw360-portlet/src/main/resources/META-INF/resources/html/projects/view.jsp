@@ -316,7 +316,7 @@
                         {title: "<span title=\"<liferay-ui:message key="release.clearing.state" />\"><liferay-ui:message key="license.clearing" /></span>", data: "clearing" },
                         {title: "<liferay-ui:message key="actions" />", data: "id", render: {display: renderProjectActions}, className: "four actions" }
                     ],
-                    drawCallback: function (oSettings) {
+                    fnDrawCallback: function (oSettings) {
                         loadClearingStateSummaries();
                     },
                     language: {
