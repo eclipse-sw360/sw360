@@ -1328,6 +1328,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 ProjectService.Iface client = thriftClients.makeProjectClient();
                 Project project = client.getProjectById(id, user);
                 project = getWithFilledClearingStateSummary(project, user);
+                Map<String, String> sortedAdditionalData = getSortedMap(project.getAdditionalData(), true);
+                project.setAdditionalData(sortedAdditionalData);
                 request.setAttribute(PROJECT, project);
                 request.setAttribute(PARENT_PROJECT_PATH, project.getId());
                 setAttachmentsInRequest(request, project);
@@ -1945,6 +1947,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             try {
                 ProjectService.Iface client = thriftClients.makeProjectClient();
                 project = client.getProjectByIdForEdit(id, user);
+                Map<String, String> sortedAdditionalData = getSortedMap(project.getAdditionalData(), true);
+                project.setAdditionalData(sortedAdditionalData);
                 usingProjects = client.searchLinkingProjects(id, user);
                 allUsingProjectCount = client.getCountByProjectId(id);
             } catch (SW360Exception sw360Exp) {
@@ -2009,6 +2013,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 String department = user.getDepartment();
 
                 Project newProject = PortletUtils.cloneProject(emailFromRequest, department, client.getProjectById(id, user));
+                Map<String, String> sortedAdditionalData = getSortedMap(newProject.getAdditionalData(), true);
+                newProject.setAdditionalData(sortedAdditionalData);
                 setAttachmentsInRequest(request, newProject);
                 PortletUtils.setCustomFieldsEdit(request, user, newProject);
                 request.setAttribute(PROJECT, newProject);

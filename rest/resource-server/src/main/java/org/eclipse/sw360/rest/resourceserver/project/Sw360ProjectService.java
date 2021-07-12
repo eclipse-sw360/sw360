@@ -90,6 +90,7 @@ import java.util.stream.Collectors;
 import javax.annotation.PreDestroy;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.getSortedMap;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -113,7 +114,10 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     public Project getProjectForUserById(String projectId, User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         try {
-            return sw360ProjectClient.getProjectById(projectId, sw360User);
+            Project project = sw360ProjectClient.getProjectById(projectId, sw360User);
+            Map<String, String> sortedAdditionalData = getSortedMap(project.getAdditionalData(), true);
+            project.setAdditionalData(sortedAdditionalData);
+            return project;
         } catch (SW360Exception sw360Exp) {
             if (sw360Exp.getErrorCode() == 404) {
                 throw new ResourceNotFoundException("Requested Project Not Found");
@@ -150,6 +154,8 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.SUCCESS) {
             project.setId(documentRequestSummary.getId());
             project.setCreatedBy(sw360User.getEmail());
+            Map<String, String> sortedAdditionalData = getSortedMap(project.getAdditionalData(), true);
+            project.setAdditionalData(sortedAdditionalData);
             return project;
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
             throw new DataIntegrityViolationException("sw360 project with name '" + project.getName() + "' already exists.");

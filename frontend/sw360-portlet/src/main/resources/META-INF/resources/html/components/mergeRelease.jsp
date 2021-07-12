@@ -228,7 +228,7 @@
             $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="repository" />', data.releaseTarget.repository, data.releaseSource.repository, repositoryFormatter(data.displayInformation)));
             $stepElement.append(wizard.createMultiMapMergeLine('<liferay-ui:message key="additional.roles" />', data.releaseTarget.roles, data.releaseSource.roles));
             $stepElement.append(wizard.createMapMergeLine('<liferay-ui:message key="external.ids" />', data.releaseTarget.externalIds, data.releaseSource.externalIds));
-            $stepElement.append(wizard.createMapMergeLine('<liferay-ui:message key="additional.data" />', data.releaseTarget.additionalData, data.releaseSource.additionalData));
+            $stepElement.append(wizard.createMapMergeLine('<liferay-ui:message key="additional.data" />', wizard.convertObjectToSortedMap(data.releaseTarget.additionalData), wizard.convertObjectToSortedMap(data.releaseSource.additionalData)));
             
             $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="linked.releases" />'));
             $stepElement.append(wizard.createMultiMergeLine('<liferay-ui:message key="linked.releases" />', Object.keys(data.releaseTarget.releaseIdToRelationship || {}), Object.keys(data.releaseSource.releaseIdToRelationship || {}), mapFormatter(data.displayInformation, 'release')));
@@ -501,7 +501,7 @@
             $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="repository" />', data.releaseSelection.repository, repositoryFormatter(displayInformation)));
             $stepElement.append(wizard.createMultiMapDisplayLine('<liferay-ui:message key="additional.roles" />', data.releaseSelection.roles));
             $stepElement.append(wizard.createMapDisplayLine('<liferay-ui:message key="external.ids" />', data.releaseSelection.externalIds));
-            $stepElement.append(wizard.createMapDisplayLine('<liferay-ui:message key="additional.data" />', data.releaseSelection.additionalData));
+            $stepElement.append(wizard.createMapDisplayLine('<liferay-ui:message key="additional.data" />', wizard.convertObjectToSortedMap(data.releaseSelection.additionalData)));
             
             $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="linked.releases" />'));
             $stepElement.append(wizard.createMultiDisplayLine('<liferay-ui:message key="linked.releases" />', Object.keys(data.releaseSelection.releaseIdToRelationship), mapFormatter(displayInformation, 'release')));
