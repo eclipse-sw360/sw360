@@ -530,19 +530,19 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         subsectionWithPath("sw360:attachmentUsages.[]owner")
                                 .description("The owner of attachment usage, possible values are:"
                                         + Arrays.asList("projectId", "componentId", "releaseId")),
-                                subsectionWithPath("sw360:attachmentUsages.[]attachmentContentId")
+                        subsectionWithPath("sw360:attachmentUsages.[]attachmentContentId")
                                 .description("The Attachment Content Id associated with the Attachment"),
-                                subsectionWithPath("sw360:attachmentUsages.[]usedBy")
+                        subsectionWithPath("sw360:attachmentUsages.[]usedBy")
                                 .description("The Id of project using the attachment"),
-                                subsectionWithPath("sw360:attachmentUsages.[]usageData")
+                        subsectionWithPath("sw360:attachmentUsages.[]usageData")
                                 .description("The usage information of attachment, possible values are:"
                                         + Arrays.asList("licenseInfo", "sourcePackage", "manuallySet")),
-                                subsectionWithPath("sw360:attachmentUsages.[]usageData.licenseInfo.excludedLicenseIds")
+                        subsectionWithPath("sw360:attachmentUsages.[]usageData.licenseInfo.excludedLicenseIds")
                                 .description("The list of excluded License Ids."),
-                                subsectionWithPath("sw360:attachmentUsages.[]usageData.licenseInfo.projectPath").description(
+                        subsectionWithPath("sw360:attachmentUsages.[]usageData.licenseInfo.projectPath").description(
                                 "The hierarchy of project in which attachment is used. Ex: projectId1:subProjectId1:subProjectId2"),
-                                subsectionWithPath("sw360:attachmentUsages.[]usageData.licenseInfo.includeConcludedLicense").description(
-                                "Value to indicate whether to include concluded license"),
+                        subsectionWithPath("sw360:attachmentUsages.[]usageData.licenseInfo.includeConcludedLicense")
+                                .description("Value to indicate whether to include concluded license"),
                         fieldWithPath("sw360:attachmentUsages").description(
                                 "An array of <<resources-project-get-attachmentusage, AttachmentUsages resources>>"))));
     }
@@ -707,8 +707,10 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:projects.[]visibility")
                                         .description("The visibility of the project, possible values are: "
                                                 + Arrays.asList(Visibility.values())),
-                                        subsectionWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
-                                        subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                subsectionWithPath("_embedded.sw360:projects")
+                                        .description("An array of <<resources-projects, Projects resources>>"),
+                                subsectionWithPath("_links")
+                                        .description("<<resources-index-links,Links>> to other resources"),
                                 fieldWithPath("page").description("Additional paging information"),
                                 fieldWithPath("page.size").description("Number of projects per page"),
                                 fieldWithPath("page.totalElements").description("Total number of all existing projects"),
@@ -743,16 +745,10 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         responseFields(
                                 subsectionWithPath("_embedded.sw360:projects[]name").description("The name of the project"),
                                 subsectionWithPath("_embedded.sw360:projects[]version").description("The project version"),
-                                subsectionWithPath("_embedded.sw360:projects[]projectType")
-                                        .description("The project type, possible values are: "
-                                                + Arrays.asList(ProjectType.values())),
-                                        subsectionWithPath("_embedded.sw360:projects[]visibility")
-                                        .description("The visibility of the project, possible values are: "
-                                                + Arrays.asList(Visibility.values())),
-                                        subsectionWithPath("_embedded.sw360:projects")
-                                        .description("An array of <<resources-projects, Projects resources>>"),
-                                        subsectionWithPath("_links")
-                                        .description("<<resources-index-links,Links>> to other resources"),
+                                subsectionWithPath("_embedded.sw360:projects[]projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
+                                subsectionWithPath("_embedded.sw360:projects[]visibility").description("The visibility of the project, possible values are: " + Arrays.asList(Visibility.values())),
+                                subsectionWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 fieldWithPath("page").description("Additional paging information"),
                                 fieldWithPath("page.size").description("Number of projects per page"),
                                 fieldWithPath("page.totalElements").description("Total number of all existing projects"),
@@ -787,16 +783,10 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         responseFields(
                                 subsectionWithPath("_embedded.sw360:projects.[]name").description("The name of the project"),
                                 subsectionWithPath("_embedded.sw360:projects.[]version").description("The project version"),
-                                subsectionWithPath("_embedded.sw360:projects.[]projectType")
-                                        .description("The project type, possible values are: "
-                                                + Arrays.asList(ProjectType.values())),
-                                        subsectionWithPath("_embedded.sw360:projects[]visibility")
-                                        .description("The visibility of the project, possible values are: "
-                                                + Arrays.asList(Visibility.values())),
-                                        subsectionWithPath("_embedded.sw360:projects")
-                                        .description("An array of <<resources-projects, Projects resources>>"),
-                                        subsectionWithPath("_links")
-                                        .description("<<resources-index-links,Links>> to other resources"),
+                                subsectionWithPath("_embedded.sw360:projects.[]projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
+                                subsectionWithPath("_embedded.sw360:projects[]visibility").description("The visibility of the project, possible values are: " + Arrays.asList(Visibility.values())),
+                                subsectionWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 fieldWithPath("page").description("Additional paging information"),
                                 fieldWithPath("page.size").description("Number of projects per page"),
                                 fieldWithPath("page.totalElements").description("Total number of all existing projects"),
@@ -832,11 +822,9 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:projects.[]name").description("The name of the project"),
                                 subsectionWithPath("_embedded.sw360:projects.[]version").description("The project version"),
                                 subsectionWithPath("_embedded.sw360:projects.[]projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
-                                subsectionWithPath("_embedded.sw360:projects.[]visibility")
-                                        .description("The visibility of the project, possible values are: "
-                                                + Arrays.asList(Visibility.values())),
-                                        subsectionWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
-                                        subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                subsectionWithPath("_embedded.sw360:projects.[]visibility").description("The visibility of the project, possible values are: "+ Arrays.asList(Visibility.values())),
+                                subsectionWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 fieldWithPath("page").description("Additional paging information"),
                                 fieldWithPath("page.size").description("Number of projects per page"),
                                 fieldWithPath("page.totalElements").description("Total number of all existing projects"),
@@ -1202,24 +1190,18 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 .description("The `linked project id` - metadata of linked projects (`enableSvm` - whether linked projects will be part of SVM, `projectRelationship` - relationship between linked project and the project. Possible values: " + Arrays.asList(ProjectRelationship.values())),
                         subsectionWithPath("linkedReleases")
                                 .description("The relationship between linked releases of the project"),
-                        fieldWithPath("securityResponsibles")
-                                .description("An array of users responsible for security of the project."),
+                        fieldWithPath("securityResponsibles").description("An array of users responsible for security of the project."),
                         fieldWithPath("state").description("The project active status, possible values are: " + Arrays.asList(ProjectState.values())),
                         fieldWithPath("clearingRequestId").description("Clearing Request id associated with project."),
-                        fieldWithPath("projectResponsible")
-                                .description("A user who is responsible for the project."),
-                                subsectionWithPath("_links")
-                                  .description("<<resources-index-links,Links>> to other resources"),
-                                  subsectionWithPath("_embedded.createdBy").description("The user who created this project"),
+                        fieldWithPath("projectResponsible").description("A user who is responsible for the project."),
+                        subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                        subsectionWithPath("_embedded.createdBy").description("The user who created this project"),
                         fieldWithPath("enableSvm").description("Security vulnerability monitoring flag"),
                         fieldWithPath("enableVulnerabilitiesDisplay").description("Displaying vulnerabilities flag."),
                         subsectionWithPath("_embedded.sw360:moderators").description("An array of moderators"),
-                        subsectionWithPath("_embedded.sw360:projects")
-                                .description("An array of <<resources-projects, Projects resources>>"),
-                                subsectionWithPath("_embedded.sw360:releases")
-                                  .description("An array of <<resources-releases, Releases resources>>"),
-                                  subsectionWithPath("_embedded.sw360:attachments").description(
-                                "An array of all project attachments and link to their <<resources-attachment-get,Attachment resource>>"))));
+                        subsectionWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
+                        subsectionWithPath("_embedded.sw360:releases").description("An array of <<resources-releases, Releases resources>>"),
+                        subsectionWithPath("_embedded.sw360:attachments").description("An array of all project attachments and link to their <<resources-attachment-get,Attachment resource>>"))));
     }
 
     @Test
