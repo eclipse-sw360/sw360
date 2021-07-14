@@ -67,7 +67,7 @@ public class ProjectPermissions extends DocumentPermissions<Project> {
     public static boolean isUserInBU(Project document, String bu) {
         final String buFromOrganisation = getBUFromOrganisation(bu);
         return !isNullOrEmpty(bu) && !isNullOrEmpty(buFromOrganisation) && !isNullOrEmpty(document.getBusinessUnit())
-                && document.getBusinessUnit().startsWith(buFromOrganisation);
+                && document.getBusinessUnit().equals(buFromOrganisation);
     }
 
     public static boolean userIsEquivalentToModeratorInProject(Project input, String user) {
