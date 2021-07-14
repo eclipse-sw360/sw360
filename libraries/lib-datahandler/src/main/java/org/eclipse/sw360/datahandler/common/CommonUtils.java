@@ -102,7 +102,7 @@ public class CommonUtils {
      * The map is sorted follow the order.
      */
     public static Map<String, String> getSortedMap(Map<String, String> unsortedMap, boolean isAscending) {
-        if (unsortedMap == null && unsortedMap.size() <= 1) {
+        if (CommonUtils.isNullOrEmptyMap(unsortedMap)) {
             return unsortedMap;
         }
         Map<String, String> sortedMap;
