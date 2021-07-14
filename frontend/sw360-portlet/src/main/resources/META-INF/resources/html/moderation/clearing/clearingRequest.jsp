@@ -437,7 +437,7 @@ require(['jquery', 'modules/dialog', 'modules/validation', 'modules/button', 'br
                 return;
             }
             $emailId.removeClass("is-invalid");
-            if ($acDate.val() && !validation.isValidDate($acDate.val(), 0)) {
+            if ($acDate.val() && !validation.isValidDate($acDate.val())) {
                 $acDate.addClass("is-invalid");
                 return;                
             }

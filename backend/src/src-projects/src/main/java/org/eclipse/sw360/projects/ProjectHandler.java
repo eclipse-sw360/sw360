@@ -279,6 +279,7 @@ public class ProjectHandler implements ProjectService.Iface {
 
     @Override
     public List<Project> fillClearingStateSummary(List<Project> projects, User user) throws TException {
+        assertUser(user);
         return handler.fillClearingStateSummary(projects, user);
     }
 

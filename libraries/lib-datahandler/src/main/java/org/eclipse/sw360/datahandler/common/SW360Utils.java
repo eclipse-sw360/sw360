@@ -235,12 +235,15 @@ public class SW360Utils {
         return text.replaceAll("(?m)^#.*(?:\r?\n)?", ""); // ignore comments in template file
     }
 
-    public static boolean isValidDate(String date, DateTimeFormatter format, long greaterThanDays) {
+    public static boolean isValidDate(String date, DateTimeFormatter format, Long greaterThanDays) {
         try {
             LocalDate selectedDate = LocalDate.parse(date, format);
             LocalDate currentDate = LocalDate.now();
             long difference = ChronoUnit.DAYS.between(currentDate, selectedDate);
-            return difference >= greaterThanDays ? true : false;
+            if (null != greaterThanDays) {
+                return difference >= greaterThanDays;
+            }
+            return true;
         } catch (DateTimeParseException e) {
             return false;
         }
