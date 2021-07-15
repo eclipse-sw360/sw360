@@ -11,6 +11,7 @@ package org.eclipse.sw360.portal.portlets.projects;
 
 import com.google.common.collect.*;
 
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
@@ -253,13 +254,19 @@ public class ProjectPortletUtils {
         for (String attachmentContentIdWithPath : attachmentContentIdsWithPath) {
             String[] checkboxes = request.getParameterValues(attachmentContentIdWithPath);
             String[] keys = request.getParameterValues(attachmentContentIdWithPath + "_key");
-
+            boolean isOnlyApprovedAttachmentSelected = Boolean.parseBoolean(request.getParameter(PortalConstants.ONLY_APPROVED));
             if (checkboxes == null) {
                 // no details present
                 continue;
             }
 
             List<String> pathParts = new ArrayList<String>(Arrays.asList(attachmentContentIdWithPath.split(":")));
+            String attachmentCheckStatus = pathParts.get(pathParts.size()-1);
+            if (isOnlyApprovedAttachmentSelected && (CommonUtils.isNullEmptyOrWhitespace(attachmentCheckStatus)
+                    || CheckStatus.valueOf(attachmentCheckStatus) != CheckStatus.ACCEPTED)) {
+                continue;
+            }
+            pathParts.remove(pathParts.size() - 1);
             if (pathParts.size() > 2) {
                 pathParts.remove(pathParts.size() - 2);
             }
@@ -305,8 +312,8 @@ public class ProjectPortletUtils {
             AttachmentUsage usage = new AttachmentUsage();
             String[] pathParts = attachmentIdWithPath.split(":");
             usage.setUsedBy(Source.projectId(pathParts[0]));
-            usage.setOwner(Source.releaseId(pathParts[pathParts.length - 3]));
-            usage.setAttachmentContentId(pathParts[pathParts.length - 1]);
+            usage.setOwner(Source.releaseId(pathParts[pathParts.length - 4]));
+            usage.setAttachmentContentId(pathParts[pathParts.length - 2]);
 
             UsageData usageData = usageDataGenerator.apply(attachmentIdWithPath);
             usage.setUsageData(usageData);

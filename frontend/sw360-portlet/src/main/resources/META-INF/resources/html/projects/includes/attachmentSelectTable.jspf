@@ -10,6 +10,8 @@
 --%>
 
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus" %>
+
 <portlet:resourceURL var="downloadLicenseInfoURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.GET_LICENCES_FROM_ATTACHMENT%>'/>
 </portlet:resourceURL>
@@ -29,8 +31,6 @@
     <div class="spinner"><liferay-ui:message key="loading.previously.stored.selection" /></div>
 </div>
 
-<div class="tab-content" id="pills-attachmentLicenseTab" style="width: 100%;">
-<div class="tab-pane fade show active" id="pills-showallView" role="tabpanel" aria-labelledby="pills-showall-tab">
 <table class="table" id="LinkedProjectsInfo" style="width: 100%; max-width: 100%;"
     data-project-id="${project.id}"
     data-table-mode="${projectLinkTableMode}"
@@ -49,6 +49,9 @@
         <col style="width: 40px;" />
         <col />
         <col style="width: 35%" />
+        <core_rt:if test="${enableConcludedLicense}">
+            <col />
+        </core_rt:if>
         <col />
         <col />
         <col />
@@ -64,10 +67,10 @@
             </core_rt:if>
             <th><liferay-ui:message key="type" /></th>
             <core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo}">
-            <th><liferay-ui:message key="state" /></th>
+                <th><liferay-ui:message key="state" /></th>
             </core_rt:if>
             <core_rt:if test="${projectLinkTableMode == tableModeSourceBundle}">
-            <th><liferay-ui:message key="clearing.state" /></th>
+                <th><liferay-ui:message key="clearing.state" /></th>
             </core_rt:if>
             <th><liferay-ui:message key="uploaded.by" /></th>
             <th><liferay-ui:message key="clearing.team" /></th>
@@ -156,6 +159,7 @@
                     data-tree-level="${projectLink.treeLevel + 1}"
                     data-release-id="${releaseLink.id}"
                     data-attachment-id="${attachment.attachmentContentId}"
+                    data-attachment-check-status="${attachment.checkStatus}"
                     <core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo}">data-release-relationship="${releaseLink.releaseRelationship}"</core_rt:if>
                     <core_rt:if test="${empty releaseLink.attachments}">class="selectable"</core_rt:if>
                     <core_rt:if test="${fn:length(releaseLink.attachments) == 1}">class="selectable highlightSuccess"</core_rt:if>
@@ -164,7 +168,9 @@
                     <td>
                         <input type="checkbox" class="form-check-input attachmentChkbox"
                                 name="<portlet:namespace/><%=PortalConstants.LICENSE_INFO_RELEASE_TO_ATTACHMENT%>"
-                                <core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo}">value='${projectPath.concat(":").concat(releaseLink.id).concat(":").concat(releaseLink.releaseRelationship).concat(":").concat(attachment.attachmentContentId)}'</core_rt:if>
+                                <core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo}">origvalue='${projectPath.concat(":").concat(releaseLink.id).concat(":").concat(releaseLink.releaseRelationship).concat(":").concat(attachment.attachmentContentId)}'</core_rt:if>
+                                <core_rt:if test="${projectLinkTableMode != tableModeLicenseInfo}">origvalue='${releaseLink.id.concat(":").concat(attachment.attachmentContentId)}'</core_rt:if>
+                                <core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo}">value='${projectPath.concat(":").concat(releaseLink.id).concat(":").concat(releaseLink.releaseRelationship).concat(":").concat(attachment.attachmentContentId).concat(":").concat(attachment.checkStatus)}'</core_rt:if>
                                 <core_rt:if test="${projectLinkTableMode != tableModeLicenseInfo}">value='${releaseLink.id.concat(":").concat(attachment.attachmentContentId)}'</core_rt:if>
                                 <core_rt:if test="${!attachmentSelected && (releaseLink.attachments.size() == 1 || attachment.createdTeam == sw360User.department)}">checked="checked" class="defaultChecked"
                                     <core_rt:set var="attachmentSelected" value="true" scope="request"/>
@@ -182,7 +188,9 @@
                         <core_rt:if test='${attachment.filename.toLowerCase().endsWith(".rdf")}'>
                             <input type="checkbox" class="form-check-input concludedLicense" disabled="true"
                                 name="<portlet:namespace/><%=PortalConstants.INCLUDE_CONCLUDED_LICENSE%>"
-                                <core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo}">value='${projectPath.concat(":").concat(releaseLink.id).concat(":").concat(releaseLink.releaseRelationship).concat(":").concat(attachment.attachmentContentId)}'</core_rt:if>
+                                <core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo}">origvalue='${projectPath.concat(":").concat(releaseLink.id).concat(":").concat(releaseLink.releaseRelationship).concat(":").concat(attachment.attachmentContentId)}'</core_rt:if>
+                                <core_rt:if test="${projectLinkTableMode != tableModeLicenseInfo}">origvalue='${releaseLink.id.concat(":").concat(attachment.attachmentContentId)}'</core_rt:if>
+                                <core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo}">value='${projectPath.concat(":").concat(releaseLink.id).concat(":").concat(releaseLink.releaseRelationship).concat(":").concat(attachment.attachmentContentId).concat(":").concat(attachment.checkStatus)}'</core_rt:if>
                                 <core_rt:if test="${projectLinkTableMode != tableModeLicenseInfo}">value='${releaseLink.id.concat(":").concat(attachment.attachmentContentId)}'</core_rt:if>
                             />
                         </core_rt:if>
@@ -200,7 +208,7 @@
                             </core_rt:choose>
                     </td>
                     <td>
-                    <sw360:out value="${attachment.checkStatus}"/>
+                        <sw360:DisplayEnum value="${attachment.checkStatus}"/>
                     </td>
                     <td>
                         <sw360:DisplayUserEmail email="${attachment.createdBy}" bare="true"/>
@@ -228,200 +236,6 @@
 </table>
 </div>
 
-<div class="tab-pane fade" id="pills-onlyapprovedView" role="tabpanel" aria-labelledby="pills-onlyapproved-tab">
-<table class="table" id="LinkedProjectsInfoForOnlyApprovedAttachment" style="width: 100%; max-width: 100%;"
-    data-project-id="${project.id}"
-    data-table-mode="${projectLinkTableMode}"
-    data-table-mode-license-info="${tableModeLicenseInfo}"
-    data-table-mode-source-bundle="${tableModeSourceBundle}"
-    data-portlet-namespace="<portlet:namespace/>"
-    data-license-info-base-url="<%=downloadLicenseInfoURL%>"
-    data-license-info-state-url="<%=downloadLicenseInfoStateURL%>"
-    data-source-package-state-url="<%=downloadSourcePackageStateURL%>"
-    data-project-id-parameter-name="<%=PortalConstants.PROJECT_ID%>"
-    data-attachment-id-parameter-name="<%=PortalConstants.ATTACHMENT_ID%>"
-    data-release-id-parameter-name="<%=PortalConstants.RELEASE_ID%>"
-    data-project-path-parameter-name="<%=PortalConstants.PROJECT_PATH%>"
->
-    <colgroup>
-        <col style="width: 40px;" />
-        <col />
-        <col style="width: 35%" />
-        <col />
-        <col />
-        <col />
-        <col />
-    </colgroup>
-    <thead>
-        <tr>
-            <th><input type="checkbox" class="form-check-input" checked="checked" id="selectAllCheckbox"/></th>
-            <th><liferay-ui:message key="lvl" /></th>
-            <th><liferay-ui:message key="name" /></th>
-            <th></th>
-            <th><liferay-ui:message key="type" /></th>
-            <th><liferay-ui:message key="state" /></th>
-            <th><liferay-ui:message key="uploaded.by" /></th>
-            <th><liferay-ui:message key="clearing.team" /></th>
-        </tr>
-    </thead>
-    <tbody>
-    <!-- linked projects and their linked projects -->
-    <core_rt:forEach items="${projectList}" var="projectLink" varStatus="loop">
-        <c:set var="projectPath">${projectLink.id}</c:set>
-        <core_rt:if test="${loop.index!=0}">
-            <c:set var="projectPath">${projectPaths[projectLink.nodeId]}</c:set>
-            <tr id="projectLinkRow${loop.count}" data-tt-id="${projectLink.nodeId}"
-                <core_rt:if test="${not empty projectLink.parentNodeId}">data-tt-parent-id="${projectLink.parentNodeId}"</core_rt:if>
-            >
-                <td></td>
-                <td>
-                    <sw360:out value="${projectLink.treeLevel}"/>
-                </td>
-                <td>
-                    <a href="<sw360:DisplayProjectLink projectId="${projectLink.id}" bare="true" />"><sw360:out
-                      value="${projectLink.name}" maxChar="50"/>
-                        <sw360:out value="${projectLink.version}"/>
-                    </a>
-                    <core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo}">
-                        <div class="form-group">
-                            <button type="button" id="${projectPath}_use-sel" class="mt-1 mb-1 btn btn-sm btn-secondary use-subproject-selection" data-tt-parent-id="${projectLink.nodeId}">
-                                <liferay-ui:message key="use.selection.of.this.subproject" />
-                            </button>
-                            <span class="text-danger"><clay:icon symbol="warning"/> <liferay-ui:message key="current.selection.will.be.overwritten" /></span>
-                        </div>
-                    </core_rt:if>
-                </td>
-                <core_rt:if test="${enableConcludedLicense}">
-                    <td></td>
-                </core_rt:if>
-                <td>
-                    <sw360:DisplayEnum value="${projectLink.projectType}"/>
-                </td>
-                <td>
-                    <sw360:DisplayEnum value="${projectLink.clearingState}"/>
-                </td>
-                <td></td>
-            </tr>
-        </core_rt:if>
-        <!-- linked releases of linked projects -->
-        <core_rt:forEach items="${projectLink.linkedReleases}" var="releaseLink" varStatus="releaseloop">
-            <tr id="releaseLinkRow${loop.count}_${releaseloop.count}" data-tt-id="${releaseLink.nodeId}"
-                data-release-id="${releaseLink.id}"
-                <core_rt:if test="${loop.index!=0}">data-tt-parent-id="${projectLink.nodeId}"</core_rt:if>
-                <core_rt:if test="${empty releaseLink.attachments}">class="highlightDanger"</core_rt:if>
-                <core_rt:if test="${fn:length(releaseLink.attachments) == 1}">class="highlightSuccess"</core_rt:if>
-                <core_rt:if test="${fn:length(releaseLink.attachments) gt 1}">class="highlightWarning"</core_rt:if>
-            >
-                <td></td>
-                <td>
-                    <sw360:out value="${projectLink.treeLevel + 1}"/>
-                </td>
-                <td class="release-name">
-                    <a href="<sw360:DisplayReleaseLink releaseId="${releaseLink.id}" bare="true" />"><sw360:out
-                            value="${releaseLink.vendor} ${releaseLink.name}" maxChar="50"/> <sw360:out
-                            value="${releaseLink.version}"/></a>
-                </td>
-                <core_rt:if test="${enableConcludedLicense}">
-                    <td></td>
-                </core_rt:if>
-                <td>
-                    <sw360:DisplayEnum value="${releaseLink.componentType}"/>
-                </td>
-                <td>
-                    <sw360:DisplayEnum value="${releaseLink.clearingState}"/>
-                </td>
-                <td>
-                </td>
-                <td>
-                </td>
-            </tr>
-            <!-- TODO what is the logic that is controlled by this variable?! -->
-            <core_rt:set var="attachmentSelected" value="false" scope="request"/>
-            <core_rt:forEach items="${releaseLink.attachments}" var="attachment" varStatus="attachmentloop">
-            <core_rt:if test="${attachment.checkStatus == 'ACCEPTED'}">
-                <tr id="attachmentRow${loop.count}_${releaseloop.count}_${attachmentloop.count}"
-                    data-tt-id="${releaseLink.nodeId}_${attachment.attachmentContentId}"
-                    data-tt-parent-id="${releaseLink.nodeId}"
-                    data-project-path="${projectPath}"
-                    <core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo}">data-tt-branch="true"</core_rt:if>
-                    data-row-type="attachment"
-                    data-tree-level="${projectLink.treeLevel + 1}"
-                    data-release-id="${releaseLink.id}"
-                    data-attachment-id="${attachment.attachmentContentId}"
-                    <core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo}">data-release-relationship="${releaseLink.releaseRelationship}"</core_rt:if>
-                    <core_rt:if test="${empty releaseLink.attachments}">class="selectable"</core_rt:if>
-                    <core_rt:if test="${fn:length(releaseLink.attachments) == 1}">class="selectable highlightSuccess"</core_rt:if>
-                    <core_rt:if test="${fn:length(releaseLink.attachments) gt 1}">class="selectable highlightWarning"</core_rt:if>
-                >
-                    <td>
-                        <input type="checkbox" class="form-check-input attachmentChkbox"
-                                name="<portlet:namespace/><%=PortalConstants.LICENSE_INFO_RELEASE_TO_ATTACHMENT%>"
-                                <core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo}">value='${projectPath.concat(":").concat(releaseLink.id).concat(":").concat(releaseLink.releaseRelationship).concat(":").concat(attachment.attachmentContentId)}'</core_rt:if>
-                                <core_rt:if test="${projectLinkTableMode != tableModeLicenseInfo}">value='${releaseLink.id.concat(":").concat(attachment.attachmentContentId)}'</core_rt:if>
-                                <core_rt:if test="${!attachmentSelected && (releaseLink.attachments.size() == 1 || attachment.createdTeam == sw360User.department)}">checked="checked" class="defaultChecked"
-                                    <core_rt:set var="attachmentSelected" value="true" scope="request"/>
-                                </core_rt:if>
-                        />
-                    </td>
-                    <td>
-                        <sw360:out value="${projectLink.treeLevel + 1}"/>
-                    </td>
-                    <td class="filename">
-                        <sw360:out value="${attachment.filename}"/>
-                    </td>
-                    <core_rt:if test='${enableConcludedLicense}'>
-                      <td>
-                        <core_rt:if test='${attachment.filename.toLowerCase().endsWith(".rdf")}'>
-                            <input type="checkbox" class="form-check-input concludedLicense" disabled="true"
-                                name="<portlet:namespace/><%=PortalConstants.INCLUDE_CONCLUDED_LICENSE%>"
-                                <core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo}">value='${projectPath.concat(":").concat(releaseLink.id).concat(":").concat(releaseLink.releaseRelationship).concat(":").concat(attachment.attachmentContentId)}'</core_rt:if>
-                                <core_rt:if test="${projectLinkTableMode != tableModeLicenseInfo}">value='${releaseLink.id.concat(":").concat(attachment.attachmentContentId)}'</core_rt:if>
-                            />
-                        </core_rt:if>
-                      </td>
-                    </core_rt:if>
-                    <td>
-                            <c:set var="mapKey">${releaseLink.id.concat("_").concat(attachment.attachmentContentId)}</c:set>
-                            <core_rt:choose>
-                                <core_rt:when test="${attachmenUsageCountMap[mapKey] != null}">
-                                  used in <b>${attachmenUsageCountMap[mapKey]}</b> projects
-                                </core_rt:when>
-                                <core_rt:otherwise>
-                                  <i><liferay-ui:message key="not.used.in.any.project.yet" /></i>
-                                </core_rt:otherwise>
-                            </core_rt:choose>
-                    </td>
-                    <td>
-                    <sw360:out value="${attachment.checkStatus}"/>
-                    </td>
-                    <td>
-                        <sw360:DisplayUserEmail email="${attachment.createdBy}" bare="true"/>
-                    </td>
-                    <td>
-                        <sw360:out value="${attachment.createdTeam}"/>
-                    </td>
-                </tr>
-                </core_rt:if>
-                <core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo && attachment.checkStatus == 'ACCEPTED'}">
-                    <tr data-tt-id="${releaseLink.nodeId}_${attachment.attachmentContentId}_loader" data-tt-parent-id="${releaseLink.nodeId}_${attachment.attachmentContentId}">
-                        <td colspan="7">
-                            <div class="spinner"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> <liferay-ui:message key="loading.license.information.please.wait" /></div>
-                        </td>
-                    </tr>
-                </core_rt:if>
-            </core_rt:forEach>
-        </core_rt:forEach>
-    </core_rt:forEach>
-    <core_rt:if test="${projectList.size() < 1 and $releaseList.size() < 1}">
-        <tr>
-            <td colspan="7"><liferay-ui:message key="no.linked.releases.or.projects" /></td>
-        </tr>
-    </core_rt:if>
-    </tbody>
-</table>
-</div>
-</div>
-
 <script>
     AUI().use('liferay-portlet-url', function () {
         require(['jquery', 'modules/button', 'modules/ajax-treetable', 'bridges/jquery-ui'], function($, button, treetable) {
@@ -430,11 +244,6 @@
                 data = $linkedProjectsInfoTable.data(),
                 releaseRelationDataAttr,
                 licenseinfoTableMode = ${projectLinkTableMode == tableModeLicenseInfo};
-
-            var $linkedProjectsInfoTableForApprovedAttachment = $("#LinkedProjectsInfoForOnlyApprovedAttachment"),
-                dataForApproved = $linkedProjectsInfoTableForApprovedAttachment.data(),
-                releaseRelationDataAttr,
-                licenseinfoTableModeForApprovedAttachment = ${projectLinkTableMode == tableModeLicenseInfo};
 
             if(data.tableMode === data.tableModeLicenseInfo) {
                 initializeTableForLicenseInfo($linkedProjectsInfoTable);
@@ -449,11 +258,6 @@
                 }));
                 $linkedProjectsInfoTable.remove();
             }
-
-            if (dataForApproved.tableMode === dataForApproved.tableModeLicenseInfo) {
-                initializeTableForLicenseInfo($linkedProjectsInfoTableForApprovedAttachment);
-                loadSavedSelectionState($linkedProjectsInfoTableForApprovedAttachment, dataForApproved.projectId);
-             }
 
             $("#selectAllCheckbox").on("change", function() {
                 // first uncheck all in any case because on check only the default ones should be checked...
@@ -521,7 +325,6 @@
                     onNodeExpand: function() { expandLicenseFile($linkedProjectsInfoTable, this); }
                 });
                 // ... therefore expand manually the loaded branches (projects and releases)
-                if ($linkedProjectsInfoTable[0].id == 'LinkedProjectsInfo') {
                 $linkedProjectsInfoTable.find('tr.branch').each(function(index, element) {
                     var data = $(element).data();
 
@@ -529,7 +332,6 @@
                         $linkedProjectsInfoTable.treetable("expandNode", data.ttId);
                     }
                 });
-               }
             }
 
             function expandLicenseFile($linkedProjectsInfoTable, node, loadedCallback) {
@@ -579,7 +381,7 @@
                     }
 
                     $rows = convertDataToRows(urlData.portletNamespace, data.ttId, data.treeLevel, data.projectPath,
-                                    data.releaseId, data.releaseRelationship, data.attachmentId, node.row.find('input[type=checkbox]:first').is(':checked'), licenses);
+                                    data.releaseId, data.releaseRelationship, data.attachmentId, data.attachmentCheckStatus, node.row.find('input[type=checkbox]:first').is(':checked'), licenses);
                     $rows.find('.license-text').tooltip({
                         delay: 0,
                         content: function () {
@@ -592,17 +394,17 @@
 
                     // synchronize checkbox of each license with checkbox of attachment
                     node.row.find('input[type=checkbox]:first').on('change', function() {
-                        $linkedProjectsInfoTable.find('tr input[name="' + urlData.portletNamespace + data.projectPath + ':' + data.releaseId + ':' + data.releaseRelationship + ':' + data.attachmentId + '"]').
+                        $linkedProjectsInfoTable.find('tr input[name="' + urlData.portletNamespace + data.projectPath + ':' + data.releaseId + ':' + data.releaseRelationship + ':' + data.attachmentId + ':' + data.attachmentCheckStatus + '"]').
                             prop('checked', this.checked).trigger('change');
                     });
                     // be sure that attachment is checked if at least one license is checked and that attachment is not checked
                     // if no license is checked
-                    $linkedProjectsInfoTable.find('tr input[name="' + urlData.portletNamespace + data.projectPath + ':' + data.releaseId + ':' + data.releaseRelationship + ':' + data.attachmentId + '"]').on('change', function() {
+                    $linkedProjectsInfoTable.find('tr input[name="' + urlData.portletNamespace + data.projectPath + ':' + data.releaseId + ':' + data.releaseRelationship + ':' + data.attachmentId  + ':' + data.attachmentCheckStatus + '"]').on('change', function() {
                         if(this.checked) {
                             // do not trigger change here, otherwise all license would be selected.
                             node.row.find('input[type=checkbox]:first').prop('checked', true);
                         } else {
-                            if($linkedProjectsInfoTable.find('tr input[name="' + urlData.portletNamespace + data.projectPath + ':' + data.releaseId + ':' + data.releaseRelationship + ':' + data.attachmentId + '"]:checked').length == 0) {
+                            if($linkedProjectsInfoTable.find('tr input[name="' + urlData.portletNamespace + data.projectPath + ':' + data.releaseId + ':' + data.releaseRelationship + ':' + data.attachmentId  + ':' + data.attachmentCheckStatus + '"]:checked').length == 0) {
                                 // do not trigger change here, otherwise all license would be selected.
                                 node.row.find('input[type=checkbox]:first').prop('checked', false);
                             }
@@ -617,7 +419,7 @@
                 });
             }
 
-            function convertDataToRows(portletNamespace, parentNodeId, treeLevel, projectPath, releaseId, releaseRelationship, attachmentContentId, initialCheck, licenses) {
+            function convertDataToRows(portletNamespace, parentNodeId, treeLevel, projectPath, releaseId, releaseRelationship, attachmentContentId, attachmentCheckStatus, initialCheck, licenses) {
                 var index = 0,
                     $rows = $();
 
@@ -631,20 +433,27 @@
                     $row.attr('data-tt-parent-id', parentNodeId);
                     $row.attr('data-license-name', license.name); // used for restoring saved selection
 
+                    let nameStr = portletNamespace + projectPath + ':' + releaseId + ':' + releaseRelationship + ':' + attachmentContentId + ':' + attachmentCheckStatus,
+                        orignameStr = portletNamespace + projectPath + ':' + releaseId + ':' + releaseRelationship + ':' + attachmentContentId;
                     $checkbox = $('<input/>', {
                         type:         'checkbox',
                         'class': 'form-check-input',
-                        name:         portletNamespace + projectPath + ':' + releaseId + ':' + releaseRelationship + ':' + attachmentContentId,
+                        name: nameStr,
+                        origname: orignameStr,
                         value:        index++,
                     });
                     if(initialCheck) {
                         $checkbox.attr('checked', 'checked');
                     }
+                    let nameKeyStr = portletNamespace + projectPath + ':' + releaseId + ':' + releaseRelationship + ':' +attachmentContentId + ':' + attachmentCheckStatus + '_key',
+                        orignameKeyStr = portletNamespace + projectPath + ':' + releaseId + ':' + releaseRelationship + ':' +attachmentContentId + '_key';
+                    
                     $('<td>/').append(
                         $checkbox,
                         $('<input/>', {
                             type:     'hidden',
-                            name:     portletNamespace + projectPath + ':' + releaseId + ':' + releaseRelationship + ':' +attachmentContentId + '_key',
+                            name: nameKeyStr,
+                            origname: orignameKeyStr,
                             value:    license.key
                         })
                     ).appendTo($row);
@@ -654,7 +463,7 @@
                     $('<td>', { text: license.name }).appendTo($row);
 
                     $('<td>', {
-                        colspan: 4,
+                        colspan: 5,
                         style: 'max-width: 0'
                     }).append(
                         $('<span/>', {
@@ -819,13 +628,13 @@
                     var relationPlusColon = releaseRelationFromMap + ':';
                     var releaseRelation = licenseinfoTableMode ? relationPlusColon : '';
 
-                    $linkedProjectsInfoTable.find('tr input[value="' + inputPrefix + usage.owner.releaseId + ':' + releaseRelation + usage.attachmentContentId + '"]:first').prop('checked', true).trigger('change');
-                    $linkedProjectsInfoTable.find('tr input[value="' + inputPrefix + usage.owner.releaseId + ':' + releaseRelation + usage.attachmentContentId + '"]:eq(1)').prop('disabled', false).trigger('change');
+                    $linkedProjectsInfoTable.find('tr input[origvalue="' + inputPrefix + usage.owner.releaseId + ':' + releaseRelation + usage.attachmentContentId + '"]:first').prop('checked', true).trigger('change');
+                    $linkedProjectsInfoTable.find('tr input[origvalue="' + inputPrefix + usage.owner.releaseId + ':' + releaseRelation + usage.attachmentContentId + '"]:eq(1)').prop('disabled', false).trigger('change');
 
                     if(usage.usageData && usage.usageData.licenseInfo && 
                             (usage.usageData.licenseInfo.includeConcludedLicense === null || usage.usageData.licenseInfo.includeConcludedLicense === undefined 
                                     || usage.usageData.licenseInfo.includeConcludedLicense)) {
-                        $linkedProjectsInfoTable.find('tr input[value="' + inputPrefix + usage.owner.releaseId + ':' + releaseRelation + usage.attachmentContentId + '"]:eq(1)').prop('checked', true).trigger('change');
+                        $linkedProjectsInfoTable.find('tr input[origvalue="' + inputPrefix + usage.owner.releaseId + ':' + releaseRelation + usage.attachmentContentId + '"]:eq(1)').prop('checked', true).trigger('change');
                     }
 
                     if(usage.usageData.licenseInfo && usage.usageData.licenseInfo.excludedLicenseIds.length > 0) {
@@ -868,7 +677,7 @@
                                             text: <liferay-ui:message key="license.x.is.not.unique.license.is.not.excluded" />
                                         });
                                     } else {
-                                        $row.find('input[name="' + config.portletNamespace + prefix + usage.usageData.licenseInfo.projectPath + ':' + usage.owner.releaseId + ':' + releaseRelation + usage.attachmentContentId + '"]').prop('checked', false).trigger('change');
+                                        $row.find('input[origname="' + config.portletNamespace + prefix + usage.usageData.licenseInfo.projectPath + ':' + usage.owner.releaseId + ':' + releaseRelation + usage.attachmentContentId  + '"]').prop('checked', false).trigger('change');
                                     }
                                 });
                                 loadCountdown.decrement();
@@ -925,20 +734,46 @@
             }
         });
 
-        $("#pills-onlyapproved-tab").on("click", function(event) {
-            if ($('#pills-onlyapproved-tab').hasClass('show active')) {
-              } else {
-                 $('#pills-showall-tab').removeClass('show active');
-                 $('#pills-onlyapproved-tab').addClass('show active');
-                 $('#pills-onlyapprovedView').addClass('show active');
-                 $('#pills-showallView').removeClass('show active');
-                 $('#LinkedProjectsInfoForOnlyApprovedAttachment').find('tr.branch').each(function(index, element) {
-                 var data = $(element).data();
-                 if (data.rowType !== 'attachment') {
-                          $('#LinkedProjectsInfoForOnlyApprovedAttachment').treetable("expandNode", data.ttId);
-                      }
+        function hideUnhideRow(element, hide) {
+            if(hide) {
+                $(element).hide();
+            } else {
+                $(element).show();
+            }
+
+            if($(element).hasClass("expanded")) {
+                let releaseTrId = $(element).data("tt-id");
+                $("#LinkedProjectsInfo tr").each(function() {
+                    let parentTrId = $(this).data("tt-parent-id");
+                    if(parentTrId && parentTrId === releaseTrId) {
+                        if(hide) {
+                            $(this).hide();
+                        } else {
+                            $(this).show();
+                        }
+                    }
                 });
-             }
+            }
+        }
+
+        $("#pills-onlyapproved-tab").on("click", function(event) {
+            if (!$('#pills-onlyapproved-tab').hasClass('active')) {
+                $(".sw360-tt-CheckStatus-NOTCHECKED, .sw360-tt-CheckStatus-REJECTED").each(function() {
+                    hideUnhideRow($(this).parents("tr:first"), true);
+                });
+            }
+        });
+
+        $("#pills-showall-tab").on("click", function(event) {
+            if (!$('#pills-showall-tab').hasClass('active')) {
+                $(".sw360-tt-CheckStatus-NOTCHECKED, .sw360-tt-CheckStatus-REJECTED").each(function() {
+                    hideUnhideRow($(this).parents("tr:first"), false);
+                });
+            }
+        });
+
+        $(document).ready(function(){
+            $("#pageSpinner").remove();
         });
     });
 </script>
