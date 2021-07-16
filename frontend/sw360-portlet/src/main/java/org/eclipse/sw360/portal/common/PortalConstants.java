@@ -603,7 +603,7 @@ public class PortalConstants {
     public static final String WRITE_ACCESS_USER = "writeAccessUser";
 
     public static final String EXTERNAL_ID_SELECTED_KEYS = "externalIds";
-
+    public static final String ONLY_APPROVED = "onlyApproved";
     public static final String PREDEFINED_TAGS;
 
     static {

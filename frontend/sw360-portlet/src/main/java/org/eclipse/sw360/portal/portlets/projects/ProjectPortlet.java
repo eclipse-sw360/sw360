@@ -500,6 +500,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         String isEmptyFile = request.getParameter(PortalConstants.LICENSE_INFO_EMPTY_FILE);
         String outputGenerator = request.getParameter(PortalConstants.LICENSE_INFO_SELECTED_OUTPUT_FORMAT);
         String selectedTemplate = request.getParameter("tmplate");
+        boolean isOnlyApprovedAttachmentSelected = Boolean.parseBoolean(request.getParameter(PortalConstants.ONLY_APPROVED));
         String fileName = "";
         if(CommonUtils.isNotNullEmptyOrWhitespace(CLEARING_REPORT_TEMPLATE_TO_FILENAMEMAPPING) && CommonUtils.isNotNullEmptyOrWhitespace(selectedTemplate)) {
             Map<String, String> tmplateToFileName = Arrays.stream(PortalConstants.CLEARING_REPORT_TEMPLATE_TO_FILENAMEMAPPING.split(","))
@@ -559,8 +560,13 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         final Map<String, Map<String,Boolean>> releaseIdsToSelectedAttachmentIds = new HashMap<>();
         filteredSelectedAttachmentIdsWithPath.stream().forEach(selectedAttachmentIdWithPath -> {
             String[] pathParts = selectedAttachmentIdWithPath.split(":");
-            String releaseId = pathParts[pathParts.length - 3];
-            String attachmentId = pathParts[pathParts.length - 1];
+            String releaseId = pathParts[pathParts.length - 4];
+            String attachmentId = pathParts[pathParts.length - 2];
+            String attachmentCheckStatus = pathParts[pathParts.length - 1];
+            if (isOnlyApprovedAttachmentSelected && (CommonUtils.isNullEmptyOrWhitespace(attachmentCheckStatus)
+                    || CheckStatus.valueOf(attachmentCheckStatus) != CheckStatus.ACCEPTED)) {
+                return;
+            }
             boolean useSpdxLicenseInfoFromFile = includeConcludedLicenseList.contains(selectedAttachmentIdWithPath);
             if (releaseIdsToSelectedAttachmentIds.containsKey(releaseId)) {
                 // since we have a set as value, we can just add without getting duplicates
@@ -573,7 +579,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         });
         final Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachmentId = new HashMap<>();
         excludedLicensesPerAttachmentIdWithPath.entrySet().stream().forEach(entry -> {
-            String attachmentId = entry.getKey().substring(entry.getKey().lastIndexOf(":") + 1);
+            String[] pathParts = entry.getKey().split(":");
+            String attachmentId = pathParts[pathParts.length - 2];
             Set<LicenseNameWithText> excludedLicenses = entry.getValue();
             if (excludedLicensesPerAttachmentId.containsKey(attachmentId)) {
                 // this is the important part: if a license is not excluded (read "included") in
@@ -589,8 +596,10 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             final LicenseInfoService.Iface licenseInfoClient = thriftClients.makeLicenseInfoClient();
             LicenseInfoFile licenseInfoFile = licenseInfoClient.getLicenseInfoFile(project, user, outputGenerator,
                     releaseIdsToSelectedAttachmentIds, excludedLicensesPerAttachmentId, externalIds, fileName);
+
             saveLicenseInfoAttachmentUsages(project, user, filteredSelectedAttachmentIdsWithPath,
-                    excludedLicensesPerAttachmentIdWithPath, includeConcludedLicenseList);
+                    excludedLicensesPerAttachmentIdWithPath, includeConcludedLicenseList,
+                    isOnlyApprovedAttachmentSelected);
             saveSelectedReleaseAndProjectRelations(projectId, listOfSelectedRelationships, listOfSelectedProjectRelationships, isLinkedProjectPresent);
             sendLicenseInfoResponse(request, response, project, licenseInfoFile);
         } catch (TException e) {
@@ -683,8 +692,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         selectedAttachmentIdsWithPath = selectedAttachmentIdsWithPath.stream().filter(fullPath -> {
             String[] pathParts = fullPath.split(":");
             int length = pathParts.length;
-            if (length >= 4) {
-                String projectIdOpted = pathParts[pathParts.length - 4];
+            if (length >= 5) {
+                String projectIdOpted = pathParts[pathParts.length - 5];
                 return filteredProjectIds.contains(projectIdOpted);
             }
             return true;
@@ -724,7 +733,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             Set<String> listOfSelectedRelationships) {
         return selectedAttachmentIdsWithPath.stream().filter(selectedAttachmentIdWithPath -> {
             String pathParts[] = selectedAttachmentIdWithPath.split(":");
-            String relation = pathParts[pathParts.length - 2];
+            String relation = pathParts[pathParts.length - 3];
             return listOfSelectedRelationships.contains(relation);
         }).collect(Collectors.toSet());
     }
@@ -756,7 +765,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
     private void saveLicenseInfoAttachmentUsages(Project project, User user, Set<String> selectedAttachmentIdsWithPath,
             Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachmentIdWithPath,
-            List<String> includeConcludedLicenseList) {
+            List<String> includeConcludedLicenseList, boolean isOnlyApprovedAttachmentSelected) {
         try {
             Function<String, UsageData> usageDataGenerator = attachmentContentId -> {
                 Set<String> licenseIds = CommonUtils
@@ -767,13 +776,48 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 LicenseInfoUsage licenseInfoUsage = new LicenseInfoUsage(licenseIds);
                 // until second last occurence of ":" (strip releaseId and attachmentId)
                 String splittedAttachmentContentId[] = attachmentContentId.split(":");
-                String projectPath = String.join(":", Arrays.copyOf(splittedAttachmentContentId, splittedAttachmentContentId.length-3));
+                String projectPath = String.join(":", Arrays.copyOf(splittedAttachmentContentId, splittedAttachmentContentId.length-4));
                 licenseInfoUsage.setProjectPath(projectPath);
                 licenseInfoUsage.setIncludeConcludedLicense(includeConcludedLicenseList.contains(attachmentContentId));
                 return UsageData.licenseInfo(licenseInfoUsage);
             };
             List<AttachmentUsage> attachmentUsages = ProjectPortletUtils.makeLicenseInfoAttachmentUsages(project,
                     selectedAttachmentIdsWithPath, usageDataGenerator);
+
+            if (isOnlyApprovedAttachmentSelected) {
+                ComponentService.Iface releaseClient = thriftClients.makeComponentClient();
+                AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
+                List<AttachmentUsage> existingUsages = attachmentClient.getUsedAttachments(
+                        Source.projectId(project.getId()),
+                        UsageData.licenseInfo(new LicenseInfoUsage(Sets.newHashSet())));
+                List<AttachmentUsage> preserveAu = existingUsages.stream().filter(au -> au.getOwner().isSetReleaseId())
+                        .filter(au -> {
+                            String attachmentContentId = au.getAttachmentContentId();
+                            String releaseId = au.getOwner().getReleaseId();
+                            Release releaseById = null;
+                            try {
+                                releaseById = releaseClient.getReleaseById(releaseId, user);
+                            } catch (TException e) {
+                                return false;
+                            }
+                            long matchingReq = 0;
+                            if (CommonUtils.isNotEmpty(releaseById.getAttachments())) {
+                                matchingReq = releaseById.getAttachments().stream()
+                                        .filter(att -> att.getAttachmentContentId().equals(attachmentContentId)
+                                                && att.getCheckStatus() != CheckStatus.ACCEPTED)
+                                        .count();
+                            }
+
+                            return matchingReq > 0;
+                        }).map(au -> {
+                            au.unsetId();
+                            au.unsetRevision();
+                            return au;
+                        }).collect(Collectors.toList());
+
+                attachmentUsages.addAll(preserveAu);
+            }
+
             replaceAttachmentUsages(project, user, attachmentUsages, UsageData.licenseInfo(new LicenseInfoUsage(Collections.emptySet())));
         } catch (TException e) {
             // there's no need to abort the user's desired action just because the ancillary action of storing selection failed

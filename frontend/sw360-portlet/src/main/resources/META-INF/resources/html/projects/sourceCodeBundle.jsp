@@ -47,14 +47,16 @@
         </div>
         <div class="row">
             <div class="col" >
-                <form id="downloadSourceBundleForm" class="form-inline" name="downloadSourceBundleForm" action="<%=downloadSourceBundleURL%>" method="post">
-                    <%@include file="/html/projects/includes/attachmentSelectTable.jspf" %>
+                <form id="downloadSourceBundleForm" name="downloadSourceBundleForm" action="<%=downloadSourceBundleURL%>" method="post">
                     <div class="form-group">
                         <input type="submit" class="btn btn-primary" value="<liferay-ui:message key="download.file" />"/>
                     </div>
+                    <%@include file="/html/projects/includes/attachmentSelectTable.jspf" %>
                 </form>
             </div>
         </div>
     </div>
-    <%@ include file="/html/utils/includes/pageSpinner.jspf" %>
+    <div id="pageSpinner">
+        <%@ include file="/html/utils/includes/pageSpinner.jspf" %>
+    </div>
 </core_rt:if>
