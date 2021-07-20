@@ -53,6 +53,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.zip.ZipOutputStream;
 
 import javax.portlet.*;
@@ -213,6 +214,7 @@ abstract public class Sw360Portlet extends MVCPortlet {
                 } else {
                     users = client.searchUsers(searchText);
                 }
+                users = users.stream().filter(user -> !user.isDeactivated()).collect(Collectors.toList());
                 List<User> truncatedUserList = limitLengthOfUserList(users);
                 request.setAttribute(PortalConstants.USER_LIST, truncatedUserList);
                 request.setAttribute(PortalConstants.HOW, multiUsers);

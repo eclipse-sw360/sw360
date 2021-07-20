@@ -225,15 +225,13 @@
                                                 <td>
                                                 <core_rt:choose>
                                                     <core_rt:when test="${isEditableForClearingTeam or isEditableForRequestingUser}">
-                                                        <input class="form-control" required="true"
-                                                            name="<portlet:namespace/><%=ClearingRequest._Fields.CLEARING_TEAM%>" type="email" mandatory
-                                                            value="<sw360:out value="${clearingRequest.clearingTeam}"/>" placeholder="<liferay-ui:message key='clearing.team' />" />
-                                                        <div class="invalid-feedback">
-                                                            <liferay-ui:message key="email.should.be.in.valid.format" />
+                                                        <sw360:DisplayUserEdit id="CLEARING_TEAM" email="${clearingRequest.clearingTeam}" description="" multiUsers="false" />
+                                                        <div class="invalid-feedback" id="clearingTeamEmailErrorMsg">
+                                                             <liferay-ui:message key="email.should.be.in.valid.format" />
                                                         </div>
                                                     </core_rt:when>
                                                     <core_rt:otherwise>
-                                                        <sw360:out value="${clearingRequest.clearingTeam}" bare="true"/>
+                                                        <sw360:DisplayUserEmail email="${clearingRequest.clearingTeam}" />
                                                     </core_rt:otherwise>
                                                 </core_rt:choose>
                                                 </td>
@@ -245,7 +243,7 @@
                                                 <td>
                                                 <core_rt:choose>
                                                     <core_rt:when test="${isEditableForClearingTeam}">
-                                                        <input class="form-control datepicker"
+                                                        <input class="form-control datepicker" id="agreedClearingDate"
                                                             name="<portlet:namespace/><%=ClearingRequest._Fields.AGREED_CLEARING_DATE%>" type="text" pattern="\d{4}-\d{2}-\d{2}"
                                                             value="<sw360:out value="${clearingRequest.agreedClearingDate}"/>" placeholder="<liferay-ui:message key='agreed.clearing.date.yyyy.mm.dd' />" />
                                                         <div class="invalid-feedback">
@@ -420,21 +418,26 @@
     </div>
 </core_rt:if>
 </div>
-
 <script>
 require(['jquery', 'modules/dialog', 'modules/validation', 'modules/button', 'bridges/jquery-ui' ], function($, dialog, validation, button) {
     validation.enableForm('#updateCRForm');
     let pcdLimit = ${PreferredClearingDateLimit};
+    var clearingTeamEmailEditable = $("#CLEARING_TEAM");
 
     $('#formSubmit').click(
         function() {
             let $form = $("#updateCRForm"),
-                $emailId = $form.find("input[type=email]"),
-                $acDate = $form.find("input[type=text]");
+                $acDate = $("#agreedClearingDate");
             $form.addClass('was-validated');
-            if (!validation.isValidEmail($emailId.val())) {
-                $emailId.addClass("is-invalid");
-                return;
+
+            if (clearingTeamEmailEditable){
+                let emailId = $("#CLEARING_TEAM").val();
+                if (validation.isValidEmail(emailId)) {
+                    $("#clearingTeamEmailErrorMsg").hide();
+                } else {
+                    $("#clearingTeamEmailErrorMsg").show();
+                    return;
+                }
             }
             $emailId.removeClass("is-invalid");
             if ($acDate.val() && !validation.isValidDate($acDate.val())) {
@@ -615,7 +618,16 @@ require(['jquery', 'modules/dialog', 'modules/validation', 'modules/button', 'br
     function displayErrorMessage(message) {
         $("#addCommentStatusMessage").html(message).show().delay(5000).fadeOut();
     }
+
+    if (clearingTeamEmailEditable) {
+        clearingTeamEmailEditable.parents("div:eq(0)").find("label:eq(0)").remove();
+        $("#CLEARING_TEAMDisplay").click(function(){
+            $("#clearingTeamEmailErrorMsg").hide();
+        });
+    }
 });
 </script>
 </core_rt:if>
 
+<jsp:include page="/html/utils/includes/searchAndSelectUsers.jsp" />
+<jsp:include page="/html/utils/includes/searchUsers.jsp" />

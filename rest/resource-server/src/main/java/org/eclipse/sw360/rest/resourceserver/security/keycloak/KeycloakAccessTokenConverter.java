@@ -12,10 +12,15 @@ package org.eclipse.sw360.rest.resourceserver.security.keycloak;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.JwtAccessTokenConverterConfigurer;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.ResourceServerProperties;
 import org.springframework.context.annotation.Profile;
+import org.springframework.security.oauth2.common.exceptions.OAuth2Exception;
+import org.springframework.security.oauth2.common.exceptions.UnauthorizedUserException;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.security.oauth2.provider.token.DefaultAccessTokenConverter;
 import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
@@ -37,6 +42,9 @@ public class KeycloakAccessTokenConverter extends DefaultAccessTokenConverter im
 
     @Autowired
     private ResourceServerProperties resourceServerProperties;
+
+    @Autowired
+    private Sw360UserService userService;
 
     @Override
     public void configure(JwtAccessTokenConverter converter) {
@@ -81,6 +89,14 @@ public class KeycloakAccessTokenConverter extends DefaultAccessTokenConverter im
         //User user = new User();
         //user.setId("test2");
         //authentication.setDetails(user);
+        Object userEmail = tokenMap.get("user_name");
+        if (userEmail != null && CommonUtils.isNotNullEmptyOrWhitespace(userEmail.toString())) {
+            String userEmailStr = userEmail.toString();
+            User sw360User = userService.getUserByEmail(userEmailStr);
+            if (sw360User == null || sw360User.isDeactivated()) {
+                throw new UnauthorizedUserException("User is deactivated");
+            }
+        }
 
         return super.extractAuthentication(jwtToken);
     }

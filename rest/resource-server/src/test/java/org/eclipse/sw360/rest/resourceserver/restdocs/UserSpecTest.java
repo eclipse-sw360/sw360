@@ -134,6 +134,7 @@ public class UserSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("department").description("The user's company department"),
                                 fieldWithPath("secondaryDepartmentsAndRoles").description("The user's secondary departments and roles"),
                                 fieldWithPath("formerEmailAddresses").description("The user's former email addresses"),
+                                fieldWithPath("deactivated").description("Is user deactivated"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
@@ -158,6 +159,7 @@ public class UserSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("department").description("The user's company department"),
                                 fieldWithPath("secondaryDepartmentsAndRoles").description("The user's secondary departments and roles"),
                                 fieldWithPath("formerEmailAddresses").description("The user's former email addresses"),
+                                fieldWithPath("deactivated").description("Is user deactivated"),
                                 fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }

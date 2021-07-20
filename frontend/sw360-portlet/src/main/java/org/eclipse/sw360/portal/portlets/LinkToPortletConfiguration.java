@@ -16,6 +16,7 @@ import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
 import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
 
+import org.eclipse.sw360.portal.portlets.admin.UserPortlet;
 import org.eclipse.sw360.portal.portlets.components.ComponentPortlet;
 import org.eclipse.sw360.portal.portlets.licenses.LicensesPortlet;
 import org.eclipse.sw360.portal.portlets.moderation.ModerationPortlet;
@@ -38,7 +39,8 @@ public enum LinkToPortletConfiguration {
     PROJECTS(ProjectPortlet.class),
     LICENSES(LicensesPortlet.class),
     MODERATION(ModerationPortlet.class),
-    VULNERABILITIES(VulnerabilitiesPortlet.class);
+    VULNERABILITIES(VulnerabilitiesPortlet.class),
+    USERS(UserPortlet.class);
 
     private final Class<? extends Sw360Portlet> portletClass;
 

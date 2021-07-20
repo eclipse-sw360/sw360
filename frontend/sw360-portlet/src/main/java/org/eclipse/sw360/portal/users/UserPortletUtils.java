@@ -12,12 +12,15 @@ package org.eclipse.sw360.portal.users;
 import com.liferay.portal.kernel.exception.NoSuchUserException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.model.Organization;
 import com.liferay.portal.kernel.model.Role;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.search.Indexer;
 import com.liferay.portal.kernel.search.IndexerRegistryUtil;
 import com.liferay.portal.kernel.service.*;
 import com.liferay.portal.kernel.service.persistence.RoleUtil;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 
 import org.eclipse.sw360.portal.common.ErrorMessages;
@@ -36,7 +39,7 @@ import java.util.function.Consumer;
  */
 public class UserPortletUtils {
     private static final Logger log = LogManager.getLogger(UserPortletUtils.class);
-
+    private static final OrganizationHelper orgHelper = new OrganizationHelper();
     private UserPortletUtils() {
         // Utility class with only static functions
     }
@@ -49,6 +52,87 @@ public class UserPortletUtils {
     public static User addLiferayUser(PortletRequest request, String firstName, String lastName, String emailAddress, String organizationName, String roleName, boolean male, String externalId, String password, boolean passwordEncrypted, boolean activateImmediately) throws SystemException, PortalException {
         PortletRequestAdapter requestAdapter = new PortletRequestAdapter(request);
         return addLiferayUser(requestAdapter, firstName, lastName, emailAddress, organizationName, roleName, male, externalId, password, passwordEncrypted, activateImmediately);
+    }
+
+    public static User updateLiferayUser(PortletRequest request, User user, String department, String primaryRole,
+            String oldEmailId, String oldExternalId) {
+        PortletRequestAdapter requestAdapter = new PortletRequestAdapter(request);
+        return updateLiferayUser(requestAdapter, user, department, primaryRole, oldEmailId, oldExternalId);
+    }
+
+    public static User deactivateLiferayUser(User user, boolean deactivate) {
+        user.setStatus(!deactivate ? WorkflowConstants.STATUS_APPROVED : WorkflowConstants.STATUS_INACTIVE);
+        return UserLocalServiceUtil.updateUser(user);
+    }
+
+    private static User updateLiferayUser(RequestAdapter requestAdapter, User user, String department,
+            String primaryRole, String oldEmailId, String oldExternalId) {
+        long companyId = requestAdapter.getCompanyId();
+        Consumer<String> errorMessagesConsumer = requestAdapter.getErrorMessagesConsumer();
+        try {
+            if (!user.getEmailAddress().equals(oldEmailId)) {
+                boolean sameEmailExists = userByFieldExists(user.getEmailAddress(),
+                        UserLocalServiceUtil::getUserByEmailAddress, companyId);
+                if (sameEmailExists) {
+                    log.info(ErrorMessages.EMAIL_ALREADY_EXISTS);
+                    errorMessagesConsumer.accept(ErrorMessages.EMAIL_ALREADY_EXISTS);
+                    return null;
+                }
+            }
+            if (!user.getScreenName().equals(oldExternalId)) {
+                boolean sameExternalIdExists = userByFieldExists(user.getScreenName(),
+                        UserLocalServiceUtil::getUserByScreenName, companyId);
+                if (sameExternalIdExists) {
+                    log.info(ErrorMessages.EXTERNAL_ID_ALREADY_EXISTS);
+                    errorMessagesConsumer.accept(ErrorMessages.EXTERNAL_ID_ALREADY_EXISTS);
+                    return null;
+                }
+            }
+        } catch (PortalException | SystemException e) {
+            log.error(e);
+            // won't try to create user if even checking for existing user failed
+            return null;
+        }
+
+        try {
+            String organizationName = orgHelper.mapOrganizationName(department);
+            Organization organization = orgHelper.addOrGetOrganization(organizationName, companyId);
+            log.info(String.format("Mapped orgcode %s to %s", department, organizationName));
+
+            Role role = RoleLocalServiceUtil.getRole(companyId, primaryRole);
+            final Role userRole = RoleLocalServiceUtil.getRole(companyId, "USER");
+            long roleIdNew = role.getRoleId();
+            long userRoleId = userRole.getRoleId();
+            long[] roleIds = user.getRoleIds();
+            if (roleIds != null) {
+                for (long roleId : roleIds) {
+                    if (userRoleId == roleId) {
+                        continue;
+                    }
+                    UserLocalServiceUtil.deleteRoleUser(roleId, user.getUserId());
+                }
+            }
+            UserGroupRoleLocalServiceUtil.deleteUserGroupRolesByUserId(user.getUserId());
+            if (primaryRole.equalsIgnoreCase("Administrator") || primaryRole.equalsIgnoreCase("User")) {
+                UserLocalServiceUtil.addRoleUser(roleIdNew, user.getUserId());
+                RoleUtil.addUser(role.getRoleId(), user.getUserId());
+            } else {
+                ThemeDisplay themeDisplay = (ThemeDisplay) requestAdapter.getServiceContext().get()
+                        .getLiferayPortletRequest().getAttribute(WebKeys.THEME_DISPLAY);
+                UserGroupRoleLocalServiceUtil.addUserGroupRole(user.getUserId(), themeDisplay.getSiteGroupId(),
+                        roleIdNew);
+            }
+
+            User userUpdated = UserLocalServiceUtil.updateUser(user);
+            orgHelper.reassignUserToOrganizationIfNecessary(userUpdated, organization);
+
+            Indexer indexer = IndexerRegistryUtil.getIndexer(User.class);
+            indexer.reindex(userUpdated);
+            return userUpdated;
+        } catch (PortalException | SystemException e) {
+            log.error(e);
+            return null;
+        }
     }
 
     private static User addLiferayUser(RequestAdapter requestAdapter, String firstName, String lastName, String emailAddress, String organizationName, String roleName, boolean male, String externalId, String password, boolean passwordEncrypted, boolean activateImmediately) throws SystemException, PortalException {
@@ -119,10 +203,10 @@ public class UserPortletUtils {
             UserLocalServiceUtil.updateUser(user);
             RoleLocalServiceUtil.updateRole(role);
 
-            UserLocalServiceUtil.updateStatus(user.getUserId(), activateImmediately ? WorkflowConstants.STATUS_APPROVED : WorkflowConstants.STATUS_INACTIVE, serviceContext);
+            User updatedUser = UserLocalServiceUtil.updateStatus(user.getUserId(), activateImmediately ? WorkflowConstants.STATUS_APPROVED : WorkflowConstants.STATUS_INACTIVE, serviceContext);
             Indexer indexer = IndexerRegistryUtil.getIndexer(User.class);
             indexer.reindex(user);
-            return user;
+            return updatedUser;
         } catch (PortalException | SystemException e) {
             log.error(e);
             return null;

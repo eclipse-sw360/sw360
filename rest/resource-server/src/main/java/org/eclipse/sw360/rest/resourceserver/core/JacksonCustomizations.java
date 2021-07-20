@@ -270,11 +270,12 @@ public class JacksonCustomizations {
                 "myProjectsPreferenceSelection",
                 "myProjectsPreferenceSelectionSize",
                 "setMyProjectsPreferenceSelection",
-                "setSecondaryDepartmentsAndRoles",
                 "secondaryDepartmentsAndRolesSize",
-                "primaryRolesSize",
+                "setSecondaryDepartmentsAndRoles",
                 "primaryRoles",
-                "setPrimaryRoles"
+                "primaryRolesSize",
+                "setPrimaryRoles",
+                "setDeactivated"
         })
         static abstract class UserMixin extends User {
             @Override

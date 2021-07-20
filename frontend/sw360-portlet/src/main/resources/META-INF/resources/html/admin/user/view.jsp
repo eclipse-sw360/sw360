@@ -7,137 +7,127 @@
   ~
   ~ SPDX-License-Identifier: EPL-2.0
   --%>
-<%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
-<%@ page import="org.eclipse.sw360.datahandler.thrift.users.UserGroup" %>
+<%@ page import="org.eclipse.sw360.portal.common.PortalConstants"%>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.users.UserGroup"%>
+<%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil"%>
+<%@ page import="javax.portlet.PortletRequest"%>
 
-<%@ include file="/html/init.jsp" %>
+<%@ include file="/html/init.jsp"%>
 <%-- the following is needed by liferay to display error messages--%>
 <%@ include file="/html/utils/includes/errorKeyToMessage.jspf"%>
 
-<portlet:defineObjects/>
-<liferay-theme:defineObjects/>
+<portlet:defineObjects />
+<liferay-theme:defineObjects />
 <portlet:resourceURL var="editsecgroupurl">
-    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.EDIT_SECONDARY_GROUP_FOR_USER%>"/>
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.EDIT_SECONDARY_GROUP_FOR_USER%>" />
 </portlet:resourceURL>
-<jsp:useBean id="userList" type="java.util.List<com.liferay.portal.kernel.model.User>" scope="request"/>
-<jsp:useBean id="missingUserList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.users.User>"
-             scope="request"/>
+
 <portlet:actionURL var="updateLifeRayUsers" name="updateUsers">
 </portlet:actionURL>
 
+<portlet:renderURL var="addUserURL">
+    <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_EDIT%>" />
+</portlet:renderURL>
+
+<portlet:resourceURL var="loadUsersPresentInCouchDBURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.USERS_PRESENT_IN_COUCH_DB%>' />
+</portlet:resourceURL>
+
+<portlet:resourceURL var="loadUsersAbsentInCouchDBURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.USERS_ABSENT_IN_COUCH_DB%>' />
+</portlet:resourceURL>
+
 <div class="container">
-	<div class="row">
-		<div class="col">
+    <div class="row">
+        <div class="col-3 sidebar">
+            <div class="card-deck" id="adv_search_mod_req">
+                <div id="searchInput" class="card">
+                    <div class="card-header">
+                        <liferay-ui:message key="advanced.search" />
+                    </div>
+                    <div class="card-body">
+                        <form id="searchUserFilter">
+                            <div class="form-group">
+                                <label for="given_name"><liferay-ui:message key="given.name" /></label> <input type="text" class="form-control form-control-sm"
+                                    name="<%=org.eclipse.sw360.datahandler.thrift.users.User._Fields.GIVENNAME%>" id="given_name">
+                            </div>
+                            <div class="form-group">
+                                <label for="last_name"><liferay-ui:message key="last.name" /></label> <input type="text" class="form-control form-control-sm"
+                                    name="<%=org.eclipse.sw360.datahandler.thrift.users.User._Fields.LASTNAME%>" id="last_name">
+                            </div>
+                            <div class="form-group">
+                                <label for="user_email"><liferay-ui:message key="email" /></label> <input type="text" class="form-control form-control-sm"
+                                    name="<%=org.eclipse.sw360.datahandler.thrift.users.User._Fields.EMAIL%>" id="user_email">
+                            </div>
+                            <div class="form-group">
+                                <label for="user_department"><liferay-ui:message key="primary.department" /></label> <input list="secGrpsKeyListForFilter" class="form-control form-control-sm"
+                                    id="user_department" name="<%=org.eclipse.sw360.datahandler.thrift.users.User._Fields.DEPARTMENT%>">
+                                <datalist id="secGrpsKeyListForFilter">
+                                    <core_rt:forEach items="${secGrpsKeys}" var="secGrpsKey">
+                                        <option value="${secGrpsKey}" />
+                                    </core_rt:forEach>
+                                </datalist>
+                            </div>
+                            <div class="form-group">
+                                <label for="primary_role"><liferay-ui:message key="primary.department.role" /></label> <select class="form-control form-control-sm" id="primary_role"
+                                    name="<%=org.eclipse.sw360.datahandler.thrift.users.User._Fields.USER_GROUP%>">
+                                    <option value="<%=PortalConstants.NO_FILTER%>" class="textlabel stackedLabel"></option>
+                                    <sw360:DisplayEnumOptions type="<%=UserGroup.class%>" useStringValues="true" />
+                                </select>
+                            </div>
+                            <input id="formStrValue" type="hidden" value="[]"/>
+                            <button type="submit" class="btn btn-primary btn-sm btn-block">
+                                <liferay-ui:message key="search" />
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
             <div class="row portlet-toolbar">
-				<div class="col-auto">
-					<div class="btn-toolbar" role="toolbar">
-						<div class="btn-group" role="group">
-							<button type="button" class="btn btn-primary"
-                              onclick="window.location.href='<portlet:resourceURL><portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.USER_LIST%>'/></portlet:resourceURL>'">
+                <div class="col-auto">
+                    <div class="btn-toolbar" role="toolbar">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-primary"
+                                onclick="window.location.href='<portlet:resourceURL><portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.USER_LIST%>'/></portlet:resourceURL>'">
                                 <liferay-ui:message key="download.liferay.users" />
                             </button>
-						</div>
-					</div>
-				</div>
-                <div class="col portlet-title text-truncate" title="<liferay-ui:message key="liferay.users" /> (${userList.size()})">
-					<liferay-ui:message key="liferay.users" /> (${userList.size()})
-				</div>
+                        </div>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-primary" onclick="window.location.href='<%=addUserURL%>'">
+                                <liferay-ui:message key="add.user" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col portlet-title text-truncate" title="<liferay-ui:message key="couchdb.users" /> (${couchDbUserCount})">
+                    <liferay-ui:message key="couchdb.users" />
+                    (${couchDbUserCount})
+                </div>
             </div>
 
             <div class="row">
                 <div class="col">
-                    <h4 class="mt-1"><liferay-ui:message key="users.already.in.liferay" /></h4>
-			        <table id="userTable" class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th><liferay-ui:message key="given.name" /></th>
-                                <th><liferay-ui:message key="last.name" /></th>
-                                <th><liferay-ui:message key="email" /></th>
-                                <th><liferay-ui:message key="primary.department" /></th>
-                                <th><liferay-ui:message key="primary.department.role" /></th>
-                                <th><liferay-ui:message key="secondary.departments.and.roles" /></th>
-                                <th><liferay-ui:message key="actions" /></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <core_rt:forEach var="user" items="${userList}">
-                                <tr>
-                                    <td><sw360:out value="${user.givenname}"/></td>
-                                    <td><sw360:out value="${user.lastname}"/></td>
-                                    <td class="email"><sw360:out value="${user.email}"/></td>
-                                    <td><sw360:out value="${user.department}"/></td>
-                                    <td>
-                                        <core_rt:forEach var="role" items="${user.primaryRoles}" varStatus="loop">
-                                            <sw360:out value="${role}"/>
-                                            <core_rt:if test="${!loop.last}">,</core_rt:if>
-                                        </core_rt:forEach>
-                                    </td>
-                                    <td class="secondaryGrpRoles"><sw360:DisplayMapOfSecondaryGroupAndRoles value="${user.secondaryDepartmentsAndRoles}"/></td>
-                                    <td>
-                                        <div class="actions">
-                                            <core_rt:if test="${empty user.id}">
-                                                <svg class="infoUser lexicon-icon" disabled>
-                                                    <title><liferay-ui:message key="user.record.not.found.in.couch.db" /></title>
-                                                    <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle" />
-                                                </svg>
-                                            </core_rt:if>
-                                            <core_rt:if test="${not empty user.id}">
-                                                <svg class="editUser lexicon-icon" data-email="${user.email}">
-                                                    <title><liferay-ui:message key="delete" /></title>
-                                                    <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil" />
-                                                </svg>
-                                            </core_rt:if>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </core_rt:forEach>
-                        </tbody>
+                    <h4 class="mt-1">
+                        <liferay-ui:message key="users.already.in.couchdb" />
+                    </h4>
+                    <table id="userTable" class="table table-bordered">
                     </table>
-
-                    <h4 class="mt-4"><liferay-ui:message key="users.not.in.liferay" /></h4>
+                    <div id="userPresentSpinner">
+                        <%@ include file="/html/utils/includes/pageSpinner.jspf"%>
+                    </div>
+                    <h4 class="mt-4">
+                        <liferay-ui:message key="users.not.in.couchdb" />
+                    </h4>
                     <table id="userMissingTable" class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th><liferay-ui:message key="given.name" /></th>
-                                <th><liferay-ui:message key="last.name" /></th>
-                                <th><liferay-ui:message key="email" /></th>
-                                <th><liferay-ui:message key="primary.department" /></th>
-                                <th><liferay-ui:message key="primary.department.role" /></th>
-                                <th><liferay-ui:message key="secondary.departments.and.roles" /></th>
-                                <th><liferay-ui:message key="actions" /></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <core_rt:forEach var="user" items="${missingUserList}">
-                                <tr>
-                                    <td><sw360:out value="${user.givenname}"/></td>
-                                    <td><sw360:out value="${user.lastname}"/></td>
-                                    <td class="email"><sw360:out value="${user.email}"/></td>
-                                    <td><sw360:out value="${user.department}"/></td>
-                                    <td><sw360:DisplayEnum value="${user.userGroup}"/></td>
-                                    <td class="secondaryGrpRoles"><sw360:DisplayMapOfSecondaryGroupAndRoles value="${user.secondaryDepartmentsAndRoles}"/></td>
-                                    <td>
-                                        <div class="actions">
-                                            <core_rt:if test="${empty user.id}">
-                                                <svg class="infoUser lexicon-icon">
-                                                    <title><liferay-ui:message key="user.record.not.found.in.couch.db" /></title>
-                                                    <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle" />
-                                                </svg>
-                                            </core_rt:if>
-                                            <core_rt:if test="${not empty user.id}">
-                                                <svg class="editUser lexicon-icon" data-email="${user.email}">
-                                                    <title><liferay-ui:message key="delete" /></title>
-                                                    <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil" />
-                                                </svg>
-                                            </core_rt:if>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </core_rt:forEach>
-                        </tbody>
                     </table>
-
-                    <h4 class="mt-4"><liferay-ui:message key="upload.users" /></h4>
+                    <div id="userAbsentSpinner">
+                        <%@ include file="/html/utils/includes/pageSpinner.jspf"%>
+                    </div>
+                    <h4 class="mt-4">
+                        <liferay-ui:message key="upload.users" />
+                    </h4>
                     <form id="usersForm" class="form needs-validation" name="usersForm" action="<%=updateLifeRayUsers%>" method="POST" enctype="multipart/form-data" novalidate>
                         <div class="form-row">
                             <div class="col">
@@ -149,14 +139,16 @@
                                 </div>
                             </div>
                             <div class="col-2">
-                                <button type="submit" class="btn btn-secondary btn-block" id="<portlet:namespace/>userCSV-Submit"><liferay-ui:message key="upload.users" /></button>
+                                <button type="submit" class="btn btn-secondary btn-block" id="<portlet:namespace/>userCSV-Submit">
+                                    <liferay-ui:message key="upload.users" />
+                                </button>
                             </div>
                         </div>
                     </form>
                 </div>
             </div>
-		</div>
-	</div>
+        </div>
+    </div>
 </div>
 
 <div id="secGrpsUserFormDiv" class="d-none">
@@ -164,7 +156,7 @@
         <strong id="strongMsg"></strong> <span id="fullMsg"></span><br>
         <button type="button" class="close" data-dismiss="alert">&times;</button>
     </div>
-    <form id="secGrpsUserForm" style="max-height:60vh">
+    <form id="secGrpsUserForm" style="max-height: 60vh">
         <table class="table edit-table two-columns-with-actions" id="secGroupsAndRolesTable">
             <thead>
                 <tr>
@@ -172,25 +164,34 @@
                     <th class="headlabel" style="width: 50%"><liferay-ui:message key="secondary.department.role" /></th>
                     <th class="headlabel" style="width: 2.5rem"><liferay-ui:message key="action" /></th>
                 </tr>
-           </thead>
-       </table>
-       <button type="button" class="btn btn-primary" id="add-sec-grp" style="margin-left: 10px;"><liferay-ui:message key="add.row" /></button>
-       <input id="submitBtn" type="submit" class="d-none"/>
+            </thead>
+        </table>
+        <button type="button" class="btn btn-primary" id="add-sec-grp" style="margin-left: 10px;">
+            <liferay-ui:message key="add.row" />
+        </button>
+        <input id="submitBtn" type="submit" class="d-none" />
     </form>
 </div>
 
 <div class="dialogs auto-dialogs"></div>
 <%--for javascript library loading --%>
-<%@ include file="/html/utils/includes/requirejs.jspf" %>
+<%@ include file="/html/utils/includes/requirejs.jspf"%>
 <script>
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;
-        require(['jquery', 'bridges/datatables', 'utils/includes/quickfilter', 'modules/dialog'], function($, datatables, quickfilter, dialog) {
+        require(['jquery', 'bridges/datatables', 'utils/includes/quickfilter', 'modules/dialog', 'utils/render'], function($, datatables, quickfilter, dialog, render) {
             var usersTable,
                 usersMissingTable,
                 rowIDCounter = 0,
                 updateTD,
                 primaryDepartment;
+
+            $("#searchUserFilter").on("submit", function( event ) {
+                event.preventDefault();
+                $("#formStrValue").val(JSON.stringify($(this).serializeArray()));
+                $('#userTable').DataTable().ajax.reload(null, true);
+            });
+
             $('#add-sec-grp').on('click', function() {
                 addRowToSecGrpsAndRolesTable();
             });
@@ -201,6 +202,7 @@
 
             $("#secGrpsUserForm").submit(function(event) {
                 event.preventDefault();
+                $("#confirmDialog div.modal-footer button.btn-info").prop("disabled", true);
                 let formData = {}, formDataText = {};
                 $("#secGroupsAndRolesTable tr").each(function() {
                     let groupElement = $(this).find("td:first input");
@@ -235,23 +237,31 @@
                     success: function(data) {
                         updateAlertMsg('<liferay-ui:message key="SUCCESS" /> !', '<liferay-ui:message key="secondary.departments.and.roles.edited.successfully.for.user" /> : ' + emailOfUser, "alert alert-success")
                         updateSecGrpRolesTD(formDataText);
+                        $("#confirmDialog div.modal-footer button.btn-info").remove();
+                        $("#confirmDialog div.modal-footer button.btn-light").html('<liferay-ui:message key="ok" />').removeClass("btn-light").addClass("btn-info");
                     },
                     error: function(data) {
+                        $("#confirmDialog div.modal-footer button.btn-info").removeAttr("disabled");
                         updateAlertMsg('<liferay-ui:message key="error" /> !', '<liferay-ui:message key="failed.to.edit.secondary.departments.and.roles.for.user" /> : ' + emailOfUser, "alert alert-warning")
                     }
                 });
             });
 
+            function makeUserEditUrl(email, page) {
+                var portletURL = PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>')
+                    .setParameter('<%=PortalConstants.PAGENAME%>', page)
+                    .setParameter('<%=PortalConstants.USER_EMAIL%>', "friendlyEmail");
+                return portletURL.toString().replace("friendlyEmail", email);
+            }
+
             var secGrpsUserFormDiv = $("#secGrpsUserFormDiv").clone(true, true);
             secGrpsUserFormDiv.removeClass("d-none");
             $("#secGrpsUserFormDiv").remove();
-            $(".editUser").click(function(){
+            function editSecondaryGroup(){
                 dialog.confirm('info', 'users', '<liferay-ui:message key="edit.users.secondary.departments.and.role" />', secGrpsUserFormDiv.clone(true, true), '<liferay-ui:message key="save" />', {
                 }, function(submit, callback) {
                     $("#submitBtn").trigger("click");
                     callback(false);
-                    $("#confirmDialog div.modal-footer button.btn-info").remove();
-                    $("#confirmDialog div.modal-footer button.btn-light").html('<liferay-ui:message key="ok" />').removeClass("btn-light").addClass("btn-info");
                 });
                 $('#secGrpsUserForm').after('<input id="emailOfUser" type="hidden"/>');
                 $("#emailOfUser").val($(this).parents("tr").find("td.email").text());
@@ -263,11 +273,24 @@
                     for(let role of roles){
                         addRowToSecGrpsAndRolesTable(group, role.trim());
                     }
-                })
-            });
+                });
+
+                if($(this).parents("tr").find("td ul.mapDisplayRootItem li").length == 0) {
+                    addRowToSecGrpsAndRolesTable();
+                }
+            };
             // initializing
-            usersTable = createExistingUserTable('#userTable');
-            usersMissingTable = createExistingUserTable('#userMissingTable');
+            usersTable = createUsersPresentInCouchDBTable();
+
+            $(document).ready(function(){
+                $.ajax({
+                    url: '<%=loadUsersAbsentInCouchDBURL%>',
+                    type: "GET",
+                    success: function(result){
+                        usersMissingTable = createUsersAbsentInCouchDBTable(result);
+                        $("#userAbsentSpinner").remove();
+                  }});
+            });
 
             // register event handlers
             $('#<portlet:namespace/>userFileUploadInput').on('change', function (event) {
@@ -276,28 +299,6 @@
                 }
             });
 
-            function createExistingUserTable(tableSelector){
-                return datatables.create(tableSelector, {
-                    language: {
-                        url: "<liferay-ui:message key="datatables.lang" />",
-                        loadingRecords: "<liferay-ui:message key="loading" />"
-                    },
-                    order: [[2, 'asc']],
-                    columnDefs: [
-                        {
-                            "targets": 0,
-                            "createdCell": function (td, cellData, rowData, row, col) {
-                                $(td).attr('title', 'click the icon to toggle obligation text');
-                            }
-                        },
-                        {
-                            'targets': [6],
-                            'orderable': false,
-                        }
-                    ],
-                }, [0, 1, 2, 3, 4, 5], undefined, true);
-            }
- 
             function updateAlertMsg(strongMsg, fullMsg, classes) {
                 $("#editMessage").addClass(classes).removeClass("d-none");
                 $("#strongMsg").text(strongMsg);
@@ -367,8 +368,104 @@
                 var datalist = '<datalist id="secGrpsKeyList">';
                 <core_rt:forEach items="${secGrpsKeys}" var="secGrpsKey">
                     datalist += '<option value="' + "${secGrpsKey}" + '">';
-                </core_rt:forEach>
+               </core_rt:forEach>
                 return datalist + '</datalist>';
+            }
+
+            // create and render datatable
+            function createUsersPresentInCouchDBTable() {
+                return datatables.create('#userTable', {
+                    bServerSide: true,
+                    sAjaxSource: '<%=loadUsersPresentInCouchDBURL%>',
+                    fnServerParams: function (aoData) {
+                        let searchFormDataArr = JSON.parse($("#formStrValue").val());
+                        if (searchFormDataArr) {
+                            for(data of searchFormDataArr) {
+                                aoData.push(data);
+                            }
+                        }
+                    },
+                    columns: [
+                        {title: "<liferay-ui:message key="given.name" />", data: "givenname", "defaultContent": ""},
+                        {title: "<liferay-ui:message key="last.name" />", data: "lastname", "defaultContent": ""},
+                        {title: "<liferay-ui:message key="email" />", data: "email", "defaultContent": "", render: {display: displayUserLink}, className: "email"},
+                        {title: "<liferay-ui:message key="primary.department" />", data: "primaryDepartment", "defaultContent": ""},
+                        {title: "<liferay-ui:message key="primary.department.role" />", data: "primaryDepartmentRole", "defaultContent": ""},
+                        {title: "<liferay-ui:message key="secondary.departments.and.roles" />", data: "secondaryDepartmentsAndRoles", "defaultContent": "", className: "secondaryGrpRoles"},
+                        {title: "<liferay-ui:message key="actions" />", data: "email", "defaultContent": "", render: {display: renderUserActions}}
+                    ],
+                    language: {
+                        url: "<liferay-ui:message key="datatables.lang" />",
+                        loadingRecords: "<liferay-ui:message key="loading" />"
+                    },
+                        order: [[2, 'asc']],
+                        columnDefs: [
+                            {
+                                'targets': [6],
+                                'orderable': false,
+                            }
+                        ],
+                        fnDrawCallback: function() {
+                            $(".editSecondaryGrp").click(editSecondaryGroup);
+                            $("#userPresentSpinner").remove();
+                        }
+                    }, [0, 1, 2, 3, 4, 5], undefined);
+            }
+        
+            function createUsersAbsentInCouchDBTable(usersAbsentInCouchDBJsonData) {
+                return datatables.create('#userMissingTable', {
+                    data: usersAbsentInCouchDBJsonData.aaData,
+                    columns: [
+                        {title: "<liferay-ui:message key="given.name" />", data: "givenname", "defaultContent": ""},
+                        {title: "<liferay-ui:message key="last.name" />", data: "lastname", "defaultContent": ""},
+                        {title: "<liferay-ui:message key="email" />", data: "email", "defaultContent": "", render: {display: displayUserLink}, className: "email"},
+                        {title: "<liferay-ui:message key="primary.department" />", data: "primaryDepartment", "defaultContent": ""},
+                        {title: "<liferay-ui:message key="primary.department.role" />", data: "primaryDepartmentRole", "defaultContent": ""},
+                        {title: "<liferay-ui:message key="actions" />", data: "email", "defaultContent": "", render: {display: renderUserActions}}
+                    ],
+                    language: {
+                        url: "<liferay-ui:message key="datatables.lang" />",
+                        loadingRecords: "<liferay-ui:message key="loading" />"
+                    },
+                        order: [[2, 'asc']],
+                        columnDefs: [
+                            {
+                                'targets': [5],
+                                'orderable': false,
+                            }
+                        ],
+                    }, [0, 1, 2, 3, 4], undefined, true);
+            }
+            
+            function displayUserLink(email) {
+                return render.linkTo(makeUserEditUrl(email, "detail"), "", email);
+            }
+
+            function renderUserActions(email, type, row) {
+                let $actions = $('<div>', {
+                    'class': 'actions'
+                }),
+                editAction,
+                secondaryGrpAction;
+            
+                editAction = render.linkTo(
+                    makeUserEditUrl(email, "edit"),
+                    "",
+                    `<svg class="lexicon-icon">
+                    <title><liferay-ui:message key="edit" /></title>
+                    <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil" />
+                    </svg>`
+                );
+
+                if (row.id) {
+                    secondaryGrpAction = `<svg class="editSecondaryGrp lexicon-icon">
+                        <title><liferay-ui:message key="edit.users.secondary.departments.and.role" /></title>
+                        <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#documents-and-media" />
+                        </svg>`;
+                }
+        
+                $actions.append(editAction, secondaryGrpAction);
+                return $actions[0].outerHTML;
             }
         });
     });

@@ -13,6 +13,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
@@ -23,6 +24,8 @@ import com.cloudant.client.api.CloudantClient;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotEmpty;
@@ -68,6 +71,9 @@ public class UserHandler implements UserService.Iface {
         if (user == null) {
             user = db.getByExternalId(externalId);
         }
+        if (user != null && user.isDeactivated()) {
+            return null;
+        }
         return user;
     }
 
@@ -112,5 +118,26 @@ public class UserHandler implements UserService.Iface {
     public String getDepartmentByEmail(String email) throws TException {
         User user = getByEmail(email);
         return user != null ? user.getDepartment() : null;
+    }
+
+    @Override
+    public Map<PaginationData, List<User>> getUsersWithPagination(User user, PaginationData pageData)
+            throws TException {
+        return db.getUsersWithPagination(pageData);
+    }
+
+    @Override
+    public List<User> refineSearch(String text, Map<String, Set<String>> subQueryRestrictions) throws TException {
+        return db.search(text, subQueryRestrictions);
+    }
+
+    @Override
+    public Set<String> getUserDepartments() throws TException {
+        return db.getUserDepartments();
+    }
+
+    @Override
+    public Set<String> getUserEmails() throws TException {
+        return db.getUserEmails();
     }
 }
