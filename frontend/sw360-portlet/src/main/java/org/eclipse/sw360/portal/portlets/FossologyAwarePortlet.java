@@ -9,20 +9,32 @@
  */
 package org.eclipse.sw360.portal.portlets;
 
+import com.google.common.base.Predicate;
+import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
 
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.FossologyUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService.Iface;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.portal.common.PortalConstants;
@@ -35,11 +47,17 @@ import org.apache.thrift.TException;
 import javax.portlet.*;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.liferay.portal.kernel.json.JSONFactoryUtil.createJSONArray;
+import static com.liferay.portal.kernel.json.JSONFactoryUtil.createJSONObject;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyString;
+import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
 import static org.eclipse.sw360.portal.common.PortalConstants.PAGENAME;
 import static org.eclipse.sw360.portal.common.PortalConstants.RELEASE_ID;
 
@@ -83,6 +101,83 @@ public abstract class FossologyAwarePortlet extends LinkedReleasesAndProjectsAwa
     }
 
     protected abstract void dealWithFossologyAction(ResourceRequest request, ResourceResponse response, String action) throws IOException, PortletException;
+
+
+    protected void serveLicenseToSourceFileMapping(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
+        final User user = UserCacheHolder.getUserFromRequest(request);
+        final String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
+        final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        final LicenseInfoService.Iface licenseClient = thriftClients.makeLicenseInfoClient();
+        final JSONObject jsonResult = createJSONObject();
+        final ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+        final Predicate<Attachment> isCLI = attachment -> AttachmentType.COMPONENT_LICENSE_INFO_XML.equals(attachment.getAttachmentType())
+                || AttachmentType.COMPONENT_LICENSE_INFO_COMBINED.equals(attachment.getAttachmentType());
+
+        Set<LicenseNameWithText> licenseNameWithTexts = new HashSet<LicenseNameWithText>();
+        Release release = null;
+        try {
+            release = componentClient.getReleaseById(releaseId, user);
+            List<Attachment> filteredAttachments = CommonUtils.nullToEmptySet(release.getAttachments()).stream().filter(isCLI).collect(Collectors.toList());
+            if (filteredAttachments.size() > 1) {
+                Predicate<Attachment> isApprovedCLI = attachment -> CheckStatus.ACCEPTED.equals(attachment.getCheckStatus());
+                filteredAttachments = filteredAttachments.stream().filter(isApprovedCLI).collect(Collectors.toList());
+            }
+            if (filteredAttachments.size() == 1 && filteredAttachments.get(0).getFilename().endsWith(".xml")) {
+                final Attachment filteredAttachment = filteredAttachments.get(0);
+                final String attachmentContentId = filteredAttachment.getAttachmentContentId();
+
+                try {
+                    List<LicenseInfoParsingResult> licenseResults = licenseClient.getLicenseInfoForAttachment(release, attachmentContentId, false, user);
+                    if (CommonUtils.isNotEmpty(licenseResults) && LicenseInfoRequestStatus.SUCCESS.equals(licenseResults.get(0).getStatus())) {
+                        licenseNameWithTexts = licenseResults.get(0).getLicenseInfo().getLicenseNamesWithTexts();
+                        if (CommonUtils.isNotEmpty(licenseNameWithTexts)) {
+                            JSONArray licenseToSourceData = createJSONArray();
+                            for (LicenseNameWithText license : licenseNameWithTexts) {
+                                JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+                                jsonObject.put("licName", nullToEmptyString(license.getLicenseName()));
+                                jsonObject.put("licSpdxId", nullToEmptyString(license.getLicenseSpdxId()));
+                                jsonObject.put("srcFiles",  nullToEmptyString(String.join(",", license.getSourceFiles())));
+                                jsonObject.put("licType", SW360Constants.LICENSE_TYPE_GLOBAL.equalsIgnoreCase(license.getType()) ? SW360Constants.LICENSE_TYPE_GLOBAL : SW360Constants.LICENSE_TYPE_OTHERS);
+                                licenseToSourceData.put(jsonObject);
+                            }
+                            jsonResult.put(SW360Constants.STATUS, SW360Constants.SUCCESS);
+                            jsonResult.put("data", licenseToSourceData);
+                            jsonResult.put("relId", releaseId);
+                            jsonResult.put("relName", nullToEmptyString(printName(release)));
+                            jsonResult.put("attName", nullToEmptyString(filteredAttachment.getFilename()));
+                        } else {
+                            jsonResult.put(SW360Constants.STATUS, SW360Constants.FAILURE);
+                            jsonResult.put(SW360Constants.MESSAGE, LanguageUtil.get(resourceBundle, "source.file.information.not.found.in.cli"));
+                        }
+                    } else {
+                        jsonResult.put(SW360Constants.STATUS, SW360Constants.FAILURE);
+                        jsonResult.put(SW360Constants.MESSAGE, licenseResults.get(0).getMessage());
+                    }
+                } catch (TException exception) {
+                    log.error(String.format("Error fetchinig license Information for attachment: %s in release: %s",
+                            filteredAttachment.getFilename(), releaseId), exception);
+                }
+            } else {
+                jsonResult.put(SW360Constants.STATUS, SW360Constants.FAILURE);
+                if (filteredAttachments.size() > 1) {
+                    jsonResult.put(SW360Constants.MESSAGE, LanguageUtil.get(resourceBundle, "multiple.approved.cli.are.found.in.the.release"));
+                } else if (filteredAttachments.isEmpty()) {
+                    jsonResult.put(SW360Constants.MESSAGE, LanguageUtil.get(resourceBundle, "cli.attachment.not.found.in.the.release"));
+                } else {
+                    jsonResult.put(SW360Constants.MESSAGE, LanguageUtil.get(resourceBundle, "source.file.information.not.found.in.cli"));
+                }
+            }
+        } catch (TException e) {
+            log.error(String.format("error fetching release from db: %s ", releaseId), e);
+        }
+        jsonResult.put("releaseId", releaseId);
+        jsonResult.put("releaseName", nullToEmptyString(printName(release)));
+        try {
+            writeJSON(request, response, jsonResult);
+        } catch (IOException e) {
+            log.error("Error rendering license to source file mapping", e);
+        }
+    }
 
     protected void serveFossologyOutdated(ResourceRequest request, ResourceResponse response) {
         FossologyService.Iface fossologyClient = thriftClients.makeFossologyClient();

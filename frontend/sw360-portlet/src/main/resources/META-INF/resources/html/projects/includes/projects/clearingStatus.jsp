@@ -140,13 +140,14 @@
 <div class="dialogs auto-dialogs"></div>
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
+<%@ include file="/html/utils/includes/licenseToSrcMapping.jspf" %>
 <script>
 AUI().use('liferay-portlet-url', function () {
     var PortletURL = Liferay.PortletURL;
-    require(['jquery', 'modules/ajax-treetable', 'utils/render', 'bridges/datatables', 'modules/dialog', 'utils/render'], function($, ajaxTreeTable, render, datatables, dialog, render) {
+    require(['jquery', 'modules/ajax-treetable', 'utils/render', 'bridges/datatables', 'modules/dialog'], function($, ajaxTreeTable, render, datatables, dialog) {
         var clearingStatuslisturl= '<%=clearingStatuslisturl%>';
         var emptyMsg = '<liferay-ui:message key="no.linked.releases.or.projects" />';
-        var licenseToSourceFileMap = new Map();
+
         $.ajax({url: clearingStatuslisturl,
                 type: 'GET',
                 dataType: 'json'
@@ -653,68 +654,6 @@ AUI().use('liferay-portlet-url', function () {
             portletURL.setParameter('<%=PortalConstants.EXTENDED_EXCEL_EXPORT%>', type === 'projectWithReleases' ? 'true' : 'false');
 
             window.location.href = portletURL.toString() + window.location.hash;
-        }
-
-        $("table").on("click", "svg.cursor[data-tag]", function(event) {
-            let releaseId = $(event.currentTarget).data().tag.split("-")[0],
-                index = $(event.currentTarget).data().tag.split("-")[2],
-                licenseArray = $(this).closest('td.actions').text().replace(/<liferay-ui:message key="view.file.list" />/g, '').split(","),
-                licenseName = licenseArray[index].trim();
-            if (index === "0" && licenseArray.length > 1) {
-                let subStrIndex = licenseName.indexOf('...') + 3;
-                licenseName = licenseName.substr(subStrIndex);
-            }
-            getLicenseToSourceFileMapping(releaseId, licenseName);
-        });
-
-        function getLicenseToSourceFileMapping(releaseId, licenseName) {
-            if (licenseToSourceFileMap.has(releaseId)) {
-                displayLicenseToSrcFileMapping(releaseId, licenseName, licenseToSourceFileMap.get(releaseId));
-                return;
-            }
-            jQuery.ajax({
-                type: 'GET',
-                url: '<%=licenseToSourceFileUrl%>',
-                cache: false,
-                data: {
-                    "<portlet:namespace/><%=PortalConstants.RELEASE_ID%>": releaseId
-                },
-                success: function (response) {
-                    if (response.status == 'success') {
-                        licenseToSourceFileMap.set(releaseId, response);
-                        let licenseToSourceFiles = response.data;
-                        displayLicenseToSrcFileMapping(releaseId, licenseName, response);
-                    }
-                    else {
-                        dialog.warn('<liferay-ui:message key="failed.to.load.source.file.with.error" />: <b>' + response.message + '!</b>');
-                    }
-                },
-                error: function () {
-                    dialog.warn('<liferay-ui:message key="error.fetching.license.to.source.file.mapping" />! <br>' + error.statusText + ' (' + error.status + ').');
-                }
-            });
-        }
-
-        function displayLicenseToSrcFileMapping(releaseId, licenseName, response) {
-            list = $('<ul/>');
-            let relId = response.relId,
-                licType = "";
-                list.append('<li><liferay-ui:message key="source.file.information.not.found.in.cli"/>!</li>');
-            if (relId === releaseId) {
-                response.data.forEach(function (item, index) {
-                    let licName = item.licName;
-                    if (licenseName.toUpperCase() === licName.toUpperCase() && item.srcFiles) {
-                        $(list).empty();
-                        licType = item.licType;
-                        let sourceFiles = item.srcFiles.split("\n");
-                        sourceFiles.forEach(function (file, index) {
-                            list.append('<li>' + file + '</li>');
-                        });
-                    }
-                });
-            }
-            dialog.info(response.relName,
-                '<liferay-ui:message key="file.name"/>: <b>' + response.attName + '</b><br><liferay-ui:message key="license.type"/>: <b>' + licType + '</b><br><liferay-ui:message key="license"/> <liferay-ui:message key="name"/>: <b>' + licenseName + '<b/><br>' + $(list)[0].outerHTML);
         }
 
         $("button#addLicenseToRelease").on("click", function(event) {

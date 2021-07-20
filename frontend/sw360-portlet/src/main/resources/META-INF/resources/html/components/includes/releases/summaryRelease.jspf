@@ -10,6 +10,10 @@
 --%>
 <%@ taglib prefix="tags" tagdir="/WEB-INF/tags" %>
 
+<portlet:resourceURL var="licenseToSourceFileUrl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.LICENSE_TO_SOURCE_FILE%>"/>
+</portlet:resourceURL>
+
 <core_rt:if test="${release != null}">
     <table class="table label-value-table" id="ReleaseDetailOverview">
         <thead>
@@ -76,14 +80,14 @@
 
         <tr>
             <td><liferay-ui:message key="main.licenses" />:</td>
-            <td>
-                <sw360:DisplayCollection value="${release.mainLicenseIds}"/>
+            <td class="actions">
+                <sw360:DisplayLicenseCollection licenseIds="${release.mainLicenseIds}" releaseId="${release.id}" scopeGroupId="${pageContext.getAttribute('scopeGroupId')}" icon="info-circle"/>
             </td>
         </tr>
         <tr>
             <td><liferay-ui:message key="other.licenses" />:</td>
-            <td>
-                <sw360:DisplayCollection value="${release.otherLicenseIds}"/>
+            <td class="actions">
+                <sw360:DisplayLicenseCollection licenseIds="${release.otherLicenseIds}" main="false" commaJoiner="true" releaseId="${release.id}" scopeGroupId="${pageContext.getAttribute('scopeGroupId')}" icon="info-circle"/>
             </td>
         </tr>
         <tr>
@@ -119,4 +123,7 @@
         </table>
     </core_rt:if>
 
+<%--for javascript library loading --%>
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
+<%@ include file="/html/utils/includes/licenseToSrcMapping.jspf" %>
 </core_rt:if>
