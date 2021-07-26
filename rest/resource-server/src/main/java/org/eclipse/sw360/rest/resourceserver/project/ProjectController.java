@@ -46,6 +46,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
@@ -231,8 +232,9 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
 
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = PROJECTS_URL, method = RequestMethod.POST)
-    public ResponseEntity createProject(
-            @RequestBody Project project) throws URISyntaxException, TException {
+    public ResponseEntity createProject(@RequestBody Map<String, Object> reqBodyMap)
+            throws URISyntaxException, TException {
+        Project project = convertToProject(reqBodyMap);
         if (project.getReleaseIdToUsage() != null) {
 
             Map<String, ProjectReleaseRelationship> releaseIdToUsage = new HashMap<>();
@@ -720,10 +722,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
             @RequestBody Map<String, Object> reqBodyMap) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Project sw360Project = projectService.getProjectForUserById(id, user);
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        mapper.registerModule(sw360Module);
-        Project updateProject = mapper.convertValue(reqBodyMap, Project.class);
+        Project updateProject = convertToProject(reqBodyMap);
         sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap, mapOfProjectFieldsToRequestBody);
         RequestStatus updateProjectStatus = projectService.updateProject(sw360Project, user);
         HalResource<Project> userHalResource = createHalProject(sw360Project, user);
@@ -835,7 +834,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
             restControllerHelper.addEmbeddedReleases(halProject, releaseIdToUsage.keySet(), releaseService, sw360User);
         }
 
-        Map<String, ProjectRelationship> linkedProjects = sw360Project.getLinkedProjects();
+        Map<String, ProjectProjectRelationship> linkedProjects = sw360Project.getLinkedProjects();
         if (linkedProjects != null) {
             restControllerHelper.addEmbeddedProject(halProject, linkedProjects.keySet(), projectService, sw360User);
         }
@@ -912,7 +911,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
 
     private HalResource<Project> createHalProjectResourceWithAllDetails(Project sw360Project, User sw360User,
             Map<String, Project> mapOfProjects, boolean isAllAccessibleProjectFetched) {
-        Map<String, ProjectRelationship> linkedProjects = sw360Project.getLinkedProjects();
+        Map<String, ProjectProjectRelationship> linkedProjects = sw360Project.getLinkedProjects();
         if (!isLinkedProjectsVisible(linkedProjects, sw360User, mapOfProjects, isAllAccessibleProjectFetched)) {
             return null;
         }
@@ -939,7 +938,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         return halProject;
     }
 
-    private boolean isLinkedProjectsVisible(Map<String, ProjectRelationship> linkedProjects, User sw360User,
+    private boolean isLinkedProjectsVisible(Map<String, ProjectProjectRelationship> linkedProjects, User sw360User,
             Map<String, Project> mapOfProjects, boolean isAllAccessibleProjectFetched) {
         if (isAllAccessibleProjectFetched && !CommonUtils.isNullOrEmptyMap(linkedProjects)) {
             for (String linkedProjectId : linkedProjects.keySet()) {
@@ -959,5 +958,24 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
             }
         }
         return true;
+    }
+
+    private Project convertToProject(Map<String, Object> requestBody) {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.registerModule(sw360Module);
+
+        if (requestBody.containsKey("linkedProjects")) {
+            Map<String, Object> linkedProjects = (Map<String, Object>) requestBody.get("linkedProjects");
+            linkedProjects.entrySet().stream().forEach(entry -> {
+                if (entry.getValue() instanceof String) {
+                    Map<String, Object> projectProjectRelationShip = new HashMap<String, Object>();
+                    projectProjectRelationShip.put("projectRelationship", entry.getValue());
+                    linkedProjects.put(entry.getKey(), projectProjectRelationShip);
+                }
+            });
+
+        }
+        return mapper.convertValue(requestBody, Project.class);
     }
 }

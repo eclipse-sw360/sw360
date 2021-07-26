@@ -83,6 +83,8 @@ To migrate it is recommended to do this in the following order:
 
 - `043_migrate_project_homepage_wiki_to_externalUrls.py`
 - `044_replace_gpl_compatibility_by_osi_approved.py`
+- `045_migrate_project_linked_project_relation.py`
+- `046_migrate_project_moderation_request_linked_project_relation.py`
 
 ## Optional usage
 - `009_overwrite_release_name_with_component_name.py`
