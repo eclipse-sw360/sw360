@@ -427,6 +427,7 @@ require(['jquery', 'modules/dialog', 'modules/validation', 'modules/button', 'br
     $('#formSubmit').click(
         function() {
             let $form = $("#updateCRForm"),
+                $emailId = $("#CLEARING_TEAMDisplay"),
                 $acDate = $("#agreedClearingDate");
             $form.addClass('was-validated');
 
@@ -436,6 +437,7 @@ require(['jquery', 'modules/dialog', 'modules/validation', 'modules/button', 'br
                     $("#clearingTeamEmailErrorMsg").hide();
                 } else {
                     $("#clearingTeamEmailErrorMsg").show();
+                    $emailId.addClass("is-invalid");
                     return;
                 }
             }
@@ -623,6 +625,7 @@ require(['jquery', 'modules/dialog', 'modules/validation', 'modules/button', 'br
         clearingTeamEmailEditable.parents("div:eq(0)").find("label:eq(0)").remove();
         $("#CLEARING_TEAMDisplay").click(function(){
             $("#clearingTeamEmailErrorMsg").hide();
+            $("#CLEARING_TEAMDisplay").removeClass("is-invalid");
         });
     }
 });
