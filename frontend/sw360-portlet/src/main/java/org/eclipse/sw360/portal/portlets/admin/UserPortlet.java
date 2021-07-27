@@ -329,10 +329,17 @@ public class UserPortlet extends Sw360Portlet {
                 .getParameter(org.eclipse.sw360.datahandler.thrift.users.User._Fields.USER_GROUP.toString());
         String pwdFromReq = request.getParameter(PortalConstants.PASSWORD);
 
+        if (emailFromReq != null) {
+            emailFromReq = emailFromReq.toLowerCase();
+        }
+        if (externalIdFromReq != null) {
+            externalIdFromReq = externalIdFromReq.toLowerCase();
+        }
+
         Map<String, Set<UserGroup>> secondaryDepartmentAndRolesMapFromRequest = PortletUtils
                 .getSecondaryDepartmentAndRolesMapFromRequest(request, departmentFromReq);
 
-        String originalEmail = userByEmailFromCouchDB.getEmail();
+        String originalEmail = CommonUtils.nullToEmptyString(userByEmailFromCouchDB.getEmail());
         org.eclipse.sw360.datahandler.thrift.users.User updatedUserForDisplay = userByEmailFromCouchDB.deepCopy();
         updatedUserForDisplay.setGivenname(givenNameFromReq).setLastname(lastNameFromReq)
                 .setDepartment(departmentFromReq).setExternalid(externalIdFromReq)
