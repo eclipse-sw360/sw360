@@ -55,7 +55,7 @@ public class ErrorMessages {
     public static final String REST_API_TOKEN_NAME_DUPLICATE = "Token name already exists.";
     public static final String REST_API_EXPIRE_DATE_NOT_VALID = "Your selected token expiration date is not valid.";
     public static final String ERROR_PROJECT_OR_DEPENDENCIES_NOT_FOUND = "Error fetching project. Project or its dependencies are not found.";
-    public static final String ERROR_PROJECT_OR_LINKEDPROJECT_NOT_ACCESSIBLE = "Error fetching project. Project or its Linked Projects are not accessible.";
+    public static final String ERROR_PROJECT_OR_LINKEDPROJECT_NOT_ACCESSIBLE = "Project or its Linked Projects are restricted and / or not accessible.";
     public static final String ERROR_GETTING_CLEARING_REQUEST = "Error fetching clearing request from backend.";
     public static final String LICENSE_TYPE_DUPLICATE = "This license type already exists.";
     public static final String LICENSE_TYPE_ACCESS_DENIED = "User does not have the permission to add license type.";

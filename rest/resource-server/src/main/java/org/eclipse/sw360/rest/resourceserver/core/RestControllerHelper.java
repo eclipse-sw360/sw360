@@ -630,7 +630,7 @@ public class RestControllerHelper<T> {
             } else if (sw360Exp.getErrorCode() == 403) {
                 if (element instanceof Project) {
                     throw new AccessDeniedException(
-                            "Error fetching project. Either Project or its Linked Projects are not accessible");
+                            "Project or its Linked Projects are restricted and / or not accessible");
                 }
             } else {
                 throw sw360Exp;
