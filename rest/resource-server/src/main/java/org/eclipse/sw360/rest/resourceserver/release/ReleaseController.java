@@ -127,7 +127,7 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
         }
 
         sw360Releases = sw360Releases.stream()
-                .filter(release -> name == null || name.isEmpty() || release.getName().equals(name))
+                .filter(release -> name == null || name.isEmpty() || release.getName().equalsIgnoreCase(name))
                 .collect(Collectors.toList());
 
         PaginationResult<Release> paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Releases, SW360Constants.TYPE_RELEASE);
