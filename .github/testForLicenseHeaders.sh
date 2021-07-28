@@ -32,7 +32,7 @@ while read file ; do
     failure=true
 done <<< "$(git ls-files \
     | grep -Ev '\.(csv|rdf|ent|dtd|lar|png|gif|psd|ico|jpg|docx|gitignore|cert|jks|spdx|rdf|MockMaker|json)' \
-    | grep -Ev '(LICENSE|NOTICE|README|CHANGELOG|Language|Language_vi)' \
+    | grep -Ev '(LICENSE|NOTICE|README|CHANGELOG|CODE_OF_CONDUCT|CONTRIBUTING|Language|Language_vi)' \
     | grep -v 'id_rsa' \
     | grep -Ev '*/asciidoc/*')"
 
