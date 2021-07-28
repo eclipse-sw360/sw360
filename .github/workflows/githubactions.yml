@@ -43,8 +43,6 @@ jobs:
         sudo apt-get update -qq
         sudo sed -i 's/^couchdb.user\s*=/& '${COUCHDB_USER}'/' build-configuration/test-resources/couchdb-test.properties
         sudo sed -i 's/^couchdb.password\s*=/& '${COUCHDB_PASSWORD}'/' build-configuration/test-resources/couchdb-test.properties
-        sudo sed -i -e '$acouchdb.username='${COUCHDB_USER}'' libraries/lib-datahandler/src/test/resources/databasetest.properties
-        sudo sed -i -e '$acouchdb.password='${COUCHDB_PASSWORD}'' libraries/lib-datahandler/src/test/resources/databasetest.properties
 
     - name: Verify license headers
       run: |
