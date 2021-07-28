@@ -26,7 +26,7 @@ RUN ./scripts/docker-config/install_scripts/build_couchdb_lucene.sh
 RUN ./scripts/docker-config/install_scripts/download_liferay_and_dependencies.sh
 
 
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
 WORKDIR /app/
 
@@ -34,19 +34,21 @@ USER root
 
 COPY ./scripts/install-thrift.sh .
 
-COPY --from=builder /app/build/sw360/liferay-ce-portal-7.3.3-ga4 /app/liferay-ce-portal-7.3.3-ga4
+COPY --from=builder /app/build/sw360/liferay-ce-portal-7.3.4-ga5 /app/liferay-ce-portal-7.3.4-ga5
 
-COPY --from=builder /app/build/sw360/deployables/webapps /app/liferay-ce-portal-7.3.3-ga4/tomcat-9.0.33/webapps
+COPY --from=builder /app/build/sw360/deployables/webapps /app/liferay-ce-portal-7.3.4-ga5/tomcat-9.0.33/webapps
 
-COPY --from=builder /app/build/sw360/deployables/deploy /app/liferay-ce-portal-7.3.3-ga4/deploy
+COPY --from=builder /app/build/sw360/deployables/deploy /app/liferay-ce-portal-7.3.4-ga5/deploy
 
-COPY ./scripts/docker-config/portal-ext.properties /app/liferay-ce-portal-7.3.3-ga4
+COPY ./scripts/docker-config/portal-ext.properties /app/liferay-ce-portal-7.3.4-ga5
 
 COPY ./scripts/docker-config/etc_sw360 /etc/sw360/
 
 COPY ./scripts/docker-config/install_scripts .
 
-COPY ./scripts/docker-config/setenv.sh /app/liferay-ce-portal-7.3.3-ga4/tomcat-9.0.33/bin
+COPY ./scripts/docker-config/setenv.sh /app/liferay-ce-portal-7.3.4-ga5/tomcat-9.0.33/bin
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install  tzdata  -y --no-install-recommends
 
 RUN ./install-thrift.sh
 

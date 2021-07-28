@@ -26,14 +26,18 @@ init_db_and_user() {
 }
 
 configure_postgres() {
-  sed -i "s/local   all             postgres                                peer/local   all             postgres                                trust/" /etc/postgresql/10/main/pg_hba.conf
-  sed -i "s/host    all             all             127.0.0.1\/32            md5/host    all             all             0.0.0.0\/0               md5/" /etc/postgresql/10/main/pg_hba.conf
-  sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" /etc/postgresql/10/main/postgresql.conf
+  sed -i "s/local   all             postgres                                peer/local   all             postgres                                trust/" /etc/postgresql/12/main/pg_hba.conf
+  sed -i "s/host    all             all             127.0.0.1\/32            md5/host    all             all             0.0.0.0\/0               md5/" /etc/postgresql/12/main/pg_hba.conf
+  sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" /etc/postgresql/12/main/postgresql.conf
   /etc/init.d/postgresql restart
 }
 
 install_postgres() {
-  DEBIAN_FRONTEND=noninteractive apt-get install postgresql-10 -y --no-install-recommends
+  apt-get install curl -y --no-install-recommends
+  curl -L https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+  echo "deb http://apt.postgresql.org/pub/repos/apt focal-pgdg main" | tee -a /etc/apt/sources.list
+  apt-get update
+  DEBIAN_FRONTEND=noninteractive apt-get install postgresql-12 -y --no-install-recommends
 }
 
 install_init_postgres
