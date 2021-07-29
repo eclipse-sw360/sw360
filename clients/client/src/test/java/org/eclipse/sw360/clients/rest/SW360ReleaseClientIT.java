@@ -12,6 +12,8 @@ package org.eclipse.sw360.clients.rest;
 
 import org.eclipse.sw360.http.utils.FailedRequestException;
 import org.eclipse.sw360.http.utils.HttpConstants;
+import org.eclipse.sw360.clients.adapter.SW360ConnectionFactory;
+import org.eclipse.sw360.clients.adapter.SW360ReleaseClientAdapterAsync;
 import org.eclipse.sw360.clients.rest.resource.attachments.SW360AttachmentType;
 import org.eclipse.sw360.clients.rest.resource.attachments.SW360SparseAttachment;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360Release;
@@ -61,8 +63,15 @@ public class SW360ReleaseClientIT extends AbstractMockServerTest {
 
     @Before
     public void setUp() {
-        releaseClient = new SW360ReleaseClient(createClientConfig(), createMockTokenProvider());
-        prepareAccessTokens(releaseClient.getTokenProvider(), CompletableFuture.completedFuture(ACCESS_TOKEN));
+        if (RUN_REST_INTEGRATION_TEST) {
+            SW360ConnectionFactory scf = new SW360ConnectionFactory();
+            SW360ReleaseClientAdapterAsync releaseClientAsync = scf.newConnection(createClientConfig())
+                    .getReleaseAdapterAsync();
+            releaseClient = releaseClientAsync.getReleaseClient();
+        } else {
+            releaseClient = new SW360ReleaseClient(createClientConfig(), createMockTokenProvider());
+            prepareAccessTokens(releaseClient.getTokenProvider(), CompletableFuture.completedFuture(ACCESS_TOKEN));
+        }
     }
 
     /**

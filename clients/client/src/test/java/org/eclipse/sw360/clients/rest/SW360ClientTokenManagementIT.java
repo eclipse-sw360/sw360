@@ -107,22 +107,25 @@ public class SW360ClientTokenManagementIT extends AbstractMockServerTest {
         CountDownLatch latchCompletion = new CountDownLatch(concurrentRequestCount);
         for (int i = 0; i < concurrentRequestCount; i++) {
             new Thread(() -> {
+                List<SW360Project> projects = null;
                 try {
                     // for maximum parallelism, wait for all threads to be started
                     barrierStart.await();
-                    List<SW360Project> projects = waitFor(client.search(ProjectSearchParams.ALL_PROJECTS));
-                    assertThat(projects).hasSize(4);
+                    projects = waitFor(client.search(ProjectSearchParams.ALL_PROJECTS));
                     // thread completed successfully
                     latchCompletion.countDown();
                 } catch (InterruptedException | IOException | BrokenBarrierException e) {
                     // in this case the test will fail as the latch is not triggered
                     e.printStackTrace();
                 }
+                assertThat(projects).isNotNull();
             }).start();
         }
 
         boolean success = latchCompletion.await(10, TimeUnit.SECONDS);
         assertThat(success).isTrue();
-        WireMock.verify(2, postRequestedFor(urlEqualTo(TOKEN_ENDPOINT)));
+        if (!RUN_REST_INTEGRATION_TEST) {
+            WireMock.verify(2, postRequestedFor(urlEqualTo(TOKEN_ENDPOINT)));
+        }
     }
 }

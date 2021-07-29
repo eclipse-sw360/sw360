@@ -12,6 +12,8 @@ package org.eclipse.sw360.clients.rest;
 
 import org.eclipse.sw360.http.utils.FailedRequestException;
 import org.eclipse.sw360.http.utils.HttpConstants;
+import org.eclipse.sw360.clients.adapter.SW360ConnectionFactory;
+import org.eclipse.sw360.clients.adapter.SW360LicenseClientAdapterAsync;
 import org.eclipse.sw360.clients.rest.resource.licenses.SW360License;
 import org.eclipse.sw360.clients.rest.resource.licenses.SW360SparseLicense;
 import org.junit.Before;
@@ -44,8 +46,15 @@ public class SW360LicenseClientIT extends AbstractMockServerTest {
 
     @Before
     public void setUp() {
-        licenseClient = new SW360LicenseClient(createClientConfig(), createMockTokenProvider());
-        prepareAccessTokens(licenseClient.getTokenProvider(), CompletableFuture.completedFuture(ACCESS_TOKEN));
+        if (RUN_REST_INTEGRATION_TEST) {
+            SW360ConnectionFactory scf = new SW360ConnectionFactory();
+            SW360LicenseClientAdapterAsync licenseClientAsync = scf.newConnection(createClientConfig())
+                    .getLicenseAdapterAsync();
+            licenseClient = licenseClientAsync.getLicenseClient();
+        } else {
+            licenseClient = new SW360LicenseClient(createClientConfig(), createMockTokenProvider());
+            prepareAccessTokens(licenseClient.getTokenProvider(), CompletableFuture.completedFuture(ACCESS_TOKEN));
+        }
     }
 
     /**

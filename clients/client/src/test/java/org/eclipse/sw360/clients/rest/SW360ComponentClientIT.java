@@ -13,6 +13,8 @@ package org.eclipse.sw360.clients.rest;
 import org.assertj.core.api.Assertions;
 import org.eclipse.sw360.http.utils.FailedRequestException;
 import org.eclipse.sw360.http.utils.HttpConstants;
+import org.eclipse.sw360.clients.adapter.SW360ComponentClientAdapterAsync;
+import org.eclipse.sw360.clients.adapter.SW360ConnectionFactory;
 import org.eclipse.sw360.clients.rest.resource.Paging;
 import org.eclipse.sw360.clients.rest.resource.components.ComponentSearchParams;
 import org.eclipse.sw360.clients.rest.resource.components.SW360Component;
@@ -59,8 +61,15 @@ public class SW360ComponentClientIT extends AbstractMockServerTest {
 
     @Before
     public void setUp() {
-        componentClient = new SW360ComponentClient(createClientConfig(), createMockTokenProvider());
-        prepareAccessTokens(componentClient.getTokenProvider(), CompletableFuture.completedFuture(ACCESS_TOKEN));
+        if (RUN_REST_INTEGRATION_TEST) {
+            SW360ConnectionFactory scf = new SW360ConnectionFactory();
+            SW360ComponentClientAdapterAsync componentClientAsync = scf.newConnection(createClientConfig())
+                    .getComponentAdapterAsync();
+            componentClient = componentClientAsync.getComponentClient();
+        } else {
+            componentClient = new SW360ComponentClient(createClientConfig(), createMockTokenProvider());
+            prepareAccessTokens(componentClient.getTokenProvider(), CompletableFuture.completedFuture(ACCESS_TOKEN));
+        }
     }
 
     /**

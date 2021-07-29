@@ -12,6 +12,8 @@ package org.eclipse.sw360.clients.rest;
 
 import org.eclipse.sw360.http.utils.FailedRequestException;
 import org.eclipse.sw360.http.utils.HttpConstants;
+import org.eclipse.sw360.clients.adapter.SW360ConnectionFactory;
+import org.eclipse.sw360.clients.adapter.SW360ProjectClientAdapterAsync;
 import org.eclipse.sw360.clients.rest.resource.projects.ProjectSearchParams;
 import org.eclipse.sw360.clients.rest.resource.projects.SW360Project;
 import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectType;
@@ -51,8 +53,15 @@ public class SW360ProjectClientIT extends AbstractMockServerTest {
 
     @Before
     public void setUp() {
-        projectClient = new SW360ProjectClient(createClientConfig(), createMockTokenProvider());
-        prepareAccessTokens(projectClient.getTokenProvider(), CompletableFuture.completedFuture(ACCESS_TOKEN));
+        if (RUN_REST_INTEGRATION_TEST) {
+            SW360ConnectionFactory scf = new SW360ConnectionFactory();
+            SW360ProjectClientAdapterAsync projectClientAsync = scf.newConnection(createClientConfig())
+                    .getProjectAdapterAsync();
+            projectClient = projectClientAsync.getProjectClient();
+        } else {
+            projectClient = new SW360ProjectClient(createClientConfig(), createMockTokenProvider());
+            prepareAccessTokens(projectClient.getTokenProvider(), CompletableFuture.completedFuture(ACCESS_TOKEN));
+        }
     }
 
     /**

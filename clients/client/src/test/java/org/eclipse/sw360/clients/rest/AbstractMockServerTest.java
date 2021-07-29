@@ -27,12 +27,14 @@ import org.eclipse.sw360.clients.auth.AccessTokenProvider;
 import org.eclipse.sw360.clients.auth.SW360AuthenticationClient;
 import org.eclipse.sw360.clients.config.SW360ClientConfig;
 import org.eclipse.sw360.clients.rest.resource.SW360HalResource;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.Collection;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
@@ -85,12 +87,43 @@ public class AbstractMockServerTest {
     /**
      * A valid access token that can be used by tests.
      */
-    protected static final AccessToken ACCESS_TOKEN = new AccessToken("a_valid_token");
+    protected static AccessToken ACCESS_TOKEN = new AccessToken("a_valid_token");
 
     /**
      * The mapper for JSON serialization.
      */
     protected static ObjectMapper objectMapper;
+
+    public static String REST_BASE_URL;
+
+    private static String OAUTH_BASE_URL;
+
+    private static String USERNAME;
+
+    private static String USER_PASSWORD;
+
+    private static String OAUTH_CLIENT_ID;
+
+    private static String OAUTH_CLIENT_SECRET;
+
+    public static String OAUTH_TOKEN;
+
+    public static boolean RUN_REST_INTEGRATION_TEST;
+
+    private static final String PROPERTIES_FILE_PATH = "/couchdb-test.properties";
+
+    static {
+        Properties props = CommonUtils.loadProperties(AbstractMockServerTest.class, PROPERTIES_FILE_PATH);
+        RUN_REST_INTEGRATION_TEST = Boolean.parseBoolean(
+                System.getProperty("RunRestIntegrationTest", props.getProperty("run_rest_integration_test", "false")));
+        REST_BASE_URL = props.getProperty("rest_base_url", "http://localhost:8080/resource/api");
+        OAUTH_BASE_URL = props.getProperty("oauth_base_url", "http://localhost:8080/authorization/oauth");
+        USERNAME = props.getProperty("username", "admin@sw360.org");
+        USER_PASSWORD = props.getProperty("user_password", "dummy_password");
+        OAUTH_CLIENT_ID = props.getProperty("oauth_client_id", "");
+        OAUTH_CLIENT_SECRET = props.getProperty("oauth_client_secret", "");
+        OAUTH_TOKEN = props.getProperty("oauth_token", "");
+    }
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(options().dynamicPort());
@@ -275,8 +308,13 @@ public class AbstractMockServerTest {
         HttpClientConfig httpClientConfig = HttpClientConfig.basicConfig();
         HttpClient httpClient = clientFactory.newHttpClient(httpClientConfig);
 
-        return SW360ClientConfig.createConfig(wireMockRule.baseUrl(), wireMockRule.url(TOKEN_ENDPOINT),
-                USER, PASSWORD, CLIENT_ID, CLIENT_PASSWORD, USER_TOKEN, httpClient, objectMapper);
+        if (RUN_REST_INTEGRATION_TEST) {
+            return SW360ClientConfig.createConfig(REST_BASE_URL, OAUTH_BASE_URL, USERNAME, USER_PASSWORD,
+                    OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET, OAUTH_TOKEN, httpClient, objectMapper);
+        }
+
+        return SW360ClientConfig.createConfig(wireMockRule.baseUrl(), wireMockRule.url(TOKEN_ENDPOINT), USER, PASSWORD,
+                CLIENT_ID, CLIENT_PASSWORD, USER_TOKEN, httpClient, objectMapper);
     }
 
     /**
