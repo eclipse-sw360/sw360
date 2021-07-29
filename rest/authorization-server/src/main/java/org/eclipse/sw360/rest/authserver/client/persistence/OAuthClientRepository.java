@@ -47,6 +47,7 @@ public class OAuthClientRepository extends CouchDbRepositorySupport<OAuthClientE
         super(OAuthClientEntity.class, new StdCouchDbConnector(dbName,
                         new StdCouchDbInstance(
                                 new StdHttpClient.Builder()
+                                        .caching(false)
                                         .url(dbUrl)
                                         .username(dbUsername)
                                         .password(dbPassword)

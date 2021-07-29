@@ -185,6 +185,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return repository.getAccessibleProjectsSummary(user);
     }
 
+    public Map<PaginationData, List<Project>> getAccessibleProjectsSummary(User user, PaginationData pageData) {
+        return repository.getAccessibleProjectsSummary(user, pageData);
+    }
+
     public List<Project> searchByName(String name, User user) {
         return repository.searchByName(name, user);
     }
@@ -1527,5 +1531,13 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         row.put("comment", CommonUtils.nullToEmptyString(comment));
         clearingStatusList.add(row);
         return row;
+    }
+
+    public Set<String> getGroups() {
+        return repository.getGroups();
+    }
+
+    public int getMyAccessibleProjects(User user) {
+        return repository.getMyAccessibleProjectsCount(user);
     }
 }
