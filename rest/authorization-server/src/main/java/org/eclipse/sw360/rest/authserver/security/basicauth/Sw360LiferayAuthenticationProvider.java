@@ -32,6 +32,7 @@ import org.springframework.security.oauth2.provider.ClientDetails;
 import org.springframework.security.oauth2.provider.ClientDetailsService;
 import org.springframework.security.oauth2.provider.ClientRegistrationException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -121,7 +122,12 @@ public class Sw360LiferayAuthenticationProvider implements AuthenticationProvide
         }
 
         RestTemplate restTemplate = restTemplateBuilder.basicAuthorization(user, encodedPassword).build();
-        ResponseEntity<String> response = restTemplate.postForEntity(url, null, String.class);
+        ResponseEntity<String> response;
+        try {
+            response = restTemplate.postForEntity(url, null, String.class);
+        } catch (HttpClientErrorException e) {
+            return false;
+        }
 
         try {
             Integer.parseInt(Optional.ofNullable(response.getBody())
