@@ -57,7 +57,8 @@ public class TagUtils {
                                                                                                T deletions,
                                                                                                U field,
                                                                                                FieldMetaData fieldMetaData,
-                                                                                               String prefix) {
+                                                                                               String prefix,
+                                                                                               boolean isClosedModeration) {
         Object oldFieldValue = oldInstance.getFieldValue(field);
         Object deletedFieldValue = deletions.getFieldValue(field);
         Object updateFieldValue = additions.getFieldValue(field);
@@ -68,13 +69,13 @@ public class TagUtils {
         if (updateFieldValue != null && updateFieldValue.equals(deletedFieldValue)) {
             return; //no intent to change something
         }
-        if (updateFieldValue != null && updateFieldValue.equals(oldFieldValue)) {
+        if (updateFieldValue != null && !isClosedModeration && updateFieldValue.equals(oldFieldValue)) {
             return; //no actual change
         }
         if (oldFieldValue == null && updateFieldValue == null) {
             return; //no actual change
         }
-        if ((oldFieldValue != null && !oldFieldValue.equals(updateFieldValue)) || oldFieldValue == null) {
+        if ((oldFieldValue != null && !oldFieldValue.equals(updateFieldValue)) || oldFieldValue == null || isClosedModeration) {
             if (fieldMetaData.valueMetaData.type == TType.SET) {
                 displaySet(
                         display,

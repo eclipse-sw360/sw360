@@ -72,6 +72,9 @@ public class ProjectModerationRequestGenerator extends ModerationRequestGenerato
                     case ADDITIONAL_DATA:
                         dealWithStringKeyedMap(Project._Fields.ADDITIONAL_DATA);
                         break;
+                    case EXTERNAL_URLS:
+                        dealWithStringtoStringMap(Project._Fields.EXTERNAL_URLS);
+                        break;
                     case ROLES:
                         dealWithCustomMap(Project._Fields.ROLES);
                         break;

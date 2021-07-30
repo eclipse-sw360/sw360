@@ -17,6 +17,7 @@ import com.liferay.portal.kernel.util.ResourceBundleUtil;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.thrift.TException;
 import org.apache.thrift.meta_data.FieldMetaData;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -53,6 +54,7 @@ public class DisplayProjectChanges extends UserAwareTag {
     private String idPrefix = "";
     private String defaultLicenseInfoHeaderText = PortalConstants.DEFAULT_LICENSE_INFO_HEADER_TEXT_FOR_DISPALY;
     private String defaultObligationsText = PortalConstants.DEFAULT_OBLIGATIONS_TEXT_FOR_DISPALY;
+    private boolean isClosedModeration = false;
 
     public void setActual(Project actual) {
         this.actual = prepareLicenseInfoHeaderTextInProject(actual);
@@ -80,6 +82,10 @@ public class DisplayProjectChanges extends UserAwareTag {
 
     public void setDefaultObligationsText(String defaultObligationsText) {
         this.defaultObligationsText = defaultObligationsText;
+    }
+
+    public void setIsClosedModeration(boolean isClosedModeration) {
+        this.isClosedModeration = isClosedModeration;
     }
 
     public int doStartTag() throws JspException {
@@ -115,7 +121,7 @@ public class DisplayProjectChanges extends UserAwareTag {
 
                     default:
                         FieldMetaData fieldMetaData = Project.metaDataMap.get(field);
-                        displaySimpleFieldOrSet(display, actual, additions, deletions, field, fieldMetaData, "");
+                        displaySimpleFieldOrSet(display, actual, additions, deletions, field, fieldMetaData, "", isClosedModeration);
                 }
             }
 
@@ -163,6 +169,11 @@ public class DisplayProjectChanges extends UserAwareTag {
 
             Set<String> addedProjectIds = Sets.difference(additions.getLinkedProjects().keySet(), changedProjectIds);
 
+            if (isClosedModeration) {
+                addedProjectIds = Sets.difference(additions.getLinkedProjects().keySet(),
+                        deletions.getLinkedProjects().keySet());
+                removedProjectIds = Sets.difference(deletions.getLinkedProjects().keySet(), linkedProjectsInDb);
+            }
             renderProjectLinkList(display, deletions.getLinkedProjects(), removedProjectIds, LanguageUtil.get(resourceBundle,"removed.project.links"), user);
             renderProjectLinkList(display, additions.getLinkedProjects(), addedProjectIds, LanguageUtil.get(resourceBundle,"added.project.links"), user);
             renderProjectLinkListCompare(
@@ -239,9 +250,14 @@ public class DisplayProjectChanges extends UserAwareTag {
             for (String projectId : projectIds) {
                 ProjectRelationship updateProjectRelationship = updateProjectRelationshipMap.get(projectId).getProjectRelationship();
                 ProjectRelationship oldProjectRelationship = oldProjectRelationshipMap.get(projectId).getProjectRelationship();
+                ProjectRelationship deleteProjectRelationship = deleteProjectRelationshipMap.get(projectId).getProjectRelationship();
 
-                if (!updateProjectRelationship.equals(oldProjectRelationship)) {
+                if (!isClosedModeration && !updateProjectRelationship.equals(oldProjectRelationship)) {
                     changeMap.put(projectId, oldProjectRelationshipMap.get(projectId));
+                }
+                
+                if (isClosedModeration && !updateProjectRelationship.equals(deleteProjectRelationship)) {
+                    changeMap.put(projectId, deleteProjectRelationshipMap.get(projectId));
                 }
             }
             //! This code doubling is done to reduce the database queries. I.e. one big query instead of multiple small ones
@@ -308,6 +324,12 @@ public class DisplayProjectChanges extends UserAwareTag {
                    additions.getReleaseIdToUsage().keySet(),
                    changedReleaseIds);
 
+           if (isClosedModeration) {
+                addedReleaseIds = Sets.difference(additions.getReleaseIdToUsage().keySet(),
+                        deletions.getReleaseIdToUsage().keySet());
+                removedReleaseIds = Sets.difference(deletions.getReleaseIdToUsage().keySet(),
+                        CommonUtils.nullToEmptySet(actual.getReleaseIdToUsage().keySet()));
+           }
            LinkedReleaseRenderer renderer = new LinkedReleaseRenderer(display, tableClasses, idPrefix, user);
            HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
            ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
@@ -316,7 +338,7 @@ public class DisplayProjectChanges extends UserAwareTag {
            renderer.renderReleaseLinkListCompare(display,
                    actual.getReleaseIdToUsage(),
                    deletions.getReleaseIdToUsage(),
-                   additions.getReleaseIdToUsage(), changedReleaseIds, request);
+                   additions.getReleaseIdToUsage(), changedReleaseIds, request, isClosedModeration);
         }
     }
 

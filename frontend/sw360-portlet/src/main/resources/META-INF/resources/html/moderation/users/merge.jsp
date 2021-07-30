@@ -45,55 +45,53 @@
                         </div>
                     </div>
                 </div>
-                <core_rt:if test="${sw360:isOpenModerationRequest(moderationRequest)}">
-                    <div class="card">
-                        <div id="moderation-changes-heading" class="card-header">
-                            <h2 class="mb-0">
-                                <button class="btn btn-secondary btn-block" type="button" data-toggle="collapse" data-target="#moderation-changes" aria-expanded="false" aria-controls="moderation-changes">
-                                    <liferay-ui:message key="proposed.changes" />
-                                </button>
-                            </h2>
-                        </div>
-                        <div id="moderation-changes" class="collapse" aria-labelledby="moderation-changes-heading" data-parent="#moderation-wizard">
-                            <div class="card-body">
-                                <h4 class="mt-2"><liferay-ui:message key="proposed.user.attributes" /></h4>
-                                <table class="table label-value-table" id="userOverview">
-                                    <thead>
-                                        <tr>
-                                            <th colspan="2"><sw360:out value="User Details: ${newuser.fullname}"/></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td><liferay-ui:message key="first.name" />:</td>
-                                            <td><sw360:out value="${newuser.givenname}"/></td>
-                                        </tr>
-                                        <tr>
-                                            <td><liferay-ui:message key="last.name" />:</td>
-                                            <td><sw360:out value="${newuser.lastname}"/></td>
-                                        </tr>
-                                        <tr>
-                                            <td><liferay-ui:message key="email" />:</td>
-                                            <td><sw360:out value="${newuser.email}"/></td>
-                                        </tr>
-                                        <tr>
-                                            <td><liferay-ui:message key="group" />:</td>
-                                            <td><sw360:out value="${newuser.department}"/></td>
-                                        </tr>
-                                        <tr>
-                                            <td><liferay-ui:message key="role" />:</td>
-                                            <td><sw360:DisplayEnum value="${newuser.userGroup}"/></td>
-                                        </tr>
-                                        <tr>
-                                            <td><liferay-ui:message key="external.id" />:</td>
-                                            <td><sw360:out value="${newuser.externalid}"/></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
+                <div class="card">
+                    <div id="moderation-changes-heading" class="card-header">
+                        <h2 class="mb-0">
+                            <button class="btn btn-secondary btn-block" type="button" data-toggle="collapse" data-target="#moderation-changes" aria-expanded="false" aria-controls="moderation-changes">
+                                <liferay-ui:message key="proposed.changes" />
+                            </button>
+                        </h2>
+                    </div>
+                    <div id="moderation-changes" class="collapse" aria-labelledby="moderation-changes-heading" data-parent="#moderation-wizard">
+                        <div class="card-body">
+                            <h4 class="mt-2"><liferay-ui:message key="proposed.user.attributes" /></h4>
+                            <table class="table label-value-table" id="userOverview">
+                                <thead>
+                                    <tr>
+                                        <th colspan="2"><sw360:out value="User Details: ${newuser.fullname}"/></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><liferay-ui:message key="first.name" />:</td>
+                                        <td><sw360:out value="${newuser.givenname}"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td><liferay-ui:message key="last.name" />:</td>
+                                        <td><sw360:out value="${newuser.lastname}"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td><liferay-ui:message key="email" />:</td>
+                                        <td><sw360:out value="${newuser.email}"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td><liferay-ui:message key="group" />:</td>
+                                        <td><sw360:out value="${newuser.department}"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td><liferay-ui:message key="role" />:</td>
+                                        <td><sw360:DisplayEnum value="${newuser.userGroup}"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td><liferay-ui:message key="external.id" />:</td>
+                                        <td><sw360:out value="${newuser.externalid}"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                </core_rt:if>
+                </div>
             </div>
         </div>
     </div>
