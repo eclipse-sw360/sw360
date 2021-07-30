@@ -265,6 +265,11 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     // GET INDIVIDUAL OBJECTS //
     ////////////////////////////
 
+    public void addSelectLogs(Project project, User user){
+
+        DatabaseHandlerUtil.addSelectLogs(project, user.getEmail(), attachmentConnector);
+    }
+
     public Project getProjectById(String id, User user) throws SW360Exception {
         Project project = repository.get(id);
         assertNotNull(project);

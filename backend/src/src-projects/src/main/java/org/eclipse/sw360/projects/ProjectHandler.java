@@ -154,6 +154,7 @@ public class ProjectHandler implements ProjectService.Iface {
         assertId(id);
 
         Project project = handler.getProjectById(id, user);
+        handler.addSelectLogs(project, user); 
         assertNotNull(project);
 
         return project;
