@@ -599,6 +599,9 @@ define('modules/mergeWizard', [ 'jquery', 'modules/sw360Wizard' ], function($, s
     };
 
     mergeWizard.convertObjectToSortedMap = function convertObjectToSortedMap(obj) {
+        if(!obj) {
+            obj = {};
+        }
         let unsortedMap = new Map(Object.entries(obj));
         return new Map([...unsortedMap.entries()].sort());
     }
