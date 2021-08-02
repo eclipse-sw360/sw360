@@ -1,6 +1,6 @@
 package org.eclipse.sw360.spdxpackageinfo;
 
-import org.eclipse.sw360.datahandler.thrift.spdx.packageinformation.PackageInformationService;
+import org.eclipse.sw360.datahandler.thrift.spdxpackageinfo.PackageInformationService;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.eclipse.sw360.projects.Sw360ThriftServlet;
 

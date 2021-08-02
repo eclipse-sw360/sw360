@@ -7,7 +7,7 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.spdx.packageinformation.*;
+import org.eclipse.sw360.datahandler.thrift.spdxpackageinfo.*;
 
 import com.cloudant.client.api.model.DesignDocument.MapReduce;
 import com.cloudant.client.api.views.Key;

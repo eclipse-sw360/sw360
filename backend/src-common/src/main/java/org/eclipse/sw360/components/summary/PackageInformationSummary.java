@@ -10,10 +10,10 @@ Copyright Toshiba Software Development (Vietnam) Co., Ltd., 2021. Part of the SW
  */
 package org.eclipse.sw360.components.summary;
 
-import org.eclipse.sw360.datahandler.thrift.spdx.packageinformation.*;
+import org.eclipse.sw360.datahandler.thrift.spdxpackageinfo.*;
 
 import static org.eclipse.sw360.datahandler.thrift.ThriftUtils.copyField;
-import static org.eclipse.sw360.datahandler.thrift.spdx.packageinformation.PackageInformation._Fields;
+import static org.eclipse.sw360.datahandler.thrift.spdxpackageinfo.PackageInformation._Fields;
 
 /**
  * Created by HieuPV on 22/07/21.
@@ -35,6 +35,5 @@ public class PackageInformationSummary extends DocumentSummary<PackageInformatio
 
         return copy;
     }
-
 
 }

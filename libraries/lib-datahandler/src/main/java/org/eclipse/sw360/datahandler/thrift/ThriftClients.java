@@ -42,7 +42,7 @@ import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
 import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocumentService;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformationService;
-import org.eclipse.sw360.datahandler.thrift.spdx.packageinformation.PackageInformationService;
+import org.eclipse.sw360.datahandler.thrift.spdxpackageinfo.PackageInformationService;
 import org.eclipse.sw360.datahandler.thrift.spdx.fileinformation.FileInformationService;
 
 import java.net.MalformedURLException;
@@ -86,7 +86,7 @@ public class ThriftClients {
     private static final String HEALTH_SERVICE_URL = "/health/thrift";
     private static final String SPDX_SERVICE_URL = "/spdxdocument/thrift";
     private static final String SPDX_DOCUMENT_INFO_SERVICE_URL = "/documentcreationinformation/thrift";
-    private static final String SPDX_PACKAGE_INFO_SERVICE_URL = "/packageinformation/thrift";
+    private static final String SPDX_PACKAGE_INFO_SERVICE_URL = "/spdxpackageinfo/thrift";
     private static final String SPDX_FILE_INFO_SERVICE_URL = "/fileinformation/thrift";
 
 

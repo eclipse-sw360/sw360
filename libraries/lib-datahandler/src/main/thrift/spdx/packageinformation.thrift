@@ -3,8 +3,8 @@ include "users.thrift"
 include "documentcreationinformation.thrift"
 include "annotations.thrift"
 
-namespace java org.eclipse.sw360.datahandler.thrift.spdx.packageinformation
-namespace php sw360.thrift.spdx.packageinformation
+namespace java org.eclipse.sw360.datahandler.thrift.spdxpackageinfo
+namespace php sw360.thrift.spdxpackageinfo
 
 typedef sw360.RequestStatus RequestStatus
 typedef sw360.RequestSummary RequestSummary
@@ -21,29 +21,30 @@ struct PackageInformation {
     1: optional string id,
     2: optional string revision,
     3: optional string type = "spdxPackageInformation",
-    4: optional string name,
-    5: optional string SPDXID,
-    6: optional string versionInfo,
-    7: optional string packageFileName,
-    8: optional string supplier,
-    9: optional string originator,
-    10: optional string downloadLocation,
-    11: optional bool filesAnalyzed,
-    12: optional PackageVerificationCode packageVerificationCode,
-    13: optional set<CheckSum> checksums,
-    14: optional string homepage,
-    15: optional string sourceInfo,
-    16: optional string licenseConcluded,
-    17: optional set<string> licenseInfoFromFiles,
-    18: optional string licenseDeclared,
-    19: optional string licenseComments,
-    20: optional string copyrightText,
-    21: optional string summary,
-    22: optional string description,
-    23: optional string packageComment,
-    24: optional set<ExternalReference> externalRefs,
-    25: optional set<string> attributionText,
-    26: optional set<Annotation> annotations,
+    4: optional string spdxDocumentId,  // Id of the parent SPDX Document
+    5: optional string name,
+    6: optional string SPDXID,
+    7: optional string versionInfo,
+    8: optional string packageFileName,
+    9: optional string supplier,
+    10: optional string originator,
+    11: optional string downloadLocation,
+    12: optional bool filesAnalyzed,
+    13: optional PackageVerificationCode packageVerificationCode,
+    14: optional set<CheckSum> checksums,
+    15: optional string homepage,
+    16: optional string sourceInfo,
+    17: optional string licenseConcluded,
+    18: optional set<string> licenseInfoFromFiles,
+    19: optional string licenseDeclared,
+    20: optional string licenseComments,
+    21: optional string copyrightText,
+    22: optional string summary,
+    23: optional string description,
+    24: optional string packageComment,
+    25: optional set<ExternalReference> externalRefs,
+    26: optional set<string> attributionText,
+    27: optional set<Annotation> annotations,
 }
 
 struct PackageVerificationCode {
@@ -62,7 +63,7 @@ service PackageInformationService {
     list<PackageInformation> getPackageInformationsShort(1: set<string> ids, 2: User user);
     list<PackageInformation> getPackageInformationSummary(1: User user);
     PackageInformation getPackageInformationById(1: string id, 2: User user);
-    RequestStatus addPackageInformation(1: PackageInformation packageInformation, 2: User user);
+    AddDocumentRequestSummary addPackageInformation(1: PackageInformation packageInformation, 2: User user);
     AddDocumentRequestSummary addPackageInformations(1: set<PackageInformation> packageInformations, 2: User user);
     RequestStatus updatePackageInformation(1: PackageInformation packageInformation, 2: User user);
     RequestSummary updatePackageInformations(1: set<PackageInformation> packageInformations, 2: User user);

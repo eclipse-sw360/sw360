@@ -15,7 +15,7 @@ import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
-import org.eclipse.sw360.datahandler.thrift.spdx.packageinformation.*;
+import org.eclipse.sw360.datahandler.thrift.spdxpackageinfo.*;
 import org.eclipse.sw360.datahandler.thrift.CustomProperties;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
@@ -66,7 +66,7 @@ public class PackageInformationHandler implements PackageInformationService.Ifac
     }
 
     @Override
-    public RequestStatus addPackageInformation(PackageInformation packageInformation, User user) throws TException {
+    public AddDocumentRequestSummary addPackageInformation(PackageInformation packageInformation, User user) throws TException {
         return handler.addPackageInformation(packageInformation, user);
     }
 

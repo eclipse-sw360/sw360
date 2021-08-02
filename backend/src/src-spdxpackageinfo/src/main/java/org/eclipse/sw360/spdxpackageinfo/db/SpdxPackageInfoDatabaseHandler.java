@@ -40,7 +40,7 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService
 import org.eclipse.sw360.datahandler.thrift.spdxdocument.*;
 import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocumentService;
-import org.eclipse.sw360.datahandler.thrift.spdx.packageinformation.*;
+import org.eclipse.sw360.datahandler.thrift.spdxpackageinfo.*;
 import org.eclipse.sw360.mail.MailConstants;
 import org.eclipse.sw360.mail.MailUtil;
 import org.apache.logging.log4j.Logger;
@@ -48,6 +48,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.spdx.SpdxBOMImporter;
 import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
+import org.eclipse.sw360.spdxdocument.db.SpdxDocumentRepository;
 import org.jetbrains.annotations.NotNull;
 import org.spdx.rdfparser.InvalidSPDXAnalysisException;
 
@@ -72,6 +73,7 @@ import static org.eclipse.sw360.datahandler.thrift.ThriftUtils.copyFields;
 import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.ensureEccInformationIsSet;
 import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.prepareComponents;
 import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.prepareReleases;
+import static org.eclipse.sw360.spdxdocument.db.SpdxDocumentRepository.*;
 
 public class SpdxPackageInfoDatabaseHandler {
 
@@ -83,6 +85,7 @@ public class SpdxPackageInfoDatabaseHandler {
     private final DatabaseConnectorCloudant db;
 
     private final SpdxPackageInfoRepository PackageInfoRepository;
+    private final SpdxDocumentRepository SPDXDocumentRepository;
 
     public SpdxPackageInfoDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException {
         db = new DatabaseConnectorCloudant(httpClient, dbName);
@@ -90,6 +93,7 @@ public class SpdxPackageInfoDatabaseHandler {
         log.info("Create the repositories ");
         // Create the repositories
         PackageInfoRepository = new SpdxPackageInfoRepository(db);
+        SPDXDocumentRepository = new SpdxDocumentRepository(db);
 
         // Create the moderator
     }
@@ -100,20 +104,27 @@ public class SpdxPackageInfoDatabaseHandler {
     }
 
     public List<PackageInformation> getPackageInformationSummary(User user) {
-        // insert code here
-        return null;
+        List<PackageInformation> packageInfos = PackageInfoRepository.getPackageInformationSummary();
+        return packageInfos;
     }
 
     public PackageInformation getPackageInformationById(String id, User user) throws SW360Exception {
-        // insert code here
-        log.info("Get PackageInformation by Id");
-        PackageInformation packageInformation = PackageInfoRepository.get(id);
-        return packageInformation;
+        PackageInformation packageInfo = PackageInfoRepository.get(id);
+        return packageInfo;
     }
 
-    public RequestStatus addPackageInformation(PackageInformation packageInformation, User user) throws SW360Exception {
-        // insert code here
-        return null;
+    public AddDocumentRequestSummary addPackageInformation(PackageInformation packageInformation, User user) throws SW360Exception {
+        AddDocumentRequestSummary requestSummary = new AddDocumentRequestSummary();
+        PackageInfoRepository.add(packageInformation);
+        String packageInformationId = packageInformation.getId();
+        String spdxDocumentId = packageInformation.getSpdxDocumentId();
+        SPDXDocument spdxDocument = SPDXDocumentRepository.get(spdxDocumentId);
+        Set<String> spdxPackageInfoIds = spdxDocument.getSpdxPackageInfoIds();
+        spdxPackageInfoIds.add(packageInformationId);
+        spdxDocument.setSpdxPackageInfoIds(spdxPackageInfoIds);
+        SPDXDocumentRepository.update(spdxDocument);
+        return requestSummary.setRequestStatus(AddDocumentRequestStatus.SUCCESS)
+                            .setId(packageInformationId);
     }
 
     public AddDocumentRequestSummary addPackageInformations(Set<PackageInformation> packageInformations, User user) throws SW360Exception {
@@ -122,8 +133,10 @@ public class SpdxPackageInfoDatabaseHandler {
     }
 
     public RequestStatus updatePackageInformation(PackageInformation packageInformation, User user) throws SW360Exception {
-        // insert code here
-        return null;
+        PackageInformation actual = PackageInfoRepository.get(packageInformation.getId());
+        assertNotNull(actual, "Could not find SPDX Document Creation Information to update!");
+        PackageInfoRepository.update(packageInformation);
+        return RequestStatus.SUCCESS;
     }
 
     public RequestSummary updatePackageInformations(Set<PackageInformation> packageInformations, User user) throws SW360Exception {
@@ -132,8 +145,15 @@ public class SpdxPackageInfoDatabaseHandler {
     }
 
     public RequestStatus deletePackageInformation(String id, User user) throws SW360Exception {
-        // insert code here
-        return null;
+        PackageInformation packageInfo = PackageInfoRepository.get(id);
+        PackageInfoRepository.remove(packageInfo);
+        String spdxDocumentId = packageInfo.getSpdxDocumentId();
+        SPDXDocument spdxDocument = SPDXDocumentRepository.get(spdxDocumentId);
+        Set<String> packageInfoIds = spdxDocument.getSpdxPackageInfoIds();
+        packageInfoIds.remove(id);
+        spdxDocument.setSpdxPackageInfoIds(packageInfoIds);
+        SPDXDocumentRepository.update(spdxDocument);
+        return RequestStatus.SUCCESS;
     }
 
 }
