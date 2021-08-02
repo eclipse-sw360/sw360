@@ -269,6 +269,8 @@ struct Release {
     90: optional DocumentState documentState,
 
     200: optional map<RequestedAction, bool> permissions,
+
+    400: optional string spdxId,
 }
 
 enum ComponentType {

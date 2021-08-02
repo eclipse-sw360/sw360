@@ -56,6 +56,16 @@ import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
+//
+import org.eclipse.sw360.datahandler.thrift.spdxdocument.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.fileinformation.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.packageinformation.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.otherlicensinginformationdetected.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelements.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.annotations.*;
+//
 import org.eclipse.sw360.exporter.ComponentExporter;
 import org.eclipse.sw360.portal.common.*;
 import org.eclipse.sw360.portal.common.datatables.PaginationParser;
@@ -690,6 +700,11 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             try {
                 ComponentService.Iface client = thriftClients.makeComponentClient();
                 Component component = client.getComponentByIdForEdit(id, user);
+
+                SPDXDocumentService.Iface SPDXClient = thriftClients.makeSPDXClient();
+                log.info("AAAAAAAAAAAAAAA :");
+                SPDXDocument spdx = SPDXClient.getSPDXDocumentById("111", user);
+                log.info(spdx.toString() + "  AAAAAAAAAAAAAAA");
 
                 PortletUtils.setCustomFieldsEdit(request, user, component);
 

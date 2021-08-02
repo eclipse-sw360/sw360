@@ -40,6 +40,10 @@ import org.eclipse.sw360.datahandler.thrift.search.SearchService;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
+import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocumentService;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformationService;
+import org.eclipse.sw360.datahandler.thrift.spdx.packageinformation.PackageInformationService;
+import org.eclipse.sw360.datahandler.thrift.spdx.fileinformation.FileInformationService;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -80,6 +84,11 @@ public class ThriftClients {
     private static final String WSIMPORT_SERVICE_URL = "/wsimport/thrift";
     private static final String CHANGELOGS_SERVICE_URL = "/changelogs/thrift";
     private static final String HEALTH_SERVICE_URL = "/health/thrift";
+    private static final String SPDX_SERVICE_URL = "/spdxdocument/thrift";
+    private static final String SPDX_DOCUMENT_INFO_SERVICE_URL = "/documentcreationinformation/thrift";
+    private static final String SPDX_PACKAGE_INFO_SERVICE_URL = "/packageinformation/thrift";
+    private static final String SPDX_FILE_INFO_SERVICE_URL = "/fileinformation/thrift";
+
 
     // A service which has to be scheduled by the scheduler should be registered here!
     // names of services that can be scheduled by the schedule service, i.e. that have an "update" method
@@ -198,4 +207,22 @@ public class ThriftClients {
     public HealthService.Iface makeHealthClient() {
         return new HealthService.Client(makeProtocol(BACKEND_URL, HEALTH_SERVICE_URL));
     }
+
+    public SPDXDocumentService.Iface makeSPDXClient() {
+        log.info("Make SPDX Document Client!");
+        return new SPDXDocumentService.Client(makeProtocol(BACKEND_URL, SPDX_SERVICE_URL));
+    }
+
+    public DocumentCreationInformationService.Iface makeSPDXDocumentInfoClient() {
+        return new DocumentCreationInformationService.Client(makeProtocol(BACKEND_URL, SPDX_DOCUMENT_INFO_SERVICE_URL));
+    }
+
+    public PackageInformationService.Iface makeSPDXPackageInfoClient() {
+        return new PackageInformationService.Client(makeProtocol(BACKEND_URL, SPDX_PACKAGE_INFO_SERVICE_URL));
+    }
+
+    public FileInformationService.Iface makeSPDXFileInfoClient() {
+        return new FileInformationService.Client(makeProtocol(BACKEND_URL, SPDX_FILE_INFO_SERVICE_URL));
+    }
+
 }

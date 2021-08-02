@@ -20,6 +20,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocument;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -230,5 +231,12 @@ public class ThriftValidate {
         assertNotNull(obligation.getLinkedObligationStatus());
         assertNotEmpty(obligation.getLinkedObligationStatus().keySet(), "linked obligtions cannot be empty");
         obligation.setType(TYPE_PROJECT_OBLIGATION);
+    }
+
+    public static void prepareSPDXDocument(SPDXDocument spdx) throws SW360Exception {
+        // Check required fields
+
+        // Check type
+        spdx.setType(TYPE_SPDX);
     }
 }
