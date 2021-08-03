@@ -221,6 +221,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             writeSpdxLicenseInfoIntoRelease(request, response);
         } else if (PortalConstants.IMPORT_BOM.equals(action)) {
             importBom(request, response);
+        } else if (PortalConstants.LICENSE_TO_SOURCE_FILE.equals(action)) {
+            serveLicenseToSourceFileMapping(request, response);
         } else if (isGenericAction(action)) {
             dealWithGenericAction(request, response, action);
         } else if (PortalConstants.LOAD_CHANGE_LOGS.equals(action) || PortalConstants.VIEW_CHANGE_LOGS.equals(action)) {

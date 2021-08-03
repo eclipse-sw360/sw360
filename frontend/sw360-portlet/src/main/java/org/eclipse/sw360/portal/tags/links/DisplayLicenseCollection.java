@@ -39,6 +39,7 @@ public class DisplayLicenseCollection extends TagSupport {
     private String releaseId;
     private boolean main = true;
     private String title;
+    private boolean commaJoiner;
 
     public void setLicenseIds(Collection<String> licenseIds) {
         this.licenseIds = licenseIds;
@@ -47,6 +48,9 @@ public class DisplayLicenseCollection extends TagSupport {
         if(scopeGroupId != null && scopeGroupId.longValue() != 0) {
             this.scopeGroupId = scopeGroupId;
         }
+    }
+    public void setCommaJoiner(Boolean commaJoiner) {
+        this.commaJoiner = commaJoiner;
     }
     public void setIcon(String icon) {
         this.icon = icon;
@@ -100,7 +104,7 @@ public class DisplayLicenseCollection extends TagSupport {
                             .append("'><title>").append(title).append("</title><use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#").append(icon).append("'/></svg> ").toString())
                         .collect(Collectors.toList());
                     }
-                    jspWriter.write(CommonUtils.NEW_LINE_JOINER.join(licenseList));
+                    jspWriter.write(commaJoiner ? CommonUtils.COMMA_JOINER.join(licenseList) : CommonUtils.NEW_LINE_JOINER.join(licenseList));
                 }
             }
         } catch (IOException e) {
