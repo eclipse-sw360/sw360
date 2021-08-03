@@ -44,7 +44,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>org.eclipse.sw360</groupId>
-                                    <artifactId>src-spdx</artifactId>
+                                    <artifactId>src-${project.build.finalName}</artifactId>
                                     <version>${project.version}</version>
                                     <type>jar</type>
                                     <overWrite>true</overWrite>
@@ -62,7 +62,7 @@
     <dependencies>
         <dependency>
             <groupId>org.eclipse.sw360</groupId>
-            <artifactId>src-spdx</artifactId>
+            <artifactId>src-${project.build.finalName}</artifactId>
             <version>${project.version}</version>
             <type>jar</type>
         </dependency>

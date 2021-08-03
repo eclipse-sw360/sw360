@@ -8,6 +8,9 @@
   ~ which is available at https://www.eclipse.org/legal/epl-2.0/
   ~
   ~ SPDX-License-Identifier: EPL-2.0
+  ~
+  ~ Author : hieu1.phamvan@toshiba.co.jp
+  ~
   -->
 <web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"

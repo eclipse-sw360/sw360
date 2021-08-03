@@ -1,31 +1,34 @@
+/*
+ * Copyright Toshiba corporation, 2021. Part of the SW360 Portal Project.
+ * Copyright Toshiba Software Development (Vietnam) Co., Ltd., 2021. Part of the SW360 Portal Project.
+ *
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
 package org.eclipse.sw360.spdxpackageinfo.db;
 
-import org.eclipse.sw360.components.summary.DocumentCreationInformationSummary;
 import org.eclipse.sw360.components.summary.PackageInformationSummary;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
-import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocument;
-import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.spdxpackageinfo.*;
 
 import com.cloudant.client.api.model.DesignDocument.MapReduce;
-import com.cloudant.client.api.views.Key;
-import com.cloudant.client.api.views.UnpaginatedRequestBuilder;
-import com.cloudant.client.api.views.ViewRequestBuilder;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
-
+/**
+ *
+ * @author hieu1.phamvan@toshiba.co.jp
+ */
 public class SpdxPackageInfoRepository extends SummaryAwareRepository<PackageInformation> {
 
-    private static final String ALL = "function(doc) { if (doc.type == 'spdxPackageInformation') emit(null, doc._id) }";
+    private static final String ALL = "function(doc) { if (doc.type == 'spdxPackageInfo') emit(null, doc._id) }";
 
     public SpdxPackageInfoRepository(DatabaseConnectorCloudant db) {
         super(PackageInformation.class, db, new PackageInformationSummary());

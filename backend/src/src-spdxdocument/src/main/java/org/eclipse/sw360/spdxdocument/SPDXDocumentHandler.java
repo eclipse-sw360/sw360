@@ -1,6 +1,6 @@
 /*
-Copyright Toshiba corporation, 2021. Part of the SW360 Portal Project.
-Copyright Toshiba Software Development (Vietnam) Co., Ltd., 2021. Part of the SW360 Portal Project.
+ * Copyright Toshiba corporation, 2021. Part of the SW360 Portal Project.
+ * Copyright Toshiba Software Development (Vietnam) Co., Ltd., 2021. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -11,16 +11,11 @@ Copyright Toshiba Software Development (Vietnam) Co., Ltd., 2021. Part of the SW
 package org.eclipse.sw360.spdxdocument;
 
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.spdxdocument.*;
-import org.eclipse.sw360.datahandler.thrift.CustomProperties;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.spdxdocument.db.*;
-import org.ektorp.http.HttpClient;
 
 import com.cloudant.client.api.CloudantClient;
 
@@ -28,7 +23,6 @@ import org.apache.thrift.TException;
 
 import java.net.MalformedURLException;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Supplier;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;

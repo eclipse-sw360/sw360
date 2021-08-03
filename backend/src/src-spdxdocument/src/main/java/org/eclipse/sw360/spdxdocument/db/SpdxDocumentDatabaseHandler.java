@@ -1,76 +1,35 @@
+/*
+ * Copyright Toshiba corporation, 2021. Part of the SW360 Portal Project.
+ * Copyright Toshiba Software Development (Vietnam) Co., Ltd., 2021. Part of the SW360 Portal Project.
+ *
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
 package org.eclipse.sw360.spdxdocument.db;
 
 import com.cloudant.client.api.CloudantClient;
-import com.cloudant.client.api.model.Response;
-import com.google.common.collect.*;
 
-import org.eclipse.sw360.common.utils.BackendUtils;
-import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
-import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.eclipse.sw360.datahandler.common.Duration;
-import org.eclipse.sw360.datahandler.common.SW360Constants;
-import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
-import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
-import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
-import org.eclipse.sw360.datahandler.entitlement.ComponentModerator;
-import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
-import org.eclipse.sw360.datahandler.entitlement.ReleaseModerator;
-import org.eclipse.sw360.datahandler.permissions.DocumentPermissions;
-import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.*;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangedFields;
-import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
-import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityCheckStatus;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
+import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.spdxdocument.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.db.ReleaseRepository;
 import org.eclipse.sw360.datahandler.db.VendorRepository;
-import org.eclipse.sw360.mail.MailConstants;
-import org.eclipse.sw360.mail.MailUtil;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import org.apache.thrift.TException;
-import org.eclipse.sw360.spdx.SpdxBOMImporter;
-import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
-import org.jetbrains.annotations.NotNull;
-import org.spdx.rdfparser.InvalidSPDXAnalysisException;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.*;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.google.common.base.Strings.nullToEmpty;
-import static com.google.common.collect.Sets.newHashSet;
-import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
-import static org.eclipse.sw360.datahandler.common.Duration.durationOf;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
-import static org.eclipse.sw360.datahandler.common.SW360Assert.fail;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
-import static org.eclipse.sw360.datahandler.thrift.ThriftUtils.copyFields;
-import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.ensureEccInformationIsSet;
-import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.prepareComponents;
-import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.prepareReleases;
 import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.prepareSPDXDocument;
 
 public class SpdxDocumentDatabaseHandler {
@@ -90,7 +49,6 @@ public class SpdxDocumentDatabaseHandler {
     public SpdxDocumentDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException {
         db = new DatabaseConnectorCloudant(httpClient, dbName);
 
-        log.info("Create the SPDX Document repositories ");
         // Create the repositories
         SPDXDocumentRepository = new SpdxDocumentRepository(db);
 
@@ -112,10 +70,19 @@ public class SpdxDocumentDatabaseHandler {
 
     public AddDocumentRequestSummary addSPDXDocument(SPDXDocument spdx, User user) throws SW360Exception {
         AddDocumentRequestSummary requestSummary= new AddDocumentRequestSummary();
-        SPDXDocumentRepository.add(spdx);
-        String spdxId = spdx.getId();
         String releaseId = spdx.getReleaseId();
         Release release = releaseRepository.get(releaseId);
+        // if (makePermission(release, user).isActionAllowed(RequestedAction.WRITE)) {
+        //     return requestSummary.setRequestStatus(AddDocumentRequestStatus.FAILURE);
+        // }
+        assertNotNull(release, "Could not find Release to add SPDX Document!");
+        if (release.isSetSpdxId()){
+            log.error("SPDX Document existed in release!");
+            return requestSummary.setRequestStatus(AddDocumentRequestStatus.DUPLICATE)
+                            .setId(release.getSpdxId());
+        }
+        SPDXDocumentRepository.add(spdx);
+        String spdxId = spdx.getId();
         release.setSpdxId(spdxId);
         releaseRepository.update(release);
         return requestSummary.setRequestStatus(AddDocumentRequestStatus.SUCCESS)
@@ -132,7 +99,10 @@ public class SpdxDocumentDatabaseHandler {
 
     public RequestStatus deleteSPDXDocument(String id, User user) throws SW360Exception {
         SPDXDocument spdx = SPDXDocumentRepository.get(id);
-
+        assertNotNull(spdx, "Could not find SPDX Document to delete!");
+        // if (makePermission(spdx, user).isActionAllowed(RequestedAction.WRITE)) {
+        //     return RequestStatus.SENT_TO_MODERATOR;
+        // }
         Set<String> packageInfoIds = spdx.getSpdxPackageInfoIds();
         if (packageInfoIds != null) {
             return RequestStatus.IN_USE;
@@ -152,6 +122,7 @@ public class SpdxDocumentDatabaseHandler {
         String releaseId = spdx.getReleaseId();
         if (releaseId != null) {
             Release release = releaseRepository.get(releaseId);
+            assertNotNull(release, "Could not remove SPDX Document ID in Release!");
             release.unsetSpdxId();
             releaseRepository.update(release);
         }

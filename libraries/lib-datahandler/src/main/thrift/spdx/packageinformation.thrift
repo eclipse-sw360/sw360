@@ -20,7 +20,7 @@ typedef annotations.Annotations Annotation
 struct PackageInformation {
     1: optional string id,
     2: optional string revision,
-    3: optional string type = "spdxPackageInformation",
+    3: optional string type = "spdxPackageInfo",
     4: optional string spdxDocumentId,  // Id of the parent SPDX Document
     5: optional string name,
     6: optional string SPDXID,
@@ -48,8 +48,8 @@ struct PackageInformation {
 }
 
 struct PackageVerificationCode {
-    1: optional set<string> packageVerificationCodeExcludedFiles,
-    2: optional string packageVerificationCodeValue,
+    1: optional set<string> excludedFiles,
+    2: optional string value,
 }
 
 struct ExternalReference {
@@ -60,7 +60,6 @@ struct ExternalReference {
 }
 
 service PackageInformationService {
-    list<PackageInformation> getPackageInformationsShort(1: set<string> ids, 2: User user);
     list<PackageInformation> getPackageInformationSummary(1: User user);
     PackageInformation getPackageInformationById(1: string id, 2: User user);
     AddDocumentRequestSummary addPackageInformation(1: PackageInformation packageInformation, 2: User user);

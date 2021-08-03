@@ -209,7 +209,6 @@ public class ThriftClients {
     }
 
     public SPDXDocumentService.Iface makeSPDXClient() {
-        log.info("Make SPDX Document Client!");
         return new SPDXDocumentService.Client(makeProtocol(BACKEND_URL, SPDX_SERVICE_URL));
     }
 
