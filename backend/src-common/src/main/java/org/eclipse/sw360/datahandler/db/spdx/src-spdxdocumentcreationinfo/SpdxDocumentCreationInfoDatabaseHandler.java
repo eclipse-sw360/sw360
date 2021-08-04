@@ -69,7 +69,7 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
         String documentCreationInfoId = documentCreationInfo.getId();
         String spdxDocumentId = documentCreationInfo.getSpdxDocumentId();
         SPDXDocument spdxDocument = SPDXDocumentRepository.get(spdxDocumentId);
-        spdxDocument.setSpdxDocumentCreationInfoId(spdxDocumentId);
+        spdxDocument.setSpdxDocumentCreationInfoId(documentCreationInfoId);
         SPDXDocumentRepository.update(spdxDocument);
         return requestSummary.setRequestStatus(AddDocumentRequestStatus.SUCCESS)
                             .setId(documentCreationInfoId);

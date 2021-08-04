@@ -73,7 +73,7 @@ public class SpdxDocumentDatabaseHandler {
         String releaseId = spdx.getReleaseId();
         Release release = releaseRepository.get(releaseId);
         // if (makePermission(release, user).isActionAllowed(RequestedAction.WRITE)) {
-        //     return requestSummary.setRequestStatus(AddDocumentRequestStatus.FAILURE);
+        //     return requestSummary.setRequestStatus(AddDocumentRequestStatus.SENT_TO_MODERATOR);
         // }
         assertNotNull(release, "Could not find Release to add SPDX Document!");
         if (release.isSetSpdxId()){

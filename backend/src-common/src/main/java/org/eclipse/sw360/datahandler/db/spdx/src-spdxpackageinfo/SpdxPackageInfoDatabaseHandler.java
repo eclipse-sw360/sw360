@@ -68,9 +68,9 @@ public class SpdxPackageInfoDatabaseHandler {
 
     public AddDocumentRequestSummary addPackageInformation(PackageInformation packageInfo, User user) throws SW360Exception {
         AddDocumentRequestSummary requestSummary = new AddDocumentRequestSummary();
-        if (makePermission(packageInfo, user).isActionAllowed(RequestedAction.WRITE)) {
-            return requestSummary.setRequestStatus(AddDocumentRequestStatus.FAILURE);
-        }
+        // if (makePermission(packageInfo, user).isActionAllowed(RequestedAction.WRITE)) {
+        //     return requestSummary.setRequestStatus(AddDocumentRequestStatus.SENT_TO_MODERATOR);
+        // }
         PackageInfoRepository.add(packageInfo);
         String packageInfoId = packageInfo.getId();
         String spdxDocumentId = packageInfo.getSpdxDocumentId();
@@ -84,9 +84,9 @@ public class SpdxPackageInfoDatabaseHandler {
 
     public AddDocumentRequestSummary addPackageInformations(Set<PackageInformation> packageInfos, User user) throws SW360Exception {
         AddDocumentRequestSummary requestSummary = new AddDocumentRequestSummary();
-        if (makePermission(packageInfos, user).isActionAllowed(RequestedAction.WRITE)) {
-            return requestSummary.setRequestStatus(AddDocumentRequestStatus.FAILURE);
-        }
+        // if (makePermission(packageInfos, user).isActionAllowed(RequestedAction.WRITE)) {
+        //     return requestSummary.setRequestStatus(AddDocumentRequestStatus.SENT_TO_MODERATOR);
+        // }
         String spdxDocumentId = packageInfos.iterator().next().getSpdxDocumentId();
         SPDXDocument spdxDocument = SPDXDocumentRepository.get(spdxDocumentId);
         Set<String> packageInfoIds = spdxDocument.getSpdxPackageInfoIds();
@@ -100,9 +100,9 @@ public class SpdxPackageInfoDatabaseHandler {
     }
 
     public RequestStatus updatePackageInformation(PackageInformation packageInfo, User user) throws SW360Exception {
-        if (makePermission(packageInfo, user).isActionAllowed(RequestedAction.WRITE)) {
-            return RequestStatus.FAILURE;
-        }
+        // if (makePermission(packageInfo, user).isActionAllowed(RequestedAction.WRITE)) {
+        //     return RequestStatus.SENT_TO_MODERATOR;
+        // }
         PackageInformation actual = PackageInfoRepository.get(packageInfo.getId());
         assertNotNull(actual, "Could not find SPDX Package Information to update!");
         PackageInfoRepository.update(packageInfo);
@@ -110,9 +110,9 @@ public class SpdxPackageInfoDatabaseHandler {
     }
 
     public RequestSummary updatePackageInformations(Set<PackageInformation> packageInfos, User user) throws SW360Exception {
-        if (makePermission(packageInfos, user).isActionAllowed(RequestedAction.WRITE)) {
-            return new RequestSummary().setRequestStatus(RequestStatus.FAILURE);
-        }
+        // if (makePermission(packageInfos, user).isActionAllowed(RequestedAction.WRITE)) {
+        //     return new RequestSummary().setRequestStatus(RequestStatus.SENT_TO_MODERATOR);
+        // }
         for (PackageInformation packageInfo : packageInfos) {
             PackageInformation actual = PackageInfoRepository.get(packageInfo.getId());
             assertNotNull(actual, "Could not find SPDX Package Information to update!");
@@ -124,9 +124,9 @@ public class SpdxPackageInfoDatabaseHandler {
     public RequestStatus deletePackageInformation(String id, User user) throws SW360Exception {
         PackageInformation packageInfo = PackageInfoRepository.get(id);
         assertNotNull(packageInfo, "Could not find SPDX Package Information to delete!");
-        if (makePermission(packageInfo, user).isActionAllowed(RequestedAction.WRITE)) {
-            return RequestStatus.FAILURE;
-        }
+        // if (makePermission(packageInfo, user).isActionAllowed(RequestedAction.WRITE)) {
+        //     return RequestStatus.SENT_TO_MODERATOR;
+        // }
         PackageInfoRepository.remove(packageInfo);
         String spdxDocumentId = packageInfo.getSpdxDocumentId();
         SPDXDocument spdxDocument = SPDXDocumentRepository.get(spdxDocumentId);
