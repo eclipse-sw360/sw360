@@ -18,6 +18,6 @@ Description: Welcome file for SPDX Service
     <title>Welcome to the SW360 SPDX Document Creation Information Service</title>
   </head>
   <body>
-    <h2>Welcome to the SW360 SPDX Document Creation Information  Service!</h2>
+    <h2>Welcome to the SW360 SPDX Document Creation Information Service!</h2>
   </body>
 </html>

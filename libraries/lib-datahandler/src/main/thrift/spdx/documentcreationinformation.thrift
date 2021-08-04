@@ -44,9 +44,7 @@ struct CheckSum {
 
 struct Creator {
     1: optional string type,
-    2: optional string name,
-    3: optional string version,
-    4: optional string email,
+    2: optional string value,
 }
 
 service DocumentCreationInformationService {

@@ -85,7 +85,7 @@ public class ThriftClients {
     private static final String CHANGELOGS_SERVICE_URL = "/changelogs/thrift";
     private static final String HEALTH_SERVICE_URL = "/health/thrift";
     private static final String SPDX_SERVICE_URL = "/spdxdocument/thrift";
-    private static final String SPDX_DOCUMENT_INFO_SERVICE_URL = "/documentcreationinformation/thrift";
+    private static final String SPDX_DOCUMENT_INFO_SERVICE_URL = "/spdxdocumentcreationinfo/thrift";
     private static final String SPDX_PACKAGE_INFO_SERVICE_URL = "/spdxpackageinfo/thrift";
     private static final String SPDX_FILE_INFO_SERVICE_URL = "/fileinformation/thrift";
 
