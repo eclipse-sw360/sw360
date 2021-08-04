@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.eclipse.sw360.datahandler.db.spdx.db;
+package org.eclipse.sw360.datahandler.db.spdx.packageinfo;
 
 import org.eclipse.sw360.components.summary.PackageInformationSummary;
 import org.eclipse.sw360.components.summary.SummaryType;

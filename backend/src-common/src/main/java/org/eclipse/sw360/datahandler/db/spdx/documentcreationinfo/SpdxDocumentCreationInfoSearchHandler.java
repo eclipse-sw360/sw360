@@ -8,11 +8,11 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.eclipse.sw360.datahandler.db.spdx.db;
+package org.eclipse.sw360.datahandler.db.spdx.documentcreationinfo;
 
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneSearchView;
-import org.eclipse.sw360.datahandler.thrift.spdxpackageinfo.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
 import org.ektorp.http.HttpClient;
 
 import com.cloudant.client.api.CloudantClient;
@@ -23,16 +23,12 @@ import java.util.function.Supplier;
 
 import static org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector.prepareWildcardQuery;
 
-/**
- *
- * @author hieu1.phamvan@toshiba.co.jp
- */
-public class SpdxPackageInfoSearchHandler {
+public class SpdxDocumentCreationInfoSearchHandler {
 
     private static final LuceneSearchView luceneSearchView
-            = new LuceneSearchView("lucene", "spdxPackageInfo",
+            = new LuceneSearchView("lucene", "spdxDocumentCreationInformation",
             "function(doc) {" +
-                    "  if(doc.type == 'spdxPackageInfo') { " +
+                    "  if(doc.type == 'spdxDocumentCreationInformation') { " +
                     "      var ret = new Document();" +
                     "      ret.add(doc._id);  " +
                     "      return ret;" +
@@ -41,12 +37,12 @@ public class SpdxPackageInfoSearchHandler {
 
     private final LuceneAwareDatabaseConnector connector;
 
-    public SpdxPackageInfoSearchHandler(Supplier<HttpClient> httpClient, Supplier<CloudantClient> cClient, String dbName) throws IOException {
+    public SpdxDocumentCreationInfoSearchHandler(Supplier<HttpClient> httpClient, Supplier<CloudantClient> cClient, String dbName) throws IOException {
         connector = new LuceneAwareDatabaseConnector(httpClient, cClient, dbName);
         connector.addView(luceneSearchView);
     }
 
-    public List<PackageInformation> search(String searchText) {
-        return connector.searchView(PackageInformation.class, luceneSearchView, prepareWildcardQuery(searchText));
+    public List<DocumentCreationInformation> search(String searchText) {
+        return connector.searchView(DocumentCreationInformation.class, luceneSearchView, prepareWildcardQuery(searchText));
     }
 }

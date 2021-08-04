@@ -11,7 +11,7 @@
 package org.eclipse.sw360.spdxpackageinfo;
 
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.eclipse.sw360.datahandler.db.spdx.db.*;
+import org.eclipse.sw360.datahandler.db.spdx.packageinfo.*;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;

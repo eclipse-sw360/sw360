@@ -58,8 +58,9 @@ import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 //
 import org.eclipse.sw360.datahandler.thrift.spdxdocument.*;
+import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocumentService.Iface;
 import org.eclipse.sw360.datahandler.thrift.spdx.fileinformation.*;
-import org.eclipse.sw360.datahandler.thrift.spdx.packageinformation.*;
+import org.eclipse.sw360.datahandler.thrift.spdxpackageinfo.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.otherlicensinginformationdetected.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelements.*;
@@ -701,10 +702,60 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 ComponentService.Iface client = thriftClients.makeComponentClient();
                 Component component = client.getComponentByIdForEdit(id, user);
 
+                // Test SPDX document
+                SPDXDocument newSpdx = new SPDXDocument();
+                newSpdx.setSpdxDocumentCreationInfoId("spdxDocumentCreationInfoId");
+                newSpdx.setReleaseId("5af9b54936474012a5b323bb1b5bf8ba");
+                Set<String> spdxPackageInfoIds = new HashSet<>();
+                spdxPackageInfoIds.add("12345");
+                newSpdx.setSpdxPackageInfoIds(spdxPackageInfoIds);
+                newSpdx.setSpdxFileInfoIds(spdxPackageInfoIds);
+
                 SPDXDocumentService.Iface SPDXClient = thriftClients.makeSPDXClient();
-                log.info("AAAAAAAAAAAAAAA :");
-                SPDXDocument spdx = SPDXClient.getSPDXDocumentById("111", user);
-                log.info(spdx.toString() + "  AAAAAAAAAAAAAAA");
+                log.info("GetSPDXDocumentSummary: " + SPDXClient.getSPDXDocumentSummary(user).toString());
+                log.info("GetSPDXDocumentById: " + SPDXClient.getSPDXDocumentById("111", user).toString());
+                AddDocumentRequestSummary requestSummarySPDX = SPDXClient.addSPDXDocument(newSpdx, user);
+                log.info("AddSPDXDocument ID:" + requestSummarySPDX.getId());
+                log.info("AddSPDXDocument Status :" + requestSummarySPDX.getRequestStatus());
+                newSpdx.setId(requestSummarySPDX.getId());
+                spdxPackageInfoIds.add("56789");
+                newSpdx.setSpdxPackageInfoIds(spdxPackageInfoIds);
+                // log.info("updateSPDXDocument : " + SPDXClient.updateSPDXDocument(newSpdx, user));
+                log.info("DeleteSPDXDocumnet: " + SPDXClient.deleteSPDXDocument(requestSummarySPDX.getId(), user));
+                
+                // Test Document Creation Info
+                DocumentCreationInformation doc = new DocumentCreationInformation();
+                doc.setName("AAAAAAA");
+                doc.setDocumentComment("documentComment");
+                doc.setSpdxDocumentId("111");
+                DocumentCreationInformationService.Iface DocumentClient = thriftClients.makeSPDXDocumentInfoClient();
+                log.info("GetDocumentCreationInformationSummary: " + DocumentClient.getDocumentCreationInformationSummary(user));
+                // log.info("GetDocumentCreationInformationById: " + DocumentClient.getDocumentCreationInformationById("555", user));
+                AddDocumentRequestSummary requestSummaryDocument = DocumentClient.addDocumentCreationInformation(doc, user);
+                log.info("AddDocumentCreationInformation ID: " + requestSummaryDocument.getId());
+                log.info("AddDocumentCreationInformation Status: " + requestSummaryDocument.getRequestStatus());
+                doc.setId(requestSummaryDocument.getId());
+                doc.setName("BBBBBBB");
+                // log.info("updateDocumentCreationInformation: " + DocumentClient.updateDocumentCreationInformation(doc, user));
+                // log.info("DeleteDocumentCreationInformation: " + DocumentClient.deleteDocumentCreationInformation(requestSummaryDocument.getId(), user));
+
+                // Test Package Info
+                PackageInformation packageInfo = new PackageInformation();
+                packageInfo.setCopyrightText("copyrightText");
+                packageInfo.setDescription("description");
+                packageInfo.setDownloadLocation("downloadLocation");
+                packageInfo.setFilesAnalyzed(true);
+                packageInfo.setSpdxDocumentId("111");
+                PackageInformationService.Iface SPDXPackageClient = thriftClients.makeSPDXPackageInfoClient();
+                log.info("getPackageInformationSummary: " + SPDXPackageClient.getPackageInformationSummary(user));
+                // log.info("getPackageInformationSummary: " + SPDXPackageClient.getPackageInformationById("666", user));
+                AddDocumentRequestSummary requestSummaryPackage = SPDXPackageClient.addPackageInformation(packageInfo, user);
+                log.info("addPackageInformation ID: " + requestSummaryPackage.getId());
+                log.info("addPackageInformation Status: " + requestSummaryPackage.getRequestStatus());
+                packageInfo.setId(requestSummaryPackage.getId());
+                // log.info("updatePackageInformation: " + SPDXPackageClient.updatePackageInformation(packageInfo, user));
+                // log.info("deletePackageInformation: " + SPDXPackageClient.deletePackageInformation(id, user));
+                
 
                 PortletUtils.setCustomFieldsEdit(request, user, component);
 
