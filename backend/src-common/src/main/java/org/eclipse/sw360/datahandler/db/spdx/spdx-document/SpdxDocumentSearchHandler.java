@@ -8,11 +8,11 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.eclipse.sw360.spdxpackageinfo.db;
+package org.eclipse.sw360.datahandler.db.spdx.document;
 
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneSearchView;
-import org.eclipse.sw360.datahandler.thrift.spdxpackageinfo.*;
+import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocument;
 import org.ektorp.http.HttpClient;
 
 import com.cloudant.client.api.CloudantClient;
@@ -23,16 +23,12 @@ import java.util.function.Supplier;
 
 import static org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector.prepareWildcardQuery;
 
-/**
- *
- * @author hieu1.phamvan@toshiba.co.jp
- */
-public class SpdxPackageInfoSearchHandler {
+public class SpdxDocumentSearchHandler {
 
     private static final LuceneSearchView luceneSearchView
-            = new LuceneSearchView("lucene", "spdxPackageInfo",
+            = new LuceneSearchView("lucene", "SPDXDocument",
             "function(doc) {" +
-                    "  if(doc.type == 'spdxPackageInfo') { " +
+                    "  if(doc.type == 'SPDXDocument') { " +
                     "      var ret = new Document();" +
                     "      ret.add(doc._id);  " +
                     "      return ret;" +
@@ -41,12 +37,12 @@ public class SpdxPackageInfoSearchHandler {
 
     private final LuceneAwareDatabaseConnector connector;
 
-    public SpdxPackageInfoSearchHandler(Supplier<HttpClient> httpClient, Supplier<CloudantClient> cClient, String dbName) throws IOException {
+    public SpdxDocumentSearchHandler(Supplier<HttpClient> httpClient, Supplier<CloudantClient> cClient, String dbName) throws IOException {
         connector = new LuceneAwareDatabaseConnector(httpClient, cClient, dbName);
         connector.addView(luceneSearchView);
     }
 
-    public List<PackageInformation> search(String searchText) {
-        return connector.searchView(PackageInformation.class, luceneSearchView, prepareWildcardQuery(searchText));
+    public List<SPDXDocument> search(String searchText) {
+        return connector.searchView(SPDXDocument.class, luceneSearchView, prepareWildcardQuery(searchText));
     }
 }

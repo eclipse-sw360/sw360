@@ -8,11 +8,12 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.eclipse.sw360.spdxpackageinfo.db;
+package org.eclipse.sw360.datahandler.db.spdx.db;
 
 import com.cloudant.client.api.CloudantClient;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.db.spdx.document.SpdxDocumentRepository;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -20,7 +21,6 @@ import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdxpackageinfo.*;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import org.eclipse.sw360.spdxdocument.db.SpdxDocumentRepository;
 
 import java.net.MalformedURLException;
 import java.util.*;

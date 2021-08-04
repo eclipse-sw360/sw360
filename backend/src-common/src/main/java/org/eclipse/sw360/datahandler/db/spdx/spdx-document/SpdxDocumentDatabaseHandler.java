@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.eclipse.sw360.spdxdocument.db;
+package org.eclipse.sw360.datahandler.db.spdx.document;
 
 import com.cloudant.client.api.CloudantClient;
 

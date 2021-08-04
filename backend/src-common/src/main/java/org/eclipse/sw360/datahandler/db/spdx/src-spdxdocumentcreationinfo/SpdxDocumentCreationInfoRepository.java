@@ -8,13 +8,13 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.eclipse.sw360.spdxdocument.db;
+package org.eclipse.sw360.datahandler.db.spdx.db;
 
-import org.eclipse.sw360.components.summary.SpdxSummary;
+import org.eclipse.sw360.components.summary.DocumentCreationInformationSummary;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
-import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
 
 import com.cloudant.client.api.model.DesignDocument.MapReduce;
 
@@ -22,18 +22,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class SpdxDocumentRepository extends SummaryAwareRepository<SPDXDocument> {
+public class SpdxDocumentCreationInfoRepository extends SummaryAwareRepository<DocumentCreationInformation> {
 
-    private static final String ALL = "function(doc) { if (doc.type == 'SPDXDocument') emit(null, doc._id) }";
+    private static final String ALL = "function(doc) { if (doc.type == 'spdxDocumentCreationInformation') emit(null, doc._id) }";
 
-    public SpdxDocumentRepository(DatabaseConnectorCloudant db) {
-        super(SPDXDocument.class, db, new SpdxSummary());
+    public SpdxDocumentCreationInfoRepository(DatabaseConnectorCloudant db) {
+        super(DocumentCreationInformation.class, db, new DocumentCreationInformationSummary());
         Map<String, MapReduce> views = new HashMap<String, MapReduce>();
         views.put("all", createMapReduce(ALL, null));
         initStandardDesignDocument(views, db);
     }
 
-    public List<SPDXDocument> getSPDXDocumentSummary() {
+    public List<DocumentCreationInformation> getDocumentCreationInformationSummary() {
         return makeSummary(SummaryType.SUMMARY, getAllIds());
     }
 

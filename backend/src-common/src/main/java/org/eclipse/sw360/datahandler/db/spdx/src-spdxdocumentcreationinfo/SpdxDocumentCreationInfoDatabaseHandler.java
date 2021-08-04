@@ -8,11 +8,12 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.eclipse.sw360.spdxdocumentcreationinfo.db;
+package org.eclipse.sw360.datahandler.db.spdx.db;
 
 import com.cloudant.client.api.CloudantClient;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.db.spdx.document.SpdxDocumentRepository;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -27,7 +28,6 @@ import java.util.function.Supplier;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
-import org.eclipse.sw360.spdxdocument.db.SpdxDocumentRepository;
 
 public class SpdxDocumentCreationInfoDatabaseHandler {
 

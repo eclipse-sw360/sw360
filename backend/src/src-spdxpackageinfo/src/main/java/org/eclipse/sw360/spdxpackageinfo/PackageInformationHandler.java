@@ -11,12 +11,12 @@
 package org.eclipse.sw360.spdxpackageinfo;
 
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.db.spdx.db.*;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.spdxpackageinfo.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.spdxpackageinfo.db.*;
 
 import com.cloudant.client.api.CloudantClient;
 
