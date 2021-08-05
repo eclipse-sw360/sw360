@@ -30,6 +30,9 @@ public class DocumentCreationInformationSummary extends DocumentSummary<Document
         switch (type) {
             case EXPORT_SUMMARY:
             case SUMMARY:
+                copyField(document, copy, DocumentCreationInformation._Fields.ID);
+                copyField(document, copy, DocumentCreationInformation._Fields.DOCUMENT_CREATION_INFORMATION_ID);
+                copyField(document, copy, DocumentCreationInformation._Fields.NAME);
             default:
         }
 

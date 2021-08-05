@@ -30,6 +30,9 @@ public class PackageInformationSummary extends DocumentSummary<PackageInformatio
         switch (type) {
             case EXPORT_SUMMARY:
             case SUMMARY:
+                copyField(document, copy, PackageInformation._Fields.ID);
+                copyField(document, copy, PackageInformation._Fields.SPDXID);
+                copyField(document, copy, PackageInformation._Fields.NAME);
             default:
         }
 
