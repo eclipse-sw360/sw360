@@ -265,7 +265,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     // GET INDIVIDUAL OBJECTS //
     ////////////////////////////
 
-    public void addSelectLogs(Project project, User user){
+    public void addSelectLogs(Project project, User user) {
 
         DatabaseHandlerUtil.addSelectLogs(project, user.getEmail(), attachmentConnector);
     }

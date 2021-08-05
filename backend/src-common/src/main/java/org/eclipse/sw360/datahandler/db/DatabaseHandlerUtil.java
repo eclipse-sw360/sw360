@@ -423,8 +423,8 @@ public class DatabaseHandlerUtil {
      * @param attachmentConnector
      */
     public static <T extends TBase> void addSelectLogs(T newDocVersion, String userEdited, AttachmentConnector attachmentConnector) {
-        Runnable changeLogRunnable = ()->{
-          try{
+        Runnable changeLogRunnable = ()-> {
+          try {
               log.info("Generating SelectLogs.");
               ChangeLogs changeLogParent =initChangeLogsObj(newDocVersion, userEdited, null, Operation.CREATE,null);
               Map<String,Object> logMap=new LinkedHashMap();

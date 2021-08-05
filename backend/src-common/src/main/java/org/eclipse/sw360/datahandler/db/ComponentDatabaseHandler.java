@@ -274,11 +274,11 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     // GET INDIVIDUAL OBJECTS //
     ////////////////////////////
     
-    public void addSelectLogs(Component component, User user){
+    public void addSelectLogs(Component component, User user) {
 
         DatabaseHandlerUtil.addSelectLogs(component, user.getEmail(), attachmentConnector);
     }
-    public void addSelectLogs(Release release, User user){
+    public void addSelectLogs(Release release, User user) {
 
         DatabaseHandlerUtil.addSelectLogs(release, user.getEmail(), attachmentConnector);
     }
