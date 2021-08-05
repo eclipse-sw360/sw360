@@ -20,7 +20,7 @@ typedef annotations.Annotations Annotation
 struct PackageInformation {
     1: optional string id,
     2: optional string revision,
-    3: optional string type = "spdxPackageInfo",
+    3: optional string type = "packageInformation",
     4: optional string spdxDocumentId,  // Id of the parent SPDX Document
     5: optional string name,
     6: optional string SPDXID,

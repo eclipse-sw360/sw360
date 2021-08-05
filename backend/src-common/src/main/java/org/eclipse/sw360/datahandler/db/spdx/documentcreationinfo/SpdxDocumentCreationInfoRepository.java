@@ -24,7 +24,7 @@ import java.util.Map;
 
 public class SpdxDocumentCreationInfoRepository extends SummaryAwareRepository<DocumentCreationInformation> {
 
-    private static final String ALL = "function(doc) { if (doc.type == 'spdxDocumentCreationInformation') emit(null, doc._id) }";
+    private static final String ALL = "function(doc) { if (doc.type == 'documentCreationInformation') emit(null, doc._id) }";
 
     public SpdxDocumentCreationInfoRepository(DatabaseConnectorCloudant db) {
         super(DocumentCreationInformation.class, db, new DocumentCreationInformationSummary());

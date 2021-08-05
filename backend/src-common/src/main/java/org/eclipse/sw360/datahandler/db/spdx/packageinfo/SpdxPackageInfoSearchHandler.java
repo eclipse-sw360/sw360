@@ -30,9 +30,9 @@ import static org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseCo
 public class SpdxPackageInfoSearchHandler {
 
     private static final LuceneSearchView luceneSearchView
-            = new LuceneSearchView("lucene", "spdxPackageInfo",
+            = new LuceneSearchView("lucene", "packageInformation",
             "function(doc) {" +
-                    "  if(doc.type == 'spdxPackageInfo') { " +
+                    "  if(doc.type == 'packageInformation') { " +
                     "      var ret = new Document();" +
                     "      ret.add(doc._id);  " +
                     "      return ret;" +

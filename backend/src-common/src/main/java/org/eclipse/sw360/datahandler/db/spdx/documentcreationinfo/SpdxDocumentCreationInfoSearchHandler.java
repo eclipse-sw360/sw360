@@ -26,9 +26,9 @@ import static org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseCo
 public class SpdxDocumentCreationInfoSearchHandler {
 
     private static final LuceneSearchView luceneSearchView
-            = new LuceneSearchView("lucene", "spdxDocumentCreationInformation",
+            = new LuceneSearchView("lucene", "documentCreationInformation",
             "function(doc) {" +
-                    "  if(doc.type == 'spdxDocumentCreationInformation') { " +
+                    "  if(doc.type == 'documentCreationInformation') { " +
                     "      var ret = new Document();" +
                     "      ret.add(doc._id);  " +
                     "      return ret;" +

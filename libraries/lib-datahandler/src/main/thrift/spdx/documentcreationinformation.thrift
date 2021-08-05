@@ -16,7 +16,7 @@ typedef users.RequestedAction RequestedAction
 struct DocumentCreationInformation {
     1: optional string id,
     2: optional string revision,
-    3: optional string type = "spdxDocumentCreationInformation",
+    3: optional string type = "documentCreationInformation",
     4: optional string spdxDocumentId,  // Id of the parent SPDX Document
     5: optional string DocumentCreationInformationVersion,
     6: optional string dataLicense,

@@ -28,7 +28,7 @@ import java.util.Map;
  */
 public class SpdxPackageInfoRepository extends SummaryAwareRepository<PackageInformation> {
 
-    private static final String ALL = "function(doc) { if (doc.type == 'spdxPackageInfo') emit(null, doc._id) }";
+    private static final String ALL = "function(doc) { if (doc.type == 'packageInformation') emit(null, doc._id) }";
 
     public SpdxPackageInfoRepository(DatabaseConnectorCloudant db) {
         super(PackageInformation.class, db, new PackageInformationSummary());
