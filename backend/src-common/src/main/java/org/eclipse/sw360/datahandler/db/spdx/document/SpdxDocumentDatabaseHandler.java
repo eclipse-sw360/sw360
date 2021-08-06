@@ -19,14 +19,17 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.spdxdocument.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
+import org.eclipse.sw360.datahandler.thrift.changelogs.*;
 import org.eclipse.sw360.datahandler.db.ReleaseRepository;
 import org.eclipse.sw360.datahandler.db.VendorRepository;
+import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
 import java.net.MalformedURLException;
 import java.util.*;
 import java.util.function.Supplier;
+import com.google.common.collect.Lists;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
@@ -41,10 +44,12 @@ public class SpdxDocumentDatabaseHandler {
      */
     private final DatabaseConnectorCloudant db;
     private final DatabaseConnectorCloudant sw360db;
+    private final DatabaseConnectorCloudant dbChangeLogs;
 
     private final SpdxDocumentRepository SPDXDocumentRepository;
     private final ReleaseRepository releaseRepository;
     private final VendorRepository vendorRepository;
+    private DatabaseHandlerUtil dbHandlerUtil;
 
     public SpdxDocumentDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException {
         db = new DatabaseConnectorCloudant(httpClient, dbName);
@@ -56,6 +61,10 @@ public class SpdxDocumentDatabaseHandler {
         vendorRepository = new VendorRepository(sw360db);
         releaseRepository = new ReleaseRepository(sw360db, vendorRepository);
         // Create the moderator
+
+        // Create the changelogs
+        dbChangeLogs = new DatabaseConnectorCloudant(httpClient, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
+        this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
     }
 
     public List<SPDXDocument> getSPDXDocumentSummary(User user) {
@@ -83,8 +92,11 @@ public class SpdxDocumentDatabaseHandler {
         }
         SPDXDocumentRepository.add(spdx);
         String spdxId = spdx.getId();
+        Release oldRelease  = release.deepCopy();
         release.setSpdxId(spdxId);
         releaseRepository.update(release);
+        dbHandlerUtil.addChangeLogs(spdx, null, user.getEmail(), Operation.CREATE, null, Lists.newArrayList(), null, null);
+        dbHandlerUtil.addChangeLogs(release, oldRelease, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), spdxId, Operation.SPDXDOCUMENT_CREATE);
         return requestSummary.setRequestStatus(AddDocumentRequestStatus.SUCCESS)
                             .setId(spdx.getId());
     }
@@ -94,6 +106,7 @@ public class SpdxDocumentDatabaseHandler {
         SPDXDocument actual = SPDXDocumentRepository.get(spdx.getId());
         assertNotNull(actual, "Could not find SPDX Document to update!");
         SPDXDocumentRepository.update(spdx);
+        dbHandlerUtil.addChangeLogs(spdx, actual, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, null);
         return RequestStatus.SUCCESS;
     }
 
@@ -119,14 +132,16 @@ public class SpdxDocumentDatabaseHandler {
         }
 
         SPDXDocumentRepository.remove(spdx);
+        dbHandlerUtil.addChangeLogs(null, spdx, user.getEmail(), Operation.DELETE, null, Lists.newArrayList(), null, null);
         String releaseId = spdx.getReleaseId();
         if (releaseId != null) {
             Release release = releaseRepository.get(releaseId);
             assertNotNull(release, "Could not remove SPDX Document ID in Release!");
+            Release oldRelease = release.deepCopy();
             release.unsetSpdxId();
             releaseRepository.update(release);
+            dbHandlerUtil.addChangeLogs(release, oldRelease, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), spdx.getId(), Operation.SPDXDOCUMENT_DELETE);
         }
-
         return RequestStatus.SUCCESS;
     }
 

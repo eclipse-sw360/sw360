@@ -86,6 +86,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocument;
 
 import com.cloudant.client.api.CloudantClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -369,6 +370,11 @@ public class DatabaseHandlerUtil {
             changeLog.setDocumentId(newProjVer.getId());
             changeLog.setDocumentType(newProjVer.getType());
             changeLog.setDbName(DatabaseSettings.COUCH_DB_DATABASE);
+        } else if (newDocVersion instanceof SPDXDocument) {
+            SPDXDocument newProjVer = (SPDXDocument) newDocVersion;
+            changeLog.setDocumentId(newProjVer.getId());
+            changeLog.setDocumentType(newProjVer.getType());
+            changeLog.setDbName(DatabaseSettings.COUCH_DB_SPDX);
         }
 
         log.info("Initialize ChangeLogs for Document Id : " + changeLog.getDocumentId());
@@ -488,6 +494,8 @@ public class DatabaseHandlerUtil {
             fields = Release._Fields.values();
         } else if (neworDeletedVersion instanceof ModerationRequest) {
             fields = ModerationRequest._Fields.values();
+        } else if (neworDeletedVersion instanceof SPDXDocument) {
+            fields = SPDXDocument._Fields.values();
         } else {
             return;
         }
@@ -512,6 +520,8 @@ public class DatabaseHandlerUtil {
             fields = Release._Fields.values();
         } else if (newVersion instanceof ModerationRequest) {
             fields = ModerationRequest._Fields.values();
+        } else if (newVersion instanceof SPDXDocument) {
+            fields = SPDXDocument._Fields.values();
         } else {
             return;
         }
