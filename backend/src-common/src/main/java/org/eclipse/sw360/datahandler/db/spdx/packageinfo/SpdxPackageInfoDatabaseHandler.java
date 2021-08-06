@@ -19,13 +19,17 @@ import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdxpackageinfo.*;
+import org.eclipse.sw360.datahandler.thrift.changelogs.*;
+import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
 import java.net.MalformedURLException;
 import java.util.*;
 import java.util.function.Supplier;
+import com.google.common.collect.Lists;
 
+import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 
@@ -37,6 +41,7 @@ import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePerm
 public class SpdxPackageInfoDatabaseHandler {
 
     private static final Logger log = LogManager.getLogger(SpdxPackageInfoDatabaseHandler.class);
+    private final DatabaseConnectorCloudant dbChangeLogs;
 
     /**
      * Connection to the couchDB database
@@ -45,6 +50,7 @@ public class SpdxPackageInfoDatabaseHandler {
 
     private final SpdxPackageInfoRepository PackageInfoRepository;
     private final SpdxDocumentRepository SPDXDocumentRepository;
+    private DatabaseHandlerUtil dbHandlerUtil;
 
     public SpdxPackageInfoDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException {
         db = new DatabaseConnectorCloudant(httpClient, dbName);
@@ -54,6 +60,10 @@ public class SpdxPackageInfoDatabaseHandler {
         SPDXDocumentRepository = new SpdxDocumentRepository(db);
 
         // Create the moderator
+
+        // Create the changelogs
+        dbChangeLogs = new DatabaseConnectorCloudant(httpClient, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
+        this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
     }
 
     public List<PackageInformation> getPackageInformationSummary(User user) {
@@ -75,10 +85,13 @@ public class SpdxPackageInfoDatabaseHandler {
         String packageInfoId = packageInfo.getId();
         String spdxDocumentId = packageInfo.getSpdxDocumentId();
         SPDXDocument spdxDocument = SPDXDocumentRepository.get(spdxDocumentId);
+        SPDXDocument oldSpdxDocument = spdxDocument.deepCopy();
         Set<String> spdxPackageInfoIds = spdxDocument.getSpdxPackageInfoIds();
         spdxPackageInfoIds.add(packageInfoId);
         spdxDocument.setSpdxPackageInfoIds(spdxPackageInfoIds);
         SPDXDocumentRepository.update(spdxDocument);
+        dbHandlerUtil.addChangeLogs(packageInfo, null, user.getEmail(), Operation.CREATE, null, Lists.newArrayList(), null, null);
+        dbHandlerUtil.addChangeLogs(spdxDocument, oldSpdxDocument, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), packageInfoId, Operation.SPDX_PACKAGE_INFO_CREATE);
         return requestSummary.setRequestStatus(AddDocumentRequestStatus.SUCCESS).setId(packageInfoId);
     }
 
@@ -89,13 +102,16 @@ public class SpdxPackageInfoDatabaseHandler {
         // }
         String spdxDocumentId = packageInfos.iterator().next().getSpdxDocumentId();
         SPDXDocument spdxDocument = SPDXDocumentRepository.get(spdxDocumentId);
+        SPDXDocument oldSpdxDocument = spdxDocument.deepCopy();
         Set<String> packageInfoIds = spdxDocument.getSpdxPackageInfoIds();
         for (PackageInformation packageInfo : packageInfos) {
             PackageInfoRepository.add(packageInfo);
             packageInfoIds.add(packageInfo.getId());
+            dbHandlerUtil.addChangeLogs(packageInfo, null, user.getEmail(), Operation.CREATE, null, Lists.newArrayList(), null, null);
         }
         spdxDocument.setSpdxPackageInfoIds(packageInfoIds);
         SPDXDocumentRepository.update(spdxDocument);
+        // dbHandlerUtil.addChangeLogs(spdxDocument, oldSpdxDocument, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, Operation.SPDX_PACKAGE_INFO_CREATE);
         return requestSummary.setRequestStatus(AddDocumentRequestStatus.SUCCESS).setId(spdxDocumentId);
     }
 
@@ -106,6 +122,7 @@ public class SpdxPackageInfoDatabaseHandler {
         PackageInformation actual = PackageInfoRepository.get(packageInfo.getId());
         assertNotNull(actual, "Could not find SPDX Package Information to update!");
         PackageInfoRepository.update(packageInfo);
+        dbHandlerUtil.addChangeLogs(packageInfo, actual, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, null);
         return RequestStatus.SUCCESS;
     }
 
@@ -117,6 +134,7 @@ public class SpdxPackageInfoDatabaseHandler {
             PackageInformation actual = PackageInfoRepository.get(packageInfo.getId());
             assertNotNull(actual, "Could not find SPDX Package Information to update!");
             PackageInfoRepository.update(packageInfo);
+            dbHandlerUtil.addChangeLogs(packageInfo, actual, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, null);
         }
         return new RequestSummary().setRequestStatus(RequestStatus.SUCCESS);
     }
@@ -128,12 +146,15 @@ public class SpdxPackageInfoDatabaseHandler {
         //     return RequestStatus.SENT_TO_MODERATOR;
         // }
         PackageInfoRepository.remove(packageInfo);
+        dbHandlerUtil.addChangeLogs(null, packageInfo, user.getEmail(), Operation.DELETE, null, Lists.newArrayList(), null, null);
         String spdxDocumentId = packageInfo.getSpdxDocumentId();
         SPDXDocument spdxDocument = SPDXDocumentRepository.get(spdxDocumentId);
+        SPDXDocument oldSpdxDocument = spdxDocument.deepCopy();
         Set<String> packageInfoIds = spdxDocument.getSpdxPackageInfoIds();
         packageInfoIds.remove(id);
         spdxDocument.setSpdxPackageInfoIds(packageInfoIds);
         SPDXDocumentRepository.update(spdxDocument);
+        dbHandlerUtil.addChangeLogs(spdxDocument, oldSpdxDocument, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), packageInfo.getId(), Operation.SPDX_PACKAGE_INFO_DELETE);
         return RequestStatus.SUCCESS;
     }
 

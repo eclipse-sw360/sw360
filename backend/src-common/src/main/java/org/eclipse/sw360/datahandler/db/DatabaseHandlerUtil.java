@@ -88,6 +88,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
+import org.eclipse.sw360.datahandler.thrift.spdxpackageinfo.PackageInformation;
 
 import com.cloudant.client.api.CloudantClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -381,6 +382,11 @@ public class DatabaseHandlerUtil {
             changeLog.setDocumentId(newProjVer.getId());
             changeLog.setDocumentType(newProjVer.getType());
             changeLog.setDbName(DatabaseSettings.COUCH_DB_SPDX);
+        } else if (newDocVersion instanceof PackageInformation) {
+            PackageInformation newProjVer = (PackageInformation) newDocVersion;
+            changeLog.setDocumentId(newProjVer.getId());
+            changeLog.setDocumentType(newProjVer.getType());
+            changeLog.setDbName(DatabaseSettings.COUCH_DB_SPDX);
         }
 
         log.info("Initialize ChangeLogs for Document Id : " + changeLog.getDocumentId());
@@ -504,6 +510,8 @@ public class DatabaseHandlerUtil {
             fields = SPDXDocument._Fields.values();
         } else if (neworDeletedVersion instanceof DocumentCreationInformation) {
             fields = DocumentCreationInformation._Fields.values();
+        } else if (neworDeletedVersion instanceof PackageInformation) {
+            fields = PackageInformation._Fields.values();
         } else {
             return;
         }
@@ -532,6 +540,8 @@ public class DatabaseHandlerUtil {
             fields = SPDXDocument._Fields.values();
         } else if (newVersion instanceof DocumentCreationInformation) {
             fields = DocumentCreationInformation._Fields.values();
+        } else if (newVersion instanceof PackageInformation) {
+            fields = PackageInformation._Fields.values();
         } else {
             return;
         }
