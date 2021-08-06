@@ -70,7 +70,7 @@ public class SW360Constants {
     public static final String TYPE_SEARCHRESULT = "searchResult";
     public static final String TYPE_CHANGELOG = "changeLog";
     public static final String TYPE_VULNERABILITYDTO = "vulDTO";
-    public static final String TYPE_SPDX = "SPDX";
+    public static final String TYPE_SPDX = "SPDXDocument";
 
     /**
      * Hashmap containing the name field for each type.
