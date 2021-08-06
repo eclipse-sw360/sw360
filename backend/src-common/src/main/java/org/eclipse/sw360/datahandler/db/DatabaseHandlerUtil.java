@@ -87,6 +87,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
 
 import com.cloudant.client.api.CloudantClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -375,6 +376,11 @@ public class DatabaseHandlerUtil {
             changeLog.setDocumentId(newProjVer.getId());
             changeLog.setDocumentType(newProjVer.getType());
             changeLog.setDbName(DatabaseSettings.COUCH_DB_SPDX);
+        } else if (newDocVersion instanceof DocumentCreationInformation) {
+            DocumentCreationInformation newProjVer = (DocumentCreationInformation) newDocVersion;
+            changeLog.setDocumentId(newProjVer.getId());
+            changeLog.setDocumentType(newProjVer.getType());
+            changeLog.setDbName(DatabaseSettings.COUCH_DB_SPDX);
         }
 
         log.info("Initialize ChangeLogs for Document Id : " + changeLog.getDocumentId());
@@ -496,6 +502,8 @@ public class DatabaseHandlerUtil {
             fields = ModerationRequest._Fields.values();
         } else if (neworDeletedVersion instanceof SPDXDocument) {
             fields = SPDXDocument._Fields.values();
+        } else if (neworDeletedVersion instanceof DocumentCreationInformation) {
+            fields = DocumentCreationInformation._Fields.values();
         } else {
             return;
         }
@@ -522,6 +530,8 @@ public class DatabaseHandlerUtil {
             fields = ModerationRequest._Fields.values();
         } else if (newVersion instanceof SPDXDocument) {
             fields = SPDXDocument._Fields.values();
+        } else if (newVersion instanceof DocumentCreationInformation) {
+            fields = DocumentCreationInformation._Fields.values();
         } else {
             return;
         }

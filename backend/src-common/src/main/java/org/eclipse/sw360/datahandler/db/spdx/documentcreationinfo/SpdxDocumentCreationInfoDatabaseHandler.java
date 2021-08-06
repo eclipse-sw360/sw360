@@ -19,13 +19,17 @@ import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
+import org.eclipse.sw360.datahandler.thrift.changelogs.*;
+import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
 import java.net.MalformedURLException;
 import java.util.*;
 import java.util.function.Supplier;
+import com.google.common.collect.Lists;
 
+import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 
@@ -37,9 +41,11 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
      * Connection to the couchDB database
      */
     private final DatabaseConnectorCloudant db;
+    private final DatabaseConnectorCloudant dbChangeLogs;
 
     private final SpdxDocumentCreationInfoRepository SPDXDocumentCreationInfoRepository;
     private final SpdxDocumentRepository SPDXDocumentRepository;
+    private DatabaseHandlerUtil dbHandlerUtil;
 
     public SpdxDocumentCreationInfoDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException {
         db = new DatabaseConnectorCloudant(httpClient, dbName);
@@ -48,6 +54,10 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
         SPDXDocumentCreationInfoRepository = new SpdxDocumentCreationInfoRepository(db);
         SPDXDocumentRepository = new SpdxDocumentRepository(db);
         // Create the moderator
+
+        // Create the changelogs
+        dbChangeLogs = new DatabaseConnectorCloudant(httpClient, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
+        this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
     }
 
     public List<DocumentCreationInformation> getDocumentCreationInformationSummary(User user) {
@@ -69,8 +79,11 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
         String documentCreationInfoId = documentCreationInfo.getId();
         String spdxDocumentId = documentCreationInfo.getSpdxDocumentId();
         SPDXDocument spdxDocument = SPDXDocumentRepository.get(spdxDocumentId);
+        SPDXDocument oldSpdxDocument = spdxDocument.deepCopy();
         spdxDocument.setSpdxDocumentCreationInfoId(documentCreationInfoId);
         SPDXDocumentRepository.update(spdxDocument);
+        dbHandlerUtil.addChangeLogs(documentCreationInfo, null, user.getEmail(), Operation.CREATE, null, Lists.newArrayList(), null, null);
+        dbHandlerUtil.addChangeLogs(spdxDocument, oldSpdxDocument, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), documentCreationInfoId, Operation.SPDX_DOCUMENT_CREATION_INFO_CREATE);
         return requestSummary.setRequestStatus(AddDocumentRequestStatus.SUCCESS)
                             .setId(documentCreationInfoId);
     }
@@ -82,6 +95,7 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
         //     return requestSummary.setRequestStatus(AddDocumentRequestStatus.SENT_TO_MODERATOR);
         // }
         SPDXDocumentCreationInfoRepository.update(documentCreationInfo);
+        dbHandlerUtil.addChangeLogs(documentCreationInfo, actual, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, null);
         return RequestStatus.SUCCESS;
     }
 
@@ -92,12 +106,15 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
         //     return requestSummary.setRequestStatus(AddDocumentRequestStatus.SENT_TO_MODERATOR);
         // }
         SPDXDocumentCreationInfoRepository.remove(documentCreationInfo);
+        dbHandlerUtil.addChangeLogs(null, documentCreationInfo, user.getEmail(), Operation.DELETE, null, Lists.newArrayList(), null, null);
         String spdxDocumentId = documentCreationInfo.getSpdxDocumentId();
         if (spdxDocumentId != null) {
             SPDXDocument spdxDocument = SPDXDocumentRepository.get(spdxDocumentId);
             assertNotNull(spdxDocument, "Could not remove SPDX Document Creation Info ID in SPDX Document!");
+            SPDXDocument oldSpdxDocument = spdxDocument.deepCopy();
             spdxDocument.unsetSpdxDocumentCreationInfoId();
             SPDXDocumentRepository.update(spdxDocument);
+            dbHandlerUtil.addChangeLogs(spdxDocument, oldSpdxDocument, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), documentCreationInfo.getId(), Operation.SPDX_DOCUMENT_CREATION_INFO_DELETE);
         }
         return RequestStatus.SUCCESS;
     }
