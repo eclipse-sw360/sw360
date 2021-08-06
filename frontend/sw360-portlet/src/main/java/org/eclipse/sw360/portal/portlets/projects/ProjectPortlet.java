@@ -2790,7 +2790,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 } catch (SW360Exception sw360Exp) {
                     if (sw360Exp.getErrorCode() == 403) {
                         jsonObject = buildResponse(srcProject, project,
-                                "Error fetching project. Project or its Linked Projects are not accessible.", false,
+                                "Project or its Linked Projects are restricted and / or not accessible.", false,
                                 true);
                     } else if (sw360Exp.getErrorCode() == 404) {
                         jsonObject = buildResponse(srcProject, project,

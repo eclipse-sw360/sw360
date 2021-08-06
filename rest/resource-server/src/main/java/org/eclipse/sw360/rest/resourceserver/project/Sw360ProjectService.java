@@ -123,7 +123,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                 throw new ResourceNotFoundException("Requested Project Not Found");
             } else if (sw360Exp.getErrorCode() == 403) {
                 throw new AccessDeniedException(
-                        "Error fetching project. Either Project or its Linked Projects are not accessible");
+                        "Project or its Linked Projects are restricted and / or not accessible");
             } else {
                 throw sw360Exp;
             }
