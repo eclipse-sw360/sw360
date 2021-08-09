@@ -25,7 +25,7 @@ import java.util.Properties;
  */
 public class DatabaseTestProperties {
 
-    private static final String PROPERTIES_FILE_PATH = "/databasetest.properties";
+    private static final String PROPERTIES_FILE_PATH = "/couchdb-test.properties";
 
     private static final String COUCH_DB_URL;
     public static final String COUCH_DB_DATABASE;
@@ -36,9 +36,9 @@ public class DatabaseTestProperties {
     static {
         Properties props = CommonUtils.loadProperties(DatabaseTestProperties.class, PROPERTIES_FILE_PATH);
 
-        COUCH_DB_URL = props.getProperty("couch_db_url", "http://localhost:5984");
-        COUCH_DB_DATABASE = props.getProperty("couch_db_database", "datahandlertestdb");
-        COUCH_DB_USERNAME = Optional.ofNullable(props.getProperty("couchdb.username", null));
+        COUCH_DB_URL = props.getProperty("couchdb.url", "http://localhost:5984");
+        COUCH_DB_DATABASE = props.getProperty("couchdb.database", "sw360_test_db");
+        COUCH_DB_USERNAME = Optional.ofNullable(props.getProperty("couchdb.user", null));
         COUCH_DB_PASSWORD = Optional.ofNullable(props.getProperty("couchdb.password", null));
     }
 
