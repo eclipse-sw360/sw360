@@ -111,7 +111,7 @@ public class SpdxPackageInfoDatabaseHandler {
         }
         spdxDocument.setSpdxPackageInfoIds(packageInfoIds);
         SPDXDocumentRepository.update(spdxDocument);
-        // dbHandlerUtil.addChangeLogs(spdxDocument, oldSpdxDocument, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, Operation.SPDX_PACKAGE_INFO_CREATE);
+        dbHandlerUtil.addChangeLogs(spdxDocument, oldSpdxDocument, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, Operation.SPDX_PACKAGE_INFO_CREATE);
         return requestSummary.setRequestStatus(AddDocumentRequestStatus.SUCCESS).setId(spdxDocumentId);
     }
 
