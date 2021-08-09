@@ -102,6 +102,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class DatabaseHandlerUtil {
     private static final Logger log = LogManager.getLogger(DatabaseHandlerUtil.class);
+    private static final Logger changelog = LogManager.getLogger("sw360changelog");
     public static final String SEPARATOR = " -> ";
     private static ChangeLogsRepository changeLogRepository;
     private static ObjectMapper mapper = initAndGetObjectMapper();
@@ -416,6 +417,35 @@ public class DatabaseHandlerUtil {
     }
 
     /**
+     * Add Select Logs
+     * @param newDocVersion
+     * @param userEdited
+     * @param attachmentConnector
+     */
+    public static <T extends TBase> void addSelectLogs(T newDocVersion, String userEdited, AttachmentConnector attachmentConnector) {
+        Runnable changeLogRunnable = ()-> {
+          try {
+              log.info("Generating SelectLogs.");
+              ChangeLogs changeLogParent =initChangeLogsObj(newDocVersion, userEdited, null, Operation.CREATE,null);
+              Map<String,Object> logMap=new LinkedHashMap();
+              logMap.put("type",changeLogParent.getType());
+              logMap.put("documentId",changeLogParent.getDocumentId());
+              logMap.put("documentType",changeLogParent.getDocumentType());
+              logMap.put("dbName",changeLogParent.getDbName());
+              logMap.put("operation","SELECT");
+              logMap.put("userEdited",changeLogParent.getUserEdited());
+              logMap.put("changeTimestamp",changeLogParent.getChangeTimestamp());
+              changelog.debug(convertObjectToJson(logMap));
+          } catch (Exception exp) {
+              log.error("Error occured while creating Select Logs", exp);
+          }
+        };
+
+        Thread changeLogsThread = new Thread(changeLogRunnable);
+        changeLogsThread.start();
+    }
+
+    /**
      * Add Chaneglogs into the DB
      */
     public <T extends TBase> void addChangeLogs(T newDocVersion, T oldDocVersion, String userEdited,
@@ -458,10 +488,12 @@ public class DatabaseHandlerUtil {
                                 attachmentConnector, changeLogParent);
                     }
                 }
+                changelog.debug(convertObjectToJson(changeLogParent));
                 changeLogRepository.add(changeLogParent);
                 String changeLogParentId = changeLogParent.getId();
                 referenceDocLogList.stream().forEach(referenceDocLog -> {
                     referenceDocLog.setDocumentId(changeLogParentId);
+                    changelog.debug(convertObjectToJson(referenceDocLog));
                     changeLogRepository.add(referenceDocLog);
                 });
             } catch (Exception exp) {

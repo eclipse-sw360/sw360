@@ -273,6 +273,15 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     ////////////////////////////
     // GET INDIVIDUAL OBJECTS //
     ////////////////////////////
+    
+    public void addSelectLogs(Component component, User user) {
+
+        DatabaseHandlerUtil.addSelectLogs(component, user.getEmail(), attachmentConnector);
+    }
+    public void addSelectLogs(Release release, User user) {
+
+        DatabaseHandlerUtil.addSelectLogs(release, user.getEmail(), attachmentConnector);
+    }
 
     public Component getComponent(String id, User user) throws SW360Exception {
         Component component = componentRepository.get(id);

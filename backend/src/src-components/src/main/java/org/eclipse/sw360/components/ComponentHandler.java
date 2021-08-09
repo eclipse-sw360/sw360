@@ -151,7 +151,9 @@ public class ComponentHandler implements ComponentService.Iface {
         assertId(id);
         assertUser(user);
 
-        return handler.getComponent(id, user);
+        Component component = handler.getComponent(id, user);
+        handler.addSelectLogs(component, user);
+        return component;
     }
 
     @Override
@@ -167,7 +169,9 @@ public class ComponentHandler implements ComponentService.Iface {
         assertId(id);
         assertUser(user);
 
-        return handler.getRelease(id, user);
+        Release release = handler.getRelease(id, user);
+        handler.addSelectLogs(release, user);
+        return release;
     }
 
     @Override

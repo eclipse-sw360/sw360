@@ -14,9 +14,22 @@
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n"/>
         </Console>
+        <!-- environment variables can be set in the format of "$ {env: LOG_ROOT}" -->
+        <RollingFile name="ChangeLogFile" fileName="../logs/sw360changelog.log"
+            filePattern="../logs/sw360changelog-%d{yyyy-MM-dd}-%i.log" >
+            <PatternLayout pattern="%m%n"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="10MB" />
+            </Policies>
+            <DefaultRolloverStrategy max="10"/>
+        </RollingFile>
     </Appenders>
     <Loggers>
         <Logger name="org.eclipse.sw360" level="info"/>
+        <Logger name="sw360changelog" level="debug" >
+            <AppenderRef ref="ChangeLogFile" />
+            <AppenderRef ref="Console"/>
+        </Logger>
         <Root level="warn">
             <AppenderRef ref="Console"/>
         </Root>
