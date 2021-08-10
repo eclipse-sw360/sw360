@@ -9,11 +9,20 @@
  */
 package org.eclipse.sw360.spdx;
 
+import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
+
+import org.eclipse.sw360.datahandler.db.spdx.document.SpdxDocumentDatabaseHandler;
+import org.eclipse.sw360.datahandler.db.spdx.documentcreationinfo.SpdxDocumentCreationInfoDatabaseHandler;
+import org.eclipse.sw360.datahandler.db.spdx.packageinfo.SpdxPackageInfoDatabaseHandler;
+
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
+import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.thrift.spdxpackageinfo.PackageInformation;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,6 +30,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
+import java.net.MalformedURLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -59,6 +69,42 @@ public class SpdxBOMImporterSink {
             throw new SW360Exception("Id of added release should not be empty. " + addDocumentRequestSummary.toString());
         }
         return new Response(releaseId, AddDocumentRequestStatus.SUCCESS.equals(addDocumentRequestSummary.getRequestStatus()));
+    }
+
+    public Response addSpdxDocument(SPDXDocument spdxDocument) throws SW360Exception, MalformedURLException {
+        log.debug("create SPDXDocument");
+        SpdxDocumentDatabaseHandler handler = new SpdxDocumentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
+        final AddDocumentRequestSummary addDocumentRequestSummary = handler.addSPDXDocument(spdxDocument, user);
+
+        final String spdxDocId = addDocumentRequestSummary.getId();
+        if(spdxDocId == null || spdxDocId.isEmpty()) {
+            throw new SW360Exception("Id of added spdx document should not be empty. " + addDocumentRequestSummary.toString());
+        }
+        return new Response(spdxDocId, AddDocumentRequestStatus.SUCCESS.equals(addDocumentRequestSummary.getRequestStatus()));
+    }
+
+    public Response addDocumentCreationInformation(DocumentCreationInformation documentCreationInfo) throws SW360Exception, MalformedURLException {
+        log.debug("create DocumentCreationInformation { name='" + documentCreationInfo.getName() + "' }");
+        SpdxDocumentCreationInfoDatabaseHandler handler = new SpdxDocumentCreationInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
+        final AddDocumentRequestSummary addDocumentRequestSummary = handler.addDocumentCreationInformation(documentCreationInfo, user);
+
+        final String docCreationInfoId = addDocumentRequestSummary.getId();
+        if(docCreationInfoId == null || docCreationInfoId.isEmpty()) {
+            throw new SW360Exception("Id of added document creation information should not be empty. " + addDocumentRequestSummary.toString());
+        }
+        return new Response(docCreationInfoId, AddDocumentRequestStatus.SUCCESS.equals(addDocumentRequestSummary.getRequestStatus()));
+    }
+
+    public Response addPackageInformation(PackageInformation packageInfo) throws SW360Exception, MalformedURLException {
+        log.debug("create PackageInfomation { name='" + packageInfo.getName() + "' }");
+        SpdxPackageInfoDatabaseHandler handler = new SpdxPackageInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
+        final AddDocumentRequestSummary addDocumentRequestSummary = handler.addPackageInformation(packageInfo, user);
+
+        final String packageInfoId = addDocumentRequestSummary.getId();
+        if(packageInfoId == null || packageInfoId.isEmpty()) {
+            throw new SW360Exception("Id of added package information should not be empty. " + addDocumentRequestSummary.toString());
+        }
+        return new Response(packageInfoId, AddDocumentRequestStatus.SUCCESS.equals(addDocumentRequestSummary.getRequestStatus()));
     }
 
     public Response addProject(Project project) throws SW360Exception {

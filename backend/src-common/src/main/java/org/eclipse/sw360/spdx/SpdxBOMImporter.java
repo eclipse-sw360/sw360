@@ -17,14 +17,27 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.spdx.annotations.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.fileinformation.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.otherlicensinginformationdetected.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelements.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.*;
+import org.eclipse.sw360.datahandler.thrift.spdxdocument.*;
+import org.eclipse.sw360.datahandler.thrift.spdxpackageinfo.*;
 import org.spdx.rdfparser.InvalidSPDXAnalysisException;
 import org.spdx.rdfparser.SPDXDocumentFactory;
 import org.spdx.rdfparser.model.*;
+import org.spdx.rdfparser.model.pointer.*;
+import org.spdx.rdfparser.license.ExtractedLicenseInfo;
+import org.spdx.rdfparser.SpdxPackageVerificationCode;
+import org.spdx.rdfparser.SPDXChecksum;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -73,7 +86,7 @@ public class SpdxBOMImporter {
         if (SW360Constants.TYPE_PROJECT.equals(type)) {
             response = importAsProject(spdxItem, attachmentContent);
         } else if (SW360Constants.TYPE_RELEASE.equals(type)) {
-            response = importAsRelease(spdxItem, attachmentContent);
+            response = importAsRelease(spdxItem, attachmentContent, spdxDocument);
         } else {
             throw new SW360Exception("Unsupported type=[" + type + "], can not import BOM");
         }
@@ -121,6 +134,436 @@ public class SpdxBOMImporter {
         return release;
     }
 
+    private SPDXDocument createSPDXDocumentFromSpdxDocument(SpdxDocument spdxDocument) {
+        SPDXDocument doc = new SPDXDocument();
+        try {
+            final SpdxSnippet[] spdxSnippets = spdxDocument.getDocumentContainer().findAllSnippets().toArray(new SpdxSnippet[0]);;
+            final Relationship[] spdxRelationships = spdxDocument.getRelationships();
+            final Annotation[] spdxAnnotations = spdxDocument.getAnnotations();
+            final ExtractedLicenseInfo[] extractedLicenseInfos = spdxDocument.getExtractedLicenseInfos();
+
+            final Set<SnippetInformation> snippetInfos = createSnippetsFromSpdxSnippets(spdxSnippets);
+            final Set<RelationshipsBetweenSPDXElements> relationships = createRelationshipsFromSpdxRelationships(spdxRelationships);
+            final Set<Annotations> annotations = createAnnotationsFromSpdxAnnotations(spdxAnnotations);
+            final Set<OtherLicensingInformationDetected> otherLicenses = createOtherLicensesFromSpdxExtractedLicenses(extractedLicenseInfos);
+
+            doc.setSnippets(snippetInfos)
+                .setRelationships(relationships)
+                .setAnnotations(annotations);
+        } catch (InvalidSPDXAnalysisException e) {
+            log.error(e);
+        }
+
+        return doc;
+    }
+
+    private Set<Annotations> createAnnotationsFromSpdxAnnotations(Annotation[] spdxAnnotations) {
+        Set<Annotations> annotations = new HashSet<Annotations>();
+
+        for(Annotation spdxAnn : spdxAnnotations) {
+            String annotator = spdxAnn.getAnnotator();
+            String date = spdxAnn.getAnnotationDate();
+            String type = spdxAnn.getAnnotationTypeTag();
+            String comment = spdxAnn.getComment();
+
+            Annotations ann = new Annotations();
+            ann.setAnnotator(annotator)
+                .setAnnotationDate(date)
+                .setAnnotationType(type)
+                .setAnnotationComment(comment);
+
+            annotations.add(ann);
+        }
+
+        return annotations;
+    }
+
+    private Set<SnippetInformation> createSnippetsFromSpdxSnippets(SpdxSnippet[] spdxSnippets) {
+        Set<SnippetInformation> snippets = new HashSet<SnippetInformation>();
+
+        try {
+            for (SpdxSnippet spdxSnippet : spdxSnippets) {
+                String id = spdxSnippet.getId();
+                String snippetFromFile = spdxSnippet.getSnippetFromFile().getName();
+                Set<SnippetRange> ranges = createSnippetRangesFromSpdxSnippet(spdxSnippet);
+                String licenseConcluded = spdxSnippet.getLicenseConcluded().toString();
+                Set<String> licenseInfoInFile = Arrays.stream(spdxSnippet.getLicenseInfoFromFiles())
+                                            .map(license -> license.toString())
+                                            .collect(Collectors.toSet());
+                String licenseComment = spdxSnippet.getLicenseComment();
+                String copyrightText = spdxSnippet.getCopyrightText();
+                String comment = spdxSnippet.getComment();
+                String name = spdxSnippet.getName();
+                String attributionText = String.join("|", spdxSnippet.getAttributionText());
+
+                SnippetInformation snippet = new SnippetInformation();
+                snippet.setSPDXID(id)
+                        .setSnippetFromFile(snippetFromFile)
+                        .setSnippetRanges(ranges)
+                        .setLicenseConcluded(licenseConcluded)
+                        .setLicenseInfoInSnippets(licenseInfoInFile)
+                        .setLicenseComments(licenseComment)
+                        .setCopyrightText(copyrightText)
+                        .setComment(comment)
+                        .setName(name)
+                        .setSnippetAttributionText(attributionText);
+
+                snippets.add(snippet);
+            }
+        } catch (InvalidSPDXAnalysisException e) {
+            log.error(e);
+        }
+
+        return snippets;
+    }
+
+    private Set<SnippetRange> createSnippetRangesFromSpdxSnippet(SpdxSnippet spdxSnippet) throws InvalidSPDXAnalysisException {
+        StartEndPointer spdxByteRange = spdxSnippet.getByteRange();
+        String[] byteRanges = rangeToStrs(spdxByteRange);
+        SnippetRange snippetByteRange = new SnippetRange();
+        snippetByteRange.setRangeType("BYTE")
+                .setStartPointer(byteRanges[0])
+                .setEndPointer(byteRanges[1])
+                .setReference(spdxByteRange.getStartPointer().getReference().toString());
+
+        StartEndPointer spdxLineRange = spdxSnippet.getLineRange();
+        String[] lineRanges = rangeToStrs(spdxLineRange);
+        SnippetRange snippetLineRange = new SnippetRange();
+        snippetLineRange.setRangeType("LINE")
+                .setStartPointer(lineRanges[0])
+                .setEndPointer(lineRanges[1])
+                .setReference(spdxLineRange.getStartPointer().getReference().toString());
+
+        return new HashSet<SnippetRange>(Arrays.asList(snippetByteRange, snippetLineRange));
+    }
+
+    // refer to rangeToStr function of spdx-tools
+    private String[] rangeToStrs(StartEndPointer rangePointer) throws InvalidSPDXAnalysisException {
+        SinglePointer startPointer = rangePointer.getStartPointer();
+        if (startPointer == null) {
+            throw new InvalidSPDXAnalysisException("Missing start pointer");
+        }
+        SinglePointer endPointer = rangePointer.getEndPointer();
+        if (endPointer == null) {
+            throw new InvalidSPDXAnalysisException("Missing end pointer");
+        }
+        String start = null;
+        if (startPointer instanceof ByteOffsetPointer) {
+            start = String.valueOf(((ByteOffsetPointer)startPointer).getOffset());
+        } else if (startPointer instanceof LineCharPointer) {
+            start = String.valueOf(((LineCharPointer)startPointer).getLineNumber());
+        } else {
+            log.error("Unknown pointer type for start pointer "+startPointer.toString());
+            throw new InvalidSPDXAnalysisException("Unknown pointer type for start pointer");
+        }
+        String end = null;
+        if (endPointer instanceof ByteOffsetPointer) {
+            end = String.valueOf(((ByteOffsetPointer)endPointer).getOffset());
+        } else if (endPointer instanceof LineCharPointer) {
+            end = String.valueOf(((LineCharPointer)endPointer).getLineNumber());
+        } else {
+            log.error("Unknown pointer type for start pointer "+startPointer.toString());
+            throw new InvalidSPDXAnalysisException("Unknown pointer type for start pointer");
+        }
+        return new String[] { start, end };
+    }
+
+    private Set<RelationshipsBetweenSPDXElements> createRelationshipsFromSpdxRelationships(Relationship[] spdxRelationships) {
+        Set<RelationshipsBetweenSPDXElements> relationships = new HashSet<RelationshipsBetweenSPDXElements>();
+
+        for (Relationship spdxRelationship : spdxRelationships) {
+            String relatedSpdxElementId = spdxRelationship.getRelatedSpdxElement().getId();
+            String type = spdxRelationship.getRelationshipType().toString();
+            String relatedSpdxElement = spdxRelationship.getRelatedSpdxElement().toString();
+            String comment = spdxRelationship.getComment();
+
+            RelationshipsBetweenSPDXElements relationship = new RelationshipsBetweenSPDXElements();
+            relationship.setSpdxElementId(relatedSpdxElementId)
+                        .setRelationshipType(type)
+                        .setRelatedSpdxElement(relatedSpdxElement)
+                        .setRelationshipComment(comment);
+
+            relationships.add(relationship);
+        }
+
+        return relationships;
+    }
+
+    private Set<OtherLicensingInformationDetected> createOtherLicensesFromSpdxExtractedLicenses(ExtractedLicenseInfo[] spdxExtractedLicenses) {
+        Set<OtherLicensingInformationDetected> otherLicenses = new HashSet<OtherLicensingInformationDetected>();
+
+        for (ExtractedLicenseInfo spdxExtractedLicense : spdxExtractedLicenses) {
+            String licenseId = spdxExtractedLicense.getLicenseId();
+            String extractedText = spdxExtractedLicense.getExtractedText();
+            String name = spdxExtractedLicense.getName();
+            Set<String> crossRef = new HashSet<String>(Arrays.asList(spdxExtractedLicense.getCrossRef()));
+            String comment = spdxExtractedLicense.getComment();
+
+            OtherLicensingInformationDetected otherLicense = new OtherLicensingInformationDetected();
+            otherLicense.setLicenseId(licenseId)
+                        .setExtractedText(extractedText)
+                        .setLicenseName(name)
+                        .setLicenseCrossRefs(crossRef)
+                        .setLicenseComment(comment);
+
+            otherLicenses.add(otherLicense);
+        }
+
+        return otherLicenses;
+    }
+
+    private DocumentCreationInformation createDocumentCreationInfoFromSpdxDocument(SpdxDocument spdxDocument) {
+        final DocumentCreationInformation info = new DocumentCreationInformation();
+
+        try {
+            final String spdxVersion = spdxDocument.getSpecVersion();
+            final String dataLicense = spdxDocument.getDataLicense().toString();
+            // final String spdxId = spdxDocument.getId();
+            final String name = spdxDocument.getName();
+            final String documentNamespace = spdxDocument.getDocumentContainer().getDocumentNamespace();
+            final Set<ExternalDocumentReferences> refs = createExternalDocumentRefsFromSpdxDocument(spdxDocument);
+            final String licenseListVersion = spdxDocument.getCreationInfo().getLicenseListVersion();
+            final Set<Creator> creators = createCreatorFromSpdxDocument(spdxDocument);
+            final String createdDate = spdxDocument.getCreationInfo().getCreated();
+            final String creatorComment = spdxDocument.getCreationInfo().getComment();
+            final String documentComment = spdxDocument.getDocumentComment();
+
+            info.setDocumentCreationInformationVersion(spdxVersion)
+                .setDataLicense(dataLicense)
+                // .setSpdxDocumentId(spdxId)
+                .setName(name)
+                .setDocumentNamespace(documentNamespace)
+                .setExternalDocumentRefs(refs)
+                .setLicenseListVersion(licenseListVersion)
+                .setCreator(creators)
+                .setCreated(createdDate)
+                .setCreatorComment(creatorComment)
+                .setDocumentComment(documentComment);
+        } catch (InvalidSPDXAnalysisException e) {
+            log.error(e);
+        }
+
+        return info;
+    }
+
+    private Set<ExternalDocumentReferences> createExternalDocumentRefsFromSpdxDocument(SpdxDocument spdxDocument) {
+        Set<ExternalDocumentReferences> refs = new HashSet<ExternalDocumentReferences>();
+
+        try {
+            ExternalDocumentRef[] externalDocumentRefs = spdxDocument.getDocumentContainer().getExternalDocumentRefs();
+
+            for (ExternalDocumentRef externalDocumentRef : externalDocumentRefs) {
+                Checksum spdxChecksum = externalDocumentRef.getChecksum();
+
+                String externalDocumentId = externalDocumentRef.getExternalDocumentId();
+                String spdxDocumentNamespace = externalDocumentRef.getSpdxDocumentNamespace();
+                CheckSum checksum = new CheckSum();
+                checksum.setAlgorithm(spdxChecksum.getAlgorithm().toString())
+                        .setChecksumValue(spdxChecksum.getValue());
+
+                ExternalDocumentReferences ref = new ExternalDocumentReferences();
+                ref.setExternalDocumentId(externalDocumentId)
+                    .setChecksum(checksum)
+                    .setSpdxDocument(spdxDocumentNamespace);
+
+                refs.add(ref);
+            }
+        } catch (InvalidSPDXAnalysisException e) {
+            log.error(e);
+        }
+
+        return refs;
+    }
+
+    private Set<Creator> createCreatorFromSpdxDocument(SpdxDocument spdxDocument) {
+        Set<Creator> creators = new HashSet<Creator>();
+
+        try {
+            String[] spdxCreators = spdxDocument.getCreationInfo().getCreators();
+
+            for (String spdxCreator : spdxCreators) {
+                String[] data = spdxCreator.split(":");
+                if (data.length != 2) {
+                    log.error("Failed to get SPDX creator!");
+                    continue;
+                }
+                String type = data[0].trim();
+                String value = data[1].trim();
+
+                Creator creator = new Creator();
+                creator.setType(type);
+                creator.setValue(value);
+
+                creators.add(creator);
+            }
+        } catch (InvalidSPDXAnalysisException e) {
+            log.error(e);
+        }
+
+        return creators;
+    }
+
+    private PackageInformation createPackageInfoFromSpdxPackage(SpdxPackage spdxPackage) {
+        final PackageInformation pInfo = new PackageInformation();
+
+        try {
+            final String name = spdxPackage.getName();
+            final String spdxId = spdxPackage.getId();
+            final String versionInfo = spdxPackage.getVersionInfo();
+            final String packageFileName = spdxPackage.getPackageFileName();
+            final String supplier = spdxPackage.getSupplier();
+            final String originator = spdxPackage.getOriginator();
+            final String downloadLocation = spdxPackage.getDownloadLocation();
+            final boolean fileAnalyzed = spdxPackage.isFilesAnalyzed();
+            final PackageVerificationCode PVC = createPVCFromSpdxPackage(spdxPackage);
+            final String homepage = spdxPackage.getHomepage();
+            final String sourceInfo = spdxPackage.getSourceInfo();
+            final String licenseConcluded = spdxPackage.getLicenseConcluded().toString();
+            final Set<String> licenseInfosFromFiles = Arrays.stream(spdxPackage.getLicenseInfoFromFiles())
+                                                        .map(license -> license.toString())
+                                                        .collect(Collectors.toSet());
+            final String licenseDeclared = spdxPackage.getLicenseDeclared().toString();
+            final String licenseComment = spdxPackage.getLicenseComment();
+            final String copyrightText = spdxPackage.getCopyrightText();
+            final String summary = spdxPackage.getSummary();
+            final String description = spdxPackage.getDescription();
+            final String comment = spdxPackage.getComment();
+            final Set<ExternalReference> externalRefs = createExternalReferenceFromSpdxPackage(spdxPackage);
+            final Set<String> attributionText = new HashSet<String>(Arrays.asList(spdxPackage.getAttributionText()));
+            final Set<Annotations> annotations = createAnnotationsFromSpdxAnnotations(spdxPackage.getAnnotations());
+
+            pInfo.setName(name)
+                .setSPDXID(spdxId)
+                .setVersionInfo(versionInfo)
+                .setPackageFileName(packageFileName)
+                .setSupplier(supplier)
+                .setOriginator(originator)
+                .setDownloadLocation(downloadLocation)
+                .setFilesAnalyzed(fileAnalyzed)
+                .setPackageVerificationCode(PVC)
+                .setHomepage(homepage)
+                .setSourceInfo(sourceInfo)
+                .setLicenseConcluded(licenseConcluded)
+                .setLicenseInfoFromFiles(licenseInfosFromFiles)
+                .setLicenseDeclared(licenseDeclared)
+                .setLicenseComments(licenseComment)
+                .setCopyrightText(copyrightText)
+                .setSummary(summary)
+                .setDescription(description)
+                .setPackageComment(comment)
+                .setExternalRefs(externalRefs)
+                .setAttributionText(attributionText)
+                .setAnnotations(annotations);
+        } catch (InvalidSPDXAnalysisException e) {
+            log.error(e);
+        }
+
+        return pInfo;
+    }
+
+    private PackageVerificationCode createPVCFromSpdxPackage(SpdxPackage spdxPackage) {
+        final PackageVerificationCode PVC = new PackageVerificationCode();
+
+        try {
+            final SpdxPackageVerificationCode spdxPVC = spdxPackage.getPackageVerificationCode();
+            final Set<String> excludedFileNames = new HashSet<String>(Arrays.asList(spdxPVC.getExcludedFileNames()));
+            final String value = spdxPVC.getValue();
+
+            PVC.setExcludedFiles(excludedFileNames)
+                .setValue(value);
+        } catch (InvalidSPDXAnalysisException e) {
+            log.error(e);
+        }
+
+        return PVC;
+    }
+
+    private Set<ExternalReference> createExternalReferenceFromSpdxPackage(SpdxPackage spdxPackage) {
+        Set<ExternalReference> refs = new HashSet<ExternalReference>();
+
+        try {
+            ExternalRef[] spdxExternalRefs = spdxPackage.getExternalRefs();
+            for (ExternalRef spdxRef : spdxExternalRefs) {
+                String category = spdxRef.getReferenceCategory().toString();
+                String locator = spdxRef.getReferenceLocator();
+                String type = spdxRef.getReferenceType().toString();
+                String comment = spdxRef.getComment();
+
+                ExternalReference ref = new ExternalReference();
+                ref.setReferenceCategory(category)
+                    .setReferenceLocator(locator)
+                    .setReferenceType(type)
+                    .setComment(comment);
+
+                refs.add(ref);
+            }
+        } catch (InvalidSPDXAnalysisException e) {
+            log.error(e);
+        }
+
+        return refs;
+    }
+
+    private Set<FileInformation> createFilesInformationFromSpdxFiles(SpdxFile[] spdxFiles) {
+        Set<FileInformation> files = new HashSet<FileInformation>();
+
+        for (SpdxFile spdxFile : spdxFiles) {
+            String name = spdxFile.getName();
+            String id = spdxFile.getId();
+            Set<String> fileTypes = Arrays.stream(spdxFile.getFileTypes())
+                                        .map(type -> type.getTag())
+                                        .collect(Collectors.toSet());
+            Set<CheckSum> checksums = createCheckSumsFromSpdxChecksums(spdxFile.getChecksums());
+            String licenseConcluded = spdxFile.getLicenseConcluded().toString();
+            Set<String> licenseInfoFromFiles = Arrays.stream(spdxFile.getLicenseInfoFromFiles())
+                                        .map(license -> license.toString())
+                                        .collect(Collectors.toSet());
+            String licenseComment = spdxFile.getLicenseComments();
+            String copyrightText = spdxFile.getCopyrightText();
+            String comment = spdxFile.getComment();
+            String noticeText = spdxFile.getNoticeText();
+            Set<String> fileContributors = new HashSet<String>(Arrays.asList(spdxFile.getFileContributors()));
+            Set<String> attributionText = new HashSet<String>(Arrays.asList(spdxFile.getAttributionText()));
+            Set<Annotations> annotations = createAnnotationsFromSpdxAnnotations(spdxFile.getAnnotations());
+
+            FileInformation file = new FileInformation();
+            file.setFileName(name)
+                .setSPDXID(id)
+                .setFileTypes(fileTypes)
+                .setChecksums(checksums)
+                .setLicenseConcluded(licenseConcluded)
+                .setLicenseInfoInFiles(licenseInfoFromFiles)
+                .setLicenseComments(licenseComment)
+                .setCopyrightText(copyrightText)
+                .setFileComment(comment)
+                .setNoticeText(noticeText)
+                .setFileContributors(attributionText)
+                .setFileAttributionText(attributionText)
+                .setAnnotations(annotations);
+
+            files.add(file);
+        }
+
+        return files;
+    }
+
+    private Set<CheckSum> createCheckSumsFromSpdxChecksums(Checksum[] spdxChecksums) {
+        Set<CheckSum> checksums = new HashSet<CheckSum>();
+
+        for (Checksum spdxChecksum : spdxChecksums) {
+            String algorithm = spdxChecksum.getAlgorithm().toString();
+            String value = spdxChecksum.getValue();
+
+            CheckSum checksum = new CheckSum();
+            checksum.setAlgorithm(algorithm)
+                    .setChecksumValue(value);
+
+            checksums.add(checksum);
+        }
+
+        return checksums;
+    }
+
     private Attachment makeAttachmentFromContent(AttachmentContent attachmentContent) {
         Attachment attachment = new Attachment();
         attachment.setAttachmentContentId(attachmentContent.getId());
@@ -132,10 +575,10 @@ public class SpdxBOMImporter {
     }
 
     private Optional<SpdxBOMImporterSink.Response> importAsRelease(SpdxElement relatedSpdxElement) throws SW360Exception {
-        return importAsRelease(relatedSpdxElement, null);
+        return importAsRelease(relatedSpdxElement, null, null);
     }
 
-    private Optional<SpdxBOMImporterSink.Response> importAsRelease(SpdxElement relatedSpdxElement, AttachmentContent attachmentContent) throws SW360Exception {
+    private Optional<SpdxBOMImporterSink.Response> importAsRelease(SpdxElement relatedSpdxElement, AttachmentContent attachmentContent, SpdxDocument spdxDocument) throws SW360Exception {
         if (relatedSpdxElement instanceof SpdxPackage) {
             final SpdxPackage spdxPackage = (SpdxPackage) relatedSpdxElement;
 
@@ -157,12 +600,48 @@ public class SpdxBOMImporter {
 
 
             final SpdxBOMImporterSink.Response response = sink.addRelease(release);
+
+            try {
+                importSpdxDocument(response.getId(), spdxDocument, spdxPackage);
+            } catch (MalformedURLException e) {
+                log.error(e);
+            }
+
             response.addChild(component);
             return Optional.of(response);
         } else {
             log.debug("Unsupported SpdxElement: " + relatedSpdxElement.getClass().getCanonicalName());
             return Optional.empty();
         }
+    }
+
+    private void importSpdxDocument(String releaseId, SpdxDocument spdxDocument, SpdxPackage spdxPackage) throws SW360Exception, MalformedURLException {
+        final SPDXDocument spdxDoc = createSPDXDocumentFromSpdxDocument(spdxDocument);
+        final DocumentCreationInformation docCreationInfo = createDocumentCreationInfoFromSpdxDocument(spdxDocument);
+        final PackageInformation packageInfo = createPackageInfoFromSpdxPackage(spdxPackage);
+
+        // Workaround, remove after update code in db handler
+        spdxDoc.setSpdxPackageInfoIds(new HashSet<String>());
+
+        spdxDoc.setReleaseId(releaseId);
+        final SpdxBOMImporterSink.Response spdxDocRes = sink.addSpdxDocument(spdxDoc);
+        final String spdxDocId = spdxDocRes.getId();
+        log.info("===========spdxDoc: " + spdxDocId);
+
+        docCreationInfo.setSpdxDocumentId(spdxDocId);
+        final SpdxBOMImporterSink.Response docCreationInfoRes = sink.addDocumentCreationInformation(docCreationInfo);
+        final String docCreationInfoId = docCreationInfoRes.getId();
+
+        packageInfo.setSpdxDocumentId(spdxDocId);
+        final SpdxBOMImporterSink.Response packageInfoRes = sink.addPackageInformation(packageInfo);
+        final String packageInfoId = packageInfoRes.getId();
+        // Set<String> packageInfoIds = new HashSet<String>(Arrays.asList(packageInfoId));
+        log.info("===========docCreation: " + docCreationInfoId);
+        log.info("===========packageInfo: " + packageInfoId);
+
+        // spdxDoc.setId(spdxDocId);
+        // spdxDoc.setSpdxDocumentCreationInfoId(docCreationInfoId);
+        // spdxDoc.setSpdxPackageInfoIds(packageInfoIds);
     }
 
     private Map<String, ReleaseRelationship> makeReleaseIdToRelationship(List<SpdxBOMImporterSink.Response> releases) {
