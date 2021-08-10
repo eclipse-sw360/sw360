@@ -23,6 +23,7 @@ import org.eclipse.sw360.datahandler.thrift.changelogs.*;
 import org.eclipse.sw360.datahandler.db.ReleaseRepository;
 import org.eclipse.sw360.datahandler.db.VendorRepository;
 import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
+import org.eclipse.sw360.datahandler.entitlement.SpdxDocumentModerator;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -50,6 +51,7 @@ public class SpdxDocumentDatabaseHandler {
     private final ReleaseRepository releaseRepository;
     private final VendorRepository vendorRepository;
     private DatabaseHandlerUtil dbHandlerUtil;
+    private final SpdxDocumentModerator moderator;
 
     public SpdxDocumentDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException {
         db = new DatabaseConnectorCloudant(httpClient, dbName);
@@ -61,7 +63,7 @@ public class SpdxDocumentDatabaseHandler {
         vendorRepository = new VendorRepository(sw360db);
         releaseRepository = new ReleaseRepository(sw360db, vendorRepository);
         // Create the moderator
-
+        moderator = new SpdxDocumentModerator();
         // Create the changelogs
         dbChangeLogs = new DatabaseConnectorCloudant(httpClient, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
@@ -103,6 +105,9 @@ public class SpdxDocumentDatabaseHandler {
 
     public RequestStatus updateSPDXDocument(SPDXDocument spdx, User user) throws SW360Exception {
         prepareSPDXDocument(spdx);
+        if (!makePermission(spdx, user).isActionAllowed(RequestedAction.WRITE)) {
+            return moderator.updateSPDXDocument(spdx, user);
+        }
         SPDXDocument actual = SPDXDocumentRepository.get(spdx.getId());
         assertNotNull(actual, "Could not find SPDX Document to update!");
         SPDXDocumentRepository.update(spdx);
@@ -113,9 +118,9 @@ public class SpdxDocumentDatabaseHandler {
     public RequestStatus deleteSPDXDocument(String id, User user) throws SW360Exception {
         SPDXDocument spdx = SPDXDocumentRepository.get(id);
         assertNotNull(spdx, "Could not find SPDX Document to delete!");
-        // if (makePermission(spdx, user).isActionAllowed(RequestedAction.WRITE)) {
-        //     return RequestStatus.SENT_TO_MODERATOR;
-        // }
+        if (!makePermission(spdx, user).isActionAllowed(RequestedAction.WRITE)) {
+            return moderator.deleteSPDXDocument(spdx, user);
+        }
         Set<String> packageInfoIds = spdx.getSpdxPackageInfoIds();
         if (packageInfoIds != null) {
             return RequestStatus.IN_USE;
