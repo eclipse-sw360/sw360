@@ -90,14 +90,15 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         createIndex("byDepartment", new String[] {"requestingUserDepartment"}, db);
         createIndex("byModerationState", new String[] {"moderationState"}, db);
         createIndex("byId", new String[] {"_id"}, db);
+        createIndex("byDocumentId", new String[] {"documentId"}, db);
     }
 
     public List<ModerationRequest> getRequestsByDocumentId(String documentId) {
         final Selector typeSelector = eq("type", "moderation");
-        final Selector filterByModeratorSelector = eq("_id", documentId);
+        final Selector filterByModeratorSelector = eq("documentId", documentId);
         final Selector finalSelector = and(typeSelector, filterByModeratorSelector);
         QueryBuilder qb = new QueryBuilder(finalSelector);
-        qb.useIndex("byId");
+        qb.useIndex("byDocumentId");
         List<ModerationRequest> mrs = getConnector().getQueryResult(qb.build(), ModerationRequest.class).getDocs();
         return mrs;
     }

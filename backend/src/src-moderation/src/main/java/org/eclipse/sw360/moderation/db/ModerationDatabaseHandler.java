@@ -339,6 +339,12 @@ public class ModerationDatabaseHandler {
 
     public void acceptRequest(ModerationRequest request, String moderationComment, String reviewer) {
         ModerationRequest dbRequest = repository.get(request.getId());
+        if (dbRequest == null) {
+            dbHandlerUtil.addChangeLogs(null, request, reviewer, Operation.MODERATION_ACCEPT, null,
+                    Lists.newArrayList(), request.getDocumentId(), null);
+            sendMailNotificationsForAcceptedRequest(request);
+            return;
+        }
         ModerationRequest requestBefore = dbRequest.deepCopy();
         // when an MR requests deletion of a document and is accepted, all outstanding MRs for that document are deleted,
         // which means that at this point we can't be sure that the MR still exists.
