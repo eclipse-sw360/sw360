@@ -30,6 +30,9 @@ struct SPDXDocument {
     8: optional set<SnippetInformation> snippets,
     9: optional set<RelationshipsBetweenSPDXElements> relationships,
     10: optional set<Annotations> annotations,
+    // Information for ModerationRequests
+    20: optional DocumentState documentState,
+    21: optional map<RequestedAction, bool> permissions,
 }
 
 service SPDXDocumentService {
