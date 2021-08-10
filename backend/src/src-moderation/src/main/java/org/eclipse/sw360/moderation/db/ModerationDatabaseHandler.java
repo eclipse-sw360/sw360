@@ -24,6 +24,7 @@ import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
+import org.eclipse.sw360.datahandler.db.spdx.document.SpdxDocumentDatabaseHandler;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestEmailTemplate;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
@@ -42,6 +43,7 @@ import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
+import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
@@ -89,6 +91,7 @@ public class ModerationDatabaseHandler {
     private final LicenseDatabaseHandler licenseDatabaseHandler;
     private final ProjectDatabaseHandler projectDatabaseHandler;
     private final ComponentDatabaseHandler componentDatabaseHandler;
+    private final SpdxDocumentDatabaseHandler spdxDocumentDatabaseHandler;
     private final DatabaseConnectorCloudant db;
     private DatabaseHandlerUtil dbHandlerUtil;
 
@@ -104,6 +107,7 @@ public class ModerationDatabaseHandler {
         licenseDatabaseHandler = new LicenseDatabaseHandler(httpClient, dbName);
         projectDatabaseHandler = new ProjectDatabaseHandler(httpClient, dbName, attachmentDbName);
         componentDatabaseHandler = new ComponentDatabaseHandler(httpClient, dbName, attachmentDbName);
+        spdxDocumentDatabaseHandler = new SpdxDocumentDatabaseHandler(httpClient, DatabaseSettings.COUCH_DB_SPDX);
         DatabaseConnectorCloudant dbChangeLogs = new DatabaseConnectorCloudant(httpClient, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
     }
@@ -522,6 +526,37 @@ public class ModerationDatabaseHandler {
         request.setUser(user);
 
         addOrUpdate(request, user);
+    }
+
+    private Set<String> getSPDXDocumentModerators(String department) {
+        // Define moderators
+        Set<String> moderators = new HashSet<>();
+        CommonUtils.addAll(moderators, getUsersAtLeast(UserGroup.ECC_ADMIN, department, false, true));
+        CommonUtils.addAll(moderators, getUsersAtLeast(UserGroup.ADMIN));
+        return moderators;
+    }
+
+    public RequestStatus createRequest(SPDXDocument spdx, User user, Boolean isDeleteRequest) {
+        SPDXDocument dbSpdx;
+        try{
+            dbSpdx = spdxDocumentDatabaseHandler.getSPDXDocumentById(spdx.getId(), user);
+        } catch (SW360Exception e) {
+            log.error("Could not get original SPDX Document from database. Could not generate moderation request.", e);
+            return RequestStatus.FAILURE;
+        }
+        // Define moderators
+        Set<String> moderators = getSPDXDocumentModerators(user.getDepartment());
+        ModerationRequest request = createStubRequest(user, isDeleteRequest, spdx.getId(), moderators);
+
+        // Set meta-data
+        request.setDocumentType(DocumentType.SPDXDOCUMENT);
+        // request.setDocumentName("SPDXDocument");
+
+        // Fill the request
+        ModerationRequestGenerator generator = new SpdxDocumentModerationRequestGenerator();
+        request = generator.setAdditionsAndDeletions(request, spdx, dbSpdx);
+        addOrUpdate(request, user);
+        return RequestStatus.SENT_TO_MODERATOR;
     }
 
     private String getDepartmentByUserEmail(String userEmail) throws TException {
