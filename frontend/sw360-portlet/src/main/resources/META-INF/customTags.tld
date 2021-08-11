@@ -519,6 +519,12 @@
             <type>java.lang.String</type>
             <rtexprvalue>true</rtexprvalue>
         </attribute>
+        <attribute>
+            <name>isClosedModeration</name>
+            <required>false</required>
+            <type>java.lang.Boolean</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
     </tag>
 
     <tag>
@@ -554,6 +560,12 @@
             <name>tableClasses</name>
             <required>false</required>
             <type>java.lang.String</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>isClosedModeration</name>
+            <required>false</required>
+            <type>java.lang.Boolean</type>
             <rtexprvalue>true</rtexprvalue>
         </attribute>
     </tag>
@@ -593,6 +605,12 @@
             <type>java.lang.String</type>
             <rtexprvalue>true</rtexprvalue>
         </attribute>
+        <attribute>
+            <name>isClosedModeration</name>
+            <required>false</required>
+            <type>java.lang.Boolean</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
     </tag>
 
     <tag>
@@ -627,6 +645,12 @@
             <name>idPrefix</name>
             <required>false</required>
             <type>java.lang.String</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>isClosedModeration</name>
+            <required>false</required>
+            <type>java.lang.Boolean</type>
             <rtexprvalue>true</rtexprvalue>
         </attribute>
         <attribute>
@@ -676,6 +700,12 @@
             <name>idPrefix</name>
             <required>false</required>
             <type>java.lang.String</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>isClosedModeration</name>
+            <required>false</required>
+            <type>java.lang.Boolean</type>
             <rtexprvalue>true</rtexprvalue>
         </attribute>
         <attribute>

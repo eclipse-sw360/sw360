@@ -47,6 +47,7 @@ public class DisplayComponentChanges extends NameSpaceAwareTag {
     private Component deletions;
     private String tableClasses = "";
     private String idPrefix = "";
+    private boolean isClosedModeration = false;
 
     public void setActual(Component actual) {
         this.actual = actual;
@@ -66,6 +67,10 @@ public class DisplayComponentChanges extends NameSpaceAwareTag {
 
     public void setIdPrefix(String idPrefix) {
         this.idPrefix = idPrefix;
+    }
+
+    public void setIsClosedModeration(boolean isClosedModeration) {
+        this.isClosedModeration = isClosedModeration;
     }
 
     public int doStartTag() throws JspException {
@@ -103,7 +108,7 @@ public class DisplayComponentChanges extends NameSpaceAwareTag {
 
                     default:
                         FieldMetaData fieldMetaData = Component.metaDataMap.get(field);
-                        displaySimpleFieldOrSet(display, actual, additions, deletions, field, fieldMetaData, "");
+                        displaySimpleFieldOrSet(display, actual, additions, deletions, field, fieldMetaData, "", isClosedModeration);
                 }
             }
 

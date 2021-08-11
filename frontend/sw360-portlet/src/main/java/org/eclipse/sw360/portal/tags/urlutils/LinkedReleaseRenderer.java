@@ -73,7 +73,7 @@ public class LinkedReleaseRenderer {
         }
     }
 
-    public <T> void renderReleaseLinkListCompare(StringBuilder display, Map<String,T> oldReleaseRelationshipMap, Map<String, T> deleteReleaseRelationshipMap, Map<String, T> updateReleaseRelationshipMap, Set<String> releaseIds, HttpServletRequest request) {
+    public <T> void renderReleaseLinkListCompare(StringBuilder display, Map<String,T> oldReleaseRelationshipMap, Map<String, T> deleteReleaseRelationshipMap, Map<String, T> updateReleaseRelationshipMap, Set<String> releaseIds, HttpServletRequest request, boolean isClosedModeration) {
         if (releaseIds.isEmpty()) return;
 
 
@@ -87,8 +87,13 @@ public class LinkedReleaseRenderer {
             for (String releaseId : releaseIds) {
                 T oldReleaseRelationship = oldReleaseRelationshipMap.get(releaseId);
                 T updateReleaseRelationship = updateReleaseRelationshipMap.get(releaseId);
+                T deleteReleaseRelationship = deleteReleaseRelationshipMap.get(releaseId);
 
-                if (!oldReleaseRelationship.equals(updateReleaseRelationship)) {
+                if (!isClosedModeration && !oldReleaseRelationship.equals(updateReleaseRelationship)) {
+                    changedIds.add(releaseId);
+                }
+
+                if (isClosedModeration && !deleteReleaseRelationship.equals(updateReleaseRelationship)) {
                     changedIds.add(releaseId);
                 }
             }

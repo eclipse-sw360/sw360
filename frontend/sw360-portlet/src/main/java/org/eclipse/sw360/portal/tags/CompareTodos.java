@@ -19,6 +19,7 @@ import org.apache.thrift.meta_data.FieldMetaData;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -43,6 +44,7 @@ public class CompareTodos extends NameSpaceAwareTag {
     private String department;
     private String tableClasses = "";
     private String idPrefix = "";
+    private boolean isClosedModeration = false;
 
     public void setOld(List<Obligation> old) {
         this.old = nullToEmptyList(old);
@@ -68,6 +70,10 @@ public class CompareTodos extends NameSpaceAwareTag {
         this.idPrefix = idPrefix;
     }
 
+    public void setIsClosedModeration(boolean isClosedModeration) {
+        this.isClosedModeration = isClosedModeration;
+    }
+
     public int doStartTag() throws JspException {
 
         JspWriter jspWriter = pageContext.getOut();
@@ -75,6 +81,9 @@ public class CompareTodos extends NameSpaceAwareTag {
         String namespace = getNamespace();
 
         try {
+            if (isClosedModeration) {
+                old = new ArrayList<Obligation>();
+            }
             renderTodos(display, old, update, delete);
 
             String renderString = display.toString();

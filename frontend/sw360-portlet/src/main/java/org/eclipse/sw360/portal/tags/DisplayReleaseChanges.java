@@ -14,6 +14,7 @@ import com.google.common.collect.Sets;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.portal.tags.urlutils.LinkedReleaseRenderer;
@@ -44,6 +45,7 @@ public class DisplayReleaseChanges extends UserAwareTag {
     private Release deletions;
     private String tableClasses = "";
     private String idPrefix = "";
+    private boolean isClosedModeration = false;
 
     public void setActual(Release actual) {
         this.actual = actual;
@@ -63,6 +65,10 @@ public class DisplayReleaseChanges extends UserAwareTag {
 
     public void setIdPrefix(String idPrefix) {
         this.idPrefix = idPrefix;
+    }
+
+    public void setIsClosedModeration(boolean isClosedModeration) {
+        this.isClosedModeration = isClosedModeration;
     }
 
     public int doStartTag() throws JspException {
@@ -98,7 +104,7 @@ public class DisplayReleaseChanges extends UserAwareTag {
                         break;
                     default:
                         FieldMetaData fieldMetaData = Release.metaDataMap.get(field);
-                        displaySimpleFieldOrSet(display, actual, additions, deletions, field, fieldMetaData, "");
+                        displaySimpleFieldOrSet(display, actual, additions, deletions, field, fieldMetaData, "", isClosedModeration);
                 }
             }
 
@@ -149,6 +155,12 @@ public class DisplayReleaseChanges extends UserAwareTag {
 
             Set<String> addedReleaseIds = Sets.difference(additions.getReleaseIdToRelationship().keySet(), changedReleaseIds);
 
+            if (isClosedModeration) {
+                addedReleaseIds = Sets.difference(additions.getReleaseIdToRelationship().keySet(),
+                        deletions.getReleaseIdToRelationship().keySet());
+                removedReleaseIds = Sets.difference(deletions.getReleaseIdToRelationship().keySet(),
+                        releaseIdsInDb);
+            }
             display.append("<h3>"+LanguageUtil.get(resourceBundle,"changes.in.linked.releases")+" </h3>");
             LinkedReleaseRenderer renderer = new LinkedReleaseRenderer(display, tableClasses, idPrefix, user);
             renderer.renderReleaseLinkList(display, deletions.getReleaseIdToRelationship(), removedReleaseIds, LanguageUtil.get(resourceBundle,"removed.release.links"), request);
@@ -159,7 +171,8 @@ public class DisplayReleaseChanges extends UserAwareTag {
                     deletions.getReleaseIdToRelationship(),
                     additions.getReleaseIdToRelationship(),
                     changedReleaseIds,
-                    request);
+                    request,
+                    isClosedModeration);
         }
     }
 
@@ -216,7 +229,7 @@ public class DisplayReleaseChanges extends UserAwareTag {
                     actual.getClearingInformation(),
                     additions.getClearingInformation(),
                     deletions.getClearingInformation(),
-                    field, fieldMetaData, "");
+                    field, fieldMetaData, "", isClosedModeration);
         }
         return "<h3>"+LanguageUtil.get(resourceBundle,"changes.in.clearing.information")+ "</h3>"
                 + String.format("<table class=\"%s\" id=\"%schanges\" >", tableClasses, idPrefix)
@@ -244,7 +257,7 @@ public class DisplayReleaseChanges extends UserAwareTag {
                     actual.getEccInformation(),
                     additions.getEccInformation(),
                     deletions.getEccInformation(),
-                    field, fieldMetaData, "");
+                    field, fieldMetaData, "", isClosedModeration);
         }
         return "<h3>"+LanguageUtil.get(resourceBundle,"changes.in.ecc.information")+"</h3>"
                 + String.format("<table class=\"%s\" id=\"%schanges\" >", tableClasses, idPrefix)
@@ -272,7 +285,7 @@ public class DisplayReleaseChanges extends UserAwareTag {
                     actual.getCotsDetails(),
                     additions.getCotsDetails(),
                     deletions.getCotsDetails(),
-                    field, fieldMetaData, "");
+                    field, fieldMetaData, "", isClosedModeration);
         }
         return "<h3>"+LanguageUtil.get(resourceBundle,"changes.in.cots.details")+"</h3>"
                 + String.format("<table class=\"%s\" id=\"%schanges\" >", tableClasses, idPrefix)

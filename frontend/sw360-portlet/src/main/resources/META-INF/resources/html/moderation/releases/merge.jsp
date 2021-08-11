@@ -56,39 +56,39 @@
                         </div>
                     </div>
                 </div>
-                <core_rt:if test="${sw360:isOpenModerationRequest(moderationRequest)}">
-                    <div class="card">
-                        <div id="moderation-changes-heading" class="card-header">
-                            <h2 class="mb-0">
-                                <button class="btn btn-secondary btn-block" type="button" data-toggle="collapse" data-target="#moderation-changes" aria-expanded="false" aria-controls="moderation-changes">
-                                    <liferay-ui:message key="proposed.changes" />
-                                </button>
-                            </h2>
-                        </div>
-                        <div id="moderation-changes" class="collapse" aria-labelledby="moderation-changes-heading" data-parent="#moderation-wizard">
-                            <div class="card-body">
-                                <h4 class="mt-2"><liferay-ui:message key="basic.fields" /></h4>
-                                <sw360:DisplayReleaseChanges
-                                    actual="${actual_release}"
-                                    additions="${moderationRequest.releaseAdditions}"
-                                    deletions="${moderationRequest.releaseDeletions}"
-                                    idPrefix="basicFields"
-                                    tableClasses="table table-bordered"
-                                />
+                <div class="card">
+                    <div id="moderation-changes-heading" class="card-header">
+                        <h2 class="mb-0">
+                            <button class="btn btn-secondary btn-block" type="button" data-toggle="collapse" data-target="#moderation-changes" aria-expanded="false" aria-controls="moderation-changes">
+                                <liferay-ui:message key="proposed.changes" />
+                            </button>
+                        </h2>
+                    </div>
+                    <div id="moderation-changes" class="collapse" aria-labelledby="moderation-changes-heading" data-parent="#moderation-wizard">
+                        <div class="card-body">
+                            <h4 class="mt-2"><liferay-ui:message key="basic.fields" /></h4>
+                            <sw360:DisplayReleaseChanges
+                                actual="${actual_release}"
+                                additions="${moderationRequest.releaseAdditions}"
+                                deletions="${moderationRequest.releaseDeletions}"
+                                idPrefix="basicFields"
+                                isClosedModeration="${not sw360:isOpenModerationRequest(moderationRequest)}"
+                                tableClasses="table table-bordered"
+                            />
 
-                                <h4 class="mt-4"><liferay-ui:message key="attachments" /></h4>
-                                <sw360:CompareAttachments
-                                    actual="${actual_release.attachments}"
-                                    additions="${moderationRequest.releaseAdditions.attachments}"
-                                    deletions="${moderationRequest.releaseDeletions.attachments}"
-                                    idPrefix="attachments"
-                                    tableClasses="table table-bordered"
-                                    contextType="${component.type}"
-                                    contextId="${component.id}"/>
-                            </div>
+                            <h4 class="mt-4"><liferay-ui:message key="attachments" /></h4>
+                            <sw360:CompareAttachments
+                                actual="${actual_release.attachments}"
+                                additions="${moderationRequest.releaseAdditions.attachments}"
+                                deletions="${moderationRequest.releaseDeletions.attachments}"
+                                idPrefix="attachments"
+                                isClosedModeration="${not sw360:isOpenModerationRequest(moderationRequest)}"
+                                tableClasses="table table-bordered"
+                                contextType="${component.type}"
+                                contextId="${component.id}"/>
                         </div>
                     </div>
-                </core_rt:if>
+                </div>
                 <div class="card">
                     <div id="current-document-heading" class="card-header">
                         <h2 class="mb-0">

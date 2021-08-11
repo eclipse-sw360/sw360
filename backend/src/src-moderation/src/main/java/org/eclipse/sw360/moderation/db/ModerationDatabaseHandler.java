@@ -30,6 +30,7 @@ import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
 import org.eclipse.sw360.datahandler.thrift.Comment;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
@@ -477,6 +478,9 @@ public class ModerationDatabaseHandler {
             return RequestStatus.FAILURE;
         }
 
+        // set created on and created by
+        setCreatedOnAndCreatedBy(project, dbproject);
+
         // Define moderators
         Set<String> moderators = getProjectModerators(dbproject, user.getDepartment());
         ModerationRequest request = createStubRequest(user, isDeleteRequest, project.getId(), moderators);
@@ -490,6 +494,37 @@ public class ModerationDatabaseHandler {
         request = generator.setAdditionsAndDeletions(request, project, dbproject);
         addOrUpdate(request, user);
         return RequestStatus.SENT_TO_MODERATOR;
+    }
+
+    private void setCreatedOnAndCreatedBy(Project project, Project dbproject) {
+        Map<String, ProjectReleaseRelationship> releaseIdToUsageOriginal = dbproject.getReleaseIdToUsage();
+        Map<String, ProjectReleaseRelationship> releaseIdToUsageModeration = project.getReleaseIdToUsage();
+
+        if (!CommonUtils.isNullOrEmptyMap(releaseIdToUsageOriginal)
+                && !CommonUtils.isNullOrEmptyMap(releaseIdToUsageModeration)) {
+            releaseIdToUsageModeration.entrySet().stream().filter(Objects::nonNull)
+                    .filter(entry -> Objects.nonNull(entry.getKey()) && Objects.nonNull(entry.getValue()))
+                    .forEach(entry -> {
+                        String releaseIdModeration = entry.getKey();
+                        ProjectReleaseRelationship projectReleaseRelationshipModeration = entry.getValue();
+                        if (releaseIdToUsageOriginal.containsKey(releaseIdModeration)) {
+                            ProjectReleaseRelationship projectReleaseRelationshipOrig = releaseIdToUsageOriginal
+                                    .get(releaseIdModeration);
+                            if (projectReleaseRelationshipOrig == null) {
+                                return;
+                            }
+                            if (projectReleaseRelationshipOrig.isSetCreatedOn()) {
+                                projectReleaseRelationshipModeration
+                                        .setCreatedOn(projectReleaseRelationshipOrig.getCreatedOn());
+                            }
+
+                            if (projectReleaseRelationshipOrig.isSetCreatedBy()) {
+                                projectReleaseRelationshipModeration
+                                        .setCreatedBy(projectReleaseRelationshipOrig.getCreatedBy());
+                            }
+                        }
+                    });
+        }
     }
 
     @NotNull
