@@ -421,8 +421,8 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
                         let count = $('#detailTab #obligtionsCount').text(),
                             fulfilled = count.split(' / ')[0],
                             total = Number(count.split(' / ')[1]) - 1,
-                            status = $(tr).find('td select.obl_status option:selected').text();
-                        if (status.toUpperCase() === 'FULFILLED') {
+                            status = $(tr).find('td select.obl_status option:selected').val();
+                        if (status === '1' && Number(fulfilled)) {
                             fulfilled = Number(fulfilled) - 1;
                         }
                         $('#detailTab #obligtionsCount').html(fulfilled + ' / ' + total);

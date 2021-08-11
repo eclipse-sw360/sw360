@@ -122,10 +122,12 @@ enum ConfigFor {
 
 enum ObligationStatus {
     OPEN = 0,
-    FULFILLED = 1,
-    IN_PROGRESS = 2,
+    ACKNOWLEDGED_OR_FULFILLED = 1,
+    WILL_BE_FULFILLED_BEFORE_RELEASE = 2,
     NOT_APPLICABLE = 3,
-    TO_BE_FULFILLED_BY_PARENT_PROJECT = 4,
+    DEFERRED_TO_PARENT_PROJECT = 4,
+    FULFILLED_AND_PARENT_MUST_ALSO_FULFILL = 5,
+    ESCALATED = 6
 }
 
 enum ClearingRequestEmailTemplate {
