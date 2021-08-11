@@ -21,6 +21,7 @@ import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdxpackageinfo.*;
 import org.eclipse.sw360.datahandler.thrift.changelogs.*;
 import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
+import org.eclipse.sw360.datahandler.entitlement.SpdxPackageInfoModerator;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -51,6 +52,7 @@ public class SpdxPackageInfoDatabaseHandler {
     private final SpdxPackageInfoRepository PackageInfoRepository;
     private final SpdxDocumentRepository SPDXDocumentRepository;
     private DatabaseHandlerUtil dbHandlerUtil;
+    private final SpdxPackageInfoModerator moderator;
 
     public SpdxPackageInfoDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException {
         db = new DatabaseConnectorCloudant(httpClient, dbName);
@@ -60,7 +62,7 @@ public class SpdxPackageInfoDatabaseHandler {
         SPDXDocumentRepository = new SpdxDocumentRepository(db);
 
         // Create the moderator
-
+        moderator = new SpdxPackageInfoModerator();
         // Create the changelogs
         dbChangeLogs = new DatabaseConnectorCloudant(httpClient, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
@@ -116,35 +118,49 @@ public class SpdxPackageInfoDatabaseHandler {
     }
 
     public RequestStatus updatePackageInformation(PackageInformation packageInfo, User user) throws SW360Exception {
-        // if (makePermission(packageInfo, user).isActionAllowed(RequestedAction.WRITE)) {
-        //     return RequestStatus.SENT_TO_MODERATOR;
-        // }
         PackageInformation actual = PackageInfoRepository.get(packageInfo.getId());
         assertNotNull(actual, "Could not find SPDX Package Information to update!");
+        if (!makePermission(packageInfo, user).isActionAllowed(RequestedAction.WRITE)) {
+            return moderator.updateSpdxPackageInfo(packageInfo, user);
+        }
         PackageInfoRepository.update(packageInfo);
         dbHandlerUtil.addChangeLogs(packageInfo, actual, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, null);
         return RequestStatus.SUCCESS;
     }
 
     public RequestSummary updatePackageInformations(Set<PackageInformation> packageInfos, User user) throws SW360Exception {
-        // if (makePermission(packageInfos, user).isActionAllowed(RequestedAction.WRITE)) {
-        //     return new RequestSummary().setRequestStatus(RequestStatus.SENT_TO_MODERATOR);
-        // }
+        int countPackagesSendToModerator = 0;
         for (PackageInformation packageInfo : packageInfos) {
             PackageInformation actual = PackageInfoRepository.get(packageInfo.getId());
             assertNotNull(actual, "Could not find SPDX Package Information to update!");
-            PackageInfoRepository.update(packageInfo);
-            dbHandlerUtil.addChangeLogs(packageInfo, actual, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, null);
+            if (!makePermission(packageInfos, user).isActionAllowed(RequestedAction.WRITE)) {
+                if (moderator.updateSpdxPackageInfo(packageInfo, user) == RequestStatus.SENT_TO_MODERATOR) {
+                    countPackagesSendToModerator++;
+                }
+            } else {
+                PackageInfoRepository.update(packageInfo);
+                dbHandlerUtil.addChangeLogs(packageInfo, actual, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, null);
+            }
         }
-        return new RequestSummary().setRequestStatus(RequestStatus.SUCCESS);
+        RequestSummary requestSummary = new RequestSummary();
+        if (countPackagesSendToModerator == packageInfos.size()) {
+            requestSummary.setRequestStatus(RequestStatus.SENT_TO_MODERATOR);
+        } else {
+            String message = "Send to moderator request " + countPackagesSendToModerator;
+            requestSummary.setMessage(message)
+                        .setTotalAffectedElements(countPackagesSendToModerator)
+                        .setTotalElements(packageInfos.size())
+                        .setRequestStatus(RequestStatus.SUCCESS);
+        }
+        return requestSummary;
     }
 
     public RequestStatus deletePackageInformation(String id, User user) throws SW360Exception {
         PackageInformation packageInfo = PackageInfoRepository.get(id);
         assertNotNull(packageInfo, "Could not find SPDX Package Information to delete!");
-        // if (makePermission(packageInfo, user).isActionAllowed(RequestedAction.WRITE)) {
-        //     return RequestStatus.SENT_TO_MODERATOR;
-        // }
+        if (!makePermission(packageInfo, user).isActionAllowed(RequestedAction.WRITE)) {
+            return moderator.deleteSpdxPackageInfo(packageInfo, user);
+        }
         PackageInfoRepository.remove(packageInfo);
         dbHandlerUtil.addChangeLogs(null, packageInfo, user.getEmail(), Operation.DELETE, null, Lists.newArrayList(), null, null);
         String spdxDocumentId = packageInfo.getSpdxDocumentId();

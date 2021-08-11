@@ -45,6 +45,9 @@ struct PackageInformation {
     25: optional set<ExternalReference> externalRefs,
     26: optional set<string> attributionText,
     27: optional set<Annotation> annotations,
+    // Information for ModerationRequests
+    30: optional DocumentState documentState,
+    31: optional map<RequestedAction, bool> permissions,
 }
 
 struct PackageVerificationCode {

@@ -29,6 +29,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
+import org.eclipse.sw360.datahandler.thrift.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.moderation.db.ModerationDatabaseHandler;
 
 import java.io.IOException;
@@ -158,6 +159,22 @@ public class ModerationHandler implements ModerationService.Iface {
         assertNotNull(documentCreationInfo);
 
         handler.createRequest(documentCreationInfo, user, true);
+    }
+
+    @Override
+    public RequestStatus createSpdxPackageInfoRequest(PackageInformation packageInfo, User user) throws TException {
+        assertUser(user);
+        assertNotNull(packageInfo);
+
+        return handler.createRequest(packageInfo, user, false);
+    }
+
+    @Override
+    public void createSpdxPackageInfoDeleteRequest(PackageInformation packageInfo, User user) throws TException {
+        assertUser(user);
+        assertNotNull(packageInfo);
+
+        handler.createRequest(packageInfo, user, true);
     }
 
     @Override

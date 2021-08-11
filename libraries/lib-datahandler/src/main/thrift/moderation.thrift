@@ -16,6 +16,7 @@ include "users.thrift"
 include "licenses.thrift"
 include "spdx/spdxdocument.thrift"
 include "spdx/documentcreationinformation.thrift"
+include "spdx/packageinformation.thrift"
 
 namespace java org.eclipse.sw360.datahandler.thrift.moderation
 namespace php sw360.thrift.moderation
@@ -35,6 +36,7 @@ typedef components.ComponentType ComponentType
 typedef projects.ClearingRequest ClearingRequest
 typedef spdxdocument.SPDXDocument SPDXDocument
 typedef documentcreationinformation.DocumentCreationInformation DocumentCreationInformation
+typedef packageinformation.PackageInformation PackageInformation
 
 enum DocumentType {
     COMPONENT = 1,
@@ -44,6 +46,7 @@ enum DocumentType {
     USER = 5,
     SPDXDOCUMENT = 6,
     SPDX_DOCUMENT_CREATION_INFO = 7,
+    SPDX_PACKAGE_INFO = 8,
 }
 
 struct ModerationRequest {
@@ -84,6 +87,8 @@ struct ModerationRequest {
     51: optional SPDXDocument spdxDeletions,
     52: optional DocumentCreationInformation documentCreationInfoAdditions,
     53: optional DocumentCreationInformation documentCreationInfoDeletions,
+    54: optional PackageInformation packageInfoAdditions,
+    55: optional PackageInformation packageInfoDeletions,
 
 }
 
@@ -141,6 +146,13 @@ service ModerationService {
     RequestStatus createSpdxDocumentCreationInfoRequest(1: DocumentCreationInformation documentCreationInfo, 2: User user);
 
     /**
+    * write moderation request for spdx document creation info to database,
+    * differences are written as additions and deletions to moderation request,
+    * set requestingUser of moderation request to user
+      **/
+    RequestStatus createSpdxPackageInfoRequest(1: PackageInformation packageInfo, 2: User user);
+
+    /**
       * write moderation request for activating a user account to database
       **/
     oneway void createUserRequest(1: User user);
@@ -174,6 +186,12 @@ service ModerationService {
       * set requestingUser of moderation request to user
       **/
     oneway void createSpdxDocumentCreationInfoDeleteRequest(1: DocumentCreationInformation documentCreationInfo, 2: User user);
+
+    /**
+    * write moderation request for deleting spdx package info to database,
+    * set requestingUser of moderation request to user
+      **/
+    oneway void createSpdxPackageInfoDeleteRequest(1: PackageInformation packageInfo, 2: User user);
 
     /**
      * get list of moderation requests for document with documentId currently present in database
