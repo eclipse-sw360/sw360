@@ -21,6 +21,7 @@ import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
 import org.eclipse.sw360.datahandler.thrift.changelogs.*;
 import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
+import org.eclipse.sw360.datahandler.entitlement.SpdxDocumentCreationInfoModerator;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -46,6 +47,7 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
     private final SpdxDocumentCreationInfoRepository SPDXDocumentCreationInfoRepository;
     private final SpdxDocumentRepository SPDXDocumentRepository;
     private DatabaseHandlerUtil dbHandlerUtil;
+    private final SpdxDocumentCreationInfoModerator moderator;
 
     public SpdxDocumentCreationInfoDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException {
         db = new DatabaseConnectorCloudant(httpClient, dbName);
@@ -54,7 +56,7 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
         SPDXDocumentCreationInfoRepository = new SpdxDocumentCreationInfoRepository(db);
         SPDXDocumentRepository = new SpdxDocumentRepository(db);
         // Create the moderator
-
+        moderator = new SpdxDocumentCreationInfoModerator();
         // Create the changelogs
         dbChangeLogs = new DatabaseConnectorCloudant(httpClient, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
@@ -91,9 +93,9 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
     public RequestStatus updateDocumentCreationInformation(DocumentCreationInformation documentCreationInfo, User user) throws SW360Exception {
         DocumentCreationInformation actual = SPDXDocumentCreationInfoRepository.get(documentCreationInfo.getId());
         assertNotNull(actual, "Could not find SPDX Document Creation Information to update!");
-        // if (makePermission(documentCreationInfo, user).isActionAllowed(RequestedAction.WRITE)) {
-        //     return requestSummary.setRequestStatus(AddDocumentRequestStatus.SENT_TO_MODERATOR);
-        // }
+        if (!makePermission(documentCreationInfo, user).isActionAllowed(RequestedAction.WRITE)) {
+            return moderator.updateSpdxDocumentCreationInfo(documentCreationInfo, user);
+        }
         SPDXDocumentCreationInfoRepository.update(documentCreationInfo);
         dbHandlerUtil.addChangeLogs(documentCreationInfo, actual, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, null);
         return RequestStatus.SUCCESS;
@@ -102,9 +104,9 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
     public RequestStatus deleteDocumentCreationInformation(String id, User user) throws SW360Exception {
         DocumentCreationInformation documentCreationInfo = SPDXDocumentCreationInfoRepository.get(id);
         assertNotNull(documentCreationInfo, "Could not find SPDX Document Creation Information to delete!");
-        // if (makePermission(documentCreationInfo, user).isActionAllowed(RequestedAction.WRITE)) {
-        //     return requestSummary.setRequestStatus(AddDocumentRequestStatus.SENT_TO_MODERATOR);
-        // }
+        if (!makePermission(documentCreationInfo, user).isActionAllowed(RequestedAction.WRITE)) {
+            return moderator.deleteSpdxDocumentCreationInfo(documentCreationInfo, user);
+        }
         SPDXDocumentCreationInfoRepository.remove(documentCreationInfo);
         dbHandlerUtil.addChangeLogs(null, documentCreationInfo, user.getEmail(), Operation.DELETE, null, Lists.newArrayList(), null, null);
         String spdxDocumentId = documentCreationInfo.getSpdxDocumentId();

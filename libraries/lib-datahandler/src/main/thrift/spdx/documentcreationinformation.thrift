@@ -29,6 +29,9 @@ struct DocumentCreationInformation {
     13: optional string created,
     14: optional string creatorComment,
     15: optional string documentComment,
+    // Information for ModerationRequests
+    20: optional DocumentState documentState,
+    21: optional map<RequestedAction, bool> permissions,
 }
 
 struct ExternalDocumentReferences {

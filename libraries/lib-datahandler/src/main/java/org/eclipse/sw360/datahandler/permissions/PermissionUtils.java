@@ -20,6 +20,7 @@ import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
 import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
 
 /**
  * Created by bodet on 16/02/15.
@@ -144,6 +145,8 @@ public class PermissionUtils {
             return (DocumentPermissions<T>) new VulnerabilityPermissions((Vulnerability) document, user);
         } else if (document instanceof SPDXDocument) {
             return (DocumentPermissions<T>) new SpdxDocumentPermissions((SPDXDocument) document, user);
+        } else if (document instanceof DocumentCreationInformation) {
+            return (DocumentPermissions<T>) new SpdxDocumentCreationInfoPermissions((DocumentCreationInformation) document, user);
         } else {
             throw new IllegalArgumentException("Invalid input type!");
         }
