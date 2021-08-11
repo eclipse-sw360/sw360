@@ -445,12 +445,18 @@
             sourceCodeAttachments = wizard.getFinalMultiValue('<liferay-ui:message key="matching.source.attachments" />');
             $.each(sourceCodeAttachments, function(index, value) {
                 /* add just required fields for easy identification */
-                releaseSelection.attachments.push(JSON.parse('{ "attachmentContentId": "' + value.attachmentContentId + '", "filename": "' + value.filename + '"}'));
+                let attachmentdata = {};
+                attachmentdata.attachmentContentId = value.attachmentContentId;
+                attachmentdata.filename = value.filename;
+                releaseSelection.attachments.push(attachmentdata);
             });
             attachments = wizard.getFinalMultiValue('<liferay-ui:message key="other.attachments" />');
             $.each(attachments, function(index, value) {
                 /* add just required fields for easy identification */
-                releaseSelection.attachments.push(JSON.parse('{ "attachmentContentId": "' + value.attachmentContentId + '", "filename": "' + value.filename + '"}'));
+                let attachmentdata = {};
+                attachmentdata.attachmentContentId = value.attachmentContentId;
+                attachmentdata.filename = value.filename;
+                releaseSelection.attachments.push(attachmentdata);
             });
 
             $stepElement.data('releaseSelection', releaseSelection);

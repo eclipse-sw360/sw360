@@ -304,7 +304,12 @@
             componentSelection.releases = [];
             $.each(releases, function(index, value) {
                 /* add just required fields for easy identification */
-                componentSelection.releases.push({ "id": value.id , "name": value.name , "version": value.version , "componentId": value.componentId });
+                let compReleaseData = {};
+                compReleaseData.id = value.id;
+                compReleaseData.name = value.name;
+                compReleaseData.version = value.version;
+                compReleaseData.componentId = value.componentId;
+                componentSelection.releases.push(compReleaseData);
             });
 
             if ((componentSelection.releases.length || 0) < $stepElement.data('releaseCount')) {
@@ -320,7 +325,10 @@
             componentSelection.attachments = [];
             $.each(attachments, function(index, value) {
                 /* add just required fields for easy identification */
-                componentSelection.attachments.push(JSON.parse('{ "attachmentContentId": "' + value.attachmentContentId + '", "filename": "' + value.filename + '"}'));
+                let attachmentData = {};
+                attachmentData.attachmentContentId = value.attachmentContentId;
+                attachmentData.filename = value.filename;
+                componentSelection.attachments.push(attachmentData);
             })
 
             $stepElement.data('componentSelection', componentSelection);
