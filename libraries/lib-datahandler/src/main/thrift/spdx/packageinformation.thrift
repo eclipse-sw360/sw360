@@ -48,6 +48,7 @@ struct PackageInformation {
     // Information for ModerationRequests
     30: optional DocumentState documentState,
     31: optional map<RequestedAction, bool> permissions,
+    32: optional string createdBy,
 }
 
 struct PackageVerificationCode {
@@ -65,6 +66,7 @@ struct ExternalReference {
 service PackageInformationService {
     list<PackageInformation> getPackageInformationSummary(1: User user);
     PackageInformation getPackageInformationById(1: string id, 2: User user);
+    PackageInformation getPackageInformationForEdit(1: string id, 2: User user);
     AddDocumentRequestSummary addPackageInformation(1: PackageInformation packageInformation, 2: User user);
     AddDocumentRequestSummary addPackageInformations(1: set<PackageInformation> packageInformations, 2: User user);
     RequestStatus updatePackageInformation(1: PackageInformation packageInformation, 2: User user);

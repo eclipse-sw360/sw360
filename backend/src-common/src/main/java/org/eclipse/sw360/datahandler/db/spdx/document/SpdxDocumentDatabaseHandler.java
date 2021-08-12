@@ -24,6 +24,8 @@ import org.eclipse.sw360.datahandler.db.ReleaseRepository;
 import org.eclipse.sw360.datahandler.db.VendorRepository;
 import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.eclipse.sw360.datahandler.entitlement.SpdxDocumentModerator;
+import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -33,6 +35,7 @@ import java.util.function.Supplier;
 import com.google.common.collect.Lists;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.prepareSPDXDocument;
 
@@ -76,6 +79,32 @@ public class SpdxDocumentDatabaseHandler {
 
     public SPDXDocument getSPDXDocumentById(String id, User user) throws SW360Exception {
         SPDXDocument spdx = SPDXDocumentRepository.get(id);
+        return spdx;
+    }
+
+    public SPDXDocument getSPDXDocumentForEdit(String id, User user) throws SW360Exception {
+        List<ModerationRequest> moderationRequestsForDocumentId = moderator.getModerationRequestsForDocumentId(id);
+
+        SPDXDocument spdx = getSPDXDocumentById(id, user);
+        DocumentState documentState;
+
+        if (moderationRequestsForDocumentId.isEmpty()) {
+            documentState = CommonUtils.getOriginalDocumentState();
+        } else {
+            final String email = user.getEmail();
+            Optional<ModerationRequest> moderationRequestOptional = CommonUtils.getFirstModerationRequestOfUser(moderationRequestsForDocumentId, email);
+            if (moderationRequestOptional.isPresent()
+                    && isInProgressOrPending(moderationRequestOptional.get())){
+                ModerationRequest moderationRequest = moderationRequestOptional.get();
+
+                spdx = moderator.updateSPDXDocumentFromModerationRequest(spdx, moderationRequest.getSpdxAdditions(), moderationRequest.getSpdxDeletions());
+                documentState = CommonUtils.getModeratedDocumentState(moderationRequest);
+            } else {
+                documentState = new DocumentState().setIsOriginalDocument(true).setModerationState(moderationRequestsForDocumentId.get(0).getModerationState());
+            }
+        }
+        spdx.setPermissions(makePermission(spdx, user).getPermissionMap());
+        spdx.setDocumentState(documentState);
         return spdx;
     }
 

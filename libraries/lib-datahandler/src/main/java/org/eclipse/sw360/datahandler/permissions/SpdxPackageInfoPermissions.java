@@ -14,9 +14,9 @@ import org.eclipse.sw360.datahandler.thrift.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.toSingletonSet;
 
 /**
  * Created on 11/08/2021.
@@ -25,8 +25,13 @@ import java.util.Set;
  */
 public class SpdxPackageInfoPermissions extends DocumentPermissions<PackageInformation> {
 
+    private final Set<String> moderators;
+    private final Set<String> createdBy;
+
     protected SpdxPackageInfoPermissions(PackageInformation packageInfo, User user) {
         super(packageInfo, user);
+        this.createdBy = toSingletonSet(packageInfo.createdBy);
+        moderators = toSingletonSet(packageInfo.createdBy);
     }
 
     @Override
@@ -41,11 +46,11 @@ public class SpdxPackageInfoPermissions extends DocumentPermissions<PackageInfor
 
     @Override
     protected Set<String> getContributors() {
-        return Collections.emptySet();
+        return moderators;
     }
 
     @Override
     protected Set<String> getModerators() {
-        return Collections.emptySet();
+        return moderators;
     }
 }

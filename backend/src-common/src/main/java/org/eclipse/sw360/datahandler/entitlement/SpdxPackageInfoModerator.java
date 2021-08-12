@@ -62,10 +62,9 @@ public class SpdxPackageInfoModerator extends Moderator<PackageInformation._Fiel
         }
     }
 
-    public PackageInformation updateSPDXDocumentFromModerationRequest(PackageInformation packageInfo,
+    public PackageInformation updateSpdxPackageInfoFromModerationRequest(PackageInformation packageInfo,
                                                       PackageInformation packageInfoAdditions,
-                                                      PackageInformation packageInfoDeletions,
-                                                      String department) {
+                                                      PackageInformation packageInfoDeletions) {
         for (PackageInformation._Fields field : PackageInformation._Fields.values()) {
             if(packageInfoAdditions.getFieldValue(field) == null && packageInfoDeletions.getFieldValue(field) == null){
                 continue;

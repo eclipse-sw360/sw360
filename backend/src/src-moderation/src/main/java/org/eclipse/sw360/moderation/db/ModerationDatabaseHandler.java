@@ -580,7 +580,7 @@ public class ModerationDatabaseHandler {
         ModerationRequest request = createStubRequest(user, isDeleteRequest, documentCreationInfo.getId(), moderators);
         // Set meta-data
         request.setDocumentType(DocumentType.SPDX_DOCUMENT_CREATION_INFO);
-        // request.setDocumentName(documentCreationInfo.getName());
+        request.setDocumentName(documentCreationInfo.getName());
         // Fill the request
         ModerationRequestGenerator generator = new SpdxDocumentCreationInfoModerationRequestGenerator();
         request = generator.setAdditionsAndDeletions(request, documentCreationInfo, dbDocumentCreationInfo);
@@ -601,7 +601,7 @@ public class ModerationDatabaseHandler {
         ModerationRequest request = createStubRequest(user, isDeleteRequest, packageInfo.getId(), moderators);
         // Set meta-data
         request.setDocumentType(DocumentType.SPDX_PACKAGE_INFO);
-        // request.setDocumentName(documentCreationInfo.getName());
+        request.setDocumentName(packageInfo.getName());
         // Fill the request
         ModerationRequestGenerator generator = new SpdxPackageInfoModerationRequestGenerator();
         request = generator.setAdditionsAndDeletions(request, packageInfo, dbPackageInfo);

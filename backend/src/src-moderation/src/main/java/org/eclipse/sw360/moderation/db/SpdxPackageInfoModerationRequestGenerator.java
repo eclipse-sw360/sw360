@@ -44,9 +44,9 @@ public class SpdxPackageInfoModerationRequestGenerator extends ModerationRequest
                 switch (field) {
                     case REVISION:
                     case TYPE:
-                    case SPDX_DOCUMENT_ID:
                     case PERMISSIONS:
                     case DOCUMENT_STATE:
+                    case CREATED_BY:
                         break;
                     case PACKAGE_VERIFICATION_CODE:
                     case CHECKSUMS:

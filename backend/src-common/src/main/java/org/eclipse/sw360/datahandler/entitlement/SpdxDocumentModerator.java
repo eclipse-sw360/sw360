@@ -63,8 +63,7 @@ public class SpdxDocumentModerator extends Moderator<SPDXDocument._Fields, SPDXD
 
     public SPDXDocument updateSPDXDocumentFromModerationRequest(SPDXDocument spdx,
                                                       SPDXDocument spdxAdditions,
-                                                      SPDXDocument spdxDeletions,
-                                                      String department) {
+                                                      SPDXDocument spdxDeletions) {
         for (SPDXDocument._Fields field : SPDXDocument._Fields.values()) {
             if(spdxAdditions.getFieldValue(field) == null && spdxDeletions.getFieldValue(field) == null){
                 continue;

@@ -14,9 +14,9 @@ import org.eclipse.sw360.datahandler.thrift.spdxdocument.*;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.toSingletonSet;
 
 /**
  * Created on 10/08/2021.
@@ -25,8 +25,13 @@ import java.util.Set;
  */
 public class SpdxDocumentPermissions extends DocumentPermissions<SPDXDocument> {
 
+    private final Set<String> moderators;
+    private final Set<String> createdBy;
+
     protected SpdxDocumentPermissions(SPDXDocument document, User user) {
         super(document, user);
+        this.createdBy = toSingletonSet(document.createdBy);
+        moderators = toSingletonSet(document.createdBy);
     }
 
     @Override
@@ -41,11 +46,11 @@ public class SpdxDocumentPermissions extends DocumentPermissions<SPDXDocument> {
 
     @Override
     protected Set<String> getContributors() {
-        return Collections.emptySet();
+        return moderators;
     }
 
     @Override
     protected Set<String> getModerators() {
-        return Collections.emptySet();
+        return moderators;
     }
 }

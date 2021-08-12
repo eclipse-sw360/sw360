@@ -57,6 +57,11 @@ public class PackageInformationHandler implements PackageInformationService.Ifac
     }
 
     @Override
+    public PackageInformation getPackageInformationForEdit(String id, User user) throws TException {
+        return handler.getPackageInformationForEdit(id, user);
+    }
+
+    @Override
     public AddDocumentRequestSummary addPackageInformation(PackageInformation packageInformation, User user) throws TException {
         return handler.addPackageInformation(packageInformation, user);
     }

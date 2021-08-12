@@ -33,11 +33,13 @@ struct SPDXDocument {
     // Information for ModerationRequests
     20: optional DocumentState documentState,
     21: optional map<RequestedAction, bool> permissions,
+    22: optional string createdBy,
 }
 
 service SPDXDocumentService {
     list<SPDXDocument> getSPDXDocumentSummary(1: User user);
     SPDXDocument getSPDXDocumentById(1: string id, 2: User user);
+    SPDXDocument getSPDXDocumentForEdit(1: string id, 2: User user);
     AddDocumentRequestSummary addSPDXDocument(1: SPDXDocument spdx, 2: User user);
     RequestStatus updateSPDXDocument(1: SPDXDocument spdx, 2: User user);
     RequestStatus deleteSPDXDocument(1: string id, 2: User user);

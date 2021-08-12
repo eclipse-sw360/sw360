@@ -22,6 +22,8 @@ import org.eclipse.sw360.datahandler.thrift.spdxpackageinfo.*;
 import org.eclipse.sw360.datahandler.thrift.changelogs.*;
 import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.eclipse.sw360.datahandler.entitlement.SpdxPackageInfoModerator;
+import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -31,6 +33,7 @@ import java.util.function.Supplier;
 import com.google.common.collect.Lists;
 
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 
@@ -75,6 +78,31 @@ public class SpdxPackageInfoDatabaseHandler {
 
     public PackageInformation getPackageInformationById(String id, User user) throws SW360Exception {
         PackageInformation packageInfo = PackageInfoRepository.get(id);
+        return packageInfo;
+    }
+
+    public PackageInformation getPackageInformationForEdit(String id, User user) throws SW360Exception {
+        List<ModerationRequest> moderationRequestsForDocumentId = moderator.getModerationRequestsForDocumentId(id);
+
+        PackageInformation packageInfo = getPackageInformationById(id, user);
+        DocumentState documentState;
+
+        if (moderationRequestsForDocumentId.isEmpty()) {
+            documentState = CommonUtils.getOriginalDocumentState();
+        } else {
+            final String email = user.getEmail();
+            Optional<ModerationRequest> moderationRequestOptional = CommonUtils.getFirstModerationRequestOfUser(moderationRequestsForDocumentId, email);
+            if (moderationRequestOptional.isPresent()
+                    && isInProgressOrPending(moderationRequestOptional.get())){
+                ModerationRequest moderationRequest = moderationRequestOptional.get();
+                packageInfo = moderator.updateSpdxPackageInfoFromModerationRequest(packageInfo, moderationRequest.getPackageInfoAdditions(), moderationRequest.getPackageInfoDeletions());
+                documentState = CommonUtils.getModeratedDocumentState(moderationRequest);
+            } else {
+                documentState = new DocumentState().setIsOriginalDocument(true).setModerationState(moderationRequestsForDocumentId.get(0).getModerationState());
+            }
+        }
+        packageInfo.setPermissions(makePermission(packageInfo, user).getPermissionMap());
+        packageInfo.setDocumentState(documentState);
         return packageInfo;
     }
 

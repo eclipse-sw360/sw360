@@ -55,6 +55,11 @@ public class SPDXDocumentHandler implements SPDXDocumentService.Iface {
     }
 
     @Override
+    public SPDXDocument getSPDXDocumentForEdit(String id, User user) throws TException {
+        return handler.getSPDXDocumentForEdit(id, user);
+    }
+
+    @Override
     public AddDocumentRequestSummary addSPDXDocument(SPDXDocument spdx, User user) throws TException {
         return handler.addSPDXDocument(spdx, user);
     }

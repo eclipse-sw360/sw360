@@ -42,11 +42,8 @@ public class SpdxDocumentCreationInfoModerator extends Moderator<DocumentCreatio
     public RequestStatus updateSpdxDocumentCreationInfo(DocumentCreationInformation documentCreationInfo, User user) {
 
         try {
-            log.info("makeModerationClient : AAAAAAAAAAAAAA");
             ModerationService.Iface client = thriftClients.makeModerationClient();
-            log.info("createSpdxDocumentCreationInfoRequest : AAAAAAAAAAAAAA");
             client.createSpdxDocumentCreationInfoRequest(documentCreationInfo, user);
-            log.info("return : BBBBBBBBBBBBBBBB");
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (TException e) {
             log.error("Could not moderate SPDX Document Creation Info " + documentCreationInfo.getId() + " for User " + user.getEmail(), e);
@@ -65,10 +62,9 @@ public class SpdxDocumentCreationInfoModerator extends Moderator<DocumentCreatio
         }
     }
 
-    public DocumentCreationInformation updateSPDXDocumentFromModerationRequest(DocumentCreationInformation documentCreationInfo,
+    public DocumentCreationInformation updateSpdxDocumentCreationInfoFromModerationRequest(DocumentCreationInformation documentCreationInfo,
                                                       DocumentCreationInformation documentCreationInfoAdditions,
-                                                      DocumentCreationInformation documentCreationInfoDeletions,
-                                                      String department) {
+                                                      DocumentCreationInformation documentCreationInfoDeletions) {
         for (DocumentCreationInformation._Fields field : DocumentCreationInformation._Fields.values()) {
             if(documentCreationInfoAdditions.getFieldValue(field) == null && documentCreationInfoDeletions.getFieldValue(field) == null){
                 continue;
@@ -92,7 +88,7 @@ public class SpdxDocumentCreationInfoModerator extends Moderator<DocumentCreatio
                 case CREATOR_COMMENT:
                 case DOCUMENT_COMMENT:
                 default:
-                documentCreationInfo = updateBasicField(field, DocumentCreationInformation.metaDataMap.get(field), documentCreationInfo, documentCreationInfoAdditions, documentCreationInfoDeletions);
+                    documentCreationInfo = updateBasicField(field, DocumentCreationInformation.metaDataMap.get(field), documentCreationInfo, documentCreationInfoAdditions, documentCreationInfoDeletions);
             }
 
         }

@@ -55,6 +55,11 @@ public class DocumentCreationInformationHandler implements DocumentCreationInfor
     }
 
     @Override
+    public DocumentCreationInformation getDocumentCreationInfoForEdit(String id, User user) throws TException {
+        return handler.getDocumentCreationInfoForEdit(id, user);
+    }
+
+    @Override
     public AddDocumentRequestSummary addDocumentCreationInformation(DocumentCreationInformation documentCreationInformation, User user) throws TException {
         return handler.addDocumentCreationInformation(documentCreationInformation, user);
     }

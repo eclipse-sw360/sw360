@@ -29,7 +29,6 @@ public class SpdxDocumentCreationInfoModerationRequestGenerator extends Moderati
         //required fields:
         documentAdditions.setId(updateDocument.getId());
         documentDeletions.setId(actualDocument.getId());
-
         for (DocumentCreationInformation._Fields field : DocumentCreationInformation._Fields.values()) {
 
             if(actualDocument.getFieldValue(field) == null){
@@ -42,18 +41,10 @@ public class SpdxDocumentCreationInfoModerationRequestGenerator extends Moderati
                     case TYPE:
                     case PERMISSIONS:
                     case DOCUMENT_STATE:
-                    case SPDX_DOCUMENT_ID:
+                    case CREATED_BY:
                         break;
-                    case DOCUMENT_CREATION_INFORMATION_ID:
-                    case DATA_LICENSE:
-                    case NAME:
-                    case DOCUMENT_NAMESPACE:
                     case EXTERNAL_DOCUMENT_REFS:
-                    case LICENSE_LIST_VERSION:
                     case CREATOR:
-                    case CREATED:
-                    case CREATOR_COMMENT:
-                    case DOCUMENT_COMMENT:
                     default:
                         dealWithBaseTypes(field, DocumentCreationInformation.metaDataMap.get(field));
                 }

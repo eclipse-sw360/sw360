@@ -30,9 +30,7 @@ public class SpdxDocumentModerationRequestGenerator extends ModerationRequestGen
         documentDeletions = new SPDXDocument();
         //required fields:
         documentAdditions.setId(updateSpdx.getId());
-        documentAdditions.setReleaseId(updateSpdx.getReleaseId());
         documentDeletions.setId(actualSpdx.getId());
-        documentDeletions.setReleaseId(actualSpdx.getReleaseId());
 
         for (SPDXDocument._Fields field : SPDXDocument._Fields.values()) {
 
@@ -44,9 +42,10 @@ public class SpdxDocumentModerationRequestGenerator extends ModerationRequestGen
                 switch (field) {
                     case REVISION:
                     case TYPE:
-                    case RELEASE_ID:
-                    case SPDX_DOCUMENT_CREATION_INFO_ID:
-                    case SPDX_FILE_INFO_IDS:
+                    case PERMISSIONS:
+                    case DOCUMENT_STATE:
+                    case CREATED_BY:
+                        break;
                     case RELATIONSHIPS:
                     case ANNOTATIONS:
                     default:
