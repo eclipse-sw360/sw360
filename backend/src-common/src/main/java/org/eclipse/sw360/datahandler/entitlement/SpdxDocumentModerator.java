@@ -13,7 +13,7 @@ package org.eclipse.sw360.datahandler.entitlement;
 import org.eclipse.sw360.datahandler.common.Moderator;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.apache.logging.log4j.Logger;
@@ -63,8 +63,7 @@ public class SpdxDocumentModerator extends Moderator<SPDXDocument._Fields, SPDXD
 
     public SPDXDocument updateSPDXDocumentFromModerationRequest(SPDXDocument spdx,
                                                       SPDXDocument spdxAdditions,
-                                                      SPDXDocument spdxDeletions,
-                                                      String department) {
+                                                      SPDXDocument spdxDeletions) {
         for (SPDXDocument._Fields field : SPDXDocument._Fields.values()) {
             if(spdxAdditions.getFieldValue(field) == null && spdxDeletions.getFieldValue(field) == null){
                 continue;

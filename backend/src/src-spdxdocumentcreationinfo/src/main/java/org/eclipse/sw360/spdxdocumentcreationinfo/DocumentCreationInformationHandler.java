@@ -46,22 +46,42 @@ public class DocumentCreationInformationHandler implements DocumentCreationInfor
 
     @Override
     public List<DocumentCreationInformation> getDocumentCreationInformationSummary(User user) throws TException {
+        assertUser(user);
         return handler.getDocumentCreationInformationSummary(user);
     }
 
     @Override
     public DocumentCreationInformation getDocumentCreationInformationById(String id, User user) throws TException {
+        assertNotEmpty(id);
+        assertUser(user);
         return handler.getDocumentCreationInformationById(id, user);
     }
 
     @Override
+    public DocumentCreationInformation getDocumentCreationInfoForEdit(String id, User user) throws TException {
+        assertNotEmpty(id);
+        assertUser(user);
+        return handler.getDocumentCreationInfoForEdit(id, user);
+    }
+
+    @Override
     public AddDocumentRequestSummary addDocumentCreationInformation(DocumentCreationInformation documentCreationInformation, User user) throws TException {
+        assertNotNull(documentCreationInformation);
+        assertUser(user);
         return handler.addDocumentCreationInformation(documentCreationInformation, user);
     }
 
     @Override
     public RequestStatus updateDocumentCreationInformation(DocumentCreationInformation documentCreationInformation, User user) throws TException {
+        assertNotNull(documentCreationInformation);
+        assertUser(user);
         return handler.updateDocumentCreationInformation(documentCreationInformation, user);
+    }
+
+    @Override
+    public RequestStatus updateDocumentCreationInfomationFromModerationRequest(DocumentCreationInformation documentCreationInfoAdditions, DocumentCreationInformation documentCreationInfoDeletions, User user) throws TException {
+        assertUser(user);
+        return handler.updateDocumentCreationInfomationFromModerationRequest(documentCreationInfoAdditions, documentCreationInfoDeletions, user);
     }
 
     @Override

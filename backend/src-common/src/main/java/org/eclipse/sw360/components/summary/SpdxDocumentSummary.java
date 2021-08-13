@@ -10,17 +10,17 @@ Copyright Toshiba Software Development (Vietnam) Co., Ltd., 2021. Part of the SW
  */
 package org.eclipse.sw360.components.summary;
 
-import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 
 import static org.eclipse.sw360.datahandler.thrift.ThriftUtils.copyField;
-import static org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocument._Fields;
+import static org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument._Fields;
 
 /**
  * Created by HieuPV on 22/07/21.
  *
  * @author hieu1.phamvan@toshiba.co.jp
  */
-public class SpdxSummary extends DocumentSummary<SPDXDocument> {
+public class SpdxDocumentSummary extends DocumentSummary<SPDXDocument> {
 
     @Override
     protected SPDXDocument summary(SummaryType type, SPDXDocument document) {

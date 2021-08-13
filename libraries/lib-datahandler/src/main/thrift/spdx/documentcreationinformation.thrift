@@ -29,6 +29,10 @@ struct DocumentCreationInformation {
     13: optional string created,
     14: optional string creatorComment,
     15: optional string documentComment,
+    // Information for ModerationRequests
+    20: optional DocumentState documentState,
+    21: optional map<RequestedAction, bool> permissions,
+    22: optional string createdBy,
 }
 
 struct ExternalDocumentReferences {
@@ -50,7 +54,9 @@ struct Creator {
 service DocumentCreationInformationService {
     list<DocumentCreationInformation> getDocumentCreationInformationSummary(1: User user);
     DocumentCreationInformation getDocumentCreationInformationById(1: string id, 2: User user);
+    DocumentCreationInformation getDocumentCreationInfoForEdit(1: string id, 2: User user);
     AddDocumentRequestSummary addDocumentCreationInformation(1: DocumentCreationInformation documentCreationInformation, 2: User user);
     RequestStatus updateDocumentCreationInformation(1: DocumentCreationInformation documentCreationInformation, 2: User user);
+    RequestStatus updateDocumentCreationInfomationFromModerationRequest(1: DocumentCreationInformation documentCreationInfoAdditions, 2: DocumentCreationInformation documentCreationInfoDeletions, 3: User user);
     RequestStatus deleteDocumentCreationInformation(1: string id, 2: User user);
 }

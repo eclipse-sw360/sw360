@@ -3,8 +3,8 @@ include "users.thrift"
 include "documentcreationinformation.thrift"
 include "annotations.thrift"
 
-namespace java org.eclipse.sw360.datahandler.thrift.spdxpackageinfo
-namespace php sw360.thrift.spdxpackageinfo
+namespace java org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo
+namespace php sw360.thrift.spdx.spdxpackageinfo
 
 typedef sw360.RequestStatus RequestStatus
 typedef sw360.RequestSummary RequestSummary
@@ -45,6 +45,10 @@ struct PackageInformation {
     25: optional set<ExternalReference> externalRefs,
     26: optional set<string> attributionText,
     27: optional set<Annotation> annotations,
+    // Information for ModerationRequests
+    30: optional DocumentState documentState,
+    31: optional map<RequestedAction, bool> permissions,
+    32: optional string createdBy,
 }
 
 struct PackageVerificationCode {
@@ -62,9 +66,11 @@ struct ExternalReference {
 service PackageInformationService {
     list<PackageInformation> getPackageInformationSummary(1: User user);
     PackageInformation getPackageInformationById(1: string id, 2: User user);
+    PackageInformation getPackageInformationForEdit(1: string id, 2: User user);
     AddDocumentRequestSummary addPackageInformation(1: PackageInformation packageInformation, 2: User user);
     AddDocumentRequestSummary addPackageInformations(1: set<PackageInformation> packageInformations, 2: User user);
     RequestStatus updatePackageInformation(1: PackageInformation packageInformation, 2: User user);
     RequestSummary updatePackageInformations(1: set<PackageInformation> packageInformations, 2: User user);
+    RequestStatus updatePackageInfomationFromModerationRequest(1: PackageInformation packageInfoAdditions, 2: PackageInformation packageInfoDeletions, 3: User user);
     RequestStatus deletePackageInformation(1: string id, 2: User user);
 }

@@ -10,7 +10,7 @@
  */
 package org.eclipse.sw360.spdxdocument;
 
-import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocumentService;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocumentService;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.eclipse.sw360.projects.Sw360ThriftServlet;
 

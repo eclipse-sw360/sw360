@@ -4,8 +4,8 @@ include "snippetinformation.thrift"
 include "relationshipsbetweenspdxelements.thrift"
 include "annotations.thrift"
 
-namespace java org.eclipse.sw360.datahandler.thrift.spdxdocument
-namespace php sw360.thrift.spdxdocument
+namespace java org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument
+namespace php sw360.thrift.spdx.spdxdocument
 
 typedef sw360.RequestStatus RequestStatus
 typedef sw360.RequestSummary RequestSummary
@@ -33,12 +33,15 @@ struct SPDXDocument {
     // Information for ModerationRequests
     20: optional DocumentState documentState,
     21: optional map<RequestedAction, bool> permissions,
+    22: optional string createdBy,
 }
 
 service SPDXDocumentService {
     list<SPDXDocument> getSPDXDocumentSummary(1: User user);
     SPDXDocument getSPDXDocumentById(1: string id, 2: User user);
+    SPDXDocument getSPDXDocumentForEdit(1: string id, 2: User user);
     AddDocumentRequestSummary addSPDXDocument(1: SPDXDocument spdx, 2: User user);
     RequestStatus updateSPDXDocument(1: SPDXDocument spdx, 2: User user);
+    RequestStatus updateSPDXDocumentFromModerationRequest(1: SPDXDocument spdxAdditions, 2: SPDXDocument spdxDeletions, 3: User user);
     RequestStatus deleteSPDXDocument(1: string id, 2: User user);
 }
