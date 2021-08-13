@@ -109,6 +109,7 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
     public AddDocumentRequestSummary addDocumentCreationInformation(DocumentCreationInformation documentCreationInfo, User user) throws SW360Exception {
         AddDocumentRequestSummary requestSummary= new AddDocumentRequestSummary();
         prepareSpdxDocumentCreationInfo(documentCreationInfo);
+        documentCreationInfo.setCreatedBy(user.getEmail());
         SPDXDocumentCreationInfoRepository.add(documentCreationInfo);
         String documentCreationInfoId = documentCreationInfo.getId();
         String spdxDocumentId = documentCreationInfo.getSpdxDocumentId();
