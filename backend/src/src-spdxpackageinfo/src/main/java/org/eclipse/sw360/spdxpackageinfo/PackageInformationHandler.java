@@ -82,6 +82,10 @@ public class PackageInformationHandler implements PackageInformationService.Ifac
     }
 
     @Override
+    public RequestStatus updatePackageInfomationFromModerationRequest(PackageInformation packageInfoAdditions, PackageInformation packageInfoDeletions, User user) throws TException {
+        return handler.updatePackageInfomationFromModerationRequest(packageInfoAdditions, packageInfoDeletions, user);
+    }
+    @Override
     public RequestStatus deletePackageInformation(String id, User user) throws TException {
         assertId(id);
         assertUser(user);

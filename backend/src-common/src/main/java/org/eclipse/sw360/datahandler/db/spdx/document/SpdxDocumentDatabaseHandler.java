@@ -14,6 +14,7 @@ import com.cloudant.client.api.CloudantClient;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.common.Moderator;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
@@ -142,6 +143,17 @@ public class SpdxDocumentDatabaseHandler {
         SPDXDocumentRepository.update(spdx);
         dbHandlerUtil.addChangeLogs(spdx, actual, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, null);
         return RequestStatus.SUCCESS;
+    }
+
+    public RequestStatus updateSPDXDocumentFromModerationRequest(SPDXDocument spdxAdditions, SPDXDocument spdxDeletions, User user) throws SW360Exception {
+        try {
+            SPDXDocument spdx = getSPDXDocumentById(spdxAdditions.getId(), user);
+            spdx = moderator.updateSPDXDocumentFromModerationRequest(spdx, spdxAdditions, spdxDeletions);
+            return updateSPDXDocument(spdx, user);
+        } catch (SW360Exception e) {
+            log.error("Could not get original SPDX Document when updating from moderation request.");
+            return RequestStatus.FAILURE;
+        }
     }
 
     public RequestStatus deleteSPDXDocument(String id, User user) throws SW360Exception {

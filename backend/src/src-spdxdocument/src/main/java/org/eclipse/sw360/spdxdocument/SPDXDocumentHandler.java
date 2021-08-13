@@ -70,6 +70,11 @@ public class SPDXDocumentHandler implements SPDXDocumentService.Iface {
     }
 
     @Override
+    public RequestStatus updateSPDXDocumentFromModerationRequest(SPDXDocument spdxAdditions, SPDXDocument spdxDeletions, User user) throws TException {
+        return handler.updateSPDXDocumentFromModerationRequest(spdxAdditions, spdxDeletions, user);
+    }
+
+    @Override
     public RequestStatus deleteSPDXDocument(String id, User user) throws TException {
         assertId(id);
         assertUser(user);

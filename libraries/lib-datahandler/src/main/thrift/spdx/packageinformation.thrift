@@ -71,5 +71,6 @@ service PackageInformationService {
     AddDocumentRequestSummary addPackageInformations(1: set<PackageInformation> packageInformations, 2: User user);
     RequestStatus updatePackageInformation(1: PackageInformation packageInformation, 2: User user);
     RequestSummary updatePackageInformations(1: set<PackageInformation> packageInformations, 2: User user);
+    RequestStatus updatePackageInfomationFromModerationRequest(1: PackageInformation packageInfoAdditions, 2: PackageInformation packageInfoDeletions, 3: User user);
     RequestStatus deletePackageInformation(1: string id, 2: User user);
 }

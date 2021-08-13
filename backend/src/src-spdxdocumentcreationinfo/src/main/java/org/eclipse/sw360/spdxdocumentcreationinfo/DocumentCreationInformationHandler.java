@@ -70,6 +70,11 @@ public class DocumentCreationInformationHandler implements DocumentCreationInfor
     }
 
     @Override
+    public RequestStatus updateDocumentCreationInfomationFromModerationRequest(DocumentCreationInformation documentCreationInfoAdditions, DocumentCreationInformation documentCreationInfoDeletions, User user) throws TException {
+        return handler.updateDocumentCreationInfomationFromModerationRequest(documentCreationInfoAdditions, documentCreationInfoDeletions, user);
+    }
+
+    @Override
     public RequestStatus deleteDocumentCreationInformation(String id, User user) throws TException {
         assertId(id);
         assertUser(user);

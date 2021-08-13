@@ -183,6 +183,17 @@ public class SpdxPackageInfoDatabaseHandler {
         return requestSummary;
     }
 
+    public RequestStatus updatePackageInfomationFromModerationRequest(PackageInformation packageInfoAdditions, PackageInformation packageInfoDeletions, User user) throws SW360Exception {
+        try {
+            PackageInformation packageInformation = getPackageInformationById(packageInfoAdditions.getId(), user);
+            packageInformation = moderator.updateSpdxPackageInfoFromModerationRequest(packageInformation, packageInfoAdditions, packageInfoDeletions);
+            return updatePackageInformation(packageInformation, user);
+        } catch (SW360Exception e) {
+            log.error("Could not get original SPDX Document creation info when updating from moderation request.");
+            return RequestStatus.FAILURE;
+        }
+    }
+
     public RequestStatus deletePackageInformation(String id, User user) throws SW360Exception {
         PackageInformation packageInfo = PackageInfoRepository.get(id);
         assertNotNull(packageInfo, "Could not find SPDX Package Information to delete!");

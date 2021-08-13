@@ -57,5 +57,6 @@ service DocumentCreationInformationService {
     DocumentCreationInformation getDocumentCreationInfoForEdit(1: string id, 2: User user);
     AddDocumentRequestSummary addDocumentCreationInformation(1: DocumentCreationInformation documentCreationInformation, 2: User user);
     RequestStatus updateDocumentCreationInformation(1: DocumentCreationInformation documentCreationInformation, 2: User user);
+    RequestStatus updateDocumentCreationInfomationFromModerationRequest(1: DocumentCreationInformation documentCreationInfoAdditions, 2: DocumentCreationInformation documentCreationInfoDeletions, 3: User user);
     RequestStatus deleteDocumentCreationInformation(1: string id, 2: User user);
 }

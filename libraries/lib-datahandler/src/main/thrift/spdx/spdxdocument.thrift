@@ -42,5 +42,6 @@ service SPDXDocumentService {
     SPDXDocument getSPDXDocumentForEdit(1: string id, 2: User user);
     AddDocumentRequestSummary addSPDXDocument(1: SPDXDocument spdx, 2: User user);
     RequestStatus updateSPDXDocument(1: SPDXDocument spdx, 2: User user);
+    RequestStatus updateSPDXDocumentFromModerationRequest(1: SPDXDocument spdxAdditions, 2: SPDXDocument spdxDeletions, 3: User user);
     RequestStatus deleteSPDXDocument(1: string id, 2: User user);
 }

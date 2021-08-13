@@ -130,6 +130,17 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
         return RequestStatus.SUCCESS;
     }
 
+    public RequestStatus updateDocumentCreationInfomationFromModerationRequest(DocumentCreationInformation documentCreationInfoAdditions, DocumentCreationInformation documentCreationInfoDeletions, User user) throws SW360Exception {
+        try {
+            DocumentCreationInformation documentCreationInfo = getDocumentCreationInformationById(documentCreationInfoAdditions.getId(), user);
+            documentCreationInfo = moderator.updateSpdxDocumentCreationInfoFromModerationRequest(documentCreationInfo, documentCreationInfoAdditions, documentCreationInfoDeletions);
+            return updateDocumentCreationInformation(documentCreationInfo, user);
+        } catch (SW360Exception e) {
+            log.error("Could not get original SPDX Document creation info when updating from moderation request.");
+            return RequestStatus.FAILURE;
+        }
+    }
+
     public RequestStatus deleteDocumentCreationInformation(String id, User user) throws SW360Exception {
         DocumentCreationInformation documentCreationInfo = SPDXDocumentCreationInfoRepository.get(id);
         assertNotNull(documentCreationInfo, "Could not find SPDX Document Creation Information to delete!");
