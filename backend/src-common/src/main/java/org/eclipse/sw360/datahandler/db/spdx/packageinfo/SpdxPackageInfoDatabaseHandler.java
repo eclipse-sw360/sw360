@@ -115,6 +115,7 @@ public class SpdxPackageInfoDatabaseHandler {
     public AddDocumentRequestSummary addPackageInformation(PackageInformation packageInfo, User user) throws SW360Exception {
         AddDocumentRequestSummary requestSummary = new AddDocumentRequestSummary();
         prepareSpdxPackageInfo(packageInfo);
+        packageInfo.setCreatedBy(user.getEmail());
         PackageInfoRepository.add(packageInfo);
         String packageInfoId = packageInfo.getId();
         String spdxDocumentId = packageInfo.getSpdxDocumentId();
@@ -145,6 +146,7 @@ public class SpdxPackageInfoDatabaseHandler {
         }
         for (PackageInformation packageInfo : packageInfos) {
             prepareSpdxPackageInfo(packageInfo);
+            packageInfo.setCreatedBy(user.getEmail());
             PackageInfoRepository.add(packageInfo);
             packageInfoIds.add(packageInfo.getId());
             dbHandlerUtil.addChangeLogs(packageInfo, null, user.getEmail(), Operation.CREATE, null, Lists.newArrayList(), null, null);
