@@ -83,8 +83,8 @@ struct ModerationRequest {
     32: optional Project projectDeletions,
     33: optional License licenseDeletions,
 
-    50: optional SPDXDocument spdxAdditions,
-    51: optional SPDXDocument spdxDeletions,
+    50: optional SPDXDocument SPDXDocumentAdditions,
+    51: optional SPDXDocument SPDXDocumentDeletions,
     52: optional DocumentCreationInformation documentCreationInfoAdditions,
     53: optional DocumentCreationInformation documentCreationInfoDeletions,
     54: optional PackageInformation packageInfoAdditions,

@@ -3,8 +3,8 @@ include "users.thrift"
 include "documentcreationinformation.thrift"
 include "annotations.thrift"
 
-namespace java org.eclipse.sw360.datahandler.thrift.spdxpackageinfo
-namespace php sw360.thrift.spdxpackageinfo
+namespace java org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo
+namespace php sw360.thrift.spdx.spdxpackageinfo
 
 typedef sw360.RequestStatus RequestStatus
 typedef sw360.RequestSummary RequestSummary

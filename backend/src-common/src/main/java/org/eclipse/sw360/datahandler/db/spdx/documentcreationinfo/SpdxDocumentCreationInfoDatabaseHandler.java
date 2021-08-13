@@ -17,7 +17,7 @@ import org.eclipse.sw360.datahandler.db.spdx.document.SpdxDocumentRepository;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
 import org.eclipse.sw360.datahandler.thrift.changelogs.*;
 import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
@@ -36,6 +36,7 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
+import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.prepareSpdxDocumentCreationInfo;
 
 public class SpdxDocumentCreationInfoDatabaseHandler {
 
@@ -72,6 +73,11 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
 
     public DocumentCreationInformation getDocumentCreationInformationById(String id, User user) throws SW360Exception {
         DocumentCreationInformation documentCreationInfo = SPDXDocumentCreationInfoRepository.get(id);
+        assertNotNull(documentCreationInfo, "Could not find SPDX Document Creation Info by id: " + id);
+        // Set permissions
+        if (user != null) {
+            makePermission(documentCreationInfo, user).fillPermissions();
+        }
         return documentCreationInfo;
     }
 
@@ -89,7 +95,6 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
             if (moderationRequestOptional.isPresent()
                     && isInProgressOrPending(moderationRequestOptional.get())){
                 ModerationRequest moderationRequest = moderationRequestOptional.get();
-
                 documentCreationInfo = moderator.updateSpdxDocumentCreationInfoFromModerationRequest(documentCreationInfo, moderationRequest.getDocumentCreationInfoAdditions(), moderationRequest.getDocumentCreationInfoDeletions());
                 documentState = CommonUtils.getModeratedDocumentState(moderationRequest);
             } else {
@@ -103,9 +108,7 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
 
     public AddDocumentRequestSummary addDocumentCreationInformation(DocumentCreationInformation documentCreationInfo, User user) throws SW360Exception {
         AddDocumentRequestSummary requestSummary= new AddDocumentRequestSummary();
-        // if (makePermission(documentCreationInfo, user).isActionAllowed(RequestedAction.WRITE)) {
-        //     return requestSummary.setRequestStatus(AddDocumentRequestStatus.SENT_TO_MODERATOR);
-        // }
+        prepareSpdxDocumentCreationInfo(documentCreationInfo);
         SPDXDocumentCreationInfoRepository.add(documentCreationInfo);
         String documentCreationInfoId = documentCreationInfo.getId();
         String spdxDocumentId = documentCreationInfo.getSpdxDocumentId();
@@ -122,6 +125,7 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
     public RequestStatus updateDocumentCreationInformation(DocumentCreationInformation documentCreationInfo, User user) throws SW360Exception {
         DocumentCreationInformation actual = SPDXDocumentCreationInfoRepository.get(documentCreationInfo.getId());
         assertNotNull(actual, "Could not find SPDX Document Creation Information to update!");
+        prepareSpdxDocumentCreationInfo(documentCreationInfo);
         if (!makePermission(documentCreationInfo, user).isActionAllowed(RequestedAction.WRITE)) {
             return moderator.updateSpdxDocumentCreationInfo(documentCreationInfo, user);
         }
@@ -150,7 +154,7 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
         SPDXDocumentCreationInfoRepository.remove(documentCreationInfo);
         dbHandlerUtil.addChangeLogs(null, documentCreationInfo, user.getEmail(), Operation.DELETE, null, Lists.newArrayList(), null, null);
         String spdxDocumentId = documentCreationInfo.getSpdxDocumentId();
-        if (spdxDocumentId != null) {
+        if (isNotNullEmptyOrWhitespace(spdxDocumentId)) {
             SPDXDocument spdxDocument = SPDXDocumentRepository.get(spdxDocumentId);
             assertNotNull(spdxDocument, "Could not remove SPDX Document Creation Info ID in SPDX Document!");
             SPDXDocument oldSpdxDocument = spdxDocument.deepCopy();

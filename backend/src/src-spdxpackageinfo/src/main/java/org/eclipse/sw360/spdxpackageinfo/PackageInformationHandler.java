@@ -15,7 +15,7 @@ import org.eclipse.sw360.datahandler.db.spdx.packageinfo.*;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
-import org.eclipse.sw360.datahandler.thrift.spdxpackageinfo.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import com.cloudant.client.api.CloudantClient;
@@ -48,21 +48,28 @@ public class PackageInformationHandler implements PackageInformationService.Ifac
 
     @Override
     public List<PackageInformation> getPackageInformationSummary(User user) throws TException {
+        assertUser(user);
         return handler.getPackageInformationSummary(user);
     }
 
     @Override
     public PackageInformation getPackageInformationById(String id, User user) throws TException {
+        assertNotEmpty(id);
+        assertUser(user);
         return handler.getPackageInformationById(id, user);
     }
 
     @Override
     public PackageInformation getPackageInformationForEdit(String id, User user) throws TException {
+        assertNotEmpty(id);
+        assertUser(user);
         return handler.getPackageInformationForEdit(id, user);
     }
 
     @Override
     public AddDocumentRequestSummary addPackageInformation(PackageInformation packageInformation, User user) throws TException {
+        assertNotNull(packageInformation);
+        assertUser(user);
         return handler.addPackageInformation(packageInformation, user);
     }
 
@@ -73,16 +80,20 @@ public class PackageInformationHandler implements PackageInformationService.Ifac
 
     @Override
     public RequestStatus updatePackageInformation(PackageInformation packageInformation, User user) throws TException {
+        assertNotNull(packageInformation);
+        assertUser(user);
         return handler.updatePackageInformation(packageInformation, user);
     }
 
     @Override
     public RequestSummary updatePackageInformations(Set<PackageInformation> packageInformations, User user) throws TException {
+        assertUser(user);
         return handler.updatePackageInformations(packageInformations, user);
     }
 
     @Override
     public RequestStatus updatePackageInfomationFromModerationRequest(PackageInformation packageInfoAdditions, PackageInformation packageInfoDeletions, User user) throws TException {
+        assertUser(user);
         return handler.updatePackageInfomationFromModerationRequest(packageInfoAdditions, packageInfoDeletions, user);
     }
     @Override

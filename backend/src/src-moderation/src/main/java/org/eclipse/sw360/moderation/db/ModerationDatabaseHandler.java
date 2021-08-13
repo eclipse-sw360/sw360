@@ -45,9 +45,9 @@ import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
-import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
-import org.eclipse.sw360.datahandler.thrift.spdxpackageinfo.PackageInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
@@ -558,7 +558,7 @@ public class ModerationDatabaseHandler {
 
         // Set meta-data
         request.setDocumentType(DocumentType.SPDXDOCUMENT);
-        // request.setDocumentName("SPDXDocument");
+        request.setDocumentName(SW360Utils.printName(spdx));
 
         // Fill the request
         ModerationRequestGenerator generator = new SpdxDocumentModerationRequestGenerator();
@@ -580,7 +580,7 @@ public class ModerationDatabaseHandler {
         ModerationRequest request = createStubRequest(user, isDeleteRequest, documentCreationInfo.getId(), moderators);
         // Set meta-data
         request.setDocumentType(DocumentType.SPDX_DOCUMENT_CREATION_INFO);
-        request.setDocumentName(documentCreationInfo.getName());
+        request.setDocumentName(SW360Utils.printName(documentCreationInfo));
         // Fill the request
         ModerationRequestGenerator generator = new SpdxDocumentCreationInfoModerationRequestGenerator();
         request = generator.setAdditionsAndDeletions(request, documentCreationInfo, dbDocumentCreationInfo);
@@ -601,7 +601,7 @@ public class ModerationDatabaseHandler {
         ModerationRequest request = createStubRequest(user, isDeleteRequest, packageInfo.getId(), moderators);
         // Set meta-data
         request.setDocumentType(DocumentType.SPDX_PACKAGE_INFO);
-        request.setDocumentName(packageInfo.getName());
+        request.setDocumentName(SW360Utils.printName(packageInfo));
         // Fill the request
         ModerationRequestGenerator generator = new SpdxPackageInfoModerationRequestGenerator();
         request = generator.setAdditionsAndDeletions(request, packageInfo, dbPackageInfo);

@@ -26,7 +26,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.spdxdocument.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.*;
 
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 

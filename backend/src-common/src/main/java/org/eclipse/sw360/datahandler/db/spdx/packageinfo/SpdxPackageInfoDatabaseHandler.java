@@ -17,8 +17,8 @@ import org.eclipse.sw360.datahandler.db.spdx.document.SpdxDocumentRepository;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocument;
-import org.eclipse.sw360.datahandler.thrift.spdxpackageinfo.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.*;
 import org.eclipse.sw360.datahandler.thrift.changelogs.*;
 import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.eclipse.sw360.datahandler.entitlement.SpdxPackageInfoModerator;
@@ -36,6 +36,7 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
+import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.prepareSpdxPackageInfo;
 
 /**
  * Class for accessing the CouchDB database
@@ -78,6 +79,11 @@ public class SpdxPackageInfoDatabaseHandler {
 
     public PackageInformation getPackageInformationById(String id, User user) throws SW360Exception {
         PackageInformation packageInfo = PackageInfoRepository.get(id);
+        assertNotNull(packageInfo, "Could not find SPDX Package Info by id: " + id);
+        // Set permissions
+        if (user != null) {
+            makePermission(packageInfo, user).fillPermissions();
+        }
         return packageInfo;
     }
 
@@ -108,15 +114,17 @@ public class SpdxPackageInfoDatabaseHandler {
 
     public AddDocumentRequestSummary addPackageInformation(PackageInformation packageInfo, User user) throws SW360Exception {
         AddDocumentRequestSummary requestSummary = new AddDocumentRequestSummary();
-        // if (makePermission(packageInfo, user).isActionAllowed(RequestedAction.WRITE)) {
-        //     return requestSummary.setRequestStatus(AddDocumentRequestStatus.SENT_TO_MODERATOR);
-        // }
+        prepareSpdxPackageInfo(packageInfo);
         PackageInfoRepository.add(packageInfo);
         String packageInfoId = packageInfo.getId();
         String spdxDocumentId = packageInfo.getSpdxDocumentId();
         SPDXDocument spdxDocument = SPDXDocumentRepository.get(spdxDocumentId);
+        assertNotNull(spdxDocument, "Could not find SPDX Document by id: " + spdxDocumentId);
         SPDXDocument oldSpdxDocument = spdxDocument.deepCopy();
-        Set<String> spdxPackageInfoIds = spdxDocument.getSpdxPackageInfoIds();
+        Set<String> spdxPackageInfoIds = new HashSet<>();
+        if (spdxDocument.getSpdxPackageInfoIds() != null) {
+            spdxPackageInfoIds = spdxDocument.getSpdxPackageInfoIds();
+        }
         spdxPackageInfoIds.add(packageInfoId);
         spdxDocument.setSpdxPackageInfoIds(spdxPackageInfoIds);
         SPDXDocumentRepository.update(spdxDocument);
@@ -127,14 +135,16 @@ public class SpdxPackageInfoDatabaseHandler {
 
     public AddDocumentRequestSummary addPackageInformations(Set<PackageInformation> packageInfos, User user) throws SW360Exception {
         AddDocumentRequestSummary requestSummary = new AddDocumentRequestSummary();
-        // if (makePermission(packageInfos, user).isActionAllowed(RequestedAction.WRITE)) {
-        //     return requestSummary.setRequestStatus(AddDocumentRequestStatus.SENT_TO_MODERATOR);
-        // }
         String spdxDocumentId = packageInfos.iterator().next().getSpdxDocumentId();
         SPDXDocument spdxDocument = SPDXDocumentRepository.get(spdxDocumentId);
+        assertNotNull(spdxDocument, "Could not find SPDX Document by id: " + spdxDocumentId);
         SPDXDocument oldSpdxDocument = spdxDocument.deepCopy();
-        Set<String> packageInfoIds = spdxDocument.getSpdxPackageInfoIds();
+        Set<String> packageInfoIds = new HashSet<>();
+        if (spdxDocument.getSpdxPackageInfoIds() != null) {
+            packageInfoIds = spdxDocument.getSpdxPackageInfoIds();
+        }
         for (PackageInformation packageInfo : packageInfos) {
+            prepareSpdxPackageInfo(packageInfo);
             PackageInfoRepository.add(packageInfo);
             packageInfoIds.add(packageInfo.getId());
             dbHandlerUtil.addChangeLogs(packageInfo, null, user.getEmail(), Operation.CREATE, null, Lists.newArrayList(), null, null);
@@ -161,6 +171,7 @@ public class SpdxPackageInfoDatabaseHandler {
         for (PackageInformation packageInfo : packageInfos) {
             PackageInformation actual = PackageInfoRepository.get(packageInfo.getId());
             assertNotNull(actual, "Could not find SPDX Package Information to update!");
+            prepareSpdxPackageInfo(packageInfo);
             if (!makePermission(packageInfos, user).isActionAllowed(RequestedAction.WRITE)) {
                 if (moderator.updateSpdxPackageInfo(packageInfo, user) == RequestStatus.SENT_TO_MODERATOR) {
                     countPackagesSendToModerator++;
@@ -189,7 +200,7 @@ public class SpdxPackageInfoDatabaseHandler {
             packageInformation = moderator.updateSpdxPackageInfoFromModerationRequest(packageInformation, packageInfoAdditions, packageInfoDeletions);
             return updatePackageInformation(packageInformation, user);
         } catch (SW360Exception e) {
-            log.error("Could not get original SPDX Document creation info when updating from moderation request.");
+            log.error("Could not get original SPDX Package info when updating from moderation request.");
             return RequestStatus.FAILURE;
         }
     }
@@ -204,12 +215,18 @@ public class SpdxPackageInfoDatabaseHandler {
         dbHandlerUtil.addChangeLogs(null, packageInfo, user.getEmail(), Operation.DELETE, null, Lists.newArrayList(), null, null);
         String spdxDocumentId = packageInfo.getSpdxDocumentId();
         SPDXDocument spdxDocument = SPDXDocumentRepository.get(spdxDocumentId);
+        assertNotNull(spdxDocument, "Could not find SPDX Document to remove Package Info!");
         SPDXDocument oldSpdxDocument = spdxDocument.deepCopy();
         Set<String> packageInfoIds = spdxDocument.getSpdxPackageInfoIds();
-        packageInfoIds.remove(id);
-        spdxDocument.setSpdxPackageInfoIds(packageInfoIds);
-        SPDXDocumentRepository.update(spdxDocument);
-        dbHandlerUtil.addChangeLogs(spdxDocument, oldSpdxDocument, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), packageInfo.getId(), Operation.SPDX_PACKAGE_INFO_DELETE);
+        if (packageInfoIds != null) {
+            packageInfoIds.remove(id);
+            spdxDocument.setSpdxPackageInfoIds(packageInfoIds);
+            SPDXDocumentRepository.update(spdxDocument);
+            dbHandlerUtil.addChangeLogs(spdxDocument, oldSpdxDocument, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), packageInfo.getId(), Operation.SPDX_PACKAGE_INFO_DELETE);
+        } else {
+            log.warn("Could not remove Package Id from SPDX Documnet");
+        }
+
         return RequestStatus.SUCCESS;
     }
 

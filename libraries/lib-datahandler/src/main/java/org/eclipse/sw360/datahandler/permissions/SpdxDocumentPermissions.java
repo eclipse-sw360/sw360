@@ -10,7 +10,7 @@
  */
 package org.eclipse.sw360.datahandler.permissions;
 
-import org.eclipse.sw360.datahandler.thrift.spdxdocument.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.*;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 

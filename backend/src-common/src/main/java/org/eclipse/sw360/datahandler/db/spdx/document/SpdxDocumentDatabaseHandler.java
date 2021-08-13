@@ -14,11 +14,10 @@ import com.cloudant.client.api.CloudantClient;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.eclipse.sw360.datahandler.common.Moderator;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.spdxdocument.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.changelogs.*;
 import org.eclipse.sw360.datahandler.db.ReleaseRepository;
@@ -80,6 +79,11 @@ public class SpdxDocumentDatabaseHandler {
 
     public SPDXDocument getSPDXDocumentById(String id, User user) throws SW360Exception {
         SPDXDocument spdx = SPDXDocumentRepository.get(id);
+        assertNotNull(spdx, "Could not find SPDX Document by id: " + id);
+        // Set permissions
+        if (user != null) {
+            makePermission(spdx, user).fillPermissions();
+        }
         return spdx;
     }
 
@@ -97,8 +101,7 @@ public class SpdxDocumentDatabaseHandler {
             if (moderationRequestOptional.isPresent()
                     && isInProgressOrPending(moderationRequestOptional.get())){
                 ModerationRequest moderationRequest = moderationRequestOptional.get();
-
-                spdx = moderator.updateSPDXDocumentFromModerationRequest(spdx, moderationRequest.getSpdxAdditions(), moderationRequest.getSpdxDeletions());
+                spdx = moderator.updateSPDXDocumentFromModerationRequest(spdx, moderationRequest.getSPDXDocumentAdditions(), moderationRequest.getSPDXDocumentDeletions());
                 documentState = CommonUtils.getModeratedDocumentState(moderationRequest);
             } else {
                 documentState = new DocumentState().setIsOriginalDocument(true).setModerationState(moderationRequestsForDocumentId.get(0).getModerationState());
@@ -111,13 +114,11 @@ public class SpdxDocumentDatabaseHandler {
 
     public AddDocumentRequestSummary addSPDXDocument(SPDXDocument spdx, User user) throws SW360Exception {
         AddDocumentRequestSummary requestSummary= new AddDocumentRequestSummary();
+        prepareSPDXDocument(spdx);
         String releaseId = spdx.getReleaseId();
         Release release = releaseRepository.get(releaseId);
-        // if (makePermission(release, user).isActionAllowed(RequestedAction.WRITE)) {
-        //     return requestSummary.setRequestStatus(AddDocumentRequestStatus.SENT_TO_MODERATOR);
-        // }
         assertNotNull(release, "Could not find Release to add SPDX Document!");
-        if (release.isSetSpdxId()){
+        if (isNotNullEmptyOrWhitespace(release.getSpdxId())){
             log.error("SPDX Document existed in release!");
             return requestSummary.setRequestStatus(AddDocumentRequestStatus.DUPLICATE)
                             .setId(release.getSpdxId());
@@ -180,7 +181,7 @@ public class SpdxDocumentDatabaseHandler {
         SPDXDocumentRepository.remove(spdx);
         dbHandlerUtil.addChangeLogs(null, spdx, user.getEmail(), Operation.DELETE, null, Lists.newArrayList(), null, null);
         String releaseId = spdx.getReleaseId();
-        if (releaseId != null) {
+        if (isNotNullEmptyOrWhitespace(releaseId)) {
             Release release = releaseRepository.get(releaseId);
             assertNotNull(release, "Could not remove SPDX Document ID in Release!");
             Release oldRelease = release.deepCopy();

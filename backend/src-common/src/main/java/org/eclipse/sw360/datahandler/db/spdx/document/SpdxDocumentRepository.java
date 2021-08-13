@@ -10,11 +10,11 @@
  */
 package org.eclipse.sw360.datahandler.db.spdx.document;
 
-import org.eclipse.sw360.components.summary.SpdxSummary;
+import org.eclipse.sw360.components.summary.SpdxDocumentSummary;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
-import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 
 import com.cloudant.client.api.model.DesignDocument.MapReduce;
 
@@ -27,7 +27,7 @@ public class SpdxDocumentRepository extends SummaryAwareRepository<SPDXDocument>
     private static final String ALL = "function(doc) { if (doc.type == 'SPDXDocument') emit(null, doc._id) }";
 
     public SpdxDocumentRepository(DatabaseConnectorCloudant db) {
-        super(SPDXDocument.class, db, new SpdxSummary());
+        super(SPDXDocument.class, db, new SpdxDocumentSummary());
         Map<String, MapReduce> views = new HashMap<String, MapReduce>();
         views.put("all", createMapReduce(ALL, null));
         initStandardDesignDocument(views, db);

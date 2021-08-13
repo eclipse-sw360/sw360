@@ -4,8 +4,8 @@ include "snippetinformation.thrift"
 include "relationshipsbetweenspdxelements.thrift"
 include "annotations.thrift"
 
-namespace java org.eclipse.sw360.datahandler.thrift.spdxdocument
-namespace php sw360.thrift.spdxdocument
+namespace java org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument
+namespace php sw360.thrift.spdx.spdxdocument
 
 typedef sw360.RequestStatus RequestStatus
 typedef sw360.RequestSummary RequestSummary

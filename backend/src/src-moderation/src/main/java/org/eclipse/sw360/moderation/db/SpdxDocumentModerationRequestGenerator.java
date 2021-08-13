@@ -10,7 +10,7 @@
  */
 package org.eclipse.sw360.moderation.db;
 
-import org.eclipse.sw360.datahandler.thrift.spdxdocument.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.*;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 
 /**
@@ -53,8 +53,8 @@ public class SpdxDocumentModerationRequestGenerator extends ModerationRequestGen
                 }
             }
         }
-        request.setSpdxAdditions(documentAdditions);
-        request.setSpdxDeletions(documentDeletions);
+        request.setSPDXDocumentAdditions(documentAdditions);
+        request.setSPDXDocumentDeletions(documentDeletions);
         return request;
     }
 }

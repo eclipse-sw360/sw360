@@ -10,7 +10,7 @@
  */
 package org.eclipse.sw360.moderation.db;
 
-import org.eclipse.sw360.datahandler.thrift.spdxpackageinfo.PackageInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.apache.thrift.protocol.TType;
 

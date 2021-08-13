@@ -17,10 +17,12 @@ import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.*;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
-import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -237,6 +239,26 @@ public class ThriftValidate {
         // Check required fields
 
         // Check type
-        spdx.setType(TYPE_SPDX);
+        spdx.setType(TYPE_SPDX_DOCUMENT);
+        // Unset temporary fields
+        spdx.unsetPermissions();
+    }
+
+    public static void prepareSpdxDocumentCreationInfo(DocumentCreationInformation documentCreationInfo) throws SW360Exception {
+        // Check required fields
+
+        // Check type
+        documentCreationInfo.setType(TYPE_SPDX_DOCUMENT_CREATION_INFO);
+        // Unset temporary fields
+        documentCreationInfo.unsetPermissions();
+}
+
+    public static void prepareSpdxPackageInfo(PackageInformation packageInfo) throws SW360Exception {
+        // Check required fields
+
+        // Check type
+        packageInfo.setType(TYPE_SPDX_PACKAGE_INFO);
+        // Unset temporary fields
+        packageInfo.unsetPermissions();
     }
 }

@@ -12,7 +12,7 @@ package org.eclipse.sw360.datahandler.db.spdx.document;
 
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneSearchView;
-import org.eclipse.sw360.datahandler.thrift.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.ektorp.http.HttpClient;
 
 import com.cloudant.client.api.CloudantClient;
