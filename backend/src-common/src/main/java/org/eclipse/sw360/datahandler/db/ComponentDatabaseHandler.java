@@ -62,10 +62,16 @@ import org.eclipse.sw360.spdx.SpdxBOMImporter;
 import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
 import org.jetbrains.annotations.NotNull;
 import org.spdx.rdfparser.InvalidSPDXAnalysisException;
+import org.spdx.tools.SpdxConverter;
+import org.spdx.tools.SpdxConverterException;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -2140,11 +2146,46 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
                 final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
                 final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
-                return spdxBOMImporter.importSpdxBOMAsRelease(inputStream, attachmentContent);
+
+                InputStream spdxInputStream;
+                String fileType = getFileType(attachmentContent.getFilename());
+                if (isRdfXmlFile(fileType)) {
+                    spdxInputStream = inputStream;
+                } else {
+                    final File sourceFile = DatabaseHandlerUtil.saveAsTempFile(user, inputStream, attachmentContentId, "."+fileType);
+                    final String sourceFileName = sourceFile.getPath().toString();
+                    final String targetFileName = attachmentContentId + ".rdf";
+
+                    SpdxConverter.convert(sourceFile.getPath().toString(), targetFileName);
+                    spdxInputStream = new FileInputStream(new File(targetFileName));
+
+                    Files.delete(Paths.get(sourceFileName));
+                    Files.delete(Paths.get(targetFileName));
+                }
+
+                return spdxBOMImporter.importSpdxBOMAsRelease(spdxInputStream, attachmentContent);
             }
-        } catch (InvalidSPDXAnalysisException | IOException e) {
+        } catch (InvalidSPDXAnalysisException | IOException | SpdxConverterException e) {
             throw new SW360Exception(e.getMessage());
         }
+    }
+
+    private String getFileType(String fileName) {
+        if (isNullEmptyOrWhitespace(fileName) || !fileName.contains(".")) {
+            log.error("Can not get file type from file name - no file extension");
+            return null;
+		}
+		String ext = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
+		if ("xml".equals(ext)) {
+			if (fileName.endsWith("rdf.xml")) {
+				ext = "rdf";
+			}
+		}
+		return ext;
+    }
+
+    private boolean isRdfXmlFile(String fileType) {
+        return (!isNullEmptyOrWhitespace(fileType) && fileType.equals("rdf"));
     }
 
     private void removeLeadingTrailingWhitespace(Release release) {
