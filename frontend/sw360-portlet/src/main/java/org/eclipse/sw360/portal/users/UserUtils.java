@@ -269,12 +269,19 @@ public class UserUtils {
     }
 
     public static String getDepartment(User user) {
-        String department = "";
+        String department = null;
+        Organization organization = null;
+        final OrganizationHelper orgHelper = new OrganizationHelper();
         try {
             List<Organization> organizations = user.getOrganizations();
             if (!organizations.isEmpty()) {
-                Organization organization = organizations.get(0);
+                organization = organizations.get(0);
                 department = organization.getName();
+            } else {
+                department = PortalConstants.SW360;
+                long companyId = user.getCompanyId();
+                organization = orgHelper.addOrGetOrganization(department, companyId);
+                orgHelper.reassignUserToOrganizationIfNecessary(user, organization);
             }
         } catch (PortalException | SystemException e) {
             log.error("Error getting department", e);

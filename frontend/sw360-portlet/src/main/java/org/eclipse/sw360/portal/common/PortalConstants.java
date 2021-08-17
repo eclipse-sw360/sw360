@@ -623,6 +623,9 @@ public class PortalConstants {
     public static final String PREDEFINED_TAGS;
     public static final boolean SSO_LOGIN_ENABLED;
 
+    // Default Department
+    public static final String SW360 = "SW360";
+
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);
 
