@@ -15,19 +15,19 @@
 start_sw360() {
   /etc/init.d/couchdb restart
   /etc/init.d/postgresql restart
-  cd /app/liferay-ce-portal-7.3.3-ga4/tomcat-9.0.33/bin/
+  cd /app/liferay-ce-portal-7.3.4-ga5/tomcat-9.0.33/bin/
   rm -rf ./indexes/*
   ./startup.sh
   tail_logs
 }
 
 stop_sw360() {
-  /app/liferay-ce-portal-7.3.3-ga4/tomcat-9.0.33/bin/shutdown.sh
-  tail -f --lines=500 /app/liferay-ce-portal-7.3.3-ga4/tomcat-9.0.33/logs/catalina.out &
+  /app/liferay-ce-portal-7.3.4-ga5/tomcat-9.0.33/bin/shutdown.sh
+  tail -f --lines=500 /app/liferay-ce-portal-7.3.4-ga5/tomcat-9.0.33/logs/catalina.out &
   sleep 20
   pkill -9 -f tail
   pkill -9 -f tomcat
-  cd /app/liferay-ce-portal-7.3.3-ga4/tomcat-9.0.33/webapps/
+  cd /app/liferay-ce-portal-7.3.4-ga5/tomcat-9.0.33/webapps/
   rm -rf *.war
   /etc/init.d/couchdb stop
   /etc/init.d/postgresql stop
@@ -42,7 +42,7 @@ stop_sw360() {
 
 tail_logs()
 {
-  tail -f --lines=500 /app/liferay-ce-portal-7.3.3-ga4/tomcat-9.0.33/logs/catalina.out &
+  tail -f --lines=500 /app/liferay-ce-portal-7.3.4-ga5/tomcat-9.0.33/logs/catalina.out &
   read -r user_input
   pkill -9 -f tail
 }

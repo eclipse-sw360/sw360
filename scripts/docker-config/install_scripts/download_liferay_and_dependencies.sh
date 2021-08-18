@@ -12,9 +12,9 @@
 # -----------------------------------------------------------------------------
 
 download_liferay_and_dependencies() {
-  wget https://sourceforge.net/projects/lportal/files/Liferay%20Portal/7.3.3%20GA4/liferay-ce-portal-tomcat-7.3.3-ga4-20200701015330959.tar.gz/download -O liferay-ce-portal-tomcat-7.3.3-ga4.tar.gz
-  tar -xzf liferay-ce-portal-tomcat-7.3.3-ga4.tar.gz
-  cd /app/build/sw360/liferay-ce-portal-7.3.3-ga4/deploy
+  wget https://sourceforge.net/projects/lportal/files/Liferay%20Portal/7.3.4%20GA5/liferay-ce-portal-tomcat-7.3.4-ga5-20200811154319029.tar.gz/download -O liferay-ce-portal-tomcat-7.3.4-ga5.tar.gz
+  tar -xzf liferay-ce-portal-tomcat-7.3.4-ga5.tar.gz
+  cd /app/build/sw360/liferay-ce-portal-7.3.4-ga5/deploy
   wget https://search.maven.org/remotecontent?filepath=commons-codec/commons-codec/1.12/commons-codec-1.12.jar -O commons-codec-1.12.jar
   wget https://search.maven.org/remotecontent?filepath=org/apache/commons/commons-collections4/4.4/commons-collections4-4.4.jar -O commons-collections4-4.4.jar
   wget https://search.maven.org/remotecontent?filepath=org/apache/commons/commons-csv/1.4/commons-csv-1.4.jar -O commons-csv-1.4.jar

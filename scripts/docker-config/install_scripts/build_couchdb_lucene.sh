@@ -17,6 +17,7 @@ build_couchdb_lucene() {
   tar -xzf couchdb-lucene.tar.gz
   cd couchdb-lucene-2.1.0
   sed -i "s/allowLeadingWildcard=false/allowLeadingWildcard=true/" ./src/main/resources/couchdb-lucene.ini
+  sed -i "s/localhost:5984/admin:password@localhost:5984/" ./src/main/resources/couchdb-lucene.ini
   wget https://raw.githubusercontent.com/sw360/sw360vagrant/master/shared/couchdb-lucene.patch
   patch -p1 < couchdb-lucene.patch
   mvn -s /app/build/sw360/scripts/docker-config/mvn-proxy-settings.xml clean install war:war

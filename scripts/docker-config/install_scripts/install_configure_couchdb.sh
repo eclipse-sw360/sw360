@@ -19,10 +19,21 @@ install_configure_couchdb() {
 
 install_couchdb() {
   apt-get install curl -y --no-install-recommends
-  curl -L https://couchdb.apache.org/repo/bintray-pubkey.asc  | apt-key add
-  echo "deb https://apache.bintray.com/couchdb-deb bionic main" | tee -a /etc/apt/sources.list
+  curl https://couchdb.apache.org/repo/keys.asc | gpg --dearmor |  tee /usr/share/keyrings/couchdb-archive-keyring.gpg >/dev/null 2>&1
+  source /etc/os-release
+  echo "deb [signed-by=/usr/share/keyrings/couchdb-archive-keyring.gpg] https://apache.jfrog.io/artifactory/couchdb-deb/ ${VERSION_CODENAME} main" \
+    |  tee /etc/apt/sources.list.d/couchdb.list >/dev/null
   apt-get update
-  DEBIAN_FRONTEND=noninteractive apt-get install -y couchdb=2.1.2~bionic
+  COUCHDB_PASSWORD=password
+  echo "couchdb couchdb/mode select standalone
+  couchdb couchdb/mode seen true
+  couchdb couchdb/bindaddress string 127.0.0.1
+  couchdb couchdb/bindaddress seen true
+  couchdb couchdb/adminpass password ${COUCHDB_PASSWORD}
+  couchdb couchdb/adminpass seen true
+  couchdb couchdb/adminpass_again password ${COUCHDB_PASSWORD}
+  couchdb couchdb/adminpass_again seen true" | debconf-set-selections
+  DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes couchdb
 }
 
 configure_couchdb_db() {
