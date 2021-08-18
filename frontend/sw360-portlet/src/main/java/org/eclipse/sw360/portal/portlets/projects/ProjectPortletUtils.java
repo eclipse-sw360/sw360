@@ -10,6 +10,12 @@
 package org.eclipse.sw360.portal.portlets.projects;
 
 import com.google.common.collect.*;
+import com.liferay.portal.kernel.model.Layout;
+import com.liferay.portal.kernel.model.Portlet;
+import com.liferay.portal.kernel.portlet.LiferayPortletURL;
+import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
+import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
+import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -36,6 +42,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 
 import javax.portlet.PortletRequest;
+import javax.portlet.RenderRequest;
 import javax.portlet.ResourceRequest;
 
 import java.util.*;
@@ -159,7 +166,7 @@ public class ProjectPortletUtils {
     }
 
     public static ProjectVulnerabilityRating updateProjectVulnerabilityRatingFromRequest(Optional<ProjectVulnerabilityRating> projectVulnerabilityRatings, ResourceRequest request) throws SW360Exception {
-        String projectId = request.getParameter(PortalConstants.PROJECT_ID);
+        String projectId = request.getParameter(PortalConstants.ACTUAL_PROJECT_ID);
         ProjectVulnerabilityRating projectVulnerabilityRating = projectVulnerabilityRatings.orElse(
                 new ProjectVulnerabilityRating()
                         .setProjectId(projectId)
@@ -495,5 +502,39 @@ public class ProjectPortletUtils {
         }
 
         return mergedUsage;
+    }
+
+    public static String createVulnerabilityFriendlyUrl(ResourceRequest request) {
+        Portlet portlet = PortletLocalServiceUtil.getPortletById(PortalConstants.VULNERABILITIES_PORTLET_NAME);
+        Optional<Layout> layout = LayoutLocalServiceUtil.getLayouts(portlet.getCompanyId()).stream()
+                .filter(l -> ("/vulnerabilities").equals(l.getFriendlyURL())).findFirst();
+        if (layout.isPresent()) {
+            long plId = layout.get().getPlid();
+            LiferayPortletURL vulUrl = PortletURLFactoryUtil.create(request,
+                    PortalConstants.VULNERABILITIES_PORTLET_NAME, plId, PortletRequest.RENDER_PHASE);
+            vulUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_DETAIL);
+            vulUrl.setParameter(PortalConstants.VULNERABILITY_ID, "replacewithexternalid");
+            return vulUrl.toString();
+        }
+
+        return "";
+    }
+
+    public static String createProjectPortletUrlWithViewSizeFriendlyUrl(RenderRequest request, String projectId) {
+        Portlet portlet = PortletLocalServiceUtil.getPortletById(PortalConstants.PROJECT_PORTLET_NAME);
+        Optional<Layout> layout = LayoutLocalServiceUtil.getLayouts(portlet.getCompanyId()).stream()
+                .filter(l -> ("/projects").equals(l.getFriendlyURL())).findFirst();
+        if (layout.isPresent()) {
+            long plId = layout.get().getPlid();
+            LiferayPortletURL projUrl = PortletURLFactoryUtil.create(request, PortalConstants.PROJECT_PORTLET_NAME,
+                    plId, PortletRequest.RENDER_PHASE);
+            projUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_DETAIL);
+            projUrl.setParameter(PortalConstants.PROJECT_ID, projectId);
+
+            projUrl.setParameter(PortalConstants.VIEW_SIZE, "replacewithviewsize");
+            return projUrl.toString();
+        }
+
+        return "";
     }
 }

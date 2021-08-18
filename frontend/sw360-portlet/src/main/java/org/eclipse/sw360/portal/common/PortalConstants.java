@@ -242,6 +242,7 @@ public class PortalConstants {
     public static final String PROJECT_BDPIMPORT_PORTLET_NAME = PORTLET_NAME_PREFIX + "projectbdpimport";
     public static final String PROJECT_WSIMPORT_PORTLET_NAME = PORTLET_NAME_PREFIX + "projectwsimport";
     public static final String PROJECT_ID = "projectid";
+    public static final String ACTUAL_PROJECT_ID = "actualprojectid";
     public static final String PROJECT_LINK_TO_PROJECT = "projectLinkToProject";
     public static final String LINKED_PROJECT_ID = "linkedProjectId";
     public static final String PROJECT = "project";
@@ -251,6 +252,7 @@ public class PortalConstants {
     public static final String USING_RELEASES = "usingReleases";
     public static final String ALL_USING_PROJECTS_COUNT = "allUsingProjectsCount";
     public static final String PROJECT_LIST = "projectList";
+    public static final String ALL_SUB_PROJECT_LINK = "allSubProjectLink";
     public static final String RELEASE_LIST = "releaseList";
     public static final String PROJECT_SEARCH = "projectSearch";
     public static final String RELEASE_SEARCH = "releaseSearch";
@@ -555,7 +557,11 @@ public class PortalConstants {
     public static  final String UPDATE_VULNERABILITIES_PROJECT = "updateVulnerabilitiesProject";
     public static  final String UPDATE_VULNERABILITY_RATINGS = "updateVulnerabilityRatings";
     public static  final String UPDATE_VULNERABILITY_VERIFICATION = "updateVulnerabilityVerification";
+    public static  final String LOAD_VULNERABILITIES_PROJECT = "loadVulnerabilitiesProject";
 
+    public static final String LIST_VULNERABILITY_WITH_VIEW_SIZE_FRIENDLY_URL = "listVulnerabilityWithViewSizeFriendlyUrl";
+    public static final String UPDATE_PROJECT_VULNERABILITIES_URL = "updateProjectVulnerabilitiesURL";
+    public static final String VIEW_VULNERABILITY_FRIENDLY_URL = "vulfriendlyUrl";
     public static final String UPDATE_VULNERABILITIES__FAILED_IDS = "updateVulnerabilities_failedIds";
     public static final String UPDATE_VULNERABILITIES__NEW_IDS = "updateVulnerabilities_newIds";
     public static final String UPDATE_VULNERABILITIES__UPDATED_IDS = "updateVulnerabilities_updatedIds";
