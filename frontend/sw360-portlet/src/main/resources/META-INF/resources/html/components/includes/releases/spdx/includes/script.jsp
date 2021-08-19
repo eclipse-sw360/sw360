@@ -326,4 +326,111 @@
         }
     });
 
+    function enableSection(section, state) {
+        if (!state) {
+            section.find('button').attr('disabled', 'disabled');
+            section.find('input').attr('disabled', 'disabled');
+
+            section.find('.spdx-delete-icon-main').css('cursor', 'not-allowed');
+            section.find('.spdx-delete-icon-sub').css('cursor', 'not-allowed');
+        } else {
+            section.find('button').removeAttr('disabled');
+            section.find('input').removeAttr('disabled');
+
+            section.find('select').removeAttr('disabled');
+
+            section.find('.spdx-delete-icon-main').css('cursor', 'pointer');
+            section.find('.spdx-delete-icon-sub').css('cursor', 'pointer');
+        }
+
+        // Keep the main button Add enable
+        section.find('.spdx-add-button-main').removeAttr('disabled');
+    }
+
+    function clearSection(section) {
+        section.find('input').val('');
+
+        //select box: first value
+
+        //radio button: no selection
+    }
+
+    $('.spdx-add-button-main').on('click', function (e) {
+        e.preventDefault();
+    })
+
+    $('.spdx-add-button-sub').on('click', function (e) {
+        e.preventDefault();
+    })
+
+    function deleteMain(deleteBtn) {
+        let selectbox = $(deleteBtn).prev('select');
+
+        if ($(deleteBtn).css('cursor') == 'not-allowed') {
+            return;
+        }
+
+        selectbox.find('option:selected').remove();
+
+        // If all options were deleted, disable the select box
+        if (selectbox.find('option').length == 0) {
+            selectbox.attr('disabled', 'true');
+            $(deleteBtn).css('cursor', 'not-allowed')
+        }
+
+        let newItem = selectbox.find('option:selected').val();
+
+        // Fill data of new item here
+        // alert(newItem);
+
+        if (typeof (newItem) == 'undefined') {
+            //Clear all textboxes and disable all textboxes/selectboxes/radio buttons/buttons
+
+            section = selectbox.closest('.form-group');
+
+            enableSection(section, false);
+
+            clearSection(section);
+        }
+    }
+
+    function deleteSub(deleteBtn) {
+        $(deleteBtn).parent().remove();
+    }
+
+    function addMain(addBtn) {
+        let selectbox = $(addBtn).prev().find('select');
+
+        let newIndex = parseInt(selectbox.find('option').last().val()) + 1;
+
+        if (isNaN(newIndex)) {
+            newIndex = 1;
+        }
+
+        selectbox.append('<option value="' + newIndex + '">' + newIndex + '</option>');
+
+        selectbox.val(newIndex);
+
+        section = selectbox.closest('.form-group');
+
+        enableSection(section, true);
+
+        clearSection(section);
+    }
+
+    $(function () {
+        // Expand/collapse section when click on the header
+        $('thead').on('click', function () {
+            if ($(this).next().css('display') == 'none') {
+                $(this).next().css('display', '');
+            } else {
+                $(this).next().css('display', 'none');
+            }
+
+        })
+
+        // $('.spdx-delete-icon-main').on('click', function() {
+        // 	console.log('xxx');
+        // })
+    });
 </script>

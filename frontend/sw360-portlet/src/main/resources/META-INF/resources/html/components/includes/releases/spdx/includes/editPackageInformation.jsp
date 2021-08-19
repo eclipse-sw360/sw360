@@ -1,11 +1,11 @@
-<core_rt:set var="package" value="${spdxPackageInfo.iterator().next()}"/>
+<core_rt:set var="package" value="${spdxPackageInfo.iterator().next()}" />
 <table class="table spdx-table three-columns" id="editPackageInformation">
     <thead>
         <tr>
             <th colspan="3">3. Package Information</th>
         </tr>
     </thead>
-    <tbody></tbody>
+    <tbody>
         <tr>
             <td style="display: flex">
                 <div class="form-group" style="flex: 1">
@@ -25,8 +25,8 @@
                     <div style="display: flex">
                         <label class="sub-label">SPDXRef-</label>
                         <input id="packageSPDXId" class="form-control needs-validation" type="text"
-                            placeholder="Enter Package SPDX Identifier"
-                            name="_sw360_portlet_components_PACKAGE_SPDX_ID" value="${package.SPDXID}">
+                            placeholder="Enter Package SPDX Identifier" name="_sw360_portlet_components_PACKAGE_SPDX_ID"
+                            value="${package.SPDXID}">
                     </div>
                 </div>
             </td>
@@ -48,7 +48,8 @@
                     </label>
                     <div style="display: flex">
                         <input id="packageFileName" class="form-control" type="text"
-                            placeholder="Enter Package File Name" name="_sw360_portlet_components_PACKAGE_FILE_NAME" value="${package.packageFileName}">
+                            placeholder="Enter Package File Name" name="_sw360_portlet_components_PACKAGE_FILE_NAME"
+                            value="${package.packageFileName}">
                     </div>
                 </div>
             </td>
@@ -67,7 +68,8 @@
                             </select>
                             <input style="flex: 6; margin-right: 1rem;" id="supplierValue"
                                 class="form-control needs-validation" rule="isDownloadUrl" type="text"
-                                name="_sw360_portlet_components_SUPPLIER_VALUE" placeholder="Enter Package Supplier" value="${package.supplier}">
+                                name="_sw360_portlet_components_SUPPLIER_VALUE" placeholder="Enter Package Supplier"
+                                value="${package.supplier}">
                         </div>
                         <div style="flex: 2">
                             <input class="spdx-radio" id="supplierNoAssertion" type="radio"
@@ -113,7 +115,7 @@
                                 name="_sw360_portlet_components_DOWNLOAD_LOCATION" value="EXIST"
                                 onchange="setInputValue('downloadLocation', value);">
                             <input style="flex: 6; margin-right: 1rem;" class="form-control needs-validation"
-                                id="downloadLocationValue" rule="isDownloadUrl" type="text" required=""
+                                id="downloadLocationValue" rule="isDownloadUrl" type="text"
                                 name="_sw360_portlet_components_DOWNLOAD_LOCATION_VALUE"
                                 placeholder="Enter Package Download Location" value="${package.downloadLocation}">
                         </div>
@@ -161,7 +163,7 @@
                                 name="_sw360_portlet_components_PACKAGE_HOMEPAGE" value="EXIST"
                                 onchange="setInputValue('packageHomepage', value);">
                             <input style="flex: 6; margin-right: 1rem;" id="packageHomepageValue"
-                                class="form-control needs-validation" rule="isDownloadUrl" type="text" required=""
+                                class="form-control needs-validation" rule="isDownloadUrl" type="text"
                                 name="_sw360_portlet_components_PACKAGE_HOMEPAGE_VALUE"
                                 placeholder="Enter Package Homepage" value="${package.homepage}">
                         </div>
@@ -200,7 +202,7 @@
                                 name="_sw360_portlet_components_LICENSE_CONCLUDED" value="EXIST"
                                 onchange="setInputValue('licenseConcluded', value);">
                             <input style="flex: 6; margin-right: 1rem;" class="form-control needs-validation"
-                                id="licenseConcludedValue" type="text" required=""
+                                id="licenseConcludedValue" type="text"
                                 name="_sw360_portlet_components_LICENSE_CONCLUDED_VALUE"
                                 placeholder="Enter Concluded License" value="${package.licenseConcluded}">
                         </div>
@@ -230,7 +232,7 @@
                                 name="_sw360_portlet_components_LICENSE_INFO_FROM_FILES" value="EXIST"
                                 onchange="setInputValue('licenseInfoFromFiles', value);">
                             <textarea style="flex: 6; margin-right: 1rem;" id="licenseInfoFromFilesValue" rows="5"
-                                class="form-control needs-validation" type="text" required=""
+                                class="form-control needs-validation" type="text"
                                 name="_sw360_portlet_components_LICENSE_INFO_FROM_FILES_VALUE"
                                 placeholder="Enter All Licenses Information from Files">${package.licenseInfoFromFiles}</textarea>
                         </div>
@@ -260,7 +262,7 @@
                                 name="_sw360_portlet_components_DECLARED_LICENSE" value="EXIST"
                                 onchange="setInputValue('licenseDeclared', value);">
                             <input style="flex: 6; margin-right: 1rem;" id="licenseDeclaredValue"
-                                class="form-control needs-validation" type="text" required=""
+                                class="form-control needs-validation" type="text"
                                 name="_sw360_portlet_components_DECLARED_LICENSE_VALUE"
                                 placeholder="Enter Declared License" value="${package.licenseDeclared}">
                         </div>
@@ -300,7 +302,7 @@
                                 name="_sw360_portlet_components_COPYRIGHT_TEXT" value="EXIST"
                                 onchange="setInputValue('copyrightText', value);">
                             <textarea style="flex: 6; margin-right: 1rem;" id="copyrightTextValue" rows="5"
-                                class="form-control needs-validation" type="text" required=""
+                                class="form-control needs-validation" type="text"
                                 name="_sw360_portlet_components_COPYRIGHT_TEXT_VALUE"
                                 placeholder="Enter Copyright Text">${package.copyrightText}</textarea>
                         </div>
@@ -345,7 +347,8 @@
                 <div class="form-group">
                     <label for="spdxPackageComment">3.20 Package Comment</label>
                     <textarea class="form-control" id="spdxPackageComment" rows="5"
-                        name="_sw360_portlet_components_PACKAGE_COMMENT" placeholder="Enter Package Comment">${package.packageComment}</textarea>
+                        name="_sw360_portlet_components_PACKAGE_COMMENT"
+                        placeholder="Enter Package Comment">${package.packageComment}</textarea>
                 </div>
             </td>
         </tr>
@@ -366,8 +369,8 @@
                         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                             <label class="sub-title">Category</label>
                             <select style="width: auto; flex: auto;" type="text" class="form-control"
-                            id="externalReferencesCategory"
-                                placeholder="Enter Category" name="_sw360_portlet_components_REFERENCE_CATEGORY">
+                                id="externalReferencesCategory" placeholder="Enter Category"
+                                name="_sw360_portlet_components_REFERENCE_CATEGORY">
                                 <option value="referenceCategory_security">SECURITY</option>
                                 <option>PACKAGE-MANAGER</option>
                                 <option>PERSISTENT-ID</option>
@@ -377,8 +380,8 @@
                         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                             <label class="sub-title">Type</label>
                             <select style="width: auto; flex: auto;" type="text" class="form-control"
-                                id="externalReferencesType"
-                                placeholder="Enter Type" name="_sw360_portlet_components_REFERENCE_TYPE">
+                                id="externalReferencesType" placeholder="Enter Type"
+                                name="_sw360_portlet_components_REFERENCE_TYPE">
                                 <option>cpe22Type</option>
                                 <option>cpe23Type</option>
                                 <option>maven-central</option>
@@ -393,14 +396,13 @@
                         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                             <label class="sub-title">Locator</label>
                             <input style="width: auto; flex: auto;" type="text" class="form-control"
-                                id="externalReferencesLocator"
-                                placeholder="Enter Locator" name="_sw360_portlet_components_REFERENCE_LOCATOR">
+                                id="externalReferencesLocator" placeholder="Enter Locator"
+                                name="_sw360_portlet_components_REFERENCE_LOCATOR">
                         </div>
                         <div style="display: flex; flex-direction: row;">
                             <label class="sub-title">3.22 Comment</label>
                             <textarea style="width: auto; flex: auto;" type="text" rows="5" class="form-control"
-                                id="externalReferencesComment"
-                                placeholder="Enter Comment"
+                                id="externalReferencesComment" placeholder="Enter Comment"
                                 name="_sw360_portlet_components_REFERENCE_COMMENT"></textarea>
                         </div>
                     </div>
@@ -447,7 +449,7 @@
     }
 
     generateExternalDocumentRefsTable('1');
-    function generateExternalDocumentRefsTable(index){
+    function generateExternalDocumentRefsTable(index) {
         <core_rt:if test="${not package.externalRefs.isEmpty()}">
             var i = 0;
             <core_rt:forEach items="${package.externalRefs}" var="externalRefsData" varStatus="loop">
