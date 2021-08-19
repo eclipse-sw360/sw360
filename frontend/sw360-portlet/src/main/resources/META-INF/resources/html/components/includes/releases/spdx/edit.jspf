@@ -1,0 +1,45 @@
+<%--
+  ~ Copyright Toshiba corporation, 2021. Part of the SW360 Portal Project.
+  ~ Copyright Toshiba Software Development (Vietnam) Co., Ltd., 2021. Part of the SW360 Portal Project.
+  ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+--%>
+
+
+<style>
+	table {
+		border-collapse: collapse !important;
+		border: none;
+	}
+
+	tr, td {
+		border: none;
+		border-top-width: 0 !important;
+	}
+
+	.radio-label {
+		vertical-align: text-bottom !important;
+	}
+</style>
+
+<%@include file="/html/components/includes/releases/spdx/includes/script.jsp" %>
+
+<%@include file="/html/utils/includes/requirejs.jspf" %>
+<form id="editSPDXForm" name="editSPDXForm" class="form needs-validation" novalidate>
+	<%@include file="/html/components/includes/releases/spdx/includes/editDocumentCreationInformation.jsp" %>
+	<%@include file="/html/components/includes/releases/spdx/includes/editPackageInformation.jsp" %>
+	<%@include file="/html/components/includes/releases/spdx/includes/editSnippetInformation.jsp" %>
+	<%@include file="/html/components/includes/releases/spdx/includes/editOtherLicensingInformationDetected.jsp" %>
+	<%@include file="/html/components/includes/releases/spdx/includes/editRelationshipsBetweenSPDXElements.jsp" %>
+	<%@include file="/html/components/includes/releases/spdx/includes/editAnnotations.jsp" %>
+</form>
+
+<script>
+	require(['jquery', /* jquery-plugins */ 'jquery-ui'], function($) {
+        $(".datepicker").datepicker({changeMonth:true,changeYear:true,dateFormat: "yy-mm-dd"});
+	});
+</script>

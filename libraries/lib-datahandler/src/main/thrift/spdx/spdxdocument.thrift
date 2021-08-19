@@ -3,6 +3,7 @@ include "users.thrift"
 include "snippetinformation.thrift"
 include "relationshipsbetweenspdxelements.thrift"
 include "annotations.thrift"
+include "otherlicensinginformationdetected.thrift"
 
 namespace java org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument
 namespace php sw360.thrift.spdx.spdxdocument
@@ -18,6 +19,7 @@ typedef users.RequestedAction RequestedAction
 typedef snippetinformation.SnippetInformation SnippetInformation
 typedef relationshipsbetweenspdxelements.RelationshipsBetweenSPDXElements RelationshipsBetweenSPDXElements
 typedef annotations.Annotations Annotations
+typedef otherlicensinginformationdetected.OtherLicensingInformationDetected OtherLicensingInformationDetected
 
 struct SPDXDocument {
     1: optional string id,
@@ -30,6 +32,7 @@ struct SPDXDocument {
     8: optional set<SnippetInformation> snippets,
     9: optional set<RelationshipsBetweenSPDXElements> relationships,
     10: optional set<Annotations> annotations,
+    11: optional set<OtherLicensingInformationDetected> otherLicensingInformationDetecteds,
     // Information for ModerationRequests
     20: optional DocumentState documentState,
     21: optional map<RequestedAction, bool> permissions,

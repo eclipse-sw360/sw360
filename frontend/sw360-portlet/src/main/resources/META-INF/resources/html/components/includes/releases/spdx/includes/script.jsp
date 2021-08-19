@@ -1,13 +1,94 @@
+<style>
+    .sub-label {
+        margin-right: 0.5rem;
+        margin-top: 0.5rem;
+        font-weight: 400;
+        font-size: 1rem;
+    }
+
+    .sub-title {
+        width: 10rem;
+        margin-top: 0.7rem;
+        margin-right: 1rem;
+    }
+
+    .sub-input {
+        width: auto;
+    }
+
+    .spdx-checkbox {
+        margin-top: 0.75rem;
+        width: 1rem;
+        height: 1rem;
+    }
+
+    .spdx-select {
+        width: auto;
+        flex: auto;
+        margin-right: 2rem;
+    }
+
+    .spdx-radio {
+        margin-top: 0.75rem;
+        margin-right: 0.5rem;
+        width: 1rem;
+        height: 1rem;
+    }
+
+    .spdx-date {
+        width: 12rem;
+        text-align: center;
+    }
+
+    .spdx-time {
+        width: 12rem;
+        text-align: center;
+        margin-left: 0.6rem;
+    }
+
+    .label-select {
+        flex: 1;
+        text-decoration: underline;
+    }
+
+    .spdx-delete-icon-main {
+        margin-top: 0.3rem;
+        margin-right: 1rem;
+        width: 1rem;
+        height: auto;
+    }
+
+    .spdx-delete-icon-sub {
+        margin-top: 0.3rem;
+        margin-right: 4rem;
+        width: 1rem;
+        height: auto;
+    }
+
+    .spdx-add-button-main {
+        margin-left: 11rem;
+        margin-bottom: 2rem;
+        width: 10rem;
+    }
+
+    .spdx-add-button-sub {
+        width: 10rem;
+    }
+
+    thead {
+        cursor: pointer;
+    }
+</style>
 <script>
     require(['jquery'], function ($) {
 
-        $('#formSubmit').on('click', function (event) {
-            event.preventDefault();
-            var myValidator = validator();
-            myValidator.setFormId('editOtherLicensingInformationDetected');
-            myValidator.validate();
-            myValidator.showAllErrors();
-        });
+        // $('#formSubmit').on('click', function (event) {
+        //     event.preventDefault();
+        //     var myValidator = validator();
+        //     myValidator.setFormId('editOtherLicensingInformationDetected');
+        //     myValidator.validate();
+        //     myValidator.showAllErrors();
+        // });
 
         function validator() {
             var errors = [];
@@ -22,7 +103,7 @@
                 if (!isNotNull(val)) {
                     return true;
                 }
-                var regexText =  new RegExp(params);
+                var regexText = new RegExp(params);
                 if (val.match(regexText) != null) {
                     return true;
                 } else {
@@ -31,14 +112,14 @@
             }
 
             function isNotNull(val) {
-                if((val == null ) || (val == '')) {
+                if ((val == null) || (val == '')) {
                     return false;
                 } else {
                     return true;
                 }
             }
 
-            function required(val, params){
+            function required(val, params) {
                 if (value == 'checked') {
                     return true;
                 } else {
