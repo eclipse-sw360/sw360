@@ -18,9 +18,9 @@ struct DocumentCreationInformation {
     2: optional string revision,
     3: optional string type = "documentCreationInformation",
     4: optional string spdxDocumentId,  // Id of the parent SPDX Document
-    5: optional string DocumentCreationInformationVersion,
+    5: optional string documentCreationInformationVersion,
     6: optional string dataLicense,
-    7: optional string DocumentCreationInformationID,
+    7: optional string documentCreationInformationID,
     8: optional string name,
     9: optional string documentNamespace,
     10: optional set<ExternalDocumentReferences> externalDocumentRefs,

@@ -21,7 +21,7 @@
                         <input id="spdxVersion" class="form-control needs-validation" rule="regex:^[0-9]+\.[0-9]+$"
                             name="_sw360_portlet_components_SPDX_VERSION" type="text" 
                             placeholder="Enter SPDX Version" 
-                            value="${spdxDocumentCreationInfo.DocumentCreationInformationVersion}">
+                            value="${spdxDocumentCreationInfo.documentCreationInformationVersion}">
                     </div>
                     <div id="spdxVersion-error-messages">
                         <div class="invalid-feedback" rule="regex">
@@ -51,7 +51,7 @@
                         <input id="spdxIdentifier" class="form-control needs-validation" rule="regex:^[0-9a-zA-Z.-]+$"
                             name="_sw360_portlet_components_SPDX_IDENTIFIER" type="text"
                             placeholder="Enter SPDX Identifier"
-                            value="${spdxDocumentCreationInfo.DocumentCreationInformationID}">
+                            value="${spdxDocumentCreationInfo.documentCreationInformationID}">
                     </div>
                     <div id="spdxIdentifier-error-messages">
                         <div class="invalid-feedback" rule="regex">
