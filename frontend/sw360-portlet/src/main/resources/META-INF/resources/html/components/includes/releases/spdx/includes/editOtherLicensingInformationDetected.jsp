@@ -1,3 +1,4 @@
+<core_rt:set var="otherLicensing" value="${spdxDocument.otherLicensingInformationDetecteds}" />
 <table class="table" id="editOtherLicensingInformationDetected">
     <thead>
         <tr>
@@ -11,9 +12,9 @@
                     <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                         <label for="selectOtherLicensing" style="text-decoration: underline;" class="sub-title">Select
                             Other Licensing</label>
-                        <select id="selectOtherLicensing" type="text" class="form-control spdx-select">
+                        <select id="selectOtherLicensing" type="text" class="form-control spdx-select"
+                            onchange="generateOtherLicensingTable($(this).find('option:selected').text())">
                             <option>1</option>
-                            <option>2</option>
                         </select>
                         <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-spdxCreatorType-Person"
                             data-row-id="" onclick="removeRow(this);" viewBox="0 0 512 512">
@@ -66,7 +67,7 @@
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" id="licenseNameExist" type="radio"
                                 name="_sw360_portlet_components_LICENSE_NAME" value="exist">
-                            <input style="flex: 6; margin-right: 1rem;" id="licenseNameExist"
+                            <input style="flex: 6; margin-right: 1rem;" id="licenseName"
                                 class="form-control needs-validation" rule="isDownloadUrl" type="text"
                                 name="_sw360_portlet_components_LICENSE_NAME_VALUE" placeholder="Enter License Name">
                         </div>
@@ -93,10 +94,32 @@
             <td>
                 <div class="form-group">
                     <label for="licenseComment">6.5 License Comment</label>
-                    <textarea class="form-control" id="licenseComment" rows="5"
+                    <textarea class="form-control" id="licenseCommentOnOtherLicensing" rows="5"
                         name="_sw360_portlet_components_LICENSE_COMMENT" placeholder="Enter License Comment"></textarea>
                 </div>
             </td>
         </tr>
     </tbody>
 </table>
+
+<script>
+    generateOtherLicensingTable('1');
+    function generateOtherLicensingTable(index) {
+        <core_rt:if test="${not otherLicensing.isEmpty()}">
+            var i = 0;
+        <core_rt:forEach items="${otherLicensing}" var="otherLicensingData" varStatus="loop">
+                i++;
+            if (i == index) {
+                fillValueToId("licenseId", "${otherLicensingData.licenseId}");
+                fillValueToId("licenseName", "${otherLicensingData.licenseName}");
+                $('#extractedText').val("${otherLicensingData.extractedText}");
+                $('#licenseCrossRefs').val("${otherLicensingData.licenseCrossRefs}");
+                $('#licenseCommentOnOtherLicensing').val("${otherLicensingData.licenseComment}");
+            }
+        </core_rt:forEach>
+        </core_rt:if>
+    }
+
+    generateSelecterOption('selectOtherLicensing', "${otherLicensing.size()}");
+
+</script>

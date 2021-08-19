@@ -12,7 +12,8 @@
                     <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                         <label for="selectSnippet" style="text-decoration: underline;" class="sub-title">Select
                             Snippet</label>
-                        <select id="selectSnippet" type="text" class="form-control spdx-select">
+                        <select id="selectSnippet" type="text" class="form-control spdx-select"
+                            onchange="generateSnippetTable($(this).find('option:selected').text())">
                             <option>1</option>
                         </select>
                         <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-spdxCreatorType-Person"
@@ -71,11 +72,11 @@
                         5.3 & 5.4 Snippet Ranges
                     </label>
                     <div style="display: flex; flex-direction: column; padding-left: 1rem;">
-                        <div style="display: flex; margin-bottom: 0.75rem;">
+                        <div style="display: flex; margin-bottom: 0.75rem;" name="snippetRanges">
                             <select style="flex: 1; margin-right: 1rem;" type="text" class="form-control"
-                                placeholder="Enter Type" value="Line">
-                                <option value="Organization" selected>Byte</option>
-                                <option value="Person">Line</option>
+                                placeholder="Enter Type">
+                                <option value="BYTE" selected>Byte</option>
+                                <option value="LINE">Line</option>
                             </select>
                             <input style="flex: 2; margin-right: 1rem;" type="text" class="form-control"
                                 placeholder="Enter Start Pointer">
@@ -83,7 +84,7 @@
                                 placeholder="Enter End Pointer">
                             <input style="flex: 4; margin-right: 2rem;" type="text" class="form-control"
                                 placeholder="Enter Reference">
-                            <svg class="disabled lexicon-icon spdx-delete-icon-sub" name="delete-spdxCreatorType-Person"
+                            <svg class="lexicon-icon spdx-delete-icon-sub" name="delete-snippetRange"
                                 data-row-id="" onclick="removeRow(this);" viewBox="0 0 512 512">
                                 <title>Delete</title>
                                 <path class="lexicon-icon-outline lx-trash-body-border"
@@ -232,6 +233,7 @@ https://spdx.org/licenses/GPL-2.0-only
 </table>
 
 <script>
+    generateSelecterOption('selectSnippet', "${snippets.size()}");
     generateSnippetTable('1');
     function generateSnippetTable(index) {
         <core_rt:if test="${not snippets.isEmpty()}">
@@ -239,7 +241,7 @@ https://spdx.org/licenses/GPL-2.0-only
         <core_rt:forEach items="${snippets}" var="snippetData" varStatus="loop">
                 i++;
             if (i == index) {
-                    fillValueToId("snippetSpdxIdentifier", "${snippetData.SPDXID}");
+                fillValueToId("snippetSpdxIdentifier", "${snippetData.SPDXID}");
                 fillValueToId("snippetFromFileValue", "${snippetData.snippetFromFile}");
                 fillValueToId("spdxConcludedLicenseValue", "${snippetData.licenseConcluded}");
                 fillValueToId("licenseInfoInFileValue", "${snippetData.licenseInfoInSnippets}");
@@ -248,8 +250,44 @@ https://spdx.org/licenses/GPL-2.0-only
                 fillValueToId("snippetComment", "${snippetData.comment}");
                 fillValueToId("snippetName", "${snippetData.name}");
                 fillValueToId("snippetAttributionText", "${snippetData.snippetAttributionText}");
+                <core_rt:set var="snippetRanges" value="${snippetData.snippetRanges}" />
+                generateSnippetRangesTable();
             }
         </core_rt:forEach>
         </core_rt:if>
+    }
+
+    function generateSnippetRangesTable() {
+        console.log("AAAAAAAAAAA");
+        <core_rt:if test="${not snippetRanges.isEmpty()}">
+            console.log("BBBBBBBB");
+            <core_rt:forEach items="${snippetRanges}" var="snippetRangeData" varStatus="loop">
+                console.log("CCCCCCCCCCC");
+                addSnippetRangeRow("snippetRanges", "${snippetRangeData.rangeType}", "${snippetRangeData.startPointer}", "${snippetRangeData.endPointer}", "${snippetRangeData.reference}");
+            </core_rt:forEach>
+            removeRow(document.getElementsByName('delete-snippetRange')[0]);
+        </core_rt:if>
+    }
+
+    function addSnippetRangeRow(name, value1, value2, value3, value4) {
+        if ($(document.getElementsByName(name)).hasClass('disabled')) {
+            return;
+        }
+        var size = document.getElementsByName(name).length;
+        var el = document.getElementsByName(name)[size - 1];
+        console.log("DDDDD " + el)
+        var clone = el.cloneNode(true);
+        clone.getElementsByTagName('select')[0].name = clone.getElementsByTagName('select')[0].name + Date.now();
+        clone.getElementsByTagName('select')[0].value = value1;
+        clone.getElementsByTagName('input')[0].name = clone.getElementsByTagName('input')[0].name + Date.now();
+        clone.getElementsByTagName('input')[0].value = value2;
+        clone.getElementsByTagName('input')[1].name = clone.getElementsByTagName('input')[1].name + Date.now();
+        clone.getElementsByTagName('input')[1].value = value3;
+        clone.getElementsByTagName('input')[2].name = clone.getElementsByTagName('input')[2].name + Date.now();
+        clone.getElementsByTagName('input')[2].value = value4;
+        $(clone).insertAfter(el);
+        if (size == 1) {
+            enableAction('delete-' + name);
+        }
     }
 </script>

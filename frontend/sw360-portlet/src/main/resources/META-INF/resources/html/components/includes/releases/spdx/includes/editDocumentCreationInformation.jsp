@@ -102,7 +102,8 @@
                         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                             <label for="externalDocumentRefs" style="text-decoration: underline;">
                                 Select Reference</label>
-                            <select id="externalDocumentRefs" type="text" class="form-control spdx-select">
+                            <select id="externalDocumentRefs" type="text" class="form-control spdx-select"
+                                onchange="generateExternalDocumentRefsTable($(this).find('option:selected').text())">
                                 <option>1</option>
                             </select>
                             <svg class="disabled lexicon-icon spdx-delete-icon-main"
@@ -227,9 +228,8 @@
                 <div class="form-group">
                     <label for="creatorComment">2.10 Creator Comment</label>
                     <textarea class="form-control" id="creatorComment" rows="5"
-                        name="_sw360_portlet_components_CREATOR_COMMENT" placeholder="<liferay-ui:message key="
-                        enter.comments" />">
-                    <sw360:out value="${spdxDocumentCreationInfo.creatorComment}" /></textarea>
+                        name="_sw360_portlet_components_CREATOR_COMMENT"
+                        placeholder="<liferay-ui:message key="enter.comments" />"><sw360:out value="${spdxDocumentCreationInfo.creatorComment}" /></textarea>
                 </div>
             </td>
         </tr>
@@ -238,9 +238,8 @@
                 <div class="form-group">
                     <label for="documentComment">2.11 Document Comment</label>
                     <textarea class="form-control" id="documentComment" rows="5"
-                        name="_sw360_portlet_components_DOCUMENT_COMMENT" placeholder="<liferay-ui:message key="
-                        enter.comments" />">
-                    <sw360:out value="${spdxDocumentCreationInfo.documentComment}" /></textarea>
+                        name="_sw360_portlet_components_DOCUMENT_COMMENT"
+                        placeholder="<liferay-ui:message key="enter.comments" />"><sw360:out value="${spdxDocumentCreationInfo.documentComment}" /></textarea>
                 </div>
             </td>
         </tr>
@@ -336,6 +335,15 @@
         createdTime = createdTime.replace(/[A-Z]/g, '');
         $('#createdDate').prop('value', createdDate);
         $('#createdTime').prop('value', createdTime);
+    }
+
+    generateSelecterOption('externalDocumentRefs', "${externalDocumentRefs.size()}");
+    function generateSelecterOption(selectId, length) {
+        for (var i = 2; i <= length; i++) {
+            var option = document.createElement("option");
+            option.text = i;
+            document.getElementById(selectId).add(option);
+        }
     }
 
 </script>

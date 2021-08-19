@@ -361,9 +361,9 @@
                     <div style="display: flex; flex-direction: column; padding-left: 1rem;">
                         <div style="display: flex; flex-direction: row; margin-bottom: 1.5rem;">
                             <label style="text-decoration: underline;" class="sub-title">Select Reference</label>
-                            <select style="width: auto; flex: auto;" type="text" class="form-control">
+                            <select style="width: auto; flex: auto;" type="text" class="form-control" id="externalReferences" 
+                                onchange="generateExternalRefsTable($(this).find('option:selected').text())">
                                 <option>1</option>
-                                <option>2</option>
                             </select>
                         </div>
                         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
@@ -448,8 +448,8 @@
         $('#' + id + 'Value').prop('disabled', false);
     }
 
-    generateExternalDocumentRefsTable('1');
-    function generateExternalDocumentRefsTable(index) {
+    generateExternalRefsTable('1');
+    function generateExternalRefsTable(index) {
         <core_rt:if test="${not package.externalRefs.isEmpty()}">
             var i = 0;
             <core_rt:forEach items="${package.externalRefs}" var="externalRefsData" varStatus="loop">
@@ -464,5 +464,6 @@
         </core_rt:if>
     }
 
+    generateSelecterOption('externalReferences', "${package.externalRefs.size()}");
 
 </script>

@@ -42,7 +42,8 @@
                     </label>
                     <div style="display: flex">
                         <select id="annotatorType" style="flex: 2; margin-right: 1rem;" type="text" class="form-control"
-                            placeholder="Enter Type" value="">
+                            placeholder="Enter Type"
+                            onchange="generateSelecterOption($(this).find('option:selected').text())">
                             <option value="Organization" selected>Organization</option>
                             <option value="Person">Person</option>
                             <option value="Tool">Tool</option>
@@ -128,4 +129,7 @@
         $('#annotationCreatedDate').prop('value', createdDate);
         $('#annotationCreatedTime').prop('value', createdTime);
     }
+
+    generateSelecterOption('selectAnnotation', "${annotations.size()}");
+
 </script>

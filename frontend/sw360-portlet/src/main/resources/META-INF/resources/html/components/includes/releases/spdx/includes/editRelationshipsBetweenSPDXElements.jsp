@@ -12,7 +12,8 @@
                     <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                         <label for="selectRelationship" style="text-decoration: underline;" class="sub-title">Select
                             Relationship</label>
-                        <select id="selectRelationship" type="text" class="form-control spdx-select">
+                        <select id="selectRelationship" type="text" class="form-control spdx-select"
+                            onchange="generateRelationshipTable($(this).find('option:selected').text())">
                             <option>1</option>
                         </select>
                         <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-spdxCreatorType-Person"
@@ -81,5 +82,7 @@
         </core_rt:forEach>
         </core_rt:if>
     }
+
+    generateSelecterOption('selectRelationship', "${relationships.size()}");
 
 </script>
