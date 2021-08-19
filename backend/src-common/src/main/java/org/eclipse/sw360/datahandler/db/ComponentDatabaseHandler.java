@@ -462,12 +462,20 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private boolean isDuplicate(Component component, boolean caseInsenstive){
-        Set<String> duplicates = componentRepository.getComponentIdsByName(component.getName(), caseInsenstive);
-        return duplicates.size()>0;
+        return isDuplicate(component.getName(), caseInsenstive);
     }
 
     private boolean isDuplicate(Release release){
-        List<Release> duplicates = releaseRepository.searchByNameAndVersion(release.getName(), release.getVersion());
+        return isDuplicate(release.getName(), release.getVersion());
+    }
+
+    private boolean isDuplicate(String componentName, boolean caseInsenstive) {
+        Set<String> duplicates = componentRepository.getComponentIdsByName(componentName, caseInsenstive);
+        return duplicates.size()>0;
+    }
+
+    private boolean isDuplicate(String releaseName, String releaseVersion) {
+        List<Release> duplicates = releaseRepository.searchByNameAndVersion(releaseName, releaseVersion);
         return duplicates.size()>0;
     }
 
@@ -2137,6 +2145,60 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 SW360Constants.NOTIFICATION_CLASS_RELEASE, Release._Fields.SUBSCRIBERS.toString(),
                 release.getName(), release.getVersion());
     }
+
+    public ImportBomRequestPreparation prepareImportBom(User user, String attachmentContentId) throws SW360Exception {
+        final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
+        final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
+        try {
+            final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
+            try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
+                final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
+                final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
+
+                InputStream spdxInputStream;
+                String fileType = getFileType(attachmentContent.getFilename());
+                if (isRdfXmlFile(fileType)) {
+                    spdxInputStream = inputStream;
+                } else {
+                    final File sourceFile = DatabaseHandlerUtil.saveAsTempFile(user, inputStream, attachmentContentId, "."+fileType);
+                    final String sourceFileName = sourceFile.getPath().toString();
+                    final String targetFileName = attachmentContentId + ".rdf";
+
+                    SpdxConverter.convert(sourceFile.getPath().toString(), targetFileName);
+                    spdxInputStream = new FileInputStream(new File(targetFileName));
+
+                    Files.delete(Paths.get(sourceFileName));
+                    Files.delete(Paths.get(targetFileName));
+                }
+
+                ImportBomRequestPreparation importBomRequestPreparation = spdxBOMImporter.prepareImportSpdxBOMAsRelease(spdxInputStream, attachmentContent);
+                if (RequestStatus.SUCCESS.equals(importBomRequestPreparation.getRequestStatus())) {
+                    String name = importBomRequestPreparation.getName();
+                    String version = importBomRequestPreparation.getVersion();
+                    if (!isDuplicate(name, true)) {
+                        importBomRequestPreparation.setIsComponentDuplicate(false);
+                        importBomRequestPreparation.setIsReleaseDuplicate(false);
+                    } else if (!isDuplicate(name, version)) {
+                        importBomRequestPreparation.setIsComponentDuplicate(true);
+                        importBomRequestPreparation.setIsReleaseDuplicate(false);
+                    } else {
+                        importBomRequestPreparation.setIsComponentDuplicate(true);
+                        importBomRequestPreparation.setIsReleaseDuplicate(true);
+                    }
+                }
+
+                return importBomRequestPreparation;
+            }
+        } catch (InvalidSPDXAnalysisException | IOException | SpdxConverterException e) {
+            throw new SW360Exception(e.getMessage());
+        }
+    }
+
+    // public RequestSummary importBomFromSpdxMap(User user, Map<String, Object> spdxMap) {
+    //     final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
+    //     final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
+    //     return spdxBOMImporter.importSpdxBOMAsRelease(spdxInputStream, attachmentContent);
+    // }
 
     public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws SW360Exception {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);

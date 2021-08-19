@@ -49,6 +49,73 @@ public class SpdxBOMImporter {
         this.sink = sink;
     }
 
+    public ImportBomRequestPreparation prepareImportSpdxBOMAsRelease(InputStream inputStream, AttachmentContent attachmentContent)
+            throws InvalidSPDXAnalysisException, SW360Exception {
+        final ImportBomRequestPreparation requestPreparation = new ImportBomRequestPreparation();
+        final SpdxDocument spdxDocument = openAsSpdx(inputStream);
+        final List<SpdxItem> describedPackages = Arrays.stream(spdxDocument.getDocumentDescribes())
+                .filter(item -> item instanceof SpdxPackage)
+                .collect(Collectors.toList());
+
+        if (describedPackages.size() == 0) {
+            requestPreparation.setMessage("The provided BOM did not contain any top level packages.");
+            requestPreparation.setRequestStatus(RequestStatus.FAILURE);
+            return requestPreparation;
+        } else if (describedPackages.size() > 1) {
+            requestPreparation.setMessage("The provided BOM file contained multiple described top level packages. This is not allowed here.");
+            requestPreparation.setRequestStatus(RequestStatus.FAILURE);
+            return requestPreparation;
+        }
+
+        final SpdxItem spdxItem = describedPackages.get(0);
+        if (spdxItem instanceof SpdxPackage) {
+            final SpdxPackage spdxPackage = (SpdxPackage) spdxItem;
+            final Component component = createComponentFromSpdxPackage(spdxPackage);
+            final Release release = createReleaseFromSpdxPackage(spdxPackage);
+
+            requestPreparation.setName(component.getName());
+            requestPreparation.setVersion(release.getVersion());
+            requestPreparation.setRequestStatus(RequestStatus.SUCCESS);
+        } else {
+            requestPreparation.setMessage("Failed to get spdx package from the provided BOM file.");
+            requestPreparation.setRequestStatus(RequestStatus.FAILURE);
+        }
+        return requestPreparation;
+    }
+
+    // public RequestSummary importSpdxBOMAsRelease(Map<String, Object> spdxMap) throws SW360Exception {
+    //     final RequestSummary requestSummary = new RequestSummary();
+    //     Object spdxElementObj = spdxMap.get("spdxElement");
+    //     Object attachmentContentObj = spdxMap.get("attachmentContent");
+    //     Object spdxDocumentObj = spdxMap.get("spdxDocument");
+
+    //     if (!(spdxElementObj instanceof SpdxElement) || !(attachmentContentObj instanceof AttachmentContent) || !(spdxDocumentObj instanceof SpdxDocument)) {
+    //         requestSummary.setRequestStatus(RequestStatus.FAILURE);
+    //         requestSummary.setTotalAffectedElements(-1);
+    //         requestSummary.setTotalElements(-1);
+    //         requestSummary.setMessage("Incorrect spdx data.");
+    //         return requestSummary;
+    //     }
+
+    //     final SpdxElement spdxElement = (SpdxElement) spdxElementObj;
+    //     final AttachmentContent attachmentContent = (AttachmentContent) attachmentContentObj;
+    //     final SpdxDocument spdxDocument = (SpdxDocument) spdxDocumentObj;
+    //     final Optional<SpdxBOMImporterSink.Response> response = importAsRelease(spdxElement, attachmentContent, spdxDocument);
+
+    //     if (response.isPresent()) {
+    //         requestSummary.setRequestStatus(RequestStatus.SUCCESS);
+    //         requestSummary.setTotalAffectedElements(response.get().countAffected());
+    //         requestSummary.setTotalElements(response.get().count());
+    //         requestSummary.setMessage(response.get().getId());
+    //     } else {
+    //         requestSummary.setRequestStatus(RequestStatus.FAILURE);
+    //         requestSummary.setTotalAffectedElements(-1);
+    //         requestSummary.setTotalElements(-1);
+    //         requestSummary.setMessage("Failed to import the BOM as release.");
+    //     }
+    //     return requestSummary;
+    // }
+
     public RequestSummary importSpdxBOMAsRelease(InputStream inputStream, AttachmentContent attachmentContent)
             throws InvalidSPDXAnalysisException, SW360Exception {
         return importSpdxBOM(inputStream, attachmentContent, SW360Constants.TYPE_RELEASE);
@@ -383,12 +450,13 @@ public class SpdxBOMImporter {
 
             for (String spdxCreator : spdxCreators) {
                 String[] data = spdxCreator.split(":");
-                if (data.length != 2) {
-                    log.error("Failed to get SPDX creator!");
+                if (data.length < 2) {
+                    log.error("Failed to get SPDX creator from " + spdxCreator + "!");
                     continue;
                 }
                 String type = data[0].trim();
-                String value = data[1].trim();
+                // String value = data[1].trim();
+                String value = spdxCreator.substring(data[0].length()+1).trim();
 
                 Creator creator = new Creator();
                 creator.setType(type);

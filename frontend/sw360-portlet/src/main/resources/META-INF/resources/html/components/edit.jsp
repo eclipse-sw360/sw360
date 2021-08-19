@@ -151,6 +151,7 @@
                                         </tbody>
                                     </table>
                                     <button type="button" class="btn btn-secondary mt-3" onclick="window.location.href='<%=addReleaseURL%>'"><liferay-ui:message key="add.releases" /></button>
+                                    <button type="button" class="btn btn-secondary mt-3" id="import-spdx-bom" data-component-name="${component.name}" data-action="import-spdx-bom"><liferay-ui:message key="import.spdx.bom" /></button>
                                 </div>
                                 <core_rt:if test="${not componentDivAddMode}" >
                                     <div id="tab-Attachments" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Attachments'}">active show</core_rt:if>">
@@ -206,6 +207,8 @@
     <jsp:include page="/html/utils/includes/searchAndSelectUsers.jsp" />
     <jsp:include page="/html/utils/includes/searchUsers.jsp" />
     <%@include file="/html/components/includes/vendors/searchVendor.jspf" %>
+    <%@include file="/html/utils/includes/requirejs.jspf" %>
+    <%@include file="/html/utils/includes/importBomForComponent.jspf" %>
 
 
     <script>

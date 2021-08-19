@@ -130,6 +130,14 @@ public class SpdxBOMImporterSink {
         return new Response(projectId, AddDocumentRequestStatus.SUCCESS.equals(addDocumentRequestSummary.getRequestStatus()));
     }
 
+    // public boolean checkDuplicate(Object obj) {
+    //     if (obj instanceof Component) {
+    //         return componentDatabaseHandler.isDuplicate((Component) obj, true);
+    //     } else if (obj instanceof Release) {
+    //         return componentDatabaseHandler.isDuplicate((Release) obj);
+    //     }
+    // }
+
     public static class Response {
         private final String id;
         private final List<Response> childs;
