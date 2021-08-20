@@ -220,11 +220,11 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         } else if (PortalConstants.WRITE_SPDX_LICENSE_INFO_INTO_RELEASE.equals(action)) {
             writeSpdxLicenseInfoIntoRelease(request, response);
         } else if (PortalConstants.PREPARE_IMPORT_BOM.equals(action)) {
-            importBom(request, response);
+            prepareImportBom(request, response);
         } else if (PortalConstants.IMPORT_BOM.equals(action)) {
             importBom(request, response);
         } else if (PortalConstants.IMPORT_BOM_AS_NEW.equals(action)) {
-            importBom(request, response);
+            importBomAsNew(request, response);
         } else if (isGenericAction(action)) {
             dealWithGenericAction(request, response, action);
         } else if (PortalConstants.LOAD_CHANGE_LOGS.equals(action) || PortalConstants.VIEW_CHANGE_LOGS.equals(action)) {
@@ -250,6 +250,50 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     // }
 
     private void importBom(ResourceRequest request, ResourceResponse response) {
+        final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        User user = UserCacheHolder.getUserFromRequest(request);
+        String attachmentContentId = request.getParameter(ATTACHMENT_CONTENT_ID);
+        // String newComponentName = request.getParameter(newComponentName);
+
+        try {
+            final RequestSummary requestSummary = componentClient.importBomFromAttachmentContent(user, attachmentContentId, null);
+
+            LiferayPortletURL releaseUrl = createDetailLinkTemplate(request);
+            releaseUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_RELEASE_DETAIL);
+            releaseUrl.setParameter(RELEASE_ID, requestSummary.getMessage());
+            JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+            jsonObject.put("redirectUrl", releaseUrl.toString());
+
+            renderRequestSummary(request, response, requestSummary, jsonObject);
+        } catch (TException e) {
+            log.error("Failed to import BOM.", e);
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE, Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+        }
+    }
+
+    private void importBomAsNew(ResourceRequest request, ResourceResponse response) {
+        final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        User user = UserCacheHolder.getUserFromRequest(request);
+        String attachmentContentId = request.getParameter(ATTACHMENT_CONTENT_ID);
+        String newComponentName = request.getParameter(NEW_COMPONENT_NAME);
+
+        try {
+            final RequestSummary requestSummary = componentClient.importBomFromAttachmentContent(user, attachmentContentId, newComponentName);
+
+            LiferayPortletURL releaseUrl = createDetailLinkTemplate(request);
+            releaseUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_RELEASE_DETAIL);
+            releaseUrl.setParameter(RELEASE_ID, requestSummary.getMessage());
+            JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+            jsonObject.put("redirectUrl", releaseUrl.toString());
+
+            renderRequestSummary(request, response, requestSummary, jsonObject);
+        } catch (TException e) {
+            log.error("Failed to import BOM.", e);
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE, Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+        }
+    }
+
+    private void prepareImportBom(ResourceRequest request, ResourceResponse response) {
         final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
         User user = UserCacheHolder.getUserFromRequest(request);
         String attachmentContentId = request.getParameter(ATTACHMENT_CONTENT_ID);

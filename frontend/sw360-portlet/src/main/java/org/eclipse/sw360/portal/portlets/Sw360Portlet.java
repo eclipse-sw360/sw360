@@ -169,6 +169,27 @@ abstract public class Sw360Portlet extends MVCPortlet {
         }
     }
 
+    protected void renderRequestPreparation(PortletRequest request, MimeResponse response, ImportBomRequestPreparation requestPreparation) {
+        JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+        jsonObject.put(PortalConstants.RESULT, requestPreparation.requestStatus.toString());
+        if (requestPreparation.isSetIsComponentDuplicate())
+            jsonObject.put("isComponentDuplicate", requestPreparation.isComponentDuplicate);
+        if (requestPreparation.isSetIsReleaseDuplicate())
+            jsonObject.put("isReleaseDuplicate", requestPreparation.isReleaseDuplicate);
+        if (requestPreparation.isSetName())
+            jsonObject.put("name", requestPreparation.name);
+        if (requestPreparation.isSetVersion())
+            jsonObject.put("version", requestPreparation.version);
+        if (requestPreparation.isSetMessage())
+            jsonObject.put("message", requestPreparation.message);
+
+        try {
+            writeJSON(request, response, jsonObject);
+        } catch (IOException e) {
+            log.error("Problem rendering RequestStatus", e);
+        }
+    }
+
     protected void renderRequestStatus(PortletRequest request, MimeResponse response, RequestStatus requestStatus) {
         JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
         jsonObject.put(PortalConstants.RESULT, requestStatus.toString());

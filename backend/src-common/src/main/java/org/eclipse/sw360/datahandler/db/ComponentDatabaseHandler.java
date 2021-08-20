@@ -2200,7 +2200,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     //     return spdxBOMImporter.importSpdxBOMAsRelease(spdxInputStream, attachmentContent);
     // }
 
-    public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws SW360Exception {
+    public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId, String componentName) throws SW360Exception {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
         final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
         try {
@@ -2225,7 +2225,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     Files.delete(Paths.get(targetFileName));
                 }
 
-                return spdxBOMImporter.importSpdxBOMAsRelease(spdxInputStream, attachmentContent);
+                return spdxBOMImporter.importSpdxBOMAsRelease(spdxInputStream, attachmentContent, componentName);
             }
         } catch (InvalidSPDXAnalysisException | IOException | SpdxConverterException e) {
             throw new SW360Exception(e.getMessage());

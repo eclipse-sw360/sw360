@@ -728,15 +728,10 @@ service ComponentService {
     //  **/
     ImportBomRequestPreparation prepareImportBom(1: User user, 2:string attachmentContentId);
 
-    // /**
-    //  * parse a bom file and write the information to SW360
-    //  **/
-    // RequestSummary importBomFromSpdxMap(1: User user, 2:map<string, object> spdxMap);
-
     /**
      * parse a bom file and write the information to SW360
      **/
-    RequestSummary importBomFromAttachmentContent(1: User user, 2:string attachmentContentId);
+    RequestSummary importBomFromAttachmentContent(1: User user, 2:string attachmentContentId, 3:string componentName);
 
     /**
      * split data like releases and attachments from source component to target component.

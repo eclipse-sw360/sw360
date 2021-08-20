@@ -41,6 +41,8 @@ import java.net.MalformedURLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.eclipse.sw360.datahandler.common.CommonUtils.isNotNullEmptyOrWhitespace;
+
 public class SpdxBOMImporter {
     private static final Logger log = LogManager.getLogger(SpdxBOMImporter.class);
     private final SpdxBOMImporterSink sink;
@@ -116,9 +118,9 @@ public class SpdxBOMImporter {
     //     return requestSummary;
     // }
 
-    public RequestSummary importSpdxBOMAsRelease(InputStream inputStream, AttachmentContent attachmentContent)
+    public RequestSummary importSpdxBOMAsRelease(InputStream inputStream, AttachmentContent attachmentContent, String componentName)
             throws InvalidSPDXAnalysisException, SW360Exception {
-        return importSpdxBOM(inputStream, attachmentContent, SW360Constants.TYPE_RELEASE);
+        return importSpdxBOM(inputStream, attachmentContent, SW360Constants.TYPE_RELEASE, componentName);
     }
 
     public RequestSummary importSpdxBOMAsProject(InputStream inputStream, AttachmentContent attachmentContent)
@@ -127,6 +129,11 @@ public class SpdxBOMImporter {
     }
 
     private RequestSummary importSpdxBOM(InputStream inputStream, AttachmentContent attachmentContent, String type)
+            throws InvalidSPDXAnalysisException, SW360Exception {
+        return importSpdxBOM(inputStream, attachmentContent, type, null);
+    }
+
+    private RequestSummary importSpdxBOM(InputStream inputStream, AttachmentContent attachmentContent, String type, String componentName)
             throws InvalidSPDXAnalysisException, SW360Exception {
         final RequestSummary requestSummary = new RequestSummary();
         final SpdxDocument spdxDocument = openAsSpdx(inputStream);
@@ -153,7 +160,7 @@ public class SpdxBOMImporter {
         if (SW360Constants.TYPE_PROJECT.equals(type)) {
             response = importAsProject(spdxItem, attachmentContent);
         } else if (SW360Constants.TYPE_RELEASE.equals(type)) {
-            response = importAsRelease(spdxItem, attachmentContent, spdxDocument);
+            response = importAsRelease(spdxItem, attachmentContent, spdxDocument, componentName);
         } else {
             throw new SW360Exception("Unsupported type=[" + type + "], can not import BOM");
         }
@@ -643,14 +650,22 @@ public class SpdxBOMImporter {
     }
 
     private Optional<SpdxBOMImporterSink.Response> importAsRelease(SpdxElement relatedSpdxElement) throws SW360Exception {
-        return importAsRelease(relatedSpdxElement, null, null);
+        return importAsRelease(relatedSpdxElement, null, null, null);
     }
 
-    private Optional<SpdxBOMImporterSink.Response> importAsRelease(SpdxElement relatedSpdxElement, AttachmentContent attachmentContent, SpdxDocument spdxDocument) throws SW360Exception {
+    private Optional<SpdxBOMImporterSink.Response> importAsRelease(SpdxElement relatedSpdxElement, AttachmentContent attachmentContent,
+            SpdxDocument spdxDocument, String componentName) throws SW360Exception {
         if (relatedSpdxElement instanceof SpdxPackage) {
             final SpdxPackage spdxPackage = (SpdxPackage) relatedSpdxElement;
 
-            SpdxBOMImporterSink.Response component = importAsComponent(spdxPackage);
+            SpdxBOMImporterSink.Response component;
+            if (isNotNullEmptyOrWhitespace(componentName)) {
+                component = sink.addComponent(new Component().setName(componentName));
+            } else {
+                component = importAsComponent(spdxPackage);
+            }
+
+            // SpdxBOMImporterSink.Response component = importAsComponent(spdxPackage);
             final String componentId = component.getId();
 
             final Release release = createReleaseFromSpdxPackage(spdxPackage);
