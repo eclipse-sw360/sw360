@@ -54,7 +54,7 @@
                 </div>
             </td>
         </tr>
-        <tr>
+        <tr class="spdx-full">
             <td style="display: flex; flex-direction: column;">
                 <div class="form-group">
                     <label>3.5 Package Supplier</label>
@@ -80,7 +80,7 @@
                 </div>
             </td>
         </tr>
-        <tr>
+        <tr class="spdx-full">
             <td style="display: flex; flex-direction: column;">
                 <div class="form-group">
                     <label>3.6 Package Originator</label>
@@ -142,7 +142,7 @@
                     <div style="display: flex; flex-direction: row;">
                         <div>
                             <input class="spdx-radio" id="FilesAnalyzedTrue" type="radio"
-                                name="_sw360_portlet_components_FILES_ANALYZED" value="TRUE">
+                                name="_sw360_portlet_components_FILES_ANALYZED" checked value="TRUE">
                             <label style="margin-right: 2rem;" class="form-check-label radio-label"
                                 for="FilesAnalyzedTrue">TRUE</label>
                             <input class="spdx-radio" id="FilesAnalyzedFalse" type="radio"
@@ -150,6 +150,77 @@
                             <label class="form-check-label radio-label" for="FilesAnalyzedFalse">FALSE</label>
                         </div>
                     </div>
+                </div>
+            </td>
+        </tr>
+        <tr class="spdx-full">
+            <td>
+                <div class="form-group">
+                    <label for="verificationCodeValue">3.9 Package Verification Code</label>
+                    <div>
+                        <input style="margin-bottom: 0.75rem;" class="form-control" id="verificationCodeValue"
+                            name="_sw360_portlet_components_VERIFICATION_CODE_VALUE"
+                            placeholder="Enter Verification Code Value"></input>
+                        <textarea class="form-control" id="excludedFiles" rows="5"
+                            name="_sw360_portlet_components_EXCLUDED_FILES"
+                            placeholder="Enter Excluded Files"></textarea>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        <tr class="spdx-full">
+            <td>
+                <div class="form-group">
+                    <label>3.10 Package Checksum</label>
+                    <div style="display: flex;">
+                        <label class="sub-title">Checksum</label>
+                        <div style="display: flex; flex-direction: column; flex: 7">
+                            <div style="display: flex; margin-bottom: 0.75rem;">
+                                <input style="flex: 2; margin-right: 1rem;" type="text" class="form-control"
+                                    placeholder="Enter Algorithm">
+                                <input style="flex: 6; margin-right: 2rem;" type="text" class="form-control"
+                                    placeholder="Enter Value">
+                                <svg class="disabled lexicon-icon spdx-delete-icon-sub"
+                                    name="delete-spdxCreatorType-Person" data-row-id="" onclick="deleteSub(this);"
+                                    viewBox="0 0 512 512">
+                                    <title>Delete</title>
+                                    <path class="lexicon-icon-outline lx-trash-body-border"
+                                        d="M64.4,440.7c0,39.3,31.9,71.3,71.3,71.3h240.6c39.3,0,71.3-31.9,71.3-71.3v-312H64.4V440.7z M128.2,192.6h255.5v231.7c0,13.1-10.7,23.8-23.8,23.8H152c-13.1,0-23.8-10.7-23.8-23.8V192.6z">
+                                    </path>
+                                    <polygon class="lexicon-icon-outline lx-trash-lid"
+                                        points="351.8,32.9 351.8,0 160.2,0 160.2,32.9 64.4,32.9 64.4,96.1 447.6,96.1 447.6,32.9 ">
+                                    </polygon>
+                                    <rect class="lexicon-icon-outline lx-trash-line-2" x="287.9" y="223.6" width="63.9"
+                                        height="191.6"></rect>
+                                    <rect class="lexicon-icon-outline lx-trash-line-1" x="160.2" y="223.6" width="63.9"
+                                        height="191.6"></rect>
+                                </svg>
+                            </div>
+                            <div style="display: flex; margin-bottom: 0.75rem;">
+                                <input style="flex: 2; margin-right: 1rem;" type="text" class="form-control"
+                                    placeholder="Enter Algorithm">
+                                <input style="flex: 6; margin-right: 2rem;" type="text" class="form-control"
+                                    placeholder="Enter Value">
+                                <svg class="disabled lexicon-icon spdx-delete-icon-sub"
+                                    name="delete-spdxCreatorType-Person" data-row-id="" onclick="deleteSub(this);"
+                                    viewBox="0 0 512 512">
+                                    <title>Delete</title>
+                                    <path class="lexicon-icon-outline lx-trash-body-border"
+                                        d="M64.4,440.7c0,39.3,31.9,71.3,71.3,71.3h240.6c39.3,0,71.3-31.9,71.3-71.3v-312H64.4V440.7z M128.2,192.6h255.5v231.7c0,13.1-10.7,23.8-23.8,23.8H152c-13.1,0-23.8-10.7-23.8-23.8V192.6z">
+                                    </path>
+                                    <polygon class="lexicon-icon-outline lx-trash-lid"
+                                        points="351.8,32.9 351.8,0 160.2,0 160.2,32.9 64.4,32.9 64.4,96.1 447.6,96.1 447.6,32.9 ">
+                                    </polygon>
+                                    <rect class="lexicon-icon-outline lx-trash-line-2" x="287.9" y="223.6" width="63.9"
+                                        height="191.6"></rect>
+                                    <rect class="lexicon-icon-outline lx-trash-line-1" x="160.2" y="223.6" width="63.9"
+                                        height="191.6"></rect>
+                                </svg>
+                            </div>
+                            <button class="spdx-add-button-sub" onclick="addSub(this)">Add new algorithm</button>
+                        </div>
+                    </div>
+                </div>
                 </div>
             </td>
         </tr>
@@ -183,7 +254,7 @@
                 </div>
             </td>
         </tr>
-        <tr>
+        <tr class="spdx-full">
             <td>
                 <div class="form-group">
                     <label for="sourceInfo">3.12 Source Information</label>
@@ -222,7 +293,7 @@
                 </div>
             </td>
         </tr>
-        <tr>
+        <tr class="spdx-full">
             <td>
                 <div class="form-group">
                     <label class="mandatory">3.14 All Licenses Information from Files</label>
@@ -234,7 +305,7 @@
                             <textarea style="flex: 6; margin-right: 1rem;" id="licenseInfoFromFilesValue" rows="5"
                                 class="form-control needs-validation" type="text"
                                 name="_sw360_portlet_components_LICENSE_INFO_FROM_FILES_VALUE"
-                                placeholder="Enter All Licenses Information from Files">${package.licenseInfoFromFiles}</textarea>
+                                placeholder="Enter All Licenses Information from Files">${package.licenseInfoFromFiles.toString()}</textarea>
                         </div>
                         <div style="flex: 2;">
                             <input class="spdx-radio" id="licenseInfoFromFilesNone" type="radio"
@@ -322,7 +393,7 @@
                 </div>
             </td>
         </tr>
-        <tr>
+        <tr class="spdx-full">
             <td>
                 <div class="form-group">
                     <label for="summary">3.18 Package Summary Description</label>
@@ -332,7 +403,7 @@
                 </div>
             </td>
         </tr>
-        <tr>
+        <tr class="spdx-full">
             <td>
                 <div class="form-group">
                     <label for="description">3.19 Package Detailed Description</label>
@@ -352,57 +423,67 @@
                 </div>
             </td>
         </tr>
-        <tr>
+        <tr class="spdx-full">
             <td>
-                <div class="form-group">
+                <div class="form-group section">
                     <label>
                         3.21 External References
                     </label>
                     <div style="display: flex; flex-direction: column; padding-left: 1rem;">
-                        <div style="display: flex; flex-direction: row; margin-bottom: 1.5rem;">
+                        <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                             <label style="text-decoration: underline;" class="sub-title">Select Reference</label>
-                            <select style="width: auto; flex: auto;" type="text" class="form-control" id="externalReferences" 
-                                onchange="generateExternalRefsTable($(this).find('option:selected').text())">
+                            <select type="text" class="form-control spdx-select">
                                 <option>1</option>
                             </select>
+                            <svg class="disabled lexicon-icon spdx-delete-icon-main" data-row-id=""
+                                onclick="deleteMain(this);" viewBox="0 0 512 512">
+                                <title>Delete</title>
+                                <path class="lexicon-icon-outline lx-trash-body-border"
+                                    d="M64.4,440.7c0,39.3,31.9,71.3,71.3,71.3h240.6c39.3,0,71.3-31.9,71.3-71.3v-312H64.4V440.7z M128.2,192.6h255.5v231.7c0,13.1-10.7,23.8-23.8,23.8H152c-13.1,0-23.8-10.7-23.8-23.8V192.6z">
+                                </path>
+                                <polygon class="lexicon-icon-outline lx-trash-lid"
+                                    points="351.8,32.9 351.8,0 160.2,0 160.2,32.9 64.4,32.9 64.4,96.1 447.6,96.1 447.6,32.9 ">
+                                </polygon>
+                                <rect class="lexicon-icon-outline lx-trash-line-2" x="287.9" y="223.6" width="63.9"
+                                    height="191.6"></rect>
+                                <rect class="lexicon-icon-outline lx-trash-line-1" x="160.2" y="223.6" width="63.9"
+                                    height="191.6"></rect>
+                            </svg>
                         </div>
+                        <button class="spdx-add-button-main" onclick="addMain(this)">Add new Reference</button>
                         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                             <label class="sub-title">Category</label>
-                            <select style="width: auto; flex: auto;" type="text" class="form-control"
-                                id="externalReferencesCategory" placeholder="Enter Category"
+                            <select style="width: auto; flex: auto;" id="referenceCategory" type="text"
+                                class="form-control" placeholder="Enter Category"
                                 name="_sw360_portlet_components_REFERENCE_CATEGORY">
-                                <option value="referenceCategory_security">SECURITY</option>
+                                <option>SECURITY</option>
                                 <option>PACKAGE-MANAGER</option>
                                 <option>PERSISTENT-ID</option>
-                                <option value="referenceCategory_other">OTHER</option>
+                                <option>OTHER</option>
                             </select>
                         </div>
                         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                             <label class="sub-title">Type</label>
-                            <select style="width: auto; flex: auto;" type="text" class="form-control"
-                                id="externalReferencesType" placeholder="Enter Type"
-                                name="_sw360_portlet_components_REFERENCE_TYPE">
+                            <select style="width: auto; flex: auto;" id="referenceType-1" type="text"
+                                class="form-control" placeholder="Enter Type"
+                                name="_sw360_portlet_components_REFERENCE_TYPE-1">
                                 <option>cpe22Type</option>
                                 <option>cpe23Type</option>
-                                <option>maven-central</option>
-                                <option>npm</option>
-                                <option>nuget</option>
-                                <option>bower</option>
-                                <option>purl</option>
-                                <option>swh</option>
-                                <option>[idstring]</option>
+                            </select>
+                            <input style="width: auto; flex: auto; display: none;" id="referenceType-2" type="text"
+                                class="form-control" placeholder="Enter Type"
+                                name="_sw360_portlet_components_REFERENCE_TYPE-2">
                             </select>
                         </div>
                         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                             <label class="sub-title">Locator</label>
                             <input style="width: auto; flex: auto;" type="text" class="form-control"
-                                id="externalReferencesLocator" placeholder="Enter Locator"
-                                name="_sw360_portlet_components_REFERENCE_LOCATOR">
+                                placeholder="Enter Locator" name="_sw360_portlet_components_REFERENCE_LOCATOR">
                         </div>
                         <div style="display: flex; flex-direction: row;">
                             <label class="sub-title">3.22 Comment</label>
                             <textarea style="width: auto; flex: auto;" type="text" rows="5" class="form-control"
-                                id="externalReferencesComment" placeholder="Enter Comment"
+                                placeholder="Enter Comment"
                                 name="_sw360_portlet_components_REFERENCE_COMMENT"></textarea>
                         </div>
                     </div>
@@ -450,6 +531,10 @@
 
     generateExternalRefsTable('1');
     function generateExternalRefsTable(index) {
+        fillValueToId("externalReferencesCategory", "");
+        fillValueToId("externalReferencesType", "");
+        fillValueToId("externalReferencesLocator", "");
+        fillValueToId("externalReferencesComment", "");
         <core_rt:if test="${not package.externalRefs.isEmpty()}">
             var i = 0;
             <core_rt:forEach items="${package.externalRefs}" var="externalRefsData" varStatus="loop">
@@ -463,7 +548,6 @@
             </core_rt:forEach>
         </core_rt:if>
     }
-
     generateSelecterOption('externalReferences', "${package.externalRefs.size()}");
 
 </script>

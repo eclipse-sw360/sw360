@@ -17,7 +17,7 @@
                             <option>1</option>
                         </select>
                         <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-spdxCreatorType-Person"
-                            data-row-id="" onclick="removeRow(this);" viewBox="0 0 512 512">
+                            data-row-id="" onclick="deleteMain(this)" viewBox="0 0 512 512">
                             <title>Delete</title>
                             <path class="lexicon-icon-outline lx-trash-body-border"
                                 d="M64.4,440.7c0,39.3,31.9,71.3,71.3,71.3h240.6c39.3,0,71.3-31.9,71.3-71.3v-312H64.4V440.7z M128.2,192.6h255.5v231.7c0,13.1-10.7,23.8-23.8,23.8H152c-13.1,0-23.8-10.7-23.8-23.8V192.6z">
@@ -31,7 +31,7 @@
                                 height="191.6"></rect>
                         </svg>
                     </div>
-                    <button class="spdx-add-button-main">Add new Snippet</button>
+                    <button class="spdx-add-button-main" onclick="addMain(this)">Add new Snippet</button>
                 </div>
             </td>
         </tr>
@@ -84,8 +84,8 @@
                                 placeholder="Enter End Pointer">
                             <input style="flex: 4; margin-right: 2rem;" type="text" class="form-control"
                                 placeholder="Enter Reference">
-                            <svg class="lexicon-icon spdx-delete-icon-sub" name="delete-snippetRange"
-                                data-row-id="" onclick="removeRow(this);" viewBox="0 0 512 512">
+                            <svg class="lexicon-icon spdx-delete-icon-sub" name="delete-snippetRange" data-row-id=""
+                                onclick="deleteSub(this)" viewBox="0 0 512 512">
                                 <title>Delete</title>
                                 <path class="lexicon-icon-outline lx-trash-body-border"
                                     d="M64.4,440.7c0,39.3,31.9,71.3,71.3,71.3h240.6c39.3,0,71.3-31.9,71.3-71.3v-312H64.4V440.7z M128.2,192.6h255.5v231.7c0,13.1-10.7,23.8-23.8,23.8H152c-13.1,0-23.8-10.7-23.8-23.8V192.6z">
@@ -99,7 +99,7 @@
                                     height="191.6"></rect>
                             </svg>
                         </div>
-                        <button class="spdx-add-button-sub">Add new range</button>
+                        <button class="spdx-add-button-sub" onclick="addSub(this)">Add new range</button>
                     </div>
                 </div>
             </td>
@@ -142,10 +142,7 @@
                             <textarea style="flex: 6; margin-right: 1rem;" id="licenseInfoInFileValue" rows="5"
                                 class="form-control needs-validation" type="text"
                                 name="_sw360_portlet_components_LICENSE_INFO_IN_FILE_SOURCE"
-                                placeholder="Enter License Information in Snippet">
-https://spdx.org/licenses/GPL-2.0-only
-#LicenseRef-1
-#LicenseRef-2</textarea>
+                                placeholder="Enter License Information in Snippet"></textarea>
                         </div>
                         <div style="flex: 2;">
                             <input class="spdx-radio" id="licenseInfoInFileNone" type="radio"
@@ -236,12 +233,23 @@ https://spdx.org/licenses/GPL-2.0-only
     generateSelecterOption('selectSnippet', "${snippets.size()}");
     generateSnippetTable('1');
     function generateSnippetTable(index) {
+        fillValueToId("snippetSpdxIdentifier", "");
+        fillValueToId("snippetFromFileValue", "");
+        fillValueToId("spdxConcludedLicenseValue", "");
+        fillValueToId("licenseInfoInFileValue", "");
+        fillValueToId("snippetLicenseComments", "");
+        $('#copyrightTextValueSnippet').val("");
+        fillValueToId("snippetComment", "");
+        fillValueToId("snippetName", "");
+        fillValueToId("snippetAttributionText", "");
+        <core_rt:set var="snippetRanges" value="" />
+        generateSnippetRangesTable();
         <core_rt:if test="${not snippets.isEmpty()}">
             var i = 0;
         <core_rt:forEach items="${snippets}" var="snippetData" varStatus="loop">
                 i++;
             if (i == index) {
-                fillValueToId("snippetSpdxIdentifier", "${snippetData.SPDXID}");
+                    fillValueToId("snippetSpdxIdentifier", "${snippetData.SPDXID}");
                 fillValueToId("snippetFromFileValue", "${snippetData.snippetFromFile}");
                 fillValueToId("spdxConcludedLicenseValue", "${snippetData.licenseConcluded}");
                 fillValueToId("licenseInfoInFileValue", "${snippetData.licenseInfoInSnippets}");
@@ -258,11 +266,8 @@ https://spdx.org/licenses/GPL-2.0-only
     }
 
     function generateSnippetRangesTable() {
-        console.log("AAAAAAAAAAA");
         <core_rt:if test="${not snippetRanges.isEmpty()}">
-            console.log("BBBBBBBB");
             <core_rt:forEach items="${snippetRanges}" var="snippetRangeData" varStatus="loop">
-                console.log("CCCCCCCCCCC");
                 addSnippetRangeRow("snippetRanges", "${snippetRangeData.rangeType}", "${snippetRangeData.startPointer}", "${snippetRangeData.endPointer}", "${snippetRangeData.reference}");
             </core_rt:forEach>
             removeRow(document.getElementsByName('delete-snippetRange')[0]);
@@ -275,7 +280,6 @@ https://spdx.org/licenses/GPL-2.0-only
         }
         var size = document.getElementsByName(name).length;
         var el = document.getElementsByName(name)[size - 1];
-        console.log("DDDDD " + el)
         var clone = el.cloneNode(true);
         clone.getElementsByTagName('select')[0].name = clone.getElementsByTagName('select')[0].name + Date.now();
         clone.getElementsByTagName('select')[0].value = value1;

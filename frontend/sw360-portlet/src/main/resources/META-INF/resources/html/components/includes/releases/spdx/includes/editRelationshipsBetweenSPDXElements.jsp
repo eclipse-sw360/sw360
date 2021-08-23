@@ -17,7 +17,7 @@
                             <option>1</option>
                         </select>
                         <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-spdxCreatorType-Person"
-                            data-row-id="" onclick="removeRow(this);" viewBox="0 0 512 512">
+                            data-row-id="" onclick="deleteMain(this)" viewBox="0 0 512 512">
                             <title>Delete</title>
                             <path class="lexicon-icon-outline lx-trash-body-border"
                                 d="M64.4,440.7c0,39.3,31.9,71.3,71.3,71.3h240.6c39.3,0,71.3-31.9,71.3-71.3v-312H64.4V440.7z M128.2,192.6h255.5v231.7c0,13.1-10.7,23.8-23.8,23.8H152c-13.1,0-23.8-10.7-23.8-23.8V192.6z">
@@ -31,7 +31,7 @@
                                 height="191.6"></rect>
                         </svg>
                     </div>
-                    <button class="spdx-add-button-main">Add new Relationship</button>
+                    <button class="spdx-add-button-main" onclick="addMain(this)">Add new Relationship</button>
                 </div>
             </td>
         </tr>
@@ -69,12 +69,16 @@
 <script>
     generateRelationshipTable('1');
     function generateRelationshipTable(index) {
+        fillValueToId("spdxElement", "");
+        fillValueToId("relationshipType", "");
+        fillValueToId("relatedSPDXElement", "");
+        $('#relationshipComment').val("");
         <core_rt:if test="${not relationships.isEmpty()}">
             var i = 0;
         <core_rt:forEach items="${relationships}" var="relationshipData" varStatus="loop">
                 i++;
             if (i == index) {
-                    fillValueToId("spdxElement", "${relationshipData.spdxElementId}");
+                fillValueToId("spdxElement", "${relationshipData.spdxElementId}");
                 fillValueToId("relationshipType", "${relationshipData.relationshipType}");
                 fillValueToId("relatedSPDXElement", "${relationshipData.relatedSpdxElement}");
                 $('#relationshipComment').val("${relationshipData.relationshipComment}");

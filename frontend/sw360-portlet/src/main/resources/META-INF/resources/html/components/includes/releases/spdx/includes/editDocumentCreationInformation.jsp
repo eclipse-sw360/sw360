@@ -51,8 +51,7 @@
                         <label class="sub-label">SPDXRef-</label>
                         <input id="spdxIdentifier" class="form-control needs-validation" rule="regex:^[0-9a-zA-Z.-]+$"
                             name="_sw360_portlet_components_SPDX_IDENTIFIER" type="text"
-                            placeholder="Enter SPDX Identifier"
-                            value="${spdxDocumentCreationInfo.SPDXID}">
+                            placeholder="Enter SPDX Identifier" value="${spdxDocumentCreationInfo.SPDXID}">
                     </div>
                     <div id="spdxIdentifier-error-messages">
                         <div class="invalid-feedback" rule="regex">
@@ -93,22 +92,21 @@
             </td>
         </tr>
         <tr>
-            <td>
-                <div class="form-group">
+            <td class="spdx-full">
+                <div class="form-group section">
                     <label for="externalDocumentRefs">
-                        2.6. External Document References
+                        2.6 External Document References
                     </label>
                     <div style="display: flex; flex-direction: column; padding-left: 1rem;">
                         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
-                            <label for="externalDocumentRefs" style="text-decoration: underline;">
-                                Select Reference</label>
+                            <label for="externalDocumentRefs" style="text-decoration: underline;"
+                                class="sub-title">Select Reference</label>
                             <select id="externalDocumentRefs" type="text" class="form-control spdx-select"
                                 onchange="generateExternalDocumentRefsTable($(this).find('option:selected').text())">
                                 <option>1</option>
                             </select>
-                            <svg class="disabled lexicon-icon spdx-delete-icon-main"
-                                name="delete-spdxCreatorType-Person" data-row-id="" onclick="deleteMain(this)"
-                                viewBox="0 0 512 512">
+                            <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-externalDocumentRef"
+                                data-row-id="" onclick="deleteMain(this);" viewBox="0 0 512 512">
                                 <title>Delete</title>
                                 <path class="lexicon-icon-outline lx-trash-body-border"
                                     d="M64.4,440.7c0,39.3,31.9,71.3,71.3,71.3h240.6c39.3,0,71.3-31.9,71.3-71.3v-312H64.4V440.7z M128.2,192.6h255.5v231.7c0,13.1-10.7,23.8-23.8,23.8H152c-13.1,0-23.8-10.7-23.8-23.8V192.6z">
@@ -122,12 +120,13 @@
                                     height="191.6"></rect>
                             </svg>
                         </div>
-                        <button class="spdx-add-button-main" onclick="addMain(this)">Add new reference</button>
+                        <button class="spdx-add-button-main" id="addNewReferenceBtn" onclick="addMain(this)">Add new
+                            Reference</button>
                     </div>
                     <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                         <label class="sub-title" for="externalDocumentId">External Document ID</label>
                         <input id="externalDocumentId" style="width: auto; flex: auto;" type="text" class="form-control"
-                            placeholder="Enter External Document ID" value="">
+                            placeholder="Enter External Document ID">
                     </div>
                     <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                         <label class="sub-title" for="externalDocument">External Document</label>
@@ -139,18 +138,17 @@
                         <div style="display: flex; flex-direction: column; flex: 7">
                             <div style="display: flex; margin-bottom: 0.75rem;">
                                 <input style="flex: 2; margin-right: 1rem;" type="text" class="form-control"
-                                    id="checksumAlgorithm" placeholder="Enter Algorithm" value="">
-                                <input style="flex: 6; margin-right: 2rem;" type="text" class="form-control"
-                                    id="checksumValue" placeholder="Enter Value">
+                                    id="checksumAlgorithm" placeholder="Enter Algorithm">
+                                <input style="flex: 6;" type="text" class="form-control" id="checksumValue"
+                                    placeholder="Enter Value">
                             </div>
+                            <!-- <button class="spdx-add-button-sub" onclick="addSub(this)">Add new algorithm</button> -->
                         </div>
                     </div>
                 </div>
-                </div>
-                </div>
             </td>
         </tr>
-        <tr>
+        <tr class="spdx-full">
             <td>
                 <div class="form-group">
                     <label for="licenseListVersion">
@@ -179,15 +177,18 @@
                             <div style="display: flex; flex-direction: column; flex: 7">
                                 <div style="display: flex; margin-bottom: 0.75rem;" name="creatorRow">
                                     <select style="flex: 2; margin-right: 1rem;" type="text"
-                                        class="form-control creator-type" placeholder="Enter Type" value="">
+                                        class="form-control creator-type" placeholder="Enter Type"
+                                        onchange="changeCreatorType(this)">
                                         <option value="Organization" selected>Organization</option>
                                         <option value="Person">Person</option>
                                         <option value="Tool">Tool</option>
                                     </select>
                                     <input style="flex: 6; margin-right: 2rem;" type="text"
-                                        class="form-control creator-value" placeholder="Enter Value" value="">
-                                    <svg class="disabled lexicon-icon spdx-delete-icon-sub" name="delete-creatorRow"
-                                        data-row-id="" onclick="removeRow(this);" viewBox="0 0 512 512">
+                                        class="form-control creator-value" placeholder="Enter Value"
+                                        value="">
+                                    <svg class="disabled lexicon-icon spdx-delete-icon-sub"
+                                        name="delete-spdxCreatorType-Person" data-row-id="" onclick="deleteSub(this);"
+                                        viewBox="0 0 512 512">
                                         <title>Delete</title>
                                         <path class="lexicon-icon-outline lx-trash-body-border"
                                             d="M64.4,440.7c0,39.3,31.9,71.3,71.3,71.3h240.6c39.3,0,71.3-31.9,71.3-71.3v-312H64.4V440.7z M128.2,192.6h255.5v231.7c0,13.1-10.7,23.8-23.8,23.8H152c-13.1,0-23.8-10.7-23.8-23.8V192.6z">
@@ -201,7 +202,8 @@
                                             width="63.9" height="191.6"></rect>
                                     </svg>
                                 </div>
-                                <button style="width: 10rem;">Add new creator</button>
+                                <button class="spdx-add-button-sub spdx-add-button-sub-creator"
+                                    onclick="addSub(this)">Add new creator</button>
                             </div>
                         </div>
                     </div>
@@ -223,28 +225,6 @@
                 </div>
             </td>
         </tr>
-        <tr>
-            <td colspan="3">
-                <div class="form-group">
-                    <label for="creatorComment">2.10 Creator Comment</label>
-                    <textarea class="form-control" id="creatorComment" rows="5"
-                        name="_sw360_portlet_components_CREATOR_COMMENT"
-                        placeholder="<liferay-ui:message key="enter.comments" />"><sw360:out value="${spdxDocumentCreationInfo.creatorComment}" /></textarea>
-                </div>
-            </td>
-        </tr>
-        <tr>
-            <td colspan="3">
-                <div class="form-group">
-                    <label for="documentComment">2.11 Document Comment</label>
-                    <textarea class="form-control" id="documentComment" rows="5"
-                        name="_sw360_portlet_components_DOCUMENT_COMMENT"
-                        placeholder="<liferay-ui:message key="enter.comments" />"><sw360:out value="${spdxDocumentCreationInfo.documentComment}" /></textarea>
-                </div>
-            </td>
-        </tr>
-        <tr>
-
     </tbody>
 </table>
 
@@ -259,11 +239,15 @@
             <core_rt:forEach items="${creator}" var="creatorData" varStatus="loop">
                 addRow("creatorRow", "${creatorData.type}", "${creatorData.value}", "");
             </core_rt:forEach>
-            removeRow(document.getElementsByName('delete-creatorRow')[0]);
+                deleteSub(document.getElementsByName('delete-spdxCreatorType-Person')[0]);
         </core_rt:if>
     }
 
     function generateExternalDocumentRefsTable(index) {
+        fillValueToId("externalDocumentId", "");
+        fillValueToId("externalDocument", "");
+        fillValueToId("checksumAlgorithm", "");
+        fillValueToId("checksumValue", "");
         <core_rt:if test="${not externalDocumentRefs.isEmpty()}">
             var i = 0;
             <core_rt:forEach items="${externalDocumentRefs}" var="externalDocumentRefsData" varStatus="loop">

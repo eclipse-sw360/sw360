@@ -12,11 +12,11 @@
                     <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                         <label for="selectAnnotation" style="text-decoration: underline;" class="sub-title">Select
                             Annotation</label>
-                        <select id="selectAnnotation" type="text" class="form-control spdx-select">
+                        <select id="selectAnnotation" type="text" class="form-control spdx-select" onclick="generateAnnotationsTable($(this).find('option:selected').text())">
                             <option>1</option>
                         </select>
                         <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-spdxCreatorType-Person"
-                            data-row-id="" onclick="removeRow(this);" viewBox="0 0 512 512">
+                            data-row-id="" onclick="deleteMain(this)" viewBox="0 0 512 512">
                             <title>Delete</title>
                             <path class="lexicon-icon-outline lx-trash-body-border"
                                 d="M64.4,440.7c0,39.3,31.9,71.3,71.3,71.3h240.6c39.3,0,71.3-31.9,71.3-71.3v-312H64.4V440.7z M128.2,192.6h255.5v231.7c0,13.1-10.7,23.8-23.8,23.8H152c-13.1,0-23.8-10.7-23.8-23.8V192.6z">
@@ -30,7 +30,7 @@
                                 height="191.6"></rect>
                         </svg>
                     </div>
-                    <button class="spdx-add-button-main">Add new Annotation</button>
+                    <button class="spdx-add-button-main" onclick="addMain(this)">Add new Annotation</button>
                 </div>
             </td>
         </tr>
@@ -103,6 +103,12 @@
 <script>
     generateAnnotationsTable('1');
     function generateAnnotationsTable(index) {
+        fillValueToId("annotatorType", "");
+        fillValueToId("annotatorValue", "");
+        setCreatedDateTime("");
+        fillValueToId("annotationType", "");
+        fillValueToId("spdxIdRef", "");
+        fillValueToId("annotationComment", "");
         <core_rt:if test="${not annotations.isEmpty()}">
             var i = 0;
         <core_rt:forEach items="${annotations}" var="annotationsData" varStatus="loop">

@@ -30,6 +30,10 @@
 
 <%@include file="/html/utils/includes/requirejs.jspf" %>
 <form id="editSPDXForm" name="editSPDXForm" class="form needs-validation" novalidate>
+	<div class="form-group btn-group">
+		<button id="spdxFullMode" class="btn btn-info">SPDX Full</button>
+		<button id="spdxLiteMode" class="btn btn-secondary">SPDX Lite</button>
+	</div>
 	<%@include file="/html/components/includes/releases/spdx/includes/editDocumentCreationInformation.jsp" %>
 	<%@include file="/html/components/includes/releases/spdx/includes/editPackageInformation.jsp" %>
 	<%@include file="/html/components/includes/releases/spdx/includes/editSnippetInformation.jsp" %>
@@ -41,5 +45,35 @@
 <script>
 	require(['jquery', /* jquery-plugins */ 'jquery-ui'], function($) {
         $(".datepicker").datepicker({changeMonth:true,changeYear:true,dateFormat: "yy-mm-dd"});
+		$('#spdxFullMode').on('click', function (e) {
+			e.preventDefault();
+
+			$(this).addClass('btn-info');
+			$(this).removeClass('btn-secondary');
+
+			$('#spdxLiteMode').addClass('btn-secondary');
+			$('#spdxLiteMode').removeClass('btn-info');
+
+			$('.spdx-full').css('display', '');
+		});
+
+		$('#spdxLiteMode').on('click', function (e) {
+			e.preventDefault();
+
+			$(this).addClass('btn-info');
+			$(this).removeClass('btn-secondary');
+
+			$('#spdxFullMode').addClass('btn-secondary');
+			$('#spdxFullMode').removeClass('btn-info');
+
+			$('.spdx-full').css('display', 'none');
+		});
+		$('.spdx-add-button-main').on('click', function (e) {
+			e.preventDefault();
+		})
+
+		$('.spdx-add-button-sub').on('click', function (e) {
+			e.preventDefault();
+		})
 	});
 </script>
