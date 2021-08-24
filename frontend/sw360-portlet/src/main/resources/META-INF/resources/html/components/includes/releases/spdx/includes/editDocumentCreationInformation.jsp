@@ -33,10 +33,9 @@
                         2.2 Data License
                     </label>
                     <input id="dataLicense" class="form-control needs-validation" rule="regex:^[0-9a-zA-Z.-]+$"
-                        name="_sw360_portlet_components_DATA_LICENSE" type="text" placeholder="<liferay-ui:message key="
-                        enter.data.license" />"
-                    value="
-                    <sw360:out value="${spdxDocumentCreationInfo.dataLicense}" />">
+                        name="_sw360_portlet_components_DATA_LICENSE" type="text"
+                        placeholder="<liferay-ui:message key="enter.data.license" />"
+                        value="<sw360:out value="${spdxDocumentCreationInfo.dataLicense}" />">
                     <div id="dataLicense-error-messages">
                         <div class="invalid-feedback" rule="regex">
                             <liferay-ui:message key="string.containing.letters.numbers.and/or.-" />
@@ -107,17 +106,8 @@
                             </select>
                             <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-externalDocumentRef"
                                 data-row-id="" onclick="deleteMain(this);" viewBox="0 0 512 512">
-                                <title>Delete</title>
-                                <path class="lexicon-icon-outline lx-trash-body-border"
-                                    d="M64.4,440.7c0,39.3,31.9,71.3,71.3,71.3h240.6c39.3,0,71.3-31.9,71.3-71.3v-312H64.4V440.7z M128.2,192.6h255.5v231.7c0,13.1-10.7,23.8-23.8,23.8H152c-13.1,0-23.8-10.7-23.8-23.8V192.6z">
-                                </path>
-                                <polygon class="lexicon-icon-outline lx-trash-lid"
-                                    points="351.8,32.9 351.8,0 160.2,0 160.2,32.9 64.4,32.9 64.4,96.1 447.6,96.1 447.6,32.9 ">
-                                </polygon>
-                                <rect class="lexicon-icon-outline lx-trash-line-2" x="287.9" y="223.6" width="63.9"
-                                    height="191.6"></rect>
-                                <rect class="lexicon-icon-outline lx-trash-line-1" x="160.2" y="223.6" width="63.9"
-                                    height="191.6"></rect>
+                                <title><liferay-ui:message key="delete" /></title>
+                                <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
                             </svg>
                         </div>
                         <button class="spdx-add-button-main" id="addNewReferenceBtn" onclick="addMain(this)">Add new
@@ -189,17 +179,8 @@
                                     <svg class="disabled lexicon-icon spdx-delete-icon-sub"
                                         name="delete-spdxCreatorType-Person" data-row-id="" onclick="deleteSub(this);"
                                         viewBox="0 0 512 512">
-                                        <title>Delete</title>
-                                        <path class="lexicon-icon-outline lx-trash-body-border"
-                                            d="M64.4,440.7c0,39.3,31.9,71.3,71.3,71.3h240.6c39.3,0,71.3-31.9,71.3-71.3v-312H64.4V440.7z M128.2,192.6h255.5v231.7c0,13.1-10.7,23.8-23.8,23.8H152c-13.1,0-23.8-10.7-23.8-23.8V192.6z">
-                                        </path>
-                                        <polygon class="lexicon-icon-outline lx-trash-lid"
-                                            points="351.8,32.9 351.8,0 160.2,0 160.2,32.9 64.4,32.9 64.4,96.1 447.6,96.1 447.6,32.9 ">
-                                        </polygon>
-                                        <rect class="lexicon-icon-outline lx-trash-line-2" x="287.9" y="223.6"
-                                            width="63.9" height="191.6"></rect>
-                                        <rect class="lexicon-icon-outline lx-trash-line-1" x="160.2" y="223.6"
-                                            width="63.9" height="191.6"></rect>
+                                        <title><liferay-ui:message key="delete" /></title>
+                                        <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
                                     </svg>
                                 </div>
                                 <button class="spdx-add-button-sub spdx-add-button-sub-creator"
@@ -328,6 +309,19 @@
             option.text = i;
             document.getElementById(selectId).add(option);
         }
+    }
+
+    autoHideString('spdxVersion', 'SPDX-');
+    autoHideString('spdxIdentifier', 'SPDX-');
+    function autoHideString(id, string, value) {
+        if (value == null || value == '') {
+            value = document.getElementById(id).value;
+        } else {
+            document.getElementById(id).value = value;
+            return;
+        }
+        var newString = value.replace(string, '');
+        document.getElementById(id).value = newString;
     }
 
 </script>
