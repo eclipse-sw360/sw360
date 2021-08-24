@@ -39,11 +39,17 @@ public class SpdxBOMImporterSink {
 
     private final ProjectDatabaseHandler projectDatabaseHandler;
     private final ComponentDatabaseHandler componentDatabaseHandler;
+    private final SpdxDocumentDatabaseHandler spdxDocumentDatabaseHandler;
+    private final SpdxDocumentCreationInfoDatabaseHandler creationInfoDatabaseHandler;
+    private final SpdxPackageInfoDatabaseHandler packageInfoDatabaseHandler;
     private final User user;
 
-    public SpdxBOMImporterSink(User user, ProjectDatabaseHandler projectDatabaseHandler, ComponentDatabaseHandler componentDatabaseHandler) {
+    public SpdxBOMImporterSink(User user, ProjectDatabaseHandler projectDatabaseHandler, ComponentDatabaseHandler componentDatabaseHandler) throws MalformedURLException {
         this.projectDatabaseHandler = projectDatabaseHandler;
         this.componentDatabaseHandler = componentDatabaseHandler;
+        this.spdxDocumentDatabaseHandler = new SpdxDocumentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
+        this.creationInfoDatabaseHandler = new SpdxDocumentCreationInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
+        this.packageInfoDatabaseHandler = new SpdxPackageInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
         this.user = user;
     }
 
@@ -71,40 +77,69 @@ public class SpdxBOMImporterSink {
         return new Response(releaseId, AddDocumentRequestStatus.SUCCESS.equals(addDocumentRequestSummary.getRequestStatus()));
     }
 
-    public Response addSpdxDocument(SPDXDocument spdxDocument) throws SW360Exception, MalformedURLException {
-        log.debug("create SPDXDocument");
-        SpdxDocumentDatabaseHandler handler = new SpdxDocumentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
-        final AddDocumentRequestSummary addDocumentRequestSummary = handler.addSPDXDocument(spdxDocument, user);
+    public Response addOrUpdateSpdxDocument(SPDXDocument spdxDocument) throws SW360Exception {
+        log.debug("create or update SPDXDocument");
+        // SpdxDocumentDatabaseHandler handler = new SpdxDocumentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
+        RequestStatus requestStatus;
+        String spdxDocId;
+        if (spdxDocument.isSetId()) {
+            requestStatus = spdxDocumentDatabaseHandler.updateSPDXDocument(spdxDocument, user);
+            spdxDocId = spdxDocument.getId();
+        } else {
+            AddDocumentRequestSummary addDocumentRequestSummary = spdxDocumentDatabaseHandler.addSPDXDocument(spdxDocument, user);
+            requestStatus = RequestStatus.findByValue(addDocumentRequestSummary.getRequestStatus().getValue());
+            spdxDocId = addDocumentRequestSummary.getId();
+        }
 
-        final String spdxDocId = addDocumentRequestSummary.getId();
+        // final String spdxDocId = addDocumentRequestSummary.getId();
         if(spdxDocId == null || spdxDocId.isEmpty()) {
-            throw new SW360Exception("Id of added spdx document should not be empty. " + addDocumentRequestSummary.toString());
+            throw new SW360Exception("Id of spdx document should not be empty. " + requestStatus.toString());
         }
-        return new Response(spdxDocId, AddDocumentRequestStatus.SUCCESS.equals(addDocumentRequestSummary.getRequestStatus()));
+        return new Response(spdxDocId, RequestStatus.SUCCESS.equals(requestStatus));
     }
 
-    public Response addDocumentCreationInformation(DocumentCreationInformation documentCreationInfo) throws SW360Exception, MalformedURLException {
-        log.debug("create DocumentCreationInformation { name='" + documentCreationInfo.getName() + "' }");
-        SpdxDocumentCreationInfoDatabaseHandler handler = new SpdxDocumentCreationInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
-        final AddDocumentRequestSummary addDocumentRequestSummary = handler.addDocumentCreationInformation(documentCreationInfo, user);
+    public Response addOrUpdateDocumentCreationInformation(DocumentCreationInformation documentCreationInfo) throws SW360Exception {
+        log.debug("create or update DocumentCreationInformation { name='" + documentCreationInfo.getName() + "' }");
+        // SpdxDocumentCreationInfoDatabaseHandler handler = new SpdxDocumentCreationInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
+        RequestStatus requestStatus;
+        String docCreationInfoId;
+        if (documentCreationInfo.isSetId()) {
+            requestStatus = creationInfoDatabaseHandler.updateDocumentCreationInformation(documentCreationInfo, user);
+            docCreationInfoId = documentCreationInfo.getId();
+        } else {
+            AddDocumentRequestSummary addDocumentRequestSummary = creationInfoDatabaseHandler.addDocumentCreationInformation(documentCreationInfo, user);
+            requestStatus = RequestStatus.findByValue(addDocumentRequestSummary.getRequestStatus().getValue());
+            docCreationInfoId = addDocumentRequestSummary.getId();
+        }
+        // final AddDocumentRequestSummary addDocumentRequestSummary = handler.addDocumentCreationInformation(documentCreationInfo, user);
 
-        final String docCreationInfoId = addDocumentRequestSummary.getId();
+        // final String docCreationInfoId = addDocumentRequestSummary.getId();
         if(docCreationInfoId == null || docCreationInfoId.isEmpty()) {
-            throw new SW360Exception("Id of added document creation information should not be empty. " + addDocumentRequestSummary.toString());
+            throw new SW360Exception("Id of added document creation information should not be empty. " + requestStatus.toString());
         }
-        return new Response(docCreationInfoId, AddDocumentRequestStatus.SUCCESS.equals(addDocumentRequestSummary.getRequestStatus()));
+        return new Response(docCreationInfoId, RequestStatus.SUCCESS.equals(requestStatus));
     }
 
-    public Response addPackageInformation(PackageInformation packageInfo) throws SW360Exception, MalformedURLException {
-        log.debug("create PackageInfomation { name='" + packageInfo.getName() + "' }");
-        SpdxPackageInfoDatabaseHandler handler = new SpdxPackageInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
-        final AddDocumentRequestSummary addDocumentRequestSummary = handler.addPackageInformation(packageInfo, user);
-
-        final String packageInfoId = addDocumentRequestSummary.getId();
-        if(packageInfoId == null || packageInfoId.isEmpty()) {
-            throw new SW360Exception("Id of added package information should not be empty. " + addDocumentRequestSummary.toString());
+    public Response addOrUpdatePackageInformation(PackageInformation packageInfo) throws SW360Exception {
+        log.debug("create or update PackageInfomation { name='" + packageInfo.getName() + "' }");
+        // SpdxPackageInfoDatabaseHandler handler = new SpdxPackageInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
+        RequestStatus requestStatus;
+        String packageInfoId;
+        if (packageInfo.isSetId()) {
+            requestStatus = packageInfoDatabaseHandler.updatePackageInformation(packageInfo, user);
+            packageInfoId = packageInfo.getId();
+        } else {
+            AddDocumentRequestSummary addDocumentRequestSummary = packageInfoDatabaseHandler.addPackageInformation(packageInfo, user);
+            requestStatus = RequestStatus.findByValue(addDocumentRequestSummary.getRequestStatus().getValue());
+            packageInfoId = addDocumentRequestSummary.getId();
         }
-        return new Response(packageInfoId, AddDocumentRequestStatus.SUCCESS.equals(addDocumentRequestSummary.getRequestStatus()));
+        // final AddDocumentRequestSummary addDocumentRequestSummary = handler.addPackageInformation(packageInfo, user);
+
+        // final String packageInfoId = addDocumentRequestSummary.getId();
+        if(packageInfoId == null || packageInfoId.isEmpty()) {
+            throw new SW360Exception("Id of added package information should not be empty. " + requestStatus.toString());
+        }
+        return new Response(packageInfoId, RequestStatus.SUCCESS.equals(requestStatus));
     }
 
     public Response addProject(Project project) throws SW360Exception {
@@ -130,13 +165,24 @@ public class SpdxBOMImporterSink {
         return new Response(projectId, AddDocumentRequestStatus.SUCCESS.equals(addDocumentRequestSummary.getRequestStatus()));
     }
 
-    // public boolean checkDuplicate(Object obj) {
-    //     if (obj instanceof Component) {
-    //         return componentDatabaseHandler.isDuplicate((Component) obj, true);
-    //     } else if (obj instanceof Release) {
-    //         return componentDatabaseHandler.isDuplicate((Release) obj);
-    //     }
-    // }
+    public Release getRelease(String id) throws SW360Exception {
+        return componentDatabaseHandler.getRelease(id, user);
+    }
+
+    public SPDXDocument getSPDXDocument(String id)  throws SW360Exception {
+        // SpdxDocumentDatabaseHandler handler = new SpdxDocumentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
+        return spdxDocumentDatabaseHandler.getSPDXDocumentById(id, user);
+    }
+
+    public DocumentCreationInformation getDocumentCreationInfo(String id)  throws SW360Exception {
+        // SpdxDocumentCreationInfoDatabaseHandler handler = new SpdxDocumentCreationInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
+        return creationInfoDatabaseHandler.getDocumentCreationInformationById(id, user);
+    }
+
+    public PackageInformation getPackageInfo(String id)  throws SW360Exception {
+        // SpdxPackageInfoDatabaseHandler handler = new SpdxPackageInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
+        return packageInfoDatabaseHandler.getPackageInformationById(id, user);
+    }
 
     public static class Response {
         private final String id;

@@ -72,11 +72,9 @@ public class SpdxBOMImporter {
         final SpdxItem spdxItem = describedPackages.get(0);
         if (spdxItem instanceof SpdxPackage) {
             final SpdxPackage spdxPackage = (SpdxPackage) spdxItem;
-            final Component component = createComponentFromSpdxPackage(spdxPackage);
-            final Release release = createReleaseFromSpdxPackage(spdxPackage);
 
-            requestPreparation.setName(component.getName());
-            requestPreparation.setVersion(release.getVersion());
+            requestPreparation.setName(spdxPackage.getName());
+            requestPreparation.setVersion(spdxPackage.getVersionInfo());
             requestPreparation.setRequestStatus(RequestStatus.SUCCESS);
         } else {
             requestPreparation.setMessage("Failed to get spdx package from the provided BOM file.");
@@ -85,42 +83,9 @@ public class SpdxBOMImporter {
         return requestPreparation;
     }
 
-    // public RequestSummary importSpdxBOMAsRelease(Map<String, Object> spdxMap) throws SW360Exception {
-    //     final RequestSummary requestSummary = new RequestSummary();
-    //     Object spdxElementObj = spdxMap.get("spdxElement");
-    //     Object attachmentContentObj = spdxMap.get("attachmentContent");
-    //     Object spdxDocumentObj = spdxMap.get("spdxDocument");
-
-    //     if (!(spdxElementObj instanceof SpdxElement) || !(attachmentContentObj instanceof AttachmentContent) || !(spdxDocumentObj instanceof SpdxDocument)) {
-    //         requestSummary.setRequestStatus(RequestStatus.FAILURE);
-    //         requestSummary.setTotalAffectedElements(-1);
-    //         requestSummary.setTotalElements(-1);
-    //         requestSummary.setMessage("Incorrect spdx data.");
-    //         return requestSummary;
-    //     }
-
-    //     final SpdxElement spdxElement = (SpdxElement) spdxElementObj;
-    //     final AttachmentContent attachmentContent = (AttachmentContent) attachmentContentObj;
-    //     final SpdxDocument spdxDocument = (SpdxDocument) spdxDocumentObj;
-    //     final Optional<SpdxBOMImporterSink.Response> response = importAsRelease(spdxElement, attachmentContent, spdxDocument);
-
-    //     if (response.isPresent()) {
-    //         requestSummary.setRequestStatus(RequestStatus.SUCCESS);
-    //         requestSummary.setTotalAffectedElements(response.get().countAffected());
-    //         requestSummary.setTotalElements(response.get().count());
-    //         requestSummary.setMessage(response.get().getId());
-    //     } else {
-    //         requestSummary.setRequestStatus(RequestStatus.FAILURE);
-    //         requestSummary.setTotalAffectedElements(-1);
-    //         requestSummary.setTotalElements(-1);
-    //         requestSummary.setMessage("Failed to import the BOM as release.");
-    //     }
-    //     return requestSummary;
-    // }
-
-    public RequestSummary importSpdxBOMAsRelease(InputStream inputStream, AttachmentContent attachmentContent, String componentName)
+    public RequestSummary importSpdxBOMAsRelease(InputStream inputStream, AttachmentContent attachmentContent, String newReleaseVersion)
             throws InvalidSPDXAnalysisException, SW360Exception {
-        return importSpdxBOM(inputStream, attachmentContent, SW360Constants.TYPE_RELEASE, componentName);
+        return importSpdxBOM(inputStream, attachmentContent, SW360Constants.TYPE_RELEASE, newReleaseVersion);
     }
 
     public RequestSummary importSpdxBOMAsProject(InputStream inputStream, AttachmentContent attachmentContent)
@@ -133,7 +98,7 @@ public class SpdxBOMImporter {
         return importSpdxBOM(inputStream, attachmentContent, type, null);
     }
 
-    private RequestSummary importSpdxBOM(InputStream inputStream, AttachmentContent attachmentContent, String type, String componentName)
+    private RequestSummary importSpdxBOM(InputStream inputStream, AttachmentContent attachmentContent, String type, String newReleaseVersion)
             throws InvalidSPDXAnalysisException, SW360Exception {
         final RequestSummary requestSummary = new RequestSummary();
         final SpdxDocument spdxDocument = openAsSpdx(inputStream);
@@ -160,7 +125,7 @@ public class SpdxBOMImporter {
         if (SW360Constants.TYPE_PROJECT.equals(type)) {
             response = importAsProject(spdxItem, attachmentContent);
         } else if (SW360Constants.TYPE_RELEASE.equals(type)) {
-            response = importAsRelease(spdxItem, attachmentContent, spdxDocument, componentName);
+            response = importAsRelease(spdxItem, attachmentContent, spdxDocument, newReleaseVersion);
         } else {
             throw new SW360Exception("Unsupported type=[" + type + "], can not import BOM");
         }
@@ -208,8 +173,9 @@ public class SpdxBOMImporter {
         return release;
     }
 
-    private SPDXDocument createSPDXDocumentFromSpdxDocument(SpdxDocument spdxDocument) {
-        SPDXDocument doc = new SPDXDocument();
+    private SPDXDocument createSPDXDocumentFromSpdxDocument(String releaseId, SpdxDocument spdxDocument) throws SW360Exception, MalformedURLException {
+        final SPDXDocument doc = getSpdxDocumentFromRelease(releaseId);
+        doc.setReleaseId(releaseId);
         try {
             final SpdxSnippet[] spdxSnippets = spdxDocument.getDocumentContainer().findAllSnippets().toArray(new SpdxSnippet[0]);;
             final Relationship[] spdxRelationships = spdxDocument.getRelationships();
@@ -386,8 +352,9 @@ public class SpdxBOMImporter {
         return otherLicenses;
     }
 
-    private DocumentCreationInformation createDocumentCreationInfoFromSpdxDocument(SpdxDocument spdxDocument) {
-        final DocumentCreationInformation info = new DocumentCreationInformation();
+    private DocumentCreationInformation createDocumentCreationInfoFromSpdxDocument(String spdxDocId, SpdxDocument spdxDocument) throws SW360Exception, MalformedURLException {
+        final DocumentCreationInformation info = getDocCreationInfoFromSpdxDocument(spdxDocId);
+        info.setSpdxDocumentId(spdxDocId);
 
         try {
             final String spdxVersion = spdxDocument.getSpecVersion();
@@ -478,8 +445,9 @@ public class SpdxBOMImporter {
         return creators;
     }
 
-    private PackageInformation createPackageInfoFromSpdxPackage(SpdxPackage spdxPackage) {
-        final PackageInformation pInfo = new PackageInformation();
+    private PackageInformation createPackageInfoFromSpdxPackage(String spdxDocId, SpdxPackage spdxPackage) throws SW360Exception, MalformedURLException {
+        final PackageInformation pInfo = getPackageInformationFromSpdxDocument(spdxDocId);
+        pInfo.setSpdxDocumentId(spdxDocId);
 
         try {
             final String name = spdxPackage.getName();
@@ -654,21 +622,16 @@ public class SpdxBOMImporter {
     }
 
     private Optional<SpdxBOMImporterSink.Response> importAsRelease(SpdxElement relatedSpdxElement, AttachmentContent attachmentContent,
-            SpdxDocument spdxDocument, String componentName) throws SW360Exception {
+            SpdxDocument spdxDocument, String newReleaseVersion) throws SW360Exception {
         if (relatedSpdxElement instanceof SpdxPackage) {
             final SpdxPackage spdxPackage = (SpdxPackage) relatedSpdxElement;
 
-            SpdxBOMImporterSink.Response component;
-            if (isNotNullEmptyOrWhitespace(componentName)) {
-                component = sink.addComponent(new Component().setName(componentName));
-            } else {
-                component = importAsComponent(spdxPackage);
-            }
-
-            // SpdxBOMImporterSink.Response component = importAsComponent(spdxPackage);
+            SpdxBOMImporterSink.Response component = importAsComponent(spdxPackage);
             final String componentId = component.getId();
 
             final Release release = createReleaseFromSpdxPackage(spdxPackage);
+            if (isNotNullEmptyOrWhitespace(newReleaseVersion))
+                release.setVersion(newReleaseVersion);
             release.setComponentId(componentId);
 
             final Relationship[] relationships = spdxPackage.getRelationships();
@@ -699,32 +662,57 @@ public class SpdxBOMImporter {
     }
 
     private void importSpdxDocument(String releaseId, SpdxDocument spdxDocument, SpdxPackage spdxPackage) throws SW360Exception, MalformedURLException {
-        final SPDXDocument spdxDoc = createSPDXDocumentFromSpdxDocument(spdxDocument);
-        final DocumentCreationInformation docCreationInfo = createDocumentCreationInfoFromSpdxDocument(spdxDocument);
-        final PackageInformation packageInfo = createPackageInfoFromSpdxPackage(spdxPackage);
-
-        // Workaround, remove after update code in db handler
-        spdxDoc.setSpdxPackageInfoIds(new HashSet<String>());
-
-        spdxDoc.setReleaseId(releaseId);
-        final SpdxBOMImporterSink.Response spdxDocRes = sink.addSpdxDocument(spdxDoc);
+        final SPDXDocument spdxDoc = createSPDXDocumentFromSpdxDocument(releaseId, spdxDocument);
+        final SpdxBOMImporterSink.Response spdxDocRes = sink.addOrUpdateSpdxDocument(spdxDoc);
         final String spdxDocId = spdxDocRes.getId();
         log.info("===========spdxDoc: " + spdxDocId);
 
-        docCreationInfo.setSpdxDocumentId(spdxDocId);
-        final SpdxBOMImporterSink.Response docCreationInfoRes = sink.addDocumentCreationInformation(docCreationInfo);
+        final DocumentCreationInformation docCreationInfo = createDocumentCreationInfoFromSpdxDocument(spdxDocId, spdxDocument);
+        final SpdxBOMImporterSink.Response docCreationInfoRes = sink.addOrUpdateDocumentCreationInformation(docCreationInfo);
         final String docCreationInfoId = docCreationInfoRes.getId();
-
-        packageInfo.setSpdxDocumentId(spdxDocId);
-        final SpdxBOMImporterSink.Response packageInfoRes = sink.addPackageInformation(packageInfo);
-        final String packageInfoId = packageInfoRes.getId();
-        // Set<String> packageInfoIds = new HashSet<String>(Arrays.asList(packageInfoId));
         log.info("===========docCreation: " + docCreationInfoId);
-        log.info("===========packageInfo: " + packageInfoId);
 
-        // spdxDoc.setId(spdxDocId);
-        // spdxDoc.setSpdxDocumentCreationInfoId(docCreationInfoId);
-        // spdxDoc.setSpdxPackageInfoIds(packageInfoIds);
+        final PackageInformation packageInfo = createPackageInfoFromSpdxPackage(spdxDocId, spdxPackage);
+        final SpdxBOMImporterSink.Response packageInfoRes = sink.addOrUpdatePackageInformation(packageInfo);
+        final String packageInfoId = packageInfoRes.getId();
+        log.info("===========packageInfo: " + packageInfoId);
+    }
+
+    private SPDXDocument getSpdxDocumentFromRelease(String releaseId) throws SW360Exception, MalformedURLException {
+        SPDXDocument spdxDoc;
+        final Release release = sink.getRelease(releaseId);
+        if (release.isSetSpdxId()) {
+            spdxDoc = sink.getSPDXDocument(release.getSpdxId());
+        } else {
+            spdxDoc = new SPDXDocument();
+        }
+        return spdxDoc;
+    }
+
+    private DocumentCreationInformation getDocCreationInfoFromSpdxDocument(String spdxDocId) throws SW360Exception, MalformedURLException {
+        DocumentCreationInformation info;
+        final SPDXDocument spdxDoc = sink.getSPDXDocument(spdxDocId);
+        if (spdxDoc.isSetSpdxDocumentCreationInfoId()) {
+            info = sink.getDocumentCreationInfo(spdxDoc.getSpdxDocumentCreationInfoId());
+        } else {
+            info = new DocumentCreationInformation();
+        }
+        return info;
+    }
+
+    private PackageInformation getPackageInformationFromSpdxDocument(String spdxDocId) throws SW360Exception, MalformedURLException {
+        PackageInformation info;
+        final SPDXDocument spdxDoc = sink.getSPDXDocument(spdxDocId);
+        log.info("=========size: "+spdxDoc.getSpdxPackageInfoIdsSize());
+        if (spdxDoc.getSpdxPackageInfoIdsSize() > 0) {
+            log.info("=============: "+spdxDoc.getSpdxPackageInfoIds().toString());
+            log.info("Spdx Package exist");
+            info = sink.getPackageInfo(spdxDoc.getSpdxPackageInfoIds().iterator().next());
+        } else {
+            log.info("Spdx Package not exist");
+            info = new PackageInformation();
+        }
+        return info;
     }
 
     private Map<String, ReleaseRelationship> makeReleaseIdToRelationship(List<SpdxBOMImporterSink.Response> releases) {

@@ -731,7 +731,7 @@ service ComponentService {
     /**
      * parse a bom file and write the information to SW360
      **/
-    RequestSummary importBomFromAttachmentContent(1: User user, 2:string attachmentContentId, 3:string componentName);
+    RequestSummary importBomFromAttachmentContent(1: User user, 2:string attachmentContentId, 3:string newReleaseVersion);
 
     /**
      * split data like releases and attachments from source component to target component.

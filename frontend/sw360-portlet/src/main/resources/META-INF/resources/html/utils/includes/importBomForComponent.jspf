@@ -75,8 +75,6 @@
                 </div>
                 <div id="spdxBomUploadStatus"></div>
                 <div class="modal-footer">
-                    <%-- <button id="importSBOM" type="button" class="btn btn-primary" data-dismiss="modal" style="display: none;">Import</button>
-                    <button id="importSBOMAsNew" type="button" class="btn btn-secondary" data-dismiss="modal" style="display: none;">Import As New</button> --%>
                     <button id="cancelImportSBOM" type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
                 </div>
             </div>
@@ -86,15 +84,8 @@
 
 <script>
     require(['jquery', 'resumable', 'modules/dialog', 'modules/validation'], function($, Resumable, dialog, validation) {
-        // $('.portlet-toolbar button[data-action="import-spdx-bom"]').on('click', function() {
         $('#import-spdx-bom').on('click', function() {
             var dialogDivId = '#spdxBomUpload';
-            var actualComponentName;
-            try {
-                actualComponentName = $('#import-spdx-bom').data.componentName;
-            } catch(err) {
-                actualComponentName = "debug";
-            }
 
             //function open(selector, data, submitCallback, beforeShowFn, afterShowFn) {
             $dialog = dialog.open(dialogDivId,
@@ -158,10 +149,10 @@
                         });
                     }
 
-                    function importBomAsNewFromAttachment(attachmentContentId, newComponentName) {
+                    function importBomAsNewFromAttachment(attachmentContentId, newReleaseVersion) {
                         var data = {};
                         data[portletNamespace + "<%=PortalConstants.ATTACHMENT_CONTENT_ID%>"] = attachmentContentId;
-                        data[portletNamespace + "<%=PortalConstants.NEW_COMPONENT_NAME%>"] = newComponentName;
+                        data[portletNamespace + "<%=PortalConstants.NEW_RELEASE_VERSION%>"] = newReleaseVersion;
 
                         return $.ajax({
                             url: urls.importBomAsNew,
@@ -199,23 +190,30 @@
                         var attachmentContentId = file.uniqueIdentifier;
                         prepareImportBom(attachmentContentId).then(function (data) {
                             console.log("prepareImportsuccess...");
-                            console.log(actualComponentName);
                             if (neededKeys.every(key => Object.keys(data).includes(key))) {
-                                $('#spdxBomUploadUpload').hide();
                                 $('.modal-footer').prepend(importBtn)
                                 componentName = data.name
                                 componentVersion = data.version
+                                actualComponentName = $('#import-spdx-bom').data().componentName;
                                 if (!data.isComponentDuplicate) {
-                                    statusDiv.html("<h3>The new Component and new Release will be created, do you want to import?</h3>");
+                                    if (actualComponentName) {
+                                        statusDiv.html("<h3>The provided SBOM file does not contain "+actualComponentName+".<br>The new Component and new Release will be created, do you want to import?</h3>");
+                                    } else {
+                                        statusDiv.html("<h3>The new Component and new Release will be created, do you want to import?</h3>");
+                                    }
                                     statusDiv.append("<div>New Component: <b>"+componentName+"</b></div>");
                                     statusDiv.append("<div>New Release:   <b>"+componentName+" "+componentVersion+"</b></div>");
                                 } else if (!data.isReleaseDuplicate) {
                                     statusDiv.html("<h3>The new Release will be created, do you want to import?</h3>");
                                     statusDiv.append("<div>New Release: <b>"+componentName+" "+componentVersion+"</b></div>");
                                 } else {
-                                    statusDiv.html("<h3>The Component and Release existed, do you want:</h3>");
-                                    statusDiv.append("<div>Update Component:     <b>"+componentName+"</b> (please choose Import button)</div>");
-                                    statusDiv.append("<div>Create new Component: <b>"+componentName+"-sbom-"+attachmentContentId.substring(0,6)+"</b> (please choose Import As New button)</div>");
+                                    if (actualComponentName) {
+                                        statusDiv.html("<h3>The Release existed, do you want:</h3>");
+                                    } else {
+                                        statusDiv.html("<h3>The Component and Release existed, do you want:</h3>");
+                                    }
+                                    statusDiv.append("<div>Update Release:     <b>"+componentName+" "+componentVersion+"</b> (please choose Import button)</div>");
+                                    statusDiv.append("<div>Create new Component and Release: <b>"+componentName+" ("+componentVersion+"-sbom-"+attachmentContentId.substring(0,6)+")</b> (please choose Import As New button)</div>");
                                     $('.modal-footer').prepend(importAsNewBtn);
                                 }
                                 $('#importSBOM').on('click', function() {
@@ -234,7 +232,7 @@
                                 });
                                 $('#importSBOMAsNew').on('click', function() {
                                     console.log('import SBOM as New');
-                                    importBomAsNewFromAttachment(attachmentContentId, componentName+"-sbom-"+attachmentContentId.substring(0,6)).then(function (data) {
+                                    importBomAsNewFromAttachment(attachmentContentId, componentVersion+"-sbom-"+attachmentContentId.substring(0,6)).then(function (data) {
                                         console.log('Call import SBOM as New function');
                                         statusDiv.html("<h2>Imported</h2>");
                                         if ('redirectUrl' in data) {

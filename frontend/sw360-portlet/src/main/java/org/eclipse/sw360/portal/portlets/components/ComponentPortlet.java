@@ -236,24 +236,10 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         }
     }
 
-    // private void importBom(ResourceRequest request, ResourceResponse response) {
-    //     final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
-    //     User user = UserCacheHolder.getUserFromRequest(request);
-    //     String attachmentContentId = request.getParameter(ATTACHMENT_CONTENT_ID);
-
-    //     try {
-    //         final Map<String, Object> map = componentClient.prepareImportBom(user, attachmentContentId);
-    //     } catch (TException e) {
-    //         log.error("Failed to import BOM.", e);
-    //         response.setProperty(ResourceResponse.HTTP_STATUS_CODE, Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
-    //     }
-    // }
-
     private void importBom(ResourceRequest request, ResourceResponse response) {
         final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
         User user = UserCacheHolder.getUserFromRequest(request);
         String attachmentContentId = request.getParameter(ATTACHMENT_CONTENT_ID);
-        // String newComponentName = request.getParameter(newComponentName);
 
         try {
             final RequestSummary requestSummary = componentClient.importBomFromAttachmentContent(user, attachmentContentId, null);
@@ -275,10 +261,11 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
         User user = UserCacheHolder.getUserFromRequest(request);
         String attachmentContentId = request.getParameter(ATTACHMENT_CONTENT_ID);
-        String newComponentName = request.getParameter(NEW_COMPONENT_NAME);
+        String newReleaseVersion = request.getParameter(NEW_RELEASE_VERSION);
+        log.info("========New release version: " + newReleaseVersion);
 
         try {
-            final RequestSummary requestSummary = componentClient.importBomFromAttachmentContent(user, attachmentContentId, newComponentName);
+            final RequestSummary requestSummary = componentClient.importBomFromAttachmentContent(user, attachmentContentId, newReleaseVersion);
 
             LiferayPortletURL releaseUrl = createDetailLinkTemplate(request);
             releaseUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_RELEASE_DETAIL);
