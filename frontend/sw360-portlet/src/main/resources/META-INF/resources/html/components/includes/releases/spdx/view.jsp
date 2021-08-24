@@ -244,26 +244,30 @@
 				<div class="spdx-col-2">
 					<div class="spdx-flex-row">
 						<div class="spdx-col-1 spdx-label-index">Index</div>
-						<select id="externalReferenceSelect" class="spdx-col-3">
+						<select id="externalReferenceSelect" class="spdx-col-3" onchange="displayIndex(this)">
 							<option>1</option>
 						</select>
 					</div>
-					<div class="spdx-flex-row">
-						<div class="spdx-col-1 spdx-key">Category</div>
-						<div class="spdx-col-3">category</div>
-					</div>
-					<div class="spdx-flex-row">
-						<div class="spdx-col-1 spdx-key">Type</div>
-						<div class="spdx-col-3">type</div>
-					</div>
-					<div class="spdx-flex-row">
-						<div class="spdx-col-1 spdx-key">Locator</div>
-						<div class="spdx-col-3">locator</div>
-					</div>
-					<div class="spdx-flex-row">
-						<div class="spdx-col-1 spdx-key">3.22 Comment</div>
-						<div class="spdx-col-3">comment</div>
-					</div>
+					<core_rt:forEach items="${package.externalRefs}" var="externalRefsData" varStatus="loop">
+						<div name="externalReferencesTable">
+							<div class="spdx-flex-row">
+								<div class="spdx-col-1 spdx-key">Category</div>
+								<div class="spdx-col-3"><sw360:out value="${externalRefsData.referenceCategory}"/></div>
+							</div>
+							<div class="spdx-flex-row">
+								<div class="spdx-col-1 spdx-key">Type</div>
+								<div class="spdx-col-3"><sw360:out value="${externalRefsData.referenceType}"/></div>
+							</div>
+							<div class="spdx-flex-row">
+								<div class="spdx-col-1 spdx-key">Locator</div>
+								<div class="spdx-col-3"><sw360:out value="${externalRefsData.referenceLocator}"/></div>
+							</div>
+							<div class="spdx-flex-row">
+								<div class="spdx-col-1 spdx-key">3.22 Comment</div>
+								<div class="spdx-col-3"><sw360:out value="${externalRefsData.comment}"/></div>
+							</div>
+						</div>
+					</core_rt:forEach>
 				</div>
 			</td>
 		</tr>
@@ -292,85 +296,80 @@
 				</select>
 			</td>
 		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">5.1 Snippet SPDX Identifier</div>
-				<div class="spdx-col-2"></div>
-			</td>
-		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">5.2 Snippet from File SPDX Identifier</div>
-				<div class="spdx-col-2"></div>
-			</td>
-		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">5.3 & 5.4 Snippet Ranges</div>
-				<div class="spdx-col-2 spdx-flex-col">
-					<div class="spdx-flex-row">
-						<div class="spdx-col-1 spdx-key">Byte</div>
-						<div class="spdx-col-1 spdx-flex-row">
-							<div class="spdx-col-1">310</div>
-							<div class="spdx-col-1">~</div>
-							<div class="spdx-col-1">420</div>
+		<core_rt:forEach items="${snippets}" var="snippetsData" varStatus="loop">
+			<tr>
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">5.1 Snippet SPDX Identifier</div>
+					<div class="spdx-col-2"><sw360:out value="${snippetsData.SPDXID}"/></div>
+				</td>
+			</tr>
+			<tr>
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">5.2 Snippet from File SPDX Identifier</div>
+					<div class="spdx-col-2"><sw360:out value="${snippetsData.snippetFromFile}"/></div>
+				</td>
+			</tr>
+			<tr>
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">5.3 & 5.4 Snippet Ranges</div>
+						<div class="spdx-col-2 spdx-flex-col">
+							<core_rt:forEach items="${snippetsData.snippetRanges}" var="snippetRangesData" varStatus="loop">
+								<div class="spdx-flex-row">
+									<div class="spdx-col-1 spdx-key"><sw360:out value="${snippetRangesData.rangeType}"/></div>
+									<div class="spdx-col-1 spdx-flex-row">
+										<div class="spdx-col-1"><sw360:out value="${snippetRangesData.startPointer}"/></div>
+										<div class="spdx-col-1">~</div>
+										<div class="spdx-col-1"><sw360:out value="${snippetRangesData.endPointer}"/></div>
+									</div>
+									<div class="spdx-col-3"><sw360:out value="${snippetRangesData.reference}"/></div>
+								</div>
+							</core_rt:forEach>
 						</div>
-						<div class="spdx-col-3">./src/org/spdx/parser/DOAPProject.java</div>
-					</div>
-					<div class="spdx-flex-row">
-						<div class="spdx-col-1 spdx-key">Line</div>
-						<div class="spdx-col-1 spdx-flex-row">
-							<div class="spdx-col-1">5</div>
-							<div class="spdx-col-1">~</div>
-							<div class="spdx-col-1">25</div>
-						</div>
-						<div class="spdx-col-3">./src/org/spdx/parser/DOAPProject.java</div>
-					</div>
-				</div>
-			</td>
-		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">5.5 Snippet Concluded License</div>
-				<div class="spdx-col-2">snippet_concluded_license</div>
-			</td>
-		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">5.6 License Information in Snippet</div>
-				<p class="spdx-col-2 spdx-p">license_information_in_snippet</p>
-			</td>
-		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">5.7 Snippet Comments on License</div>
-				<p class="spdx-col-2 spdx-p">snippet_comments_on_license</p>
-			</td>
-		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">5.8 Copyright Text</div>
-				<p class="spdx-col-2 spdx-p">copyright_text</p>
-			</td>
-		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">5.9 Snippet Comments</div>
-				<p class="spdx-col-2 spdx-p">snippet_comments</p>
-			</td>
-		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">5.10 License List Version</div>
-				<div class="spdx-col-2">license_list_version</div>
-			</td>
-		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">5.11 License List Version</div>
-				<p class="spdx-col-2 spdx-p">license_list_version</p>
-			</td>
-		</tr>
+				</td>
+			</tr>
+			<tr>
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">5.5 Snippet Concluded License</div>
+					<div class="spdx-col-2"><sw360:out value="${snippetsData.licenseConcluded}"/></div>
+				</td>
+			</tr>
+			<tr>
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">5.6 License Information in Snippet</div>
+					<p class="spdx-col-2 spdx-p"><sw360:out value="${snippetsData.licenseInfoInSnippets}"/></p>
+				</td>
+			</tr>
+			<tr>
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">5.7 Snippet Comments on License</div>
+					<p class="spdx-col-2 spdx-p"><sw360:out value="${snippetsData.licenseComments}"/></p>
+				</td>
+			</tr>
+			<tr>
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">5.8 Copyright Text</div>
+					<p class="spdx-col-2 spdx-p"><sw360:out value="${snippetsData.copyrightText}"/></p>
+				</td>
+			</tr>
+			<tr>
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">5.9 Snippet Comments</div>
+					<p class="spdx-col-2 spdx-p"><sw360:out value="${snippetsData.comment}"/></p>
+				</td>
+			</tr>
+			<tr>
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">5.10 Snippet Name</div>
+					<p class="spdx-col-2 spdx-p"><sw360:out value="${snippetsData.name}"/></p>
+				</td>
+			</tr>
+			<tr>
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">5.11 Snippet Attribution Text</div>
+					<p class="spdx-col-2 spdx-p"><sw360:out value="${snippetsData.snippetAttributionText}"/></p>
+				</td>
+			</tr>
+		</core_rt:forEach>
 	</tbody>
 </table>
 
@@ -390,36 +389,38 @@
 				</select>
 			</td>
 		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">6.1 License Identifier</div>
-				<div class="spdx-col-2">LicenseRef-xxx</div>
-			</td>
-		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">6.2 Extracted Text</div>
-				<p class="spdx-col-2 spdx-p">extracted_text</p>
-			</td>
-		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">6.3 License Name</div>
-				<div class="spdx-col-2">license_name</div>
-			</td>
-		</tr>
-		<tr class="spdx-full">
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">6.4 License Cross Reference</div>
-				<p class="spdx-col-2 spdx-p">license_cross_reference</p>
-			</td>
-		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">6.5 License Comment</div>
-				<p class="spdx-col-2 spdx-p">license_comment</p>
-			</td>
-		</tr>
+		<core_rt:forEach items="${otherLicensing}" var="otherLicensingData" varStatus="loop">
+			<tr>
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">6.1 License Identifier</div>
+					<div class="spdx-col-2"><sw360:out value="${otherLicensingData.licenseId}"/></div>
+				</td>
+			</tr>
+			<tr>
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">6.2 Extracted Text</div>
+					<p class="spdx-col-2 spdx-p"><sw360:out value="${otherLicensingData.extractedText}"/></p>
+				</td>
+			</tr>
+			<tr>
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">6.3 License Name</div>
+					<div class="spdx-col-2"><sw360:out value="${otherLicensingData.licenseName}"/></div>
+				</td>
+			</tr>
+			<tr class="spdx-full">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">6.4 License Cross Reference</div>
+					<p class="spdx-col-2 spdx-p"><sw360:out value="${otherLicensingData.licenseCrossRefs}"/></p>
+				</td>
+			</tr>
+			<tr>
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">6.5 License Comment</div>
+					<p class="spdx-col-2 spdx-p"><sw360:out value="${otherLicensingData.licenseComment}"/></p>
+				</td>
+			</tr>
+		</core_rt:forEach>
 	</tbody>
 </table>
 
@@ -439,24 +440,26 @@
 				</select>
 			</td>
 		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">7.1 Relationship</div>
-				<div class="spdx-col-2 spdx-flex-col">
-					<div class="spdx-flex-row">
-						<div class="spdx-col-1">SPDX_element</div>
-						<div class="spdx-col-1 spdx-flex-row">relationship_type</div>
-						<div class="spdx-col-3">related_SPDX_element</div>
+		<core_rt:forEach items="${relationships}" var="relationshipsData" varStatus="loop">
+			<tr>
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">7.1 Relationship</div>
+					<div class="spdx-col-2 spdx-flex-col">
+						<div class="spdx-flex-row">
+							<div class="spdx-col-1"><sw360:out value="${relationshipsData.spdxElementId}"/></div>
+							<div class="spdx-col-1 spdx-flex-row"><sw360:out value="${relationshipsData.relationshipType}"/></div>
+							<div class="spdx-col-3"><sw360:out value="${relationshipsData.relatedSpdxElement}"/></div>
+						</div>
 					</div>
-				</div>
-			</td>
-		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">7.2 Relationship Comment</div>
-				<p class="spdx-col-2 spdx-p">license_comment</p>
-			</td>
-		</tr>
+				</td>
+			</tr>
+			<tr>
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">7.2 Relationship Comment</div>
+					<p class="spdx-col-2 spdx-p"><sw360:out value="${relationshipsData.relationshipComment}"/></p>
+				</td>
+			</tr>
+		</core_rt:forEach>
 	</tbody>
 </table>
 
@@ -468,59 +471,52 @@
 		</tr>
 	</thead>
 	<tbody>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1 spdx-label-index">Index</div>
-				<select id="annotationSelect" class="spdx-col-2">
-					<option>1</option>
-				</select>
-			</td>
-		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">8.1 Annotator</div>
-				<div class="spdx-col-2 spdx-flex-col">
-					<div class="spdx-flex-row">
-						<div class="spdx-col-1">SPDX_element</div>
-						<div class="spdx-col-1 spdx-flex-row">relationship_type</div>
-						<div class="spdx-col-3">related_SPDX_element</div>
+			<tr>
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1 spdx-label-index">Index</div>
+					<select id="annotationSelect" class="spdx-col-2">
+						<option>1</option>
+					</select>
+				</td>
+			</tr>
+		<core_rt:forEach items="${annotations}" var="annotationsData" varStatus="loop">
+			<tr>
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">8.1 Annotator</div>
+					<p class="spdx-col-2 spdx-p"><sw360:out value="${annotationsData.annotator}"/></p>
 					</div>
-				</div>
-			</td>
-		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">8.2 Annotation Date</div>
-				<p class="spdx-col-2 spdx-p">2021-08-24 12:00:00</p>
-			</td>
-		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">8.3 Annotation Type</div>
-				<div class="spdx-col-2">
-					<div class="spdx-flex-row">
-						<div class="spdx-col-1 spdx-key">Organization</div>
-						<div class="spdx-col-3">TSDV</div>
+				</td>
+			</tr>
+			<tr>
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">8.2 Annotation Date</div>
+					<p class="spdx-col-2 spdx-p"><sw360:out value="${annotationsData.annotationDate}"/></p>
+				</td>
+			</tr>
+			<tr>
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">8.3 Annotation Type</div>
+					<div class="spdx-col-2">
+						<div class="spdx-flex-row">
+							<!-- <div class="spdx-col-1 spdx-key">Organization</div> -->
+							<div class="spdx-col-3"><sw360:out value="${annotationsData.annotationType}"/></div>
+						</div>
 					</div>
-					<div class="spdx-flex-row">
-						<div class="spdx-col-1 spdx-key">Person</div>
-						<div class="spdx-col-3">QuanTV</div>
-					</div>
-				</div>
-			</td>
-		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">8.4 SPDX Identifier Reference</div>
-				<div class="spdx-col-2">SPDX_identifier_reference</div>
-			</td>
-		</tr>
-		<tr>
-			<td class="spdx-flex-row">
-				<div class="spdx-col-1">8.5 Annotation Comment</div>
-				<p class="spdx-col-2 spdx-p">annotation_comment</p>
-			</td>
-		</tr>
+				</td>
+			</tr>
+			<tr>
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">8.4 SPDX Identifier Reference</div>
+					<div class="spdx-col-2"><sw360:out value="${annotationsData.spdxRef}"/></div>
+				</td>
+			</tr>
+			<tr>
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">8.5 Annotation Comment</div>
+					<p class="spdx-col-2 spdx-p"><sw360:out value="${annotationsData.annotationComment}"/></p>
+				</td>
+			</tr>
+		</core_rt:forEach>
 	</tbody>
 </table>
 
@@ -614,4 +610,10 @@
 	generateSelecterOption('relationshipSelect', "${relationships.size()}");
 	generateSelecterOption('annotationSelect', "${annotations.size()}");
 	generateSelecterOption('externalReferenceSelect', "${package.externalRefs.size()}");
+
+	function displayIndex(el) {
+		var index = $(el).find('option:selected').text();
+		var parent = $(el).parent();
+		$(parent).find('div')
+	}
 </script>
