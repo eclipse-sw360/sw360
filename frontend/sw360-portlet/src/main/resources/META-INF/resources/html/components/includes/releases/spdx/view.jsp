@@ -62,18 +62,17 @@
 				<div class="spdx-col-2"><sw360:out value="${spdxDocumentCreationInfo.licenseListVersion}"/></div>
 			</td>
 		</tr>
+		<core_rt:set var="creators" value="${spdxDocumentCreationInfo.creator}" />
 		<tr>
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1">2.8 Creator</div>
 				<div class="spdx-col-2">
-					<div class="spdx-flex-row">
-						<div class="spdx-col-1 spdx-key">Organization</div>
-						<div class="spdx-col-3">TSDV</div>
-					</div>
-					<div class="spdx-flex-row">
-						<div class="spdx-col-1 spdx-key">Person</div>
-						<div class="spdx-col-3">QuanTV</div>
-					</div>
+					<core_rt:forEach items="${creators}" var="creatorData" varStatus="loop">
+						<div class="spdx-flex-row">
+							<div class="spdx-col-1 spdx-key"><sw360:out value="${creatorData.type}"/></div>
+							<div class="spdx-col-3"><sw360:out value="${creatorData.value}"/></div>
+						</div>
+					</core_rt:forEach>
 				</div>
 			</td>
 		</tr>
@@ -149,11 +148,16 @@
 				<div class="spdx-col-2 spdx-flex-col">
 					<div class="spdx-flex-row">
 						<div class="spdx-col-1 spdx-key">Value</div>
-						<div class="spdx-col-3">111</div>
+						<div class="spdx-col-3"><sw360:out value="${package.packageVerificationCode.value}"/></div>
 					</div>
 					<div class="spdx-flex-row">
 						<div class="spdx-col-1 spdx-key">Excluded Files</div>
-						<p class="spdx-col-3 spdx-p">File 1 <br> File 2</p>
+							<p class="spdx-col-3 spdx-p">
+								<core_rt:forEach items="${package.packageVerificationCode.excludedFiles}" var="excludedFileData" varStatus="loop">
+									<sw360:out value="${excludedFileData}"/> <br> 
+								</core_rt:forEach>
+							</p>
+						</div>
 					</div>
 				</div>
 			</td>
@@ -162,14 +166,12 @@
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1">3.10 Package Checksum</div>
 				<div class="spdx-col-2">
-					<div class="spdx-flex-row">
-						<div class="spdx-col-1 spdx-key">Algorithm 1</div>
-						<div class="spdx-col-3">Value 1</div>
-					</div>
-					<div class="spdx-flex-row">
-						<div class="spdx-col-1 spdx-key">Algorithm 2</div>
-						<div class="spdx-col-3">Value 2</div>
-					</div>
+					<core_rt:forEach items="${package.checksums}" var="checksumData" varStatus="loop">
+						<div class="spdx-flex-row">
+							<div class="spdx-col-1 spdx-key"><sw360:out value="${checksumData.algorithm}"/></div>
+							<div class="spdx-col-3"><sw360:out value="${checksumData.checksumValue}"/></div>
+						</div>
+					</core_rt:forEach>
 				</div>
 			</td>
 		</tr>
@@ -182,7 +184,7 @@
 		<tr class="spdx-full">
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1">3.12 Source Information</div>
-				<p class="spdx-col-2 spdx-p">source_information_1<br>source_information_2</p>
+				<div class="spdx-col-2 spdx-p"><sw360:out value="${package.sourceInfo}"/></div>
 			</td>
 		</tr>
 		<tr>
@@ -194,7 +196,10 @@
 		<tr class="spdx-full">
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1">3.14 All Licenses Information from Files</div>
-				<p class="spdx-col-2 spdx-p"><sw360:out value="${package.licenseInfoFromFiles}"/></p>
+				<p class="spdx-col-2 spdx-p">
+					<core_rt:forEach items="${package.licenseInfoFromFiles}" var="licenseInfoFromFileData" varStatus="loop">
+						<sw360:out value="${licenseInfoFromFileData}, "/>
+					</core_rt:forEach>
 			</td>
 		</tr>
 		<tr>
@@ -239,9 +244,8 @@
 				<div class="spdx-col-2">
 					<div class="spdx-flex-row">
 						<div class="spdx-col-1 spdx-label-index">Index</div>
-						<select class="spdx-col-3">
+						<select id="externalReferenceSelect" class="spdx-col-3">
 							<option>1</option>
-							<option>2</option>
 						</select>
 					</div>
 					<div class="spdx-flex-row">
@@ -271,6 +275,8 @@
 		</tr>
 	</tbody>
 </table>
+
+<core_rt:set var="snippets" value="${spdxDocument.snippets}" />
 <table class="table label-value-table spdx-full" id="SnippetInformation">
 	<thead class="spdx-thead">
 		<tr>
@@ -281,22 +287,21 @@
 		<tr>
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1 spdx-label-index">Index</div>
-				<select class="spdx-col-2">
+				<select id="snippetInfoSelect" class="spdx-col-2">
 					<option>1</option>
-					<option>2</option>
 				</select>
 			</td>
 		</tr>
 		<tr>
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1">5.1 Snippet SPDX Identifier</div>
-				<div class="spdx-col-2"><sw360:out value="${spdxDocumentCreationInfo.snippets}"/></div>
+				<div class="spdx-col-2"></div>
 			</td>
 		</tr>
 		<tr>
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1">5.2 Snippet from File SPDX Identifier</div>
-				<div class="spdx-col-2">SPDXRef-xxx</div>
+				<div class="spdx-col-2"></div>
 			</td>
 		</tr>
 		<tr>
@@ -368,6 +373,8 @@
 		</tr>
 	</tbody>
 </table>
+
+<core_rt:set var="otherLicensing" value="${spdxDocument.otherLicensingInformationDetecteds}" />
 <table class="table label-value-table" id="OtherLicensingInformationDetected">
 	<thead class="spdx-thead">
 		<tr>
@@ -378,9 +385,8 @@
 		<tr>
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1 spdx-label-index">Index</div>
-				<select class="spdx-col-2">
+				<select id="otherLicensingSelect" class="spdx-col-2">
 					<option>1</option>
-					<option>2</option>
 				</select>
 			</td>
 		</tr>
@@ -416,19 +422,20 @@
 		</tr>
 	</tbody>
 </table>
+
+<core_rt:set var="relationships" value="${spdxDocument.relationships}" />
 <table class="table label-value-table spdx-full" id="RelationshipsbetweenSPDXElements">
 	<thead class="spdx-thead">
 		<tr>
-			<th>7. Other Licensing Information Detected</th>
+			<th>7. Relationships between SPDX Elements</th>
 		</tr>
 	</thead>
 	<tbody>
 		<tr>
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1 spdx-label-index">Index</div>
-				<select class="spdx-col-2">
+				<select id="relationshipSelect" class="spdx-col-2">
 					<option>1</option>
-					<option>2</option>
 				</select>
 			</td>
 		</tr>
@@ -452,6 +459,8 @@
 		</tr>
 	</tbody>
 </table>
+
+<core_rt:set var="annotations" value="${spdxDocument.annotations}" />
 <table class="table label-value-table spdx-full" id="Annotations">
 	<thead class="spdx-thead">
 		<tr>
@@ -462,9 +471,8 @@
 		<tr>
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1 spdx-label-index">Index</div>
-				<select class="spdx-col-2">
+				<select id="annotationSelect" class="spdx-col-2">
 					<option>1</option>
-					<option>2</option>
 				</select>
 			</td>
 		</tr>
@@ -516,6 +524,48 @@
 	</tbody>
 </table>
 
+<style>
+	.spdx-col-1 {
+		flex: 1; 
+	}
+
+	.spdx-col-2 {
+		flex: 2; 
+	}
+
+	.spdx-col-3 {
+		flex: 3;
+		max-width: 60%;
+	}
+
+	.spdx-flex-row {
+		display:flex;
+		flex-direction: row;
+		overflow: auto;;
+	}
+
+	.spdx-flex-col {
+		display:flex;
+		flex-direction: column;
+	}
+
+	.spdx-p {
+		margin-bottom: 0;
+	}
+
+	.spdx-key {
+		font-weight: bold;
+	}
+
+	.spdx-label-index {
+		text-decoration: underline;
+	}
+
+	.spdx-thead {
+		cursor: pointer;
+	}
+</style>
+
 <script type="text/javascript">
 	$(function() {
 		$('#spdxFullMode').on('click', function(e) {
@@ -551,4 +601,17 @@
 			}
 		})
 	});
+
+	function generateSelecterOption(selectId, length) {
+        for (var i = 2; i <= length; i++) {
+            var option = document.createElement("option");
+            option.text = i;
+            document.getElementById(selectId).add(option);
+        }
+    }
+	generateSelecterOption('snippetInfoSelect', "${snippets.size()}");
+	generateSelecterOption('otherLicensingSelect', "${otherLicensing.size()}");
+	generateSelecterOption('relationshipSelect', "${relationships.size()}");
+	generateSelecterOption('annotationSelect', "${annotations.size()}");
+	generateSelecterOption('externalReferenceSelect', "${package.externalRefs.size()}");
 </script>
