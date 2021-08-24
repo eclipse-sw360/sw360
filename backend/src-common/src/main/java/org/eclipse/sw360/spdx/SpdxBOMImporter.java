@@ -642,7 +642,7 @@ public class SpdxBOMImporter {
     private Attachment makeAttachmentFromContent(AttachmentContent attachmentContent) {
         Attachment attachment = new Attachment();
         attachment.setAttachmentContentId(attachmentContent.getId());
-        attachment.setAttachmentType(AttachmentType.OTHER);
+        attachment.setAttachmentType(AttachmentType.SBOM);
         attachment.setCreatedComment("Used for SPDX Bom import");
         attachment.setFilename(attachmentContent.getFilename());
 
