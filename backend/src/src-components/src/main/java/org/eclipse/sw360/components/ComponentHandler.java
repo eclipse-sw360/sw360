@@ -508,13 +508,6 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     @Override
-    public ImportBomRequestPreparation prepareImportBom(User user, String attachmentContentId) throws TException {
-        assertNotNull(attachmentContentId);
-        assertUser(user);
-        return handler.prepareImportBom(user, attachmentContentId);
-    }
-
-    @Override
     public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId, String componentName) throws TException {
         assertNotNull(attachmentContentId);
         assertUser(user);
