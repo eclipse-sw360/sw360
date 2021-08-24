@@ -1432,6 +1432,30 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             if (release != null) {
                 addReleaseBreadcrumb(request, response, release);
             }
+            String spdxDocumentId = release.getSpdxId();
+            if (!isNullOrEmpty(spdxDocumentId)) {
+                SPDXDocument spdxDocument = new SPDXDocument();
+                DocumentCreationInformation documentCreationInfo = new DocumentCreationInformation();
+                Set<PackageInformation> packageInfos = new HashSet<>();
+                SPDXDocumentService.Iface SPDXDocumentClient = thriftClients.makeSPDXClient();
+                spdxDocument = SPDXDocumentClient.getSPDXDocumentById(spdxDocumentId, user);
+                String spdxDocumentCreationInfoId = spdxDocument.getSpdxDocumentCreationInfoId();
+                Set<String> spdxPackageInfoIds = spdxDocument.getSpdxPackageInfoIds();
+                if(!isNullOrEmpty(spdxDocumentCreationInfoId)) {
+                    DocumentCreationInformationService.Iface doClient = thriftClients.makeSPDXDocumentInfoClient();
+                    documentCreationInfo = doClient.getDocumentCreationInformationById(spdxDocumentCreationInfoId, user);
+                }
+                if(spdxPackageInfoIds != null) {
+                    PackageInformationService.Iface paClient = thriftClients.makeSPDXPackageInfoClient();
+                    for (String spdxPackageInfoId : spdxPackageInfoIds) {
+                        PackageInformation packageInfo = paClient.getPackageInformationById(spdxPackageInfoId, user);
+                        packageInfos.add(packageInfo);
+                    }
+                }
+                request.setAttribute(SPDXDOCUMENT, spdxDocument);
+                request.setAttribute(SPDX_DOCUMENT_CREATION_INFO, documentCreationInfo);
+                request.setAttribute(SPDX_PACKAGE_INFO, packageInfos);
+            }
 
         } catch (TException e) {
             log.error("Error fetching release from backend!", e);

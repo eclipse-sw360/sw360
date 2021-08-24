@@ -1,4 +1,6 @@
-<core_rt:set var="package" value="${spdxPackageInfo.iterator().next()}" />
+<core_rt:if test="${not spdxPackageInfo.isEmpty()}">
+    <core_rt:set var="package" value="${spdxPackageInfo.iterator().next()}" />
+</core_rt:if>
 <table class="table spdx-table three-columns" id="editPackageInformation">
     <thead>
         <tr>
