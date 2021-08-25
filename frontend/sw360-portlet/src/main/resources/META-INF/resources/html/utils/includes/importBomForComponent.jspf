@@ -63,18 +63,18 @@
                     <p>This currently only supports SPDX RDF/XML files with a uniq described top level node.</p>
                     <div class="lfr-dynamic-uploader">
                         <div class="lfr-upload-container">
-                            <div id="fileupload-drop" class="upload-target">
+                            <div id="spdx-fileupload-drop" class="upload-target">
                                 <span>Drop a File Here</span>
                                 <br/>
                                 Or
                                 <br/>
-                                <button id="fileupload-browse" type="button" class="btn btn-secondary">Browse</button>
+                                <button id="spdx-fileupload-browse" type="button" class="btn btn-secondary">Browse</button>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div id="spdxBomUploadStatus"></div>
-                <div class="modal-footer">
+                <div id="spdxBomUploadAction" class="modal-footer">
                     <button id="cancelImportSBOM" type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
                 </div>
             </div>
@@ -171,8 +171,8 @@
                         maxChunkRetries: 3
                     });
 
-                    r.assignBrowse($('#fileupload-browse')[0]);
-                    r.assignDrop($('#fileupload-drop')[0]);
+                    r.assignBrowse($('#spdx-fileupload-browse')[0]);
+                    r.assignDrop($('#spdx-fileupload-drop')[0]);
 
                     r.on('fileAdded', function (file) {
                         console.log("fileAdded...");
@@ -191,7 +191,7 @@
                         prepareImportBom(attachmentContentId).then(function (data) {
                             console.log("prepareImportsuccess...");
                             if (neededKeys.every(key => Object.keys(data).includes(key))) {
-                                $('.modal-footer').prepend(importBtn)
+                                $('#spdxBomUploadAction').prepend(importBtn)
                                 componentName = data.name
                                 componentVersion = data.version
                                 actualComponentName = $('#import-spdx-bom').data().componentName;
@@ -209,12 +209,14 @@
                                 } else {
                                     if (actualComponentName) {
                                         statusDiv.html("<h3>The Release existed, do you want:</h3>");
+                                        statusDiv.append("<div>Update Release:     <b>"+componentName+" "+componentVersion+"</b> (please choose Import button)</div>");
+                                        statusDiv.append("<div>Create new Release: <b>"+componentName+" ("+componentVersion+"-sbom-"+attachmentContentId.substring(0,6)+")</b> (please choose Import As New button)</div>");
                                     } else {
                                         statusDiv.html("<h3>The Component and Release existed, do you want:</h3>");
+                                        statusDiv.append("<div>Update Release:                   <b>"+componentName+" "+componentVersion+"</b> (please choose Import button)</div>");
+                                        statusDiv.append("<div>Create new Component and Release: <b>"+componentName+" ("+componentVersion+"-sbom-"+attachmentContentId.substring(0,6)+")</b> (please choose Import As New button)</div>");
                                     }
-                                    statusDiv.append("<div>Update Release:     <b>"+componentName+" "+componentVersion+"</b> (please choose Import button)</div>");
-                                    statusDiv.append("<div>Create new Component and Release: <b>"+componentName+" ("+componentVersion+"-sbom-"+attachmentContentId.substring(0,6)+")</b> (please choose Import As New button)</div>");
-                                    $('.modal-footer').prepend(importAsNewBtn);
+                                    $('#spdxBomUploadAction').prepend(importAsNewBtn)
                                 }
                                 $('#importSBOM').on('click', function() {
                                     console.log('import SBOM');
