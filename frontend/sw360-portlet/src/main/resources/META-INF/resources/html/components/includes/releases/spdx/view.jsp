@@ -507,7 +507,7 @@
 			<tr>
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">8.4 SPDX Identifier Reference</div>
-					<div class="spdx-col-2"><sw360:out value="${annotationsData.spdxRef}"/></div>
+					<div class="spdx-col-2"><sw360:out value="${annotationsData.spdxIdRef}"/></div>
 				</td>
 			</tr>
 			<tr>

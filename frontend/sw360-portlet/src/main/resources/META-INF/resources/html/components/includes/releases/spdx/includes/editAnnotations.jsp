@@ -111,7 +111,7 @@
                 fillValueToId("annotatorValue", annotatorValue);
                 setCreatedDateTime("${annotationsData.annotationDate}");
                 fillValueToId("annotationType", "${annotationsData.annotationType}");
-                fillValueToId("spdxIdRef", "${annotationsData.spdxRef}");
+                fillValueToId("spdxIdRef", "${annotationsData.spdxIdRef}");
                 fillValueToId("annotationComment", "${annotationsData.annotationComment}");
             }
         </core_rt:forEach>
