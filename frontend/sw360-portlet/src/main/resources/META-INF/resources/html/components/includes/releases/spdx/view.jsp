@@ -13,7 +13,7 @@
 	<button id="spdxLiteMode" class="btn btn-secondary">SPDX Lite</button>
 </div>
 
-<table class="table label-value-table" id="DocumentCreationInformation">
+<table class="table label-value-table spdx-table" id="DocumentCreationInformation">
 	<thead class="spdx-thead">
 		<tr>
 			<th>2. Document Creation Information</th>
@@ -87,7 +87,7 @@
 <core_rt:if test="${not spdxPackageInfo.isEmpty()}">
     <core_rt:set var="package" value="${spdxPackageInfo.iterator().next()}" />
 </core_rt:if>
-<table class="table label-value-table" id="PackageInformation">
+<table class="table label-value-table spdx-table" id="PackageInformation">
 	<thead class="spdx-thead">
 		<tr>
 			<th>3. Package Information</th>
@@ -281,7 +281,7 @@
 </table>
 
 <core_rt:set var="snippets" value="${spdxDocument.snippets}" />
-<table class="table label-value-table spdx-full" id="SnippetInformation">
+<table class="table label-value-table spdx-table spdx-full" id="SnippetInformation">
 	<thead class="spdx-thead">
 		<tr>
 			<th>5. Snippet Information</th>
@@ -374,7 +374,7 @@
 </table>
 
 <core_rt:set var="otherLicensing" value="${spdxDocument.otherLicensingInformationDetecteds}" />
-<table class="table label-value-table" id="OtherLicensingInformationDetected">
+<table class="table label-value-table spdx-table" id="OtherLicensingInformationDetected">
 	<thead class="spdx-thead">
 		<tr>
 			<th>6. Other Licensing Information Detected</th>
@@ -425,7 +425,7 @@
 </table>
 
 <core_rt:set var="relationships" value="${spdxDocument.relationships}" />
-<table class="table label-value-table spdx-full" id="RelationshipsbetweenSPDXElements">
+<table class="table label-value-table spdx-table spdx-full" id="RelationshipsbetweenSPDXElements">
 	<thead class="spdx-thead">
 		<tr>
 			<th>7. Relationships between SPDX Elements</th>
@@ -464,7 +464,7 @@
 </table>
 
 <core_rt:set var="annotations" value="${spdxDocument.annotations}" />
-<table class="table label-value-table spdx-full" id="Annotations">
+<table class="table label-value-table spdx-table spdx-full" id="Annotations">
 	<thead class="spdx-thead">
 		<tr>
 			<th>8. Annotations</th>
@@ -555,6 +555,10 @@
 
 	.spdx-label-index {
 		text-decoration: underline;
+	}
+
+	.spdx-table td:first-child {
+		width: 100% !important;
 	}
 
 	.spdx-thead {
