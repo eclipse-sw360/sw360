@@ -77,7 +77,7 @@ public class SpdxDocumentCreationInfoModerator extends Moderator<DocumentCreatio
                 case DOCUMENT_STATE:
                 case SPDX_DOCUMENT_ID:
                     break;
-                case DOCUMENT_CREATION_INFORMATION_ID:
+                case SPDXID:
                 case DATA_LICENSE:
                 case NAME:
                 case DOCUMENT_NAMESPACE:

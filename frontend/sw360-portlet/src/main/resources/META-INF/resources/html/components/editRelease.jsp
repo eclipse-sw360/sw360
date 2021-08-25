@@ -12,6 +12,7 @@
 <%@ page import="org.eclipse.sw360.datahandler.thrift.attachments.Attachment" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.components.ComponentType" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.components.Release" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument" %>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.users.RequestedAction" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus" %>
@@ -45,7 +46,7 @@
 <c:catch var="attributeNotFoundException">
     <jsp:useBean id="component" class="org.eclipse.sw360.datahandler.thrift.components.Component" scope="request"/>
     <jsp:useBean id="release" class="org.eclipse.sw360.datahandler.thrift.components.Release" scope="request"/>
-
+    <jsp:useBean id="spdxDocument" class="org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument" scope="request"/>
     <jsp:useBean id="usingProjects" type="java.util.Set<org.eclipse.sw360.datahandler.thrift.projects.Project>"
                  scope="request"/>
     <jsp:useBean id="allUsingProjectsCount" type="java.lang.Integer" scope="request"/>
@@ -76,6 +77,7 @@
             <div class="col-3 sidebar">
                 <div id="detailTab" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
                     <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab"><liferay-ui:message key="summary" /></a>
+                    <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-SPDX'}">active</core_rt:if>" href="#tab-SPDX" data-toggle="list" role="tab"><liferay-ui:message key="spdx.document" /></a>
                     <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-linkedReleases'}">active</core_rt:if>" href="#tab-linkedReleases" data-toggle="list" role="tab"><liferay-ui:message key="linked.releases" /></a>
 
                     <core_rt:if test="${not addMode}" >
@@ -149,6 +151,9 @@
                                 </div>
                                 <div id="tab-linkedReleases" class="tab-pane <core_rt:if test="${selectedTab == 'tab-linkedReleases'}">active show</core_rt:if>" >
                                     <%@include file="/html/utils/includes/editLinkedReleases.jspf" %>
+                                </div>
+                                <div id="tab-SPDX" class="tab-pane <core_rt:if test="${selectedTab == 'tab-SPDX'}">active show</core_rt:if>" >
+                                    <%@include file="/html/components/includes/releases/spdx/edit.jspf" %>
                                 </div>
                                 <div id="tab-ClearingDetails" class="tab-pane <core_rt:if test="${selectedTab == 'tab-ClearingDetails'}">active show</core_rt:if>" >
                                     <%@include file="/html/components/includes/releases/editReleaseClearingInformation.jspf" %>

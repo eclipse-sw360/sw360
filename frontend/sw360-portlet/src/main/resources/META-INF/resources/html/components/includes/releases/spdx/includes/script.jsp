@@ -1,248 +1,355 @@
-<script>
-    require(['jquery'], function ($) {
+<style>
+    /*-------------------ADD-------------------*/
 
-        $('#formSubmit').on('click', function (event) {
-            event.preventDefault();
-            var myValidator = validator();
-            myValidator.setFormId('editOtherLicensingInformationDetected');
-            myValidator.validate();
-            myValidator.showAllErrors();
+    .sub-label {
+        margin-right: 0.5rem;
+        margin-top: 0.5rem;
+        font-weight: 400;
+        font-size: 1rem;
+    }
+
+    .sub-title {
+        width: 10rem;
+        margin-top: 0.7rem;
+        margin-right: 1rem;
+    }
+
+    .sub-input {
+        width: auto;
+    }
+
+    .spdx-checkbox {
+        margin-top: 0.75rem;
+        width: 1rem;
+        height: 1rem;
+    }
+
+    .spdx-select {
+        width: auto;
+        flex: auto;
+        margin-right: 2rem;
+    }
+
+    .spdx-radio {
+        margin-top: 0.75rem;
+        margin-right: 0.5rem;
+        width: 1rem;
+        height: 1rem;
+    }
+
+    .spdx-date {
+        width: 12rem;
+        text-align: center;
+    }
+
+    .spdx-time {
+        width: 12rem;
+        text-align: center;
+        margin-left: 0.6rem;
+    }
+
+    .label-select {
+        flex: 1;
+        text-decoration: underline;
+    }
+
+    .spdx-delete-icon-main {
+        margin-top: 0.3rem;
+        margin-right: 1rem;
+        width: 1rem;
+        height: auto;
+
+        cursor: pointer;
+    }
+
+    .spdx-delete-icon-sub {
+        margin-top: 0.3rem;
+        margin-right: 4rem;
+        width: 1rem;
+        height: auto;
+
+        cursor: pointer;
+    }
+
+    .spdx-add-button-main {
+        margin-left: 11rem;
+        margin-bottom: 2rem;
+        width: 10rem;
+    }
+
+    .spdx-add-button-sub {
+        width: 10rem;
+    }
+
+    thead {
+        cursor: pointer;
+    }
+</style>
+
+<script>
+    function enableSection(section, state) {
+        if (!state) {
+            section.find('button').attr('disabled', 'disabled');
+            section.find('select').attr('disabled', 'disabled');
+            section.find('input').attr('disabled', 'disabled');
+            section.find('textarea').attr('disabled', 'disabled');
+
+            section.find('.spdx-delete-icon-main').css('cursor', 'not-allowed');
+            section.find('.spdx-delete-icon-sub').css('cursor', 'not-allowed');
+        } else {
+            section.find('button').removeAttr('disabled');
+            section.find('select').removeAttr('disabled');
+            section.find('input').removeAttr('disabled');
+            section.find('textarea').removeAttr('disabled');
+
+            section.find('select').removeAttr('disabled');
+
+            section.find('.spdx-delete-icon-main').css('cursor', 'pointer');
+            section.find('.spdx-delete-icon-sub').css('cursor', 'pointer');
+        }
+
+        section.find('.spdx-radio').each(function () {
+            $(this).parent().parent().find('input[type=text]').attr('disabled', 'true');
+            $(this).parent().parent().find('select').attr('disabled', 'true');
+            $(this).parent().parent().find('textarea').attr('disabled', 'true');
         });
 
-        function validator() {
-            var errors = [];
-            var totalErrors = 0;
-            var formId = '';
+        // Keep the main button Add enable
+        section.find('.spdx-add-button-main').removeAttr('disabled');
+    }
 
-            const numRegex = /^[-+]?\d*$/;
-            const urlRegex = /^(?:(?:https?|ftp):\/\/)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,})))(?::\d{2,5})?(?:\/\S*)?$/;
-            const downloadUrlRegex = /(?:git|ssh|https?|ftp|git@[-\w.]+):(\/\/)?(.*?)(\.git)?(\/?|\#[-\d\w._]+?)$/;
+    function clearSection(section) {
+        section.find('input').val('');
+        section.find('textarea').val('');
 
-            function regex(val, params) {
-                if (!isNotNull(val)) {
-                    return true;
-                }
-                var regexText =  new RegExp(params);
-                if (val.match(regexText) != null) {
-                    return true;
-                } else {
-                    return false;
-                }
-            }
+        //select box: first value
+        section.find('select').not('.spdx-select').prop("selectedIndex", 0).change();
 
-            function isNotNull(val) {
-                if((val == null ) || (val == '')) {
-                    return false;
-                } else {
-                    return true;
-                }
-            }
+        //radio button: no selection
+        section.find('input[type=radio]').prop('checked', false);
+    }
 
-            function required(val, params){
-                if (value == 'checked') {
-                    return true;
-                } else {
-                    return false;
-                }
-            }
+    $('#spdxFullMode').on('click', function (e) {
+    //    e.preventDefault();
 
-            function integer(val, params) {
-                if (isNaN(val)) {
-                    return false;
-                }
+        $(this).addClass('btn-info');
+        $(this).removeClass('btn-secondary');
 
-                var x = parseFloat(val);
+        $('#spdxLiteMode').addClass('btn-secondary');
+        $('#spdxLiteMode').removeClass('btn-info');
 
-                return (x | 0) === x;
-            }
+        $('.spdx-full').css('display', '');
+    });
 
-            function max(val, params) {
-                if (val.match(numRegex) == null) {
-                    return true;
-                }
+    $('#spdxLiteMode').on('click', function (e) {
+    //    e.preventDefault();
 
-                if (isNaN(parseInt(val)) || isNaN(parseInt(params))) {
-                    return true;
-                }
+        $(this).addClass('btn-info');
+        $(this).removeClass('btn-secondary');
 
-                return parseInt(val) <= parseInt(params);
-            }
+        $('#spdxFullMode').addClass('btn-secondary');
+        $('#spdxFullMode').removeClass('btn-info');
 
-            function min(val, params) {
-                if (val.match(numRegex) == null) {
-                    return true;
-                }
+        $('.spdx-full').css('display', 'none');
+    });
 
-                if (isNaN(parseInt(val)) || isNaN(parseInt(params))) {
-                    return true;
-                }
+    // $('.spdx-add-button-main').on('click', function (e) {
+    //     e.preventDefault();
+    // })
 
-                return parseInt(val) >= parseInt(params);
-            }
+    // $('.spdx-add-button-sub').on('click', function (e) {
+    //     e.preventDefault();
+    // })
 
-            function isUrl(val, params) {
-                if (!isNotNull(val)) {
-                    return true;
-                }
-                if (val.match(urlRegex)) {
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-
-            function isDownloadUrl(val, params) {
-                if (!isNotNull(val)) {
-                    return true;
-                }
-                if (val.match(downloadUrlRegex)) {
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-
-            function getElementVal(element) {
-                if ($(element).is('input')) {       // Textbox, checkbox
-                    var type = $(element).attr('type');
-
-                    switch (type) {
-                        case 'text':
-                            return $(element).val();
-                            break;
-
-                        case 'checkbox':
-                            return $(element).is(':checked');
-                            break;
-
-                        case 'radio':
-                            var name = $(element).attr('name');
-                            var all_radio_button = document.getElementsByName(name);
-                            for (radio_button in all_radio_button) {
-                                if ($(radio_button).is(':checked')) {
-                                    return 'checked';
-                                }
-                            }
-                            return null;
-                            break;
-                        default:
-                            return undefined;
-                            break;
-                    }
-                }
-
-                if ($(element).is('select')) {      // Selectbox
-                    return $(element).val();
-                }
-
-                if ($(element).is('textarea')) {    // Textarea
-                    return $(element).val();
-                }
-
-                return undefined;
-            }
-
-            function setFormId(val) {
-                formId = val;
-            }
-
-            function validate() {
-                errors = [];
-                totalErrors = 0;
-
-                const elements = $('#' + formId).find('.needs-validation');
-                for (var i = 0; i < elements.length; i++) {
-                    const element = elements[i];
-                    const elementId = String($(element).attr('id'));
-                    const elementErrors = validateElement(element);
-
-                    errors.push({
-                        id: elementId,
-                        rules: elementErrors
-                    });
-
-                    totalErrors += elementErrors.length;
-                }
-            }
-
-            function allValid() {
-                return totalErrors == 0;
-            }
-
-            function validateElement(element) {
-                var errors = [];
-
-                if ($(element).attr('rule') === 'undefined' || $(element).attr('rule').length == 0) {
-                    return errors;
-                }
-
-                var val = getElementVal($(element));
-
-                var valdationRules = $(element).attr('rule').split('|');
-
-                valdationRules.forEach(rule => {
-                    var ruleName = rule.split(':')[0];
-                    var params = rule.split(':')[1];
-
-                    if (!eval(ruleName)(val, params)) {
-                        errors.push(ruleName);
-                    }
-                });
-                return errors;
-            }
-
-            function showAllErrors() {
-                hideAllErrors();
-
-                if (allValid()) {
-                    return;
-                }
-
-                $('#' + formId).addClass('was-validated');
-
-                errors.forEach(error => {
-                    showError(error.id, error.rules);
-                })
-            }
-
-            function showError(elementId, rules) {
-                if (rules.length == 0) {
-                    $('#' + elementId)[0].setCustomValidity('');
-                    return;
-                }
-
-                $('#' + elementId)[0].setCustomValidity('error');
-                rules.forEach(rule => {
-                    var tmp = "[rule='" + rule + "']";
-                    var tmp2 = "[rule=\"${rule}\"]";
-                    console.log(tmp);
-                    console.log(tmp2);
-                    $('#' + elementId + '-error-messages').find(tmp).addClass('d-block');
-                })
-
-
-                // $('#' + elementId)[0].setCustomValidity('error');
-                // $('#error-invalid-char').addClass('d-block');
-            }
-
-            function hideAllErrors() {
-                $('#' + formId).removeClass('needs-validation');
-                const elements = $('#' + formId).find('.needs-validation');
-
-                for (var i = 0; i < elements.length; i++) {
-                    $(elements[i])[0].setCustomValidity('');
-                    $('.invalid-feedback').css('display', 'none');
-                    $('.invalid-feedback').removeClass('d-block');
-                }
-            }
-
-            return {
-                setFormId: setFormId,
-                validate: validate,
-                allValid: allValid,
-                showAllErrors: showAllErrors,
-            }
+    function deleteMain(deleteBtn) {
+        if ($(deleteBtn).css('cursor') == 'not-allowed') {
+            return;
         }
+
+        let selectbox = $(deleteBtn).prev('select');
+
+        selectbox.find('option:selected').remove();
+
+        // If all options were deleted, disable the select box
+        if (selectbox.find('option').length == 0) {
+            selectbox.attr('disabled', 'true');
+            $(deleteBtn).css('cursor', 'not-allowed')
+        }
+
+        let newItem = selectbox.find('option:selected').val();
+
+        // Fill data of new item here
+        // alert(newItem);
+
+        if (typeof (newItem) == 'undefined') {
+            //Clear all textboxes and disable all textboxes/selectboxes/radio buttons/buttons
+
+            section = selectbox.closest('.section');
+
+            enableSection(section, false);
+
+            clearSection(section);
+        }
+    }
+
+    function deleteSub(deleteBtn) {
+        if ($(deleteBtn).css('cursor') == 'not-allowed') {
+            return;
+        }
+
+        let section = $(deleteBtn).parent().parent();
+
+        if (section.find('.spdx-delete-icon-sub').length == 1) {
+            $(deleteBtn).parent().css('display', 'none');
+        } else {
+            $(deleteBtn).parent().remove();
+        }
+    }
+
+    function addMain(addBtn) {
+        let selectbox = $(addBtn).prev().find('select');
+
+        let newIndex = parseInt(selectbox.find('option').last().val()) + 1;
+
+        if (isNaN(newIndex)) {
+            newIndex = 1;
+        }
+
+        selectbox.append('<option value="' + newIndex + '">' + newIndex + '</option>');
+
+        selectbox.val(newIndex);
+
+        section = selectbox.closest('.section');
+
+        enableSection(section, true);
+
+        clearSection(section);
+    }
+
+    function addSub(addBtn) {
+        if ($(addBtn).prev().css('display') == 'none') {
+            $(addBtn).prev().css('display', 'flex');
+        } else {
+            let newItem = $(addBtn).prev().clone();
+            newItem.find('input').val('');
+            newItem.find('*').removeAttr('disabled');
+            newItem.find('.spdx-delete-icon-sub').css('cursor', 'pointer');
+
+            if ($(addBtn).hasClass('spdx-add-button-sub-creator')) {
+                if ($('#creator-anonymous').is(':checked')) {
+                    newItem.find('.creator-type').val('Tool');
+                } else {
+                    newItem.find('.creator-type').val('Organization');
+                }
+            }
+
+
+            $(addBtn).before(newItem);
+        }
+    }
+
+    $('#creator-anonymous').on('click', function (e) {
+        let selectboxes = $(this).parent().next().find('select');
+
+        if ($(this).is(':checked')) {
+            selectboxes.each(function (index) {
+                if ($(this).val() == 'Organization' || $(this).val() == 'Person') {
+                    $(this).attr('disabled', 'true');
+                    $(this).next().attr('disabled', 'true');
+                    $(this).next().next().css('cursor', 'not-allowed');
+                }
+            });
+        } else {
+            selectboxes.each(function (index) {
+                if ($(this).val() == 'Organization' || $(this).val() == 'Person') {
+                    $(this).removeAttr('disabled');
+                    $(this).next().removeAttr('disabled');
+                    $(this).next().next().css('cursor', 'pointer');
+                }
+            });
+        }
+    });
+
+    function updateRadioButton(button) {
+        if ($(button).attr('id') == 'FilesAnalyzedFalse' && $(button).is(':checked')) {
+            $('#verificationCodeValue').attr('disabled', 'true');
+            $('#excludedFiles').attr('disabled', 'true');
+            return;
+        }
+
+        if ($(button).attr('id') == 'FilesAnalyzedTrue' && $(button).is(':checked')) {
+            $('#verificationCodeValue').removeAttr('disabled');
+            $('#excludedFiles').removeAttr('disabled');
+            return;
+        }
+
+        if (button.val() == 'NONE' || button.val() == 'NOASSERTION') {
+            button.parent().parent().find('input[type=text]').attr('disabled', 'true');
+            button.parent().parent().find('select').attr('disabled', 'true');
+            button.parent().parent().find('textarea').attr('disabled', 'true');
+        } else {
+            button.parent().parent().find('input[type=text]').removeAttr('disabled');
+            button.parent().parent().find('select').removeAttr('disabled');
+            button.parent().parent().find('textarea').removeAttr('disabled');
+        }
+    }
+
+
+    $('.spdx-radio').on('change', function () {
+        updateRadioButton($(this));
+    });
+
+    function changeCreatorType(selectbox) {
+        if ($('#creator-anonymous').is(':checked') &&
+            ($(selectbox).val() == 'Organization' || $(selectbox).val() == 'Person')) {
+            $(selectbox).attr('disabled', 'true');
+            $(selectbox).next().attr('disabled', 'true');
+            $(selectbox).next().next().css('cursor', 'not-allowed');
+        }
+    }
+
+    const referenceCategories = {
+        'SECURITY': ['cpe22Type', 'cpe23Type'],
+        'PACKAGE-MANAGER': ['maven-central', 'npm', 'nuget', 'bower', 'purl'],
+        'PERSISTENT-ID': [],
+        'OTHER': []
+    }
+
+    $('#referenceCategory').on('change', function () {
+        let category = $('#referenceCategory').val();
+        let types = referenceCategories[category];
+
+        if (types.length > 0) {
+            $("#referenceType-1").css('display', 'block');
+            $("#referenceType-1").val(types[0]);
+            $("#referenceType-2").css('display', 'none');
+
+            $("#referenceType-1").empty();
+
+            for (let i = 0; i < types.length; i++) {
+                let option = '<option>' + types[i] + '</option>';
+                $("#referenceType-1").append(option);
+            }
+        } else {
+            $("#referenceType-1").css('display', 'none');
+            $("#referenceType-2").css('display', 'block');
+            $("#referenceType-2").val('');
+        }
+    });
+
+    $('.spdx-radio').each(function () {
+        updateRadioButton($(this));
+    })
+
+    $(function () {
+        // Expand/collapse section when click on the header
+        $('thead').on('click', function () {
+            if ($(this).next().css('display') == 'none') {
+                $(this).next().css('display', '');
+            } else {
+                $(this).next().css('display', 'none');
+            }
+        })
     });
 
 </script>

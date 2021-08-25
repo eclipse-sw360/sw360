@@ -598,6 +598,14 @@ public class PortalConstants {
 
     public static final String PREDEFINED_TAGS;
 
+    //! Specialized keys for SPDX
+    public static final String SPDXDOCUMENT = "spdxDocument";
+    public static final String SPDX_DOCUMENT_CREATION_INFO = "spdxDocumentCreationInfo";
+    public static final String SPDX_PACKAGE_INFO = "spdxPackageInfo";
+    public static final String SPDX_DOCUMENT_ID = "spdxDocumentId";
+    public static final String SPDX_DOCUMENT_CREATION_INFO_ID = "spdxDocumentCreationInfoId";
+    public static final String SPDX_PACKAGE_INFO_ID = "spdxPackageInfoId";
+
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);
 

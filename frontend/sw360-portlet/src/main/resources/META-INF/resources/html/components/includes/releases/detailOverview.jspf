@@ -32,6 +32,7 @@
 		<div class="col-3 sidebar">
 			<div id="detailTab" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
 			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab"><liferay-ui:message key="summary" /></a>
+            <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-SPDX'}">active</core_rt:if>" href="#tab-SPDX" data-toggle="list" role="tab"><liferay-ui:message key="spdx.format" /></a>
 			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-linkedReleases'}">active</core_rt:if>" href="#tab-linkedReleases" data-toggle="list" role="tab"><liferay-ui:message key="linked.releases" /></a>
 			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ClearingDetails'}">active</core_rt:if>" href="#tab-ClearingDetails" data-toggle="list" role="tab"><liferay-ui:message key="clearing.details" /></a>
                 <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ECCDetails'}">active</core_rt:if>" href="#tab-ECCDetails" data-toggle="list" role="tab">
@@ -127,6 +128,14 @@
                                     <liferay-ui:message key="changes" /></a>
                                 </div>
                             </div>
+                            <div class="list-group-companion" data-belong-to="tab-SPDX">
+                                <div class="nav nav-pills justify-content-center bg-light font-weight-bold d-inline-flex" id="pills-tab" role="tablist">
+                                    <a class="nav-item nav-link active" id="spdx-tab" data-toggle="pill" href="#pills-spdx" role="tab" aria-controls="pills-spdx" aria-selected="true">
+                                    <liferay-ui:message key="spdx" /></a>
+                                    <a class="nav-item nav-link" id="spdxLite-tab" data-toggle="pill" href="#pills-spdxLite" role="tab" aria-controls="pills-spdxLite" aria-selected="false">
+                                    <liferay-ui:message key="spdx.lite" /></a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="col portlet-title text-truncate" title="<sw360:out value="${release.name}"/> <sw360:out value="${release.version}"/>">
@@ -143,6 +152,13 @@
                             <%@include file="/html/components/includes/vendors/vendorDetail.jspf" %>
 
                             <core_rt:set var="documentName"><sw360:ReleaseName release="${release}"/></core_rt:set>
+                            <core_rt:set var="tableId" value="usingProjectsTableSummary"/>
+                            <%@include file="/html/utils/includes/usingProjectsTable.jspf" %>
+                            <%@include file="/html/utils/includes/usingComponentsTable.jspf"%>
+                        </div>
+                        <div id="tab-SPDX" class="tab-pane <core_rt:if test="${selectedTab == 'tab-SPDX'}">active show</core_rt:if>">
+                            <%@include file="/html/components/includes/releases/spdx/view.jsp" %>
+                            <core_rt:set var="tableId" value="usingProjectsTableSPDX"/>
                             <%@include file="/html/utils/includes/usingProjectsTable.jspf" %>
                             <%@include file="/html/utils/includes/usingComponentsTable.jspf"%>
 		                </div>

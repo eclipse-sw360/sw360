@@ -1,36 +1,137 @@
-<table class="table three-columns" id="editPackageInformation">
+<core_rt:if test="${not spdxPackageInfo.isEmpty()}">
+    <core_rt:set var="package" value="${spdxPackageInfo.iterator().next()}" />
+</core_rt:if>
+<table class="table spdx-table three-columns" id="editPackageInformation">
     <thead>
         <tr>
-            <th colspan="3"><liferay-ui:message key="package.information" /></th>
+            <th colspan="3">3. Package Information</th>
         </tr>
     </thead>
     <tbody>
         <tr>
-            <td>
-                <div class="form-group">
-                    <label class="mandatory" for="spdxPackageName"><liferay-ui:message key="package.name" /></label>
-                    <input id="spdxPackageName"
-                    type="text" class="form-control"
-                    name="<portlet:namespace/><%=Release._Fields.SPDX%><%=Release._Fields.NAME%>"
-                    value="<sw360:out value="${component.name}"/>" />
+            <td style="display: flex">
+                <div class="form-group" style="flex: 1">
+                    <label class="mandatory" for="packageName">
+                        3.1 Package Name
+                    </label>
+                    <div style="display: flex">
+                        <input id="packageName" class="form-control needs-validation" type="text"
+                            placeholder="Enter Package Name" name="_sw360_portlet_components_PACKAGE_NAME"
+                            value="${package.name}">
+                    </div>
+                </div>
+                <div class="form-group" style="flex: 1">
+                    <label class="mandatory" for="packageSPDXId">
+                        3.2 Package SPDX Identifier
+                    </label>
+                    <div style="display: flex">
+                        <label class="sub-label">SPDXRef-</label>
+                        <input id="packageSPDXId" class="form-control needs-validation" type="text"
+                            placeholder="Enter Package SPDX Identifier" name="_sw360_portlet_components_PACKAGE_SPDX_ID"
+                            value="${package.SPDXID}">
+                    </div>
                 </div>
             </td>
-            <td>
-                <div class="form-group">
-                    <label class="mandatory" for="packageSpdxIdentifier"><liferay-ui:message key="package.spdx.identifier" /></label>
+        </tr>
+        <tr>
+            <td style="display: flex">
+                <div class="form-group" style="flex: 1">
+                    <label for="versionInfo">
+                        3.3 Package Version
+                    </label>
                     <div style="display: flex">
-                        <label style="font-weight: 400; margin-top: 0.5rem; font-size: 16px">SPDXRef-</label>
-                        <input id="packageSpdxIdentifier"
-                            class="form-control needs-validation"
-                            rule="regex:^[0-9a-zA-Z.-]+$"
-                            type="text"
-                            name="<portlet:namespace/><%=Release._Fields.SPDX%><%=SPDX._Fields.PACKAGE_SPDX_ID%>"
-                            placeholder="<liferay-ui:message key="enter.package.spdx.identifier" />"
-                            value="<sw360:out value="${release.spdx.packageSpdxId}" />" />
+                        <input id="versionInfo" class="form-control" type="text" placeholder="Enter Package Version"
+                            name="_sw360_portlet_components_VERSION_INFO" value="${package.versionInfo}">
                     </div>
-                    <div id="packageSpdxIdentifier-error-messages">
-                        <div class="invalid-feedback" rule="regex">
-                            <liferay-ui:message key="string.containing.letters.numbers.and/or.-" />
+                </div>
+                <div class="form-group" style="flex: 1">
+                    <label for="packageFileName">
+                        3.4 Package File Name
+                    </label>
+                    <div style="display: flex">
+                        <input id="packageFileName" class="form-control" type="text"
+                            placeholder="Enter Package File Name" name="_sw360_portlet_components_PACKAGE_FILE_NAME"
+                            value="${package.packageFileName}">
+                    </div>
+                </div>
+            </td>
+        </tr>
+        <tr class="spdx-full">
+            <td style="display: flex; flex-direction: column;">
+                <div class="form-group">
+                    <label>3.5 Package Supplier</label>
+                    <div style="display: flex; flex-direction: row;">
+                        <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
+                            <input class="spdx-radio" type="radio" name="_sw360_portlet_components_SUPPLIER"
+                                value="EXIST">
+                            <select id="supplierType" style="flex: 2; margin-right: 1rem;" class="form-control">
+                                <option>Person</option>
+                                <option>Organization</option>
+                            </select>
+                            <input style="flex: 6; margin-right: 1rem;" id="supplierValue"
+                                class="form-control needs-validation" rule="isDownloadUrl" type="text"
+                                name="_sw360_portlet_components_SUPPLIER_VALUE" placeholder="Enter Package Supplier"
+                                value="${package.supplier}">
+                        </div>
+                        <div style="flex: 2">
+                            <input class="spdx-radio" id="supplierNoAssertion" type="radio"
+                                name="_sw360_portlet_components_SUPPLIER" value="NOASSERTION">
+                            <label class="form-check-label radio-label" for="supplierNoAssertion">NOASSERTION</label>
+                        </div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        <tr class="spdx-full">
+            <td style="display: flex; flex-direction: column;">
+                <div class="form-group">
+                    <label>3.6 Package Originator</label>
+                    <div style="display: flex; flex-direction: row;">
+                        <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
+                            <input class="spdx-radio" type="radio" name="_sw360_portlet_components_ORIGINATOR"
+                                value="EXIST">
+                            <select id="originatorType" style="flex: 2; margin-right: 1rem;" class="form-control">
+                                <option>Person</option>
+                                <option>Organization</option>
+                            </select>
+                            <input style="flex: 6; margin-right: 1rem;" class="form-control needs-validation"
+                                rule="isDownloadUrl" type="text" name="_sw360_portlet_components_ORIGINATOR_VALUE"
+                                placeholder="Enter Package Originator" value="${package.originator}">
+                        </div>
+                        <div style="flex: 2">
+                            <input class="spdx-radio" id="originatorNoAssertion" type="radio"
+                                name="_sw360_portlet_components_ORIGINATOR" value="NOASSERTION">
+                            <label class="form-check-label radio-label" for="originatorNoAssertion">NOASSERTION</label>
+                        </div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td style="display: flex; flex-direction: column;">
+                <div class="form-group">
+                    <label class="mandatory">3.7 Package Download Location</label>
+                    <div style="display: flex; flex-direction: row;">
+                        <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
+                            <input class="spdx-radio" type="radio" id="downloadLocationExist"
+                                name="_sw360_portlet_components_DOWNLOAD_LOCATION" value="EXIST"
+                                onchange="setInputValue('downloadLocation', value);">
+                            <input style="flex: 6; margin-right: 1rem;" class="form-control needs-validation"
+                                id="downloadLocationValue" rule="isDownloadUrl" type="text"
+                                name="_sw360_portlet_components_DOWNLOAD_LOCATION_VALUE"
+                                placeholder="Enter Package Download Location" value="${package.downloadLocation}">
+                        </div>
+                        <div style="flex: 2;">
+                            <input class="spdx-radio" id="downloadLocationNone" type="radio"
+                                name="_sw360_portlet_components_DOWNLOAD_LOCATION" value="NONE"
+                                onchange="setInputValue('downloadLocation', value);">
+                            <label style="margin-right: 2rem;" class="form-check-label radio-label"
+                                for="downloadLocationNone">NONE</label>
+                            <input class="spdx-radio" id="downloadLocationNoAssertion" type="radio"
+                                name="_sw360_portlet_components_DOWNLOAD_LOCATION" value="NOASSERTION"
+                                onchange="setInputValue('downloadLocation', value);">
+                            <label class="form-check-label radio-label"
+                                for="downloadLocationNoAssertion">NOASSERTION</label>
                         </div>
                     </div>
                 </div>
@@ -39,224 +140,199 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label for="spdxPackageVersion"><liferay-ui:message key="package.version" /></label>
-                    <input id="spdxPackageVersion"
-                        type="text" class="form-control"
-                        name="<portlet:namespace/><%=Release._Fields.SPDX%><%=SPDX._Fields.PACKAGE_VERSION%>"
-                        placeholder="<liferay-ui:message key="enter.package.version" />"
-                        value="<sw360:out value="${release.spdx.spdxVersion}" />" />
+                    <label>3.8 Files Analyzed</label>
+                    <div style="display: flex; flex-direction: row;">
+                        <div>
+                            <input class="spdx-radio" id="FilesAnalyzedTrue" type="radio"
+                                name="_sw360_portlet_components_FILES_ANALYZED" checked value="TRUE">
+                            <label style="margin-right: 2rem;" class="form-check-label radio-label"
+                                for="FilesAnalyzedTrue">TRUE</label>
+                            <input class="spdx-radio" id="FilesAnalyzedFalse" type="radio"
+                                name="_sw360_portlet_components_FILES_ANALYZED" value="FALSE">
+                            <label class="form-check-label radio-label" for="FilesAnalyzedFalse">FALSE</label>
+                        </div>
+                    </div>
                 </div>
             </td>
+        </tr>
+        <tr class="spdx-full">
             <td>
                 <div class="form-group">
-                    <label for="spdxPackageFileName"><liferay-ui:message key="package.file.name" /></label>
-                    <input id="spdxPackageFileName"
-                        type="text" class="form-control"
-                        name="<portlet:namespace/><%=Release._Fields.SPDX%><%=SPDX._Fields.PACKAGE_FILENAME%>"
-                        placeholder="<liferay-ui:message key="enter.package.file.name" />"
-                        value="<sw360:out value="${release.spdx.packageFilename}" />" />
-                </div>
-            </td>
-        </tr>
-        <tr>
-            <td style="display: flex; flex-direction: column;">
-                <label class="mandatory"><liferay-ui:message key="package.download.location" /></label>
-                <div style="display: flex; flex-direction: row; width: 50rem;">
-                    <div style="display: inline-flex;">
-                        <input style="margin-top: 12px;" id="spdxPackageDownloadLocationExist"
-                            type="radio"
-                            name="<portlet:namespace/><%=SPDX._Fields.PACKAGE_DOWNLOAD%><%=PackageDownload._Fields.TYPE%>"
-                            value="exist"
-                            onchange="setInputValue('spdxPackageDownloadLocation', value);" />
-                        <input style="margin-left: 4px; width: 30rem;" id="spdxPackageDownloadLocation"
-                            class="form-control needs-validation"
-                            rule="isDownloadUrl"
-                            type="text" required=""
-                            name="<portlet:namespace/><%=SPDX._Fields.PACKAGE_DOWNLOAD%><%=PackageDownload._Fields.VALUE%>"
-                            placeholder="<liferay-ui:message key="enter.url" />"
-                            value="<sw360:out value="${release.spdx.packageDownload.value}" />" />
-                    </div>
-                    <div style="margin-left: 2rem;">
-                        <input style="margin-top: 12px;" id="spdxPackageDownloadLocationNone"
-                            type="radio"
-                            name="<portlet:namespace/><%=SPDX._Fields.PACKAGE_DOWNLOAD%><%=PackageDownload._Fields.TYPE%>"
-                            value="none"
-                            onchange="setInputValue('spdxPackageDownloadLocation', value);"
-                        />
-                        <label class="form-check-label radio-label" for="spdxPackageDownloadLocationNone"><liferay-ui:message key="none" /></label>
-                    </div>
-                    <div style="margin-left: 2rem;">
-                        <input style="margin-top: 12px;" id="spdxPackageDownloadLocationNoassertion"
-                            type="radio"
-                            name="<portlet:namespace/><%=SPDX._Fields.PACKAGE_DOWNLOAD%><%=PackageDownload._Fields.TYPE%>"
-                            value="noassertion"
-                            onchange="setInputValue('spdxPackageDownloadLocation', value);"
-                        />
-                        <label class="form-check-label radio-label" for="spdxPackageDownloadLocationNoassertion"><liferay-ui:message key="noassertion" /></label>
-                    </div>
-                </div>
-                <div id="spdxPackageDownloadLocation-error-messages">
-                    <div class="invalid-feedback" rule="isDownloadUrl">
-                        <liferay-ui:message key="formatting.must.be.an.download.url" />
-                    </div>
-                </div>
-            </td>
-        </tr>
-        <tr>
-            <td style="display: flex; flex-direction: column;">
-                <label for="spdxFileAnalyzedTrue"><liferay-ui:message key="file.analyzed" /></label>
-                <div style="display: flex; flex-direction: row; width: 50rem;">
+                    <label for="verificationCodeValue">3.9 Package Verification Code</label>
                     <div>
-                        <input style="margin-top: 12px;" id="spdxFileAnalyzedTrue"
-                            type="radio"
-                            name="<portlet:namespace/><%=Release._Fields.SPDX%><%=SPDX._Fields.FILE_ANALYZED%>"
-                            value="true"
-                            <core_rt:if test="${release.spdx.fileAnalyzed == 'true'}"> checked="checked" </core_rt:if>
-                        />
-                        <label class="form-check-label radio-label" for="spdxFileAnalyzedTrue"><liferay-ui:message key="true" /></label>
+                        <input style="margin-bottom: 0.75rem;" class="form-control" id="verificationCodeValue"
+                            name="_sw360_portlet_components_VERIFICATION_CODE_VALUE"
+                            placeholder="Enter Verification Code Value"></input>
+                        <textarea class="form-control" id="excludedFiles" rows="5"
+                            name="_sw360_portlet_components_EXCLUDED_FILES"
+                            placeholder="Enter Excluded Files"></textarea>
                     </div>
-                    <div style="margin-left: 2rem;">
-                        <input style="margin-top: 12px;" id="spdxFileAnalyzedFalse"
-                            type="radio"
-                            name="<portlet:namespace/><%=Release._Fields.SPDX%><%=SPDX._Fields.FILE_ANALYZED%>"
-                            value="false"
-                            <core_rt:if test="${release.spdx.fileAnalyzed == 'false'}"> checked="checked" </core_rt:if>
-                        />
-                        <label class="form-check-label radio-label" for="spdxFileAnalyzedFalse"><liferay-ui:message key="false" /></label>
+                </div>
+            </td>
+        </tr>
+        <tr class="spdx-full">
+            <td>
+                <div class="form-group">
+                    <label>3.10 Package Checksum</label>
+                    <div style="display: flex;">
+                        <label class="sub-title">Checksum</label>
+                        <div style="display: flex; flex-direction: column; flex: 7">
+                            <div style="display: flex; margin-bottom: 0.75rem;">
+                                <input style="flex: 2; margin-right: 1rem;" type="text" class="form-control"
+                                    placeholder="Enter Algorithm">
+                                <input style="flex: 6; margin-right: 2rem;" type="text" class="form-control"
+                                    placeholder="Enter Value">
+                                <svg class="disabled lexicon-icon spdx-delete-icon-sub"
+                                    name="delete-spdxCreatorType-Person" data-row-id="" onclick="deleteSub(this);"
+                                    viewBox="0 0 512 512">
+                                    <title><liferay-ui:message key="delete" /></title>
+                                    <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
+                                </svg>
+                            </div>
+                            <div style="display: flex; margin-bottom: 0.75rem;">
+                                <input style="flex: 2; margin-right: 1rem;" type="text" class="form-control"
+                                    placeholder="Enter Algorithm">
+                                <input style="flex: 6; margin-right: 2rem;" type="text" class="form-control"
+                                    placeholder="Enter Value">
+                                <svg class="disabled lexicon-icon spdx-delete-icon-sub"
+                                    name="delete-spdxCreatorType-Person" data-row-id="" onclick="deleteSub(this);"
+                                    viewBox="0 0 512 512">
+                                    <title><liferay-ui:message key="delete" /></title>
+                                    <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
+                                </svg>
+                            </div>
+                            <button class="spdx-add-button-sub" onclick="addSub(this)">Add new algorithm</button>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="form-group">
+                    <label class="mandatory">3.11 Package Homepage</label>
+                    <div style="display: flex; flex-direction: row;">
+                        <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
+                            <input class="spdx-radio" id="packageHomepageExist" type="radio"
+                                name="_sw360_portlet_components_PACKAGE_HOMEPAGE" value="EXIST"
+                                onchange="setInputValue('packageHomepage', value);">
+                            <input style="flex: 6; margin-right: 1rem;" id="packageHomepageValue"
+                                class="form-control needs-validation" rule="isDownloadUrl" type="text"
+                                name="_sw360_portlet_components_PACKAGE_HOMEPAGE_VALUE"
+                                placeholder="Enter Package Homepage" value="${package.homepage}">
+                        </div>
+                        <div style="flex: 2;">
+                            <input class="spdx-radio" id="packageHomepageNone" type="radio"
+                                name="_sw360_portlet_components_PACKAGE_HOMEPAGE" value="NONE"
+                                onchange="setInputValue('packageHomepage', value);">
+                            <label style="margin-right: 2rem;" class="form-check-label radio-label"
+                                for="packageHomepageNone">NONE</label>
+                            <input class="spdx-radio" id="packageHomepageNoAssertion" type="radio"
+                                name="_sw360_portlet_components_PACKAGE_HOMEPAGE" value="NOASSERTION"
+                                onchange="setInputValue('packageHomepage', value);">
+                            <label class="form-check-label radio-label"
+                                for="packageHomepageNoAssertion">NOASSERTION</label>
+                        </div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        <tr class="spdx-full">
+            <td>
+                <div class="form-group">
+                    <label for="sourceInfo">3.12 Source Information</label>
+                    <textarea class="form-control" id="sourceInfo" rows="5" name="_sw360_portlet_components_SOURCE_INFO"
+                        placeholder="Enter Source Information"> ${package.sourceInfo}</textarea>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="form-group">
+                    <label class="mandatory">3.13 Concluded License</label>
+                    <div style="display: flex; flex-direction: row;">
+                        <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
+                            <input class="spdx-radio" id="licenseConcludedExist" type="radio"
+                                name="_sw360_portlet_components_LICENSE_CONCLUDED" value="EXIST"
+                                onchange="setInputValue('licenseConcluded', value);">
+                            <input style="flex: 6; margin-right: 1rem;" class="form-control needs-validation"
+                                id="licenseConcludedValue" type="text"
+                                name="_sw360_portlet_components_LICENSE_CONCLUDED_VALUE"
+                                placeholder="Enter Concluded License" value="${package.licenseConcluded}">
+                        </div>
+                        <div style="flex: 2;">
+                            <input class="spdx-radio" id="licenseConcludedNone" type="radio"
+                                name="_sw360_portlet_components_LICENSE_CONCLUDED" value="NONE"
+                                onchange="setInputValue('licenseConcluded', value);">
+                            <label style="margin-right: 2rem;" class="form-check-label radio-label"
+                                for="licenseConcludedNone">NONE</label>
+                            <input class="spdx-radio" id="licenseConcludedNoAssertion" type="radio"
+                                name="_sw360_portlet_components_LICENSE_CONCLUDED" value="NOASSERTION"
+                                onchange="setInputValue('licenseConcluded', value);">
+                            <label class="form-check-label radio-label"
+                                for="licenseConcludedNoAssertion">NOASSERTION</label>
+                        </div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        <tr class="spdx-full">
+            <td>
+                <div class="form-group">
+                    <label class="mandatory">3.14 All Licenses Information from Files</label>
+                    <div style="display: flex; flex-direction: row;">
+                        <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
+                            <input class="spdx-radio" id="licenseInfoFromFilesExist" type="radio"
+                                name="_sw360_portlet_components_LICENSE_INFO_FROM_FILES" value="EXIST"
+                                onchange="setInputValue('licenseInfoFromFiles', value);">
+                            <textarea style="flex: 6; margin-right: 1rem;" id="licenseInfoFromFilesValue" rows="5"
+                                class="form-control needs-validation" type="text"
+                                name="_sw360_portlet_components_LICENSE_INFO_FROM_FILES_VALUE"
+                                placeholder="Enter All Licenses Information from Files"><sw360:out value="${package.licenseInfoFromFiles.toString()}" hashSet="true"/></textarea>
+                        </div>
+                        <div style="flex: 2;">
+                            <input class="spdx-radio" id="licenseInfoFromFilesNone" type="radio"
+                                name="_sw360_portlet_components_LICENSE_INFO_FROM_FILES" value="NONE"
+                                onchange="setInputValue('licenseInfoFromFiles', value);">
+                            <label style="margin-right: 2rem;" class="form-check-label radio-label"
+                                for="licenseInfoFromFilesNone">NONE</label>
+                            <input class="spdx-radio" id="licenseInfoFromFilesNoAssertion" type="radio"
+                                name="_sw360_portlet_components_LICENSE_INFO_FROM_FILES" value="NOASSERTION"
+                                onchange="setInputValue('licenseInfoFromFiles', value);">
+                            <label class="form-check-label radio-label"
+                                for="licenseInfoFromFilesNoAssertion">NOASSERTION</label>
+                        </div>
                     </div>
                 </div>
             </td>
         </tr>
         <tr>
-            <td style="display: flex; flex-direction: column;">
-                <label class="mandatory"><liferay-ui:message key="package.homepage" /></label>
-                <div style="display: flex; flex-direction: row; width: 50rem;">
-                    <div style="display: inline-flex;">
-                        <input style="margin-top: 12px;" id="spdxPackageHomepageExist"
-                            type="radio"
-                            name="<portlet:namespace/><%=SPDX._Fields.PACKAGE_HOME_PAGE%><%=PackageHomePage._Fields.TYPE%>"
-                            value="exist"
-                            onchange="setInputValue('spdxPackageHomepage', value);"
-                        />
-                        <input style="margin-left: 4px; width: 30rem;" id="spdxPackageHomepage"
-                            class="form-control needs-validation"
-                            rule="isUrl"
-                            type="text" required=""
-                            name="<portlet:namespace/><%=SPDX._Fields.PACKAGE_HOME_PAGE%><%=PackageHomePage._Fields.VALUE%>"
-                            placeholder="<liferay-ui:message key="enter.url" />"
-                            value="<sw360:out value="${release.spdx.packageHomePage.value}" />" />
-                    </div>
-                    <div style="margin-left: 2rem;">
-                        <input style="margin-top: 12px;" id="spdxPackageHomepageNone"
-                            type="radio"
-                            name="<portlet:namespace/><%=SPDX._Fields.PACKAGE_HOME_PAGE%><%=PackageHomePage._Fields.TYPE%>"
-                            value="none"
-                            onchange="setInputValue('spdxPackageHomepage', value);"
-                        />
-                        <label class="form-check-label radio-label" for="spdxPackageHomepageNone"><liferay-ui:message key="none" /></label>
-                    </div>
-                    <div style="margin-left: 2rem;">
-                        <input style="margin-top: 12px;" id="spdxPackageHomepageNoassertion"
-                        type="radio"
-                        name="<portlet:namespace/><%=SPDX._Fields.PACKAGE_HOME_PAGE%><%=PackageHomePage._Fields.TYPE%>"
-                        value="noassertion"
-                        onchange="setInputValue('spdxPackageHomepage', value);" />
-                        <label class="form-check-label radio-label" for="spdxPackageHomepageNoassertion"><liferay-ui:message key="noassertion" /></label>
-                    </div>
-                </div>
-                <div id="spdxPackageHomepage-error-messages">
-                    <div class="invalid-feedback" rule="isUrl">
-                        <liferay-ui:message key="formatting.must.be.an.URI" />
-                    </div>
-                </div>
-            </td>
-        </tr>
-        <tr>
-            <td style="display: flex; flex-direction: column;">
-                <label class="mandatory"><liferay-ui:message key="concluded.license" /></label>
-                <div style="display: flex; flex-direction: row; width: 50rem;">
-                    <div style="display: inline-flex;">
-                        <input style="margin-top: 12px;" id="spdxConcludedLicenseExist"
-                            type="radio"
-                            name="<portlet:namespace/><%=SPDX._Fields.CONCLUDED_LICENSE%><%=ConcludedLicense._Fields.TYPE%>"
-                            value="exist"
-                            onchange="setInputValue('spdxConcludedLicense', value);"
-                        />
-                        <input style="margin-left: 4px; width: 30rem;" id="spdxConcludedLicense"
-                            class="form-control needs-validation"
-                            rule="regex:^[0-9a-zA-Z-.+]+$"
-                            type="text" required=""
-                            name="<portlet:namespace/><%=SPDX._Fields.CONCLUDED_LICENSE%><%=ConcludedLicense._Fields.VALUE%>"
-                            placeholder="<liferay-ui:message key="enter.concluded.license" />"
-                            value="<sw360:out value="${release.spdx.concludedLicense.value}" />" />
-                    </div>
-                    <div style="margin-left: 2rem;">
-                        <input style="margin-top: 12px;" id="spdxConcludedLicenseNone"
-                            type="radio"
-                            name="<portlet:namespace/><%=SPDX._Fields.CONCLUDED_LICENSE%><%=ConcludedLicense._Fields.TYPE%>"
-                            value="none"
-                            onchange="setInputValue('spdxConcludedLicense', value);"
-                        />
-                        <label class="form-check-label radio-label" for="spdxConcludedLicenseNone"><liferay-ui:message key="none" /></label>
-                    </div>
-                    <div style="margin-left: 2rem;">
-                        <input style="margin-top: 12px;" id="spdxConcludedLicenseNoassertion"
-                            type="radio"
-                            name="<portlet:namespace/><%=SPDX._Fields.CONCLUDED_LICENSE%><%=ConcludedLicense._Fields.TYPE%>"
-                            value="noassertion"
-                            onchange="setInputValue('spdxConcludedLicense', value);"
-                        />
-                        <label class="form-check-label radio-label" for="spdxConcludedLicenseNoassertion"><liferay-ui:message key="noassertion" /></label>
-                    </div>
-                </div>
-                <div id="spdxConcludedLicense-error-messages">
-                    <div class="invalid-feedback" rule="regex">
-                        <liferay-ui:message key="string.containing.letters.numbers.and/or.-" />
-                    </div>
-                </div>
-            </td>
-        </tr>
-        <tr>
-            <td style="display: flex; flex-direction: column;">
-                <label class="mandatory"><liferay-ui:message key="declared.license" /></label>
-                <div style="display: flex; flex-direction: row; width: 50rem;">
-                    <div style="display: inline-flex;">
-                        <input style="margin-top: 12px;" id="spdxDeclaredLicenseExist"
-                            type="radio"
-                            name="<portlet:namespace/><%=SPDX._Fields.DECLARED_LICENSE%><%=DeclaredLicense._Fields.TYPE%>"
-                            value="exist"
-                            onchange="setInputValue('spdxDeclaredLicense', value);"
-                        />
-                        <input style="margin-left: 4px; width: 30rem;" id="spdxDeclaredLicense"
-                            class="form-control needs-validation"
-                            rule="regex:^[0-9a-zA-Z-.+]+$"
-                            type="text" required=""
-                            name="<portlet:namespace/><%=SPDX._Fields.DECLARED_LICENSE%><%=DeclaredLicense._Fields.VALUE%>"
-                            placeholder="<liferay-ui:message key="enter.declared.license" />"
-                            value="<sw360:out value="${release.spdx.declaredLicense.value}" />" />
-                    </div>
-                    <div style="margin-left: 2rem;">
-                        <input style="margin-top: 12px;" id="spdxDeclaredLicenseNone"
-                            type="radio"
-                            name="<portlet:namespace/><%=SPDX._Fields.DECLARED_LICENSE%><%=DeclaredLicense._Fields.TYPE%>"
-                            value="none"
-                            onchange="setInputValue('spdxDeclaredLicense', value);"
-                        />
-                        <label class="form-check-label radio-label" for="spdxDeclaredLicenseNone"><liferay-ui:message key="none" /></label>
-                    </div>
-                    <div style="margin-left: 2rem;">
-                        <input style="margin-top: 12px;" id="spdxDeclaredLicenseNoassertion"
-                            type="radio"
-                            name="<portlet:namespace/><%=SPDX._Fields.DECLARED_LICENSE%><%=DeclaredLicense._Fields.TYPE%>"
-                            value="noassertion"
-                            onchange="setInputValue('spdxDeclaredLicense', value);"
-                        />
-                        <label class="form-check-label radio-label" for="spdxDeclaredLicenseNoassertion"><liferay-ui:message key="noassertion" /></label>
-                    </div>
-                </div>
-                <div id="spdxDeclaredLicense-error-messages">
-                    <div class="invalid-feedback" rule="regex">
-                        <liferay-ui:message key="string.containing.letters.numbers.and/or.-" />
+            <td>
+                <div class="form-group">
+                    <label class="mandatory">3.15 Declared License</label>
+                    <div style="display: flex; flex-direction: row;">
+                        <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
+                            <input class="spdx-radio" id="licenseDeclaredExist" type="radio"
+                                name="_sw360_portlet_components_DECLARED_LICENSE" value="EXIST"
+                                onchange="setInputValue('licenseDeclared', value);">
+                            <input style="flex: 6; margin-right: 1rem;" id="licenseDeclaredValue"
+                                class="form-control needs-validation" type="text"
+                                name="_sw360_portlet_components_DECLARED_LICENSE_VALUE"
+                                placeholder="Enter Declared License" value="${package.licenseDeclared}">
+                        </div>
+                        <div style="flex: 2;">
+                            <input class="spdx-radio" id="licenseDeclaredNone" type="radio"
+                                name="_sw360_portlet_components_DECLARED_LICENSE" value="NONE"
+                                onchange="setInputValue('licenseDeclared', value);">
+                            <label style="margin-right: 2rem;" class="form-check-label radio-label"
+                                for="licenseDeclaredNone">NONE</label>
+                            <input class="spdx-radio" id="licenseDeclaredNoAssertion" type="radio"
+                                name="_sw360_portlet_components_DECLARED_LICENSE" value="NOASSERTION"
+                                onchange="setInputValue('licenseDeclared', value);">
+                            <label class="form-check-label radio-label"
+                                for="licenseDeclaredNoAssertion">NOASSERTION</label>
+                        </div>
                     </div>
                 </div>
             </td>
@@ -264,57 +340,127 @@
         <tr>
             <td colspan="3">
                 <div class="form-group">
-                    <label for="spdxPackageLicenseComments"><liferay-ui:message key="comments.on.license" /></label>
-                    <textarea class="form-control" id="spdxPackageLicenseComments" rows="4"
-                        name="<portlet:namespace/><%=Release._Fields.SPDX%><%=SPDX._Fields.PACKAGE_LICENSE_COMMENTS%>"
-                        placeholder="<liferay-ui:message key="enter.comments" />"><sw360:out value="${release.spdx.packageLicenseComments}"/></textarea>
+                    <label for="licenseComments">3.16 Comments On License</label>
+                    <textarea class="form-control" id="licenseComments" rows="5"
+                        name="_sw360_portlet_components_LICENSE_COMMENTS"
+                        placeholder="Enter Comments On License">${package.licenseComments}</textarea>
                 </div>
             </td>
         </tr>
         <tr>
-            <td style="display: flex; flex-direction: column;">
-                <label class="mandatory"><liferay-ui:message key="copyright.text" /></label>
-                <div style="display: flex; flex-direction: row; width: 60rem;">
-                    <div style="display: inline-flex;">
-                        <input style="margin-top: 12px;" id="spdxPackageCopyrightExist"
-                            type="radio"
-                            name="<portlet:namespace/><%=SPDX._Fields.COPYRIGHT%><%=Copyright._Fields.TYPE%>"
-                            value="exist"
-                            onchange="setInputValue('spdxPackageCopyright', value);"
-                        />
-                        <textarea style="margin-left: 4px; width: 40rem" id="spdxPackageCopyright"
-                            required="" class="form-control" rows="4"
-                            name="<portlet:namespace/><%=SPDX._Fields.COPYRIGHT%><%=Copyright._Fields.VALUE%>"
-                            placeholder="<liferay-ui:message key="enter.copyright" />"><sw360:out value="${release.spdx.copyright.value}"/></textarea>
+            <td>
+                <div class="form-group">
+                    <label class="mandatory">3.17 Copyright Text</label>
+                    <div style="display: flex; flex-direction: row;">
+                        <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
+                            <input class="spdx-radio" id="copyrightTextExist" type="radio"
+                                name="_sw360_portlet_components_COPYRIGHT_TEXT" value="EXIST"
+                                onchange="setInputValue('copyrightText', value);">
+                            <textarea style="flex: 6; margin-right: 1rem;" id="copyrightTextValue" rows="5"
+                                class="form-control needs-validation" type="text"
+                                name="_sw360_portlet_components_COPYRIGHT_TEXT_VALUE"
+                                placeholder="Enter Copyright Text">${package.copyrightText}</textarea>
+                        </div>
+                        <div style="flex: 2;">
+                            <input class="spdx-radio" id="copyrightTextNone" type="radio"
+                                name="_sw360_portlet_components_COPYRIGHT_TEXT" value="NONE"
+                                onchange="setInputValue('copyrightText', value);">
+                            <label style="margin-right: 2rem;" class="form-check-label radio-label"
+                                for="copyrightTextNone">NONE</label>
+                            <input class="spdx-radio" id="copyrightTextNoAssertion" type="radio"
+                                name="_sw360_portlet_components_COPYRIGHT_TEXT" value="NOASSERTION"
+                                onchange="setInputValue('copyrightText', value);">
+                            <label class="form-check-label radio-label"
+                                for="copyrightTextNoAssertion">NOASSERTION</label>
+                        </div>
                     </div>
-                    <div style="margin-left: 2rem;">
-                        <input style="margin-top: 12px;" id="spdxPackageCopyrightNone"
-                            type="radio"
-                            name="<portlet:namespace/><%=SPDX._Fields.COPYRIGHT%><%=Copyright._Fields.TYPE%>"
-                            value="none"
-                            onchange="setInputValue('spdxPackageCopyright', value);"
-                        />
-                        <label class="form-check-label radio-label" for="spdxPackageCopyrightNone"><liferay-ui:message key="none" /></label>
-                    </div>
-                    <div style="margin-left: 2rem;">
-                        <input style="margin-top: 12px;" id="spdxPackageCopyrightNoassertion"
-                            type="radio"
-                            name="<portlet:namespace/><%=SPDX._Fields.COPYRIGHT%><%=Copyright._Fields.TYPE%>"
-                            value="noassertion"
-                            onchange="setInputValue('spdxPackageCopyright', value);"
-                        />
-                        <label class="form-check-label radio-label" for="spdxPackageCopyrightNoassertion"><liferay-ui:message key="noassertion" /></label>
-                    </div>
+                </div>
+            </td>
+        </tr>
+        <tr class="spdx-full">
+            <td>
+                <div class="form-group">
+                    <label for="summary">3.18 Package Summary Description</label>
+                    <textarea class="form-control" id="summary" rows="5"
+                        name="_sw360_portlet_components_PACKAGE_SUMMARY"
+                        placeholder="Enter Package Summary Description">${package.summary}</textarea>
+                </div>
+            </td>
+        </tr>
+        <tr class="spdx-full">
+            <td>
+                <div class="form-group">
+                    <label for="description">3.19 Package Detailed Description</label>
+                    <textarea class="form-control" id="description" rows="5"
+                        name="_sw360_portlet_components_PACKAGE_DESCRIPTION"
+                        placeholder="Enter Package Detailed Description">${package.description}</textarea>
                 </div>
             </td>
         </tr>
         <tr>
             <td colspan="3">
                 <div class="form-group">
-                    <label for="spdxPackageComment"><liferay-ui:message key="package.comment" /></label>
-                    <textarea class="form-control" id="spdxPackageComment" rows="4"
-                    name="<portlet:namespace/><%=Release._Fields.SPDX%><%=SPDX._Fields.PACKAGE_COMMENT%>"
-                    placeholder="<liferay-ui:message key="enter.comments" />"><sw360:out value="${release.spdx.packageComment}"/></textarea>
+                    <label for="spdxPackageComment">3.20 Package Comment</label>
+                    <textarea class="form-control" id="spdxPackageComment" rows="5"
+                        name="_sw360_portlet_components_PACKAGE_COMMENT"
+                        placeholder="Enter Package Comment">${package.packageComment}</textarea>
+                </div>
+            </td>
+        </tr>
+        <tr class="spdx-full">
+            <td>
+                <div class="form-group section">
+                    <label>
+                        3.21 External References
+                    </label>
+                    <div style="display: flex; flex-direction: column; padding-left: 1rem;">
+                        <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
+                            <label style="text-decoration: underline;" class="sub-title">Select Reference</label>
+                            <select type="text" class="form-control spdx-select">
+                            </select>
+                            <svg class="disabled lexicon-icon spdx-delete-icon-main" data-row-id=""
+                                onclick="deleteMain(this);" viewBox="0 0 512 512">
+                                <title><liferay-ui:message key="delete" /></title>
+                                <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
+                            </svg>
+                        </div>
+                        <button class="spdx-add-button-main" onclick="addMain(this)">Add new Reference</button>
+                        <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
+                            <label class="sub-title">Category</label>
+                            <select style="width: auto; flex: auto;" id="referenceCategory" type="text"
+                                class="form-control" placeholder="Enter Category"
+                                name="_sw360_portlet_components_REFERENCE_CATEGORY">
+                                <option>SECURITY</option>
+                                <option>PACKAGE-MANAGER</option>
+                                <option>PERSISTENT-ID</option>
+                                <option>OTHER</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
+                            <label class="sub-title">Type</label>
+                            <select style="width: auto; flex: auto;" id="referenceType-1" type="text"
+                                class="form-control" placeholder="Enter Type"
+                                name="_sw360_portlet_components_REFERENCE_TYPE-1">
+                                <option>cpe22Type</option>
+                                <option>cpe23Type</option>
+                            </select>
+                            <input style="width: auto; flex: auto; display: none;" id="referenceType-2" type="text"
+                                class="form-control" placeholder="Enter Type"
+                                name="_sw360_portlet_components_REFERENCE_TYPE-2">
+                            </select>
+                        </div>
+                        <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
+                            <label class="sub-title">Locator</label>
+                            <input style="width: auto; flex: auto;" type="text" class="form-control"
+                                placeholder="Enter Locator" name="_sw360_portlet_components_REFERENCE_LOCATOR">
+                        </div>
+                        <div style="display: flex; flex-direction: row;">
+                            <label class="sub-title">3.22 Comment</label>
+                            <textarea style="width: auto; flex: auto;" type="text" rows="5" class="form-control"
+                                placeholder="Enter Comment"
+                                name="_sw360_portlet_components_REFERENCE_COMMENT"></textarea>
+                        </div>
+                    </div>
                 </div>
             </td>
         </tr>
@@ -323,38 +469,60 @@
 
 <script>
 
-    setInputValue('spdxPackageDownloadLocation', "${release.spdx.packageDownload.type}");
-    setInputValue('spdxPackageHomepage', "${release.spdx.packageDownload.type}");
-    setInputValue('spdxConcludedLicense', "${release.spdx.concludedLicense.type}");
-    setInputValue('spdxDeclaredLicense', "${release.spdx.declaredLicense.type}");
-    setInputValue('spdxPackageCopyright', "${release.spdx.copyright.type}");
+    setInputValue('downloadLocation', "${package.downloadLocation}");
+    setInputValue('packageHomepage', "${package.homepage}");
+    setInputValue('licenseConcluded', "${package.licenseConcluded}");
+    setInputValue('licenseDeclared', "${package.licenseDeclared}");
+    setInputValue('copyrightText', "${package.copyrightText}");
 
     function setInputValue(id, type) {
-        switch(type) {
-            case 'exist':
-                document.getElementById(id + 'Exist').checked = 'true';
-                setEnabled(id);
+        switch (type) {
+            case '':
+                setDisabled(id);
                 break;
-            case 'none':
+            case 'NONE':
                 document.getElementById(id + 'None').checked = 'true';
                 setDisabled(id);
                 break;
-            case 'noassertion':
-                document.getElementById(id + 'Noassertion').checked = 'true';
+            case 'NOASSERTION':
+                document.getElementById(id + 'NoAssertion').checked = 'true';
                 setDisabled(id);
                 break;
             default:
-                setDisabled(id);
+                document.getElementById(id + 'Exist').checked = 'true';
+                setEnabled(id);
                 break;
         }
     }
 
-    function setDisabled(id){
-        $('#' + id).prop('disabled', true);
+    function setDisabled(id) {
+        $('#' + id + 'Value').prop('disabled', true);
     }
 
-    function setEnabled(id){
-        $('#' + id).prop('disabled', false);
+    function setEnabled(id) {
+        $('#' + id + 'Value').prop('disabled', false);
     }
+
+    generateExternalRefsTable('1');
+    function generateExternalRefsTable(index) {
+        fillValueToId("externalReferencesCategory", "");
+        fillValueToId("externalReferencesType", "");
+        fillValueToId("externalReferencesLocator", "");
+        fillValueToId("externalReferencesComment", "");
+        <core_rt:if test="${not package.externalRefs.isEmpty()}">
+            var i = 0;
+            <core_rt:forEach items="${package.externalRefs}" var="externalRefsData" varStatus="loop">
+                i++;
+                if (i == index) {
+                    fillValueToId("externalReferencesCategory", "${externalRefsData.referenceCategory}");
+                    fillValueToId("externalReferencesType", "${externalRefsData.referenceType}");
+                    fillValueToId("externalReferencesLocator", "${externalRefsData.referenceLocator}");
+                    fillValueToId("externalReferencesComment", "${externalRefsData.comment}");
+                }
+            </core_rt:forEach>
+        </core_rt:if>
+    }
+    generateSelecterOption('externalReferences', "${package.externalRefs.size()}");
+    autoHideString('packageSPDXId', 'SPDXRef-');
 
 </script>

@@ -1,30 +1,26 @@
-<core_rt:set var="creatorDataPerson" value="${release.spdx.spdxCreatedBy.person.entrySet()}"/>
-<core_rt:set var="creatorDataOrganization" value="${release.spdx.spdxCreatedBy.organization.entrySet()}"/>
-<core_rt:set var="creatorDataTool" value="${release.spdx.spdxCreatedBy.tool.entrySet()}"/>
-
-<table class="table three-columns" id="editDocumentCreationInformation">
+<core_rt:set var="created" value="${spdxDocumentCreationInfo.created}" />
+<core_rt:set var="creator" value="${spdxDocumentCreationInfo.creator}" />
+<core_rt:set var="externalDocumentRefs" value="${spdxDocumentCreationInfo.externalDocumentRefs}" />
+<table class="table spdx-table three-columns" id="editDocumentCreationInformation">
     <thead>
         <tr>
             <th colspan="3">
-                <liferay-ui:message key="document.creation.information" />
+                <liferay-ui:message key="2.document.creation.information" />
             </th>
         </tr>
     </thead>
     <tbody>
         <tr>
-            <td>
-                <div class="form-group">
+            <td style="display: flex">
+                <div class="form-group" style="flex: 1">
                     <label class="mandatory" for="spdxVersion">
-                        <liferay-ui:message key="spdx.version" />
+                        2.1 SPDX Version
                     </label>
                     <div style="display: flex">
-                        <label style="font-weight: 400; margin-top: 0.5rem; font-size: 16px">SPDX-</label>
-                        <input style="width: auto;" id="spdxVersion" class="form-control needs-validation"
-                            rule="regex:^[0-9]+\.[0-9]+$"
-                            name="<portlet:namespace/><%=Release._Fields.SPDX%><%=SPDX._Fields.SPDX_VERSION%>"
-                            type="text" class="form-control"
-                            placeholder="<liferay-ui:message key="enter.spdx.version" />"
-                            value="<sw360:out value="${release.spdx.spdxVersion}" />" />
+                        <label class="sub-label">SPDX-</label>
+                        <input id="spdxVersion" class="form-control needs-validation" rule="regex:^[0-9]+\.[0-9]+$"
+                            name="_sw360_portlet_components_SPDX_VERSION" type="text" placeholder="Enter SPDX Version"
+                            value="${spdxDocumentCreationInfo.spdxVersion}">
                     </div>
                     <div id="spdxVersion-error-messages">
                         <div class="invalid-feedback" rule="regex">
@@ -32,43 +28,34 @@
                         </div>
                     </div>
                 </div>
-            </td>
-            <td>
-                <div class="form-group">
+                <div class="form-group" style="flex: 1">
                     <label class="mandatory" for="dataLicense">
-                        <liferay-ui:message key="data.license" />
+                        2.2 Data License
                     </label>
-                    <input id="dataLicense" class="form-control needs-validation"
-                        rule="regex:^[0-9a-zA-Z.-]+$"
-                        name="<portlet:namespace/><%=Release._Fields.SPDX%><%=SPDX._Fields.SPDX_DATA_LICENSE%>"
-                        type="text" class="form-control col-8"
+                    <input id="dataLicense" class="form-control needs-validation" rule="regex:^[0-9a-zA-Z.-]+$"
+                        name="_sw360_portlet_components_DATA_LICENSE" type="text"
                         placeholder="<liferay-ui:message key="enter.data.license" />"
-                        value="<sw360:out value="${release.spdx.spdxDataLicense}" />" />
-                </div>
-                <div id="dataLicense-error-messages">
-                    <div class="invalid-feedback" rule="regex">
-                        <liferay-ui:message key="string.containing.letters.numbers.and/or.-" />
+                        value="<sw360:out value="${spdxDocumentCreationInfo.dataLicense}" />">
+                    <div id="dataLicense-error-messages">
+                        <div class="invalid-feedback" rule="regex">
+                            <liferay-ui:message key="string.containing.letters.numbers.and/or.-" />
+                        </div>
                     </div>
                 </div>
-            </td>
-            <td>
-                <div class="form-group">
+                <div class="form-group" style="flex: 1">
                     <label class="mandatory" for="spdxIdentifier">
-                        <liferay-ui:message key="spdx.identifier" />
+                        2.3 SPDX Identifier
                     </label>
                     <div style="display: flex">
-                        <label style="font-weight: 400; margin-top: 0.5rem; font-size: 16px">SPDXRef-</label>
-                        <input style="width: auto;" id="spdxIdentifier" class="form-control needs-validation"
-                            rule="regex:^[0-9a-zA-Z.-]+$"
-                            name="<portlet:namespace/><%=Release._Fields.SPDX%><%=SPDX._Fields.SPDX_IDENTIFIER%>"
-                            type="text" class="form-control col-8"
-                            placeholder="<liferay-ui:message key="enter.spdx.identifier" />"
-                            value="<sw360:out value="${release.spdx.spdxIdentifier}" />" />
+                        <label class="sub-label">SPDXRef-</label>
+                        <input id="spdxIdentifier" class="form-control needs-validation" rule="regex:^[0-9a-zA-Z.-]+$"
+                            name="_sw360_portlet_components_SPDX_IDENTIFIER" type="text"
+                            placeholder="Enter SPDX Identifier" value="${spdxDocumentCreationInfo.SPDXID}">
                     </div>
-                </div>
-                <div id="spdxIdentifier-error-messages">
-                    <div class="invalid-feedback" rule="regex">
-                        <liferay-ui:message key="formatting.must.be.SPDXRef.document" />
+                    <div id="spdxIdentifier-error-messages">
+                        <div class="invalid-feedback" rule="regex">
+                            <liferay-ui:message key="formatting.must.be.SPDXRef.document" />
+                        </div>
                     </div>
                 </div>
             </td>
@@ -76,30 +63,27 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label class="mandatory" for="spdxDocumentName">
-                        <liferay-ui:message key="document.name" />
+                    <label class="mandatory" for="documentName">
+                        2.4. Document Name
                     </label>
-                    <input id="spdxDocumentName"
-                        name="<portlet:namespace/><%=Release._Fields.SPDX%><%=SPDX._Fields.SPDX_NAME%>"
-                        type="text"
-                        class="form-control"
-                        placeholder="<liferay-ui:message key="enter.spdx.document.name" />"
-                        value="<sw360:out value="${release.spdx.spdxName}" />" />
+                    <input id="documentName" name="_sw360_portlet_components_DOCUMENT_NAME" type="text"
+                        class="form-control" placeholder="<liferay-ui:message key=" enter.spdx.document.name" />"
+                    value="${spdxDocumentCreationInfo.name}">
                 </div>
             </td>
+        </tr>
+        <tr>
             <td>
                 <div class="form-group">
-                    <label class="mandatory" for="spdxDocumentNamespace">
-                        <liferay-ui:message key="spdx.document.namespace" />
+                    <label class="mandatory" for="documentNamespace">
+                        2.5 SPDX Document Namespace
                     </label>
-                    <input id="spdxDocumentNamespace" class="form-control needs-validation"
-                        rule="isUrl"
-                        name="<portlet:namespace/><%=Release._Fields.SPDX%><%=SPDX._Fields.SPDX_NAME_SPACE%>"
-                        type="text" class="form-control"
-                        placeholder="<liferay-ui:message key="enter.spdx.document.namespace" />"
-                        value="<sw360:out value="${release.spdx.spdxNameSpace}" />" />
+                    <input id="documentNamespace" class="form-control needs-validation" rule="isUrl"
+                        name="_sw360_portlet_components_DOCUMENT_NAMESPACE" type="text"
+                        placeholder="<liferay-ui:message key=" enter.spdx.document.namespace" />"
+                    value="${spdxDocumentCreationInfo.documentNamespace}">
                 </div>
-                <div id="spdxDocumentNamespace-error-messages">
+                <div id="documentNamespace-error-messages">
                     <div class="invalid-feedback" rule="isUrl">
                         <liferay-ui:message key="formatting.must.be.an.URI" />
                     </div>
@@ -107,112 +91,117 @@
             </td>
         </tr>
         <tr>
-            <td  id="spdxCreator" style="display: flex; flex-direction: column; border-top-width: 0px;">
-                <label class="mandatory" for="spdxCreatorType">
-                    <liferay-ui:message key="creator" />
-                </label>
-                <div style="display: flex; flex-direction: row; margin-bottom: 12px;">
-                    <label style="font-weight: 400; margin-top: 0.5rem; font-size: 16px; flex: 0 0 7rem;">
-                        <liferay-ui:message key="anonymous" />
+            <td class="spdx-full">
+                <div class="form-group section">
+                    <label for="externalDocumentRefs">
+                        2.6 External Document References
                     </label>
-                    <input style="margin-left: 1rem !important; margin-top: 12px; width: 16px; height: 16px;"
-                        id="spdxCreatorType-Anonymous" type="checkbox"
-                        name="<portlet:namespace/><%=SPDX._Fields.SPDX_CREATED_BY%><%=SpdxCreatedBy._Fields.IS_ANONYMOUS%>"
-                        value="true"
-                        onclick="setCreatorInput();"
-                        <core_rt:if test="${release.spdx.spdxCreatedBy.isAnonymous}"> checked="checked" </core_rt:if> />
+                    <div style="display: flex; flex-direction: column; padding-left: 1rem;">
+                        <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
+                            <label for="externalDocumentRefs" style="text-decoration: underline;"
+                                class="sub-title">Select Reference</label>
+                            <select id="externalDocumentRefs" type="text" class="form-control spdx-select"
+                                onchange="generateExternalDocumentRefsTable($(this).find('option:selected').text())">
+                            </select>
+                            <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-externalDocumentRef"
+                                data-row-id="" onclick="deleteMain(this);" viewBox="0 0 512 512">
+                                <title><liferay-ui:message key="delete" /></title>
+                                <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
+                            </svg>
+                        </div>
+                        <button class="spdx-add-button-main" id="addNewReferenceBtn" onclick="addMain(this)">Add new
+                            Reference</button>
+                    </div>
+                    <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
+                        <label class="sub-title" for="externalDocumentId">External Document ID</label>
+                        <input id="externalDocumentId" style="width: auto; flex: auto;" type="text" class="form-control"
+                            placeholder="Enter External Document ID">
+                    </div>
+                    <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
+                        <label class="sub-title" for="externalDocument">External Document</label>
+                        <input id="externalDocument" style="width: auto; flex: auto;" type="text" class="form-control"
+                            placeholder="Enter External Document">
+                    </div>
+                    <div style="display: flex;">
+                        <label class="sub-title">Checksum</label>
+                        <div style="display: flex; flex-direction: column; flex: 7">
+                            <div style="display: flex; margin-bottom: 0.75rem;">
+                                <input style="flex: 2; margin-right: 1rem;" type="text" class="form-control"
+                                    id="checksumAlgorithm" placeholder="Enter Algorithm">
+                                <input style="flex: 6;" type="text" class="form-control" id="checksumValue"
+                                    placeholder="Enter Value">
+                            </div>
+                            <!-- <button class="spdx-add-button-sub" onclick="addSub(this)">Add new algorithm</button> -->
+                        </div>
+                    </div>
                 </div>
-                <div class="actions" name="spdxCreatorType-Person" style="display: flex; flex-direction: row; margin-bottom: 12px;">
-                    <label style="font-weight: 400; margin-top: 0.5rem; font-size: 16px; flex: 0 0 7rem;"><liferay-ui:message key="person" /></label>
-                    <input style="margin-left: 1rem !important;"
-                        type="text" class="form-control"
-                        name="<portlet:namespace/><%=PortalConstants.SPDX_PERSON_NAME%>"
-                        placeholder="<liferay-ui:message key="enter.name.of.person" />"
-                        value="" />
-                    <input style="margin-left: 1rem !important;"
-                        type="text" class="form-control medium-textbox"
-                        name="<portlet:namespace/><%=PortalConstants.SPDX_PERSON_EMAIL%>"
-                        placeholder="<liferay-ui:message key="enter.email.of.person" />"
-                        value="" />
-                    <svg class="disabled lexicon-icon" name="delete-spdxCreatorType-Person" data-row-id="" style="margin-left: 0.5rem; margin-top: 1em; width: 80px" onclick="removeRow(this);">
-                        <title><liferay-ui:message key="delete" /></title>
-                        <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
-                    </svg>
-                </div>
-                <div class="actions">
-                    <svg class="action lexicon-icon" name="add-spdxCreatorType-Person" style="margin-left: 0.5rem; margin-top: 1em; width: 80px" onclick="addRow('spdxCreatorType-Person', '', '', '');">
-                        <title><liferay-ui:message key="add" /></title>
-                        <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#add-row"/>
-                    </svg>
-                </div>
-                <div class="actions" name="spdxCreatorType-Organization" style="display: flex; flex-direction: row; margin-bottom: 12px;">
-                    <label style="font-weight: 400; margin-top: 0.5rem; font-size: 16px; flex: 0 0 7rem;">
-                        <liferay-ui:message key="organization" />
+            </td>
+        </tr>
+        <tr class="spdx-full">
+            <td>
+                <div class="form-group">
+                    <label for="licenseListVersion">
+                        2.7 License List Version
                     </label>
-                    <input style="margin-left: 1rem !important;"
-                        type="text" class="form-control"
-                        name="<portlet:namespace/><%=PortalConstants.SPDX_ORGANIZATION_NAME%>"
-                        placeholder="<liferay-ui:message key="enter.name.of.organisation" />"
-                        value="" />
-                    <input style="margin-left: 1rem !important;"
-                        type="text" class="form-control medium-textbox"
-                        name="<portlet:namespace/><%=PortalConstants.SPDX_ORGANIZATION_EMAIL%>"
-                        placeholder="<liferay-ui:message key="enter.email.of.organisation" />"
-                        value="" />
-                    <svg class="disabled lexicon-icon" name="delete-spdxCreatorType-Organization" data-row-id="" style="margin-left: 0.5rem; margin-top: 1em; width: 80px" onclick="removeRow(this);">
-                        <title><liferay-ui:message key="delete" /></title>
-                        <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
-                    </svg>
-                </div>
-                <div class="actions">
-                    <svg class="action lexicon-icon" name="add-spdxCreatorType-Organization" data-row-id="" style="margin-left: 0.5rem; margin-top: 1em; width: 80px" onclick="addRow('spdxCreatorType-Organization', '', '', '');">
-                        <title><liferay-ui:message key="add" /></title>
-                        <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#add-row"/>
-                    </svg>
-                </div>
-                <div class="actions" name="spdxCreatorType-Tool" style="display: flex; flex-direction: row; margin-bottom: 12px;">
-                    <label style="font-weight: 400; margin-top: 0.5rem; font-size: 16px; flex: 0 0 7rem;">
-                        <liferay-ui:message key="tool" />
-                    </label>
-                    <input style="margin-left: 1rem !important;"
-                        type="text" class="form-control"
-                        name="<portlet:namespace/><%=PortalConstants.SPDX_TOOL_NAME%>"
-                        placeholder="<liferay-ui:message key="enter.name.of.tool" />"
-                        value="" />
-                    <input style="margin-left: 1rem !important;"
-                        type="text" class="form-control medium-textbox"
-                        name="<portlet:namespace/><%=PortalConstants.SPDX_TOOL_VERSION%>"
-                        placeholder="<liferay-ui:message key="enter.version.of.tool" />"
-                        value="" \>
-                    <svg class="disabled lexicon-icon" name="delete-spdxCreatorType-Tool" data-row-id="" style="margin-left: 0.5rem; margin-top: 1em; width: 80px" onclick="removeRow(this);">
-                        <title><liferay-ui:message key="delete" /></title>
-                        <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
-                    </svg>
-                </div>
-                <div class="actions">
-                    <svg class="action lexicon-icon" name="add-spdxCreatorType-Tool" data-row-id="" style="margin-left: 0.5rem; margin-top: 1em; width: 80px" onclick="addRow('spdxCreatorType-Tool', '', '', '');">
-                        <title><liferay-ui:message key="add" /></title>
-                        <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#add-row"/>
-                    </svg>
+                    <input id="licenseListVersion" class="form-control needs-validation"
+                        name="_sw360_portlet_components_LICENSE_LIST_VERSION" type="text"
+                        placeholder="Enter License List Version" value="${spdxDocumentCreationInfo.licenseListVersion}">
                 </div>
             </td>
         </tr>
         <tr>
-            <td style="display: flex; flex-direction: column; border-top-width: 0px;">
-                <label class="mandatory" for="created_date">
-                    <liferay-ui:message key="created" />
-                </label>
-                <div style="display: flex; flex-direction: row; margin-bottom: 12px;">
-                    <input id="created_date" style="width: 12rem; text-align: center;"
-                        type="date" class="form-control"
-                        name="<portlet:namespace/><%=Release._Fields.SPDX%><%=SPDX._Fields.SPDX_CREATED_DATE%>"
-                        placeholder="<liferay-ui:message key=" creation.date.yyyy.mm.dd" />"
-                        value="<sw360:out value="${release.spdx.spdxCreatedDate}" />" />
-                    <input id="created_time" style="width: 12rem; text-align: center; margin-left: 10px;"
-                        type="time" step="1"   class="form-control"
-                        name="<portlet:namespace/><%=Release._Fields.SPDX%><%=SPDX._Fields.SPDX_CREATED_TIME%>"
-                        placeholder="<liferay-ui:message key=" creation.time.hh.mm.ss" />"
-                        value="<sw360:out value="${release.spdx.spdxCreatedTime}" />" />
+            <td>
+                <div class="form-group">
+                    <label class="mandatory" for="creator">
+                        2.8 Creator
+                    </label>
+                    <div style="display: flex; flex-direction: column;">
+                        <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
+                            <label class="sub-title" for="creator-anonymous">Anonymous</label>
+                            <input id="creator-anonymous" class="spdx-checkbox" type="checkbox"
+                                name="_sw360_portlet_components_CREATOR_ANONYNOUS">
+                        </div>
+                        <div style="display: flex;">
+                            <label class="sub-title">List</label>
+                            <div style="display: flex; flex-direction: column; flex: 7">
+                                <div style="display: flex; margin-bottom: 0.75rem;" name="creatorRow">
+                                    <select style="flex: 2; margin-right: 1rem;" type="text"
+                                        class="form-control creator-type" placeholder="Enter Type"
+                                        onchange="changeCreatorType(this)">
+                                        <option value="Organization" selected>Organization</option>
+                                        <option value="Person">Person</option>
+                                        <option value="Tool">Tool</option>
+                                    </select>
+                                    <input style="flex: 6; margin-right: 2rem;" type="text"
+                                        class="form-control creator-value" placeholder="Enter Value"
+                                        value="">
+                                    <svg class="disabled lexicon-icon spdx-delete-icon-sub"
+                                        name="delete-spdxCreatorType-Person" data-row-id="" onclick="deleteSub(this);"
+                                        viewBox="0 0 512 512">
+                                        <title><liferay-ui:message key="delete" /></title>
+                                        <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
+                                    </svg>
+                                </div>
+                                <button class="spdx-add-button-sub spdx-add-button-sub-creator"
+                                    onclick="addSub(this)">Add new creator</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td style="display: flex; flex-direction: column;">
+                <div class="form-group">
+                    <label class="mandatory" for="createdDate">
+                        2.9 Created
+                    </label>
+                    <div style="display: flex; flex-direction: row; margin-bottom: 12px;">
+                        <input id="createdDate" type="date" class="form-control spdx-date"
+                            name="_sw360_portlet_components_CREATED_DATE" placeholder="created.date.yyyy.mm.dd">
+                        <input id="createdTime" type="time" step="1" class="form-control spdx-time"
+                            name="_sw360_portlet_components_CREATED_TIME" placeholder="created.time.hh.mm.ss">
+                    </div>
                 </div>
             </td>
         </tr>
@@ -222,61 +211,42 @@
 <script>
 
     generateCreatorTable();
-    setCreatorInput();
-    function setCreatorInput() {
-        if (document.getElementById('spdxCreatorType-Anonymous').checked == true) {
-            $('#spdxCreator > div[name="spdxCreatorType-Person"] > input').prop('disabled', true);
-            $('#spdxCreator > div[name="spdxCreatorType-Organization"] > input').prop('disabled', true);
-            disableAction('add-spdxCreatorType-Person');
-            disableAction('add-spdxCreatorType-Organization');
-            disableAction('delete-spdxCreatorType-Person');
-            disableAction('delete-spdxCreatorType-Organization');
-        } else {
-            $('#spdxCreator > div[name="spdxCreatorType-Person"] > input').prop('disabled', false);
-            $('#spdxCreator > div[name="spdxCreatorType-Organization"] > input').prop('disabled', false);
-            enableAction('delete-spdxCreatorType-Person');
-            enableAction('delete-spdxCreatorType-Organization');
-            enableAction('add-spdxCreatorType-Person');
-            enableAction('add-spdxCreatorType-Organization');
-        }
-    }
-
-    autoHideString('spdxVersion', 'SPDX-');
-    function autoHideString(id, string, value) {
-        if ((value == null || value == '')) {
-            value = document.getElementById(id).value;
-        }
-        var newString = value.replace(string, '');
-        document.getElementById(id).value = newString;
-    }
-
+    //setCreatorInput();
+    setCreatedTime("${created}");
+    generateExternalDocumentRefsTable("1");
     function generateCreatorTable() {
-        <core_rt:if test="${not creatorDataPerson.isEmpty()}">
-            <core_rt:forEach items="${creatorDataPerson}" var="tableEntry" varStatus="loop">
-                addRow("spdxCreatorType-Person", "${tableEntry.key}", "${tableEntry.value}", "");
+        <core_rt:if test="${not creator.isEmpty()}">
+            <core_rt:forEach items="${creator}" var="creatorData" varStatus="loop">
+                addRow("creatorRow", "${creatorData.type}", "${creatorData.value}", "");
             </core_rt:forEach>
-            removeRow(document.getElementsByName('delete-spdxCreatorType-Person')[0]);
+                deleteSub(document.getElementsByName('delete-spdxCreatorType-Person')[0]);
         </core_rt:if>
-
-        <core_rt:if test="${not creatorDataOrganization.isEmpty()}">
-            <core_rt:forEach items="${creatorDataOrganization}" var="tableEntry" varStatus="loop">
-                addRow("spdxCreatorType-Organization", "${tableEntry.key}", "${tableEntry.value}", "");
-            </core_rt:forEach>
-            removeRow(document.getElementsByName('delete-spdxCreatorType-Organization')[0]);
-        </core_rt:if>
-
-
-        <core_rt:if test="${not creatorDataTool.isEmpty()}">
-            <core_rt:forEach items="${creatorDataTool}" var="tableEntry" varStatus="loop">
-                addRow("spdxCreatorType-Tool", "${tableEntry.key}", "${tableEntry.value}", "");
-            </core_rt:forEach>
-            removeRow(document.getElementsByName('delete-spdxCreatorType-Tool')[0]);
-        </core_rt:if>
-
     }
 
+    function generateExternalDocumentRefsTable(index) {
+        fillValueToId("externalDocumentId", "");
+        fillValueToId("externalDocument", "");
+        fillValueToId("checksumAlgorithm", "");
+        fillValueToId("checksumValue", "");
+        <core_rt:if test="${not externalDocumentRefs.isEmpty()}">
+            var i = 0;
+            <core_rt:forEach items="${externalDocumentRefs}" var="externalDocumentRefsData" varStatus="loop">
+                i++;
+                if (i == index) {
+                    fillValueToId("externalDocumentId", "${externalDocumentRefsData.externalDocumentId}");
+                    fillValueToId("externalDocument", "${externalDocumentRefsData.spdxDocument}");
+                    fillValueToId("checksumAlgorithm", "${externalDocumentRefsData.checksum.algorithm}");
+                    fillValueToId("checksumValue", "${externalDocumentRefsData.checksum.checksumValue}");
+                }
+            </core_rt:forEach>
+        </core_rt:if>
+    }
+
+    function fillValueToId(id, value) {
+        $('#' + id).prop('value', value);
+    }
     function addRow(name, value1, value2, lable) {
-        if ($(document.getElementsByName('add-' + name)).hasClass('disabled')) {
+        if ($(document.getElementsByName(name)).hasClass('disabled')) {
             return;
         }
         var size = document.getElementsByName(name).length;
@@ -284,10 +254,9 @@
 
         var clone = el.cloneNode(true);
         clone.getElementsByTagName('input')[0].name = clone.getElementsByTagName('input')[0].name + Date.now();
-        clone.getElementsByTagName('input')[1].name = clone.getElementsByTagName('input')[1].name + Date.now();
-        clone.getElementsByTagName('input')[0].value = value1;
-        clone.getElementsByTagName('input')[1].value = value2;
-        clone.getElementsByTagName('label')[0].innerHTML = '<liferay-ui:message key="' + lable +'" />';
+        clone.getElementsByTagName('select')[0].name = clone.getElementsByTagName('select')[0].name + Date.now();
+        clone.getElementsByTagName('input')[0].value = value2;
+        clone.getElementsByTagName('select')[0].value = value1;
         $(clone).insertAfter(el);
         if (size == 1) {
             enableAction('delete-' + name);
@@ -299,12 +268,8 @@
             return;
         }
         var parent = $(el).parent();
-        var label = $(parent)[0].getElementsByTagName('label')[0].innerHTML;
         var name = $(parent)[0].getAttribute("name");
         $(parent).remove();
-        if (label) {
-            document.getElementsByName(name)[0].getElementsByTagName('label')[0].innerHTML = label;
-        }
         if (document.getElementsByName(name).length < 2) {
             disableAction('delete-' + name);
         }
@@ -323,6 +288,39 @@
             $(el).removeClass('disabled');
             $(el).addClass('action');
         }
+    }
+
+
+
+
+    function setCreatedTime(created) {
+        var createdDate = created.replace(/T.*/i, '');
+        var createdTime = created.replace(createdDate, '');
+        createdTime = createdTime.replace(/[A-Z]/g, '');
+        $('#createdDate').prop('value', createdDate);
+        $('#createdTime').prop('value', createdTime);
+    }
+
+    generateSelecterOption('externalDocumentRefs', "${externalDocumentRefs.size()}");
+    function generateSelecterOption(selectId, length) {
+        for (var i = 1; i <= length; i++) {
+            var option = document.createElement("option");
+            option.text = i;
+            document.getElementById(selectId).add(option);
+        }
+    }
+
+    autoHideString('spdxVersion', 'SPDX-');
+    autoHideString('spdxIdentifier', 'SPDX-');
+    function autoHideString(id, string, value) {
+        if (value == null || value == '') {
+            value = document.getElementById(id).value;
+        } else {
+            document.getElementById(id).value = value;
+            return;
+        }
+        var newString = value.replace(string, '');
+        document.getElementById(id).value = newString;
     }
 
 </script>

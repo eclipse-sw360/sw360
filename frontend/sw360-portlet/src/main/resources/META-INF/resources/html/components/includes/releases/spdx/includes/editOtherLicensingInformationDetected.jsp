@@ -1,83 +1,122 @@
-<table class="table three-columns" id="editOtherLicensingInformationDetected">
-<thead>
-    <tr>
-        <th colspan="3"><liferay-ui:message key="other.licensing.information.detected" /></th>
-    </tr>
-</thead>
-<tbody>
-<tr>
-    <td>
-        <div class="form-group">
-            <label for="spdxLicenseIdentifier"><liferay-ui:message key="license.identifier" /></label>
-            <div style="display: flex">
-                <label style="font-weight: 400; margin-top: 0.5rem; font-size: 16px">LicenseRef-</label>
-                <input style="margin-left: 4px; width: 30rem;" id="spdxLicenseIdentifier"
-                    class="form-control needs-validation"
-                    rule="regex:^[0-9a-zA-Z-.]+$"
-                    type="text"
-                    name="<portlet:namespace/><%=Release._Fields.SPDX%><%=SPDX._Fields.OTHER_LICENSE_ID%>"
-                    placeholder="<liferay-ui:message key="enter.license.identifier" />"
-                    value="<sw360:out value="${release.spdx.otherLicenseId}"/>"/>
-            </div>
-            <div id="spdxLicenseIdentifier-error-messages">
-                <div class="invalid-feedback" rule="regex">
-                    <liferay-ui:message key="string.containing.letters.numbers.and/or.-" />
+<core_rt:set var="otherLicensing" value="${spdxDocument.otherLicensingInformationDetecteds}" />
+<table class="table" id="editOtherLicensingInformationDetected">
+    <thead>
+        <tr>
+            <th colspan="3">6. Other Licensing Information Detected</th>
+        </tr>
+    </thead>
+    <tbody class="section">
+        <tr>
+            <td>
+                <div style="display: flex; flex-direction: column; padding-left: 1rem;">
+                    <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
+                        <label for="selectOtherLicensing" style="text-decoration: underline;" class="sub-title">Select
+                            Other Licensing</label>
+                        <select id="selectOtherLicensing" type="text" class="form-control spdx-select"
+                            onchange="generateOtherLicensingTable($(this).find('option:selected').text())">
+                        </select>
+                        <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-spdxCreatorType-Person"
+                            data-row-id="" onclick="deleteMain(this)" viewBox="0 0 512 512">
+                            <title><liferay-ui:message key="delete" /></title>
+                            <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
+                        </svg>
+                    </div>
+                    <button class="spdx-add-button-main" onclick="addMain(this)">Add new Licensing</button>
                 </div>
-            </div>
-        </div>
-    </td>
-</tr>
-<tr>
-    <td>
-        <div class="form-group">
-            <label for="spdxExtractedText"><liferay-ui:message key="extracted.text" /></label>
-            <textarea class="form-control" id="spdxExtractedText" rows="4"
-                name="<portlet:namespace/><%=Release._Fields.SPDX%><%=SPDX._Fields.OTHER_LICENSE_TEXT%>"
-                placeholder="<liferay-ui:message key="enter.extracted.text" />"><sw360:out value="${release.spdx.otherLicenseText}"/></textarea>
-        </div>
-    </td>
-</tr>
-<tr>
-    <td style="display: flex; flex-direction: column;">
-        <label><liferay-ui:message key="license.name" /></label>
-        <div style="display: flex; flex-direction: row; width: 50rem;">
-            <div style="display: inline-flex;">
-                <input style="margin-top: 12px;" id="spdxLicenseNameExist"
-                    type="radio"
-                    name="<portlet:namespace/><%=SPDX._Fields.OTHER_LICENSE_NAME%><%=OtherLicenseName._Fields.TYPE%>"
-                    value="exist"
-                    onchange="setInputValue('spdxLicenseName', value);"
-                />
-                <input style="margin-left: 4px; width: 30rem;" id="spdxLicenseName"
-                    class="form-control" type="text"
-                    name="<portlet:namespace/><%=SPDX._Fields.OTHER_LICENSE_NAME%><%=OtherLicenseName._Fields.VALUE%>"
-                    placeholder="<liferay-ui:message key="enter.license.name" />"
-                    value="<sw360:out value="${release.spdx.otherLicenseName.value}" />" />
-            </div>
-            <div style="margin-left: 2rem;">
-                <input style="margin-top: 12px;" id="spdxLicenseNameNoassertion"
-                type="radio"
-                name="<portlet:namespace/><%=SPDX._Fields.OTHER_LICENSE_NAME%><%=OtherLicenseName._Fields.TYPE%>"
-                value="noassertion"
-                onchange="setInputValue('spdxLicenseName', value);" />
-                <label class="form-check-label radio-label" for="spdxLicenseNameNoassertion"><liferay-ui:message key="noassertion" /></label>
-            </div>
-        </div>
-    </td>
-</tr>
-<tr>
-    <td>
-        <div class="form-group">
-            <label for="spdxLicenseComment"><liferay-ui:message key="license.comment" /></label>
-            <textarea class="form-control" id="spdxLicenseComment" rows="4"
-                name="<portlet:namespace/><%=Release._Fields.SPDX%><%=SPDX._Fields.OTHER_LICENSE_COMMENT%>"
-                placeholder="<liferay-ui:message key="enter.license.comment" />"><sw360:out value="${release.spdx.otherLicenseComment}"/></textarea>
-        </div>
-    </td>
-</tr>
-</tbody>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="form-group">
+                    <label class="mandatory" for="licenseId">
+                        6.1 License Identifier
+                    </label>
+                    <div style="display: flex">
+                        <label class="sub-label">LicenseRef-</label>
+                        <input id="licenseId" class="form-control needs-validation"
+                            name="_sw360_portlet_components_LICENSE_ID" type="text"
+                            placeholder="Enter License Identifier" value="">
+                    </div>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="form-group">
+                    <label class="mandatory" for="extractedText">6.2 Extracted Text</label>
+                    <textarea class="form-control" id="extractedText" rows="5"
+                        name="_sw360_portlet_components_EXTRACTED_TEXT" placeholder="Enter Extracted Text"></textarea>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td style="display: flex; flex-direction: column;">
+                <div class="form-group">
+                    <label class="mandatory">6.3 License Name</label>
+                    <div style="display: flex; flex-direction: row;">
+                        <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
+                            <input class="spdx-radio" id="licenseNameExist" type="radio"
+                                name="_sw360_portlet_components_LICENSE_NAME" value="exist">
+                            <input style="flex: 6; margin-right: 1rem;" id="licenseName"
+                                class="form-control needs-validation" rule="isDownloadUrl" type="text"
+                                name="_sw360_portlet_components_LICENSE_NAME_VALUE" placeholder="Enter License Name">
+                        </div>
+                        <div style="flex: 2;">
+                            <input class="spdx-radio" id="licenseNameNoAssertion" type="radio"
+                                name="_sw360_portlet_components_LICENSE_NAME" value="NOASSERTION">
+                            <label class="form-check-label radio-label" for="licenseNameNoAssertion">NOASSERTION</label>
+                        </div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        <tr class="spdx-full">
+            <td>
+                <div class="form-group">
+                    <label for="licenseCrossRefs">6.4 License Cross Reference</label>
+                    <textarea class="form-control" id="licenseCrossRefs" rows="5"
+                        name="_sw360_portlet_components_LICENSE_CROSS_REFERENCE"
+                        placeholder="Enter License Cross Reference"></textarea>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="form-group">
+                    <label for="licenseComment">6.5 License Comment</label>
+                    <textarea class="form-control" id="licenseCommentOnOtherLicensing" rows="5"
+                        name="_sw360_portlet_components_LICENSE_COMMENT" placeholder="Enter License Comment"></textarea>
+                </div>
+            </td>
+        </tr>
+    </tbody>
 </table>
 
 <script>
-    setInputValue('spdxLicenseName', "${release.spdx.otherLicenseName.type}");
+    generateOtherLicensingTable('1');
+    function generateOtherLicensingTable(index) {
+        fillValueToId("licenseId", "");
+        fillValueToId("licenseName", "");
+        $('#extractedText').val("");
+        $('#licenseCrossRefs').val("");
+        $('#licenseCommentOnOtherLicensing').val("");
+        <core_rt:if test="${not otherLicensing.isEmpty()}">
+            var i = 0;
+        <core_rt:forEach items="${otherLicensing}" var="otherLicensingData" varStatus="loop">
+                i++;
+            if (i == index) {
+                fillValueToId("licenseId", "${otherLicensingData.licenseId}");
+                fillValueToId("licenseName", "${otherLicensingData.licenseName}");
+                $('#extractedText').val("${otherLicensingData.extractedText}");
+                $('#licenseCrossRefs').val("<sw360:out value="${otherLicensingData.licenseCrossRefs.toString()}" hashSet="true"/>");
+                $('#licenseCommentOnOtherLicensing').val("${otherLicensingData.licenseComment}");
+            }
+        </core_rt:forEach>
+        </core_rt:if>
+    }
+
+    generateSelecterOption('selectOtherLicensing', "${otherLicensing.size()}");
+
+    autoHideString('licenseId', 'SPDXRef-');
+
 </script>

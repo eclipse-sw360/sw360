@@ -110,10 +110,16 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
         AddDocumentRequestSummary requestSummary= new AddDocumentRequestSummary();
         prepareSpdxDocumentCreationInfo(documentCreationInfo);
         documentCreationInfo.setCreatedBy(user.getEmail());
-        SPDXDocumentCreationInfoRepository.add(documentCreationInfo);
-        String documentCreationInfoId = documentCreationInfo.getId();
         String spdxDocumentId = documentCreationInfo.getSpdxDocumentId();
         SPDXDocument spdxDocument = SPDXDocumentRepository.get(spdxDocumentId);
+        assertNotNull(spdxDocument, "Could not find SPDX Document to add SPDX Document Creation Info!");
+        if (isNotNullEmptyOrWhitespace(spdxDocument.getSpdxDocumentCreationInfoId())) {
+            log.error("SPDX Document Creation existed in SPDX Document!");
+            return requestSummary.setRequestStatus(AddDocumentRequestStatus.DUPLICATE)
+                            .setId(spdxDocumentId);
+        }
+        SPDXDocumentCreationInfoRepository.add(documentCreationInfo);
+        String documentCreationInfoId = documentCreationInfo.getId();
         SPDXDocument oldSpdxDocument = spdxDocument.deepCopy();
         spdxDocument.setSpdxDocumentCreationInfoId(documentCreationInfoId);
         SPDXDocumentRepository.update(spdxDocument);

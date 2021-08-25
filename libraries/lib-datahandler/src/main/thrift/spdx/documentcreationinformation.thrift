@@ -18,17 +18,17 @@ struct DocumentCreationInformation {
     2: optional string revision,
     3: optional string type = "documentCreationInformation",
     4: optional string spdxDocumentId,  // Id of the parent SPDX Document
-    5: optional string DocumentCreationInformationVersion,
-    6: optional string dataLicense,
-    7: optional string DocumentCreationInformationID,
-    8: optional string name,
-    9: optional string documentNamespace,
-    10: optional set<ExternalDocumentReferences> externalDocumentRefs,
-    11: optional string licenseListVersion,
-    12: optional set<Creator> creator,
-    13: optional string created,
-    14: optional string creatorComment,
-    15: optional string documentComment,
+    5: optional string spdxVersion,     // 2.1
+    6: optional string dataLicense,     // 2.2
+    7: optional string SPDXID,          // 2.3
+    8: optional string name,            // 2.4
+    9: optional string documentNamespace,   // 2.5
+    10: optional set<ExternalDocumentReferences> externalDocumentRefs,  // 2.6
+    11: optional string licenseListVersion, // 2.7
+    12: optional set<Creator> creator,      // 2.8
+    13: optional string created,            // 2.9
+    14: optional string creatorComment,     // 2.10
+    15: optional string documentComment,    // 2.11
     // Information for ModerationRequests
     20: optional DocumentState documentState,
     21: optional map<RequestedAction, bool> permissions,
