@@ -241,31 +241,28 @@
 		<tr class="spdx-full">
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1">3.21 External Reference</div>
-				<div class="spdx-col-2">
+				<div class="spdx-col-2 section" data-size="4">
 					<div class="spdx-flex-row">
 						<div class="spdx-col-1 spdx-label-index">Index</div>
 						<select id="externalReferenceSelect" class="spdx-col-3" onchange="displayIndex(this)">
-							<option>1</option>
 						</select>
 					</div>
 					<core_rt:forEach items="${package.externalRefs}" var="externalRefsData" varStatus="loop">
-						<div name="externalReferencesTable">
-							<div class="spdx-flex-row">
-								<div class="spdx-col-1 spdx-key">Category</div>
-								<div class="spdx-col-3"><sw360:out value="${externalRefsData.referenceCategory}"/></div>
-							</div>
-							<div class="spdx-flex-row">
-								<div class="spdx-col-1 spdx-key">Type</div>
-								<div class="spdx-col-3"><sw360:out value="${externalRefsData.referenceType}"/></div>
-							</div>
-							<div class="spdx-flex-row">
-								<div class="spdx-col-1 spdx-key">Locator</div>
-								<div class="spdx-col-3"><sw360:out value="${externalRefsData.referenceLocator}"/></div>
-							</div>
-							<div class="spdx-flex-row">
-								<div class="spdx-col-1 spdx-key">3.22 Comment</div>
-								<div class="spdx-col-3"><sw360:out value="${externalRefsData.comment}"/></div>
-							</div>
+						<div class="spdx-flex-row">
+							<div class="spdx-col-1 spdx-key">Category</div>
+							<div class="spdx-col-3"><sw360:out value="${externalRefsData.referenceCategory}"/></div>
+						</div>
+						<div class="spdx-flex-row">
+							<div class="spdx-col-1 spdx-key">Type</div>
+							<div class="spdx-col-3"><sw360:out value="${externalRefsData.referenceType}"/></div>
+						</div>
+						<div class="spdx-flex-row">
+							<div class="spdx-col-1 spdx-key">Locator</div>
+							<div class="spdx-col-3"><sw360:out value="${externalRefsData.referenceLocator}"/></div>
+						</div>
+						<div class="spdx-flex-row">
+							<div class="spdx-col-1 spdx-key">3.22 Comment</div>
+							<div class="spdx-col-3"><sw360:out value="${externalRefsData.comment}"/></div>
 						</div>
 					</core_rt:forEach>
 				</div>
@@ -287,13 +284,11 @@
 			<th>5. Snippet Information</th>
 		</tr>
 	</thead>
-	<tbody>
+	<tbody class="section" data-size="10">
 		<tr>
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1 spdx-label-index">Index</div>
-				<select id="snippetInfoSelect" class="spdx-col-2">
-					<option>1</option>
-				</select>
+				<select id="snippetInfoSelect" class="spdx-col-2" onchange="displayIndex(this)"></select>
 			</td>
 		</tr>
 		<core_rt:forEach items="${snippets}" var="snippetsData" varStatus="loop">
@@ -380,13 +375,11 @@
 			<th>6. Other Licensing Information Detected</th>
 		</tr>
 	</thead>
-	<tbody>
+	<tbody class="section" data-size="5">
 		<tr>
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1 spdx-label-index">Index</div>
-				<select id="otherLicensingSelect" class="spdx-col-2">
-					<option>1</option>
-				</select>
+				<select id="otherLicensingSelect" class="spdx-col-2" onchange="displayIndex(this)"></select>
 			</td>
 		</tr>
 		<core_rt:forEach items="${otherLicensing}" var="otherLicensingData" varStatus="loop">
@@ -431,13 +424,11 @@
 			<th>7. Relationships between SPDX Elements</th>
 		</tr>
 	</thead>
-	<tbody>
+	<tbody class="section" data-size="2">
 		<tr>
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1 spdx-label-index">Index</div>
-				<select id="relationshipSelect" class="spdx-col-2">
-					<option>1</option>
-				</select>
+				<select id="relationshipSelect" class="spdx-col-2" onchange="displayIndex(this)"></select>
 			</td>
 		</tr>
 		<core_rt:forEach items="${relationships}" var="relationshipsData" varStatus="loop">
@@ -470,13 +461,11 @@
 			<th>8. Annotations</th>
 		</tr>
 	</thead>
-	<tbody>
+	<tbody class="section" data-size="5">
 			<tr>
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1 spdx-label-index">Index</div>
-					<select id="annotationSelect" class="spdx-col-2">
-						<option>1</option>
-					</select>
+					<select id="annotationSelect" class="spdx-col-2" onchange="displayIndex(this)"></select>
 				</td>
 			</tr>
 		<core_rt:forEach items="${annotations}" var="annotationsData" varStatus="loop">
@@ -599,11 +588,13 @@
 			} else {
 				$(this).next().css('display', 'none');
 			}
-		})
+		});
+
+		$('.spdx-table select').change();
 	});
 
 	function generateSelecterOption(selectId, length) {
-        for (var i = 2; i <= length; i++) {
+        for (var i = 1; i <= length; i++) {
             var option = document.createElement("option");
             option.text = i;
             document.getElementById(selectId).add(option);
@@ -616,8 +607,15 @@
 	generateSelecterOption('externalReferenceSelect', "${package.externalRefs.size()}");
 
 	function displayIndex(el) {
-		var index = $(el).find('option:selected').text();
-		var parent = $(el).parent();
-		$(parent).find('div')
+		var index = $(el).val();
+		var section = $(el).closest('.section');
+		var size = section.data()['size'];
+
+		section.children().css('display', 'none');
+		section.children().eq(0).css('display', '');
+
+		for (var i = 0; i < size; i++) {
+			section.children().eq(size * (index - 1) + i + 1).css('display', '');
+		}
 	}
 </script>
