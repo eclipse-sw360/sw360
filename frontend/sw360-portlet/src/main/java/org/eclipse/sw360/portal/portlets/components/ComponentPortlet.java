@@ -242,7 +242,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         String attachmentContentId = request.getParameter(ATTACHMENT_CONTENT_ID);
 
         try {
-            final RequestSummary requestSummary = componentClient.importBomFromAttachmentContent(user, attachmentContentId, null);
+            final RequestSummary requestSummary = componentClient.importBomFromAttachmentContent(user, attachmentContentId, null, null);
 
             LiferayPortletURL releaseUrl = createDetailLinkTemplate(request);
             releaseUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_RELEASE_DETAIL);
@@ -265,7 +265,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         log.info("========New release version: " + newReleaseVersion);
 
         try {
-            final RequestSummary requestSummary = componentClient.importBomFromAttachmentContent(user, attachmentContentId, newReleaseVersion);
+            final RequestSummary requestSummary = componentClient.importBomFromAttachmentContent(user, attachmentContentId, newReleaseVersion, null);
 
             LiferayPortletURL releaseUrl = createDetailLinkTemplate(request);
             releaseUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_RELEASE_DETAIL);
@@ -667,6 +667,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     private void writeSpdxLicenseInfoIntoRelease(ResourceRequest request, ResourceResponse response) {
         User user = UserCacheHolder.getUserFromRequest(request);
         String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
+        String attachmentContentId = request.getParameter(ATTACHMENT_CONTENT_ID);
         ComponentService.Iface componentClient = thriftClients.makeComponentClient();
 
         RequestStatus result = null;
@@ -694,6 +695,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 }
             }
             result = componentClient.updateRelease(release, user);
+
+            componentClient.importBomFromAttachmentContent(user, attachmentContentId, null, releaseId);
         } catch (TException | IOException e) {
             log.error("Cannot write license info into release " + releaseId + ".", e);
             response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "500");
