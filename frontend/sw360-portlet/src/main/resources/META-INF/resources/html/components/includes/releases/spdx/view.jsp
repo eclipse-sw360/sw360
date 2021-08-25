@@ -53,7 +53,31 @@
 		<tr class="spdx-full">
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1">2.6 External Document References</div>
-				<div class="spdx-col-2"><sw360:out value="${spdxDocumentCreationInfo.externalDocumentRefs}"/></div>
+				<div class="spdx-col-2 section" data-size="3">
+        			<div class="spdx-flex-row">
+        				<div class="spdx-col-1 spdx-label-index">Index</div>
+        				<select class="spdx-col-3" onchange="displayIndex(this)">
+        					<option>1</option>
+        					<option>2</option>
+        				</select>
+        			</div>
+        			<!-- <core_rt:forEach items="${spdxDocumentCreationInfo.externalDocumentRefs}" var="externalRefsData" varStatus="loop"> -->
+	        			<div class="spdx-flex-row">
+	        				<div class="spdx-col-1 spdx-key">External Document ID</div>
+	        				<div class="spdx-col-3">external_document_id</div>
+	        			</div>
+	        			<div class="spdx-flex-row">
+	        				<div class="spdx-col-1 spdx-key">External Document</div>
+	        				<div class="spdx-col-3">external_document</div>
+	        			</div>
+	        			<div class="spdx-flex-row">
+	        				<div class="spdx-col-2 spdx-key">Checksum</div>
+	        				<div class="spdx-col-3">
+	        					sha1 - d6a770ba38583edsdgsdg4bb4525bd96e50461655d2759
+	        				</div>
+	        			</div>
+        			<!-- </core_rt:forEach> -->
+        		</div>
 			</td>
 		</tr>
 		<tr class="spdx-full">
@@ -587,6 +611,12 @@
 				$(this).next().css('display', '');
 			} else {
 				$(this).next().css('display', 'none');
+			}
+		});
+
+		$('.spdx-table select').each(function() {
+			if ($(this).children().length == 0) {
+				$(this).attr('disabled', 'true');
 			}
 		});
 
