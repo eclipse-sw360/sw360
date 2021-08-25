@@ -14,7 +14,6 @@
                             Relationship</label>
                         <select id="selectRelationship" type="text" class="form-control spdx-select"
                             onchange="generateRelationshipTable($(this).find('option:selected').text())">
-                            <option>1</option>
                         </select>
                         <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-spdxCreatorType-Person"
                             data-row-id="" onclick="deleteMain(this)" viewBox="0 0 512 512">

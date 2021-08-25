@@ -14,7 +14,6 @@
                             Snippet</label>
                         <select id="selectSnippet" type="text" class="form-control spdx-select"
                             onchange="generateSnippetTable($(this).find('option:selected').text())">
-                            <option>1</option>
                         </select>
                         <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-spdxCreatorType-Person"
                             data-row-id="" onclick="deleteMain(this)" viewBox="0 0 512 512">
@@ -231,15 +230,15 @@
         <core_rt:forEach items="${snippets}" var="snippetData" varStatus="loop">
                 i++;
             if (i == index) {
-                    fillValueToId("snippetSpdxIdentifier", "${snippetData.SPDXID}");
-                fillValueToId("snippetFromFileValue", "${snippetData.snippetFromFile}");
-                fillValueToId("spdxConcludedLicenseValue", "${snippetData.licenseConcluded}");
-                fillValueToId("licenseInfoInFileValue", "${snippetData.licenseInfoInSnippets}");
-                fillValueToId("snippetLicenseComments", "${snippetData.licenseComments}");
-                $('#copyrightTextValueSnippet').val("${snippetData.copyrightText}");
-                fillValueToId("snippetComment", "${snippetData.comment}");
-                fillValueToId("snippetName", "${snippetData.name}");
-                fillValueToId("snippetAttributionText", "${snippetData.snippetAttributionText}");
+                fillValueToId("snippetSpdxIdentifier", "<sw360:out value="${snippetData.licenseInfoInSnippets}" />");
+                fillValueToId("snippetFromFileValue", "<sw360:out value="${snippetData.snippetFromFile}" />");
+                fillValueToId("spdxConcludedLicenseValue", "<sw360:out value="${snippetData.licenseConcluded}" />");
+                fillValueToId("licenseInfoInFileValue", "<sw360:out value="${snippetData.licenseInfoInSnippets.toString()}" hashSet="true"/>");
+                fillValueToId("snippetLicenseComments", "<sw360:out value="${snippetData.licenseComments}" />");
+                $('#copyrightTextValueSnippet').val("<sw360:out value="${snippetData.copyrightText}" />");
+                fillValueToId("snippetComment", "<sw360:out value="${snippetData.comment}" />");
+                fillValueToId("snippetName", "<sw360:out value="${snippetData.name}" />");
+                fillValueToId("snippetAttributionText", "<sw360:out value="${snippetData.snippetAttributionText}" />");
                 <core_rt:set var="snippetRanges" value="${snippetData.snippetRanges}" />
                 generateSnippetRangesTable();
             }

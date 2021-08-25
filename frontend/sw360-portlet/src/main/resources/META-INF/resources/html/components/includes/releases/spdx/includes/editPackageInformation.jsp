@@ -289,7 +289,7 @@
                             <textarea style="flex: 6; margin-right: 1rem;" id="licenseInfoFromFilesValue" rows="5"
                                 class="form-control needs-validation" type="text"
                                 name="_sw360_portlet_components_LICENSE_INFO_FROM_FILES_VALUE"
-                                placeholder="Enter All Licenses Information from Files">${package.licenseInfoFromFiles.toString()}</textarea>
+                                placeholder="Enter All Licenses Information from Files"><sw360:out value="${package.licenseInfoFromFiles.toString()}" hashSet="true"/></textarea>
                         </div>
                         <div style="flex: 2;">
                             <input class="spdx-radio" id="licenseInfoFromFilesNone" type="radio"
@@ -417,7 +417,6 @@
                         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                             <label style="text-decoration: underline;" class="sub-title">Select Reference</label>
                             <select type="text" class="form-control spdx-select">
-                                <option>1</option>
                             </select>
                             <svg class="disabled lexicon-icon spdx-delete-icon-main" data-row-id=""
                                 onclick="deleteMain(this);" viewBox="0 0 512 512">

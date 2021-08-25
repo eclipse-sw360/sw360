@@ -14,7 +14,6 @@
                             Other Licensing</label>
                         <select id="selectOtherLicensing" type="text" class="form-control spdx-select"
                             onchange="generateOtherLicensingTable($(this).find('option:selected').text())">
-                            <option>1</option>
                         </select>
                         <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-spdxCreatorType-Person"
                             data-row-id="" onclick="deleteMain(this)" viewBox="0 0 512 512">
@@ -109,7 +108,7 @@
                 fillValueToId("licenseId", "${otherLicensingData.licenseId}");
                 fillValueToId("licenseName", "${otherLicensingData.licenseName}");
                 $('#extractedText').val("${otherLicensingData.extractedText}");
-                $('#licenseCrossRefs').val("${otherLicensingData.licenseCrossRefs}");
+                $('#licenseCrossRefs').val("<sw360:out value="${otherLicensingData.licenseCrossRefs.toString()}" hashSet="true"/>");
                 $('#licenseCommentOnOtherLicensing').val("${otherLicensingData.licenseComment}");
             }
         </core_rt:forEach>

@@ -102,7 +102,6 @@
                                 class="sub-title">Select Reference</label>
                             <select id="externalDocumentRefs" type="text" class="form-control spdx-select"
                                 onchange="generateExternalDocumentRefsTable($(this).find('option:selected').text())">
-                                <option>1</option>
                             </select>
                             <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-externalDocumentRef"
                                 data-row-id="" onclick="deleteMain(this);" viewBox="0 0 512 512">
@@ -304,7 +303,7 @@
 
     generateSelecterOption('externalDocumentRefs', "${externalDocumentRefs.size()}");
     function generateSelecterOption(selectId, length) {
-        for (var i = 2; i <= length; i++) {
+        for (var i = 1; i <= length; i++) {
             var option = document.createElement("option");
             option.text = i;
             document.getElementById(selectId).add(option);
