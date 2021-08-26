@@ -84,6 +84,23 @@
     thead {
         cursor: pointer;
     }
+
+    .spdx-table .form-group {
+        margin-right: 1rem;
+    }
+
+    .spdx-table textarea {
+        margin-left: 0 !important;
+    }
+
+    .spdx-table .form-control {
+        margin-left: 0 !important;
+    }
+
+    #spdxLiteMode {
+        margin-left: -1px !important;
+    }
+
 </style>
 
 <script>
