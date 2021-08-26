@@ -260,15 +260,14 @@
                 }
             }
 
-
             $(addBtn).before(newItem);
         }
     }
 
-    $('#creator-anonymous').on('click', function (e) {
-        let selectboxes = $(this).parent().next().find('select');
+    function setAnonymous(checkbox) {
+        let selectboxes = $('#creator-anonymous').parent().next().find('select');
 
-        if ($(this).is(':checked')) {
+        if ($('#creator-anonymous').is(':checked')) {
             selectboxes.each(function (index) {
                 if ($(this).val() == 'Organization' || $(this).val() == 'Person') {
                     $(this).attr('disabled', 'true');
@@ -285,7 +284,7 @@
                 }
             });
         }
-    });
+    }
 
     function updateRadioButton(button) {
         if ($(button).attr('id') == 'FilesAnalyzedFalse' && $(button).is(':checked')) {

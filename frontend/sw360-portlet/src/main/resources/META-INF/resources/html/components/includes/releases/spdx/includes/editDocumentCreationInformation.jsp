@@ -159,7 +159,7 @@
                     <div style="display: flex; flex-direction: column;">
                         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                             <label class="sub-title" for="creator-anonymous">Anonymous</label>
-                            <input id="creator-anonymous" class="spdx-checkbox" type="checkbox"
+                            <input id="creator-anonymous" class="spdx-checkbox" type="checkbox" onclick="setAnonymous()"
                                 name="_sw360_portlet_components_CREATOR_ANONYNOUS">
                         </div>
                         <div style="display: flex;">
