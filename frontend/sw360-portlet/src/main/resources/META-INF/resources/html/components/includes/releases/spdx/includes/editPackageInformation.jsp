@@ -185,8 +185,10 @@
                                 <svg class="disabled lexicon-icon spdx-delete-icon-sub"
                                     name="delete-spdxCreatorType-Person" data-row-id="" onclick="deleteSub(this);"
                                     viewBox="0 0 512 512">
-                                    <title><liferay-ui:message key="delete" /></title>
-                                    <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
+                                    <title>
+                                        <liferay-ui:message key="delete" />
+                                    </title>
+                                    <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash" />
                                 </svg>
                             </div>
                             <div style="display: flex; margin-bottom: 0.75rem;">
@@ -197,8 +199,10 @@
                                 <svg class="disabled lexicon-icon spdx-delete-icon-sub"
                                     name="delete-spdxCreatorType-Person" data-row-id="" onclick="deleteSub(this);"
                                     viewBox="0 0 512 512">
-                                    <title><liferay-ui:message key="delete" /></title>
-                                    <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
+                                    <title>
+                                        <liferay-ui:message key="delete" />
+                                    </title>
+                                    <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash" />
                                 </svg>
                             </div>
                             <button class="spdx-add-button-sub" onclick="addSub(this)">Add new algorithm</button>
@@ -289,7 +293,7 @@
                             <textarea style="flex: 6; margin-right: 1rem;" id="licenseInfoFromFilesValue" rows="5"
                                 class="form-control needs-validation" type="text"
                                 name="_sw360_portlet_components_LICENSE_INFO_FROM_FILES_VALUE"
-                                placeholder="Enter All Licenses Information from Files">${package.licenseInfoFromFiles.toString()}</textarea>
+                                placeholder="Enter All Licenses Information from Files"><sw360:out value="${package.licenseInfoFromFiles.toString()}" hashSet="true"/></textarea>
                         </div>
                         <div style="flex: 2;">
                             <input class="spdx-radio" id="licenseInfoFromFilesNone" type="radio"
@@ -416,13 +420,15 @@
                     <div style="display: flex; flex-direction: column; padding-left: 1rem;">
                         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                             <label style="text-decoration: underline;" class="sub-title">Select Reference</label>
-                            <select type="text" class="form-control spdx-select">
-                                <option>1</option>
+                            <select type="text" class="form-control spdx-select" id="externalReferences"
+                                onchange="generateExternalRefsTable($(this).find('option:selected').text())">
                             </select>
                             <svg class="disabled lexicon-icon spdx-delete-icon-main" data-row-id=""
                                 onclick="deleteMain(this);" viewBox="0 0 512 512">
-                                <title><liferay-ui:message key="delete" /></title>
-                                <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
+                                <title>
+                                    <liferay-ui:message key="delete" />
+                                </title>
+                                <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash" />
                             </svg>
                         </div>
                         <button class="spdx-add-button-main" onclick="addMain(this)">Add new Reference</button>
@@ -431,10 +437,10 @@
                             <select style="width: auto; flex: auto;" id="referenceCategory" type="text"
                                 class="form-control" placeholder="Enter Category"
                                 name="_sw360_portlet_components_REFERENCE_CATEGORY">
-                                <option>SECURITY</option>
+                                <option value="referenceCategory_security">SECURITY</option>
                                 <option>PACKAGE-MANAGER</option>
                                 <option>PERSISTENT-ID</option>
-                                <option>OTHER</option>
+                                <option value="referenceCategory_other">OTHER</option>
                             </select>
                         </div>
                         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
@@ -453,15 +459,26 @@
                         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                             <label class="sub-title">Locator</label>
                             <input style="width: auto; flex: auto;" type="text" class="form-control"
-                                placeholder="Enter Locator" name="_sw360_portlet_components_REFERENCE_LOCATOR">
+                                id="externalReferencesLocator" placeholder="Enter Locator"
+                                name="_sw360_portlet_components_REFERENCE_LOCATOR">
                         </div>
                         <div style="display: flex; flex-direction: row;">
                             <label class="sub-title">3.22 Comment</label>
                             <textarea style="width: auto; flex: auto;" type="text" rows="5" class="form-control"
-                                placeholder="Enter Comment"
+                                id="externalReferencesComment" placeholder="Enter Comment"
                                 name="_sw360_portlet_components_REFERENCE_COMMENT"></textarea>
                         </div>
                     </div>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="3">
+                <div class="form-group">
+                    <label for="spdxPackageComment">3.23 Package Attribution Text</label>
+                    <textarea class="form-control" id="spdxPackageAttributionText" rows="5"
+                        name="_sw360_portlet_components_PACKAGE_COMMENT"
+                        placeholder="Enter Package Comment"><sw360:out value="${package.attributionText.toString()}" stripNewlines="false" hashSet="true"/></textarea>
                 </div>
             </td>
         </tr>
@@ -506,24 +523,34 @@
 
     generateExternalRefsTable('1');
     function generateExternalRefsTable(index) {
-        fillValueToId("externalReferencesCategory", "");
+        fillValueToId("referenceCategory", "");
         fillValueToId("externalReferencesType", "");
         fillValueToId("externalReferencesLocator", "");
         fillValueToId("externalReferencesComment", "");
+        console.log(index);
         <core_rt:if test="${not package.externalRefs.isEmpty()}">
             var i = 0;
             <core_rt:forEach items="${package.externalRefs}" var="externalRefsData" varStatus="loop">
                 i++;
                 if (i == index) {
-                    fillValueToId("externalReferencesCategory", "${externalRefsData.referenceCategory}");
-                    fillValueToId("externalReferencesType", "${externalRefsData.referenceType}");
+                    fillValueToId("referenceCategory", "${externalRefsData.referenceCategory}");
+                    fillValueToId("referenceType-1", "${externalRefsData.referenceType}");
                     fillValueToId("externalReferencesLocator", "${externalRefsData.referenceLocator}");
-                    fillValueToId("externalReferencesComment", "${externalRefsData.comment}");
+                    $('#externalReferencesComment').val("<sw360:out value="${externalRefsData.comment}" stripNewlines="false" />")
                 }
             </core_rt:forEach>
         </core_rt:if>
     }
     generateSelecterOption('externalReferences', "${package.externalRefs.size()}");
     autoHideString('packageSPDXId', 'SPDXRef-');
+
+    fillValueToTextArea('licenseInfoFromFilesValue', "${package.licenseInfoFromFiles.toString()}");
+    function fillValueToTextArea(id, value) {
+        value = value.replace('[', '');
+        value = value.replace(']', '');
+        value = value.replaceAll(',', '\n');
+        console.log("AAAAAAAA " + value)
+        $('#' + id).val(value);
+    }
 
 </script>
