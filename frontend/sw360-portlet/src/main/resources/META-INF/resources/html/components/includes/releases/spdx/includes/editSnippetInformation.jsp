@@ -80,7 +80,7 @@
                                 <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
                             </svg>
                         </div>
-                        <button class="spdx-add-button-sub" onclick="addSub(this)">Add new range</button>
+                        <button class="spdx-add-button-sub" onclick="addSub(this)">Add new Range</button>
                     </div>
                 </div>
             </td>
