@@ -189,7 +189,8 @@ public class SpdxBOMImporter {
 
             doc.setSnippets(snippetInfos)
                 .setRelationships(relationships)
-                .setAnnotations(annotations);
+                .setAnnotations(annotations)
+                .setOtherLicensingInformationDetecteds(otherLicenses);
         } catch (InvalidSPDXAnalysisException e) {
             log.error(e);
         }
@@ -359,7 +360,7 @@ public class SpdxBOMImporter {
         try {
             final String spdxVersion = spdxDocument.getSpecVersion();
             final String dataLicense = spdxDocument.getDataLicense().toString();
-            // final String spdxId = spdxDocument.getId();
+            final String spdxId = spdxDocument.getId();
             final String name = spdxDocument.getName();
             final String documentNamespace = spdxDocument.getDocumentContainer().getDocumentNamespace();
             final Set<ExternalDocumentReferences> refs = createExternalDocumentRefsFromSpdxDocument(spdxDocument);
@@ -369,9 +370,9 @@ public class SpdxBOMImporter {
             final String creatorComment = spdxDocument.getCreationInfo().getComment();
             final String documentComment = spdxDocument.getDocumentComment();
 
-            info.setDocumentCreationInformationVersion(spdxVersion)
+            info.setSpdxVersion(spdxVersion)
                 .setDataLicense(dataLicense)
-                // .setSpdxDocumentId(spdxId)
+                .setSPDXID(spdxId)
                 .setName(name)
                 .setDocumentNamespace(documentNamespace)
                 .setExternalDocumentRefs(refs)
@@ -459,6 +460,7 @@ public class SpdxBOMImporter {
             final String downloadLocation = spdxPackage.getDownloadLocation();
             final boolean fileAnalyzed = spdxPackage.isFilesAnalyzed();
             final PackageVerificationCode PVC = createPVCFromSpdxPackage(spdxPackage);
+            final Set<CheckSum> checksums = createCheckSumsFromSpdxChecksums(spdxPackage.getChecksums());
             final String homepage = spdxPackage.getHomepage();
             final String sourceInfo = spdxPackage.getSourceInfo();
             final String licenseConcluded = spdxPackage.getLicenseConcluded().toString();
@@ -593,6 +595,7 @@ public class SpdxBOMImporter {
     private Set<CheckSum> createCheckSumsFromSpdxChecksums(Checksum[] spdxChecksums) {
         Set<CheckSum> checksums = new HashSet<CheckSum>();
 
+        log.info(spdxChecksums.length);
         for (Checksum spdxChecksum : spdxChecksums) {
             String algorithm = spdxChecksum.getAlgorithm().toString();
             String value = spdxChecksum.getValue();
