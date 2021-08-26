@@ -114,8 +114,7 @@
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" type="radio" id="downloadLocationExist"
-                                name="_sw360_portlet_components_DOWNLOAD_LOCATION" value="EXIST"
-                                onchange="setInputValue('downloadLocation', value);">
+                                name="_sw360_portlet_components_DOWNLOAD_LOCATION" value="EXIST">
                             <input style="flex: 6; margin-right: 1rem;" class="form-control needs-validation"
                                 id="downloadLocationValue" rule="isDownloadUrl" type="text"
                                 name="_sw360_portlet_components_DOWNLOAD_LOCATION_VALUE"
@@ -123,13 +122,11 @@
                         </div>
                         <div style="flex: 2;">
                             <input class="spdx-radio" id="downloadLocationNone" type="radio"
-                                name="_sw360_portlet_components_DOWNLOAD_LOCATION" value="NONE"
-                                onchange="setInputValue('downloadLocation', value);">
+                                name="_sw360_portlet_components_DOWNLOAD_LOCATION" value="NONE">
                             <label style="margin-right: 2rem;" class="form-check-label radio-label"
                                 for="downloadLocationNone">NONE</label>
                             <input class="spdx-radio" id="downloadLocationNoAssertion" type="radio"
-                                name="_sw360_portlet_components_DOWNLOAD_LOCATION" value="NOASSERTION"
-                                onchange="setInputValue('downloadLocation', value);">
+                                name="_sw360_portlet_components_DOWNLOAD_LOCATION" value="NOASSERTION">
                             <label class="form-check-label radio-label"
                                 for="downloadLocationNoAssertion">NOASSERTION</label>
                         </div>
@@ -165,7 +162,7 @@
                             placeholder="Enter Verification Code Value"></input>
                         <textarea class="form-control" id="excludedFiles" rows="5"
                             name="_sw360_portlet_components_EXCLUDED_FILES"
-                            placeholder="Enter Excluded Files"></textarea>
+                            placeholder="Enter Excluded Files"><sw360:out value="${package.packageVerificationCode.excludedFiles.toString()}" hashSet="true"/></textarea>
                     </div>
                 </div>
             </td>
@@ -186,7 +183,7 @@
                                     name="delete-spdxCreatorType-Person" data-row-id="" onclick="deleteSub(this);"
                                     viewBox="0 0 512 512">
                                     <title><liferay-ui:message key="delete" /></title>
-                                    <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
+                                    <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash" />
                                 </svg>
                             </div>
                             <div style="display: flex; margin-bottom: 0.75rem;">
@@ -198,7 +195,7 @@
                                     name="delete-spdxCreatorType-Person" data-row-id="" onclick="deleteSub(this);"
                                     viewBox="0 0 512 512">
                                     <title><liferay-ui:message key="delete" /></title>
-                                    <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
+                                    <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash" />
                                 </svg>
                             </div>
                             <button class="spdx-add-button-sub" onclick="addSub(this)">Add new algorithm</button>
@@ -215,8 +212,7 @@
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" id="packageHomepageExist" type="radio"
-                                name="_sw360_portlet_components_PACKAGE_HOMEPAGE" value="EXIST"
-                                onchange="setInputValue('packageHomepage', value);">
+                                name="_sw360_portlet_components_PACKAGE_HOMEPAGE" value="EXIST">
                             <input style="flex: 6; margin-right: 1rem;" id="packageHomepageValue"
                                 class="form-control needs-validation" rule="isDownloadUrl" type="text"
                                 name="_sw360_portlet_components_PACKAGE_HOMEPAGE_VALUE"
@@ -224,13 +220,11 @@
                         </div>
                         <div style="flex: 2;">
                             <input class="spdx-radio" id="packageHomepageNone" type="radio"
-                                name="_sw360_portlet_components_PACKAGE_HOMEPAGE" value="NONE"
-                                onchange="setInputValue('packageHomepage', value);">
+                                name="_sw360_portlet_components_PACKAGE_HOMEPAGE" value="NONE">
                             <label style="margin-right: 2rem;" class="form-check-label radio-label"
                                 for="packageHomepageNone">NONE</label>
                             <input class="spdx-radio" id="packageHomepageNoAssertion" type="radio"
-                                name="_sw360_portlet_components_PACKAGE_HOMEPAGE" value="NOASSERTION"
-                                onchange="setInputValue('packageHomepage', value);">
+                                name="_sw360_portlet_components_PACKAGE_HOMEPAGE" value="NOASSERTION">
                             <label class="form-check-label radio-label"
                                 for="packageHomepageNoAssertion">NOASSERTION</label>
                         </div>
@@ -254,8 +248,7 @@
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" id="licenseConcludedExist" type="radio"
-                                name="_sw360_portlet_components_LICENSE_CONCLUDED" value="EXIST"
-                                onchange="setInputValue('licenseConcluded', value);">
+                                name="_sw360_portlet_components_LICENSE_CONCLUDED" value="EXIST">
                             <input style="flex: 6; margin-right: 1rem;" class="form-control needs-validation"
                                 id="licenseConcludedValue" type="text"
                                 name="_sw360_portlet_components_LICENSE_CONCLUDED_VALUE"
@@ -263,13 +256,11 @@
                         </div>
                         <div style="flex: 2;">
                             <input class="spdx-radio" id="licenseConcludedNone" type="radio"
-                                name="_sw360_portlet_components_LICENSE_CONCLUDED" value="NONE"
-                                onchange="setInputValue('licenseConcluded', value);">
+                                name="_sw360_portlet_components_LICENSE_CONCLUDED" value="NONE">
                             <label style="margin-right: 2rem;" class="form-check-label radio-label"
                                 for="licenseConcludedNone">NONE</label>
                             <input class="spdx-radio" id="licenseConcludedNoAssertion" type="radio"
-                                name="_sw360_portlet_components_LICENSE_CONCLUDED" value="NOASSERTION"
-                                onchange="setInputValue('licenseConcluded', value);">
+                                name="_sw360_portlet_components_LICENSE_CONCLUDED" value="NOASSERTION">
                             <label class="form-check-label radio-label"
                                 for="licenseConcludedNoAssertion">NOASSERTION</label>
                         </div>
@@ -284,22 +275,19 @@
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" id="licenseInfoFromFilesExist" type="radio"
-                                name="_sw360_portlet_components_LICENSE_INFO_FROM_FILES" value="EXIST"
-                                onchange="setInputValue('licenseInfoFromFiles', value);">
+                                name="_sw360_portlet_components_LICENSE_INFO_FROM_FILES" value="EXIST">
                             <textarea style="flex: 6; margin-right: 1rem;" id="licenseInfoFromFilesValue" rows="5"
                                 class="form-control needs-validation" type="text"
                                 name="_sw360_portlet_components_LICENSE_INFO_FROM_FILES_VALUE"
-                                placeholder="Enter All Licenses Information from Files">${package.licenseInfoFromFiles.toString()}</textarea>
+                                placeholder="Enter All Licenses Information from Files"><sw360:out value="${package.licenseInfoFromFiles.toString()}" hashSet="true"/></textarea>
                         </div>
                         <div style="flex: 2;">
                             <input class="spdx-radio" id="licenseInfoFromFilesNone" type="radio"
-                                name="_sw360_portlet_components_LICENSE_INFO_FROM_FILES" value="NONE"
-                                onchange="setInputValue('licenseInfoFromFiles', value);">
+                                name="_sw360_portlet_components_LICENSE_INFO_FROM_FILES" value="NONE">
                             <label style="margin-right: 2rem;" class="form-check-label radio-label"
                                 for="licenseInfoFromFilesNone">NONE</label>
                             <input class="spdx-radio" id="licenseInfoFromFilesNoAssertion" type="radio"
-                                name="_sw360_portlet_components_LICENSE_INFO_FROM_FILES" value="NOASSERTION"
-                                onchange="setInputValue('licenseInfoFromFiles', value);">
+                                name="_sw360_portlet_components_LICENSE_INFO_FROM_FILES" value="NOASSERTION">
                             <label class="form-check-label radio-label"
                                 for="licenseInfoFromFilesNoAssertion">NOASSERTION</label>
                         </div>
@@ -314,8 +302,7 @@
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" id="licenseDeclaredExist" type="radio"
-                                name="_sw360_portlet_components_DECLARED_LICENSE" value="EXIST"
-                                onchange="setInputValue('licenseDeclared', value);">
+                                name="_sw360_portlet_components_DECLARED_LICENSE" value="EXIST">
                             <input style="flex: 6; margin-right: 1rem;" id="licenseDeclaredValue"
                                 class="form-control needs-validation" type="text"
                                 name="_sw360_portlet_components_DECLARED_LICENSE_VALUE"
@@ -323,13 +310,11 @@
                         </div>
                         <div style="flex: 2;">
                             <input class="spdx-radio" id="licenseDeclaredNone" type="radio"
-                                name="_sw360_portlet_components_DECLARED_LICENSE" value="NONE"
-                                onchange="setInputValue('licenseDeclared', value);">
+                                name="_sw360_portlet_components_DECLARED_LICENSE" value="NONE">
                             <label style="margin-right: 2rem;" class="form-check-label radio-label"
                                 for="licenseDeclaredNone">NONE</label>
                             <input class="spdx-radio" id="licenseDeclaredNoAssertion" type="radio"
-                                name="_sw360_portlet_components_DECLARED_LICENSE" value="NOASSERTION"
-                                onchange="setInputValue('licenseDeclared', value);">
+                                name="_sw360_portlet_components_DECLARED_LICENSE" value="NOASSERTION">
                             <label class="form-check-label radio-label"
                                 for="licenseDeclaredNoAssertion">NOASSERTION</label>
                         </div>
@@ -354,8 +339,7 @@
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" id="copyrightTextExist" type="radio"
-                                name="_sw360_portlet_components_COPYRIGHT_TEXT" value="EXIST"
-                                onchange="setInputValue('copyrightText', value);">
+                                name="_sw360_portlet_components_COPYRIGHT_TEXT" value="EXIST">
                             <textarea style="flex: 6; margin-right: 1rem;" id="copyrightTextValue" rows="5"
                                 class="form-control needs-validation" type="text"
                                 name="_sw360_portlet_components_COPYRIGHT_TEXT_VALUE"
@@ -363,13 +347,11 @@
                         </div>
                         <div style="flex: 2;">
                             <input class="spdx-radio" id="copyrightTextNone" type="radio"
-                                name="_sw360_portlet_components_COPYRIGHT_TEXT" value="NONE"
-                                onchange="setInputValue('copyrightText', value);">
+                                name="_sw360_portlet_components_COPYRIGHT_TEXT" value="NONE">
                             <label style="margin-right: 2rem;" class="form-check-label radio-label"
                                 for="copyrightTextNone">NONE</label>
                             <input class="spdx-radio" id="copyrightTextNoAssertion" type="radio"
-                                name="_sw360_portlet_components_COPYRIGHT_TEXT" value="NOASSERTION"
-                                onchange="setInputValue('copyrightText', value);">
+                                name="_sw360_portlet_components_COPYRIGHT_TEXT" value="NOASSERTION">
                             <label class="form-check-label radio-label"
                                 for="copyrightTextNoAssertion">NOASSERTION</label>
                         </div>
@@ -416,13 +398,13 @@
                     <div style="display: flex; flex-direction: column; padding-left: 1rem;">
                         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                             <label style="text-decoration: underline;" class="sub-title">Select Reference</label>
-                            <select type="text" class="form-control spdx-select">
-                                <option>1</option>
+                            <select type="text" class="form-control spdx-select" id="externalReferences"
+                                onchange="generateExternalRefsTable($(this).find('option:selected').text())">
                             </select>
                             <svg class="disabled lexicon-icon spdx-delete-icon-main" data-row-id=""
                                 onclick="deleteMain(this);" viewBox="0 0 512 512">
                                 <title><liferay-ui:message key="delete" /></title>
-                                <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
+                                <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash" />
                             </svg>
                         </div>
                         <button class="spdx-add-button-main" onclick="addMain(this)">Add new Reference</button>
@@ -431,10 +413,10 @@
                             <select style="width: auto; flex: auto;" id="referenceCategory" type="text"
                                 class="form-control" placeholder="Enter Category"
                                 name="_sw360_portlet_components_REFERENCE_CATEGORY">
-                                <option>SECURITY</option>
+                                <option value="referenceCategory_security">SECURITY</option>
                                 <option>PACKAGE-MANAGER</option>
                                 <option>PERSISTENT-ID</option>
-                                <option>OTHER</option>
+                                <option value="referenceCategory_other">OTHER</option>
                             </select>
                         </div>
                         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
@@ -453,15 +435,26 @@
                         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                             <label class="sub-title">Locator</label>
                             <input style="width: auto; flex: auto;" type="text" class="form-control"
-                                placeholder="Enter Locator" name="_sw360_portlet_components_REFERENCE_LOCATOR">
+                                id="externalReferencesLocator" placeholder="Enter Locator"
+                                name="_sw360_portlet_components_REFERENCE_LOCATOR">
                         </div>
                         <div style="display: flex; flex-direction: row;">
                             <label class="sub-title">3.22 Comment</label>
                             <textarea style="width: auto; flex: auto;" type="text" rows="5" class="form-control"
-                                placeholder="Enter Comment"
+                                id="externalReferencesComment" placeholder="Enter Comment"
                                 name="_sw360_portlet_components_REFERENCE_COMMENT"></textarea>
                         </div>
                     </div>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="3">
+                <div class="form-group">
+                    <label for="spdxPackageComment">3.23 Package Attribution Text</label>
+                    <textarea class="form-control" id="spdxPackageAttributionText" rows="5"
+                        name="_sw360_portlet_components_PACKAGE_COMMENT"
+                        placeholder="Enter Package Comment"><sw360:out value="${package.attributionText.toString()}" stripNewlines="false" hashSet="true"/></textarea>
                 </div>
             </td>
         </tr>
@@ -506,7 +499,7 @@
 
     generateExternalRefsTable('1');
     function generateExternalRefsTable(index) {
-        fillValueToId("externalReferencesCategory", "");
+        fillValueToId("referenceCategory", "");
         fillValueToId("externalReferencesType", "");
         fillValueToId("externalReferencesLocator", "");
         fillValueToId("externalReferencesComment", "");
@@ -515,15 +508,22 @@
             <core_rt:forEach items="${package.externalRefs}" var="externalRefsData" varStatus="loop">
                 i++;
                 if (i == index) {
-                    fillValueToId("externalReferencesCategory", "${externalRefsData.referenceCategory}");
-                    fillValueToId("externalReferencesType", "${externalRefsData.referenceType}");
+                    fillValueToId("referenceCategory", "${externalRefsData.referenceCategory}");
+                    fillValueToId("referenceType-1", "${externalRefsData.referenceType}");
                     fillValueToId("externalReferencesLocator", "${externalRefsData.referenceLocator}");
-                    fillValueToId("externalReferencesComment", "${externalRefsData.comment}");
+                    $('#externalReferencesComment').val("<sw360:out value="${externalRefsData.comment}" stripNewlines="false" />")
                 }
             </core_rt:forEach>
         </core_rt:if>
     }
     generateSelecterOption('externalReferences', "${package.externalRefs.size()}");
     autoHideString('packageSPDXId', 'SPDXRef-');
+    fillValueToTextArea('licenseInfoFromFilesValue', "${package.licenseInfoFromFiles.toString()}");
+    function fillValueToTextArea(id, value) {
+        value = value.replace('[', '');
+        value = value.replace(']', '');
+        value = value.replaceAll(',', '\n');
+        $('#' + id).val(value);
+    }
 
 </script>

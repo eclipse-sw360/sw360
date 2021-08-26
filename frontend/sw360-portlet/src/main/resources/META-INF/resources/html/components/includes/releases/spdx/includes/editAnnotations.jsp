@@ -13,7 +13,6 @@
                         <label for="selectAnnotation" style="text-decoration: underline;" class="sub-title">Select
                             Annotation</label>
                         <select id="selectAnnotation" type="text" class="form-control spdx-select" onclick="generateAnnotationsTable($(this).find('option:selected').text())">
-                            <option>1</option>
                         </select>
                         <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-spdxCreatorType-Person"
                             data-row-id="" onclick="deleteMain(this)" viewBox="0 0 512 512">
@@ -112,7 +111,7 @@
                 fillValueToId("annotatorValue", annotatorValue);
                 setCreatedDateTime("${annotationsData.annotationDate}");
                 fillValueToId("annotationType", "${annotationsData.annotationType}");
-                fillValueToId("spdxIdRef", "${annotationsData.spdxRef}");
+                fillValueToId("spdxIdRef", "${annotationsData.spdxIdRef}");
                 fillValueToId("annotationComment", "${annotationsData.annotationComment}");
             }
         </core_rt:forEach>
