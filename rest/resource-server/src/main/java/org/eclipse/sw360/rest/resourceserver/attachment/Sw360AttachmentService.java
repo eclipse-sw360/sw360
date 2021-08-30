@@ -240,10 +240,12 @@ public class Sw360AttachmentService {
 
     public Resources<Resource<Attachment>> getResourcesFromList(Set<Attachment> attachmentList) {
         final List<Resource<Attachment>> attachmentResources = new ArrayList<>();
-        for (final Attachment attachment : attachmentList) {
-            final Attachment embeddedAttachment = restControllerHelper.convertToEmbeddedAttachment(attachment);
-            final Resource<Attachment> attachmentResource = new Resource<>(embeddedAttachment);
-            attachmentResources.add(attachmentResource);
+        if (CommonUtils.isNotEmpty(attachmentList)) {
+            for (final Attachment attachment : attachmentList) {
+                final Attachment embeddedAttachment = restControllerHelper.convertToEmbeddedAttachment(attachment);
+                final Resource<Attachment> attachmentResource = new Resource<>(embeddedAttachment);
+                attachmentResources.add(attachmentResource);
+            }
         }
         return new Resources<>(attachmentResources);
     }
