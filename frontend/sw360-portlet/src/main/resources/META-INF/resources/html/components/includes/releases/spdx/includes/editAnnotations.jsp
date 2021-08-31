@@ -91,41 +91,57 @@
 </table>
 
 <script>
-    generateAnnotationsTable('1');
-    function generateAnnotationsTable(index) {
-        fillValueToId("annotatorType", "");
-        fillValueToId("annotatorValue", "");
-        setCreatedDateTime("");
-        fillValueToId("annotationType", "");
-        fillValueToId("spdxIdRef", "");
-        fillValueToId("annotationComment", "");
-        <core_rt:if test="${not annotations.isEmpty()}">
-            var i = 0;
-        <core_rt:forEach items="${annotations}" var="annotationsData" varStatus="loop">
-                i++;
-            if (i == index) {
-                var annotator = "${annotationsData.annotator}";
-                annotatorType = annotator.replace(/:.*/, '');
-                annotatorValue = annotator.replace(annotatorType + ':', '')
-                fillValueToId("annotatorType", annotatorType);
-                fillValueToId("annotatorValue", annotatorValue);
-                setCreatedDateTime("${annotationsData.annotationDate}");
-                fillValueToId("annotationType", "${annotationsData.annotationType}");
-                fillValueToId("spdxIdRef", "${annotationsData.spdxIdRef}");
-                fillValueToId("annotationComment", "${annotationsData.annotationComment}");
+    $(function () {
+        // ------------------------- 8 Annotations
+        // Add data
+        $('[name=add-annotation]').on('click', function(e) {
+            let newObj = { 'annotator': '', 'annotationDate': '', 'annotationType': '', 'annotationComment': '', 'spdxRef': '' };
+            spdxDocumentObj.annotations.push(newObj);
+            addMain($(this));
+            $('#selectAnnotation').change();
+        });
+
+        // Delete data
+        $('[name=delete-annotation').on('click', function(e) {
+            let selectedIndex = $('#selectAnnotation')[0].selectedIndex;
+            spdxDocumentObj.annotations.splice(selectedIndex, 1);
+            deleteMain($(this));
+        });
+
+        // Change data
+        $('#selectAnnotation').on('change', function(e) {
+            let selectedIndex = $('#selectAnnotation')[0].selectedIndex;
+            fillAnnotation(selectedIndex);
+        });
+
+        function fillAnnotation(index) {
+            let obj = spdxDocumentObj.annotations[index];
+
+            fillAnnotator('#annotatorType', obj['annotator']);
+
+            fillDateTime('#annotationCreatedDate', '#annotationCreatedTime', obj['annotationDate']);
+
+            $('#annotationType').val(obj['annotationType']);
+
+            $('#spdxIdRef').val(obj['spdxRef']);
+
+            $('#annotationComment').val(obj['annotationComment']);
+        }
+
+        function storeAnnotation(index) {
+            let obj = spdxDocumentObj.annotations[index];
+
+            if ($('#annotatorValue').val().trim() != '') {
+                obj['annotator'] = $('#annotatorType').val() + ': ' + $('#annotatorValue').val().trim();
+            } else {
+                obj['annotator'] = '';
             }
-        </core_rt:forEach>
-        </core_rt:if>
-    }
 
-    function setCreatedDateTime(created) {
-        var createdDate = created.replace(/T.*/i, '');
-        var createdTime = created.replace(createdDate, '');
-        createdTime = createdTime.replace(/[A-Z]/g, '');
-        $('#annotationCreatedDate').prop('value', createdDate);
-        $('#annotationCreatedTime').prop('value', createdTime);
-    }
+            obj['annotationDate'] = readDateTime('#annotationCreatedDate', '#annotationCreatedTime');
 
-    generateSelecterOption('selectAnnotation', "${annotations.size()}");
-
+            obj['annotationType'] = $('#annotationType').val();
+            obj['spdxRef'] = $('#spdxIdRef').val();
+            obj['annotationComment'] = $('#annotationComment').val();
+        }
+    });
 </script>
