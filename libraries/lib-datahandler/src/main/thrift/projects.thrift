@@ -240,6 +240,11 @@ service ProjectService {
     list<Project> getMyProjects(1: User user, 2:  map<string, bool> userRoles);
 
     /**
+     * get all projects as project summaries which are visible to user with pagination
+     */
+    map<PaginationData, list<Project>> getAccessibleProjectsSummaryWithPagination(1: User user, 2: PaginationData pageData);
+
+    /**
      * get all projects as project summaries which are visible to user
      */
     list<Project> getAccessibleProjectsSummary(1: User user);
@@ -453,4 +458,14 @@ service ProjectService {
      * get clearing state information for list view
      */
     list<map<string,string>> getClearingStateInformationForListView(1:string projectId, 2: User user) throws (1: SW360Exception exp);
+
+    /**
+    * filter groups from the projects
+    */
+    set<string> getGroups();
+
+    /**
+    * get accessible projects count
+    */
+    i32 getMyAccessibleProjectCounts(1: User user);
 }

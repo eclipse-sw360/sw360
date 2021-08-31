@@ -18,6 +18,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -36,7 +37,9 @@ import com.cloudant.client.api.DesignDocumentManager;
 import com.cloudant.client.api.model.Response;
 import com.cloudant.client.api.query.QueryResult;
 import com.cloudant.client.api.views.Key;
+import com.cloudant.client.api.views.ViewRequest;
 import com.cloudant.client.api.views.ViewRequestBuilder;
+import com.cloudant.client.api.views.ViewResponse;
 import com.cloudant.client.api.views.ViewResponse.Row;
 import com.cloudant.client.org.lightcouch.NoDocumentException;
 import com.google.common.collect.ImmutableList;
@@ -227,6 +230,18 @@ public class DatabaseConnectorCloudant {
         return count;
     }
 
+    public <T> int getDocumentCount(Class<T> type, String viewName, String []keys) {
+        int count = 0;
+        try {
+            ViewResponse<String, Integer> response = database.getViewRequestBuilder(type.getSimpleName(), viewName)
+                    .newRequest(Key.Type.STRING, Integer.class).keys(keys).includeDocs(false).group(true).reduce(true).build().getResponse();
+            count = response.getValues().stream().mapToInt(x->x).sum();
+        } catch (IOException e) {
+            log.error("Error getting document count", e);
+        }
+        return count;
+    }
+
     public <T> ViewRequestBuilder createQuery(Class<T> type, String queryName) {
         return database.getViewRequestBuilder(type.getSimpleName(), queryName);
     }
@@ -277,5 +292,17 @@ public class DatabaseConnectorCloudant {
 
     public <T> QueryResult<T> getQueryResult(String query, Class<T> type) {
         return database.query(query, type);
+    }
+
+    public <T> Set<String> getDistinctSortedStringKeys(Class<T> type, String viewName) {
+        ViewRequest<String, String> countReq1 = database.getViewRequestBuilder(type.getSimpleName(), viewName)
+                .newRequest(Key.Type.STRING, String.class).includeDocs(false).build();
+        try {
+            ViewResponse<String, String> response = countReq1.getResponse();
+            return new TreeSet<String>(response.getKeys());
+        } catch (IOException e) {
+            log.error("Error in getting project groups", e);
+        }
+        return Collections.emptySet();
     }
 }

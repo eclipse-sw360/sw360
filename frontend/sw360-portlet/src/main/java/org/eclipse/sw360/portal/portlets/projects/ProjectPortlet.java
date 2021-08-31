@@ -153,7 +153,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
     private static final JsonFactory JSON_FACTORY = new JsonFactory();
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final TSerializer THRIFT_JSON_SERIALIZER = new TSerializer(new TSimpleJSONProtocol.Factory());
+    private static final TSerializer THRIFT_JSON_SERIALIZER = getJsonSerializer();
 
     public static final String LICENSE_STORE_KEY_PREFIX = "license-store-";
 
@@ -1277,8 +1277,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         ProjectService.Iface projectClient = thriftClients.makeProjectClient();
         ModerationService.Iface modClient = thriftClients.makeModerationClient();
         try {
-            List<Project> projectList = projectClient.getAccessibleProjectsSummary(user);
-            Set<String> organizations = getProjectGroups(projectList);
+            Set<String> organizations = projectClient.getGroups();
             request.setAttribute(PortalConstants.ORGANIZATIONS, organizations);
             String dateLimit = CommonUtils.nullToEmptyString(ModerationPortletUtils.loadPreferredClearingDateLimit(request, UserCacheHolder.getUserFromRequest(request)));
             request.setAttribute(CUSTOM_FIELD_PREFERRED_CLEARING_DATE_LIMIT, dateLimit);
@@ -1292,6 +1291,14 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             String parameter = request.getParameter(filteredField.toString());
             request.setAttribute(filteredField.getFieldName(), nullToEmpty(parameter));
         }
+    }
+
+    private Map<PaginationData, List<Project>> getFilteredProjectList(PortletRequest request, PaginationData pageData) throws IOException {
+        final User user = UserCacheHolder.getUserFromRequest(request);
+        Map<String, Set<String>> filterMap = loadFilterMapFromRequest(request);
+        loadAndStoreStickyProjectGroup(request, user, filterMap);
+        String id = request.getParameter(Project._Fields.ID.toString());
+        return findProjectsByFiltersOrId(filterMap, id, user, pageData);
     }
 
     private List<Project> getFilteredProjectList(PortletRequest request) throws IOException {
@@ -1309,6 +1316,30 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         } else {
             ProjectPortletUtils.saveStickyProjectGroup(request, user, groupFilterValue);
         }
+    }
+
+    private Map<PaginationData, List<Project>> findProjectsByFiltersOrId(Map<String, Set<String>> filterMap, String id, User user, PaginationData pageData) {
+        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
+        Map<PaginationData, List<Project>> ctToProjects = Maps.newHashMap();
+        List<Project> projectList;
+        try {
+            if (!isNullOrEmpty(id)){ // the presence of the id signals to load linked projects hierarchy instead of using filters
+                final Collection<ProjectLink> projectLinks = SW360Utils.getLinkedProjectsAsFlatList(id, true, thriftClients, log, user);
+                List<String> linkedProjectIds = projectLinks.stream().map(ProjectLink::getId).collect(Collectors.toList());
+                projectList = projectClient.getProjectsById(linkedProjectIds, user);
+            } else {
+                if (filterMap.isEmpty()) {
+                    ctToProjects = projectClient.getAccessibleProjectsSummaryWithPagination(user, pageData);
+                } else {
+                    projectList = projectClient.refineSearch(null, filterMap, user);
+                    ctToProjects.put(pageData.setTotalRowCount(projectList.size()), projectList);
+                }
+            }
+        } catch (TException e) {
+            log.error("Could not search projects in backend ", e);
+            projectList = Collections.emptyList();
+        }
+        return ctToProjects;
     }
 
     private List<Project> findProjectsByFiltersOrId(Map<String, Set<String>> filterMap, String id, User user) {
@@ -2644,12 +2675,28 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         HttpServletRequest originalServletRequest = PortalUtil.getOriginalServletRequest(PortalUtil.getHttpServletRequest(request));
         PaginationParameters paginationParameters = PaginationParser.parametersFrom(originalServletRequest);
         PortletUtils.handlePaginationSortOrder(request, paginationParameters, projectFilteredFields, PROJECT_NO_SORT);
-        List<Project> projectList = getFilteredProjectList(request);
+        PaginationData pageData = new PaginationData();
+        pageData.setRowsPerPage(paginationParameters.getDisplayLength());
+        pageData.setDisplayStart(paginationParameters.getDisplayStart());
+        pageData.setAscending(paginationParameters.isAscending().get());
+        int sortParam = -1;
+        if (paginationParameters.getSortingColumn().isPresent()) {
+            sortParam = paginationParameters.getSortingColumn().get();
+            if (sortParam == 1 && Integer.valueOf(paginationParameters.getEcho()) == 1) {
+                pageData.setSortColumnNumber(-1);
+            } else {
+                pageData.setSortColumnNumber(sortParam);
+            }
+        }
+        Map<PaginationData, List<Project>> projectList = getFilteredProjectList(request, pageData);
 
-        JSONArray jsonProjects = getProjectData(projectList, paginationParameters, request);
+        JSONArray jsonProjects = getProjectData(projectList.values().iterator().next(), paginationParameters, request);
         JSONObject jsonResult = createJSONObject();
-        jsonResult.put(DATATABLE_RECORDS_TOTAL, projectList.size());
-        jsonResult.put(DATATABLE_RECORDS_FILTERED, projectList.size());
+        Map<String, Set<String>> filterMap = loadFilterMapFromRequest(request);
+        int count = (int) (filterMap.isEmpty() ? getAccessibleProjectsCount(request)
+                : projectList.keySet().iterator().next().getTotalRowCount());
+        jsonResult.put(DATATABLE_RECORDS_TOTAL, count);
+        jsonResult.put(DATATABLE_RECORDS_FILTERED, count);
         jsonResult.put(DATATABLE_DISPLAY_DATA, jsonProjects);
 
         try {
@@ -2659,12 +2706,25 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         }
     }
 
+    private int getAccessibleProjectsCount(ResourceRequest request) {
+        ProjectService.Iface client = thriftClients.makeProjectClient();
+        User user = UserCacheHolder.getUserFromRequest(request);
+        int count = 0;
+        try {
+            count = client.getMyAccessibleProjectCounts(user);
+        } catch (TException e) {
+            log.error("Error getting projects count", e);
+        }
+        return count;
+    }
+
     public JSONArray getProjectData(List<Project> projectList, PaginationParameters projectParameters, ResourceRequest request) {
         List<Project> sortedProjects = sortProjectList(projectList, projectParameters);
         int count = PortletUtils.getProjectDataCount(projectParameters, projectList.size());
-
+        Map<String, Set<String>> filterMap = loadFilterMapFromRequest(request);
+        final int start = filterMap.isEmpty() ? 0 : projectParameters.getDisplayStart();
         JSONArray projectData = createJSONArray();
-        for (int i = projectParameters.getDisplayStart(); i < count; i++) {
+        for (int i = start; i < count; i++) {
             JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
             Project project = sortedProjects.get(i);
             jsonObject.put("id", project.getId());
