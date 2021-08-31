@@ -159,7 +159,6 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
             return moderator.deleteSpdxDocumentCreationInfo(documentCreationInfo, user);
         }
         SPDXDocumentCreationInfoRepository.remove(documentCreationInfo);
-        dbHandlerUtil.addChangeLogs(null, documentCreationInfo, user.getEmail(), Operation.DELETE, null, Lists.newArrayList(), null, null);
         String spdxDocumentId = documentCreationInfo.getSpdxDocumentId();
         if (isNotNullEmptyOrWhitespace(spdxDocumentId)) {
             SPDXDocument spdxDocument = SPDXDocumentRepository.get(spdxDocumentId);

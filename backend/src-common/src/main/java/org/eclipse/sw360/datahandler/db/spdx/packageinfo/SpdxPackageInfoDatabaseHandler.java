@@ -214,7 +214,6 @@ public class SpdxPackageInfoDatabaseHandler {
             return moderator.deleteSpdxPackageInfo(packageInfo, user);
         }
         PackageInfoRepository.remove(packageInfo);
-        dbHandlerUtil.addChangeLogs(null, packageInfo, user.getEmail(), Operation.DELETE, null, Lists.newArrayList(), null, null);
         String spdxDocumentId = packageInfo.getSpdxDocumentId();
         SPDXDocument spdxDocument = SPDXDocumentRepository.get(spdxDocumentId);
         assertNotNull(spdxDocument, "Could not find SPDX Document to remove Package Info!");

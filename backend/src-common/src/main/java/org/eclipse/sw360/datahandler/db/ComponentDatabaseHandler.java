@@ -25,6 +25,7 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
+import org.eclipse.sw360.datahandler.db.spdx.document.SpdxDocumentDatabaseHandler;
 import org.eclipse.sw360.datahandler.entitlement.ComponentModerator;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.entitlement.ReleaseModerator;
@@ -117,6 +118,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private DatabaseHandlerUtil dbHandlerUtil;
 
     private final AttachmentConnector attachmentConnector;
+    private final SpdxDocumentDatabaseHandler spdxDocumentDatabaseHandler;
     /**
      * Access to moderation
      */
@@ -166,6 +168,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         attachmentConnector = new AttachmentConnector(httpClient, attachmentDbName, durationOf(30, TimeUnit.SECONDS));
         DatabaseConnectorCloudant dbChangeLogs = new DatabaseConnectorCloudant(httpClient, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
+
+        // Create the spdx document database handler
+        this.spdxDocumentDatabaseHandler = new SpdxDocumentDatabaseHandler(httpClient, DatabaseSettings.COUCH_DB_SPDX);
     }
 
     public ComponentDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String changeLogsDbName, String attachmentDbName, ComponentModerator moderator, ReleaseModerator releaseModerator, ProjectModerator projectModerator) throws MalformedURLException {
@@ -1610,6 +1615,12 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Component componentBefore = componentRepository.get(release.getComponentId());
             // Remove release id from component
             removeReleaseId(id, release.componentId);
+            // Remove spdx if exist
+            String spdxId = release.getSpdxId();
+            if (CommonUtils.isNotNullEmptyOrWhitespace(spdxId)) {
+                spdxDocumentDatabaseHandler.deleteSPDXDocument(spdxId, user);
+                release = releaseRepository.get(id);
+            }
             Component componentAfter=removeReleaseAndCleanUp(release);
             dbHandlerUtil.addChangeLogs(null, release, user.getEmail(), Operation.DELETE, attachmentConnector,
                     Lists.newArrayList(), null, null);
