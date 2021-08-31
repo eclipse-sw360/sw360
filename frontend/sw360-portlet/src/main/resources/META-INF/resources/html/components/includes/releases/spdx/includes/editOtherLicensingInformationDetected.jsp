@@ -93,30 +93,59 @@
 </table>
 
 <script>
-    generateOtherLicensingTable('1');
-    function generateOtherLicensingTable(index) {
-        fillValueToId("licenseId", "");
-        fillValueToId("licenseName", "");
-        $('#extractedText').val("");
-        $('#licenseCrossRefs').val("");
-        $('#licenseCommentOnOtherLicensing').val("");
-        <core_rt:if test="${not otherLicensing.isEmpty()}">
-            var i = 0;
-        <core_rt:forEach items="${otherLicensing}" var="otherLicensingData" varStatus="loop">
-                i++;
-            if (i == index) {
-                fillValueToId("licenseId", "${otherLicensingData.licenseId}");
-                fillValueToId("licenseName", "${otherLicensingData.licenseName}");
-                $('#extractedText').val("${otherLicensingData.extractedText}");
-                $('#licenseCrossRefs').val("<sw360:out value="${otherLicensingData.licenseCrossRefs.toString()}" hashSet="true"/>");
-                $('#licenseCommentOnOtherLicensing').val("${otherLicensingData.licenseComment}");
+    $(function () {
+        // ------------------------- 6 Other Licensing Information Detected
+        // Add data
+        $('[name=add-otherLicensing]').on('click', function(e) {
+            let newObj = { 'licenseId': '', 'extractedText': '', 'licenseName': '', 'licenseCrossRefs': [] };
+            spdxDocumentObj.hasExtractedLicensingInfos.push(newObj);
+            addMain($(this));
+            $('#selectOtherLicensing').change();
+        });
+
+        // Delete data
+        $('[name=delete-otherLicensing').on('click', function(e) {
+            let selectedIndex = $('#selectOtherLicensing')[0].selectedIndex;
+            spdxDocumentObj.hasExtractedLicensingInfos.splice(selectedIndex, 1);
+            deleteMain($(this));
+        });
+
+        // Change data
+        $('#selectOtherLicensing').on('change', function(e) {
+            let selectedIndex = $('#selectOtherLicensing')[0].selectedIndex;
+            fillOtherLicensing(selectedIndex);
+        });
+
+        function fillOtherLicensing(index) {
+            let obj = spdxDocumentObj.hasExtractedLicensingInfos[index];
+
+            if (obj.licenseId.startsWith('LicenseRef-')) {
+                $('#licenseId').val(obj.licenseId.substr(11));
+            } else {
+                $('#licenseId').val('');
             }
-        </core_rt:forEach>
-        </core_rt:if>
-    }
 
-    generateSelecterOption('selectOtherLicensing', "${otherLicensing.size()}");
+            $('#extractedText').val(obj.extractedText);
 
-    autoHideString('licenseId', 'SPDXRef-');
+            fillMultiOptionsField('#licenseName', obj.licenseName);
 
+            fillArray('#licenseCrossRefs', obj.licenseCrossRefs);
+
+            $('#licenseCommentOnOtherLicensing').val(obj.licenseComment);
+        }
+
+        function storeOtherLicensing(index) {
+            let obj = spdxDocumentObj.hasExtractedLicensingInfos[index];
+
+            if ($('#licenseId').val().trim() != '') {
+                obj['licenseId'] = 'LicenseRef-' + $('#licenseId').val().trim();
+            } else {
+                obj['licenseId'] = '';
+            }
+
+            obj['extractedText'] = $('#extractedText').val().trim();
+
+            obj['licenseName'] = readMultiOptionField('#licenseName');
+        }
+    });
 </script>
