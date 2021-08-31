@@ -462,68 +462,94 @@
 </table>
 
 <script>
-
-    setInputValue('downloadLocation', "${package.downloadLocation}");
-    setInputValue('packageHomepage', "${package.homepage}");
-    setInputValue('licenseConcluded', "${package.licenseConcluded}");
-    setInputValue('licenseDeclared', "${package.licenseDeclared}");
-    setInputValue('copyrightText', "${package.copyrightText}");
-
-    function setInputValue(id, type) {
-        switch (type) {
-            case '':
-                setDisabled(id);
-                break;
-            case 'NONE':
-                document.getElementById(id + 'None').checked = 'true';
-                setDisabled(id);
-                break;
-            case 'NOASSERTION':
-                document.getElementById(id + 'NoAssertion').checked = 'true';
-                setDisabled(id);
-                break;
-            default:
-                document.getElementById(id + 'Exist').checked = 'true';
-                setEnabled(id);
-                break;
+    $(function () {
+        const referenceCategories = {
+            'referenceCategory_security': ['cpe22Type', 'cpe23Type'],
+            'referenceCategory_packageManager': ['maven-central', 'npm', 'nuget', 'bower', 'purl'],
+            'referenceCategory_persistentId': [],
+            'referenceCategory_other': []
         }
-    }
 
-    function setDisabled(id) {
-        $('#' + id + 'Value').prop('disabled', true);
-    }
+        $('#referenceCategory').on('change', function () {
+            let category = $('#referenceCategory').val();
+            let types = referenceCategories[category];
 
-    function setEnabled(id) {
-        $('#' + id + 'Value').prop('disabled', false);
-    }
+            if (types.length > 0) {
+                $("#referenceType-1").css('display', 'block');
+                $("#referenceType-1").val(types[0]);
+                $("#referenceType-2").css('display', 'none');
 
-    generateExternalRefsTable('1');
-    function generateExternalRefsTable(index) {
-        fillValueToId("referenceCategory", "");
-        fillValueToId("externalReferencesType", "");
-        fillValueToId("externalReferencesLocator", "");
-        fillValueToId("externalReferencesComment", "");
-        <core_rt:if test="${not package.externalRefs.isEmpty()}">
-            var i = 0;
-            <core_rt:forEach items="${package.externalRefs}" var="externalRefsData" varStatus="loop">
-                i++;
-                if (i == index) {
-                    fillValueToId("referenceCategory", "${externalRefsData.referenceCategory}");
-                    fillValueToId("referenceType-1", "${externalRefsData.referenceType}");
-                    fillValueToId("externalReferencesLocator", "${externalRefsData.referenceLocator}");
-                    $('#externalReferencesComment').val("<sw360:out value="${externalRefsData.comment}" stripNewlines="false" />")
+                $("#referenceType-1").empty();
+
+                for (let i = 0; i < types.length; i++) {
+                    let option = '<option>' + types[i] + '</option>';
+                    $("#referenceType-1").append(option);
                 }
-            </core_rt:forEach>
-        </core_rt:if>
-    }
-    generateSelecterOption('externalReferences', "${package.externalRefs.size()}");
-    autoHideString('packageSPDXId', 'SPDXRef-');
-    fillValueToTextArea('licenseInfoFromFilesValue', "${package.licenseInfoFromFiles.toString()}");
-    function fillValueToTextArea(id, value) {
-        value = value.replace('[', '');
-        value = value.replace(']', '');
-        value = value.replaceAll(',', '\n');
-        $('#' + id).val(value);
-    }
+            } else {
+                $("#referenceType-1").css('display', 'none');
+                $("#referenceType-2").css('display', 'block');
+                $("#referenceType-2").val('');
+            }
 
+            if ($('#referenceCategory').is(":focus")) {
+                let index = $('#externalReferences')[0].selectedIndex;
+                storeExternalRef(index);
+            }
+        });
+
+        // $('#referenceType-1').on('change', function() {
+        //     if ($('#referenceType-1').is(":focus")) {
+        //         let index = $('#externalReferences')[0].selectedIndex;
+        //         storeExternalRef(index);
+        //     }
+        // });
+
+        // ------------------------- 3.21 External References
+        // Add data
+        $('[name=add-externalRef]').on('click', function(e) {
+            let newObj = { 'referenceCategory': 'referenceCategory_security', 'referenceLocator': '', 'referenceType': 'cpe22Type', 'comment': '' };
+            packageInformationObj.externalRefs.push(newObj);
+            addMain($(this));
+            $('#externalReferences').change();
+        });
+
+        // Delete data
+        $('[name=delete-externalRef').on('click', function(e) {
+            let selectedIndex = $('#externalReferences')[0].selectedIndex;
+            packageInformationObj.externalRefs.splice(selectedIndex, 1);
+            deleteMain($(this));
+        });
+
+        // // Change data
+        $('#externalReferences').on('change', function(e) {
+            let selectedIndex = $('#externalReferences')[0].selectedIndex;
+            fillExternalRef(selectedIndex);
+        });
+
+        // // Fill data - index start from 0
+        function fillExternalRef(index) {
+            let obj = packageInformationObj.externalRefs[index];
+
+            $('#referenceCategory').val(obj['referenceCategory']);
+            $('#referenceCategory').change();
+
+            if (obj['referenceCategory'] == 'referenceCategory_security' || obj['referenceCategory'] == 'referenceCategory_packageManager') {
+                $('#referenceType-1').val(obj['referenceType']);
+            } else {
+                $('#referenceType-2').val(obj['referenceType']);
+            }
+            // alert(obj['referenceLocator']);
+            $('#externalReferencesLocator').val(obj['referenceLocator']);
+            $('#externalReferencesComment').val(obj['comment']);
+        }
+
+        function storeExternalDocRef(index) {
+            let obj = documentCreationInformationObj.externalDocumentRefs[index];
+
+            obj['externalDocumentId'] = $('#externalDocumentId').val();
+            obj['spdxDocument'] = $('#externalDocument').val();
+            obj['checksum']['algorithm'] = $('#checksumAlgorithm').val();
+            obj['checksum']['checksumValue'] = $('#checksumValue').val();
+        }
+    });
 </script>
