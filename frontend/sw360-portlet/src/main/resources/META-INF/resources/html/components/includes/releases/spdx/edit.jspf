@@ -11,69 +11,93 @@
 
 
 <style>
-	table {
-		border-collapse: collapse !important;
-		border: none;
-	}
+    table {
+        border-collapse: collapse !important;
+        border: none;
+    }
 
-	tr, td {
-		border: none;
-		border-top-width: 0 !important;
-	}
+    tr, td {
+        border: none;
+        border-top-width: 0 !important;
+    }
 
-	.radio-label {
-		vertical-align: text-bottom !important;
-	}
+    .radio-label {
+        vertical-align: text-bottom !important;
+    }
 </style>
 
 <%@include file="/html/components/includes/releases/spdx/includes/script.jsp" %>
 
 <%@include file="/html/utils/includes/requirejs.jspf" %>
 <form id="editSPDXForm" name="editSPDXForm" class="form needs-validation" novalidate>
-	<div class="form-group btn-group">
-		<button id="spdxFullMode" class="btn btn-info">SPDX Full</button>
-		<button id="spdxLiteMode" class="btn btn-secondary">SPDX Lite</button>
-	</div>
-	<%@include file="/html/components/includes/releases/spdx/includes/editDocumentCreationInformation.jsp" %>
-	<%@include file="/html/components/includes/releases/spdx/includes/editPackageInformation.jsp" %>
-	<%@include file="/html/components/includes/releases/spdx/includes/editSnippetInformation.jsp" %>
-	<%@include file="/html/components/includes/releases/spdx/includes/editOtherLicensingInformationDetected.jsp" %>
-	<%@include file="/html/components/includes/releases/spdx/includes/editRelationshipsBetweenSPDXElements.jsp" %>
-	<%@include file="/html/components/includes/releases/spdx/includes/editAnnotations.jsp" %>
+    <div class="form-group btn-group">
+        <button id="spdxFullMode" class="btn btn-info">SPDX Full</button>
+        <button id="spdxLiteMode" class="btn btn-secondary">SPDX Lite</button>
+    </div>
+    <%@include file="/html/components/includes/releases/spdx/includes/editDocumentCreationInformation.jsp" %>
+    <%@include file="/html/components/includes/releases/spdx/includes/editPackageInformation.jsp" %>
+    <%@include file="/html/components/includes/releases/spdx/includes/editSnippetInformation.jsp" %>
+    <%@include file="/html/components/includes/releases/spdx/includes/editOtherLicensingInformationDetected.jsp" %>
+    <%@include file="/html/components/includes/releases/spdx/includes/editRelationshipsBetweenSPDXElements.jsp" %>
+    <%@include file="/html/components/includes/releases/spdx/includes/editAnnotations.jsp" %>
 </form>
 
 <script>
-	require(['jquery', /* jquery-plugins */ 'jquery-ui'], function($) {
+    require(['jquery', /* jquery-plugins */ 'jquery-ui'], function($) {
         $(".datepicker").datepicker({changeMonth:true,changeYear:true,dateFormat: "yy-mm-dd"});
-		$('#spdxFullMode').on('click', function (e) {
-			e.preventDefault();
+        $('#spdxFullMode').on('click', function (e) {
+            e.preventDefault();
 
-			$(this).addClass('btn-info');
-			$(this).removeClass('btn-secondary');
+            $(this).addClass('btn-info');
+            $(this).removeClass('btn-secondary');
 
-			$('#spdxLiteMode').addClass('btn-secondary');
-			$('#spdxLiteMode').removeClass('btn-info');
+            $('#spdxLiteMode').addClass('btn-secondary');
+            $('#spdxLiteMode').removeClass('btn-info');
 
-			$('.spdx-full').css('display', '');
-		});
+            $('.spdx-full').css('display', '');
+        });
 
-		$('#spdxLiteMode').on('click', function (e) {
-			e.preventDefault();
+        $('#spdxLiteMode').on('click', function (e) {
+            e.preventDefault();
 
-			$(this).addClass('btn-info');
-			$(this).removeClass('btn-secondary');
+            $(this).addClass('btn-info');
+            $(this).removeClass('btn-secondary');
 
-			$('#spdxFullMode').addClass('btn-secondary');
-			$('#spdxFullMode').removeClass('btn-info');
+            $('#spdxFullMode').addClass('btn-secondary');
+            $('#spdxFullMode').removeClass('btn-info');
 
-			$('.spdx-full').css('display', 'none');
-		});
-		$('.spdx-add-button-main').on('click', function (e) {
-			e.preventDefault();
-		})
+            $('.spdx-full').css('display', 'none');
+        });
 
-		$('.spdx-add-button-sub').on('click', function (e) {
-			e.preventDefault();
-		})
-	});
+        $('.spdx-table button').on('click', function (e) {
+            e.preventDefault();
+        });
+
+        $('.spdx-add-button-main').on('click', function (e) {
+            e.preventDefault();
+        })
+
+        $('.spdx-add-button-sub').on('click', function (e) {
+            e.preventDefault();
+        })
+
+        $(function () {
+            let spdxDocumentObj = jQuery.parseJSON(spdxDocument);
+            let packageInformationObj = jQuery.parseJSON(packageInformation);
+            let documentCreationInformationObj = jQuery.parseJSON(documentCreationInformation);
+
+            // Expand/collapse section when click on the header
+            $('thead').on('click', function () {
+                if ($(this).next().css('display') == 'none') {
+                    $(this).next().css('display', '');
+                } else {
+                    $(this).next().css('display', 'none');
+                }
+            });
+
+            $('.spdx-radio').on('change', function () {
+                updateRadioButton($(this));
+            });
+        });
+    });
 </script>
