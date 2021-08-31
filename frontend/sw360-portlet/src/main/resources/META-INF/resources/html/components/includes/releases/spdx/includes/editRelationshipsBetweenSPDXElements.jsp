@@ -57,26 +57,49 @@
     </tbody>
 </table>
 <script>
-    generateRelationshipTable('1');
-    function generateRelationshipTable(index) {
-        fillValueToId("spdxElement", "");
-        fillValueToId("relationshipType", "");
-        fillValueToId("relatedSPDXElement", "");
-        $('#relationshipComment').val("");
-        <core_rt:if test="${not relationships.isEmpty()}">
-            var i = 0;
-        <core_rt:forEach items="${relationships}" var="relationshipData" varStatus="loop">
-                i++;
-            if (i == index) {
-                fillValueToId("spdxElement", "${relationshipData.spdxElementId}");
-                fillValueToId("relationshipType", "${relationshipData.relationshipType}");
-                fillValueToId("relatedSPDXElement", "${relationshipData.relatedSpdxElement}");
-                $('#relationshipComment').val("${relationshipData.relationshipComment}");
+    $(function () {
+        // ------------------------- 7 Relationships between SPDX Elements
+        // Add data
+        $('[name=add-relationship]').on('click', function(e) {
+            let newObj = { 'spdxElementId': '', 'relationshipType': '', 'relatedSpdxElement': '', 'relationshipComment': '' };
+            spdxDocumentObj.relationships.push(newObj);
+            addMain($(this));
+            $('#selectRelationship').change();
+        });
+
+        // Delete data
+        $('[name=delete-relationship').on('click', function(e) {
+            let selectedIndex = $('#selectRelationship')[0].selectedIndex;
+            spdxDocumentObj.relationships.splice(selectedIndex, 1);
+            deleteMain($(this));
+        });
+
+        // Change data
+        $('#selectRelationship').on('change', function(e) {
+            let selectedIndex = $('#selectRelationship')[0].selectedIndex;
+            fillRelationship(selectedIndex);
+        });
+
+        function fillRelationship(index) {
+            let obj = spdxDocumentObj.relationships[index];
+            $('#spdxElement').val(obj.spdxElementId);
+            if (obj.relationshipType.startsWith('relationshipType_')) {
+                $('#relationshipType').val(obj.relationshipType.substr(17).toUpperCase());
+            } else {
+                $('#relationshipType').val('');
             }
-        </core_rt:forEach>
-        </core_rt:if>
-    }
 
-    generateSelecterOption('selectRelationship', "${relationships.size()}");
+            $('#relatedSPDXElement').val(obj.relatedSpdxElement);
+            $('#relationshipComment').val(obj.relationshipComment);
+        }
 
+        function storeRelationship(index) {
+            let obj = spdxDocumentObj.relationships[index];
+
+            obj['spdxElementId'] = $('#spdxElement').val().trim();
+            obj['relationshipType'] = 'relationshipType_' + $('#relationshipType').val().toLowerCase().trim();
+            obj['relatedSpdxElement'] = $('#relatedSPDXElement').val().trim();
+            obj['relationshipComment'] = $('#relationshipComment').val().trim();
+        }
+    });
 </script>
