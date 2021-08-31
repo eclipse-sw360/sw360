@@ -100,17 +100,15 @@
                         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                             <label for="externalDocumentRefs" style="text-decoration: underline;"
                                 class="sub-title">Select Reference</label>
-                            <select id="externalDocumentRefs" type="text" class="form-control spdx-select"
-                                onchange="generateExternalDocumentRefsTable($(this).find('option:selected').text())">
+                            <select id="externalDocumentRefs" type="text" class="form-control spdx-select">
                             </select>
-                            <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-externalDocumentRef"
-                                data-row-id="" onclick="deleteMain(this);" viewBox="0 0 512 512">
+                            <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-externalDocRef"
+                                data-row-id="" viewBox="0 0 512 512">
                                 <title><liferay-ui:message key="delete" /></title>
                                 <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
                             </svg>
                         </div>
-                        <button class="spdx-add-button-main" id="addNewReferenceBtn" onclick="addMain(this)">Add new
-                            Reference</button>
+                        <button class="spdx-add-button-main" id="addNewReferenceBtn">Add new Reference</button>
                     </div>
                     <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                         <label class="sub-title" for="externalDocumentId">External Document ID</label>
@@ -182,8 +180,7 @@
                                         <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
                                     </svg>
                                 </div>
-                                <button class="spdx-add-button-sub spdx-add-button-sub-creator"
-                                    onclick="addSub(this)">Add new creator</button>
+                                <button class="spdx-add-button-sub spdx-add-button-sub-creator" onclick="addSub(this)">Add new creator</button>
                             </div>
                         </div>
                     </div>
@@ -209,118 +206,45 @@
 </table>
 
 <script>
+    // ------------------------- 2.6 External Document References
+    // Add data
+    $(function () {
+        $('[name=add-externalDocRef]').on('click', function(e) {
+            let newObj = { 'externalDocumentId': '', 'checksum': {'algorithm': '', 'checksumValue': ''}, 'spdxDocument': '' };
+            documentCreationInformationObj.externalDocumentRefs.push(newObj);
+            addMain($(this));
+            $('#externalDocumentRefs').change();
+        });
 
-    generateCreatorTable();
-    //setCreatorInput();
-    setCreatedTime("${created}");
-    generateExternalDocumentRefsTable("1");
-    function generateCreatorTable() {
-        <core_rt:if test="${not creator.isEmpty()}">
-            <core_rt:forEach items="${creator}" var="creatorData" varStatus="loop">
-                addRow("creatorRow", "${creatorData.type}", "${creatorData.value}", "");
-            </core_rt:forEach>
-                deleteSub(document.getElementsByName('delete-spdxCreatorType-Person')[0]);
-        </core_rt:if>
-    }
+        // Delete data
+        $('[name=delete-externalDocRef').on('click', function(e) {
+            let selectedIndex = $('#externalDocumentRefs')[0].selectedIndex;
+            documentCreationInformationObj.externalDocumentRefs.splice(selectedIndex, 1);
+            deleteMain($(this));
+        });
 
-    function generateExternalDocumentRefsTable(index) {
-        fillValueToId("externalDocumentId", "");
-        fillValueToId("externalDocument", "");
-        fillValueToId("checksumAlgorithm", "");
-        fillValueToId("checksumValue", "");
-        <core_rt:if test="${not externalDocumentRefs.isEmpty()}">
-            var i = 0;
-            <core_rt:forEach items="${externalDocumentRefs}" var="externalDocumentRefsData" varStatus="loop">
-                i++;
-                if (i == index) {
-                    fillValueToId("externalDocumentId", "${externalDocumentRefsData.externalDocumentId}");
-                    fillValueToId("externalDocument", "${externalDocumentRefsData.spdxDocument}");
-                    fillValueToId("checksumAlgorithm", "${externalDocumentRefsData.checksum.algorithm}");
-                    fillValueToId("checksumValue", "${externalDocumentRefsData.checksum.checksumValue}");
-                }
-            </core_rt:forEach>
-        </core_rt:if>
-    }
+        // Change data
+        $('#externalDocumentRefs').on('change', function(e) {
+            let selectedIndex = $('#externalDocumentRefs')[0].selectedIndex;
+            fillExternalDocRef(selectedIndex);
+        });
 
-    function fillValueToId(id, value) {
-        $('#' + id).prop('value', value);
-    }
-    function addRow(name, value1, value2, lable) {
-        if ($(document.getElementsByName(name)).hasClass('disabled')) {
-            return;
+        // Fill data - index start from 0
+        function fillExternalDocRef(index) {
+            let obj = documentCreationInformationObj.externalDocumentRefs[index];
+            fillValueToId('externalDocumentId', obj['externalDocumentId']);
+            fillValueToId('externalDocument', obj['spdxDocument']);
+            fillValueToId('checksumAlgorithm', obj['checksum']['algorithm']);
+            fillValueToId('checksumValue', obj['checksum']['checksumValue']);
         }
-        var size = document.getElementsByName(name).length;
-        var el = document.getElementsByName(name)[size - 1];
 
-        var clone = el.cloneNode(true);
-        clone.getElementsByTagName('input')[0].name = clone.getElementsByTagName('input')[0].name + Date.now();
-        clone.getElementsByTagName('select')[0].name = clone.getElementsByTagName('select')[0].name + Date.now();
-        clone.getElementsByTagName('input')[0].value = value2;
-        clone.getElementsByTagName('select')[0].value = value1;
-        $(clone).insertAfter(el);
-        if (size == 1) {
-            enableAction('delete-' + name);
+        function storeExternalDocRef(index) {
+            let obj = documentCreationInformationObj.externalDocumentRefs[index];
+
+            obj['externalDocumentId'] = $('#externalDocumentId').val();
+            obj['spdxDocument'] = $('#externalDocument').val();
+            obj['checksum']['algorithm'] = $('#checksumAlgorithm').val();
+            obj['checksum']['checksumValue'] = $('#checksumValue').val();
         }
-    }
-
-    function removeRow(el) {
-        if ($(el).hasClass('disabled')) {
-            return;
-        }
-        var parent = $(el).parent();
-        var name = $(parent)[0].getAttribute("name");
-        $(parent).remove();
-        if (document.getElementsByName(name).length < 2) {
-            disableAction('delete-' + name);
-        }
-    }
-
-    function disableAction(name) {
-        var el = document.getElementsByName(name);
-        $(el).removeClass('action');
-        $(el).addClass('disabled');
-    }
-
-    function enableAction(name) {
-        var el = document.getElementsByName(name);
-        var size = $(el).length;
-        if (size > 1 || name.includes("add")) {
-            $(el).removeClass('disabled');
-            $(el).addClass('action');
-        }
-    }
-
-
-
-
-    function setCreatedTime(created) {
-        var createdDate = created.replace(/T.*/i, '');
-        var createdTime = created.replace(createdDate, '');
-        createdTime = createdTime.replace(/[A-Z]/g, '');
-        $('#createdDate').prop('value', createdDate);
-        $('#createdTime').prop('value', createdTime);
-    }
-
-    generateSelecterOption('externalDocumentRefs', "${externalDocumentRefs.size()}");
-    function generateSelecterOption(selectId, length) {
-        for (var i = 1; i <= length; i++) {
-            var option = document.createElement("option");
-            option.text = i;
-            document.getElementById(selectId).add(option);
-        }
-    }
-
-    autoHideString('spdxVersion', 'SPDX-');
-    autoHideString('spdxIdentifier', 'SPDX-');
-    function autoHideString(id, string, value) {
-        if (value == null || value == '') {
-            value = document.getElementById(id).value;
-        } else {
-            document.getElementById(id).value = value;
-            return;
-        }
-        var newString = value.replace(string, '');
-        document.getElementById(id).value = newString;
-    }
-
+    });
 </script>
