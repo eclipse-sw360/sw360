@@ -13,10 +13,16 @@ package org.eclipse.sw360.datahandler.entitlement;
 import org.eclipse.sw360.datahandler.common.Moderator;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.datahandler.thrift.spdx.otherlicensinginformationdetected.OtherLicensingInformationDetected;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.apache.logging.log4j.Logger;
+
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 
@@ -28,7 +34,6 @@ import org.apache.thrift.TException;
 public class SpdxDocumentModerator extends Moderator<SPDXDocument._Fields, SPDXDocument> {
 
     private static final Logger log = LogManager.getLogger(SpdxDocumentModerator.class);
-
 
     public SpdxDocumentModerator(ThriftClients thriftClients) {
         super(thriftClients);
@@ -61,27 +66,63 @@ public class SpdxDocumentModerator extends Moderator<SPDXDocument._Fields, SPDXD
         }
     }
 
-    public SPDXDocument updateSPDXDocumentFromModerationRequest(SPDXDocument spdx,
-                                                      SPDXDocument spdxAdditions,
-                                                      SPDXDocument spdxDeletions) {
+    public SPDXDocument updateSPDXDocumentFromModerationRequest(SPDXDocument spdx, SPDXDocument spdxAdditions, SPDXDocument spdxDeletions) {
         for (SPDXDocument._Fields field : SPDXDocument._Fields.values()) {
-            if(spdxAdditions.getFieldValue(field) == null && spdxDeletions.getFieldValue(field) == null){
+            if(spdxAdditions.getFieldValue(field) == null && spdxDeletions.getFieldValue(field) == null) {
                 continue;
             }
             switch (field) {
                 case ID:
                 case REVISION:
                 case TYPE:
-                case RELEASE_ID:
-                case SPDX_DOCUMENT_CREATION_INFO_ID:
-                case SPDX_FILE_INFO_IDS:
+                    break;
+                case OTHER_LICENSING_INFORMATION_DETECTEDS:
+                    spdx = updateOtherLicensingInformationDetecteds(spdx, spdxAdditions, spdxDeletions);
+                    break;
                 case RELATIONSHIPS:
+                    break;
                 case ANNOTATIONS:
+                    break;
+                case SNIPPETS:
+                    break;
                 default:
-                    spdx = updateBasicField(field, SPDXDocument.metaDataMap.get(field), spdx, spdxAdditions, spdxDeletions);
+                    spdx = updateBasicField(field, SPDXDocument.metaDataMap.get(field), spdx, spdxAdditions,
+                            spdxDeletions);
             }
 
         }
+        return spdx;
+    }
+
+    private SPDXDocument updateOtherLicensingInformationDetecteds(SPDXDocument spdx, SPDXDocument spdxAdditions, SPDXDocument spdxDeletions) {
+        Set<OtherLicensingInformationDetected> actuals = spdx.getOtherLicensingInformationDetecteds();
+        Iterator<OtherLicensingInformationDetected> additionsIterator = spdxAdditions.getOtherLicensingInformationDetectedsIterator();
+        Iterator<OtherLicensingInformationDetected> deletionsIterator = spdxDeletions.getOtherLicensingInformationDetectedsIterator();
+        if (additionsIterator == null) {
+            return spdx;
+        }
+        if (deletionsIterator == null) {
+            return spdx;
+        }
+        if (actuals == null) {
+            actuals = new HashSet<>();
+        }
+        while(additionsIterator.hasNext()) {
+            OtherLicensingInformationDetected additions = additionsIterator.next();
+            OtherLicensingInformationDetected actual = new OtherLicensingInformationDetected();
+            for (OtherLicensingInformationDetected._Fields field : OtherLicensingInformationDetected._Fields.values()) {
+                if (additions.isSet(field)) {
+                    actual.setFieldValue(field, additions.getFieldValue(field));
+                }
+            }
+            actuals.add(actual);
+        }
+        while(deletionsIterator.hasNext()) {
+            OtherLicensingInformationDetected deletions = deletionsIterator.next();
+            actuals.remove(deletions);
+        }
+
+        spdx.setOtherLicensingInformationDetecteds(actuals);
         return spdx;
     }
 

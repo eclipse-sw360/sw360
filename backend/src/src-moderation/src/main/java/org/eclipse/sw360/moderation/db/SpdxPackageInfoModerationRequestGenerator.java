@@ -42,17 +42,10 @@ public class SpdxPackageInfoModerationRequestGenerator extends ModerationRequest
                     documentDeletions.setFieldValue(field, actualDocument.getFieldValue(field));
             } else if(!actualDocument.getFieldValue(field).equals(updateDocument.getFieldValue(field))) {
                 switch (field) {
-                    case REVISION:
-                    case TYPE:
                     case PERMISSIONS:
                     case DOCUMENT_STATE:
                     case CREATED_BY:
                         break;
-                    case PACKAGE_VERIFICATION_CODE:
-                    case CHECKSUMS:
-                    case EXTERNAL_REFS:
-                    case ATTRIBUTION_TEXT:
-                    case ANNOTATIONS:
                     default:
                         dealWithBaseTypes(field, PackageInformation.metaDataMap.get(field));
                 }

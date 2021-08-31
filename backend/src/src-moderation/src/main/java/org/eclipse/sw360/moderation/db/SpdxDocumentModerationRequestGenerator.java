@@ -40,14 +40,10 @@ public class SpdxDocumentModerationRequestGenerator extends ModerationRequestGen
                     documentDeletions.setFieldValue(field, actualSpdx.getFieldValue(field));
             } else if(!actualSpdx.getFieldValue(field).equals(updateSpdx.getFieldValue(field))) {
                 switch (field) {
-                    case REVISION:
-                    case TYPE:
                     case PERMISSIONS:
                     case DOCUMENT_STATE:
                     case CREATED_BY:
                         break;
-                    case RELATIONSHIPS:
-                    case ANNOTATIONS:
                     default:
                         dealWithBaseTypes(field, SPDXDocument.metaDataMap.get(field));
                 }

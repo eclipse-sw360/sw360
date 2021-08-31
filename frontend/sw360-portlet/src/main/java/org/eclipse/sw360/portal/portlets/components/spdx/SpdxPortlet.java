@@ -1,266 +1,174 @@
+/*
+ * Copyright . Part of the SW360 Portal Project.
+ *
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
 
+package org.eclipse.sw360.portal.portlets.components.spdx;
 
-    // @UsedAsLiferayAction
-    // public void deleteSpdxDocument(ActionRequest request, ActionResponse response) throws PortletException, IOException {
-    //     RequestStatus requestStatus = SpdxPortletUtils.deleteSpdxDocument(request, log);
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
-    //     String userEmail = UserCacheHolder.getUserFromRequest(request).getEmail();
-    //     String id = request.getParameter(PortalConstants.SPDX_DOCUMENT_ID);
-    //     setSessionMessage(request, requestStatus, "SPDXDocument", "delete");
+import javax.portlet.ActionRequest;
+import javax.portlet.ActionResponse;
 
-    //     response.setRenderParameter(PAGENAME, PAGENAME_DETAIL);
-    //     response.setRenderParameter(RELEASE_ID, request.getParameter(RELEASE_ID));
-    // }
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.liferay.portal.kernel.xml.Element;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformationService;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocumentService;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformationService;
+import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.portal.common.PortalConstants;
+import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 
-    // @UsedAsLiferayAction
-    // public void updateSpdxDocument(ActionRequest request, ActionResponse response) throws PortletException, IOException {
-    //     String id = request.getParameter(RELEASE_ID);
-    //     final User user = UserCacheHolder.getUserFromRequest(request);
+import static com.google.common.base.Strings.isNullOrEmpty;
 
-    //     if (id != null) {
-    //         try {
-    //             ComponentService.Iface releaseClient = thriftClients.makeComponentClient();
-    //             Release release = releaseClient.getReleaseById(id, user);
+/**
+ * SPDX portlet implementation
+ *
+ * @author hieu1.phamvan@toshiba.co.jp
+ */
+public abstract class SpdxPortlet {
 
-    //             SPDXDocument spdxDocunent;
-    //             String spdxDocunentId = request.getParameter(SPDX_DOCUMENT_ID);
-    //             if (spdxDocunentId != null) {
-    //                 SPDXDocumentService.Iface client = thriftClients.makeSPDXClient();
-    //                 spdxDocunent = client.getSPDXDocumentForEdit(spdxDocunentId, user);
-    //                 SpdxPortletUtils.updateSpdxDocumentFromRequest(request, release);
-    //                 String ModerationRequestCommentMsg = request.getParameter(MODERATION_REQUEST_COMMENT);
-    //                 user.setCommentMadeDuringModerationRequest(ModerationRequestCommentMsg);
+    private SpdxPortlet() {
+        // Utility class with only static functions
+    }
 
-    //                 RequestStatus requestStatus = client.updateSPDXDocument(spdxDocunent, user);
-    //                 setSessionMessage(request, requestStatus, "SPDXDocument", "update", printName(spdxDocunent));
+    private static final Logger log = LogManager.getLogger(SpdxPortlet.class);
+    private static final ObjectMapper mapper = new ObjectMapper();
 
-    //                 cleanUploadHistory(user.getEmail(), releaseId);
+    private static SPDXDocument parseSPDXDocumentFromRequest(String jsonData) {
+        SPDXDocument spdx = new SPDXDocument();
+        if (jsonData == null) {
+            return null;
+        }
+        try {
+            spdx = mapper.readValue(jsonData, SPDXDocument.class);
+        } catch (JsonMappingException e) {
+            e.printStackTrace();
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return spdx;
+    }
 
-    //                 // successful update of release means we want to send a redirect to the detail
-    //                 // view to make sure that no POST gets executed twice by some browser reload or
-    //                 // back button click (POST-redirect-GET pattern)
-    //                 String portletId = (String) request.getAttribute(WebKeys.PORTLET_ID);
-    //                 ThemeDisplay tD = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
-    //                 long plid = tD.getPlid();
+    private static DocumentCreationInformation parseDocumentCreationInfoFromRequest(String jsonData) {
+        DocumentCreationInformation documentCreationInfo = new DocumentCreationInformation();
+        if (jsonData == null) {
+            return null;
+        }
+        try {
+            documentCreationInfo = mapper.readValue(jsonData, DocumentCreationInformation.class);
+        } catch (JsonMappingException e) {
+            e.printStackTrace();
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return documentCreationInfo;
+    }
 
-    //                 LiferayPortletURL redirectUrl = PortletURLFactoryUtil.create(request, portletId, plid,
-    //                         PortletRequest.RENDER_PHASE);
-    //                 redirectUrl.setParameter(PAGENAME, PAGENAME_RELEASE_DETAIL);
-    //                 redirectUrl.setParameter(COMPONENT_ID, id);
-    //                 redirectUrl.setParameter(RELEASE_ID, releaseId);
+    private static Set<PackageInformation> parsePackageInfosFromRequest(String jsonData) {
+        Set<PackageInformation> packageInfos = new HashSet<>();
+        if (jsonData == null) {
+            return null;
+        }
+        ObjectMapper mapper = new ObjectMapper();
+        JsonFactory factory = mapper.getFactory();
+        JsonParser parser;
+        try {
+            parser = factory.createParser(jsonData);
+            JsonNode packageInfosJsonNode = mapper.readTree(parser);
+            packageInfosJsonNode.forEach(packageInfoJson -> {
+                PackageInformation packageInfo = new PackageInformation();
+                try {
+                    packageInfo = mapper.readValue(packageInfoJson.toString(), PackageInformation.class);
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
+                packageInfos.add(packageInfo);
+            });
+        } catch (IOException e1) {
+            e1.printStackTrace();
+        }
 
-    //                 request.setAttribute(WebKeys.REDIRECT, redirectUrl.toString());
-    //                 sendRedirect(request, response);
-                
-    //             } else {
-    //                 release = new Release();
-    //                 release.setComponentId(component.getId());
-    //                 release.setClearingState(ClearingState.NEW_CLEARING);
-    //                 ComponentPortletUtils.updateReleaseFromRequest(request, release);
+        return packageInfos;
+    }
 
-    //                 String cyclicLinkedReleasePath = client.getCyclicLinkedReleasePath(release, user);
-    //                 if (!isNullEmptyOrWhitespace(cyclicLinkedReleasePath)) {
-    //                     FossologyAwarePortlet.addCustomErrorMessage(CYCLIC_LINKED_RELEASE + cyclicLinkedReleasePath,
-    //                             PAGENAME_EDIT_RELEASE, request, response);
-    //                     prepareRequestForReleaseEditAfterDuplicateError(request, release);
-    //                     response.setRenderParameter(COMPONENT_ID, request.getParameter(COMPONENT_ID));
-    //                     return;
-    //                 }
+    public static void updateSPDX(ActionRequest request, ActionResponse response, User user, String releaseId) throws TException {
+        String spdxDocumentData = request.getParameter(SPDXDocument._Fields.TYPE.toString());
+        String documentCreationInfoData = request.getParameter(SPDXDocument._Fields.TYPE.toString());
+        String packageInfoData = request.getParameter(SPDXDocument._Fields.TYPE.toString());
+        String spdxDocumentId = "";
+        //
+        // spdxDocumentData = "{ \"id\":\"7e5a5481c8c643dc8d030805a09738c5\", \"revision\":\"21-7225d4699bba8297997276fa85598019\", \"snippets\": [ { \"SPDXID\": \"SPDXRef-Snippet\", \"snippetFromFile\": \"./src/org/spdx/parser/DOAPProject.java\", \"snippetRanges\": [ { \"rangeType\": \"LINE\", \"startPointer\": \"5\", \"endPointer\": \"23\", \"reference\": \"./src/org/spdx/parser/DOAPProject.java\" }, { \"rangeType\": \"BYTE\", \"startPointer\": \"310\", \"endPointer\": \"420\", \"reference\": \"./src/org/spdx/parser/DOAPProject.java\" } ], \"licenseConcluded\": \"GPL-2.0\", \"licenseInfoInSnippets\": [ \"GPL-2.0\" ], \"licenseComments\": \"The concluded license was taken from package xyz, from which the snippet was copied into the current file. The concluded license information was found in the COPYING.txt file in package xyz.\", \"copyrightText\": \"Copyright 2008-2010 John Smith\", \"comment\": \"This snippet was identified as significant and highlighted in this Apache-2.0 file, when a commercial scanner identified it as being derived from file foo.c in package xyz which is licensed under GPL-2.0.\", \"name\": \"from linux kernel\", \"snippetAttributionText\": \"AAAAAAAAA\" }, { \"SPDXID\": \"SPDXRef-sdasdSnippet\", \"snippetFromFile\": \"./src/org/spdx/parser/DOAPdsadasroject.java\", \"snippetRanges\": [ { \"rangeType\": \"LINE\", \"startPointer\": \"dsadas5\", \"endPointer\": \"2dasda3\", \"reference\": \"./src/org/spdx/parser/DdasdasdOAPProject.java\" }, { \"rangeType\": \"BYTE\", \"startPointer\": \"310\", \"endPointer\": \"420\", \"reference\": \"./src/org/spdx/pdasdarser/DOAPProject.java\" } ], \"licenseConcluded\": \"GPL-2.0\", \"licenseInfoInSnippets\": [ \"GPL-2.0\" ], \"licenseComments\": \"The concluded licensedasdas was taken from package xyz, from which the snippet was copied into the current file. The concluded license information was found in the COPYING.txt file in package xyz.\", \"copyrightText\": \"Copyright 2008-2010 John Smith\", \"comment\": \"This snippet was identified adasdas significant and highlighted in this Apache-2.0 file, when a commercial scanner identified it as being derived from file foo.c in package xyz which is licensed under GPL-2.0.\", \"name\": \"from linux kernel\", \"snippetAttributionText\": \"AAAAdasdaAAAAA\" } ], \"relationships\": [ { \"spdxElementId\": \"SPDXRef-File\", \"relationshipType\": \"relationshipType_describes\", \"relatedSpdxElement\": \"./package/foo.c\", \"relationshipComment\": \"AAAAAÂÂÂAÂAA\" }, { \"spdxElementId\": \"SPDXRef-Package\", \"relationshipType\": \"relationshipType_contains\", \"relatedSpdxElement\": \"glibc\" }, { \"spdxElementId\": \"SPDXRef-Package\", \"relationshipType\": \"relationshipType_describes\", \"relatedSpdxElement\": \"glibc\" } ], \"annotations\": [ { \"annotator\": \"Person: Jane Doe ()\", \"annotationDate\": \"2010-01-29T18:30:22Z\", \"annotationType\": \"OTHER\", \"annotationComment\": \"Document level annotation\", \"spdxIdRef\": \"spdxIdRef\" }, { \"annotator\": \"Person: Jane ddsdsDoe ()\", \"annotationDate\": \"2011-01-29T18:30:22Z\", \"annotationType\": \"OTHER\", \"annotationComment\": \"Document sdsdlevel annotation\", \"spdxIdRef\": \"sdsdpdxRef\" } ], \"otherLicensingInformationDetecteds\": [ { \"licenseId\": \"Person: Jane Doe ()\", \"extractedText\": \"2010-01-29T18:30:22Z\", \"licenseName\": \"OTHER1\", \"licenseCrossRefs\": [ \"Document level annotation\", \"AAAAAAA\" ], \"licenseComment\": \"spdxRef\" }, { \"licenseId\": \"Person:dsadasd Jane Doe ()\", \"extractedText\": \"2010-01-2sdasda9T18:30:22Z\", \"licenseName\": \"OTHER\", \"licenseCrossRefs\": [ \"Document level annosdsadasdtation\", \"BBBBBBBBBBB\" ], \"licenseComment\": \"spdxdsdRef\" } ] }";
+        // documentCreationInfoData = "{  \"id\":\"789057d9076b4fc28312dfe0fe380849\", \"revision\":\"1-6b3dac6fe192685c49b34df0f9e071ef\", \"spdxVersion\": \"SPDX-2.0\", \"SPDXID\": \"SPDX-2.0\", \"dataLicense\": \"CC0-1.0\", \"name\": \"SPDX-Tools-v2.0\", \"documentNamespace\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\", \"externalDocumentRefs\": [ { \"externalDocumentId\": \"DocumentRef\", \"checksum\": { \"algorithm\": \"checksumAlgorithm_sha1\", \"checksumValue\": \"d6a770ba38583ed4bb4525bd96e50461655d2759\" }, \"spdxDocument\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaa\" }, { \"externalDocumentId\": \"DocumentRgsdgsdgef\", \"checksum\": { \"algorithm\": \"checksumAlgoritsdgsdghm_sha1\", \"checksumValue\": \"d6a770ba38583edsdgsdg4bb4525bd96e50461655d2759\" }, \"spdxDocument\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\" } ], \"licenseListVersion\": \"1.1997\", \"creator\": [ { \"type\": \"Organization\", \"value\": \"ExampleCodeInspect\" }, { \"type\": \"Tool\", \"value\": \"LicenseFind-1.0\" }, { \"type\": \"Person\", \"value\": \"Jane Doe\" } ], \"created\": \"2010-01-29T18:30:22Z\", \"creatorComment\": \"This package has been shipped in source and binary form. The binaries were created with gcc 4.5.1 and expect to link to compatible system run time libraries.\", \"documentComment\": \"This document was created using SPDX 2.0 using licenses from the web sites.\", \"createdBy\": \"admin@sw360.org\" }";
+        // packageInfoData = "[ { \"id\":\"6f158d9149b04b33868111cb4e757b5e\", \"revision\":\"1-4e1314347046e6b57f7b77cce175345c\", \"name\": \"glibc\", \"SPDXID\": \"SPDXRef-Package\", \"versionInfo\": \"2.11.1\", \"packageFileName\": \"glibc-2.11.1.tar.gz\", \"supplier\": \"Person: Jane Doe (jane.doe@example.com)\", \"originator\": \"Organization: ExampleCodeInspect (contact@example.com)\", \"downloadLocation\": \"http://ftp.gnu.org/gnu/glibc/glibc-ports-2.15.tar.gz\", \"filesAnalyzed\": true, \"packageVerificationCode\": { \"excludedFiles\": [ \"excludes: ./package.spdx\", \"AAAAAAAAAAAAAAAAAAAAAAAAA\", \"SSSSSSSSSSSSSSSSSSSSSSSSS\" ], \"value\": \"d6a770ba38583ed4bb4525bd96e50461655d2758\" }, \"checksums\": [ { \"algorithm\": \"2222222222222222\", \"checksumValue\": \"111111111111111\" }, { \"algorithm\": \"2222222222222\", \"checksumValue\": \"2222222222222\" } ], \"homepage\": \"http://ftp.gnu.org/gnu/glibc\", \"sourceInfo\": \"uses glibc-2_11-branch from git://sourceware.org/git/glibc.git.\", \"licenseConcluded\": \"ewqewqeeeeee\", \"licenseInfoFromFiles\": [ \"GPL-2.0\", \"LicenseRef-2\", \"LicenseRef-1\" ], \"licenseDeclared\": \"(LicenseRef-3 AND LGPL-2.0)\", \"licenseComments\": \"The license for this project changed with the release of version x.y.  The version of the project included here post-dates the license change.\", \"copyrightText\": \"Copyright 2008-2010 John Smith a\", \"summary\": \"GNU C library.\", \"description\": \"The GNU C Library defines functions that are specified by the ISO C standard, as well as additional features specific to POSIX and other derivatives of the Unix operating system, and extensions specific to GNU systems.\", \"externalRefs\": [ { \"referenceCategory\": \"referenceCategory_other\", \"referenceLocator\": \"acmecorp/acmenator/4.1.3-alpha\", \"referenceType\": \"http://spdx.org/spdxdocs/spdx-example-444504E0-4F89-41D3-9A0C-0305E82C3301#LocationRef-acmeforge\", \"comment\": \"This is the external ref for Acme\" }, { \"referenceCategory\": \"referenceCategory_security\", \"referenceLocator\": \"cpe:2.3:a:pivotal_software:spring_framework:4.1.0:*:*:*:*:*:*:*\", \"referenceType\": \"cpe23Type\" } ], \"attributionText\": [], \"annotations\": [ { \"annotator\": \"Person: Package Commenter\", \"annotationDate\": \"2011-01-29T18:30:22Z\", \"annotationType\": \"OTHER\", \"annotationComment\": \"Package level annotation\" }, { \"annotator\": \"Person: Packdsdsdsge Commenter\", \"annotationDate\": \"2011-11-29T18:30:22Z\", \"annotationType\": \"OTHER\", \"annotationComment\": \"Package levedsadasdaddasl annotation\" } ]} ]";
+        //
+        if (!isNullOrEmpty(spdxDocumentData)) {
+            SPDXDocument spdx = parseSPDXDocumentFromRequest(spdxDocumentData);
+            SPDXDocumentService.Iface spdxClient = new ThriftClients().makeSPDXClient();
+            if (spdx != null) {
+                if (isNullOrEmpty(spdx.getReleaseId()) && ! isNullOrEmpty(releaseId)) {
+                    spdx.setReleaseId(releaseId);
+                }
+                if (isNullOrEmpty(spdx.getId())) {
+                    spdxDocumentId = spdxClient.addSPDXDocument(spdx, user).getId();
+                } else {
+                    spdxClient.updateSPDXDocument(spdx, user);
+                    spdxDocumentId = spdx.getId();
+                }
+            }
+        }
+        if (!isNullOrEmpty(documentCreationInfoData)) {
+            DocumentCreationInformation document = parseDocumentCreationInfoFromRequest(documentCreationInfoData);
+            if (isNullOrEmpty(document.getSpdxDocumentId())) {
+                document.setSpdxDocumentId(spdxDocumentId);
+            }
+            if (document != null) {
+                DocumentCreationInformationService.Iface documentClient = new ThriftClients().makeSPDXDocumentInfoClient();
+                if (isNullOrEmpty(document.getId())) {
+                    documentClient.addDocumentCreationInformation(document, user);
+                } else {
+                    documentClient.updateDocumentCreationInformation(document, user);
+                }
+            }
+        }
+        if (!isNullOrEmpty(packageInfoData)) {
+            Set<PackageInformation> packageInfos = parsePackageInfosFromRequest(packageInfoData);
+            if (packageInfos != null) {
+                PackageInformationService.Iface packageClient = new ThriftClients().makeSPDXPackageInfoClient();
+                for (PackageInformation packageInfo : packageInfos) {
+                    if (isNullOrEmpty(packageInfo.getSpdxDocumentId())) {
+                       packageInfo.setSpdxDocumentId(spdxDocumentId);
+                    }
+                    if (isNullOrEmpty(packageInfo.getId())) {
+                        packageClient.addPackageInformation(packageInfo, user);
+                    } else {
+                        packageClient.updatePackageInformation(packageInfo, user);
+                    }
+                }
+            }
+        }
+    }
 
-    //                 AddDocumentRequestSummary summary = client.addRelease(release, user);
-
-    //                 AddDocumentRequestStatus status = summary.getRequestStatus();
-    //                 switch(status){
-    //                     case SUCCESS:
-    //                         response.setRenderParameter(RELEASE_ID, summary.getId());
-    //                         String successMsg = "Release " + printName(release) + " added successfully";
-    //                         SessionMessages.add(request, "request_processed", successMsg);
-    //                         response.setRenderParameter(PAGENAME, PAGENAME_EDIT_RELEASE);
-    //                         break;
-    //                     case DUPLICATE:
-    //                         setSW360SessionError(request, ErrorMessages.RELEASE_DUPLICATE);
-    //                         response.setRenderParameter(PAGENAME, PAGENAME_EDIT_RELEASE);
-    //                         prepareRequestForReleaseEditAfterDuplicateError(request, release);
-    //                         break;
-    //                     case NAMINGERROR:
-    //                         setSW360SessionError(request, ErrorMessages.RELEASE_NAME_VERSION_ERROR);
-    //                         response.setRenderParameter(PAGENAME, PAGENAME_EDIT_RELEASE);
-    //                         prepareRequestForReleaseEditAfterDuplicateError(request, release);
-    //                         break;
-    //                     default:
-    //                         setSW360SessionError(request, ErrorMessages.RELEASE_NOT_ADDED);
-    //                         response.setRenderParameter(PAGENAME, PAGENAME_DETAIL);
-    //                 }
-
-    //                 response.setRenderParameter(COMPONENT_ID, request.getParameter(COMPONENT_ID));
-    //             }
-    //         } catch (TException e) {
-    //             log.error("Error fetching release from backend!", e);
-    //         }
-    //     }
-    // }
-
-
-    // private void prepareReleaseDetailView(RenderRequest request, RenderResponse response) throws PortletException {
-    //     String id = request.getParameter(COMPONENT_ID);
-    //     String releaseId = request.getParameter(RELEASE_ID);
-    //     final User user = UserCacheHolder.getUserFromRequest(request);
-
-    //     if (isNullOrEmpty(id) && isNullOrEmpty(releaseId)) {
-    //         throw new PortletException("Component or Release ID not set!");
-    //     }
-
-    //     try {
-    //         ComponentService.Iface client = thriftClients.makeComponentClient();
-    //         FossologyService.Iface fossologyClient = thriftClients.makeFossologyClient();
-    //         Component component;
-    //         Release release = null;
-
-    //         if (!isNullOrEmpty(releaseId)) {
-    //             release = client.getReleaseById(releaseId, user);
-
-    //             ExternalToolProcessStep processStep = SW360Utils.getExternalToolProcessStepOfFirstProcessForTool(
-    //                     release, ExternalTool.FOSSOLOGY, FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD);
-    //             ConfigContainer fossologyConfig = fossologyClient.getFossologyConfig();
-    //             Map<String, Set<String>> configKeyToValues = fossologyConfig.getConfigKeyToValues();
-    //             String fossologyJobsViewLink = null;
-    //             if (!configKeyToValues.isEmpty()) {
-    //                 fossologyJobsViewLink = createFossologyJobViewLink(processStep, configKeyToValues,
-    //                         fossologyJobsViewLink);
-    //             }
-
-    //             PortletUtils.setCustomFieldsDisplay(request, user, release);
-
-    //             request.setAttribute(FOSSOLOGY_JOB_VIEW_LINK, fossologyJobsViewLink);
-    //             request.setAttribute(RELEASE_ID, releaseId);
-    //             request.setAttribute(RELEASE, release);
-    //             request.setAttribute(DOCUMENT_ID, releaseId);
-    //             request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_RELEASE);
-    //             setAttachmentsInRequest(request, release);
-    //             setSpdxAttachmentsInRequest(request, release);
-
-    //             setUsingDocs(request, releaseId, user, client);
-    //             putDirectlyLinkedReleaseRelationsInRequest(request, release);
-    //             request.setAttribute(IS_USER_ALLOWED_TO_MERGE, PermissionUtils.isUserAtLeast(USER_ROLE_ALLOWED_TO_MERGE_OR_SPLIT_COMPONENT, user));
-
-    //             if (isNullOrEmpty(id)) {
-    //                 id = release.getComponentId();
-    //             }
-    //             Set<UserGroup> allSecRoles = !CommonUtils.isNullOrEmptyMap(user.getSecondaryDepartmentsAndRoles())
-    //                     ? user.getSecondaryDepartmentsAndRoles().entrySet().stream().flatMap(entry -> entry.getValue().stream()).collect(Collectors.toSet())
-    //                     : new HashSet<UserGroup>();
-    //             boolean isVulEditable = PermissionUtils.isUserAtLeast(UserGroup.SECURITY_ADMIN, user)
-    //                     || PermissionUtils.isUserAtLeastDesiredRoleInSecondaryGroup(UserGroup.SECURITY_ADMIN, allSecRoles);
-    //             putVulnerabilitiesInRequestRelease(request, releaseId, user, isVulEditable);
-    //             request.setAttribute(VULNERABILITY_VERIFICATION_EDITABLE, isVulEditable);
-    //         }
-
-    //         component = client.getComponentById(id, user);
-    //         request.setAttribute(COMPONENT, component);
-
-    //         addComponentBreadcrumb(request, response, component);
-    //         if (release != null) {
-    //             addReleaseBreadcrumb(request, response, release);
-    //         }
-
-    //     } catch (TException e) {
-    //         log.error("Error fetching release from backend!", e);
-    //         setSW360SessionError(request, ErrorMessages.ERROR_GETTING_RELEASE);
-    //     }
-
-    // }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // private void prepareReleaseEdit(RenderRequest request, RenderResponse response) throws PortletException {
-    //     ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
-
-    //     String id = request.getParameter(COMPONENT_ID);
-    //     String releaseId = request.getParameter(RELEASE_ID);
-    //     final User user = UserCacheHolder.getUserFromRequest(request);
-    //     request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_RELEASE);
-    //     request.setAttribute(IS_USER_AT_LEAST_CLEARING_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user));
-
-    //     if (isNullOrEmpty(id) && isNullOrEmpty(releaseId)) {
-    //         throw new PortletException("Component or Release ID not set!");
-    //     }
-
-    //     try {
-    //         ComponentService.Iface client = thriftClients.makeComponentClient();
-    //         Component component;
-    //         Release release;
-
-    //         if (!isNullOrEmpty(releaseId)) {
-    //             release = client.getReleaseByIdForEdit(releaseId, user);
-    //             request.setAttribute(RELEASE, release);
-    //             request.setAttribute(DOCUMENT_ID, releaseId);
-    //             setAttachmentsInRequest(request, release);
-
-    //             putDirectlyLinkedReleaseRelationsInRequest(request, release);
-    //             Map<RequestedAction, Boolean> permissions = release.getPermissions();
-    //             DocumentState documentState = release.getDocumentState();
-    //             setUsingDocs(request, releaseId, user, client);
-    //             addEditDocumentMessage(request, permissions, documentState);
-
-    //             if (isNullOrEmpty(id)) {
-    //                 id = release.getComponentId();
-    //             }
-    //             component = client.getComponentById(id, user);
-
-    //         } else {
-    //             component = client.getComponentById(id, user);
-    //             release = (Release) request.getAttribute(RELEASE);
-    //             if(release == null) {
-    //                 release = new Release();
-    //                 release.setComponentId(id);
-    //                 release.setClearingState(ClearingState.NEW_CLEARING);
-    //                 release.setVendorId(component.getDefaultVendorId());
-    //                 release.setVendor(component.getDefaultVendor());
-    //                 request.setAttribute(RELEASE, release);
-    //                 putDirectlyLinkedReleaseRelationsInRequest(request, release);
-    //                 setAttachmentsInRequest(request, release);
-    //                 setUsingDocs(request, null, user, client);
-    //                 SessionMessages.add(request, "request_processed", LanguageUtil.get(resourceBundle,"new.license"));
-    //             }
-    //         }
-
-    //         PortletUtils.setCustomFieldsEdit(request, user, release);
-    //         addComponentBreadcrumb(request, response, component);
-    //         if (!isNullOrEmpty(release.getId())) { //Otherwise the link is meaningless
-    //             addReleaseBreadcrumb(request, response, release);
-    //         }
-
-    //         Map<String, String> externalIds = component.getExternalIds();
-    //         if (externalIds != null && externalIds.containsKey("purl.id")) {
-    //             request.setAttribute(COMPONENT_PURL, externalIds.get("purl.id"));
-    //         } else {
-    //             request.setAttribute(COMPONENT_PURL, "");
-    //         }
-
-    //         Set<UserGroup> allSecRoles = !CommonUtils.isNullOrEmptyMap(user.getSecondaryDepartmentsAndRoles())
-    //                 ? user.getSecondaryDepartmentsAndRoles().entrySet().stream().flatMap(entry -> entry.getValue().stream()).collect(Collectors.toSet())
-    //                 : new HashSet<UserGroup>();
-
-    //         request.setAttribute(COMPONENT, component);
-    //         request.setAttribute(IS_USER_AT_LEAST_ECC_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.ECC_ADMIN, user)
-    //                 || PermissionUtils.isUserAtLeastDesiredRoleInSecondaryGroup(UserGroup.ECC_ADMIN, allSecRoles) ? "Yes" : "No");
-
-    //     } catch (TException e) {
-    //         log.error("Error fetching release from backend!", e);
-    //         setSW360SessionError(request, ErrorMessages.ERROR_GETTING_RELEASE);
-    //     }
-    // }
+}
