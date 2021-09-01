@@ -66,6 +66,8 @@ struct Attachment {
 
     20: optional set<string> uploadHistory, // just for importing data by now
     21: optional CheckStatus checkStatus; // simple status of checks
+    22: optional string superAttachmentId,
+    23: optional string superAttachmentFilename
 }
 
 struct AttachmentContent {

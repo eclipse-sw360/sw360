@@ -25,8 +25,10 @@ import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
 import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
+import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
@@ -74,7 +76,9 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
     protected ComponentDatabaseHandler componentDatabaseHandler;
     protected ProjectDatabaseHandler projectDatabaseHandler;
     protected Cache<Object[], List<LicenseInfoParsingResult>> licenseInfoCache;
+    protected Cache<String, LicenseInfoParsingResult> licenseInfoCacheForEvaluation;
     protected Cache<String, List<ObligationParsingResult>> obligationCache;
+    protected Cache<String, List<ObligationParsingResult>> obligationCacheForEvaluation;
     protected Cache<String, LicenseInfoParsingResult> licenseObligationMappingCache;
 
     public LicenseInfoHandler() throws MalformedURLException {
@@ -91,6 +95,10 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         this.licenseInfoCache = CacheBuilder.newBuilder().expireAfterWrite(CACHE_TIMEOUT_MINUTES, TimeUnit.MINUTES)
                 .maximumSize(CACHE_MAX_ITEMS).build();
         this.obligationCache = CacheBuilder.newBuilder().expireAfterWrite(CACHE_TIMEOUT_MINUTES, TimeUnit.MINUTES)
+                .maximumSize(CACHE_MAX_ITEMS).build();
+        this.licenseInfoCacheForEvaluation = CacheBuilder.newBuilder().expireAfterWrite(CACHE_TIMEOUT_MINUTES, TimeUnit.MINUTES)
+                .maximumSize(CACHE_MAX_ITEMS).build();
+        this.obligationCacheForEvaluation = CacheBuilder.newBuilder().expireAfterWrite(CACHE_TIMEOUT_MINUTES, TimeUnit.MINUTES)
                 .maximumSize(CACHE_MAX_ITEMS).build();
         this.licenseObligationMappingCache = CacheBuilder.newBuilder().expireAfterWrite(CACHE_TIMEOUT_MINUTES, TimeUnit.MINUTES)
                 .maximumSize(CACHE_MAX_ITEMS).build();
@@ -116,7 +124,8 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
 
     @Override
     public LicenseInfoFile getLicenseInfoFile(Project project, User user, String outputGenerator,
-            Map<String, Map<String, Boolean>> releaseIdsToSelectedAttachmentIds, Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachment, String externalIds, String fileName)
+            Map<String, Map<String, Boolean>> releaseIdsToSelectedAttachmentIds,
+            Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachment, String externalIds, String fileName)
             throws TException {
         assertNotNull(project);
         assertNotNull(user);
@@ -124,9 +133,10 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         assertNotNull(releaseIdsToSelectedAttachmentIds);
         assertNotNull(excludedLicensesPerAttachment);
 
-        Map<Release, Map<String, Boolean>> releaseToAttachmentId = mapKeysToReleases(releaseIdsToSelectedAttachmentIds, user);
-        Collection<LicenseInfoParsingResult> projectLicenseInfoResults = getAllReleaseLicenseInfos(releaseToAttachmentId, user,
-                excludedLicensesPerAttachment);
+        Map<Release, Map<String, Boolean>> releaseToAttachmentId = mapKeysToReleases(releaseIdsToSelectedAttachmentIds,
+                user);
+        Collection<LicenseInfoParsingResult> projectLicenseInfoResults = getAllReleaseLicenseInfos(
+                releaseToAttachmentId, user, excludedLicensesPerAttachment);
         Collection<ObligationParsingResult> obligationsResults = getAllReleaseObligations(releaseToAttachmentId, user);
 
         String[] outputGeneratorClassnameAndVariant = outputGenerator.split("::");
@@ -136,26 +146,31 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
 
         Map<String, ObligationStatusInfo> obligationsStatusInfoMap = Maps.newHashMap();
         if (project.getReleaseIdToUsageSize() > 0) {
-            obligationsStatusInfoMap = createLicenseToObligationMappingForReport(project, projectLicenseInfoResults, obligationsResults, releaseToAttachmentId, user);
+            obligationsStatusInfoMap = createLicenseToObligationMappingForReport(project, projectLicenseInfoResults,
+                    obligationsResults, releaseToAttachmentId, user);
         }
 
         String outputGeneratorClassName = outputGeneratorClassnameAndVariant[0];
-        OutputFormatVariant outputGeneratorVariant = Enums.getIfPresent(OutputFormatVariant.class, outputGeneratorClassnameAndVariant[1]).orNull();
-        OutputGenerator<?> generator = getOutputGeneratorByClassnameAndVariant(outputGeneratorClassName, outputGeneratorVariant);
+        OutputFormatVariant outputGeneratorVariant = Enums
+                .getIfPresent(OutputFormatVariant.class, outputGeneratorClassnameAndVariant[1]).orNull();
+        OutputGenerator<?> generator = getOutputGeneratorByClassnameAndVariant(outputGeneratorClassName,
+                outputGeneratorVariant);
         LicenseInfoFile licenseInfoFile = new LicenseInfoFile();
 
         licenseInfoFile.setOutputFormatInfo(generator.getOutputFormatInfo());
 
         fillDefaults(project);
 
-        Map<String,String> filteredExtIdMap = Collections.emptyMap();
-        if(!StringUtils.isEmpty(externalIds)) {
-            Map<String,String> extIdMap = project.getExternalIds();
+        Map<String, String> filteredExtIdMap = Collections.emptyMap();
+        if (!StringUtils.isEmpty(externalIds)) {
+            Map<String, String> extIdMap = project.getExternalIds();
             List<String> externalId = Arrays.asList(externalIds.split(","));
-            filteredExtIdMap = extIdMap.entrySet().stream().filter(x->externalId.contains(x.getKey())).collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+            filteredExtIdMap = extIdMap.entrySet().stream().filter(x -> externalId.contains(x.getKey()))
+                    .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
         }
 
-        Object output = generator.generateOutputFile(projectLicenseInfoResults, project, obligationsResults, user, filteredExtIdMap, obligationsStatusInfoMap, fileName);
+        Object output = generator.generateOutputFile(projectLicenseInfoResults, project, obligationsResults, user,
+                filteredExtIdMap, obligationsStatusInfoMap, fileName);
         if (output instanceof byte[]) {
             licenseInfoFile.setGeneratedOutput((byte[]) output);
         } else if (output instanceof String) {
@@ -165,6 +180,361 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         }
 
         return licenseInfoFile;
+    }
+
+    public Map<String, Map<String, String>> evaluateAttachments(String releaseId, User user) throws TException {
+        Release release = componentDatabaseHandler.getRelease(releaseId, user);
+        Map<Attachment, LicenseInfoParsingResult> parsedResults = new HashMap<Attachment, LicenseInfoParsingResult>();
+        Map<Attachment, ObligationParsingResult> parsedObligations = new HashMap<>();
+        Map<String, Map<String, String>> result = new HashMap<String, Map<String, String>>();
+        if (CommonUtils.isNotEmpty(release.getAttachments())) {
+            for (Attachment att : release.getAttachments()) {
+                LicenseInfoParsingResult licenseInfoForAttachment = getLicenseInfoForAttachment(release, att, user);
+                if (licenseInfoForAttachment.getStatus() != null
+                        && licenseInfoForAttachment.getStatus() != LicenseInfoRequestStatus.SUCCESS) {
+                    continue;
+                }
+                parsedResults.put(att, licenseInfoForAttachment);
+                parsedObligations.put(att, getObligationsForCLIAttachment(release, att, user));
+            }
+        }
+
+        if (parsedResults.size() <= 1) {
+            return result;
+        }
+
+        Map<String, List<Entry<Attachment, LicenseInfoParsingResult>>> groupedParsedResult = new HashMap<>();
+        groupParsedLicenseInfosByComponentSHA(groupedParsedResult, parsedResults);
+
+        Map<String, List<Entry<Attachment, ObligationParsingResult>>> groupedParsedObligations = new HashMap<>();
+        groupParsedObligationsByComponentSHA(groupedParsedObligations, parsedObligations);
+
+        Map<String, Map<String, String>> compareLicenseInfoParsingResult = compareLicenseInfoParsingResult(
+                groupedParsedResult);
+        Map<String, Map<String, String>> compareParsedObligations = compareParsedObligations(groupedParsedObligations);
+
+        Map<String, Map<String, String>> commonObsoleteMap = compareLicenseInfoParsingResult.entrySet().stream()
+                .filter(entry -> compareParsedObligations.containsKey(entry.getKey()))
+                .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+        commonObsoleteMap.entrySet().forEach(entry -> {
+            String superAttachmentId = entry.getValue().get("superAttachmentContentId");
+            String superFileName = entry.getValue().get("superFilename");
+            String[] superParent = findSuperParent(superAttachmentId, superFileName, commonObsoleteMap);
+            entry.getValue().put("superAttachmentContentId", superParent[0]);
+            entry.getValue().put("superFilename", superParent[1]);
+        });
+
+        if (!commonObsoleteMap.isEmpty()) {
+            release.getAttachments().stream().forEach(att -> {
+                Map<String, String> valueMap = commonObsoleteMap.get(att.getAttachmentContentId());
+                if (valueMap != null) {
+                    att.setSuperAttachmentId(valueMap.get("superAttachmentContentId"));
+                    att.setSuperAttachmentFilename(valueMap.get("superFilename"));
+                }
+            });
+            componentDatabaseHandler.updateRelease(release, user, ThriftUtils.IMMUTABLE_OF_RELEASE);
+        }
+        return commonObsoleteMap;
+    }
+
+    private String[] findSuperParent(String superAttachmentId, String superFileName,
+            Map<String, Map<String, String>> commonObsoleteMap) {
+        if (commonObsoleteMap.containsKey(superAttachmentId)) {
+            return findSuperParent(commonObsoleteMap.get(superAttachmentId).get("superAttachmentContentId"),
+                    commonObsoleteMap.get(superAttachmentId).get("superFilename"), commonObsoleteMap);
+        }
+        return new String[] { superAttachmentId, superFileName };
+    }
+
+    private Map<String, Map<String, String>> compareParsedObligations(
+            Map<String, List<Entry<Attachment, ObligationParsingResult>>> groupedParsedObligations) {
+        Map<String, Map<String, String>> obsoluteResult = new HashMap<>();
+        for (Entry<String, List<Entry<Attachment, ObligationParsingResult>>> entry : groupedParsedObligations
+                .entrySet()) {
+            List<Entry<Attachment, ObligationParsingResult>> commonSHA1Component = entry.getValue();
+            Set<String> removedEntry = new HashSet<>();
+            ListIterator<Entry<Attachment, ObligationParsingResult>> listIteratorPrimary = new LinkedList(
+                    commonSHA1Component).listIterator();
+            while (listIteratorPrimary.hasNext()) {
+                Entry<Attachment, ObligationParsingResult> primaryEntry = listIteratorPrimary.next();
+                if (primaryEntry == null || primaryEntry.getValue() == null
+                        || primaryEntry.getValue().getObligationsAtProject() == null ||
+                        removedEntry.contains(primaryEntry.getKey().getAttachmentContentId())) {
+                    continue;
+                }
+                List<ObligationAtProject> primaryObligationsAtProject = primaryEntry.getValue()
+                        .getObligationsAtProject();
+                if (!CommonUtils.isNotEmpty(primaryObligationsAtProject)) {
+                    continue;
+                }
+                ListIterator<Entry<Attachment, ObligationParsingResult>> listIteratorSec = commonSHA1Component
+                        .listIterator();
+                while (listIteratorSec.hasNext()) {
+                    Entry<Attachment, ObligationParsingResult> secondaryEntry = listIteratorSec.next();
+                    if (secondaryEntry == null || secondaryEntry.getValue() == null
+                            || secondaryEntry.getValue().getObligationsAtProject() == null
+                            || secondaryEntry == primaryEntry) {
+                        continue;
+                    }
+
+                    List<ObligationAtProject> secObligationsAtProject = secondaryEntry.getValue()
+                            .getObligationsAtProject();
+                    if (!CommonUtils.isNotEmpty(secObligationsAtProject)) {
+                        listIteratorSec.remove();
+                        removedEntry.add(secondaryEntry.getKey().getAttachmentContentId());
+                        Map<String, String> metadata = new HashMap<>();
+                        metadata.put("superFilename", primaryEntry.getKey().getFilename());
+                        metadata.put("superAttachmentContentId", primaryEntry.getKey().getAttachmentContentId());
+                        obsoluteResult.put(secondaryEntry.getKey().getAttachmentContentId(), metadata);
+                        secondaryEntry.getKey().setSuperAttachmentFilename(primaryEntry.getKey().getFilename())
+                                .setSuperAttachmentId(primaryEntry.getKey().getAttachmentContentId());
+                        continue;
+                    }
+                    if (compareObligationsAtProject(primaryObligationsAtProject, secObligationsAtProject)) {
+                        listIteratorSec.remove();
+                        removedEntry.add(secondaryEntry.getKey().getAttachmentContentId());
+                        Map<String, String> metadata = new HashMap<>();
+                        metadata.put("superFilename", primaryEntry.getKey().getFilename());
+                        metadata.put("superAttachmentContentId", primaryEntry.getKey().getAttachmentContentId());
+                        obsoluteResult.put(secondaryEntry.getKey().getAttachmentContentId(), metadata);
+                        secondaryEntry.getKey().setSuperAttachmentFilename(primaryEntry.getKey().getFilename())
+                                .setSuperAttachmentId(primaryEntry.getKey().getAttachmentContentId());
+                    }
+                }
+            }
+        }
+        return obsoluteResult;
+    }
+
+    private boolean compareObligationsAtProject(List<ObligationAtProject> primaryObligationsAtProject,
+            List<ObligationAtProject> secObligationsAtProject) {
+        ListIterator<ObligationAtProject> secListIterator = secObligationsAtProject.listIterator();
+        while (secListIterator.hasNext()) {
+            ObligationAtProject secObligationAtProject = secListIterator.next();
+            List<String> secLicenseIDs = secObligationAtProject.getLicenseIDs();
+            String secText = secObligationAtProject.getText();
+            String secTopic = secObligationAtProject.getTopic();
+            ListIterator<ObligationAtProject> primaryListIterator = primaryObligationsAtProject.listIterator();
+            while (primaryListIterator.hasNext()) {
+                ObligationAtProject primaryObligationAtProject = primaryListIterator.next();
+                List<String> primaryLicenseIDs = primaryObligationAtProject.getLicenseIDs();
+                String primaryText = primaryObligationAtProject.getText();
+                String primaryTopic = primaryObligationAtProject.getTopic();
+                if (!((secText != null && primaryText != null && secText.equals(primaryText))
+                        || (secText == null && primaryText == null))) {
+                    if (!primaryListIterator.hasNext()) {
+                        return false;
+                    }
+                    continue;
+                }
+                if (!((secTopic != null && primaryTopic != null && secTopic.equals(primaryTopic))
+                        || (secTopic == null && primaryTopic == null))) {
+                    if (!primaryListIterator.hasNext()) {
+                        return false;
+                    }
+                    continue;
+                }
+                if (!((secLicenseIDs != null && primaryLicenseIDs != null
+                        && primaryLicenseIDs.containsAll(secLicenseIDs))
+                        || (primaryLicenseIDs == null && secLicenseIDs == null))) {
+                    if (!primaryListIterator.hasNext()) {
+                        return false;
+                    }
+                    continue;
+                }
+                break;
+            }
+        }
+
+        return true;
+    }
+
+    private Map<String, Map<String, String>> compareLicenseInfoParsingResult(
+            Map<String, List<Entry<Attachment, LicenseInfoParsingResult>>> groupedParsedResult) {
+        Map<String, Map<String, String>> obsoluteResult = new HashMap<>();
+
+        for (Entry<String, List<Entry<Attachment, LicenseInfoParsingResult>>> entry : groupedParsedResult.entrySet()) {
+            List<Entry<Attachment, LicenseInfoParsingResult>> commonSHA1Component = entry.getValue();
+
+            Set<String> removedEntry = new HashSet<>();
+            ListIterator<Entry<Attachment, LicenseInfoParsingResult>> listIteratorPrimary = new LinkedList(
+                    commonSHA1Component).listIterator();
+            while (listIteratorPrimary.hasNext()) {
+                Entry<Attachment, LicenseInfoParsingResult> primaryEntry = listIteratorPrimary.next();
+                if (primaryEntry == null || primaryEntry.getValue() == null
+                        || primaryEntry.getValue().getLicenseInfo() == null
+                        || removedEntry.contains(primaryEntry.getKey().getAttachmentContentId())) {
+                    continue;
+                }
+                Map<String, Set<String>> primaryCopyrightsWithFilesHash = primaryEntry.getValue().getLicenseInfo()
+                        .getCopyrightsWithFilesHash();
+                Set<LicenseNameWithText> primaryLicenseNamesWithTexts = primaryEntry.getValue().getLicenseInfo()
+                        .getLicenseNamesWithTexts();
+                if (CommonUtils.isNullOrEmptyMap(primaryCopyrightsWithFilesHash)
+                        && !CommonUtils.isNotEmpty(primaryLicenseNamesWithTexts)) {
+                    continue;
+                }
+                ListIterator<Entry<Attachment, LicenseInfoParsingResult>> listIteratorSec = commonSHA1Component
+                        .listIterator();
+                while (listIteratorSec.hasNext()) {
+                    Entry<Attachment, LicenseInfoParsingResult> secondaryEntry = listIteratorSec.next();
+                    if (secondaryEntry == null || secondaryEntry.getValue() == null
+                            || secondaryEntry.getValue().getLicenseInfo() == null || secondaryEntry == primaryEntry) {
+                        continue;
+                    }
+
+                    Map<String, Set<String>> secCopyrightsWithFilesHash = secondaryEntry.getValue().getLicenseInfo()
+                            .getCopyrightsWithFilesHash();
+                    Set<LicenseNameWithText> secLicenseNamesWithTexts = secondaryEntry.getValue().getLicenseInfo()
+                            .getLicenseNamesWithTexts();
+                    if (CommonUtils.isNullOrEmptyMap(secCopyrightsWithFilesHash)
+                            && !CommonUtils.isNotEmpty(secLicenseNamesWithTexts)) {
+                        listIteratorSec.remove();
+                        removedEntry.add(secondaryEntry.getKey().getAttachmentContentId());
+                        Map<String, String> metadata = new HashMap<>();
+                        metadata.put("superFilename", primaryEntry.getKey().getFilename());
+                        metadata.put("superAttachmentContentId", primaryEntry.getKey().getAttachmentContentId());
+                        obsoluteResult.put(secondaryEntry.getKey().getAttachmentContentId(), metadata);
+                        secondaryEntry.getKey().setSuperAttachmentFilename(primaryEntry.getKey().getFilename())
+                                .setSuperAttachmentId(primaryEntry.getKey().getAttachmentContentId());
+                        continue;
+                    }
+                    if (compareCopyrights(primaryCopyrightsWithFilesHash, secCopyrightsWithFilesHash)
+                            && compareLicenses(primaryLicenseNamesWithTexts, secLicenseNamesWithTexts)) {
+                        listIteratorSec.remove();
+                        removedEntry.add(secondaryEntry.getKey().getAttachmentContentId());
+                        Map<String, String> metadata = new HashMap<>();
+                        metadata.put("superFilename", primaryEntry.getKey().getFilename());
+                        metadata.put("superAttachmentContentId", primaryEntry.getKey().getAttachmentContentId());
+                        obsoluteResult.put(secondaryEntry.getKey().getAttachmentContentId(), metadata);
+                        secondaryEntry.getKey().setSuperAttachmentFilename(primaryEntry.getKey().getFilename())
+                                .setSuperAttachmentId(primaryEntry.getKey().getAttachmentContentId());
+                    }
+                }
+            }
+        }
+        return obsoluteResult;
+    }
+
+    private void groupParsedLicenseInfosByComponentSHA(
+            Map<String, List<Entry<Attachment, LicenseInfoParsingResult>>> groupedParsedResult,
+            Map<Attachment, LicenseInfoParsingResult> parsedResults) {
+        for (Entry<Attachment, LicenseInfoParsingResult> parsedResult : parsedResults.entrySet()) {
+            if (parsedResult.getValue() != null && parsedResult.getValue().getLicenseInfo() != null
+                    && CommonUtils.isNotNullEmptyOrWhitespace(parsedResult.getValue().getLicenseInfo().getSha1Hash())) {
+                String componentSha1Hash = parsedResult.getValue().getLicenseInfo().getSha1Hash();
+                if (groupedParsedResult.containsKey(componentSha1Hash)) {
+                    groupedParsedResult.get(componentSha1Hash).add(parsedResult);
+                } else {
+                    List<Entry<Attachment, LicenseInfoParsingResult>> groupList = new ArrayList<>();
+                    groupList.add(parsedResult);
+                    groupedParsedResult.put(componentSha1Hash, groupList);
+                }
+            }
+        }
+
+    }
+
+    private void groupParsedObligationsByComponentSHA(
+            Map<String, List<Entry<Attachment, ObligationParsingResult>>> groupedParsedObligations,
+            Map<Attachment, ObligationParsingResult> parsedObligations) {
+
+        for (Entry<Attachment, ObligationParsingResult> parsedObligationEntry : parsedObligations.entrySet()) {
+            if (parsedObligationEntry.getValue() != null) {
+                String componentSha1Hash = parsedObligationEntry.getValue().getSha1Hash();
+                if (CommonUtils.isNullEmptyOrWhitespace(componentSha1Hash)) {
+                    continue;
+                }
+
+                if (groupedParsedObligations.containsKey(componentSha1Hash)) {
+                    groupedParsedObligations.get(componentSha1Hash).add(parsedObligationEntry);
+                } else {
+                    List<Entry<Attachment, ObligationParsingResult>> groupList = new ArrayList<>();
+                    groupList.add(parsedObligationEntry);
+                    groupedParsedObligations.put(componentSha1Hash, groupList);
+                }
+
+            }
+        }
+
+    }
+
+    private boolean compareCopyrights(Map<String, Set<String>> primaryCopyrightsWithFilesHash,
+            Map<String, Set<String>> secCopyrightsWithFilesHash) {
+        if (primaryCopyrightsWithFilesHash.size() < secCopyrightsWithFilesHash.size()) {
+            return false;
+        }
+        if (primaryCopyrightsWithFilesHash.keySet().containsAll(secCopyrightsWithFilesHash.keySet())) {
+            for (Entry<String, Set<String>> secEntry : secCopyrightsWithFilesHash.entrySet()) {
+                if (!(primaryCopyrightsWithFilesHash.get(secEntry.getKey()) != null && secEntry.getValue() != null
+                        && primaryCopyrightsWithFilesHash.get(secEntry.getKey()).containsAll(secEntry.getValue()))) {
+                    return false;
+                }
+
+                if ((primaryCopyrightsWithFilesHash.get(secEntry.getKey()) == null && secEntry.getValue() == null)
+                        || (primaryCopyrightsWithFilesHash.get(secEntry.getKey()) != null
+                                && secEntry.getValue() != null)) {
+                    continue;
+                } else {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private boolean compareLicenses(Set<LicenseNameWithText> primaryLicenseNamesWithTexts,
+            Set<LicenseNameWithText> secLicenseNamesWithTexts) {
+        for (LicenseNameWithText secLicenseNamesWithText : secLicenseNamesWithTexts) {
+            Iterator<LicenseNameWithText> primaryIterator = primaryLicenseNamesWithTexts.iterator();
+            String secLicenseSpdxId = secLicenseNamesWithText.getLicenseSpdxId();
+            String secLicenseName = secLicenseNamesWithText.getLicenseName();
+            String secLicenseText = secLicenseNamesWithText.getLicenseText();
+            Set<String> secSourceFilesHash = secLicenseNamesWithText.getSourceFilesHash();
+            while (primaryIterator.hasNext()) {
+                LicenseNameWithText primaryLicenseNamesWithText = primaryIterator.next();
+                String primaryLicenseSpdxId = primaryLicenseNamesWithText.getLicenseSpdxId();
+                String primaryLicenseName = primaryLicenseNamesWithText.getLicenseName();
+                String primaryLicenseText = primaryLicenseNamesWithText.getLicenseText();
+                Set<String> primarySourceFilesHash = primaryLicenseNamesWithText.getSourceFilesHash();
+
+                if (!((secLicenseSpdxId != null && primaryLicenseSpdxId != null
+                        && secLicenseSpdxId.equals(primaryLicenseSpdxId))
+                        || (secLicenseSpdxId == null && primaryLicenseSpdxId == null))) {
+                    if (!primaryIterator.hasNext()) {
+                        return false;
+                    }
+                    continue;
+                }
+
+                if (!((secLicenseName != null && primaryLicenseName != null
+                        && secLicenseName.equals(primaryLicenseName))
+                        || (secLicenseName == null && primaryLicenseName == null))) {
+                    if (!primaryIterator.hasNext()) {
+                        return false;
+                    }
+                    continue;
+                }
+                if (!((secLicenseText != null && primaryLicenseText != null
+                        && secLicenseText.equals(primaryLicenseText))
+                        || (secLicenseText == null && primaryLicenseText == null))) {
+                    if (!primaryIterator.hasNext()) {
+                        return false;
+                    }
+                    continue;
+                }
+                if (!((secSourceFilesHash != null && primarySourceFilesHash != null
+                        && primarySourceFilesHash.containsAll(secSourceFilesHash))
+                        || (primarySourceFilesHash == null && secSourceFilesHash == null))) {
+                    if (!primaryIterator.hasNext()) {
+                        return false;
+                    }
+                    continue;
+                }
+                break;
+            }
+        }
+        return true;
     }
 
     private void fillDefaults(Project project) {
@@ -630,5 +1000,94 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
                 .filter(outputGenerator -> generatorClassname.equals(outputGenerator.getClass().getSimpleName()))
                 .filter(outputGenerator -> generatorVariant.equals(outputGenerator.getOutputVariant()))
                 .findFirst().orElseThrow(() -> new TException("Unknown output generator: " + generatorClassname));
+    }
+
+    private LicenseInfoParsingResult getLicenseInfoForAttachment(Release release, Attachment attachment, User user)
+            throws TException {
+        try {
+            if (licenseInfoCacheForEvaluation != null) {
+                for (Entry<String, LicenseInfoParsingResult> entry : licenseInfoCacheForEvaluation.asMap().entrySet()) {
+                    LicenseInfoParsingResult cachedValue = entry.getValue();
+                    if (attachment.getAttachmentContentId().equals(entry.getKey()) && cachedValue != null) {
+                        return cachedValue;
+                    }
+                }
+            }
+
+            List<LicenseInfoParser> applicableParsers = parsers.stream()
+                    .filter(parser -> wrapTException(() -> parser.isApplicableTo(attachment, user, release)))
+                    .collect(Collectors.toList());
+
+            if (applicableParsers.size() == 0) {
+                LOGGER.warn("No applicable parser has been found for the attachment selected for license information");
+                return assignReleaseToLicenseInfoParsingResult(assignFileNameToLicenseInfoParsingResult(
+                        noSourceParsingResult("No applicable parser has been found for the attachment"),
+                        attachment.getFilename()), release).get(0);
+            } else if (applicableParsers.size() > 1) {
+                LOGGER.info("More than one parser claims to be able to parse attachment with contend id "
+                        + attachment.getAttachmentContentId());
+            }
+
+            List<LicenseInfoParsingResult> results = applicableParsers.stream().map(parser -> wrapTException(() -> {
+                if (parser instanceof CLIParser) {
+                    return ((CLIParser) parser).getLicenseInfos(attachment, user, release, true);
+                } else {
+                    return assignReleaseToLicenseInfoParsingResult(assignFileNameToLicenseInfoParsingResult(
+                            noSourceParsingResult(
+                                    "The attachment/Parser is not CLI?parser file. Hence not applicable for evaluation"),
+                            attachment.getFilename()), release);
+                }
+
+            })).flatMap(Collection::stream).collect(Collectors.toList());
+            filterEmptyLicenses(results);
+
+            results = assignReleaseToLicenseInfoParsingResults(results, release);
+            results = assignComponentToLicenseInfoParsingResults(results, release, user);
+            licenseInfoCacheForEvaluation.put(attachment.getAttachmentContentId(), results.get(0));
+            return results.get(0);
+        } catch (WrappedTException exception) {
+            throw exception.getCause();
+        }
+    }
+
+    public ObligationParsingResult getObligationsForCLIAttachment(Release release, Attachment attachment, User user)
+            throws TException {
+        List<ObligationParsingResult> cachedResults = obligationCacheForEvaluation
+                .getIfPresent(attachment.getAttachmentContentId());
+        if (cachedResults != null) {
+            return cachedResults.get(0);
+        }
+
+        try {
+
+            List<LicenseInfoParser> applicableParsers = parsers.stream()
+                    .filter(parser -> wrapTException(() -> parser.isApplicableTo(attachment, user, release)))
+                    .collect(Collectors.toList());
+
+            if (applicableParsers.size() == 0) {
+                LOGGER.warn("No applicable parser has been found for the attachment selected for license information");
+                return new ObligationParsingResult().setStatus(ObligationInfoRequestStatus.NO_APPLICABLE_SOURCE)
+                        .setMessage("No applicable parser has been found for the attachment.");
+            } else if (applicableParsers.size() > 1) {
+                LOGGER.info("More than one parser claims to be able to parse attachment with contend id "
+                        + attachment.getAttachmentContentId());
+            }
+
+            List<ObligationParsingResult> results = applicableParsers.stream().map(parser -> wrapTException(() -> {
+                if (parser instanceof CLIParser) {
+                    return ((CLIParser) parser).getObligations(attachment, user, release);
+                } else {
+                    return new ObligationParsingResult().setStatus(ObligationInfoRequestStatus.NO_APPLICABLE_SOURCE)
+                            .setMessage("The attachment/Parser is not CLI?parser file. Hence not applicable for evaluation");
+                }
+            })).collect(Collectors.toList());
+
+            results = assignReleaseToObligationParsingResults(results, release);
+
+            obligationCache.put(attachment.getAttachmentContentId(), results);
+            return results.get(0);
+        } catch (WrappedTException exception) {
+            throw exception.getCause();
+        }
     }
 }

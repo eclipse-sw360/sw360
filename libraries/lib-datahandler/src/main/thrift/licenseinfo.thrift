@@ -50,6 +50,7 @@ struct LicenseNameWithText {
     6: optional string type,
     7: optional set<ObligationAtProject> obligationsAtProject,
     8: optional set<string> sourceFiles,
+    9: optional set<string> sourceFilesHash
 }
 
 struct LicenseInfo {
@@ -62,6 +63,7 @@ struct LicenseInfo {
     23: optional string componentName,
     24: optional set<string> concludedLicenseIds,
     25: optional i32 totalObligations,
+    26: optional map<string, set<string>> copyrightsWithFilesHash
 }
 
 struct LicenseInfoParsingResult {
@@ -90,6 +92,7 @@ struct ObligationParsingResult {
     3: optional list<ObligationAtProject> obligationsAtProject,
     4: optional Release release,
     5: optional string attachmentContentId,
+    6: optional string sha1Hash,
 }
 
 struct ObligationAtProject {
@@ -160,4 +163,8 @@ service LicenseInfoService {
      */
     string getDefaultObligationsText();
 
+    /**
+     * Evaluate CLI attachments
+     */
+    map<string, map<string, string>> evaluateAttachments(1: string releaseId, 2: User user);
 }

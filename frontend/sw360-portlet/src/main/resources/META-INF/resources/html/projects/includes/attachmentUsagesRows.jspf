@@ -76,19 +76,20 @@
         </tr>
         <%--attachments of linked releases--%>
         <core_rt:forEach items="${releaseLink.attachments}" var="attachment" varStatus="attachmentloop">
+          <core_rt:if test="${empty attachment.superAttachmentId or sourceAttUsages.containsKey(attachment.attachmentContentId) or licInfoAttUsages.containsKey(attachment.attachmentContentId) or manualAttUsages.containsKey(attachment.attachmentContentId)}">
             <tr data-tt-id="${releaseLink.nodeId}_${attachment.attachmentContentId}" data-tt-branch="false"
                 data-tt-parent-id="${releaseLink.nodeId}"
                 title="<liferay-ui:message key="created.on" />: ${attachment.createdOn}&#10;Status: ${attachment.checkStatus} <core_rt:if test="${attachment.checkStatus != 'NOTCHECKED'}">&#10;Checked By: ${attachment.checkedBy}&#10;Checked On: ${attachment.checkedOn}</core_rt:if>"
             >
-                <td>
+                <td <core_rt:if test="${not empty attachment.superAttachmentId}">class="text-white" style="background-color: #adaec1 !important"</core_rt:if>>
                     <sw360:out value="${attachment.filename}" maxChar="60"/>
                     <%--<sw360:DisplayDownloadAttachmentFile attachment="${attachment}" contextType="release" contextId="${releaseLink.id}"/>--%>
                 </td>
-                <td></td>
-                <td>
+                <td <core_rt:if test="${not empty attachment.superAttachmentId}">class="text-white" style="background-color: #adaec1 !important"</core_rt:if>></td>
+                <td <core_rt:if test="${not empty attachment.superAttachmentId}">class="text-white" style="background-color: #adaec1 !important"</core_rt:if>>
                     <sw360:out value="${attachment.createdBy}"/>
                 </td>
-                <td>
+                <td <core_rt:if test="${not empty attachment.superAttachmentId}">class="text-white" style="background-color: #adaec1 !important"</core_rt:if>>
                     <sw360:DisplayEnumShort value="${attachment.attachmentType}"/>
                     <core_rt:if test="${attachment.attachmentType eq 'COMPONENT_LICENSE_INFO_XML'}">
                     <script>
@@ -105,7 +106,7 @@
                     </script>
                     </core_rt:if>
                 </td>
-                <td>
+                <td <core_rt:if test="${not empty attachment.superAttachmentId}">class="text-white" style="background-color: #adaec1 !important"</core_rt:if>>
                     <input type="checkbox"
                            name="<portlet:namespace/><%=PortalConstants.PROJECT_SELECTED_ATTACHMENT_USAGES%>"
                            value="${parentProjectPath}-${releaseLink.id}_<%=UsageData._Fields.LICENSE_INFO.getFieldName()%>_${attachment.attachmentContentId}"
@@ -121,7 +122,7 @@
                            style="display:none"
                     />
                 </td>
-                <td>
+                <td <core_rt:if test="${not empty attachment.superAttachmentId}">class="text-white" style="background-color: #adaec1 !important"</core_rt:if>>
                   <core_rt:if test='${attachment.filename.toLowerCase().endsWith(".rdf")}'>
                     <input type="checkbox"
                            id="${parentProjectPath}-${releaseLink.id}_<%=PortalConstants.INCLUDE_CONCLUDED_LICENSE_SHADOWS%>_${attachment.attachmentContentId}"
@@ -142,7 +143,7 @@
                     />
                   </core_rt:if>
                 </td>
-                <td>
+                <td <core_rt:if test="${not empty attachment.superAttachmentId}">class="text-white" style="background-color: #adaec1 !important"</core_rt:if>>
                     <input type="checkbox"
                            name="<portlet:namespace/><%=PortalConstants.PROJECT_SELECTED_ATTACHMENT_USAGES%>"
                            value="${releaseLink.id}_<%=UsageData._Fields.SOURCE_PACKAGE.getFieldName()%>_${attachment.attachmentContentId}"
@@ -158,7 +159,7 @@
                            style="display:none"
                     />
                 </td>
-                <td>
+                <td <core_rt:if test="${not empty attachment.superAttachmentId}">class="text-white" style="background-color: #adaec1 !important"</core_rt:if>>
                     <input type="checkbox"
                            name="<portlet:namespace/><%=PortalConstants.PROJECT_SELECTED_ATTACHMENT_USAGES%>"
                            value="${releaseLink.id}_<%=UsageData._Fields.MANUALLY_SET.getFieldName()%>_${attachment.attachmentContentId}"
@@ -175,6 +176,7 @@
                     />
                 </td>
             </tr>
+          </core_rt:if>
         </core_rt:forEach>
     </core_rt:forEach>
 </core_rt:forEach>

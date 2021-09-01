@@ -18,7 +18,9 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationAtProject;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -52,9 +54,10 @@ import static org.eclipse.sw360.datahandler.common.SW360Constants.OBLIGATION_TOP
  * @author: alex.borodin@evosoft.com
  */
 public abstract class AbstractCLIParser extends LicenseInfoParser {
-    private static final String LICENSE_CONTENT_ELEMENT_NAME = "Content";
+    public static final String LICENSE_CONTENT_ELEMENT_NAME = "Content";
     private static final String LICENSE_ACKNOWLEDGEMENTS_ELEMENT_NAME = "Acknowledgements";
     private static final String SOURCE_FILES_ELEMENT_NAME = "Files";
+    public static final String SOURCE_FILES_HASH_ELEMENT_NAME = "FileHash";
     protected static final String XML_FILE_EXTENSION = ".xml";
     private static final String LICENSENAME_ATTRIBUTE_NAME = "name";
     private static final String SPDX_IDENTIFIER_ATTRIBUTE_NAME = "spdxidentifier";
@@ -72,6 +75,11 @@ public abstract class AbstractCLIParser extends LicenseInfoParser {
 
     public AbstractCLIParser(AttachmentConnector attachmentConnector, AttachmentContentProvider attachmentContentProvider) {
         super(attachmentConnector, attachmentContentProvider);
+    }
+
+    public <T> List<LicenseInfoParsingResult> getLicenseInfos(Attachment attachment, User user, T context,
+            boolean includeFilesHash) throws TException {
+        return new ArrayList<LicenseInfoParsingResult>();
     }
 
     @Override
@@ -172,6 +180,16 @@ public abstract class AbstractCLIParser extends LicenseInfoParser {
                         .map(Node::getNodeValue)
                         .orElse(TYPE_UNKNOWN))
                 .setSourceFiles(files);
+    }
+
+    protected LicenseNameWithText getLicenseNameWithTextFromLicenseNodeAndFileHash(Node node) {
+        Set<String> filesHash = new HashSet<String>();
+        String sourceFilesHash = findNamedSubelement(node, SOURCE_FILES_HASH_ELEMENT_NAME)
+                .map(AbstractCLIParser::normalizeEscapedXhtml).orElse(null);
+        if (CommonUtils.isNotNullEmptyOrWhitespace(sourceFilesHash)) {
+            filesHash.addAll(Arrays.asList(sourceFilesHash.split("\\n")));
+        }
+        return getLicenseNameWithTextFromLicenseNode(node).setSourceFilesHash(filesHash);
     }
 
     protected ObligationAtProject getObligationFromObligationNode(Node node) {

@@ -14,7 +14,10 @@
 
 <portlet:defineObjects />
 <liferay-theme:defineObjects />
-
+<portlet:resourceURL var="evaluateCLIAttachments">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.EVALUATE_CLI_ATTACHMENTS%>"/>
+    <portlet:param name="<%=PortalConstants.RELEASE_ID%>" value="${releaseId}"/>
+</portlet:resourceURL>
 <core_rt:catch var="attributeNotFoundException">
     <jsp:useBean id="attachments" type="java.util.Set<org.eclipse.sw360.datahandler.thrift.attachments.Attachment>" scope="request" />
     <jsp:useBean id="attachmentUsages" type="java.util.Map<java.lang.String, java.util.List<org.eclipse.sw360.datahandler.thrift.projects.Project>>" scope="request" />
@@ -41,6 +44,16 @@
     </core_rt:if>
 
     <core_rt:if test="${not empty attachments}">
+        <core_rt:if test="${not empty releaseId and writeAccessUser}">
+          <div id="errorMsgContainer">
+            <div id="errorMsg" class="alert alert-dismissible d-none" role="alert">
+                <span></span>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+          </div>
+        </core_rt:if>
         <table id="attachmentsDetail" class="table table-bordered" title="<liferay-ui:message key="attachment.information" />">
             <colgroup>
                 <col />  <!-- set by class -->
@@ -103,7 +116,10 @@
                         "uploadedComment": "<core_rt:if test="${not empty attachment.createdComment}">Comment: <sw360:DisplayEllipsisString value="${attachment.createdComment}"/></core_rt:if>",
                         "checkedOn": "<sw360:out value="${attachment.checkedOn}"/>",
                         "checkedComment": "<core_rt:if test="${not empty attachment.checkedComment}">Comment: <sw360:DisplayEllipsisString value="${attachment.checkedComment}"/></core_rt:if>",
-                        "checkStatus": "<sw360:out value="${attachment.checkStatus}"/>"
+                        "checkStatus": "<sw360:out value="${attachment.checkStatus}"/>",
+                        "attachmentContentId": "<sw360:out value="${attachment.attachmentContentId}"/>",
+                        "superAttachmentId": "<sw360:out value="${attachment.superAttachmentId}"/>",
+                        "superAttachmentFilename": "<sw360:out value="${attachment.superAttachmentFilename}"/>"
                     });
                 </core_rt:forEach>
 
@@ -111,6 +127,7 @@
                 $('#downloadAttachmentBundle').on('click', function() {
                     window.location = $('#attachmentsDetail th:first a').attr('href');
                 });
+
 
                 /* create table */
                 var table = datatables.create('#attachmentsDetail', {
@@ -122,7 +139,7 @@
                             "data":           null,
                             "defaultContent": ''
                         },
-                        { "data": "fileName" },
+                        { "data": "fileName" , "render": renderAttachmentFileName},
                         { "data": "size" },
                         { "data": "type" },
                         { "data": "uploadedTeam" },
@@ -140,6 +157,10 @@
                                     $(td).addClass('text-danger');
                                 } else if (rowData.checkStatus === 'ACCEPTED') {
                                     $(td).addClass('text-success');
+                                }
+
+                                if (rowData.superAttachmentId) {
+                                    $(td).addClass('text-white').css("background-color", "#adaec1 !important");
                                 }
                             }
                         },
@@ -160,6 +181,18 @@
                                         dialogContent
                                     );
                                 });
+
+                                if (rowData.superAttachmentId) {
+                                    $(td).addClass('text-white').css("background-color", "#adaec1 !important");
+                                }
+                            }
+                        },
+                        {
+                            "targets": [ 0, 1, 2, 3, 4 ,5, 9 ],
+                            "createdCell": function (td, cellData, rowData, row, col) {
+                                if (rowData.superAttachmentId) {
+                                    $(td).addClass('text-white').css("background-color", "#adaec1 !important");
+                                }
                             }
                         }
                     ],
@@ -168,6 +201,18 @@
                         loadingRecords: "<liferay-ui:message key="loading" />"
                     },
                     "order": [[1, 'asc']]
+                    <core_rt:if test="${not empty releaseId and writeAccessUser}">
+                    ,"buttons": [
+                      {
+                        text: '<liferay-ui:message key="evaluate.cli.files" />',
+                        "className": 'btn btn-primary',
+                        "attr": {
+                            "id": 'evaluateCLIFiles',
+                         },
+                        "action": evaluateCLIFiles
+                      }
+                    ]
+                    </core_rt:if>
                 } );
 
                 /* Add event listener for opening and closing details as child row */
@@ -186,25 +231,47 @@
 
                 /* Define function for child row creation, which will contain additional data for a clicked table row */
                 function createChildRow(rowData) {
-                    var childHtmlString = '' +
-                            '<div>' +
-                                '<span class="dataTableChildRowCell" style="padding-right: 10px; width:  4%;"/>' +
-                                '<span class="dataTableChildRowCell" style="padding-right: 50px; width: 36%;">' + rowData.sha1 + '</span>' +
-                                '<span class="dataTableChildRowCell" style="padding-right: 30px; width: 22%;">' + rowData.uploadedOn + ' ' + rowData.uploadedComment + '</span>';
+                    let className = "";
                     if (rowData.checkStatus === 'ACCEPTED') {
-                        childHtmlString += '' +
-                                '<span class="dataTableChildRowCell foregroundOK" style="padding-right: 30px; width: 22%;">' + rowData.checkedOn + ' ' + rowData.checkedComment + '</span>';
-                    } else if (rowData.checkStatus === 'REJECTED') {
-                        childHtmlString += '' +
-                                '<span class="dataTableChildRowCell foregroundAlert" style="padding-right: 30px; width: 22%;">' + rowData.checkedOn + ' ' + rowData.checkedComment + '</span>';
-                    } else {
-                        childHtmlString += '' +
-                                '<span class="dataTableChildRowCell" style="padding-right: 30px; width: 22%;">' + rowData.checkedOn + ' ' + rowData.checkedComment + '</span>';
+                        className = "foregroundOK";
+                          } else if (rowData.checkStatus === 'REJECTED') {
+                        className = "foregroundAlert";
+                        }
+                    var childHtmlString = `
+                    <table class="table table-borderless"
+                         <tr class="dataTableChildRowCell">
+                             <td><liferay-ui:message key="sha" /> : </td>
+                             <td>`+ rowData.sha1 + `</td>
+                             <td><liferay-ui:message key="uploaded.on" /> : </td>
+                             <td>` + rowData.uploadedOn + `</td>
+                             <td><liferay-ui:message key="uploaded.comment" /> : </td>
+                             <td>` + rowData.uploadedComment + `</td>
+                         <tr>
+                         <tr class="dataTableChildRowCell ` + className + `">
+                             <td><liferay-ui:message key="checked.on" /> : </td>
+                             <td>` + rowData.checkedOn + `</td>
+                             <td><liferay-ui:message key="checked.comment" /> : </td>
+                             <td>` + rowData.checkedComment + `</td>
+                             <td></td>
+                             <td></td>
+                         <tr>`
+
+                    if (rowData.superAttachmentId) {
+                        childHtmlString += `<tr class="dataTableChildRowCell">
+                             <td><liferay-ui:message key="super.attachment.id" /> : </td>
+                             <td>` + rowData.superAttachmentId + `</td>
+                             <td><liferay-ui:message key="super.attachment.filename" /> : </td>
+                             <td>`+ rowData.superAttachmentFilename + `</td>
+                             <td></td>
+                             <td></td>
+                             <tr>`
                     }
-                    childHtmlString += '' +
-                                '<span class="dataTableChildRowCell" style="padding-right: 30px; width: 16%;"/>'+
-                            '</div>';
+                    childHtmlString += '<table>'
                     return childHtmlString;
+                }
+
+                function renderAttachmentFileName(data, type, row, meta) {
+                    return $('<span></span>').text(data).addClass(row.attachmentContentId)[0].outerHTML;
                 }
 
                 function renderAttachmentUsages(data, type, row, meta) {
@@ -222,7 +289,45 @@
                         return null;
                     }
                 }
+                <core_rt:if test="${not empty releaseId and writeAccessUser}">
+                    let errorMsgClone = $("#errorMsgContainer").find("div:first").clone(true, true);
+                    function evaluateCLIFiles() {
+                       let releaseId = "${releaseId}";
+                       $("#evaluateCLIFiles").attr("disabled", "disabled").text("<liferay-ui:message key="evaluating" />");
+                        $.ajax({
+                            url: '<%=evaluateCLIAttachments%>',
+                            type: "GET",
+                            success: function(result){
+                               $("#evaluateCLIFiles").removeAttr("disabled").text("<liferay-ui:message key="evaluate.cli.files" />");
+                               if(result.error) {
+                                   $("#evaluateCLIFiles").removeClass("btn-primary").addClass("btn-danger");
+                                   errorMsgClone.removeClass("alert-info d-none").addClass("alert-warning").find("span:first")
+                                   .text("<liferay-ui:message key="an.error.happened.while.communicating.with.the.server" />")
+                                   $("#errorMsgContainer").html("").append(errorMsgClone);
+                                   return;
+                               }
 
+                               if(!Object.keys(result).length) {
+                                   errorMsgClone.removeClass("alert-info d-none").addClass("alert-warning").find("span:first")
+                                   .text("<liferay-ui:message key="no.super.set.cli.attachment.found" />");
+                                   $("#errorMsgContainer").html("").append(errorMsgClone);
+                                   return;
+                               }
+                               for( let [attachmentContentId, {superAttachmentContentId, superFilename}] of Object.entries(result)){
+                                   let tr = $('.' + attachmentContentId).parents("tr:first")
+                                   tr.find("td").each(function(){
+                                       rowData = table.row(tr).data();
+                                       rowData.superAttachmentId = superAttachmentContentId;
+                                       rowData.superAttachmentFilename = superFilename;
+                                       $(this).addClass('text-white').css("background-color", "#adaec1 !important");
+                                   })
+                               }
+                               errorMsgClone.removeClass("alert-warning d-none").addClass("alert-info").find("span:first")
+                               .text("<liferay-ui:message key="cli.attachment.evaluation.completed" />");
+                               $("#errorMsgContainer").html("").append(errorMsgClone);
+                            }});
+                    }
+                </core_rt:if>
             });
         </script>
     </core_rt:if>

@@ -949,6 +949,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 if (release.getClearingState() == null) {
                     release.setClearingState(ClearingState.NEW_CLEARING);
                 }
+                checkSuperAttachmentExists(release);
                 releaseRepository.update(release);
                 String componentId=release.getComponentId();
                 Component oldComponent = componentRepository.get(componentId);
@@ -1208,7 +1209,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             // First merge everything into the new compontent which is mergable in one step (attachments, plain fields)
             mergeReleasePlainFields(mergeSelection, mergeTarget, mergeSource);
             mergeReleaseAttachments(mergeSelection, mergeTarget, mergeSource);
-            
+            checkSuperAttachmentExists(mergeTarget);
+            checkSuperAttachmentExists(mergeSource);
             // update target first. If updating source fails, no data is lost (but inconsistency might occur)
             updateReleaseCompletely(mergeTarget, sessionUser, true, true, true);
             // now, update source (before deletion so that attachments and releases and
@@ -2275,5 +2277,20 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     public Map<PaginationData, List<Component>> getRecentComponentsSummaryWithPagination(User user,
             PaginationData pageData) {
           return componentRepository.getRecentComponentsSummary(user, pageData);
+    }
+    
+    private void checkSuperAttachmentExists(Release release) {
+        if (CommonUtils.isNotEmpty(release.getAttachments())) {
+            Set<String> attachmentContentIds = release.getAttachments().stream()
+                    .map(Attachment::getAttachmentContentId).collect(Collectors.toSet());
+            release.getAttachments().stream()
+                    .filter(att -> CommonUtils.isNotNullEmptyOrWhitespace(att.getAttachmentContentId()))
+                    .forEach(att -> {
+                        if (!attachmentContentIds.contains(att.getSuperAttachmentId())) {
+                            att.unsetSuperAttachmentFilename();
+                            att.unsetSuperAttachmentId();
+                        }
+                    });
+        }
     }
 }

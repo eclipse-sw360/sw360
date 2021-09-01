@@ -480,7 +480,9 @@ public class JacksonCustomizations {
                 "setCheckedBy",
                 "setCheckedTeam",
                 "setCheckedOn",
-                "setCheckStatus"
+                "setCheckStatus",
+                "setSuperAttachmentId",
+                "setSuperAttachmentFilename"
         })
         static abstract class AttachmentMixin {
         }

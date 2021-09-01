@@ -18,6 +18,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.liferay.portal.kernel.json.JSONArray;
+import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.portlet.LiferayPortletURL;
@@ -233,7 +234,29 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             JSONObject dataForChangeLogs = changeLogsPortletUtilsPortletUtils.serveResourceForChangeLogs(request,
                     response, action);
             writeJSON(request, response, dataForChangeLogs);
+        } else if (PortalConstants.EVALUATE_CLI_ATTACHMENTS.equals(action)) {
+            evaluateCLIAttachments(request, response);
         }
+    }
+
+    private void evaluateCLIAttachments(ResourceRequest request, ResourceResponse response) throws IOException {
+        User user = UserCacheHolder.getUserFromRequest(request);
+        String releaseId = request.getParameter(RELEASE_ID);
+        final LicenseInfoService.Iface client = thriftClients.makeLicenseInfoClient();
+        Map<String, Map<String, String>> result = new HashMap<String, Map<String, String>>();
+        try {
+            result = client.evaluateAttachments(releaseId, user);
+        } catch (TException e) {
+            log.error("Error occured while evaluating attachments.", e);
+            result.put("error", new HashMap<String, String>());
+        }
+        JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+        try {
+            jsonObject = createJSONObject(PortletUtils.convertObjectToJsonStr(result));
+        } catch (JSONException e) {
+            log.error("Error occured while creating JSON.", e);
+        }
+        writeJSON(request, response, jsonObject);
     }
 
     private void importBom(ResourceRequest request, ResourceResponse response) {
@@ -1393,6 +1416,9 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 putDirectlyLinkedReleaseRelationsInRequest(request, release);
                 request.setAttribute(IS_USER_ALLOWED_TO_MERGE, PermissionUtils.isUserAtLeast(USER_ROLE_ALLOWED_TO_MERGE_OR_SPLIT_COMPONENT, user));
 
+                Map<RequestedAction, Boolean> permissions = release.getPermissions();
+                
+                request.setAttribute(PortalConstants.WRITE_ACCESS_USER, permissions.get(RequestedAction.WRITE));
                 if (isNullOrEmpty(id)) {
                     id = release.getComponentId();
                 }
