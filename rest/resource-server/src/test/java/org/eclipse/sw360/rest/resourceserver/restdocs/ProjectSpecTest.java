@@ -272,6 +272,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.getProjectForUserById(eq(projectForAtt.getId()), anyObject())).willReturn(projectForAtt);
         given(this.projectServiceMock.searchLinkingProjects(eq(project.getId()), anyObject())).willReturn(usedByProjectList);
         given(this.projectServiceMock.searchProjectByName(eq(project.getName()), anyObject())).willReturn(projectListByName);
+        given(this.projectServiceMock.refineSearch(anyObject(), anyObject())).willReturn(projectListByName);
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), anyObject(), eq("false"))).willReturn(releaseIds);
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), anyObject(), eq("true"))).willReturn(releaseIdsTransitive);
         given(this.projectServiceMock.updateProjectReleaseRelationship(anyObject(), anyObject(), anyObject())).willReturn(projectReleaseRelationshipResponseBody);
@@ -809,6 +810,52 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 .andDo(this.documentationHandler.document(
                         requestParameters(
                                 parameterWithName("name").description("The name of the project"),
+                                parameterWithName("page").description("Page of projects"),
+                                parameterWithName("page_entries").description("Amount of projects per page"),
+                                parameterWithName("sort").description("Defines order of the projects")
+                        ),
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
+                        ),
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:projects.[]name").description("The name of the project"),
+                                subsectionWithPath("_embedded.sw360:projects.[]version").description("The project version"),
+                                subsectionWithPath("_embedded.sw360:projects.[]projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
+                                subsectionWithPath("_embedded.sw360:projects.[]visibility").description("The visibility of the project, possible values are: "+ Arrays.asList(Visibility.values())),
+                                subsectionWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of projects per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all existing projects"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_projects_by_lucene_search() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/projects")
+                .header("Authorization", "Bearer " + accessToken)
+                .param("name", project.getName())
+                .param("type", project.getProjectType().name())
+                .param("group", project.getBusinessUnit())
+                .param("tag", project.getTag())
+                .param("luceneSearch", "true")
+                .param("page", "0")
+                .param("page_entries", "5")
+                .param("sort", "name,desc")
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("name").description("The name of the project"),
+                                parameterWithName("type").description("The type of the project"),
+                                parameterWithName("group").description("The group of the project"),
+                                parameterWithName("tag").description("The tag of the project"),
+                                parameterWithName("luceneSearch").description("List project by lucene search"),
                                 parameterWithName("page").description("Page of projects"),
                                 parameterWithName("page_entries").description("Amount of projects per page"),
                                 parameterWithName("sort").description("Defines order of the projects")

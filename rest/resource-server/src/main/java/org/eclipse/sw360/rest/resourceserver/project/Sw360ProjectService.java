@@ -379,4 +379,9 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             releaseExecutor.shutdownNow();
         }
     }
+
+    public List<Project> refineSearch(Map<String, Set<String>> filterMap, User sw360User) throws TException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        return sw360ProjectClient.refineSearch(null, filterMap, sw360User);
+    }
 }
