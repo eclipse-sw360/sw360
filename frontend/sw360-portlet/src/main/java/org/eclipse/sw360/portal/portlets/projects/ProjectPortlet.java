@@ -2572,7 +2572,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     private int getFulfilledObligationsCount(Map<String, ObligationStatusInfo> obligationStatusMap) {
         if (CommonUtils.isNotEmpty(obligationStatusMap.keySet())) {
             return Math.toIntExact(obligationStatusMap.values().stream()
-                    .filter(obligation -> ObligationStatus.FULFILLED.equals(obligation.getStatus())).count());
+                    .filter(obligation -> ObligationStatus.ACKNOWLEDGED_OR_FULFILLED.equals(obligation.getStatus())).count());
         }
         return 0;
     }

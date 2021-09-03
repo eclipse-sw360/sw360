@@ -257,13 +257,13 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
                     var status = $(rowData.status).text();
                     if (status === '<liferay-ui:message key="open" />') {
                         $(td).addClass('text-danger');
-                    } else if (status === '<liferay-ui:message key="fulfilled" />') {
+                    } else if (status === '<liferay-ui:message key="acknowledged.or.fulfilled" />') {
                         $(td).addClass('text-success');
-                    } else if (status === '<liferay-ui:message key="in.progress" />') {
+                    } else if (status === '<liferay-ui:message key="will.be.fulfilled.before.release" />') {
                         $(td).addClass('text-warning');
                     } else if (status === '<liferay-ui:message key="not.applicable" />') {
                         $(td).addClass('text-secondary');
-                    } else if (status === '<liferay-ui:message key="to.be.fulfilled.by.parent.project" />') {
+                    } else if (status === '<liferay-ui:message key="deferred.to.parent.project" />') {
                         $(td).addClass('text-info');
                     }
                 }
@@ -390,13 +390,13 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
                     var status = $(rowData.status).text();
                     if (status === '<liferay-ui:message key="open" />') {
                         $(td).addClass('text-danger');
-                    } else if (status === '<liferay-ui:message key="fulfilled" />') {
+                    } else if (status === '<liferay-ui:message key="acknowledged.or.fulfilled" />') {
                         $(td).addClass('text-success');
-                    } else if (status === '<liferay-ui:message key="in.progress" />') {
+                    } else if (status === '<liferay-ui:message key="will.be.fulfilled.before.release" />') {
                         $(td).addClass('text-warning');
                     } else if (status === '<liferay-ui:message key="not.applicable" />') {
                         $(td).addClass('text-secondary');
-                    } else if (status === '<liferay-ui:message key="to.be.fulfilled.by.parent.project" />') {
+                    } else if (status === '<liferay-ui:message key="deferred.to.parent.project" />') {
                         $(td).addClass('text-info');
                     }
                 }
@@ -476,13 +476,13 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
                     var status = $(rowData.status).text();
                     if (status === '<liferay-ui:message key="open" />') {
                         $(td).addClass('text-danger');
-                    } else if (status === '<liferay-ui:message key="fulfilled" />') {
+                    } else if (status === '<liferay-ui:message key="acknowledged.or.fulfilled" />') {
                         $(td).addClass('text-success');
-                    } else if (status === '<liferay-ui:message key="in.progress" />') {
+                    } else if (status === '<liferay-ui:message key="will.be.fulfilled.before.release" />') {
                         $(td).addClass('text-warning');
                     } else if (status === '<liferay-ui:message key="not.applicable" />') {
                         $(td).addClass('text-secondary');
-                    } else if (status === '<liferay-ui:message key="to.be.fulfilled.by.parent.project" />') {
+                    } else if (status === '<liferay-ui:message key="deferred.to.parent.project" />') {
                         $(td).addClass('text-info');
                     }
                 }
@@ -562,13 +562,13 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
                     var status = $(rowData.status).text();
                     if (status === '<liferay-ui:message key="open" />') {
                         $(td).addClass('text-danger');
-                    } else if (status === '<liferay-ui:message key="fulfilled" />') {
+                    } else if (status === '<liferay-ui:message key="acknowledged.or.fulfilled" />') {
                         $(td).addClass('text-success');
-                    } else if (status === '<liferay-ui:message key="in.progress" />') {
+                    } else if (status === '<liferay-ui:message key="will.be.fulfilled.before.release" />') {
                         $(td).addClass('text-warning');
                     } else if (status === '<liferay-ui:message key="not.applicable" />') {
                         $(td).addClass('text-secondary');
-                    } else if (status === '<liferay-ui:message key="to.be.fulfilled.by.parent.project" />') {
+                    } else if (status === '<liferay-ui:message key="deferred.to.parent.project" />') {
                         $(td).addClass('text-info');
                     }
                 }

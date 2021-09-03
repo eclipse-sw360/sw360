@@ -278,13 +278,15 @@ public class ThriftEnumUtils {
             DocumentType.USER, "user"
     );
 
-    private static final ImmutableMap<ObligationStatus, String> MAP_OBLIGATION_STATUS_STRING = ImmutableMap.of(
-            ObligationStatus.OPEN, "Open",
-            ObligationStatus.FULFILLED, "Fulfilled",
-            ObligationStatus.IN_PROGRESS, "In Progress",
-            ObligationStatus.NOT_APPLICABLE, "Not Applicable",
-            ObligationStatus.TO_BE_FULFILLED_BY_PARENT_PROJECT, "To be fulfilled by parent project"
-    );
+    private static final ImmutableMap<ObligationStatus, String> MAP_OBLIGATION_STATUS_STRING = ImmutableMap.<ObligationStatus, String>builder()
+            .put(ObligationStatus.OPEN, "Open")
+            .put(ObligationStatus.ACKNOWLEDGED_OR_FULFILLED, "Acknowledged or Fulfilled")
+            .put(ObligationStatus.WILL_BE_FULFILLED_BEFORE_RELEASE, "Will be fulfilled before release")
+            .put(ObligationStatus.NOT_APPLICABLE, "Not Applicable")
+            .put(ObligationStatus.DEFERRED_TO_PARENT_PROJECT, "Deferred to parent project")
+            .put(ObligationStatus.FULFILLED_AND_PARENT_MUST_ALSO_FULFILL, "Fulfilled and parent must also fulfill")
+            .put(ObligationStatus.ESCALATED, "Escalated")
+            .build();
 
     private static final ImmutableMap<ClearingRequestState, String> MAP_CLEARING_REQUEST_STATE_STRING = ImmutableMap.<ClearingRequestState, String>builder()
             .put(ClearingRequestState.NEW, "New")
