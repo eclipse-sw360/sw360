@@ -18,6 +18,15 @@
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.LOAD_OBLIGATIONS_VIEW%>"/>
     <portlet:param name="<%=PortalConstants.DOCUMENT_ID%>" value="${docid}"/>
 </portlet:resourceURL>
+<portlet:resourceURL var="updateProjectVulnerabilitiesURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.UPDATE_VULNERABILITIES_PROJECT%>"/>
+</portlet:resourceURL>
+<portlet:resourceURL var="updateVulnerabilityRatings">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.UPDATE_VULNERABILITY_RATINGS%>"/>
+</portlet:resourceURL>
+
+<core_rt:set var = "updateProjectVulnerabilitiesURL" scope = "request" value = "updateProjectVulnerabilitiesURL"/>
+<core_rt:set var = "updateVulnerabilityRatings" scope = "request" value = "updateVulnerabilityRatings"/>
 <div class="container" style="display: none;">
 	<div class="row">
 		<div class="col-3 sidebar">
@@ -227,10 +236,33 @@
 		                    <jsp:include page="/html/utils/includes/attachmentsDetail.jsp" />
 		                </div>
 		                <core_rt:if test="${inProjectDetailsContext}">
-			                <div id="tab-Vulnerabilities" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Vulnerabilities'}">active show</core_rt:if>">
-			                    <%@include file="/html/projects/includes/projects/vulnerabilities.jspf" %>
-			                </div>
-		                </core_rt:if>
+                            <div id="tab-Vulnerabilities" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Vulnerabilities'}">active show</core_rt:if>">
+                                <%@include file="/html/utils/includes/vulnerabilityModal.jspf" %>
+                                <ul class="nav nav-tabs font-weight-bold border-bottom" role="tablist">
+                                    <li class="nav-item border rounded border-bottom-0"><a class="nav-link active" id="parentProject-tab" data-toggle="tab" href="#parentProject" role="tab"
+                                        aria-controls="parentProject" aria-selected="true"><sw360:ProjectName project="${project}" /></a></li>
+                                    <core_rt:forEach var="subprojectLink" items="${allSubProjectLink}">
+                                    <core_rt:if test="${subprojectLink.id != project.id}">
+                                        <li class="nav-item border rounded border-bottom-0"><a class="nav-link" id="subProject-${subprojectLink.id}-tab" data-toggle="tab"
+                                            href="#subProject-${subprojectLink.id}" role="tab" aria-controls="subProject-${subprojectLink.id}" aria-selected="false"><sw360:out value="${subprojectLink.name}" />  (<sw360:out value="${subprojectLink.version}" />)</a>
+                                        </li>
+                                        </core_rt:if>
+                                    </core_rt:forEach>
+                                </ul>
+                                <div class="tab-content">
+                                    <div class="tab-pane fade show active" id="parentProject" role="tabpanel" aria-labelledby="parentProject-tab">
+                                        <%@include file="/html/projects/includes/projects/vulnerabilities.jsp"%>
+                                    </div>
+                                    <core_rt:forEach var="subprojectLink" items="${allSubProjectLink}">
+                                     <core_rt:if test="${subprojectLink.id != project.id}">
+                                        <div class="tab-pane fade subproject" id="subProject-${subprojectLink.id}" role="tabpanel" aria-labelledby="subProject-${subprojectLink.id}-tab">
+                                            <%@include file="/html/projects/includes/projects/vulnerabilitiesFetch.jspf"%>
+                                        </div>
+                                        </core_rt:if>
+                                    </core_rt:forEach>
+                                </div>
+                            </div>
+                        </core_rt:if>
 		                <div id="tab-ChangeLogs" class="tab-pane <core_rt:if test="${selectedTab == 'tab-ChangeLogs'}">active show</core_rt:if>">
 			                <jsp:include page="/html/changelogs/elementView.jsp" />
 		                </div>

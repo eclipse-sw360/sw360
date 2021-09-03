@@ -272,7 +272,39 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             request.setAttribute(LICENSE_OBLIGATION_DATA, loadLicenseObligation(request));
             include("/html/projects/includes/projects/licenseObligations.jsp", request, response,
                     PortletRequest.RESOURCE_PHASE);
+        } else if (PortalConstants.LOAD_VULNERABILITIES_PROJECT.equals(action)) {
+            prepareVulnerabilitiesView(request, response);
+            include("/html/projects/includes/projects/vulnerabilities.jsp", request, response,
+                    PortletRequest.RESOURCE_PHASE);
         }
+    }
+
+    private void prepareVulnerabilitiesView(ResourceRequest request, ResourceResponse response) {
+        User user = UserCacheHolder.getUserFromRequest(request);
+        ProjectService.Iface client = thriftClients.makeProjectClient();
+        String id = request.getParameter("subprojectid");
+        String updateVulnerabilityRatings = request.getParameter(UPDATE_VULNERABILITY_RATINGS);
+        String updateProjectVulnerabilitiesURL = request.getParameter(UPDATE_PROJECT_VULNERABILITIES_URL);
+        Project project = null;
+        try {
+            project = client.getProjectById(id, user);
+            putVulnerabilitiesInRequest(request, id, user);
+        } catch (TException e) {
+            log.error("Error getting Project - " + id, e);
+            request.setAttribute(VULNERABILITY_LIST, new ArrayList());
+            request.setAttribute(VULNERABILITY_RATINGS, new HashMap());
+            request.setAttribute(VULNERABILITY_CHECKSTATUS_TOOLTIPS, new HashMap());
+            request.setAttribute(VULNERABILITY_MATCHED_BY_HISTOGRAM, new HashMap());
+            request.setAttribute(VIEW_SIZE, 0);
+        }
+        request.setAttribute("isSubProject", true);
+        request.setAttribute(UPDATE_PROJECT_VULNERABILITIES_URL, updateProjectVulnerabilitiesURL);
+        request.setAttribute(UPDATE_VULNERABILITY_RATINGS, updateVulnerabilityRatings);
+        request.setAttribute(PROJECT, project);
+        request.setAttribute(WRITE_ACCESS_USER,
+                PermissionUtils.makePermission(project, user).isActionAllowed(RequestedAction.WRITE));
+        request.setAttribute(VIEW_VULNERABILITY_FRIENDLY_URL,
+                ProjectPortletUtils.createVulnerabilityFriendlyUrl(request));
     }
 
     private void removeOrphanObligation(ResourceRequest request, ResourceResponse response) {
@@ -1410,6 +1442,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 setAttachmentsInRequest(request, project);
                 List<ProjectLink> mappedProjectLinks = createLinkedProjects(project, user);
                 request.setAttribute(PROJECT_LIST, mappedProjectLinks);
+                List<ProjectLink> allSubProjectLinks = createLinkedProjects(project, Function.identity(), true, user);
+                request.setAttribute(ALL_SUB_PROJECT_LINK, allSubProjectLinks);
                 putDirectlyLinkedReleasesInRequest(request, project);
                 Set<Project> usingProjects = client.searchLinkingProjects(id, user);
                 request.setAttribute(USING_PROJECTS, usingProjects);
@@ -1430,6 +1464,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 ModerationService.Iface modClient = thriftClients.makeModerationClient();
                 Integer criticalCount = modClient.getCriticalClearingRequestCount();
                 request.setAttribute(CRITICAL_CR_COUNT, criticalCount);
+                request.setAttribute(LIST_VULNERABILITY_WITH_VIEW_SIZE_FRIENDLY_URL,
+                        ProjectPortletUtils.createProjectPortletUrlWithViewSizeFriendlyUrl(request, id));
             } catch (SW360Exception sw360Exp) {
                 setSessionErrorBasedOnErrorCode(request, sw360Exp.getErrorCode());
             } catch (TException e) {
@@ -1888,7 +1924,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         return false;
     }
 
-    private void putVulnerabilitiesInRequest(RenderRequest request, String id, User user) throws TException {
+    private void putVulnerabilitiesInRequest(PortletRequest request, String id, User user) throws TException {
         VulnerabilityService.Iface vulClient = thriftClients.makeVulnerabilityClient();
         List<VulnerabilityDTO> vuls = vulClient.getVulnerabilitiesByProjectIdWithoutIncorrect(id, user);
 
@@ -1899,7 +1935,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         putVulnerabilitiesMetadatasInRequest(request, vuls, projectVulnerabilityRating);
     }
 
-    private void putVulnerabilitiesMetadatasInRequest(RenderRequest request, List<VulnerabilityDTO> vuls, Optional<ProjectVulnerabilityRating> projectVulnerabilityRating) {
+    private void putVulnerabilitiesMetadatasInRequest(PortletRequest request, List<VulnerabilityDTO> vuls, Optional<ProjectVulnerabilityRating> projectVulnerabilityRating) {
         Map<String, Map<String, List<VulnerabilityCheckStatus>>> vulnerabilityIdToStatusHistory = projectVulnerabilityRating
                 .map(ProjectVulnerabilityRating::getVulnerabilityIdToReleaseIdToStatus)
                 .orElseGet(HashMap::new);
@@ -2365,7 +2401,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     }
 
     private void updateVulnerabilityRating(ResourceRequest request, ResourceResponse response) throws IOException {
-        String projectId = request.getParameter(PortalConstants.PROJECT_ID);
+        String projectId = request.getParameter(PortalConstants.ACTUAL_PROJECT_ID);
         User user = UserCacheHolder.getUserFromRequest(request);
 
         VulnerabilityService.Iface vulClient = thriftClients.makeVulnerabilityClient();

@@ -1,5 +1,5 @@
 <%--
-  ~ Copyright Siemens AG, 2016-2017, 2019. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2016-2017, 2019, 2021. Part of the SW360 Portal Project.
   ~ With modifications from Bosch Software Innovations GmbH, 2016.
   ~
   ~ This program and the accompanying materials are made
@@ -8,17 +8,10 @@
   ~
   ~ SPDX-License-Identifier: EPL-2.0
 --%>
-<%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
+<%@include file="/html/init.jsp"%>
 <%@ page import="javax.portlet.PortletRequest" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.RequestStatus" %>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
-
-<portlet:resourceURL var="updateProjectVulnerabilitiesURL">
-    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.UPDATE_VULNERABILITIES_PROJECT%>"/>
-</portlet:resourceURL>
-<portlet:resourceURL var="updateVulnerabilityRatings">
-    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.UPDATE_VULNERABILITY_RATINGS%>"/>
-</portlet:resourceURL>
 
 <jsp:useBean id="vulnerabilityList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO>" scope="request"/>
 <jsp:useBean id="vulnerabilityRatings" type="java.util.Map<java.lang.String, org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityRatingForProject>" scope="request"/>
@@ -74,12 +67,12 @@
             <div class="col">
                 <h4><liferay-ui:message key="vulnerabilities" /></h4>
                 <form class="form-inline">
-                    <table id="vulnerabilityTable" class="table table-bordered" data-view-size="${viewSize}" data-write-access="${writeAccessUser}">
+                    <table id="vulnerabilityTable_${project.id}" class="table table-bordered" data-view-size="${viewSize}" data-write-access="${writeAccessUser}">
                     </table>
                     <core_rt:if test="${writeAccessUser}">
                         <div class="form-group">
                             <label for="rating-change-for-selected"><liferay-ui:message key="change.rating.and.action.of.selected.vulnerabilities" />
-                                <button id="apply-to-selected" type="button" class="btn btn-primary"><liferay-ui:message key="change" /></button>
+                                <button id="apply-to-selected_${project.id}" type="button" class="btn btn-primary"><liferay-ui:message key="change" /></button>
                             </label>
                         </div>
                     </core_rt:if>
@@ -103,8 +96,6 @@
     </core_rt:if>
 </div>
 
-<%@include file="/html/utils/includes/vulnerabilityModal.jspf" %>
-
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 
@@ -113,45 +104,48 @@
         var vulnerabilityTable;
 
         vulnerabilityTable = createVulnerabilityTable();
-        $('#vulnerabilityTable').on('change', '[data-action="select-all"]', function(event) {
+        $('#vulnerabilityTable_${project.id}').on('change', '[data-action="select-all"]', function(event) {
             if($(event.currentTarget).is(':checked')) {
                 vulnerabilityTable.rows().select();
             } else {
                 vulnerabilityTable.rows().deselect();
             }
         });
-        $('#vulnerabilityTable').on('change', 'td :checkbox', function(event) {
+        $('#vulnerabilityTable_${project.id}').on('change', 'td :checkbox', function(event) {
             $('#vulnerabilityTable th [data-action="select-all"]').prop('checked', !($('#vulnerabilityTable td :checkbox:not(:checked)').length > 0));
         });
 
         vulnerabilityTable.on('preDraw', function() {
             $('[role="tooltip"]').css("display", "none");
-            $('#vulnerabilityTable .info-text').tooltip("close");
+            $('#vulnerabilityTable_${project.id} .info-text').tooltip("close");
         });
 
         vulnerabilityTable.on('draw', function() {
             $('[role="tooltip"]').css("display", "none");
-            $('#vulnerabilityTable .info-text').tooltip("close");
+            $('#vulnerabilityTable_${project.id} .info-text').tooltip("close");
         });
 
-        var viewSize = $('#vulnerabilityTable').data() ? $('#vulnerabilityTable').data().viewSize : 0;
+        var viewSize = $('#vulnerabilityTable_${project.id}').data() ? $('#vulnerabilityTable_${project.id}').data().viewSize : 0;
         $('#btnShowVulnerabilityCount [data-name="count"]').text(viewSize > 0 ? '<liferay-ui:message key="latest" /> ' + viewSize : '<liferay-ui:message key="all" />');
         $('#btnShowVulnerabilityCount + div > a').on('click', function(event) {
             var viewSize = $(event.currentTarget).data().type;
-
-            var PortletURL = Liferay.PortletURL;
-            var portletURL = PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>');
-            portletURL.setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_DETAIL%>');
-            portletURL.setParameter('<%=PortalConstants.PROJECT_ID%>', '${project.id}');
-            portletURL.setParameter('<%=PortalConstants.VIEW_SIZE%>', viewSize);
-
-            window.location.href = portletURL.toString() + window.location.hash;
+            <core_rt:if test="${not empty listVulnerabilityWithViewSizeFriendlyUrl}">
+                let listVulnerabilityWithViewSizeUrl = "${listVulnerabilityWithViewSizeFriendlyUrl}";
+                listVulnerabilityWithViewSizeUrl = listVulnerabilityWithViewSizeUrl.replace("replacewithviewsize", viewSize)
+                window.location.href = listVulnerabilityWithViewSizeUrl + window.location.hash;
+            </core_rt:if>
         });
 
-        if($('#vulnerabilityTable').data() && $('#vulnerabilityTable').data().writeAccess) {
-            $('#apply-to-selected').on('click', function () {
+        if($('#vulnerabilityTable_${project.id}').data() && $('#vulnerabilityTable_${project.id}').data().writeAccess) {
+            $('#apply-to-selected_${project.id}').on('click', function () {
                 batchChangeRating();
             });
+        }
+
+        function displayVulnerabilityLink(extId) {
+            let vulfriendlyUrl = "${vulfriendlyUrl}";
+            let vulUrl = vulfriendlyUrl.replace("replacewithexternalid", extId);
+            return $("<a></a>").attr("href", vulUrl).text(extId)[0].outerHTML;
         }
 
         function createVulnerabilityTable() {
@@ -159,12 +153,17 @@
                 tableDefinition,
                 result = [];
 
-            <core_rt:if test="${project.enableVulnerabilitiesDisplay}">
+            <core_rt:if test="${project.enableVulnerabilitiesDisplay and not empty vulnerabilityList}">
                 <core_rt:forEach items="${vulnerabilityList}" var="vulnerability">
                     result.push({
                         releaseName: "<sw360:out value='${vulnerability.intReleaseName}'/>",
                         externalId: "${vulnerability.externalId}",
-                        externalIdLink: "<sw360:DisplayVulnerabilityLink vulnerabilityId="${vulnerability.externalId}"/>",
+                        <core_rt:if test="${not isSubProject}">
+                            externalIdLink: "<sw360:DisplayVulnerabilityLink vulnerabilityId="${vulnerability.externalId}"/>",
+                        </core_rt:if>
+                        <core_rt:if test="${isSubProject}">
+                            externalIdLink: displayVulnerabilityLink("${vulnerability.externalId}"),
+                        </core_rt:if>
                         intReleaseId: "<sw360:out value="${vulnerability.intReleaseId}"/>",
                         priority: {
                             text: "<sw360:out value='${vulnerability.priority}'/>",
@@ -206,14 +205,14 @@
                 order: [[3, 'asc'], [4, 'desc']],
             }
 
-            if($('#vulnerabilityTable').data() && $('#vulnerabilityTable').data().writeAccess) {
+            if($('#vulnerabilityTable_${project.id}').data() && $('#vulnerabilityTable_${project.id}').data().writeAccess) {
                 tableDefinition.select = 'multi+shift';
                 tableDefinition.columns[0].title = '<div class="form-check"><input data-action="select-all" type="checkbox" class="form-check-input" /></div>';
             }
 
-            table = datatable.create('#vulnerabilityTable', tableDefinition, [1, 2, 3, 4, 5, 6, 7], [0], true);
-            if($('#vulnerabilityTable').data() && $('#vulnerabilityTable').data().writeAccess) {
-                $("#vulnerabilityTable").on('init.dt', function() {
+            table = datatable.create('#vulnerabilityTable_${project.id}', tableDefinition, [1, 2, 3, 4, 5, 6, 7], [0], true);
+            if($('#vulnerabilityTable_${project.id}').data() && $('#vulnerabilityTable_${project.id}').data().writeAccess) {
+                $("#vulnerabilityTable_${project.id}").on('init.dt', function() {
                    datatable.enableCheckboxForSelection(table, 0);
                 });
             }
@@ -253,7 +252,8 @@
                 });
 
                 var data = {};
-                data["<portlet:namespace/><%=PortalConstants.PROJECT_ID%>"] = "${project.id}";
+            
+                data["<portlet:namespace/><%=PortalConstants.ACTUAL_PROJECT_ID%>"] = "${project.id}";
                 data["<portlet:namespace/><%=PortalConstants.VULNERABILITY_IDS%>"] = vulnerabilityIds;
                 data["<portlet:namespace/><%=PortalConstants.RELEASE_IDS%>"] = releaseIds;
                 data["<portlet:namespace/><%=PortalConstants.VULNERABILITY_RATING_VALUE%>"] = newValue;
@@ -262,7 +262,7 @@
 
                 return new Promise(function(resolve, reject) {
                     $.ajax({
-                        url: '<%=updateVulnerabilityRatings%>',
+                        url: '${updateVulnerabilityRatings}',
                         type: 'POST',
                         dataType: 'json',
                         data: data,
@@ -280,6 +280,7 @@
                                             text: newValueText,
                                             tooltip: "<liferay-ui:message key="you.just.changed.this.value.please.reload.page" />"
                                         };
+                                        this.data().action = action;
                                         this.invalidate();
                                     });
                                     selectedRows.deselect();
