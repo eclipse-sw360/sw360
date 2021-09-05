@@ -37,14 +37,10 @@ public class SpdxDocumentCreationInfoModerationRequestGenerator extends Moderati
                     documentDeletions.setFieldValue(field, actualDocument.getFieldValue(field));
             } else if(!actualDocument.getFieldValue(field).equals(updateDocument.getFieldValue(field))) {
                 switch (field) {
-                    case REVISION:
-                    case TYPE:
                     case PERMISSIONS:
                     case DOCUMENT_STATE:
                     case CREATED_BY:
                         break;
-                    case EXTERNAL_DOCUMENT_REFS:
-                    case CREATOR:
                     default:
                         dealWithBaseTypes(field, DocumentCreationInformation.metaDataMap.get(field));
                 }

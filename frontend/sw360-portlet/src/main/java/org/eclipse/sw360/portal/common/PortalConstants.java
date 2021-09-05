@@ -602,6 +602,9 @@ public class PortalConstants {
     public static final String SPDX_DOCUMENT_ID = "spdxDocumentId";
     public static final String SPDX_DOCUMENT_CREATION_INFO_ID = "spdxDocumentCreationInfoId";
     public static final String SPDX_PACKAGE_INFO_ID = "spdxPackageInfoId";
+    public static final String ACTUAL_SPDXDOCUMENT = "actual_SPDXDocument";
+    public static final String ACTUAL_DOCUMENT_CREATION_INFO = "actual_DocumentCreationInfo";
+    public static final String ACTUAL_PACKAGE_INFO = "actual_PackageInfo";
 
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);

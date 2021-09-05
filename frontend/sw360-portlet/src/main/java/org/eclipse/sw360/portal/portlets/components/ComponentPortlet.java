@@ -12,6 +12,7 @@ package org.eclipse.sw360.portal.portlets.components;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
@@ -67,6 +68,7 @@ import org.eclipse.sw360.portal.common.*;
 import org.eclipse.sw360.portal.common.datatables.PaginationParser;
 import org.eclipse.sw360.portal.common.datatables.data.PaginationParameters;
 import org.eclipse.sw360.portal.portlets.FossologyAwarePortlet;
+import org.eclipse.sw360.portal.portlets.components.spdx.SpdxPortlet;
 import org.eclipse.sw360.portal.users.LifeRayUserSession;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 import org.apache.logging.log4j.LogManager;
@@ -1455,6 +1457,14 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 request.setAttribute(SPDXDOCUMENT, spdxDocument);
                 request.setAttribute(SPDX_DOCUMENT_CREATION_INFO, documentCreationInfo);
                 request.setAttribute(SPDX_PACKAGE_INFO, packageInfos);
+                // ObjectMapper objectMapper = new ObjectMapper();
+                // try {
+                //     String spdxDocumentJson = objectMapper.writeValueAsString(spdxDocument);
+                //     request.setAttribute("spdxDocumentJson", spdxDocumentJson);
+                // } catch (JsonProcessingException e) {
+                //     // TODO Auto-generated catch block
+                //     e.printStackTrace();
+                // }
             }
 
         } catch (TException e) {
@@ -1862,6 +1872,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
                         request.setAttribute(WebKeys.REDIRECT, redirectUrl.toString());
                         sendRedirect(request, response);
+                        SpdxPortlet.updateSPDX(request, response, user, releaseId);
                     }
                 } else {
                     release = new Release();
@@ -1883,6 +1894,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                     AddDocumentRequestStatus status = summary.getRequestStatus();
                     switch(status){
                         case SUCCESS:
+                            SpdxPortlet.updateSPDX(request, response, user, summary.getId());
                             response.setRenderParameter(RELEASE_ID, summary.getId());
                             String successMsg = "Release " + printName(release) + " added successfully";
                             SessionMessages.add(request, "request_processed", successMsg);
