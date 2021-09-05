@@ -5,23 +5,19 @@
             <th>5. Snippet Information</th>
         </tr>
     </thead>
-    <tbody class="section">
+    <tbody class="section section-snippet">
         <tr>
             <td>
                 <div style="display: flex; flex-direction: column; padding-left: 1rem;">
                     <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
-                        <label for="selectSnippet" style="text-decoration: underline;" class="sub-title">Select
-                            Snippet</label>
-                        <select id="selectSnippet" type="text" class="form-control spdx-select"
-                            onchange="generateSnippetTable($(this).find('option:selected').text())">
-                        </select>
-                        <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-spdxCreatorType-Person"
-                            data-row-id="" onclick="deleteMain(this)" viewBox="0 0 512 512">
+                        <label for="selectSnippet" style="text-decoration: underline;" class="sub-title">Select Snippet</label>
+                        <select id="selectSnippet" type="text" class="form-control spdx-select"></select>
+                        <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-snippet" data-row-id="" viewBox="0 0 512 512">
                             <title><liferay-ui:message key="delete" /></title>
                             <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
                         </svg>
                     </div>
-                    <button class="spdx-add-button-main" onclick="addMain(this)">Add new Snippet</button>
+                    <button class="spdx-add-button-main" name="add-snippet">Add new Snippet</button>
                 </div>
             </td>
         </tr>
@@ -62,25 +58,20 @@
                         5.3 & 5.4 Snippet Ranges
                     </label>
                     <div style="display: flex; flex-direction: column; padding-left: 1rem;">
-                        <div style="display: flex; margin-bottom: 0.75rem;" name="snippetRanges">
-                            <select style="flex: 1; margin-right: 1rem;" type="text" class="form-control"
-                                placeholder="Enter Type">
-                                <option value="BYTE" selected>Byte</option>
-                                <option value="LINE">Line</option>
+                        <div style="display: none; margin-bottom: 0.75rem;" name="snippetRange">
+                            <select style="flex: 1; margin-right: 1rem;" type="text" class="form-control range-type" placeholder="Enter Type">
+                                <option value="BYTE" selected>BYTE</option>
+                                <option value="LINE">LINE</option>
                             </select>
-                            <input style="flex: 2; margin-right: 1rem;" type="text" class="form-control"
-                                placeholder="Enter Start Pointer">
-                            <input style="flex: 2; margin-right: 1rem;" type="text" class="form-control"
-                                placeholder="Enter End Pointer">
-                            <input style="flex: 4; margin-right: 2rem;" type="text" class="form-control"
-                                placeholder="Enter Reference">
-                            <svg class="lexicon-icon spdx-delete-icon-sub" name="delete-snippetRange" data-row-id=""
-                                onclick="deleteSub(this)" viewBox="0 0 512 512">
+                            <input style="flex: 2; margin-right: 1rem;" type="text" class="form-control start-pointer" placeholder="Enter Start Pointer">
+                            <input style="flex: 2; margin-right: 1rem;" type="text" class="form-control end-pointer" placeholder="Enter End Pointer">
+                            <input style="flex: 4; margin-right: 2rem;" type="text" class="form-control reference" placeholder="Enter Reference">
+                            <svg class="lexicon-icon spdx-delete-icon-sub hidden" name="delete-snippetRange" data-row-id="" viewBox="0 0 512 512">
                                 <title><liferay-ui:message key="delete" /></title>
                                 <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
                             </svg>
                         </div>
-                        <button class="spdx-add-button-sub" onclick="addSub(this)">Add new Range</button>
+                        <button id="addNewRange" class="spdx-add-button-sub">Add new Range</button>
                     </div>
                 </div>
             </td>
@@ -92,7 +83,7 @@
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" id="spdxConcludedLicenseExist" type="radio"
-                                name="_sw360_portlet_components_CONCLUDED_LICENSE" value="exist">
+                                name="_sw360_portlet_components_CONCLUDED_LICENSE" value="EXIST">
                             <input style="flex: 6; margin-right: 1rem;" id="spdxConcludedLicenseValue"
                                 class="form-control needs-validation" type="text"
                                 name="_sw360_portlet_components_CONCLUDED_LICENSE_VALUE"
@@ -119,7 +110,7 @@
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" id="licenseInfoInFile" type="radio"
-                                name="_sw360_portlet_components_LICENSE_INFO_IN_FILE" value="exist">
+                                name="_sw360_portlet_components_LICENSE_INFO_IN_FILE" value="EXIST">
                             <textarea style="flex: 6; margin-right: 1rem;" id="licenseInfoInFileValue" rows="5"
                                 class="form-control needs-validation" type="text"
                                 name="_sw360_portlet_components_LICENSE_INFO_IN_FILE_SOURCE"
@@ -156,7 +147,7 @@
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" id="snippetCopyrightText" type="radio"
-                                name="_sw360_portlet_components_SNIPPET_COPYRIGHT_TEXT" value="exist">
+                                name="_sw360_portlet_components_SNIPPET_COPYRIGHT_TEXT" value="EXIST">
                             <textarea style="flex: 6; margin-right: 1rem;" id="copyrightTextValueSnippet" rows="5"
                                 class="form-control needs-validation" type="text"
                                 name="_sw360_portlet_components_COPYRIGHT_TEXT_VALUE"

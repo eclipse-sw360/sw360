@@ -92,7 +92,7 @@
         </tr>
         <tr>
             <td class="spdx-full">
-                <div class="form-group section">
+                <div class="form-group section section-external-doc-ref">
                     <label for="externalDocumentRefs">
                         2.6 External Document References
                     </label>
@@ -108,7 +108,7 @@
                                 <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
                             </svg>
                         </div>
-                        <button class="spdx-add-button-main" id="addNewReferenceBtn">Add new Reference</button>
+                        <button class="spdx-add-button-main" name="add-externalDocRef">Add new Reference</button>
                     </div>
                     <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                         <label class="sub-title" for="externalDocumentId">External Document ID</label>
@@ -129,7 +129,6 @@
                                 <input style="flex: 6;" type="text" class="form-control" id="checksumValue"
                                     placeholder="Enter Value">
                             </div>
-                            <!-- <button class="spdx-add-button-sub" onclick="addSub(this)">Add new algorithm</button> -->
                         </div>
                     </div>
                 </div>
@@ -162,7 +161,7 @@
                         <div style="display: flex;">
                             <label class="sub-title">List</label>
                             <div style="display: flex; flex-direction: column; flex: 7">
-                                <div style="display: flex; margin-bottom: 0.75rem;" name="creatorRow">
+                                <div style="display: none; margin-bottom: 0.75rem;" name="creatorRow">
                                     <select style="flex: 2; margin-right: 1rem;" type="text"
                                         class="form-control creator-type" placeholder="Enter Type"
                                         onchange="changeCreatorType(this)">
@@ -193,7 +192,7 @@
                     <label class="mandatory" for="createdDate">
                         2.9 Created
                     </label>
-                    <div style="display: flex; flex-direction: row; margin-bottom: 12px;">
+                    <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                         <input id="createdDate" type="date" class="form-control spdx-date"
                             name="_sw360_portlet_components_CREATED_DATE" placeholder="created.date.yyyy.mm.dd">
                         <input id="createdTime" type="time" step="1" class="form-control spdx-time"

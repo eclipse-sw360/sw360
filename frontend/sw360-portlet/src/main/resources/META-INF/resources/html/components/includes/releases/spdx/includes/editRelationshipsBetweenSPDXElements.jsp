@@ -5,23 +5,20 @@
             <th colspan="3">7. Relationships between SPDX Elements</th>
         </tr>
     </thead>
-    <tbody class="section">
+    <tbody class="section section-relationship">
         <tr>
             <td>
                 <div style="display: flex; flex-direction: column; padding-left: 1rem;">
                     <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                         <label for="selectRelationship" style="text-decoration: underline;" class="sub-title">Select
                             Relationship</label>
-                        <select id="selectRelationship" type="text" class="form-control spdx-select"
-                            onchange="generateRelationshipTable($(this).find('option:selected').text())">
-                        </select>
-                        <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-spdxCreatorType-Person"
-                            data-row-id="" onclick="deleteMain(this)" viewBox="0 0 512 512">
+                        <select id="selectRelationship" type="text" class="form-control spdx-select">
+                        <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-relationship" data-row-id="" viewBox="0 0 512 512">
                             <title><liferay-ui:message key="delete" /></title>
                             <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
                         </svg>
                     </div>
-                    <button class="spdx-add-button-main" onclick="addMain(this)">Add new Relationship</button>
+                    <button class="spdx-add-button-main" name="add-relationship">Add new Relationship</button>
                 </div>
             </td>
         </tr>

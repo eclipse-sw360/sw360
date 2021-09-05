@@ -65,8 +65,8 @@
                             <input class="spdx-radio" type="radio" name="_sw360_portlet_components_SUPPLIER"
                                 value="EXIST">
                             <select id="supplierType" style="flex: 2; margin-right: 1rem;" class="form-control">
+                                <option selected>Organization</option>
                                 <option>Person</option>
-                                <option>Organization</option>
                             </select>
                             <input style="flex: 6; margin-right: 1rem;" id="supplierValue"
                                 class="form-control needs-validation" rule="isDownloadUrl" type="text"
@@ -141,11 +141,11 @@
                     <div style="display: flex; flex-direction: row;">
                         <div>
                             <input class="spdx-radio" id="FilesAnalyzedTrue" type="radio"
-                                name="_sw360_portlet_components_FILES_ANALYZED" checked value="TRUE">
+                                name="_sw360_portlet_components_FILES_ANALYZED" checked value="true">
                             <label style="margin-right: 2rem;" class="form-check-label radio-label"
                                 for="FilesAnalyzedTrue">TRUE</label>
                             <input class="spdx-radio" id="FilesAnalyzedFalse" type="radio"
-                                name="_sw360_portlet_components_FILES_ANALYZED" value="FALSE">
+                                name="_sw360_portlet_components_FILES_ANALYZED" value="false">
                             <label class="form-check-label radio-label" for="FilesAnalyzedFalse">FALSE</label>
                         </div>
                     </div>
@@ -174,31 +174,18 @@
                     <div style="display: flex;">
                         <label class="sub-title">Checksum</label>
                         <div style="display: flex; flex-direction: column; flex: 7">
-                            <div style="display: flex; margin-bottom: 0.75rem;">
-                                <input style="flex: 2; margin-right: 1rem;" type="text" class="form-control"
+                            <div style="display: none; margin-bottom: 0.75rem;" name="checksumRow">
+                                <input style="flex: 2; margin-right: 1rem;" type="text" class="form-control checksum-algorithm"
                                     placeholder="Enter Algorithm">
-                                <input style="flex: 6; margin-right: 2rem;" type="text" class="form-control"
+                                <input style="flex: 6; margin-right: 2rem;" type="text" class="form-control checksum-value"
                                     placeholder="Enter Value">
-                                <svg class="disabled lexicon-icon spdx-delete-icon-sub"
-                                    name="delete-spdxCreatorType-Person" data-row-id="" onclick="deleteSub(this);"
+                                <svg class="disabled lexicon-icon spdx-delete-icon-sub" data-row-id="" onclick="deleteSub(this);"
                                     viewBox="0 0 512 512">
                                     <title><liferay-ui:message key="delete" /></title>
                                     <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash" />
                                 </svg>
                             </div>
-                            <div style="display: flex; margin-bottom: 0.75rem;">
-                                <input style="flex: 2; margin-right: 1rem;" type="text" class="form-control"
-                                    placeholder="Enter Algorithm">
-                                <input style="flex: 6; margin-right: 2rem;" type="text" class="form-control"
-                                    placeholder="Enter Value">
-                                <svg class="disabled lexicon-icon spdx-delete-icon-sub"
-                                    name="delete-spdxCreatorType-Person" data-row-id="" onclick="deleteSub(this);"
-                                    viewBox="0 0 512 512">
-                                    <title><liferay-ui:message key="delete" /></title>
-                                    <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash" />
-                                </svg>
-                            </div>
-                            <button class="spdx-add-button-sub" onclick="addSub(this)">Add new algorithm</button>
+                            <button class="spdx-add-button-sub spdx-add-button-sub-checksum" onclick="addSub(this)">Add new algorithm</button>
                         </div>
                     </div>
                 </div>
@@ -391,23 +378,20 @@
         </tr>
         <tr class="spdx-full">
             <td>
-                <div class="form-group section">
+                <div class="form-group section section-external-ref">
                     <label>
                         3.21 External References
                     </label>
                     <div style="display: flex; flex-direction: column; padding-left: 1rem;">
                         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                             <label style="text-decoration: underline;" class="sub-title">Select Reference</label>
-                            <select type="text" class="form-control spdx-select" id="externalReferences"
-                                onchange="generateExternalRefsTable($(this).find('option:selected').text())">
-                            </select>
-                            <svg class="disabled lexicon-icon spdx-delete-icon-main" data-row-id=""
-                                onclick="deleteMain(this);" viewBox="0 0 512 512">
+                            <select type="text" class="form-control spdx-select" id="externalReferences"></select>
+                            <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-externalRef" data-row-id="" viewBox="0 0 512 512">
                                 <title><liferay-ui:message key="delete" /></title>
                                 <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash" />
                             </svg>
                         </div>
-                        <button class="spdx-add-button-main" onclick="addMain(this)">Add new Reference</button>
+                        <button class="spdx-add-button-main" name="add-externalRef">Add new Reference</button>
                         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                             <label class="sub-title">Category</label>
                             <select style="width: auto; flex: auto;" id="referenceCategory" type="text"

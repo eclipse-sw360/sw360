@@ -5,22 +5,26 @@
             <th colspan="3">8. Annotations</th>
         </tr>
     </thead>
-    <tbody class="section">
+    <tbody class="section section-annotation">
         <tr>
             <td>
+                <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem; padding-left: 1rem;">
+                    <label for="selectAnnotationSource" style="text-decoration: underline;" class="sub-title">Select Source</label>
+                    <select id="selectAnnotationSource" type="text" class="form-control spdx-select" style="margin-right: 4rem;">
+                        <option>SPDX Document</option>
+                        <option>Package</option>
+                    </select>
+                </div>
                 <div style="display: flex; flex-direction: column; padding-left: 1rem;">
                     <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
-                        <label for="selectAnnotation" style="text-decoration: underline;" class="sub-title">Select
-                            Annotation</label>
-                        <select id="selectAnnotation" type="text" class="form-control spdx-select" onclick="generateAnnotationsTable($(this).find('option:selected').text())">
-                        </select>
-                        <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-spdxCreatorType-Person"
-                            data-row-id="" onclick="deleteMain(this)" viewBox="0 0 512 512">
+                        <label for="selectAnnotation" style="text-decoration: underline;" class="sub-title">Select Annotation</label>
+                        <select id="selectAnnotation" type="text" class="form-control spdx-select"></select>
+                        <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-annotation" data-row-id="" viewBox="0 0 512 512">
                             <title><liferay-ui:message key="delete" /></title>
                             <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
                         </svg>
                     </div>
-                    <button class="spdx-add-button-main" onclick="addMain(this)">Add new Annotation</button>
+                    <button class="spdx-add-button-main" name="add-annotation">Add new Annotation</button>
                 </div>
             </td>
         </tr>

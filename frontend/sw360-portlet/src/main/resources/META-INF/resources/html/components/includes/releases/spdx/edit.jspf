@@ -162,7 +162,7 @@
             }
 
             initialize();
-            // store();
+            // store();     // Call when submit the form
         });
     });
 </script>

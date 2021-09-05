@@ -5,23 +5,20 @@
             <th colspan="3">6. Other Licensing Information Detected</th>
         </tr>
     </thead>
-    <tbody class="section">
+    <tbody class="section section-other-licensing">
         <tr>
             <td>
                 <div style="display: flex; flex-direction: column; padding-left: 1rem;">
                     <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                         <label for="selectOtherLicensing" style="text-decoration: underline;" class="sub-title">Select
                             Other Licensing</label>
-                        <select id="selectOtherLicensing" type="text" class="form-control spdx-select"
-                            onchange="generateOtherLicensingTable($(this).find('option:selected').text())">
-                        </select>
-                        <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-spdxCreatorType-Person"
-                            data-row-id="" onclick="deleteMain(this)" viewBox="0 0 512 512">
+                        <select id="selectOtherLicensing" type="text" class="form-control spdx-select">
+                        <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-otherLicensing" data-row-id="" viewBox="0 0 512 512">
                             <title><liferay-ui:message key="delete" /></title>
                             <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
                         </svg>
                     </div>
-                    <button class="spdx-add-button-main" onclick="addMain(this)">Add new Licensing</button>
+                    <button class="spdx-add-button-main" name="add-otherLicensing">Add new Licensing</button>
                 </div>
             </td>
         </tr>
@@ -56,7 +53,7 @@
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" id="licenseNameExist" type="radio"
-                                name="_sw360_portlet_components_LICENSE_NAME" value="exist">
+                                name="_sw360_portlet_components_LICENSE_NAME" value="EXIST">
                             <input style="flex: 6; margin-right: 1rem;" id="licenseName"
                                 class="form-control needs-validation" rule="isDownloadUrl" type="text"
                                 name="_sw360_portlet_components_LICENSE_NAME_VALUE" placeholder="Enter License Name">
