@@ -206,45 +206,168 @@
 </table>
 
 <script>
+    function initDocumentCreation() {
+        // 2.1 SPDX Version
+        if (documentCreationInformationObj['spdxVersion'].startsWith('SPDX-')) {
+            $('#spdxVersion').val(documentCreationInformationObj['spdxVersion'].substr(5).trim());
+        } else {
+            $('#spdxVersion').val('SPDX-2.2');
+        }
+
+        // 2.2 Data License
+        if (documentCreationInformationObj['dataLicense'] == '') {
+            $('#dataLicense').val('CC0-1.0');
+        }
+
+        // 2.3 SPDX Identifier
+        if (documentCreationInformationObj['SPDXID'].startsWith('SPDXRef-')) {
+            $('#spdxIdentifier').val(documentCreationInformationObj['SPDXID'].substr(8).trim());
+        } else {
+            $('#spdxIdentifier').val('DOCUMENT');
+        }
+
+        // 2.6 External Document References
+        if (documentCreationInformationObj.externalDocumentRefs.length == 0) {
+            enableSection($('.section-external-doc-ref'), false);
+        } else {
+            fillSelectbox('#externalDocumentRefs', documentCreationInformationObj.externalDocumentRefs.length);
+            fillExternalDocRef(0);
+        }
+
+        // 2.8 Creator
+        if (documentCreationInformationObj.creator.length == 0) {
+            // Need to fill the current user of SW360
+        } else {
+            for (let i = 0; i < documentCreationInformationObj.creator.length; i++) {
+                $('.spdx-add-button-sub-creator').first().click();
+                $('.creator-type').last().val(documentCreationInformationObj.creator[i].type);
+                $('.creator-value').last().val(documentCreationInformationObj.creator[i].value);
+            }
+        }
+
+        // 2.9
+        if (documentCreationInformationObj.created == '') {
+            fillDateTime('#createdDate', '#createdTime', (new Date().toISOString()));
+        } else {
+            fillDateTime('#createdDate', '#createdTime', documentCreationInformationObj.created);
+        }
+    }
+
     // ------------------------- 2.6 External Document References
     // Add data
-    $(function () {
-        $('[name=add-externalDocRef]').on('click', function(e) {
-            let newObj = { 'externalDocumentId': '', 'checksum': {'algorithm': '', 'checksumValue': ''}, 'spdxDocument': '' };
-            documentCreationInformationObj.externalDocumentRefs.push(newObj);
-            addMain($(this));
-            $('#externalDocumentRefs').change();
-        });
-
-        // Delete data
-        $('[name=delete-externalDocRef').on('click', function(e) {
-            let selectedIndex = $('#externalDocumentRefs')[0].selectedIndex;
-            documentCreationInformationObj.externalDocumentRefs.splice(selectedIndex, 1);
-            deleteMain($(this));
-        });
-
-        // Change data
-        $('#externalDocumentRefs').on('change', function(e) {
-            let selectedIndex = $('#externalDocumentRefs')[0].selectedIndex;
-            fillExternalDocRef(selectedIndex);
-        });
-
-        // Fill data - index start from 0
-        function fillExternalDocRef(index) {
-            let obj = documentCreationInformationObj.externalDocumentRefs[index];
-            fillValueToId('externalDocumentId', obj['externalDocumentId']);
-            fillValueToId('externalDocument', obj['spdxDocument']);
-            fillValueToId('checksumAlgorithm', obj['checksum']['algorithm']);
-            fillValueToId('checksumValue', obj['checksum']['checksumValue']);
-        }
-
-        function storeExternalDocRef(index) {
-            let obj = documentCreationInformationObj.externalDocumentRefs[index];
-
-            obj['externalDocumentId'] = $('#externalDocumentId').val();
-            obj['spdxDocument'] = $('#externalDocument').val();
-            obj['checksum']['algorithm'] = $('#checksumAlgorithm').val();
-            obj['checksum']['checksumValue'] = $('#checksumValue').val();
-        }
+    $('[name=add-externalDocRef]').on('click', function(e) {
+        let newObj = { 'externalDocumentId': '', 'checksum': {'algorithm': '', 'checksumValue': ''}, 'spdxDocument': '' };
+        documentCreationInformationObj.externalDocumentRefs.push(newObj);
+        addMain($(this));
+        $('#externalDocumentRefs').change();
     });
+
+    // Delete data
+    $('[name=delete-externalDocRef').on('click', function(e) {
+        let selectedIndex = $('#externalDocumentRefs')[0].selectedIndex;
+        documentCreationInformationObj.externalDocumentRefs.splice(selectedIndex, 1);
+        deleteMain($(this));
+    });
+
+    // Change data
+    $('#externalDocumentRefs').on('change', function(e) {
+        let selectedIndex = $('#externalDocumentRefs')[0].selectedIndex;
+        fillExternalDocRef(selectedIndex);
+    });
+
+    // Fill data - index start from 0
+    function fillExternalDocRef(index) {
+        index = $('#externalDocumentRefs')[0].selectedIndex;
+
+        let obj = documentCreationInformationObj.externalDocumentRefs[index];
+
+        $('#externalDocumentId').val(obj['externalDocumentId']);
+
+        $('#externalDocument').val(obj['spdxDocument']);
+
+        if (obj['checksum']['algorithm'].startsWith('checksumAlgorithm_')) {
+            $('#checksumAlgorithm').val(obj['checksum']['algorithm'].substr(18));
+        } else {
+            $('#checksumAlgorithm').val('');
+        }
+
+        $('#checksumValue').val(obj['checksum']['checksumValue']);
+    }
+
+    function storeExternalDocRef(index) {
+        let obj = documentCreationInformationObj.externalDocumentRefs[index];
+
+        obj['externalDocumentId'] = $('#externalDocumentId').val().trim();
+        obj['spdxDocument'] = $('#externalDocument').val().trim();
+
+        let algorithm = $('#checksumAlgorithm').val().trim();
+        let checksumValue = $('#checksumValue').val().trim();
+
+        if (algorithm == '' || checksumValue == '') {
+            obj['checksum']['algorithm']     = '';
+            obj['checksum']['checksumValue'] = '';
+        } else {
+            obj['checksum']['algorithm'] = 'checksumAlgorithm_' + algorithm;
+            obj['checksum']['checksumValue'] = checksumValue;
+        }
+    }
+
+    function storeDocumentCreation() {
+        // 2.1 SPDX Version
+        if ($('#spdxVersion').val().trim() == '') {
+            documentCreationInformationObj['spdxVersion'] = 'SPDX-2.2';
+        } else {
+            documentCreationInformationObj['spdxVersion'] = 'SPDX-' + $('#spdxVersion').val().trim();
+        }
+
+        // 2.2 Data License
+        if ($('#dataLicense').val().trim() == '') {
+            documentCreationInformationObj['dataLicense'] = 'CC0-1.0';
+        } else {
+            documentCreationInformationObj['dataLicense'] = $('#dataLicense').val().trim();
+        }
+
+        // 2.3 SPDX Identifier
+        if ($('#spdxIdentifier').val().trim() == '') {
+            documentCreationInformationObj['SPDXID'] = 'SPDXRef-DOCUMENT';
+        } else {
+            documentCreationInformationObj['SPDXID'] = 'SPDXRef-' + $('#spdxIdentifier').val().trim();
+        }
+
+        // 2.4 Document Name
+        documentCreationInformationObj['name'] = $('#documentName').val().trim();
+
+        // 2.5 SPDX Document Namespace
+        documentCreationInformationObj['documentNamespace'] = $('#documentNamespace').val().trim();
+
+        // 2.6 External Document References: auto
+
+        // 2.7 License List Version
+        documentCreationInformationObj['licenseListVersion'] = $('#licenseListVersion').val().trim();
+
+        // 2.8 Creator
+        documentCreationInformationObj.creator = [];
+        $('[name=creatorRow]').each(function() {
+            if ($(this).find('.creator-type').first().attr('disabled')) {
+                return;
+            }
+
+            let creatorType = $(this).find('.creator-type').first().val().trim();
+            let creatorValue = $(this).find('.creator-value').first().val().trim();
+
+            if (creatorValue != '') {
+                documentCreationInformationObj.creator.push({ 'type': creatorType, 'value': creatorValue });
+            }
+        })
+
+        if (documentCreationInformationObj.creator.length == 0) {
+            // Fill the current user of SW360
+        }
+
+        // 2.9 Created
+        documentCreationInformationObj['created'] = readDateTime('#createdDate', '#createdTime');
+        if (documentCreationInformationObj['created'] == '') {
+            documentCreationInformationObj['created'] = (new Date()).toISOString();
+        }
+    }
 </script>

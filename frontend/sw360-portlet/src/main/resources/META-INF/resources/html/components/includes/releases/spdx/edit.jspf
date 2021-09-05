@@ -28,6 +28,12 @@
 
 <%@include file="/html/components/includes/releases/spdx/includes/script.jsp" %>
 
+<script>
+    let spdxDocumentObj = jQuery.parseJSON(spdxDocument);
+    let packageInformationObj = jQuery.parseJSON(packageInformation);
+    let documentCreationInformationObj = jQuery.parseJSON(documentCreationInformation);
+</script>
+
 <%@include file="/html/utils/includes/requirejs.jspf" %>
 <form id="editSPDXForm" name="editSPDXForm" class="form needs-validation" novalidate>
     <div class="form-group btn-group">
@@ -44,7 +50,8 @@
 
 <script>
     require(['jquery', /* jquery-plugins */ 'jquery-ui'], function($) {
-        $(".datepicker").datepicker({changeMonth:true,changeYear:true,dateFormat: "yy-mm-dd"});
+        // $(".datepicker").datepicker({changeMonth:true,changeYear:true,dateFormat: "yy-mm-dd"});
+
         $('#spdxFullMode').on('click', function (e) {
             e.preventDefault();
 
@@ -81,11 +88,7 @@
             e.preventDefault();
         })
 
-        $(function () {
-            let spdxDocumentObj = jQuery.parseJSON(spdxDocument);
-            let packageInformationObj = jQuery.parseJSON(packageInformation);
-            let documentCreationInformationObj = jQuery.parseJSON(documentCreationInformation);
-
+        $(function() {
             // Expand/collapse section when click on the header
             $('thead').on('click', function () {
                 if ($(this).next().css('display') == 'none') {
@@ -98,6 +101,68 @@
             $('.spdx-radio').on('change', function () {
                 updateRadioButton($(this));
             });
+
+            $('.section').find('input, select, textarea').not('spdx-select').on('change keyup', function() {
+                if ($(this).hasClass('spdx-select')) {
+                    return;
+                }
+
+                if ($(this).is('select') && !$(this).is(":focus")) {
+                    return;
+                }
+
+                // Store 2.6
+                let index = $('#externalDocumentRefs')[0].selectedIndex;
+                storeExternalDocRef(index);
+
+                // Store 3.21
+                index = $('#externalReferences')[0].selectedIndex;
+                storeExternalRef(index);
+
+                // Store 5
+                index = $('#selectSnippet')[0].selectedIndex;
+                storeSnippet(index);
+
+                // Store 6
+                index = $('#selectOtherLicensing')[0].selectedIndex;
+                storeOtherLicensing(index);
+
+                // Store 7
+                index = $('#selectRelationship')[0].selectedIndex;
+                storeRelationship(index);
+
+                // Store 8
+                index = $('#selectAnnotation')[0].selectedIndex;
+                storeAnnotation(index);
+            });
+
+            function initialize() {
+                initDocumentCreation();
+
+                initPackageInfo();
+
+                initSnippetInfo();
+
+                initOtherLicensing();
+
+                initRelationships();
+
+                initAnnotations();
+            }
+
+            // -------------------------Store data
+            function store() {
+                // 2
+                storeDocumentCreation();
+
+                // 3
+                storePackageInfo();
+
+                // 5, 6, 7, 8: auto
+            }
+
+            initialize();
+            // store();
         });
     });
 </script>

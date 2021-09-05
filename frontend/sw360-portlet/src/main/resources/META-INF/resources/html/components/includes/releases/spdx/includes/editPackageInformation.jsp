@@ -462,94 +462,246 @@
 </table>
 
 <script>
-    $(function () {
-        const referenceCategories = {
-            'referenceCategory_security': ['cpe22Type', 'cpe23Type'],
-            'referenceCategory_packageManager': ['maven-central', 'npm', 'nuget', 'bower', 'purl'],
-            'referenceCategory_persistentId': [],
-            'referenceCategory_other': []
+    const referenceCategories = {
+        'referenceCategory_security': ['cpe22Type', 'cpe23Type'],
+        'referenceCategory_packageManager': ['maven-central', 'npm', 'nuget', 'bower', 'purl'],
+        'referenceCategory_persistentId': [],
+        'referenceCategory_other': []
+    }
+
+    $('#referenceCategory').on('change', function() {
+        let category = $('#referenceCategory').val();
+        let types = referenceCategories[category];
+
+        if (types.length > 0) {
+            $("#referenceType-1").css('display', 'block');
+            $("#referenceType-1").val(types[0]);
+            $("#referenceType-2").css('display', 'none');
+
+            $("#referenceType-1").empty();
+
+            for (let i = 0; i < types.length; i++) {
+                let option = '<option>' + types[i] + '</option>';
+                $("#referenceType-1").append(option);
+            }
+        } else {
+            $("#referenceType-1").css('display', 'none');
+            $("#referenceType-2").css('display', 'block');
+            $("#referenceType-2").val('');
         }
 
-        $('#referenceCategory').on('change', function () {
-            let category = $('#referenceCategory').val();
-            let types = referenceCategories[category];
-
-            if (types.length > 0) {
-                $("#referenceType-1").css('display', 'block');
-                $("#referenceType-1").val(types[0]);
-                $("#referenceType-2").css('display', 'none');
-
-                $("#referenceType-1").empty();
-
-                for (let i = 0; i < types.length; i++) {
-                    let option = '<option>' + types[i] + '</option>';
-                    $("#referenceType-1").append(option);
-                }
-            } else {
-                $("#referenceType-1").css('display', 'none');
-                $("#referenceType-2").css('display', 'block');
-                $("#referenceType-2").val('');
-            }
-
-            if ($('#referenceCategory').is(":focus")) {
-                let index = $('#externalReferences')[0].selectedIndex;
-                storeExternalRef(index);
-            }
-        });
-
-        // $('#referenceType-1').on('change', function() {
-        //     if ($('#referenceType-1').is(":focus")) {
-        //         let index = $('#externalReferences')[0].selectedIndex;
-        //         storeExternalRef(index);
-        //     }
-        // });
-
-        // ------------------------- 3.21 External References
-        // Add data
-        $('[name=add-externalRef]').on('click', function(e) {
-            let newObj = { 'referenceCategory': 'referenceCategory_security', 'referenceLocator': '', 'referenceType': 'cpe22Type', 'comment': '' };
-            packageInformationObj.externalRefs.push(newObj);
-            addMain($(this));
-            $('#externalReferences').change();
-        });
-
-        // Delete data
-        $('[name=delete-externalRef').on('click', function(e) {
-            let selectedIndex = $('#externalReferences')[0].selectedIndex;
-            packageInformationObj.externalRefs.splice(selectedIndex, 1);
-            deleteMain($(this));
-        });
-
-        // // Change data
-        $('#externalReferences').on('change', function(e) {
-            let selectedIndex = $('#externalReferences')[0].selectedIndex;
-            fillExternalRef(selectedIndex);
-        });
-
-        // // Fill data - index start from 0
-        function fillExternalRef(index) {
-            let obj = packageInformationObj.externalRefs[index];
-
-            $('#referenceCategory').val(obj['referenceCategory']);
-            $('#referenceCategory').change();
-
-            if (obj['referenceCategory'] == 'referenceCategory_security' || obj['referenceCategory'] == 'referenceCategory_packageManager') {
-                $('#referenceType-1').val(obj['referenceType']);
-            } else {
-                $('#referenceType-2').val(obj['referenceType']);
-            }
-            // alert(obj['referenceLocator']);
-            $('#externalReferencesLocator').val(obj['referenceLocator']);
-            $('#externalReferencesComment').val(obj['comment']);
-        }
-
-        function storeExternalDocRef(index) {
-            let obj = documentCreationInformationObj.externalDocumentRefs[index];
-
-            obj['externalDocumentId'] = $('#externalDocumentId').val();
-            obj['spdxDocument'] = $('#externalDocument').val();
-            obj['checksum']['algorithm'] = $('#checksumAlgorithm').val();
-            obj['checksum']['checksumValue'] = $('#checksumValue').val();
+        if ($('#referenceCategory').is(":focus")) {
+            let index = $('#externalReferences')[0].selectedIndex;
+            storeExternalRef(index);
         }
     });
+
+    function initPackageInfo() {
+        // 3.2 Package SPDX Identifier
+        if (packageInformationObj.SPDXID.startsWith('SPDXRef-')) {
+            $('#packageSPDXId').val(packageInformationObj.SPDXID.substr(8));
+        } else {
+            $('#packageSPDXId').val('Package-' + packageInformationObj['name']);
+        }
+
+        // 3.5 Package Supplier
+        fillMultiOptionsField('#supplierType', packageInformationObj.supplier, 'annotator');
+
+        // 3.6 Package Originator
+        fillMultiOptionsField('#originatorType', packageInformationObj.originator, 'annotator');
+
+        // 3.7 Package Download Location
+        fillMultiOptionsField('#downloadLocationValue', packageInformationObj.downloadLocation);
+
+        // 3.8 Files Analyzed
+        // 3.9 Package Verification Code
+        if (packageInformationObj.filesAnalyzed) {
+            $('#FilesAnalyzedTrue').click();
+            $('#verificationCodeValue').val(packageInformationObj.packageVerificationCode.value);
+            fillArray('#excludedFiles', packageInformationObj.packageVerificationCode.excludedFiles);
+        } else {
+            $('#FilesAnalyzedFalse').click();
+        }
+
+        // 3.10 Package Checksum
+        for (let i = 0; i < packageInformationObj.checksums.length; i++) {
+            addSub($('.spdx-add-button-sub-checksum'));
+
+            let algorithm     = packageInformationObj.checksums[i].algorithm;
+            let checksumValue = packageInformationObj.checksums[i].checksumValue;
+
+            if (algorithm.startsWith('checksumAlgorithm_')) {
+                $('.checksum-algorithm').last().val(algorithm.substr(18));
+            } else {
+                $('.checksum-algorithm').last().val('');
+            }
+
+            $('.checksum-value').last().val(packageInformationObj.checksums[i].checksumValue);
+        }
+
+        // 3.11 Package Homepage
+        fillMultiOptionsField('#packageHomepageValue', packageInformationObj.homepage);
+
+        // 3.13 Concluded License
+        fillMultiOptionsField('#licenseConcludedValue', packageInformationObj.licenseConcluded);
+
+        // 3.14 All Licenses Information from Files
+        fillMultiOptionsField('#licenseInfoFromFilesValue', packageInformationObj.licenseInfoFromFiles, 'array');
+
+        // 3.15 Declared License
+        fillMultiOptionsField('#licenseDeclaredValue', packageInformationObj.licenseDeclared);
+
+        // 3.17 Copyright Text
+        fillMultiOptionsField('#copyrightTextValue', packageInformationObj.copyrightText);
+
+        // 3.21 External References
+        if (packageInformationObj.externalRefs.length == 0) {
+            enableSection($('.section-external-ref'), false);
+        } else {
+            fillSelectbox('#externalReferences', packageInformationObj.externalRefs.length);
+            fillExternalRef(0);
+        }
+    }
+
+    // ------------------------- 3.21 External References
+    // Add data
+    $('[name=add-externalRef]').on('click', function(e) {
+        let newObj = { 'referenceCategory': 'referenceCategory_security', 'referenceLocator': '', 'referenceType': 'cpe22Type', 'comment': '' };
+        packageInformationObj.externalRefs.push(newObj);
+        addMain($(this));
+        $('#externalReferences').change();
+    });
+
+    // Delete data
+    $('[name=delete-externalRef').on('click', function(e) {
+        let selectedIndex = $('#externalReferences')[0].selectedIndex;
+        packageInformationObj.externalRefs.splice(selectedIndex, 1);
+        deleteMain($(this));
+    });
+
+    // // Change data
+    $('#externalReferences').on('change', function(e) {
+        let selectedIndex = $('#externalReferences')[0].selectedIndex;
+        fillExternalRef(selectedIndex);
+    });
+
+    // // Fill data - index start from 0
+    function fillExternalRef(index) {
+
+        let obj = packageInformationObj.externalRefs[index];
+
+        $('#referenceCategory').val(obj['referenceCategory']);
+        $('#referenceCategory').change();
+
+        if (obj['referenceCategory'] == 'referenceCategory_security' || obj['referenceCategory'] == 'referenceCategory_packageManager') {
+            $('#referenceType-1').val(obj['referenceType']);
+        } else {
+            $('#referenceType-2').val(obj['referenceType']);
+        }
+
+        $('#externalReferencesLocator').val(obj['referenceLocator']);
+        $('#externalReferencesComment').val(obj['comment']);
+    }
+
+    function storePackageInfo() {
+        // 3.1 Package Name
+        packageInformationObj['name'] = $('#packageName').val().trim();
+
+        // 3.2 Package SPDX Identifier
+        if ($('#packageSPDXId').val().trim() == '') {
+            packageInformationObj['SPDXID'] = 'SPDXRef-Package-' + packageInformationObj['name'];
+        } else {
+            packageInformationObj['SPDXID'] = 'SPDXRef-Package-' + $('#packageSPDXId').val().trim();
+        }
+
+        // 3.3 Package Version
+        packageInformationObj['versionInfo'] = $('#versionInfo').val().trim();
+
+        // 3.4 Package File Name
+        packageInformationObj['packageFileName'] = $('#packageFileName').val().trim();
+
+        // 3.5 Package Supplier
+        packageInformationObj['supplier'] = readMultiOptionField('#supplierType', 'annotator');
+
+        // 3.6 Package Originator
+        packageInformationObj['originator'] = readMultiOptionField('#originatorType', 'annotator');
+
+        // 3.7 Package Download Location
+        packageInformationObj['downloadLocation'] = readMultiOptionField('#downloadLocationValue');
+
+        // 3.8 Files Analyzed
+        packageInformationObj['filesAnalyzed'] = $('[name=_sw360_portlet_components_FILES_ANALYZED]:checked').val();
+
+        // 3.9 Package Verification Code
+        if (packageInformationObj['filesAnalyzed']) {
+            packageInformationObj['packageVerificationCode']['value'] = $('#verificationCodeValue').val().trim();
+            packageInformationObj['packageVerificationCode']['excludedFiles'] = readArray('#excludedFiles');
+        } else {
+            packageInformationObj['packageVerificationCode']['value'] = '';
+            packageInformationObj['packageVerificationCode']['excludedFiles'] = '';
+        }
+
+        // 3.10 Package Checksum
+        packageInformationObj['checksums'] = [];
+        $('[name=checksumRow]').each(function() {
+            let algorithm = $(this).find('.checksum-algorithm').first().val().trim();
+            let checksumValue = $(this).find('.checksum-value').first().val().trim();
+
+            if (checksumValue != '') {
+                packageInformationObj['checksums'].push({ 'algorithm': 'checksumAlgorithm_' + algorithm, 'checksumValue': checksumValue });
+            }
+        });
+
+        // 3.11 Package Homepage
+        packageInformationObj['homepage'] = readMultiOptionField('#packageHomepageValue');
+
+        // 3.12 Source Information
+        packageInformationObj['sourceInfo'] = $('#sourceInfo').val().trim();
+
+        // 3.13 Concluded License
+        packageInformationObj['licenseConcluded'] = readMultiOptionField('#licenseConcludedValue');
+
+        // 3.14 All Licenses Information from Files
+        packageInformationObj['licenseInfoFromFiles'] = readMultiOptionField('#licenseInfoFromFilesValue', 'array');
+
+        // 3.15 Declared License
+        packageInformationObj['licenseDeclared'] = readMultiOptionField('#licenseDeclaredValue');
+
+        // 3.16 Comments On License
+        packageInformationObj['licenseComments'] = $('#licenseComments').val().trim();
+
+        // 3.17 Copyright Text
+        packageInformationObj['copyrightText'] = $('#copyrightTextValue').val().trim();
+
+        // 3.18 Package Summary Description
+        packageInformationObj['summary'] = $('#summary').val().trim();
+
+        // 3.19 Package Detailed Description
+        packageInformationObj['description'] = $('#description').val().trim();
+
+        // 3.20 Package Comment
+        packageInformationObj['packageComment'] = $('#spdxPackageComment').val().trim();
+
+        // 3.21 External References: auto
+
+        // 3.22 External Reference Comment: auto
+
+        // 3.23
+        packageInformationObj['attributionText'] = $('#spdxPackageAttributionText').val().trim();
+    }
+
+    function storeExternalRef(index) {
+        let obj = packageInformationObj.externalRefs[index];
+
+        obj['referenceCategory'] = $('#referenceCategory').val().trim();
+
+        if (obj['referenceCategory'] == 'referenceCategory_security' || obj['referenceCategory'] == 'referenceCategory_packageManager') {
+            obj['referenceType'] = $('#referenceType-1').val().trim();
+        } else {
+            obj['referenceType'] = $('#referenceType-2').val().trim();
+        }
+
+        obj['referenceLocator'] = $('#externalReferencesLocator').val().trim();
+        obj['comment'] = $('#externalReferencesComment').val().trim();
+    }
 </script>

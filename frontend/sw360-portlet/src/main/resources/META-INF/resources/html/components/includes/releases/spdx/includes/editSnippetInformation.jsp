@@ -211,71 +211,167 @@
 </table>
 
 <script>
-    generateSelecterOption('selectSnippet', "${snippets.size()}");
-    generateSnippetTable('1');
-    function generateSnippetTable(index) {
-        fillValueToId("snippetSpdxIdentifier", "");
-        fillValueToId("snippetFromFileValue", "");
-        fillValueToId("spdxConcludedLicenseValue", "");
-        fillValueToId("licenseInfoInFileValue", "");
-        fillValueToId("snippetLicenseComments", "");
-        $('#copyrightTextValueSnippet').val("");
-        fillValueToId("snippetComment", "");
-        fillValueToId("snippetName", "");
-        fillValueToId("snippetAttributionText", "");
-        <core_rt:set var="snippetRanges" value="" />
-        generateSnippetRangesTable();
-        <core_rt:if test="${not snippets.isEmpty()}">
-            var i = 0;
-        <core_rt:forEach items="${snippets}" var="snippetData" varStatus="loop">
-                i++;
-            if (i == index) {
-                fillValueToId("snippetSpdxIdentifier", "<sw360:out value="${snippetData.licenseInfoInSnippets}" />");
-                fillValueToId("snippetFromFileValue", "<sw360:out value="${snippetData.snippetFromFile}" />");
-                fillValueToId("spdxConcludedLicenseValue", "<sw360:out value="${snippetData.licenseConcluded}" />");
-                fillValueToId("licenseInfoInFileValue", "<sw360:out value="${snippetData.licenseInfoInSnippets.toString()}" hashSet="true"/>");
-                fillValueToId("snippetLicenseComments", "<sw360:out value="${snippetData.licenseComments}" />");
-                $('#copyrightTextValueSnippet').val("<sw360:out value="${snippetData.copyrightText}" />");
-                fillValueToId("snippetComment", "<sw360:out value="${snippetData.comment}" />");
-                fillValueToId("snippetName", "<sw360:out value="${snippetData.name}" />");
-                fillValueToId("snippetAttributionText", "<sw360:out value="${snippetData.snippetAttributionText}" />");
-                <core_rt:set var="snippetRanges" value="${snippetData.snippetRanges}" />
-                generateSnippetRangesTable();
+   function initSnippetInfo() {
+        if (spdxDocumentObj.snippets.length == 0) {
+            enableSection($('.section-snippet'), false);
+        } else {
+            fillSelectbox('#selectSnippet', spdxDocumentObj.snippets.length);
+            fillSnippet(0);
+        }
+    }
+
+    // ------------------------- 5 Snippet Information
+    // Add data
+    $('[name=add-snippet]').on('click', function(e) {
+        let newObj = { 'SPDXID': '', 'snippetFromFile': '', 'snippetRanges': [], 'licenseConcluded': [], 'licenseInfoInSnippets': [], 'licenseComments': '', 'copyrightText': '', 'comment': '', 'name': '', 'snippetAttributionText': ''};
+        spdxDocumentObj.snippets.push(newObj);
+        addMain($(this));
+        $('#selectSnippet').change();
+    });
+
+    // Delete data
+    $('[name=delete-snippet').on('click', function(e) {
+        let selectedIndex = $('#selectSnippet')[0].selectedIndex;
+        spdxDocumentObj.snippets.splice(selectedIndex, 1);
+        deleteMain($(this));
+    });
+
+    // Change data
+    $('#selectSnippet').on('change', function(e) {
+        let selectedIndex = $('#selectSnippet')[0].selectedIndex;
+        fillSnippet(selectedIndex);
+    });
+
+    function fillSnippet(index) {
+        const obj = spdxDocumentObj.snippets[index];
+
+        if (obj['SPDXID'].startsWith('SPDXRef-')) {
+            $('#snippetSpdxIdentifier').val(obj['SPDXID'].substr(8));
+        } else {
+            $('#snippetSpdxIdentifier').val('Snippet-' + obj['name']);
+        }
+
+        if (obj['snippetFromFile'].startsWith('SPDXRef-')) {
+            $('#snippetFromFile').val('SPDXRef');
+            $('#snippetFromFileValue').val(obj['snippetFromFile'].substr(8));
+        } else if (obj['snippetFromFile'].startsWith('DocumentRef-')) {
+            $('#snippetFromFile').val('DocumentRef');
+            $('#snippetFromFileValue').val(obj['snippetFromFile'].substr(12));
+        } else {
+            $('#snippetFromFile').val('SPDXRef');
+            $('#snippetFromFileValue').val('');
+        }
+
+        // Check to clear all current ranges
+        if ($('[name=delete-snippetRange].hidden').length == 0) {
+            const rangesNum = $('[name=snippetRange]').length;
+            for (let i = 0; i < rangesNum; i++) {
+                if (i == 0) {
+                    $($('[name=snippetRange]')[i]).css('display', 'none');
+                    $($('[name=snippetRange]')[i]).find('[name=delete-snippetRange]').addClass('hidden');
+                    clearSection($($('[name=snippetRange]')[i]));
+                } else {
+                    $('[name=snippetRange]').last().remove();
+                }
             }
-        </core_rt:forEach>
-        </core_rt:if>
-    }
-
-    function generateSnippetRangesTable() {
-        <core_rt:if test="${not snippetRanges.isEmpty()}">
-            <core_rt:forEach items="${snippetRanges}" var="snippetRangeData" varStatus="loop">
-                addSnippetRangeRow("snippetRanges", "${snippetRangeData.rangeType}", "${snippetRangeData.startPointer}", "${snippetRangeData.endPointer}", "${snippetRangeData.reference}");
-            </core_rt:forEach>
-            removeRow(document.getElementsByName('delete-snippetRange')[0]);
-        </core_rt:if>
-    }
-
-    function addSnippetRangeRow(name, value1, value2, value3, value4) {
-        if ($(document.getElementsByName(name)).hasClass('disabled')) {
-            return;
         }
-        var size = document.getElementsByName(name).length;
-        var el = document.getElementsByName(name)[size - 1];
-        var clone = el.cloneNode(true);
-        clone.getElementsByTagName('select')[0].name = clone.getElementsByTagName('select')[0].name + Date.now();
-        clone.getElementsByTagName('select')[0].value = value1;
-        clone.getElementsByTagName('input')[0].name = clone.getElementsByTagName('input')[0].name + Date.now();
-        clone.getElementsByTagName('input')[0].value = value2;
-        clone.getElementsByTagName('input')[1].name = clone.getElementsByTagName('input')[1].name + Date.now();
-        clone.getElementsByTagName('input')[1].value = value3;
-        clone.getElementsByTagName('input')[2].name = clone.getElementsByTagName('input')[2].name + Date.now();
-        clone.getElementsByTagName('input')[2].value = value4;
-        $(clone).insertAfter(el);
-        if (size == 1) {
-            enableAction('delete-' + name);
+
+        for (let i = 0; i < obj.snippetRanges.length; i++) {
+            addSub('#addNewRange');
+
+            $('.range-type').last().val(obj.snippetRanges[i].rangeType);
+            $('.start-pointer').last().val(obj.snippetRanges[i].startPointer);
+            $('.end-pointer').last().val(obj.snippetRanges[i].endPointer);
+            $('.reference').last().val(obj.snippetRanges[i].reference);
         }
+
+        $('.range-type, .start-pointer, .end-pointer, .reference').bind('change keyup', function() {
+            if ($(this).is(":focus")) {
+                storeSnippet();
+            }
+        });
+
+        $('[name=delete-snippetRange]').bind('click', function() {
+            deleteSub($(this));
+
+            storeSnippet();
+        });
+
+        fillMultiOptionsField('#spdxConcludedLicenseValue', obj.licenseConcluded);
+
+        fillMultiOptionsField('#licenseInfoInFileValue', obj.licenseInfoInSnippets, 'array');
+
+        $('#snippetLicenseComments').val(obj.licenseComments);
+
+        fillMultiOptionsField('#copyrightTextValueSnippet', obj.copyrightText);
+
+        $('#snippetComment').val(obj.comment);
+
+        $('#snippetName').val(obj.name);
+
+        $('#snippetAttributionText').val(obj.snippetAttributionText);
     }
 
-    autoHideString('snippetSpdxIdentifier', 'SPDXRef-');
-    autoHideString('snippetFromFileValue', 'SPDXRef-');
+    $('#addNewRange').on('click', function() {
+        addSub($(this));
+
+        $('[name=delete-snippetRange]').bind('click', function() {
+            deleteSub($(this));
+
+            storeSnippet();
+        });
+
+        $('.range-type, .start-pointer, .end-pointer, .reference').bind('change keyup', function() {
+            if ($(this).is(":focus")) {
+                storeSnippet();
+            }
+        });
+    });
+
+    function storeSnippet(index) {
+        if (typeof(index) == 'undefined') {
+            index = $('#selectSnippet')[0].selectedIndex;
+        }
+
+        let obj = spdxDocumentObj.snippets[index];
+
+        if ($('#snippetSpdxIdentifier').val().trim() != '') {
+            obj['SPDXID'] = 'SPDXRef-' + $('#snippetSpdxIdentifier').val().trim();
+        } else {
+            obj['SPDXID'] = 'SPDXRef-Snippet-' + $('#snippetName').val().trim();
+        }
+
+        if ($('#snippetFromFileValue').val().trim() != '') {
+            obj['snippetFromFile'] = $('#snippetFromFile').val() + '-' + $('#snippetFromFileValue').val().trim();
+        } else {
+            obj['snippetFromFile'] = '';
+        }
+
+        obj['snippetRanges'] = [];
+
+        if ($('[name=snippetRange]').first().css('display') != 'none') {
+            obj['snippetRanges'] = [];
+
+            $('[name=snippetRange]').each(function() {
+                let range = {'rangeType': '', 'startPointer': '', 'endPointer': '', 'reference': ''};
+
+                range['rangeType'] = $(this).find('.range-type').first().val().trim();
+                range['startPointer'] = $(this).find('.start-pointer').first().val().trim();
+                range['endPointer'] = $(this).find('.end-pointer').first().val().trim();
+                range['reference'] = $(this).find('.reference').first().val().trim();
+
+                if (range['startPointer'] != '' || range['endPointer'] != '' || range['reference'] != '') {
+                    obj['snippetRanges'].push(range);
+                }
+            })
+        }
+
+        obj['licenseConcluded']       = readMultiOptionField('#spdxConcludedLicenseValue');
+        obj['licenseInfoInSnippets']  = readMultiOptionField('#licenseInfoInFileValue', 'array');
+        obj['licenseComments']        = $('#snippetLicenseComments').val().trim();
+        obj['copyrightText']          = readMultiOptionField('#copyrightTextValueSnippet');
+        obj['comment']                = $('#snippetComment').val().trim();
+        obj['name']                   = $('#snippetName').val().trim();
+        obj['snippetAttributionText'] = $('#snippetAttributionText').val().trim();
+    }
 </script>

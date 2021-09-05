@@ -91,57 +91,91 @@
 </table>
 
 <script>
-    $(function () {
-        // ------------------------- 8 Annotations
-        // Add data
-        $('[name=add-annotation]').on('click', function(e) {
-            let newObj = { 'annotator': '', 'annotationDate': '', 'annotationType': '', 'annotationComment': '', 'spdxRef': '' };
-            spdxDocumentObj.annotations.push(newObj);
-            addMain($(this));
-            $('#selectAnnotation').change();
-        });
+    function initAnnotations() {
+        let source = getAnnotationsSource();
 
-        // Delete data
-        $('[name=delete-annotation').on('click', function(e) {
-            let selectedIndex = $('#selectAnnotation')[0].selectedIndex;
-            spdxDocumentObj.annotations.splice(selectedIndex, 1);
-            deleteMain($(this));
-        });
+        if (source.length == 0) {
+            enableSection($('.section-annotation'), false);
+        } else {
+            fillSelectbox('#selectAnnotation', source.length);
+            fillAnnotation(source, 0);
+        }
+    }
 
-        // Change data
-        $('#selectAnnotation').on('change', function(e) {
-            let selectedIndex = $('#selectAnnotation')[0].selectedIndex;
-            fillAnnotation(selectedIndex);
-        });
-
-        function fillAnnotation(index) {
-            let obj = spdxDocumentObj.annotations[index];
-
-            fillAnnotator('#annotatorType', obj['annotator']);
-
-            fillDateTime('#annotationCreatedDate', '#annotationCreatedTime', obj['annotationDate']);
-
-            $('#annotationType').val(obj['annotationType']);
-
-            $('#spdxIdRef').val(obj['spdxRef']);
-
-            $('#annotationComment').val(obj['annotationComment']);
+    function getAnnotationsSource() {
+        if ($('#selectAnnotationSource').val() == 'Package') {
+            return packageInformationObj.annotations;
         }
 
-        function storeAnnotation(index) {
-            let obj = spdxDocumentObj.annotations[index];
+        return spdxDocumentObj.annotations;
+    }
 
-            if ($('#annotatorValue').val().trim() != '') {
-                obj['annotator'] = $('#annotatorType').val() + ': ' + $('#annotatorValue').val().trim();
-            } else {
-                obj['annotator'] = '';
-            }
+    // ------------------------- 8 Annotations
+    // Add data
+    $('[name=add-annotation]').on('click', function(e) {
+        let newObj = { 'annotator': '', 'annotationDate': '', 'annotationType': '', 'annotationComment': '', 'spdxRef': '' };
 
-            obj['annotationDate'] = readDateTime('#annotationCreatedDate', '#annotationCreatedTime');
+        let source = getAnnotationsSource();
 
-            obj['annotationType'] = $('#annotationType').val();
-            obj['spdxRef'] = $('#spdxIdRef').val();
-            obj['annotationComment'] = $('#annotationComment').val();
-        }
+        source.push(newObj);
+
+        addMain($(this));
+
+        $('#selectAnnotation').change();
     });
+
+    // Delete data
+    $('[name=delete-annotation').on('click', function(e) {
+        let source = getAnnotationsSource();
+
+        let selectedIndex = $('#selectAnnotation')[0].selectedIndex;
+
+        source.splice(selectedIndex, 1);
+
+        deleteMain($(this));
+    });
+
+    // Change data
+    $('#selectAnnotationSource').on('change', function() {
+        initAnnotations();
+    });
+
+    $('#selectAnnotation').on('change', function(e) {
+        let source = getAnnotationsSource();
+
+        let selectedIndex = $('#selectAnnotation')[0].selectedIndex;
+
+        fillAnnotation(source, selectedIndex);
+    });
+
+    function fillAnnotation(source, index) {
+        let obj = source[index];
+
+        fillAnnotator('#annotatorType', obj['annotator']);
+
+        fillDateTime('#annotationCreatedDate', '#annotationCreatedTime', obj['annotationDate']);
+
+        $('#annotationType').val(obj['annotationType']);
+
+        $('#spdxIdRef').val(obj['spdxRef']);
+
+        $('#annotationComment').val(obj['annotationComment']);
+    }
+
+    function storeAnnotation(index) {
+        let source = getAnnotationsSource();
+        let obj = source[index];
+
+        if ($('#annotatorValue').val().trim() != '') {
+            obj['annotator'] = $('#annotatorType').val() + ': ' + $('#annotatorValue').val().trim();
+        } else {
+            obj['annotator'] = '';
+        }
+
+        obj['annotationDate'] = readDateTime('#annotationCreatedDate', '#annotationCreatedTime');
+
+        obj['annotationType'] = $('#annotationType').val().trim();
+        obj['spdxRef'] = $('#spdxIdRef').val().trim();
+        obj['annotationComment'] = $('#annotationComment').val().trim();
+    }
 </script>

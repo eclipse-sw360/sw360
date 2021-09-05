@@ -93,59 +93,66 @@
 </table>
 
 <script>
-    $(function () {
-        // ------------------------- 6 Other Licensing Information Detected
-        // Add data
-        $('[name=add-otherLicensing]').on('click', function(e) {
-            let newObj = { 'licenseId': '', 'extractedText': '', 'licenseName': '', 'licenseCrossRefs': [] };
-            spdxDocumentObj.hasExtractedLicensingInfos.push(newObj);
-            addMain($(this));
-            $('#selectOtherLicensing').change();
-        });
-
-        // Delete data
-        $('[name=delete-otherLicensing').on('click', function(e) {
-            let selectedIndex = $('#selectOtherLicensing')[0].selectedIndex;
-            spdxDocumentObj.hasExtractedLicensingInfos.splice(selectedIndex, 1);
-            deleteMain($(this));
-        });
-
-        // Change data
-        $('#selectOtherLicensing').on('change', function(e) {
-            let selectedIndex = $('#selectOtherLicensing')[0].selectedIndex;
-            fillOtherLicensing(selectedIndex);
-        });
-
-        function fillOtherLicensing(index) {
-            let obj = spdxDocumentObj.hasExtractedLicensingInfos[index];
-
-            if (obj.licenseId.startsWith('LicenseRef-')) {
-                $('#licenseId').val(obj.licenseId.substr(11));
-            } else {
-                $('#licenseId').val('');
-            }
-
-            $('#extractedText').val(obj.extractedText);
-
-            fillMultiOptionsField('#licenseName', obj.licenseName);
-
-            fillArray('#licenseCrossRefs', obj.licenseCrossRefs);
-
-            $('#licenseCommentOnOtherLicensing').val(obj.licenseComment);
+    function initOtherLicensing() {
+        if (spdxDocumentObj.hasExtractedLicensingInfos.length == 0) {
+            enableSection($('.section-other-licensing'), false);
+        } else {
+            fillSelectbox('#selectOtherLicensing', spdxDocumentObj.hasExtractedLicensingInfos.length);
+            fillOtherLicensing(0);
         }
+    }
 
-        function storeOtherLicensing(index) {
-            let obj = spdxDocumentObj.hasExtractedLicensingInfos[index];
-
-            if ($('#licenseId').val().trim() != '') {
-                obj['licenseId'] = 'LicenseRef-' + $('#licenseId').val().trim();
-            } else {
-                obj['licenseId'] = '';
-            }
-
-            obj['extractedText'] = $('#extractedText').val().trim();
-
-            obj['licenseName'] = readMultiOptionField('#licenseName');
-        }
+    // ------------------------- 6 Other Licensing Information Detected
+    // Add data
+    $('[name=add-otherLicensing]').on('click', function(e) {
+        let newObj = { 'licenseId': '', 'extractedText': '', 'licenseName': '', 'licenseCrossRefs': [] };
+        spdxDocumentObj.hasExtractedLicensingInfos.push(newObj);
+        addMain($(this));
+        $('#selectOtherLicensing').change();
     });
+
+    // Delete data
+    $('[name=delete-otherLicensing').on('click', function(e) {
+        let selectedIndex = $('#selectOtherLicensing')[0].selectedIndex;
+        spdxDocumentObj.hasExtractedLicensingInfos.splice(selectedIndex, 1);
+        deleteMain($(this));
+    });
+
+    // Change data
+    $('#selectOtherLicensing').on('change', function(e) {
+        let selectedIndex = $('#selectOtherLicensing')[0].selectedIndex;
+        fillOtherLicensing(selectedIndex);
+    });
+
+    function fillOtherLicensing(index) {
+        let obj = spdxDocumentObj.hasExtractedLicensingInfos[index];
+
+        if (obj.licenseId.startsWith('LicenseRef-')) {
+            $('#licenseId').val(obj.licenseId.substr(11));
+        } else {
+            $('#licenseId').val(obj.licenseName);
+        }
+
+        $('#extractedText').val(obj.extractedText);
+
+        fillMultiOptionsField('#licenseName', obj.licenseName);
+
+        fillArray('#licenseCrossRefs', obj.licenseCrossRefs);
+
+        $('#licenseCommentOnOtherLicensing').val(obj.licenseComment);
+    }
+
+    function storeOtherLicensing(index) {
+        let obj = spdxDocumentObj.hasExtractedLicensingInfos[index];
+
+        if ($('#licenseId').val().trim() != '') {
+            obj['licenseId'] = 'LicenseRef-' + $('#licenseId').val().trim();
+        } else {
+            obj['licenseId'] = 'LicenseRef-' + readMultiOptionField('#licenseName');
+        }
+
+        obj['extractedText'] = $('#extractedText').val().trim();
+
+        obj['licenseName'] = readMultiOptionField('#licenseName');
+    }
 </script>
