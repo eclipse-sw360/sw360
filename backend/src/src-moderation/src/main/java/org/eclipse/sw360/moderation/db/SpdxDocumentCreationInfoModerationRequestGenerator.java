@@ -22,7 +22,9 @@ import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 
 public class SpdxDocumentCreationInfoModerationRequestGenerator extends ModerationRequestGenerator<DocumentCreationInformation._Fields, DocumentCreationInformation> {
     @Override
-    public ModerationRequest setAdditionsAndDeletions(ModerationRequest request, DocumentCreationInformation updateDocument, DocumentCreationInformation actualDocument){
+    public ModerationRequest setAdditionsAndDeletions(ModerationRequest request, DocumentCreationInformation updateDocumentCreationInfo, DocumentCreationInformation actualDocumentCreationInfo){
+        updateDocument = updateDocumentCreationInfo;
+        actualDocument = actualDocumentCreationInfo;
 
         documentAdditions = new DocumentCreationInformation();
         documentDeletions = new DocumentCreationInformation();

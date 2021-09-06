@@ -11,31 +11,24 @@
 package org.eclipse.sw360.portal.tags;
 
 import com.google.common.base.Strings;
-import com.google.common.collect.Sets;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 
+import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
 import org.eclipse.sw360.datahandler.thrift.spdx.otherlicensinginformationdetected.OtherLicensingInformationDetected;
+import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelements.RelationshipsBetweenSPDXElements;
 import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.*;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.portal.tags.urlutils.LinkedReleaseRenderer;
-
 import org.apache.thrift.meta_data.FieldMetaData;
-import org.apache.thrift.protocol.TType;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.ResourceBundle;
-import java.util.Set;
 
-import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyMap;
-import static org.eclipse.sw360.datahandler.common.SW360Utils.newDefaultEccInformation;
 import static org.eclipse.sw360.portal.tags.TagUtils.*;
 
 /**
@@ -91,6 +84,9 @@ public class DisplaySPDXDocumentChanges extends UserAwareTag {
                     case PERMISSIONS:
                     case DOCUMENT_STATE:
                     case OTHER_LICENSING_INFORMATION_DETECTEDS:
+                    case SNIPPETS:
+                    case ANNOTATIONS:
+                    case RELATIONSHIPS:
                         break;
                     default:
                         FieldMetaData fieldMetaData = SPDXDocument.metaDataMap.get(field);
@@ -117,9 +113,14 @@ public class DisplaySPDXDocumentChanges extends UserAwareTag {
                                 LanguageUtil.get(resourceBundle, "suggested.value"))
                         + renderString + "</tbody></table>";
             }
-
-            String a = renderOtherLicensingInformationDetected();
-            jspWriter.print(renderString + a.toString());
+            String snippetRenderString = renderSnippetInformation();
+            String relationshipSRenderString = renderRelationshipInformation();
+            String annotaionsRenderString = renderAnnotaionsInformation();
+            String otherLicensingRenderString = renderOtherLicensingInformationDetected();
+            jspWriter.print(renderString + snippetRenderString.toString()
+                            + relationshipSRenderString.toString()
+                            + annotaionsRenderString.toString()
+                            + otherLicensingRenderString.toString());
         } catch (Exception e) {
             throw new JspException(e);
         }
@@ -173,21 +174,110 @@ public class DisplaySPDXDocumentChanges extends UserAwareTag {
         if (! actual.isSet(SPDXDocument._Fields.SNIPPETS)){
             actual.snippets = new HashSet<>();
         }
+        Iterator<SnippetInformation> snippetAdditionsIterator = additions.getSnippetsIterator();
+        Iterator<SnippetInformation> snippetDeletionsIterator = deletions.getSnippetsIterator();
         for (SnippetInformation snippet : actual.getSnippets()) {
+            SnippetInformation snippetAdditions = new SnippetInformation();
+            if (snippetAdditionsIterator.hasNext()) {
+                snippetAdditions = snippetAdditionsIterator.next();
+            }
+            SnippetInformation snippetDeletions = new SnippetInformation();
+            if (snippetDeletionsIterator.hasNext()) {
+                snippetDeletions = snippetDeletionsIterator.next();
+            }
             for (SnippetInformation._Fields field : SnippetInformation._Fields.values()) {
                 FieldMetaData fieldMetaData = SnippetInformation.metaDataMap.get(field);
                 displaySimpleFieldOrSet(
                         display,
                         snippet,
-                        additions.getSnippets().iterator().next(),
-                        deletions.getSnippets().iterator().next(),
+                        snippetAdditions,
+                        snippetDeletions,
                         field, fieldMetaData, "");
             }
         }
-        return "<h3>"+LanguageUtil.get(resourceBundle,"changes.in.clearing.information")+ "</h3>"
+        return "<h3>"+LanguageUtil.get(resourceBundle,"changes.in.snippets.information")+ "</h3>"
                 + String.format("<table class=\"%s\" id=\"%schanges\" >", tableClasses, idPrefix)
                 + String.format("<thead><tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr></thead><tbody>",
-                LanguageUtil.get(resourceBundle,"field.name"), LanguageUtil.get(resourceBundle,"current.value"), LanguageUtil.get(resourceBundle,"former.value"), LanguageUtil.get(resourceBundle,"suggested.value"))
+                LanguageUtil.get(resourceBundle,"field.name"), LanguageUtil.get(resourceBundle,"current.value"),
+                LanguageUtil.get(resourceBundle,"former.value"), LanguageUtil.get(resourceBundle,"suggested.value"))
+                + display.toString() + "</tbody></table>";
+    }
+
+    private String renderRelationshipInformation() {
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+        if (!ensureSomethingTodoAndNoNull(SPDXDocument._Fields.RELATIONSHIPS)) {
+            return "";
+        }
+        StringBuilder display = new StringBuilder();
+        if (! actual.isSet(SPDXDocument._Fields.RELATIONSHIPS)){
+            actual.relationships = new HashSet<>();
+        }
+        Iterator<RelationshipsBetweenSPDXElements> relationshipsAdditionsIterator = additions.getRelationshipsIterator();
+        Iterator<RelationshipsBetweenSPDXElements> relationshipsDeletionsIterator = deletions.getRelationshipsIterator();
+        for (RelationshipsBetweenSPDXElements relationships : actual.getRelationships()) {
+            RelationshipsBetweenSPDXElements relationshipsAdditions = new RelationshipsBetweenSPDXElements();
+            if (relationshipsAdditionsIterator.hasNext()) {
+                relationshipsAdditions = relationshipsAdditionsIterator.next();
+            }
+            RelationshipsBetweenSPDXElements relationshipsDeletions = new RelationshipsBetweenSPDXElements();
+            if (relationshipsDeletionsIterator.hasNext()) {
+                relationshipsDeletions = relationshipsDeletionsIterator.next();
+            }
+            for (RelationshipsBetweenSPDXElements._Fields field : RelationshipsBetweenSPDXElements._Fields.values()) {
+                FieldMetaData fieldMetaData = RelationshipsBetweenSPDXElements.metaDataMap.get(field);
+                displaySimpleFieldOrSet(
+                        display,
+                        relationships,
+                        relationshipsAdditions,
+                        relationshipsDeletions,
+                        field, fieldMetaData, "");
+            }
+        }
+        return "<h3>"+LanguageUtil.get(resourceBundle,"changes.in.relationship.information")+ "</h3>"
+                + String.format("<table class=\"%s\" id=\"%schanges\" >", tableClasses, idPrefix)
+                + String.format("<thead><tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr></thead><tbody>",
+                LanguageUtil.get(resourceBundle,"field.name"), LanguageUtil.get(resourceBundle,"current.value"),
+                LanguageUtil.get(resourceBundle,"former.value"), LanguageUtil.get(resourceBundle,"suggested.value"))
+                + display.toString() + "</tbody></table>";
+    }
+
+    private String renderAnnotaionsInformation() {
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+        if (!ensureSomethingTodoAndNoNull(SPDXDocument._Fields.ANNOTATIONS)) {
+            return "";
+        }
+        StringBuilder display = new StringBuilder();
+        if (! actual.isSet(SPDXDocument._Fields.ANNOTATIONS)){
+            actual.annotations = new HashSet<>();
+        }
+        Iterator<Annotations> annotationsAdditionsIterator = additions.getAnnotationsIterator();
+        Iterator<Annotations> annotationsDeletionsIterator = deletions.getAnnotationsIterator();
+        for (Annotations annotations : actual.getAnnotations()) {
+            Annotations annotationsAdditions = new Annotations();
+            if (annotationsAdditionsIterator.hasNext()) {
+                annotationsAdditions = annotationsAdditionsIterator.next();
+            }
+            Annotations annotationsDeletions = new Annotations();
+            if (annotationsDeletionsIterator.hasNext()) {
+                annotationsDeletions = annotationsDeletionsIterator.next();
+            }
+            for (Annotations._Fields field : Annotations._Fields.values()) {
+                FieldMetaData fieldMetaData = Annotations.metaDataMap.get(field);
+                displaySimpleFieldOrSet(
+                        display,
+                        annotations,
+                        annotationsAdditions,
+                        annotationsDeletions,
+                        field, fieldMetaData, "");
+            }
+        }
+        return "<h3>"+LanguageUtil.get(resourceBundle,"changes.in.annotaions.information")+ "</h3>"
+                + String.format("<table class=\"%s\" id=\"%schanges\" >", tableClasses, idPrefix)
+                + String.format("<thead><tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr></thead><tbody>",
+                LanguageUtil.get(resourceBundle,"field.name"), LanguageUtil.get(resourceBundle,"current.value"),
+                LanguageUtil.get(resourceBundle,"former.value"), LanguageUtil.get(resourceBundle,"suggested.value"))
                 + display.toString() + "</tbody></table>";
     }
 
@@ -226,7 +316,8 @@ public class DisplaySPDXDocumentChanges extends UserAwareTag {
         return "<h3>"+LanguageUtil.get(resourceBundle,"changes.in.other.licensing.information.detecteds")+ "</h3>"
                 + String.format("<table class=\"%s\" id=\"%schanges\" >", tableClasses, idPrefix)
                 + String.format("<thead><tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr></thead><tbody>",
-                LanguageUtil.get(resourceBundle,"field.name"), LanguageUtil.get(resourceBundle,"current.value"), LanguageUtil.get(resourceBundle,"former.value"), LanguageUtil.get(resourceBundle,"suggested.value"))
+                LanguageUtil.get(resourceBundle,"field.name"), LanguageUtil.get(resourceBundle,"current.value"),
+                LanguageUtil.get(resourceBundle,"former.value"), LanguageUtil.get(resourceBundle,"suggested.value"))
                 + display.toString() + "</tbody></table>";
     }
 
