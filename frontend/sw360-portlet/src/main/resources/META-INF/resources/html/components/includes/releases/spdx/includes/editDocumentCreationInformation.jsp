@@ -92,7 +92,7 @@
         </tr>
         <tr>
             <td class="spdx-full">
-                <div class="form-group section">
+                <div class="form-group section section-external-doc-ref">
                     <label for="externalDocumentRefs">
                         2.6 External Document References
                     </label>
@@ -100,17 +100,15 @@
                         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                             <label for="externalDocumentRefs" style="text-decoration: underline;"
                                 class="sub-title">Select Reference</label>
-                            <select id="externalDocumentRefs" type="text" class="form-control spdx-select"
-                                onchange="generateExternalDocumentRefsTable($(this).find('option:selected').text())">
+                            <select id="externalDocumentRefs" type="text" class="form-control spdx-select">
                             </select>
-                            <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-externalDocumentRef"
-                                data-row-id="" onclick="deleteMain(this);" viewBox="0 0 512 512">
+                            <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-externalDocRef"
+                                data-row-id="" viewBox="0 0 512 512">
                                 <title><liferay-ui:message key="delete" /></title>
                                 <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
                             </svg>
                         </div>
-                        <button class="spdx-add-button-main" id="addNewReferenceBtn" onclick="addMain(this)">Add new
-                            Reference</button>
+                        <button class="spdx-add-button-main" name="add-externalDocRef">Add new Reference</button>
                     </div>
                     <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                         <label class="sub-title" for="externalDocumentId">External Document ID</label>
@@ -131,7 +129,6 @@
                                 <input style="flex: 6;" type="text" class="form-control" id="checksumValue"
                                     placeholder="Enter Value">
                             </div>
-                            <!-- <button class="spdx-add-button-sub" onclick="addSub(this)">Add new algorithm</button> -->
                         </div>
                     </div>
                 </div>
@@ -164,7 +161,7 @@
                         <div style="display: flex;">
                             <label class="sub-title">List</label>
                             <div style="display: flex; flex-direction: column; flex: 7">
-                                <div style="display: flex; margin-bottom: 0.75rem;" name="creatorRow">
+                                <div style="display: none; margin-bottom: 0.75rem;" name="creatorRow">
                                     <select style="flex: 2; margin-right: 1rem;" type="text"
                                         class="form-control creator-type" placeholder="Enter Type"
                                         onchange="changeCreatorType(this)">
@@ -182,8 +179,7 @@
                                         <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
                                     </svg>
                                 </div>
-                                <button class="spdx-add-button-sub spdx-add-button-sub-creator"
-                                    onclick="addSub(this)">Add new creator</button>
+                                <button class="spdx-add-button-sub spdx-add-button-sub-creator" onclick="addSub(this)">Add new creator</button>
                             </div>
                         </div>
                     </div>
@@ -196,7 +192,7 @@
                     <label class="mandatory" for="createdDate">
                         2.9 Created
                     </label>
-                    <div style="display: flex; flex-direction: row; margin-bottom: 12px;">
+                    <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                         <input id="createdDate" type="date" class="form-control spdx-date"
                             name="_sw360_portlet_components_CREATED_DATE" placeholder="created.date.yyyy.mm.dd">
                         <input id="createdTime" type="time" step="1" class="form-control spdx-time"
@@ -209,118 +205,168 @@
 </table>
 
 <script>
-
-    generateCreatorTable();
-    //setCreatorInput();
-    setCreatedTime("${created}");
-    generateExternalDocumentRefsTable("1");
-    function generateCreatorTable() {
-        <core_rt:if test="${not creator.isEmpty()}">
-            <core_rt:forEach items="${creator}" var="creatorData" varStatus="loop">
-                addRow("creatorRow", "${creatorData.type}", "${creatorData.value}", "");
-            </core_rt:forEach>
-                deleteSub(document.getElementsByName('delete-spdxCreatorType-Person')[0]);
-        </core_rt:if>
-    }
-
-    function generateExternalDocumentRefsTable(index) {
-        fillValueToId("externalDocumentId", "");
-        fillValueToId("externalDocument", "");
-        fillValueToId("checksumAlgorithm", "");
-        fillValueToId("checksumValue", "");
-        <core_rt:if test="${not externalDocumentRefs.isEmpty()}">
-            var i = 0;
-            <core_rt:forEach items="${externalDocumentRefs}" var="externalDocumentRefsData" varStatus="loop">
-                i++;
-                if (i == index) {
-                    fillValueToId("externalDocumentId", "${externalDocumentRefsData.externalDocumentId}");
-                    fillValueToId("externalDocument", "${externalDocumentRefsData.spdxDocument}");
-                    fillValueToId("checksumAlgorithm", "${externalDocumentRefsData.checksum.algorithm}");
-                    fillValueToId("checksumValue", "${externalDocumentRefsData.checksum.checksumValue}");
-                }
-            </core_rt:forEach>
-        </core_rt:if>
-    }
-
-    function fillValueToId(id, value) {
-        $('#' + id).prop('value', value);
-    }
-    function addRow(name, value1, value2, lable) {
-        if ($(document.getElementsByName(name)).hasClass('disabled')) {
-            return;
-        }
-        var size = document.getElementsByName(name).length;
-        var el = document.getElementsByName(name)[size - 1];
-
-        var clone = el.cloneNode(true);
-        clone.getElementsByTagName('input')[0].name = clone.getElementsByTagName('input')[0].name + Date.now();
-        clone.getElementsByTagName('select')[0].name = clone.getElementsByTagName('select')[0].name + Date.now();
-        clone.getElementsByTagName('input')[0].value = value2;
-        clone.getElementsByTagName('select')[0].value = value1;
-        $(clone).insertAfter(el);
-        if (size == 1) {
-            enableAction('delete-' + name);
-        }
-    }
-
-    function removeRow(el) {
-        if ($(el).hasClass('disabled')) {
-            return;
-        }
-        var parent = $(el).parent();
-        var name = $(parent)[0].getAttribute("name");
-        $(parent).remove();
-        if (document.getElementsByName(name).length < 2) {
-            disableAction('delete-' + name);
-        }
-    }
-
-    function disableAction(name) {
-        var el = document.getElementsByName(name);
-        $(el).removeClass('action');
-        $(el).addClass('disabled');
-    }
-
-    function enableAction(name) {
-        var el = document.getElementsByName(name);
-        var size = $(el).length;
-        if (size > 1 || name.includes("add")) {
-            $(el).removeClass('disabled');
-            $(el).addClass('action');
-        }
-    }
-
-
-
-
-    function setCreatedTime(created) {
-        var createdDate = created.replace(/T.*/i, '');
-        var createdTime = created.replace(createdDate, '');
-        createdTime = createdTime.replace(/[A-Z]/g, '');
-        $('#createdDate').prop('value', createdDate);
-        $('#createdTime').prop('value', createdTime);
-    }
-
-    generateSelecterOption('externalDocumentRefs', "${externalDocumentRefs.size()}");
-    function generateSelecterOption(selectId, length) {
-        for (var i = 1; i <= length; i++) {
-            var option = document.createElement("option");
-            option.text = i;
-            document.getElementById(selectId).add(option);
-        }
-    }
-
-    autoHideString('spdxVersion', 'SPDX-');
-    autoHideString('spdxIdentifier', 'SPDX-');
-    function autoHideString(id, string, value) {
-        if (value == null || value == '') {
-            value = document.getElementById(id).value;
+    function initDocumentCreation() {
+        // 2.1 SPDX Version
+        if (documentCreationInformationObj['spdxVersion'].startsWith('SPDX-')) {
+            $('#spdxVersion').val(documentCreationInformationObj['spdxVersion'].substr(5).trim());
         } else {
-            document.getElementById(id).value = value;
-            return;
+            $('#spdxVersion').val('SPDX-2.2');
         }
-        var newString = value.replace(string, '');
-        document.getElementById(id).value = newString;
+
+        // 2.2 Data License
+        if (documentCreationInformationObj['dataLicense'] == '') {
+            $('#dataLicense').val('CC0-1.0');
+        }
+
+        // 2.3 SPDX Identifier
+        if (documentCreationInformationObj['SPDXID'].startsWith('SPDXRef-')) {
+            $('#spdxIdentifier').val(documentCreationInformationObj['SPDXID'].substr(8).trim());
+        } else {
+            $('#spdxIdentifier').val('DOCUMENT');
+        }
+
+        // 2.6 External Document References
+        if (documentCreationInformationObj.externalDocumentRefs.length == 0) {
+            enableSection($('.section-external-doc-ref'), false);
+        } else {
+            fillSelectbox('#externalDocumentRefs', documentCreationInformationObj.externalDocumentRefs.length);
+            fillExternalDocRef(0);
+        }
+
+        // 2.8 Creator
+        if (documentCreationInformationObj.creator.length == 0) {
+            // Need to fill the current user of SW360
+        } else {
+            for (let i = 0; i < documentCreationInformationObj.creator.length; i++) {
+                $('.spdx-add-button-sub-creator').first().click();
+                $('.creator-type').last().val(documentCreationInformationObj.creator[i].type);
+                $('.creator-value').last().val(documentCreationInformationObj.creator[i].value);
+            }
+        }
+
+        // 2.9
+        if (documentCreationInformationObj.created == '') {
+            fillDateTime('#createdDate', '#createdTime', (new Date().toISOString()));
+        } else {
+            fillDateTime('#createdDate', '#createdTime', documentCreationInformationObj.created);
+        }
     }
 
+    // ------------------------- 2.6 External Document References
+    // Add data
+    $('[name=add-externalDocRef]').on('click', function(e) {
+        let newObj = { 'externalDocumentId': '', 'checksum': {'algorithm': '', 'checksumValue': ''}, 'spdxDocument': '' };
+        documentCreationInformationObj.externalDocumentRefs.push(newObj);
+        addMain($(this));
+        $('#externalDocumentRefs').change();
+    });
+
+    // Delete data
+    $('[name=delete-externalDocRef').on('click', function(e) {
+        let selectedIndex = $('#externalDocumentRefs')[0].selectedIndex;
+        documentCreationInformationObj.externalDocumentRefs.splice(selectedIndex, 1);
+        deleteMain($(this));
+    });
+
+    // Change data
+    $('#externalDocumentRefs').on('change', function(e) {
+        let selectedIndex = $('#externalDocumentRefs')[0].selectedIndex;
+        fillExternalDocRef(selectedIndex);
+    });
+
+    // Fill data - index start from 0
+    function fillExternalDocRef(index) {
+        index = $('#externalDocumentRefs')[0].selectedIndex;
+
+        let obj = documentCreationInformationObj.externalDocumentRefs[index];
+
+        $('#externalDocumentId').val(obj['externalDocumentId']);
+
+        $('#externalDocument').val(obj['spdxDocument']);
+
+        if (obj['checksum']['algorithm'].startsWith('checksumAlgorithm_')) {
+            $('#checksumAlgorithm').val(obj['checksum']['algorithm'].substr(18));
+        } else {
+            $('#checksumAlgorithm').val('');
+        }
+
+        $('#checksumValue').val(obj['checksum']['checksumValue']);
+    }
+
+    function storeExternalDocRef(index) {
+        let obj = documentCreationInformationObj.externalDocumentRefs[index];
+
+        obj['externalDocumentId'] = $('#externalDocumentId').val().trim();
+        obj['spdxDocument'] = $('#externalDocument').val().trim();
+
+        let algorithm = $('#checksumAlgorithm').val().trim();
+        let checksumValue = $('#checksumValue').val().trim();
+
+        if (algorithm == '' || checksumValue == '') {
+            obj['checksum']['algorithm']     = '';
+            obj['checksum']['checksumValue'] = '';
+        } else {
+            obj['checksum']['algorithm'] = 'checksumAlgorithm_' + algorithm;
+            obj['checksum']['checksumValue'] = checksumValue;
+        }
+    }
+
+    function storeDocumentCreation() {
+        // 2.1 SPDX Version
+        if ($('#spdxVersion').val().trim() == '') {
+            documentCreationInformationObj['spdxVersion'] = 'SPDX-2.2';
+        } else {
+            documentCreationInformationObj['spdxVersion'] = 'SPDX-' + $('#spdxVersion').val().trim();
+        }
+
+        // 2.2 Data License
+        if ($('#dataLicense').val().trim() == '') {
+            documentCreationInformationObj['dataLicense'] = 'CC0-1.0';
+        } else {
+            documentCreationInformationObj['dataLicense'] = $('#dataLicense').val().trim();
+        }
+
+        // 2.3 SPDX Identifier
+        if ($('#spdxIdentifier').val().trim() == '') {
+            documentCreationInformationObj['SPDXID'] = 'SPDXRef-DOCUMENT';
+        } else {
+            documentCreationInformationObj['SPDXID'] = 'SPDXRef-' + $('#spdxIdentifier').val().trim();
+        }
+
+        // 2.4 Document Name
+        documentCreationInformationObj['name'] = $('#documentName').val().trim();
+
+        // 2.5 SPDX Document Namespace
+        documentCreationInformationObj['documentNamespace'] = $('#documentNamespace').val().trim();
+
+        // 2.6 External Document References: auto
+
+        // 2.7 License List Version
+        documentCreationInformationObj['licenseListVersion'] = $('#licenseListVersion').val().trim();
+
+        // 2.8 Creator
+        documentCreationInformationObj.creator = [];
+        $('[name=creatorRow]').each(function() {
+            if ($(this).find('.creator-type').first().attr('disabled')) {
+                return;
+            }
+
+            let creatorType = $(this).find('.creator-type').first().val().trim();
+            let creatorValue = $(this).find('.creator-value').first().val().trim();
+
+            if (creatorValue != '') {
+                documentCreationInformationObj.creator.push({ 'type': creatorType, 'value': creatorValue });
+            }
+        })
+
+        if (documentCreationInformationObj.creator.length == 0) {
+            // Fill the current user of SW360
+        }
+
+        // 2.9 Created
+        documentCreationInformationObj['created'] = readDateTime('#createdDate', '#createdTime');
+        if (documentCreationInformationObj['created'] == '') {
+            documentCreationInformationObj['created'] = (new Date()).toISOString();
+        }
+    }
 </script>

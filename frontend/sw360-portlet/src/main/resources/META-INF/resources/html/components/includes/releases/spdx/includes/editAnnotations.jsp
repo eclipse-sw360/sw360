@@ -5,22 +5,26 @@
             <th colspan="3">8. Annotations</th>
         </tr>
     </thead>
-    <tbody class="section">
+    <tbody class="section section-annotation">
         <tr>
             <td>
+                <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem; padding-left: 1rem;">
+                    <label for="selectAnnotationSource" style="text-decoration: underline;" class="sub-title">Select Source</label>
+                    <select id="selectAnnotationSource" type="text" class="form-control spdx-select" style="margin-right: 4rem;">
+                        <option>SPDX Document</option>
+                        <option>Package</option>
+                    </select>
+                </div>
                 <div style="display: flex; flex-direction: column; padding-left: 1rem;">
                     <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
-                        <label for="selectAnnotation" style="text-decoration: underline;" class="sub-title">Select
-                            Annotation</label>
-                        <select id="selectAnnotation" type="text" class="form-control spdx-select" onclick="generateAnnotationsTable($(this).find('option:selected').text())">
-                        </select>
-                        <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-spdxCreatorType-Person"
-                            data-row-id="" onclick="deleteMain(this)" viewBox="0 0 512 512">
+                        <label for="selectAnnotation" style="text-decoration: underline;" class="sub-title">Select Annotation</label>
+                        <select id="selectAnnotation" type="text" class="form-control spdx-select"></select>
+                        <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-annotation" data-row-id="" viewBox="0 0 512 512">
                             <title><liferay-ui:message key="delete" /></title>
                             <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
                         </svg>
                     </div>
-                    <button class="spdx-add-button-main" onclick="addMain(this)">Add new Annotation</button>
+                    <button class="spdx-add-button-main" name="add-annotation">Add new Annotation</button>
                 </div>
             </td>
         </tr>
@@ -91,41 +95,91 @@
 </table>
 
 <script>
-    generateAnnotationsTable('1');
-    function generateAnnotationsTable(index) {
-        fillValueToId("annotatorType", "");
-        fillValueToId("annotatorValue", "");
-        setCreatedDateTime("");
-        fillValueToId("annotationType", "");
-        fillValueToId("spdxIdRef", "");
-        fillValueToId("annotationComment", "");
-        <core_rt:if test="${not annotations.isEmpty()}">
-            var i = 0;
-        <core_rt:forEach items="${annotations}" var="annotationsData" varStatus="loop">
-                i++;
-            if (i == index) {
-                var annotator = "${annotationsData.annotator}";
-                annotatorType = annotator.replace(/:.*/, '');
-                annotatorValue = annotator.replace(annotatorType + ':', '')
-                fillValueToId("annotatorType", annotatorType);
-                fillValueToId("annotatorValue", annotatorValue);
-                setCreatedDateTime("${annotationsData.annotationDate}");
-                fillValueToId("annotationType", "${annotationsData.annotationType}");
-                fillValueToId("spdxIdRef", "${annotationsData.spdxIdRef}");
-                fillValueToId("annotationComment", "${annotationsData.annotationComment}");
-            }
-        </core_rt:forEach>
-        </core_rt:if>
+    function initAnnotations() {
+        let source = getAnnotationsSource();
+
+        if (source.length == 0) {
+            enableSection($('.section-annotation'), false);
+        } else {
+            fillSelectbox('#selectAnnotation', source.length);
+            fillAnnotation(source, 0);
+        }
     }
 
-    function setCreatedDateTime(created) {
-        var createdDate = created.replace(/T.*/i, '');
-        var createdTime = created.replace(createdDate, '');
-        createdTime = createdTime.replace(/[A-Z]/g, '');
-        $('#annotationCreatedDate').prop('value', createdDate);
-        $('#annotationCreatedTime').prop('value', createdTime);
+    function getAnnotationsSource() {
+        if ($('#selectAnnotationSource').val() == 'Package') {
+            return packageInformationObj.annotations;
+        }
+
+        return spdxDocumentObj.annotations;
     }
 
-    generateSelecterOption('selectAnnotation', "${annotations.size()}");
+    // ------------------------- 8 Annotations
+    // Add data
+    $('[name=add-annotation]').on('click', function(e) {
+        let newObj = { 'annotator': '', 'annotationDate': '', 'annotationType': '', 'annotationComment': '', 'spdxRef': '' };
 
+        let source = getAnnotationsSource();
+
+        source.push(newObj);
+
+        addMain($(this));
+
+        $('#selectAnnotation').change();
+    });
+
+    // Delete data
+    $('[name=delete-annotation').on('click', function(e) {
+        let source = getAnnotationsSource();
+
+        let selectedIndex = $('#selectAnnotation')[0].selectedIndex;
+
+        source.splice(selectedIndex, 1);
+
+        deleteMain($(this));
+    });
+
+    // Change data
+    $('#selectAnnotationSource').on('change', function() {
+        initAnnotations();
+    });
+
+    $('#selectAnnotation').on('change', function(e) {
+        let source = getAnnotationsSource();
+
+        let selectedIndex = $('#selectAnnotation')[0].selectedIndex;
+
+        fillAnnotation(source, selectedIndex);
+    });
+
+    function fillAnnotation(source, index) {
+        let obj = source[index];
+
+        fillAnnotator('#annotatorType', obj['annotator']);
+
+        fillDateTime('#annotationCreatedDate', '#annotationCreatedTime', obj['annotationDate']);
+
+        $('#annotationType').val(obj['annotationType']);
+
+        $('#spdxIdRef').val(obj['spdxRef']);
+
+        $('#annotationComment').val(obj['annotationComment']);
+    }
+
+    function storeAnnotation(index) {
+        let source = getAnnotationsSource();
+        let obj = source[index];
+
+        if ($('#annotatorValue').val().trim() != '') {
+            obj['annotator'] = $('#annotatorType').val() + ': ' + $('#annotatorValue').val().trim();
+        } else {
+            obj['annotator'] = '';
+        }
+
+        obj['annotationDate'] = readDateTime('#annotationCreatedDate', '#annotationCreatedTime');
+
+        obj['annotationType'] = $('#annotationType').val().trim();
+        obj['spdxRef'] = $('#spdxIdRef').val().trim();
+        obj['annotationComment'] = $('#annotationComment').val().trim();
+    }
 </script>

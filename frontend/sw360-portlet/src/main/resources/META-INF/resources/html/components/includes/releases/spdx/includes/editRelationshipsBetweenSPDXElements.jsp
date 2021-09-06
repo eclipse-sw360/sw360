@@ -5,23 +5,20 @@
             <th colspan="3">7. Relationships between SPDX Elements</th>
         </tr>
     </thead>
-    <tbody class="section">
+    <tbody class="section section-relationship">
         <tr>
             <td>
                 <div style="display: flex; flex-direction: column; padding-left: 1rem;">
                     <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                         <label for="selectRelationship" style="text-decoration: underline;" class="sub-title">Select
                             Relationship</label>
-                        <select id="selectRelationship" type="text" class="form-control spdx-select"
-                            onchange="generateRelationshipTable($(this).find('option:selected').text())">
-                        </select>
-                        <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-spdxCreatorType-Person"
-                            data-row-id="" onclick="deleteMain(this)" viewBox="0 0 512 512">
+                        <select id="selectRelationship" type="text" class="form-control spdx-select">
+                        <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-relationship" data-row-id="" viewBox="0 0 512 512">
                             <title><liferay-ui:message key="delete" /></title>
                             <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
                         </svg>
                     </div>
-                    <button class="spdx-add-button-main" onclick="addMain(this)">Add new Relationship</button>
+                    <button class="spdx-add-button-main" name="add-relationship">Add new Relationship</button>
                 </div>
             </td>
         </tr>
@@ -57,26 +54,57 @@
     </tbody>
 </table>
 <script>
-    generateRelationshipTable('1');
-    function generateRelationshipTable(index) {
-        fillValueToId("spdxElement", "");
-        fillValueToId("relationshipType", "");
-        fillValueToId("relatedSPDXElement", "");
-        $('#relationshipComment').val("");
-        <core_rt:if test="${not relationships.isEmpty()}">
-            var i = 0;
-        <core_rt:forEach items="${relationships}" var="relationshipData" varStatus="loop">
-                i++;
-            if (i == index) {
-                fillValueToId("spdxElement", "${relationshipData.spdxElementId}");
-                fillValueToId("relationshipType", "${relationshipData.relationshipType}");
-                fillValueToId("relatedSPDXElement", "${relationshipData.relatedSpdxElement}");
-                $('#relationshipComment').val("${relationshipData.relationshipComment}");
-            }
-        </core_rt:forEach>
-        </core_rt:if>
+    function initRelationships() {
+        if (spdxDocumentObj.relationships.length == 0) {
+            enableSection($('.section-relationship'), false);
+        } else {
+            fillSelectbox('#selectRelationship', spdxDocumentObj.relationships.length);
+            fillRelationship(0);
+        }
     }
 
-    generateSelecterOption('selectRelationship', "${relationships.size()}");
+    // ------------------------- 7 Relationships between SPDX Elements
+    // Add data
+    $('[name=add-relationship]').on('click', function(e) {
+        let newObj = { 'spdxElementId': '', 'relationshipType': '', 'relatedSpdxElement': '', 'relationshipComment': '' };
+        spdxDocumentObj.relationships.push(newObj);
+        addMain($(this));
+        $('#selectRelationship').change();
+    });
 
+    // Delete data
+    $('[name=delete-relationship').on('click', function(e) {
+        let selectedIndex = $('#selectRelationship')[0].selectedIndex;
+        spdxDocumentObj.relationships.splice(selectedIndex, 1);
+        deleteMain($(this));
+    });
+
+    // Change data
+    $('#selectRelationship').on('change', function(e) {
+        let selectedIndex = $('#selectRelationship')[0].selectedIndex;
+        fillRelationship(selectedIndex);
+    });
+
+    function fillRelationship(index) {
+        let obj = spdxDocumentObj.relationships[index];
+
+        $('#spdxElement').val(obj.spdxElementId);
+        if (obj.relationshipType.startsWith('relationshipType_')) {
+            $('#relationshipType').val(obj.relationshipType.substr(17).toUpperCase());
+        } else {
+            $('#relationshipType').val('');
+        }
+
+        $('#relatedSPDXElement').val(obj.relatedSpdxElement);
+        $('#relationshipComment').val(obj.relationshipComment);
+    }
+
+    function storeRelationship(index) {
+        let obj = spdxDocumentObj.relationships[index];
+
+        obj['spdxElementId'] = $('#spdxElement').val().trim();
+        obj['relationshipType'] = 'relationshipType_' + $('#relationshipType').val().toLowerCase().trim();
+        obj['relatedSpdxElement'] = $('#relatedSPDXElement').val().trim();
+        obj['relationshipComment'] = $('#relationshipComment').val().trim();
+    }
 </script>
