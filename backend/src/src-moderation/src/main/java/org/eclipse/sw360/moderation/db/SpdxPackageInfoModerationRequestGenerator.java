@@ -23,7 +23,9 @@ import org.apache.thrift.protocol.TType;
 
 public class SpdxPackageInfoModerationRequestGenerator extends ModerationRequestGenerator<PackageInformation._Fields, PackageInformation> {
     @Override
-    public ModerationRequest setAdditionsAndDeletions(ModerationRequest request, PackageInformation updateDocument, PackageInformation actualDocument){
+    public ModerationRequest setAdditionsAndDeletions(ModerationRequest request, PackageInformation updatePackageInfo, PackageInformation actualPackageInfo){
+        updateDocument = updatePackageInfo;
+        actualDocument = actualPackageInfo;
 
         documentAdditions = new PackageInformation();
         documentDeletions = new PackageInformation();

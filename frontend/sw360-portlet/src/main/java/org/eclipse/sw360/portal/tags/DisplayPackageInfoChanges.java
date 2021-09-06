@@ -11,29 +11,24 @@
 package org.eclipse.sw360.portal.tags;
 
 import com.google.common.base.Strings;
-import com.google.common.collect.Sets;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 
-import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReference;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.portal.tags.urlutils.LinkedReleaseRenderer;
-
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageVerificationCode;
 import org.apache.thrift.meta_data.FieldMetaData;
-import org.apache.thrift.protocol.TType;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 
-import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.ResourceBundle;
-import java.util.Set;
 
-import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyMap;
-import static org.eclipse.sw360.datahandler.common.SW360Utils.newDefaultEccInformation;
 import static org.eclipse.sw360.portal.tags.TagUtils.*;
 
 /**
@@ -88,6 +83,10 @@ public class DisplayPackageInfoChanges extends UserAwareTag {
                     case CREATED_BY:
                     case PERMISSIONS:
                     case DOCUMENT_STATE:
+                    case PACKAGE_VERIFICATION_CODE:
+                    case ANNOTATIONS:
+                    case CHECKSUMS:
+                    case EXTERNAL_REFS:
                         break;
                     default:
                         FieldMetaData fieldMetaData = PackageInformation.metaDataMap.get(field);
@@ -114,11 +113,198 @@ public class DisplayPackageInfoChanges extends UserAwareTag {
                                 LanguageUtil.get(resourceBundle, "suggested.value"))
                         + renderString + "</tbody></table>";
             }
-
-            jspWriter.print(renderString);
+            String packageVerificationCodeRenderString = renderPackageVerificationCode();
+            String annotaionsRenderString = renderAnnotaions();
+            String checkSumRenderString = renderCheckSum();
+            String externalReferenceRenderString = renderExternalReference();
+            jspWriter.print(renderString + packageVerificationCodeRenderString.toString() + checkSumRenderString.toString() + externalReferenceRenderString.toString() + annotaionsRenderString.toString());
         } catch (Exception e) {
             throw new JspException(e);
         }
         return SKIP_BODY;
+    }
+
+    private boolean ensureSomethingTodoAndNoNull(PackageInformation._Fields field) {
+        if (!deletions.isSet(field) && !additions.isSet(field)) {
+            return false;
+        }
+
+        if (field == PackageInformation._Fields.CHECKSUMS){
+            if (!deletions.isSet(field)) {
+                deletions.setFieldValue(field, new HashSet<>());
+            }
+            if (!additions.isSet(field)) {
+                additions.setFieldValue(field, new HashSet<>());
+            }
+        } else if (field == PackageInformation._Fields.EXTERNAL_REFS){
+            if (!deletions.isSet(field)) {
+                deletions.setFieldValue(field, new HashSet<>());
+            }
+            if (!additions.isSet(field)) {
+                additions.setFieldValue(field, new HashSet<>());
+            }
+        } else if (field == PackageInformation._Fields.ANNOTATIONS){
+            if (!deletions.isSet(field)) {
+                deletions.setFieldValue(field, new HashSet<>());
+            }
+            if (!additions.isSet(field)) {
+                additions.setFieldValue(field, new HashSet<>());
+            }
+        } else if (field == PackageInformation._Fields.PACKAGE_VERIFICATION_CODE){
+            if (!deletions.isSet(field)) {
+                deletions.setFieldValue(field, new HashSet<>());
+            }
+            if (!additions.isSet(field)) {
+                additions.setFieldValue(field, new HashSet<>());
+            }
+        }
+
+        return true;
+    }
+
+    private String renderCheckSum() {
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+        if (!ensureSomethingTodoAndNoNull(PackageInformation._Fields.CHECKSUMS)) {
+            return "";
+        }
+        StringBuilder display = new StringBuilder();
+        if (! actual.isSet(PackageInformation._Fields.CHECKSUMS)){
+            actual.checksums = new HashSet<>();
+        }
+        Iterator<CheckSum> checkSumAdditionsIterator = additions.getChecksumsIterator();
+        Iterator<CheckSum> checkSumDeletionsIterator = deletions.getChecksumsIterator();
+        for (CheckSum checkSum : actual.getChecksums()) {
+            CheckSum checkSumAdditions = new CheckSum();
+            if (checkSumAdditionsIterator.hasNext()) {
+                checkSumAdditions = checkSumAdditionsIterator.next();
+            }
+            CheckSum checkSumDeletions = new CheckSum();
+            if (checkSumDeletionsIterator.hasNext()) {
+                checkSumDeletions = checkSumDeletionsIterator.next();
+            }
+            for (CheckSum._Fields field : CheckSum._Fields.values()) {
+                FieldMetaData fieldMetaData = CheckSum.metaDataMap.get(field);
+                displaySimpleFieldOrSet(
+                        display,
+                        checkSum,
+                        checkSumAdditions,
+                        checkSumDeletions,
+                        field, fieldMetaData, "");
+            }
+        }
+        return "<h3>"+LanguageUtil.get(resourceBundle,"changes.in.checksum")+ "</h3>"
+                + String.format("<table class=\"%s\" id=\"%schanges\" >", tableClasses, idPrefix)
+                + String.format("<thead><tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr></thead><tbody>",
+                LanguageUtil.get(resourceBundle,"field.name"), LanguageUtil.get(resourceBundle,"current.value"),
+                LanguageUtil.get(resourceBundle,"former.value"), LanguageUtil.get(resourceBundle,"suggested.value"))
+                + display.toString() + "</tbody></table>";
+    }
+
+    private String renderAnnotaions() {
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+        if (!ensureSomethingTodoAndNoNull(PackageInformation._Fields.ANNOTATIONS)) {
+            return "";
+        }
+        StringBuilder display = new StringBuilder();
+        if (! actual.isSet(PackageInformation._Fields.ANNOTATIONS)){
+            actual.annotations = new HashSet<>();
+        }
+        Iterator<Annotations> annotationsAdditionsIterator = additions.getAnnotationsIterator();
+        Iterator<Annotations> annotationsDeletionsIterator = deletions.getAnnotationsIterator();
+        for (Annotations annotations : actual.getAnnotations()) {
+            Annotations annotationsAdditions = new Annotations();
+            if (annotationsAdditionsIterator.hasNext()) {
+                annotationsAdditions = annotationsAdditionsIterator.next();
+            }
+            Annotations annotationsDeletions = new Annotations();
+            if (annotationsDeletionsIterator.hasNext()) {
+                annotationsDeletions = annotationsDeletionsIterator.next();
+            }
+            for (Annotations._Fields field : Annotations._Fields.values()) {
+                FieldMetaData fieldMetaData = Annotations.metaDataMap.get(field);
+                displaySimpleFieldOrSet(
+                        display,
+                        annotations,
+                        annotationsAdditions,
+                        annotationsDeletions,
+                        field, fieldMetaData, "");
+            }
+        }
+        return "<h3>"+LanguageUtil.get(resourceBundle,"changes.in.annotaions.information")+ "</h3>"
+                + String.format("<table class=\"%s\" id=\"%schanges\" >", tableClasses, idPrefix)
+                + String.format("<thead><tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr></thead><tbody>",
+                LanguageUtil.get(resourceBundle,"field.name"), LanguageUtil.get(resourceBundle,"current.value"),
+                LanguageUtil.get(resourceBundle,"former.value"), LanguageUtil.get(resourceBundle,"suggested.value"))
+                + display.toString() + "</tbody></table>";
+    }
+
+    private String renderExternalReference() {
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+        if (!ensureSomethingTodoAndNoNull(PackageInformation._Fields.EXTERNAL_REFS)) {
+            return "";
+        }
+        StringBuilder display = new StringBuilder();
+        if (! actual.isSet(PackageInformation._Fields.EXTERNAL_REFS)){
+            actual.externalRefs = new HashSet<>();
+        }
+        Iterator<ExternalReference> externalDocumentRefsAdditionsIterator = additions.getExternalRefsIterator();
+        Iterator<ExternalReference> externalDocumentRefsDeletionsIterator = deletions.getExternalRefsIterator();
+        for (ExternalReference externalDocumentRefs : actual.getExternalRefs()) {
+            ExternalReference externalDocumentRefsAdditions = new ExternalReference();
+            if (externalDocumentRefsAdditionsIterator.hasNext()) {
+                externalDocumentRefsAdditions = externalDocumentRefsAdditionsIterator.next();
+            }
+            ExternalReference externalDocumentRefsDeletions = new ExternalReference();
+            if (externalDocumentRefsDeletionsIterator.hasNext()) {
+                externalDocumentRefsDeletions = externalDocumentRefsDeletionsIterator.next();
+            }
+            for (ExternalReference._Fields field : ExternalReference._Fields.values()) {
+                FieldMetaData fieldMetaData = ExternalReference.metaDataMap.get(field);
+                displaySimpleFieldOrSet(
+                        display,
+                        externalDocumentRefs,
+                        externalDocumentRefsAdditions,
+                        externalDocumentRefsDeletions,
+                        field, fieldMetaData, "");
+            }
+        }
+        return "<h3>"+LanguageUtil.get(resourceBundle,"changes.in.external.document.references")+ "</h3>"
+                + String.format("<table class=\"%s\" id=\"%schanges\" >", tableClasses, idPrefix)
+                + String.format("<thead><tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr></thead><tbody>",
+                LanguageUtil.get(resourceBundle,"field.name"), LanguageUtil.get(resourceBundle,"current.value"),
+                LanguageUtil.get(resourceBundle,"former.value"), LanguageUtil.get(resourceBundle,"suggested.value"))
+                + display.toString() + "</tbody></table>";
+    }
+
+    private String renderPackageVerificationCode() {
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+        if (!ensureSomethingTodoAndNoNull(PackageInformation._Fields.PACKAGE_VERIFICATION_CODE)) {
+            return "";
+        }
+        StringBuilder display = new StringBuilder();
+        if (! actual.isSet(PackageInformation._Fields.PACKAGE_VERIFICATION_CODE)){
+            actual.packageVerificationCode = new PackageVerificationCode();
+        }
+
+        for (PackageVerificationCode._Fields field : PackageVerificationCode._Fields.values()) {
+            FieldMetaData fieldMetaData = PackageVerificationCode.metaDataMap.get(field);
+            displaySimpleFieldOrSet(
+                    display,
+                    actual.getPackageVerificationCode(),
+                    additions.getPackageVerificationCode(),
+                    deletions.getPackageVerificationCode(),
+                    field, fieldMetaData, "");
+        }
+
+        return "<h3>"+LanguageUtil.get(resourceBundle,"changes.in.package.verification.code")+ "</h3>"
+                + String.format("<table class=\"%s\" id=\"%schanges\" >", tableClasses, idPrefix)
+                + String.format("<thead><tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr></thead><tbody>",
+                LanguageUtil.get(resourceBundle,"field.name"), LanguageUtil.get(resourceBundle,"current.value"),
+                LanguageUtil.get(resourceBundle,"former.value"), LanguageUtil.get(resourceBundle,"suggested.value"))
+                + display.toString() + "</tbody></table>";
     }
 }

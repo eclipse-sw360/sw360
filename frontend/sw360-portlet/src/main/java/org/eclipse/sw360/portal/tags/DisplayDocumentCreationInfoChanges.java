@@ -11,28 +11,24 @@
 package org.eclipse.sw360.portal.tags;
 
 import com.google.common.base.Strings;
-import com.google.common.collect.Sets;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 
-import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.*;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.portal.tags.urlutils.LinkedReleaseRenderer;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
+
+import jdk.internal.org.jline.utils.Log;
 
 import org.apache.thrift.meta_data.FieldMetaData;
-import org.apache.thrift.protocol.TType;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 
-import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.ResourceBundle;
 import java.util.Set;
 
-import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyMap;
-import static org.eclipse.sw360.datahandler.common.SW360Utils.newDefaultEccInformation;
 import static org.eclipse.sw360.portal.tags.TagUtils.*;
 
 /**
@@ -87,6 +83,8 @@ public class DisplayDocumentCreationInfoChanges extends UserAwareTag {
                     case CREATED_BY:
                     case PERMISSIONS:
                     case DOCUMENT_STATE:
+                    case EXTERNAL_DOCUMENT_REFS:
+                    case CREATOR:
                         break;
                     default:
                         FieldMetaData fieldMetaData = DocumentCreationInformation.metaDataMap.get(field);
@@ -113,11 +111,143 @@ public class DisplayDocumentCreationInfoChanges extends UserAwareTag {
                                 LanguageUtil.get(resourceBundle, "suggested.value"))
                         + renderString + "</tbody></table>";
             }
-
-            jspWriter.print(renderString);
+            String externalDocumentRefsRenderString = renderExternalDocumentRefs();
+            String creatorRenderString = renderCreator();
+            jspWriter.print(renderString + externalDocumentRefsRenderString.toString() + creatorRenderString.toString());
         } catch (Exception e) {
             throw new JspException(e);
         }
         return SKIP_BODY;
     }
+
+    private boolean ensureSomethingTodoAndNoNull(DocumentCreationInformation._Fields field) {
+        if (!deletions.isSet(field) && !additions.isSet(field)) {
+            return false;
+        }
+
+        if (field == DocumentCreationInformation._Fields.EXTERNAL_DOCUMENT_REFS){
+            if (!deletions.isSet(field)) {
+                deletions.setFieldValue(field, new HashSet<>());
+            }
+            if (!additions.isSet(field)) {
+                additions.setFieldValue(field, new HashSet<>());
+            }
+        } else if (field == DocumentCreationInformation._Fields.CREATOR){
+            if (!deletions.isSet(field)) {
+                deletions.setFieldValue(field, new HashSet<>());
+            }
+            if (!additions.isSet(field)) {
+                additions.setFieldValue(field, new HashSet<>());
+            }
+        }
+        return true;
+    }
+
+    private String renderExternalDocumentRefs() {
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+        if (!ensureSomethingTodoAndNoNull(DocumentCreationInformation._Fields.EXTERNAL_DOCUMENT_REFS)) {
+            return "";
+        }
+        StringBuilder display = new StringBuilder();
+        if (! actual.isSet(DocumentCreationInformation._Fields.EXTERNAL_DOCUMENT_REFS)){
+            actual.externalDocumentRefs = new HashSet<>();
+        }
+        Iterator<ExternalDocumentReferences> externalDocumentRefsAdditionsIterator = additions.getExternalDocumentRefsIterator();
+        Iterator<ExternalDocumentReferences> externalDocumentRefsDeletionsIterator = deletions.getExternalDocumentRefsIterator();
+        for (ExternalDocumentReferences externalDocumentRefs : actual.getExternalDocumentRefs()) {
+            ExternalDocumentReferences externalDocumentRefsAdditions = new ExternalDocumentReferences();
+            if (externalDocumentRefsAdditionsIterator.hasNext()) {
+                externalDocumentRefsAdditions = externalDocumentRefsAdditionsIterator.next();
+            }
+            ExternalDocumentReferences externalDocumentRefsDeletions = new ExternalDocumentReferences();
+            if (externalDocumentRefsDeletionsIterator.hasNext()) {
+                externalDocumentRefsDeletions = externalDocumentRefsDeletionsIterator.next();
+            }
+            String checkSumRendeString = null;
+            for (ExternalDocumentReferences._Fields field : ExternalDocumentReferences._Fields.values()) {
+                FieldMetaData fieldMetaData = ExternalDocumentReferences.metaDataMap.get(field);
+                if (field == ExternalDocumentReferences._Fields.CHECKSUM) {
+                    checkSumRendeString = renderCheckSum(externalDocumentRefs, externalDocumentRefsAdditions, externalDocumentRefsDeletions);
+                } else {
+                    displaySimpleFieldOrSet(
+                            display,
+                            externalDocumentRefs,
+                            externalDocumentRefsAdditions,
+                            externalDocumentRefsDeletions,
+                            field, fieldMetaData, "");
+                }
+            }
+            if (checkSumRendeString != null) {
+                display.append(checkSumRendeString);
+            }
+        }
+        return "<h3>"+LanguageUtil.get(resourceBundle,"changes.in.external.document.references")+ "</h3>"
+                + String.format("<table class=\"%s\" id=\"%schanges\" >", tableClasses, idPrefix)
+                + String.format("<thead><tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr></thead><tbody>",
+                LanguageUtil.get(resourceBundle,"field.name"), LanguageUtil.get(resourceBundle,"current.value"),
+                LanguageUtil.get(resourceBundle,"former.value"), LanguageUtil.get(resourceBundle,"suggested.value"))
+                + display.toString() + "</tbody></table>";
+    }
+
+    private String renderCreator() {
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+        if (!ensureSomethingTodoAndNoNull(DocumentCreationInformation._Fields.CREATOR)) {
+            return "";
+        }
+        StringBuilder display = new StringBuilder();
+        if (! actual.isSet(DocumentCreationInformation._Fields.CREATOR)){
+            actual.creator = new HashSet<>();
+        }
+        Iterator<Creator> creatorAdditionsIterator = additions.getCreatorIterator();
+        Iterator<Creator> creatorDeletionsIterator = deletions.getCreatorIterator();
+        Set<Creator> creators = actual.getCreator();
+        while(creators.size() < additions.getCreatorSize()) {
+            creators.add(new Creator());
+        }
+        for (Creator creator : creators) {
+            Creator creatorAdditions = new Creator();
+            if (creatorAdditionsIterator.hasNext()) {
+                creatorAdditions = creatorAdditionsIterator.next();
+            }
+            Creator creatorDeletions = new Creator();
+            if (creatorDeletionsIterator.hasNext()) {
+                creatorDeletions = creatorDeletionsIterator.next();
+            }
+            for (Creator._Fields field : Creator._Fields.values()) {
+                FieldMetaData fieldMetaData = Creator.metaDataMap.get(field);
+                displaySimpleFieldOrSet(
+                        display,
+                        creator,
+                        creatorAdditions,
+                        creatorDeletions,
+                        field, fieldMetaData, "");
+            }
+        }
+        return "<h3>"+LanguageUtil.get(resourceBundle,"changes.in.external.document.references")+ "</h3>"
+                + String.format("<table class=\"%s\" id=\"%schanges\" >", tableClasses, idPrefix)
+                + String.format("<thead><tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr></thead><tbody>",
+                LanguageUtil.get(resourceBundle,"field.name"), LanguageUtil.get(resourceBundle,"current.value"),
+                LanguageUtil.get(resourceBundle,"former.value"), LanguageUtil.get(resourceBundle,"suggested.value"))
+                + display.toString() + "</tbody></table>";
+    }
+
+    private String renderCheckSum(ExternalDocumentReferences actualChecsum, ExternalDocumentReferences additionsChecsum, ExternalDocumentReferences deletionsChecsum) {
+
+        if (deletionsChecsum.isSet(ExternalDocumentReferences._Fields.CHECKSUM)
+            && !additionsChecsum.isSet(ExternalDocumentReferences._Fields.CHECKSUM)) {
+            return "";
+        }
+
+        String display = "<tr> <td>CheckSum:</td> <td> <ul> <li>algorithm: " 
+                    + actualChecsum.checksum.algorithm + "</li> <li>checksumValue: "
+                    + actualChecsum.checksum.checksumValue +  "</li> </ul> </td> <td> <li>algorithm: "
+                    + deletionsChecsum.checksum.algorithm + "</li> <li>checksumValue: </li>"
+                    + deletionsChecsum.checksum.checksumValue +  "</td> <td> <ul> <li>algorithm: "
+                    + additionsChecsum.checksum.algorithm + " </li> <li>checksumValue: "
+                    + additionsChecsum.checksum.checksumValue + "</li> </ul> </td> </tr>";
+        return display;
+    }
+
 }
