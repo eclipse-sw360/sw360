@@ -208,10 +208,10 @@ public class SpdxBOMImporter {
             String comment = spdxAnn.getComment();
 
             Annotations ann = new Annotations();
-            ann.setAnnotator(annotator)
-                .setAnnotationDate(date)
-                .setAnnotationType(type)
-                .setAnnotationComment(comment);
+            ann.setAnnotator(verifyOrSetDefault(annotator))
+                .setAnnotationDate(verifyOrSetDefault(date))
+                .setAnnotationType(verifyOrSetDefault(type))
+                .setAnnotationComment(verifyOrSetDefault(comment));
 
             annotations.add(ann);
         }
@@ -229,7 +229,7 @@ public class SpdxBOMImporter {
                 Set<SnippetRange> ranges = createSnippetRangesFromSpdxSnippet(spdxSnippet);
                 String licenseConcluded = spdxSnippet.getLicenseConcluded().toString();
                 Set<String> licenseInfoInFile = Arrays.stream(spdxSnippet.getLicenseInfoFromFiles())
-                                            .map(license -> license.toString())
+                                            .map(license -> verifyOrSetDefault(license.toString()))
                                             .collect(Collectors.toSet());
                 String licenseComment = spdxSnippet.getLicenseComment();
                 String copyrightText = spdxSnippet.getCopyrightText();
@@ -238,16 +238,16 @@ public class SpdxBOMImporter {
                 String attributionText = String.join("|", spdxSnippet.getAttributionText());
 
                 SnippetInformation snippet = new SnippetInformation();
-                snippet.setSPDXID(id)
-                        .setSnippetFromFile(snippetFromFile)
+                snippet.setSPDXID(verifyOrSetDefault(id))
+                        .setSnippetFromFile(verifyOrSetDefault(snippetFromFile))
                         .setSnippetRanges(ranges)
-                        .setLicenseConcluded(licenseConcluded)
+                        .setLicenseConcluded(verifyOrSetDefault(licenseConcluded))
                         .setLicenseInfoInSnippets(licenseInfoInFile)
-                        .setLicenseComments(licenseComment)
-                        .setCopyrightText(copyrightText)
-                        .setComment(comment)
-                        .setName(name)
-                        .setSnippetAttributionText(attributionText);
+                        .setLicenseComments(verifyOrSetDefault(licenseComment))
+                        .setCopyrightText(verifyOrSetDefault(copyrightText))
+                        .setComment(verifyOrSetDefault(comment))
+                        .setName(verifyOrSetDefault(name))
+                        .setSnippetAttributionText(verifyOrSetDefault(attributionText));
 
                 snippets.add(snippet);
             }
@@ -319,10 +319,10 @@ public class SpdxBOMImporter {
             String comment = spdxRelationship.getComment();
 
             RelationshipsBetweenSPDXElements relationship = new RelationshipsBetweenSPDXElements();
-            relationship.setSpdxElementId(relatedSpdxElementId)
-                        .setRelationshipType(type)
-                        .setRelatedSpdxElement(relatedSpdxElement)
-                        .setRelationshipComment(comment);
+            relationship.setSpdxElementId(verifyOrSetDefault(relatedSpdxElementId))
+                        .setRelationshipType(verifyOrSetDefault(type))
+                        .setRelatedSpdxElement(verifyOrSetDefault(relatedSpdxElement))
+                        .setRelationshipComment(verifyOrSetDefault(comment));
 
             relationships.add(relationship);
         }
@@ -341,11 +341,11 @@ public class SpdxBOMImporter {
             String comment = spdxExtractedLicense.getComment();
 
             OtherLicensingInformationDetected otherLicense = new OtherLicensingInformationDetected();
-            otherLicense.setLicenseId(licenseId)
-                        .setExtractedText(extractedText)
-                        .setLicenseName(name)
+            otherLicense.setLicenseId(verifyOrSetDefault(licenseId))
+                        .setExtractedText(verifyOrSetDefault(extractedText))
+                        .setLicenseName(verifyOrSetDefault(name))
                         .setLicenseCrossRefs(crossRef)
-                        .setLicenseComment(comment);
+                        .setLicenseComment(verifyOrSetDefault(comment));
 
             otherLicenses.add(otherLicense);
         }
@@ -370,17 +370,17 @@ public class SpdxBOMImporter {
             final String creatorComment = spdxDocument.getCreationInfo().getComment();
             final String documentComment = spdxDocument.getDocumentComment();
 
-            info.setSpdxVersion(spdxVersion)
-                .setDataLicense(dataLicense)
-                .setSPDXID(spdxId)
-                .setName(name)
-                .setDocumentNamespace(documentNamespace)
+            info.setSpdxVersion(verifyOrSetDefault(spdxVersion))
+                .setDataLicense(verifyOrSetDefault(dataLicense))
+                .setSPDXID(verifyOrSetDefault(spdxId))
+                .setName(verifyOrSetDefault(name))
+                .setDocumentNamespace(verifyOrSetDefault(documentNamespace))
                 .setExternalDocumentRefs(refs)
-                .setLicenseListVersion(licenseListVersion)
+                .setLicenseListVersion(verifyOrSetDefault(licenseListVersion))
                 .setCreator(creators)
-                .setCreated(createdDate)
-                .setCreatorComment(creatorComment)
-                .setDocumentComment(documentComment);
+                .setCreated(verifyOrSetDefault(createdDate))
+                .setCreatorComment(verifyOrSetDefault(creatorComment))
+                .setDocumentComment(verifyOrSetDefault(documentComment));
         } catch (InvalidSPDXAnalysisException e) {
             log.error(e);
         }
@@ -400,13 +400,13 @@ public class SpdxBOMImporter {
                 String externalDocumentId = externalDocumentRef.getExternalDocumentId();
                 String spdxDocumentNamespace = externalDocumentRef.getSpdxDocumentNamespace();
                 CheckSum checksum = new CheckSum();
-                checksum.setAlgorithm(spdxChecksum.getAlgorithm().toString())
-                        .setChecksumValue(spdxChecksum.getValue());
+                checksum.setAlgorithm(verifyOrSetDefault(spdxChecksum.getAlgorithm().toString()))
+                        .setChecksumValue(verifyOrSetDefault(spdxChecksum.getValue()));
 
                 ExternalDocumentReferences ref = new ExternalDocumentReferences();
-                ref.setExternalDocumentId(externalDocumentId)
+                ref.setExternalDocumentId(verifyOrSetDefault(externalDocumentId))
                     .setChecksum(checksum)
-                    .setSpdxDocument(spdxDocumentNamespace);
+                    .setSpdxDocument(verifyOrSetDefault(spdxDocumentNamespace));
 
                 refs.add(ref);
             }
@@ -430,12 +430,11 @@ public class SpdxBOMImporter {
                     continue;
                 }
                 String type = data[0].trim();
-                // String value = data[1].trim();
                 String value = spdxCreator.substring(data[0].length()+1).trim();
 
                 Creator creator = new Creator();
-                creator.setType(type);
-                creator.setValue(value);
+                creator.setType(verifyOrSetDefault(type));
+                creator.setValue(verifyOrSetDefault(value));
 
                 creators.add(creator);
             }
@@ -477,25 +476,25 @@ public class SpdxBOMImporter {
             final Set<String> attributionText = new HashSet<String>(Arrays.asList(spdxPackage.getAttributionText()));
             final Set<Annotations> annotations = createAnnotationsFromSpdxAnnotations(spdxPackage.getAnnotations());
 
-            pInfo.setName(name)
-                .setSPDXID(spdxId)
-                .setVersionInfo(versionInfo)
-                .setPackageFileName(packageFileName)
-                .setSupplier(supplier)
-                .setOriginator(originator)
-                .setDownloadLocation(downloadLocation)
+            pInfo.setName(verifyOrSetDefault(name))
+                .setSPDXID(verifyOrSetDefault(spdxId))
+                .setVersionInfo(verifyOrSetDefault(versionInfo))
+                .setPackageFileName(verifyOrSetDefault(packageFileName))
+                .setSupplier(verifyOrSetDefault(supplier))
+                .setOriginator(verifyOrSetDefault(originator))
+                .setDownloadLocation(verifyOrSetDefault(downloadLocation))
                 .setFilesAnalyzed(fileAnalyzed)
                 .setPackageVerificationCode(PVC)
-                .setHomepage(homepage)
-                .setSourceInfo(sourceInfo)
-                .setLicenseConcluded(licenseConcluded)
+                .setHomepage(verifyOrSetDefault(homepage))
+                .setSourceInfo(verifyOrSetDefault(sourceInfo))
+                .setLicenseConcluded(verifyOrSetDefault(licenseConcluded))
                 .setLicenseInfoFromFiles(licenseInfosFromFiles)
-                .setLicenseDeclared(licenseDeclared)
-                .setLicenseComments(licenseComment)
-                .setCopyrightText(copyrightText)
-                .setSummary(summary)
-                .setDescription(description)
-                .setPackageComment(comment)
+                .setLicenseDeclared(verifyOrSetDefault(licenseDeclared))
+                .setLicenseComments(verifyOrSetDefault(licenseComment))
+                .setCopyrightText(verifyOrSetDefault(copyrightText))
+                .setSummary(verifyOrSetDefault(summary))
+                .setDescription(verifyOrSetDefault(description))
+                .setPackageComment(verifyOrSetDefault(comment))
                 .setExternalRefs(externalRefs)
                 .setAttributionText(attributionText)
                 .setAnnotations(annotations);
@@ -515,7 +514,7 @@ public class SpdxBOMImporter {
             final String value = spdxPVC.getValue();
 
             PVC.setExcludedFiles(excludedFileNames)
-                .setValue(value);
+                .setValue(verifyOrSetDefault(value));
         } catch (InvalidSPDXAnalysisException e) {
             log.error(e);
         }
@@ -535,10 +534,10 @@ public class SpdxBOMImporter {
                 String comment = spdxRef.getComment();
 
                 ExternalReference ref = new ExternalReference();
-                ref.setReferenceCategory(category)
-                    .setReferenceLocator(locator)
-                    .setReferenceType(type)
-                    .setComment(comment);
+                ref.setReferenceCategory(verifyOrSetDefault(category))
+                    .setReferenceLocator(verifyOrSetDefault(locator))
+                    .setReferenceType(verifyOrSetDefault(type))
+                    .setComment(verifyOrSetDefault(comment));
 
                 refs.add(ref);
             }
@@ -556,12 +555,12 @@ public class SpdxBOMImporter {
             String name = spdxFile.getName();
             String id = spdxFile.getId();
             Set<String> fileTypes = Arrays.stream(spdxFile.getFileTypes())
-                                        .map(type -> type.getTag())
+                                        .map(type -> verifyOrSetDefault(type.getTag()))
                                         .collect(Collectors.toSet());
             Set<CheckSum> checksums = createCheckSumsFromSpdxChecksums(spdxFile.getChecksums());
             String licenseConcluded = spdxFile.getLicenseConcluded().toString();
             Set<String> licenseInfoFromFiles = Arrays.stream(spdxFile.getLicenseInfoFromFiles())
-                                        .map(license -> license.toString())
+                                        .map(license -> verifyOrSetDefault(license.toString()))
                                         .collect(Collectors.toSet());
             String licenseComment = spdxFile.getLicenseComments();
             String copyrightText = spdxFile.getCopyrightText();
@@ -572,16 +571,16 @@ public class SpdxBOMImporter {
             Set<Annotations> annotations = createAnnotationsFromSpdxAnnotations(spdxFile.getAnnotations());
 
             FileInformation file = new FileInformation();
-            file.setFileName(name)
-                .setSPDXID(id)
+            file.setFileName(verifyOrSetDefault(name))
+                .setSPDXID(verifyOrSetDefault(id))
                 .setFileTypes(fileTypes)
                 .setChecksums(checksums)
-                .setLicenseConcluded(licenseConcluded)
+                .setLicenseConcluded(verifyOrSetDefault(licenseConcluded))
                 .setLicenseInfoInFiles(licenseInfoFromFiles)
-                .setLicenseComments(licenseComment)
-                .setCopyrightText(copyrightText)
-                .setFileComment(comment)
-                .setNoticeText(noticeText)
+                .setLicenseComments(verifyOrSetDefault(licenseComment))
+                .setCopyrightText(verifyOrSetDefault(copyrightText))
+                .setFileComment(verifyOrSetDefault(comment))
+                .setNoticeText(verifyOrSetDefault(noticeText))
                 .setFileContributors(attributionText)
                 .setFileAttributionText(attributionText)
                 .setAnnotations(annotations);
@@ -595,14 +594,13 @@ public class SpdxBOMImporter {
     private Set<CheckSum> createCheckSumsFromSpdxChecksums(Checksum[] spdxChecksums) {
         Set<CheckSum> checksums = new HashSet<CheckSum>();
 
-        log.info(spdxChecksums.length);
         for (Checksum spdxChecksum : spdxChecksums) {
             String algorithm = spdxChecksum.getAlgorithm().toString();
             String value = spdxChecksum.getValue();
 
             CheckSum checksum = new CheckSum();
-            checksum.setAlgorithm(algorithm)
-                    .setChecksumValue(value);
+            checksum.setAlgorithm(verifyOrSetDefault(algorithm))
+                    .setChecksumValue(verifyOrSetDefault(value));
 
             checksums.add(checksum);
         }
@@ -675,17 +673,14 @@ public class SpdxBOMImporter {
         final SPDXDocument spdxDoc = createSPDXDocumentFromSpdxDocument(releaseId, spdxDocument);
         final SpdxBOMImporterSink.Response spdxDocRes = sink.addOrUpdateSpdxDocument(spdxDoc);
         final String spdxDocId = spdxDocRes.getId();
-        log.info("===========spdxDoc: " + spdxDocId);
 
         final DocumentCreationInformation docCreationInfo = createDocumentCreationInfoFromSpdxDocument(spdxDocId, spdxDocument);
         final SpdxBOMImporterSink.Response docCreationInfoRes = sink.addOrUpdateDocumentCreationInformation(docCreationInfo);
         final String docCreationInfoId = docCreationInfoRes.getId();
-        log.info("===========docCreation: " + docCreationInfoId);
 
         final PackageInformation packageInfo = createPackageInfoFromSpdxPackage(spdxDocId, spdxPackage);
         final SpdxBOMImporterSink.Response packageInfoRes = sink.addOrUpdatePackageInformation(packageInfo);
         final String packageInfoId = packageInfoRes.getId();
-        log.info("===========packageInfo: " + packageInfoId);
     }
 
     private SPDXDocument getSpdxDocumentFromRelease(String releaseId) throws SW360Exception, MalformedURLException {
@@ -713,13 +708,9 @@ public class SpdxBOMImporter {
     private PackageInformation getPackageInformationFromSpdxDocument(String spdxDocId) throws SW360Exception, MalformedURLException {
         PackageInformation info;
         final SPDXDocument spdxDoc = sink.getSPDXDocument(spdxDocId);
-        log.info("=========size: "+spdxDoc.getSpdxPackageInfoIdsSize());
         if (spdxDoc.getSpdxPackageInfoIdsSize() > 0) {
-            log.info("=============: "+spdxDoc.getSpdxPackageInfoIds().toString());
-            log.info("Spdx Package exist");
             info = sink.getPackageInfo(spdxDoc.getSpdxPackageInfoIds().iterator().next());
         } else {
-            log.info("Spdx Package not exist");
             info = new PackageInformation();
         }
         return info;
@@ -796,5 +787,10 @@ public class SpdxBOMImporter {
             log.debug("Unsupported SpdxElement: " + spdxElement.getClass().getCanonicalName());
             return Optional.empty();
         }
+    }
+
+
+    private String verifyOrSetDefault(String value) {
+        return (isNotNullEmptyOrWhitespace(value)) ? value : "";
     }
 }
