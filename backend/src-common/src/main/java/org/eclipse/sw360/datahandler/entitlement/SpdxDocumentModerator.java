@@ -13,7 +13,10 @@ package org.eclipse.sw360.datahandler.entitlement;
 import org.eclipse.sw360.datahandler.common.Moderator;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
 import org.eclipse.sw360.datahandler.thrift.spdx.otherlicensinginformationdetected.OtherLicensingInformationDetected;
+import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelements.RelationshipsBetweenSPDXElements;
+import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -80,14 +83,16 @@ public class SpdxDocumentModerator extends Moderator<SPDXDocument._Fields, SPDXD
                     spdx = updateOtherLicensingInformationDetecteds(spdx, spdxAdditions, spdxDeletions);
                     break;
                 case RELATIONSHIPS:
+                    spdx = updateRelationships(spdx, spdxAdditions, spdxDeletions);
                     break;
                 case ANNOTATIONS:
+                    spdx = updateAnnotaions(spdx, spdxAdditions, spdxDeletions);
                     break;
                 case SNIPPETS:
+                    spdx = updateSnippets(spdx, spdxAdditions, spdxDeletions);
                     break;
                 default:
-                    spdx = updateBasicField(field, SPDXDocument.metaDataMap.get(field), spdx, spdxAdditions,
-                            spdxDeletions);
+                    spdx = updateBasicField(field, SPDXDocument.metaDataMap.get(field), spdx, spdxAdditions, spdxDeletions);
             }
 
         }
@@ -107,7 +112,7 @@ public class SpdxDocumentModerator extends Moderator<SPDXDocument._Fields, SPDXD
         if (actuals == null) {
             actuals = new HashSet<>();
         }
-        while(additionsIterator.hasNext()) {
+        while (additionsIterator.hasNext()) {
             OtherLicensingInformationDetected additions = additionsIterator.next();
             OtherLicensingInformationDetected actual = new OtherLicensingInformationDetected();
             for (OtherLicensingInformationDetected._Fields field : OtherLicensingInformationDetected._Fields.values()) {
@@ -123,6 +128,89 @@ public class SpdxDocumentModerator extends Moderator<SPDXDocument._Fields, SPDXD
         }
 
         spdx.setOtherLicensingInformationDetecteds(actuals);
+        return spdx;
+    }
+
+    private SPDXDocument updateRelationships(SPDXDocument spdx, SPDXDocument spdxAdditions, SPDXDocument spdxDeletions) {
+        Set<RelationshipsBetweenSPDXElements> actuals = spdx.getRelationships();
+        Iterator<RelationshipsBetweenSPDXElements> additionsIterator = spdxAdditions.getRelationshipsIterator();
+        Iterator<RelationshipsBetweenSPDXElements> deletionsIterator = spdxDeletions.getRelationshipsIterator();
+        if (additionsIterator == null) {
+            return spdx;
+        }
+        if (deletionsIterator == null) {
+            return spdx;
+        }
+        if (actuals == null) {
+            actuals = new HashSet<>();
+        }
+        while (additionsIterator.hasNext()) {
+            RelationshipsBetweenSPDXElements additions = additionsIterator.next();
+            RelationshipsBetweenSPDXElements actual = new RelationshipsBetweenSPDXElements();
+            for (RelationshipsBetweenSPDXElements._Fields field : RelationshipsBetweenSPDXElements._Fields.values()) {
+                if (additions.isSet(field)) {
+                    actual.setFieldValue(field, additions.getFieldValue(field));
+                }
+            }
+        }
+        while (deletionsIterator.hasNext()) {
+            RelationshipsBetweenSPDXElements deletions = deletionsIterator.next();
+            actuals.remove(deletions);
+        }
+        spdx.setRelationships(actuals);
+        return spdx;
+    }
+
+    private SPDXDocument updateAnnotaions(SPDXDocument spdx, SPDXDocument spdxAdditions, SPDXDocument spdxDeletions) {
+        Set<Annotations> actuals = spdx.getAnnotations();
+        Iterator<Annotations> additionsIterator = spdxAdditions.getAnnotationsIterator();
+        Iterator<Annotations> deletionsIterator = spdxDeletions.getAnnotationsIterator();
+        if (additionsIterator == null || deletionsIterator == null) {
+            return spdx;
+        }
+        if (actuals == null) {
+            actuals = new HashSet<>();
+        }
+        while (additionsIterator.hasNext()) {
+            Annotations additions = additionsIterator.next();
+            Annotations actual = new Annotations();
+            for (Annotations._Fields field : Annotations._Fields.values()) {
+                if (additions.isSet(field)) {
+                    actual.setFieldValue(field, additions.getFieldValue(field));
+                }
+            }
+        }
+        while (deletionsIterator.hasNext()) {
+            Annotations deletions = deletionsIterator.next();
+            actuals.remove(deletions);
+        }
+        spdx.setAnnotations(actuals);
+        return spdx;
+    }
+
+    private SPDXDocument updateSnippets(SPDXDocument spdx, SPDXDocument spdxAdditions, SPDXDocument spdxDeletions) {
+        Set<SnippetInformation> actuals = spdx.getSnippets();
+        Iterator<SnippetInformation> additionsIterator = spdxAdditions.getSnippetsIterator();
+        Iterator<SnippetInformation> deletionsIterator = spdxDeletions.getSnippetsIterator();
+        if (additionsIterator == null || deletionsIterator == null) {
+            return spdx;
+        }
+        if (actuals == null) {
+            actuals = new HashSet<>();
+        }
+        while (additionsIterator.hasNext()) {
+            SnippetInformation additions = additionsIterator.next();
+            SnippetInformation actual = new SnippetInformation();
+            for (SnippetInformation._Fields field : SnippetInformation._Fields.values()) {
+                if (additions.isSet(field)) {
+                    actual.setFieldValue(field, additions.getFieldValue(field));
+                }
+            }
+        }
+        while (deletionsIterator.hasNext()) {
+            SnippetInformation deletions = deletionsIterator.next();
+            actuals.remove(deletions);
+        }
         return spdx;
     }
 
