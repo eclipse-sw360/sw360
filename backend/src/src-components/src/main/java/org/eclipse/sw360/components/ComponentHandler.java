@@ -514,6 +514,14 @@ public class ComponentHandler implements ComponentService.Iface {
         return handler.importBomFromAttachmentContent(user, attachmentContentId, newReleaseVersion, releaseId);
     }
 
+
+    @Override
+    public RequestSummary exportSPDX(User user, String releaseId, String outputFormat) throws TException {
+        assertNotNull(releaseId);
+        assertUser(user);
+        return handler.exportSPDX(user, releaseId, outputFormat);
+    }
+
     @Override
     public RequestStatus splitComponent(Component srcComponent, Component targetComponent, User user) throws TException {
         assertNotNull(srcComponent);

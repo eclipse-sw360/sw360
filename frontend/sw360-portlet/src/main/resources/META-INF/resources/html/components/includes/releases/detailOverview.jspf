@@ -99,6 +99,22 @@
                                 <sw360:DisplaySubscribeButton email="<%=themeDisplay.getUser().getEmailAddress()%>" object="${release}"
                                         id="SubscribeButton" />
                             </div>
+
+                            <div id="btnExportGroup" class="btn-group" role="group">
+                                <button id="btnExport" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <liferay-ui:message key="export.spreadsheet" />
+                                    <clay:icon symbol="caret-bottom" />
+                                </button>
+                                <div class="dropdown-menu" aria-labelledby="btnExport">
+                                    <a class="dropdown-item" href="#" data-type="XLS" data-release-id="${release.id}"><liferay-ui:message key="spdx.document.xls" /></a>
+                                    <a class="dropdown-item" href="#" data-type="XML" data-release-id="${release.id}"><liferay-ui:message key="spdx.document.xml" /></a>
+                                    <a class="dropdown-item" href="#" data-type="RDF" data-release-id="${release.id}"><liferay-ui:message key="spdx.document.rdf" /></a>
+                                    <a class="dropdown-item" href="#" data-type="JSON" data-release-id="${release.id}"><liferay-ui:message key="spdx.document.json" /></a>
+                                    <a class="dropdown-item" href="#" data-type="SPDX" data-release-id="${release.id}"><liferay-ui:message key="spdx.document.spdx" /></a>
+
+                                </div>
+                            </div>
+
                             <div class="list-group-companion" data-belong-to="tab-Attachments">
                                 <core_rt:if test="${inReleaseDetailsContext}">
                                     <div class="btn-group" role="group">
@@ -263,6 +279,21 @@
             textToCopy = $(textSelector).clone().children().remove().end().text().trim();
             clipboard.copyToClipboard(textToCopy, textSelector);
         });
+
+        $('#btnExportGroup a.dropdown-item').on('click', function(event) {
+            //var releaseId = $(event.currentTarget).data('data-release-id');
+            var releaseId = $(event.currentTarget).data().releaseId;
+            exportSpreadsheet($(event.currentTarget).data('type'), releaseId);
+        });
+
+        // Export Spreadsheet action
+        function exportSpreadsheet(type, releaseId){
+            var portletURL = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>')
+                    .setParameter('<%=PortalConstants.ACTION%>', 'export-spdx')
+                    .setParameter('<%=PortalConstants.WHAT%>', type)
+                    .setParameter('<%=PortalConstants.RELEASE_ID%>', releaseId);
+            window.location.href = portletURL.toString();
+        }
 
         function doAjax(url, successCallback, errorCallback) {
             $.ajax({

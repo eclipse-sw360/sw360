@@ -77,6 +77,8 @@ import org.apache.thrift.TSerializer;
 import org.apache.thrift.protocol.TSimpleJSONProtocol;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.apache.commons.lang.StringUtils;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import javax.portlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -239,6 +241,49 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             JSONObject dataForChangeLogs = changeLogsPortletUtilsPortletUtils.serveResourceForChangeLogs(request,
                     response, action);
             writeJSON(request, response, dataForChangeLogs);
+        } else if (action.equals("export-spdx")) {
+            exportSPDX(request, response);
+        }
+    }
+    private void exportSPDX(ResourceRequest request, ResourceResponse response) {
+        final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
+        String outputFormat = request.getParameter(PortalConstants.WHAT);
+        User user = UserCacheHolder.getUserFromRequest(request);
+
+
+        String filename = releaseId + "." + outputFormat.toLowerCase();
+        try {
+            final RequestSummary requestSummary = componentClient.exportSPDX(user, releaseId, outputFormat);
+
+            if (requestSummary.getRequestStatus() == RequestStatus.SUCCESS) {
+                try {
+                    InputStream inputStream = new FileInputStream(new File(filename));
+                    PortletResponseUtil.sendFile(request, response, filename, inputStream, CONTENT_TYPE_OPENXML_SPREADSHEET);
+                    log.info("Export SPDX file success !!!");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                log.error("Failed to export SPDX file.");
+            }
+
+        } catch (TException e) {
+            log.error("Failed to export SPDX file.", e);
+        }
+
+        // delete file after user download
+        try {
+            if (outputFormat.equals("RDF")) {
+                Files.delete(Paths.get(releaseId + ".spdx"));
+            } else if (!outputFormat.equals("SPDX")) {
+                Files.delete(Paths.get(releaseId + ".spdx"));
+                Files.delete(Paths.get(releaseId + ".rdf"));
+            }
+            Files.delete(Paths.get(filename));
+        } catch (IOException e) {
+                e.printStackTrace();
+                log.error("Failed to delete files.");
         }
     }
 
