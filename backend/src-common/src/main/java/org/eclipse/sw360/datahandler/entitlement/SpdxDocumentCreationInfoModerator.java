@@ -13,10 +13,17 @@ package org.eclipse.sw360.datahandler.entitlement;
 import org.eclipse.sw360.datahandler.common.Moderator;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.Creator;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.ExternalDocumentReferences;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.apache.logging.log4j.Logger;
+
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 
@@ -26,10 +33,10 @@ import org.apache.thrift.TException;
  * @author hieu1.phamvan@toshiba.co.jp
  */
 
-public class SpdxDocumentCreationInfoModerator extends Moderator<DocumentCreationInformation._Fields, DocumentCreationInformation> {
+public class SpdxDocumentCreationInfoModerator
+        extends Moderator<DocumentCreationInformation._Fields, DocumentCreationInformation> {
 
     private static final Logger log = LogManager.getLogger(SpdxDocumentCreationInfoModerator.class);
-
 
     public SpdxDocumentCreationInfoModerator(ThriftClients thriftClients) {
         super(thriftClients);
@@ -46,7 +53,8 @@ public class SpdxDocumentCreationInfoModerator extends Moderator<DocumentCreatio
             client.createSpdxDocumentCreationInfoRequest(documentCreationInfo, user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (TException e) {
-            log.error("Could not moderate SPDX Document Creation Info " + documentCreationInfo.getId() + " for User " + user.getEmail(), e);
+            log.error("Could not moderate SPDX Document Creation Info " + documentCreationInfo.getId() + " for User "
+                    + user.getEmail(), e);
             return RequestStatus.FAILURE;
         }
     }
@@ -57,43 +65,96 @@ public class SpdxDocumentCreationInfoModerator extends Moderator<DocumentCreatio
             client.createSpdxDocumentCreationInfoDeleteRequest(documentCreationInfo, user);
             return RequestStatus.SENT_TO_MODERATOR;
         } catch (TException e) {
-            log.error("Could not moderate delete SPDX document " + documentCreationInfo.getId() + " for User " + user.getEmail(), e);
+            log.error("Could not moderate delete SPDX document creation information" + documentCreationInfo.getId() + " for User "
+                    + user.getEmail(), e);
             return RequestStatus.FAILURE;
         }
     }
 
-    public DocumentCreationInformation updateSpdxDocumentCreationInfoFromModerationRequest(DocumentCreationInformation documentCreationInfo,
-                                                      DocumentCreationInformation documentCreationInfoAdditions,
-                                                      DocumentCreationInformation documentCreationInfoDeletions) {
+    public DocumentCreationInformation updateSpdxDocumentCreationInfoFromModerationRequest(
+            DocumentCreationInformation documentCreationInfo, DocumentCreationInformation documentCreationInfoAdditions,
+            DocumentCreationInformation documentCreationInfoDeletions) {
         for (DocumentCreationInformation._Fields field : DocumentCreationInformation._Fields.values()) {
-            if(documentCreationInfoAdditions.getFieldValue(field) == null && documentCreationInfoDeletions.getFieldValue(field) == null){
+            if (documentCreationInfoAdditions.getFieldValue(field) == null
+                    && documentCreationInfoDeletions.getFieldValue(field) == null) {
                 continue;
             }
             switch (field) {
                 case ID:
                 case REVISION:
                 case TYPE:
-                case PERMISSIONS:
-                case DOCUMENT_STATE:
-                case SPDX_DOCUMENT_ID:
                     break;
-                case SPDXID:
-                case DATA_LICENSE:
-                case NAME:
-                case DOCUMENT_NAMESPACE:
                 case EXTERNAL_DOCUMENT_REFS:
-                case LICENSE_LIST_VERSION:
+                    documentCreationInfo = updateExternalDocumentRefs(documentCreationInfo, documentCreationInfoAdditions, documentCreationInfoDeletions);
+                    break;
                 case CREATOR:
-                case CREATED:
-                case CREATOR_COMMENT:
-                case DOCUMENT_COMMENT:
+                    documentCreationInfo = updateCreator(documentCreationInfo, documentCreationInfoAdditions, documentCreationInfoDeletions);
+                    break;
                 default:
-                    documentCreationInfo = updateBasicField(field, DocumentCreationInformation.metaDataMap.get(field), documentCreationInfo, documentCreationInfoAdditions, documentCreationInfoDeletions);
+                    documentCreationInfo = updateBasicField(field, DocumentCreationInformation.metaDataMap.get(field),
+                            documentCreationInfo, documentCreationInfoAdditions, documentCreationInfoDeletions);
             }
 
         }
         return documentCreationInfo;
     }
 
-}
+    private DocumentCreationInformation updateExternalDocumentRefs(DocumentCreationInformation documentCreationInfo,
+                                                                    DocumentCreationInformation documentCreationInfoAdditions,
+                                                                    DocumentCreationInformation documentCreationInfoDeletions) {
+        Set<ExternalDocumentReferences> actuals = documentCreationInfo.getExternalDocumentRefs();
+        Iterator<ExternalDocumentReferences> additionsIterator = documentCreationInfoAdditions.getExternalDocumentRefsIterator();
+        Iterator<ExternalDocumentReferences> deletionsIterator = documentCreationInfoDeletions.getExternalDocumentRefsIterator();
+        if (additionsIterator == null || deletionsIterator == null) {
+            return documentCreationInfo;
+        }
+        if (actuals == null) {
+            actuals = new HashSet<>();
+        }
+        while (additionsIterator.hasNext()) {
+            ExternalDocumentReferences additions = additionsIterator.next();
+            ExternalDocumentReferences actual = new ExternalDocumentReferences();
+            for (ExternalDocumentReferences._Fields field : ExternalDocumentReferences._Fields.values()) {
+                if (additions.isSet(field)) {
+                    actual.setFieldValue(field, additions.getFieldValue(field));
+                }
+            }
+        }
+        while (deletionsIterator.hasNext()) {
+            ExternalDocumentReferences deletions = deletionsIterator.next();
+            actuals.remove(deletions);
+        }
+        documentCreationInfo.setExternalDocumentRefs(actuals);
+        return documentCreationInfo;
+    }
 
+    private DocumentCreationInformation updateCreator(DocumentCreationInformation documentCreationInfo,
+                                    DocumentCreationInformation documentCreationInfoAdditions,
+                                    DocumentCreationInformation documentCreationInfoDeletions) {
+        Set<Creator> actuals = documentCreationInfo.getCreator();
+        Iterator<Creator> additionsIterator = documentCreationInfoAdditions.getCreatorIterator();
+        Iterator<Creator> deletionsIterator = documentCreationInfoDeletions.getCreatorIterator();
+        if (additionsIterator == null || deletionsIterator == null) {
+            return documentCreationInfo;
+        }
+        if (actuals == null) {
+            actuals = new HashSet<>();
+        }
+        while (additionsIterator.hasNext()) {
+            Creator additions = additionsIterator.next();
+            Creator actual = new Creator();
+            for (Creator._Fields field : Creator._Fields.values()) {
+                if (additions.isSet(field)) {
+                    actual.setFieldValue(field, additions.getFieldValue(field));
+                }
+            }
+        }
+        while (deletionsIterator.hasNext()) {
+            Creator deletions = deletionsIterator.next();
+            actuals.remove(deletions);
+        }
+        documentCreationInfo.setCreator(actuals);
+        return documentCreationInfo;
+    }
+
+}

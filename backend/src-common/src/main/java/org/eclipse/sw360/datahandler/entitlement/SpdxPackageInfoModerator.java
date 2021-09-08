@@ -73,9 +73,6 @@ public class SpdxPackageInfoModerator extends Moderator<PackageInformation._Fiel
                 case ID:
                 case REVISION:
                 case TYPE:
-                case PERMISSIONS:
-                case DOCUMENT_STATE:
-                case SPDX_DOCUMENT_ID:
                     break;
                 case PACKAGE_VERIFICATION_CODE:
                 case CHECKSUMS:

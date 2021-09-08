@@ -211,6 +211,7 @@ public class SpdxDocumentModerator extends Moderator<SPDXDocument._Fields, SPDXD
             SnippetInformation deletions = deletionsIterator.next();
             actuals.remove(deletions);
         }
+        spdx.setSnippets(actuals);
         return spdx;
     }
 
