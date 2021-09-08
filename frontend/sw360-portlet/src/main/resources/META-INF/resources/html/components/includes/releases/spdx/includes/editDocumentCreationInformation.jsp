@@ -1,7 +1,7 @@
 <core_rt:set var="created" value="${spdxDocumentCreationInfo.created}" />
 <core_rt:set var="creator" value="${spdxDocumentCreationInfo.creator}" />
 <core_rt:set var="externalDocumentRefs" value="${spdxDocumentCreationInfo.externalDocumentRefs}" />
-<table class="table spdx-table three-columns" id="editDocumentCreationInformation">
+<table class="table spdx-table" id="editDocumentCreationInformation">
   <thead>
     <tr>
       <th colspan="3">

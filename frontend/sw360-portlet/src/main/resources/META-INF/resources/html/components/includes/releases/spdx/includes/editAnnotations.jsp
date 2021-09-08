@@ -1,5 +1,5 @@
 <core_rt:set var="annotations" value="${spdxDocument.annotations}" />
-<table class="table three-columns" id="editAnnotations">
+<table class="table spdx-table" id="editAnnotations">
   <thead>
     <tr>
       <th colspan="3">8. Annotations</th>
