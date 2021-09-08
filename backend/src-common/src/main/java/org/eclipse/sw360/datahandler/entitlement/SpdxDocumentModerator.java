@@ -103,10 +103,7 @@ public class SpdxDocumentModerator extends Moderator<SPDXDocument._Fields, SPDXD
         Set<OtherLicensingInformationDetected> actuals = spdx.getOtherLicensingInformationDetecteds();
         Iterator<OtherLicensingInformationDetected> additionsIterator = spdxAdditions.getOtherLicensingInformationDetectedsIterator();
         Iterator<OtherLicensingInformationDetected> deletionsIterator = spdxDeletions.getOtherLicensingInformationDetectedsIterator();
-        if (additionsIterator == null) {
-            return spdx;
-        }
-        if (deletionsIterator == null) {
+        if (additionsIterator == null && deletionsIterator == null) {
             return spdx;
         }
         if (actuals == null) {
@@ -135,10 +132,7 @@ public class SpdxDocumentModerator extends Moderator<SPDXDocument._Fields, SPDXD
         Set<RelationshipsBetweenSPDXElements> actuals = spdx.getRelationships();
         Iterator<RelationshipsBetweenSPDXElements> additionsIterator = spdxAdditions.getRelationshipsIterator();
         Iterator<RelationshipsBetweenSPDXElements> deletionsIterator = spdxDeletions.getRelationshipsIterator();
-        if (additionsIterator == null) {
-            return spdx;
-        }
-        if (deletionsIterator == null) {
+        if (additionsIterator == null && deletionsIterator == null) {
             return spdx;
         }
         if (actuals == null) {
@@ -165,7 +159,7 @@ public class SpdxDocumentModerator extends Moderator<SPDXDocument._Fields, SPDXD
         Set<Annotations> actuals = spdx.getAnnotations();
         Iterator<Annotations> additionsIterator = spdxAdditions.getAnnotationsIterator();
         Iterator<Annotations> deletionsIterator = spdxDeletions.getAnnotationsIterator();
-        if (additionsIterator == null || deletionsIterator == null) {
+        if (additionsIterator == null && deletionsIterator == null) {
             return spdx;
         }
         if (actuals == null) {
@@ -192,7 +186,7 @@ public class SpdxDocumentModerator extends Moderator<SPDXDocument._Fields, SPDXD
         Set<SnippetInformation> actuals = spdx.getSnippets();
         Iterator<SnippetInformation> additionsIterator = spdxAdditions.getSnippetsIterator();
         Iterator<SnippetInformation> deletionsIterator = spdxDeletions.getSnippetsIterator();
-        if (additionsIterator == null || deletionsIterator == null) {
+        if (additionsIterator == null && deletionsIterator == null) {
             return spdx;
         }
         if (actuals == null) {
