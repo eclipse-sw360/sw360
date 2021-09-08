@@ -268,7 +268,6 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         User user = UserCacheHolder.getUserFromRequest(request);
         String attachmentContentId = request.getParameter(ATTACHMENT_CONTENT_ID);
         String newReleaseVersion = request.getParameter(NEW_RELEASE_VERSION);
-        log.info("========New release version: " + newReleaseVersion);
 
         try {
             final RequestSummary requestSummary = componentClient.importBomFromAttachmentContent(user, attachmentContentId, newReleaseVersion, null);
@@ -293,23 +292,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
         try {
             final ImportBomRequestPreparation importBomRequestPreparation = componentClient.prepareImportBom(user, attachmentContentId);
-            log.info("=========ImportBomRequestPreparation==========");
-            log.info(importBomRequestPreparation.getRequestStatus());
-            log.info(importBomRequestPreparation.isIsComponentDuplicate());
-            log.info(importBomRequestPreparation.isIsReleaseDuplicate());
-            log.info(importBomRequestPreparation.getName());
-            log.info(importBomRequestPreparation.getVersion());
             renderRequestPreparation(request, response, importBomRequestPreparation);
-
-            // final RequestSummary requestSummary = componentClient.importBomFromAttachmentContent(user, attachmentContentId);
-
-            // LiferayPortletURL releaseUrl = createDetailLinkTemplate(request);
-            // releaseUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_RELEASE_DETAIL);
-            // releaseUrl.setParameter(RELEASE_ID, requestSummary.getMessage());
-            // JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
-            // jsonObject.put("redirectUrl", releaseUrl.toString());
-
-            // renderRequestSummary(request, response, requestSummary, jsonObject);
         } catch (TException e) {
             log.error("Failed to import BOM.", e);
             response.setProperty(ResourceResponse.HTTP_STATUS_CODE, Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));

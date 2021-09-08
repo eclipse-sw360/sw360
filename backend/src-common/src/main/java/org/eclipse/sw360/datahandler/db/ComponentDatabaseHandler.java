@@ -2179,7 +2179,6 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     spdxInputStream = new FileInputStream(new File(targetFileName));
 
                     Files.delete(Paths.get(sourceFileName));
-                    Files.delete(Paths.get(targetFileName));
                 }
 
                 ImportBomRequestPreparation importBomRequestPreparation = spdxBOMImporter.prepareImportSpdxBOMAsRelease(spdxInputStream, attachmentContent);
@@ -2205,12 +2204,6 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
     }
 
-    // public RequestSummary importBomFromSpdxMap(User user, Map<String, Object> spdxMap) {
-    //     final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
-    //     final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
-    //     return spdxBOMImporter.importSpdxBOMAsRelease(spdxInputStream, attachmentContent);
-    // }
-
     public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId, String newReleaseVersion, String releaseId) throws SW360Exception {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
         final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
@@ -2225,20 +2218,14 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 if (isRdfXmlFile(fileType)) {
                     spdxInputStream = inputStream;
                 } else {
-                    final File sourceFile = DatabaseHandlerUtil.saveAsTempFile(user, inputStream, attachmentContentId, "."+fileType);
-                    final String sourceFileName = sourceFile.getPath().toString();
                     final String targetFileName = attachmentContentId + ".rdf";
-
-                    SpdxConverter.convert(sourceFile.getPath().toString(), targetFileName);
                     spdxInputStream = new FileInputStream(new File(targetFileName));
-
-                    Files.delete(Paths.get(sourceFileName));
                     Files.delete(Paths.get(targetFileName));
                 }
 
                 return spdxBOMImporter.importSpdxBOMAsRelease(spdxInputStream, attachmentContent, newReleaseVersion, releaseId);
             }
-        } catch (InvalidSPDXAnalysisException | IOException | SpdxConverterException e) {
+        } catch (InvalidSPDXAnalysisException | IOException e) {
             throw new SW360Exception(e.getMessage());
         }
     }
