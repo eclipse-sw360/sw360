@@ -49,7 +49,7 @@ public class SpdxBOMExporter {
         this.sink = sink;
     }
 
-    public RequestSummary exportSPDXFile(String releaseId, String outputFormat) throws SW360Exception, MalformedURLException, InvalidSPDXAnalysisException, URISyntaxException {
+    public RequestSummary exportSPDXFile(String releaseId, String outputFormat) throws SW360Exception, MalformedURLException, InvalidSPDXAnalysisException {
         RequestSummary requestSummary = new RequestSummary();
         SpdxDocument doc = null;
         try {
@@ -175,7 +175,7 @@ public class SpdxBOMExporter {
 		}
     }
 
-    private SpdxDocument createSpdxDocumentFromSw360Spdx(String releaseId) throws SW360Exception, MalformedURLException, InvalidSPDXAnalysisException, URISyntaxException {
+    private SpdxDocument createSpdxDocumentFromSw360Spdx(String releaseId) throws SW360Exception, InvalidSPDXAnalysisException {
         final SPDXDocument sw360SPDXDocument = getSpdxDocumentFromRelease(releaseId);
 
         SpdxDocument spdxDocument = createSpdxDocumentCreationInfoFromSw360DocumentCreationInfo(sw360SPDXDocument.getId(), sw360SPDXDocument);
@@ -297,7 +297,7 @@ public class SpdxBOMExporter {
                 null, null, null, null, null, null,null, null, null, null, null, null, null, null, null, null, null, true, null);
                 try {
                     createSpdxPackageInfoFromSw360PackageInfo(relatedSpdxPackage, SPDXDocId);
-                } catch (SW360Exception | MalformedURLException | URISyntaxException e) {
+                } catch (SW360Exception | URISyntaxException e) {
                     e.printStackTrace();
                 }
 
@@ -346,7 +346,7 @@ public class SpdxBOMExporter {
         return spdxExtractedLicenseInfo.toArray(ExtractedLicenseInfo[]::new);
     }
 
-    private SpdxDocument createSpdxDocumentCreationInfoFromSw360DocumentCreationInfo(String sw360SpdxDocId, SPDXDocument sw360SPDXDocument) throws SW360Exception, MalformedURLException, InvalidSPDXAnalysisException {
+    private SpdxDocument createSpdxDocumentCreationInfoFromSw360DocumentCreationInfo(String sw360SpdxDocId, SPDXDocument sw360SPDXDocument) throws SW360Exception, InvalidSPDXAnalysisException {
         DocumentCreationInformation sw360DocumentCreationInformation = getDocCreationInfoFromSpdxDocument(sw360SpdxDocId);        
 
         SpdxDocumentContainer documentContainer = new SpdxDocumentContainer(sw360DocumentCreationInformation.getDocumentNamespace(), sw360DocumentCreationInformation.getSpdxVersion());
@@ -400,7 +400,7 @@ public class SpdxBOMExporter {
     }
     
     
-    private void createSpdxPackageInfoFromSw360PackageInfo(SpdxPackage spdxPackage, String sw360SpdxDocId) throws SW360Exception, MalformedURLException, InvalidSPDXAnalysisException, URISyntaxException {
+    private void createSpdxPackageInfoFromSw360PackageInfo(SpdxPackage spdxPackage, String sw360SpdxDocId) throws SW360Exception, InvalidSPDXAnalysisException, URISyntaxException {
         final PackageInformation sw360PackageInfo = getPackageInformationFromSpdxDocument(sw360SpdxDocId);
 
         spdxPackage.setId(sw360PackageInfo.getSPDXID());
@@ -417,8 +417,9 @@ public class SpdxBOMExporter {
 
         spdxPackage.setFilesAnalyzed(sw360PackageInfo.isFilesAnalyzed());
 
-        SpdxPackageVerificationCode packageVerificationCode = new SpdxPackageVerificationCode(null, sw360PackageInfo.getPackageVerificationCode().getExcludedFiles().toArray(String[]::new));
-        packageVerificationCode.setValue(sw360PackageInfo.getPackageVerificationCode().getValue());
+        SpdxPackageVerificationCode packageVerificationCode = new SpdxPackageVerificationCode(sw360PackageInfo.getPackageVerificationCode().getValue(),
+        sw360PackageInfo.getPackageVerificationCode().getExcludedFiles().toArray(String[]::new));
+        //packageVerificationCode.setValue(sw360PackageInfo.getPackageVerificationCode().getValue());
         spdxPackage.setPackageVerificationCode(packageVerificationCode);
 
         spdxPackage.setHomepage(sw360PackageInfo.getHomepage());

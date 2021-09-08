@@ -2204,7 +2204,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             final SpdxBOMExporter spdxBOMExporter = new SpdxBOMExporter(spdxBOMExporterSink);
             try {
                 return spdxBOMExporter.exportSPDXFile(releaseId, outputFormat);
-            } catch (InvalidSPDXAnalysisException | URISyntaxException e) {
+            } catch (InvalidSPDXAnalysisException e) {
                 e.printStackTrace();
             }
         } catch (IOException e) {
