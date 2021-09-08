@@ -55,6 +55,25 @@ include::{snippets}/should_document_get_projects_with_all_details/http-response.
 ===== Links
 include::{snippets}/should_document_get_projects_with_all_details/links.adoc[]
 
+[[resources-projects-list-by-lucene-search]]
+==== Listing by lucene search
+
+A `GET` request will list all of the service's projects by lucene search.
+
+===== Request parameter
+include::{snippets}/should_document_get_projects_by_lucene_search/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_projects_by_lucene_search/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_projects_by_lucene_search/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_projects_by_lucene_search/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_projects_by_lucene_search/links.adoc[]
 
 [[resources-projects-list-by-name]]
 ==== Listing by name

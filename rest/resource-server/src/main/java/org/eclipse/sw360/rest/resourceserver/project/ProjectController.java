@@ -26,6 +26,7 @@ import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
+import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
@@ -108,11 +109,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.wrapThriftOptionalReplacement;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapException;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
@@ -178,40 +181,69 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
             @RequestParam(value = "group", required = false) String group,
             @RequestParam(value = "tag", required = false) String tag,
             @RequestParam(value = "allDetails", required = false) boolean allDetails,
+            @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
             HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Map<String, Project> mapOfProjects = new HashMap<>();
         boolean isSearchByName = name != null && !name.isEmpty();
         List<Project> sw360Projects = new ArrayList<>();
-        if (isSearchByName) {
-            sw360Projects.addAll(projectService.searchProjectByName(name, sw360User));
-        } else {
-            sw360Projects.addAll(projectService.getProjectsForUser(sw360User));
-        }
+        Map<String, Set<String>> filterMap = new HashMap<>();
+        if (luceneSearch) {
+            if (CommonUtils.isNotNullEmptyOrWhitespace(projectType)) {
+                Set<String> values = CommonUtils.splitToSet(projectType);
+                filterMap.put(Project._Fields.PROJECT_TYPE.getFieldName(), values);
+            }
+            if (CommonUtils.isNotNullEmptyOrWhitespace(group)) {
+                Set<String> values = CommonUtils.splitToSet(group);
+                filterMap.put(Project._Fields.BUSINESS_UNIT.getFieldName(), values);
+            }
+            if (CommonUtils.isNotNullEmptyOrWhitespace(tag)) {
+                Set<String> values = CommonUtils.splitToSet(tag);
+                filterMap.put(Project._Fields.TAG.getFieldName(), values);
+            }
 
+            if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
+                Set<String> values = CommonUtils.splitToSet(name);
+                values = values.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery)
+                        .collect(Collectors.toSet());
+                filterMap.put(Project._Fields.NAME.getFieldName(), values);
+            }
+
+            sw360Projects.addAll(projectService.refineSearch(filterMap, sw360User));
+        } else {
+            if (isSearchByName) {
+                sw360Projects.addAll(projectService.searchProjectByName(name, sw360User));
+            } else {
+                sw360Projects.addAll(projectService.getProjectsForUser(sw360User));
+            }
+        }
         sw360Projects.stream().forEach(prj -> mapOfProjects.put(prj.getId(), prj));
         PaginationResult<Project> paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Projects, SW360Constants.TYPE_PROJECT);
 
         List<Resource<Project>> projectResources = new ArrayList<>();
-        paginationResult.getResources().stream()
-                .filter(project -> projectType == null || projectType.equals(project.projectType.name()))
-                .filter(project -> group == null || group.isEmpty() || group.equals(project.getBusinessUnit()))
-                .filter(project -> tag == null || tag.isEmpty() || tag.equals(project.getTag()))
-                .forEach(p -> {
-                    Resource<Project> embeddedProjectResource = null;
-                    if (!allDetails) {
-                        Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
-                        embeddedProjectResource = new Resource<>(embeddedProject);
-                    } else {
-                        embeddedProjectResource = createHalProjectResourceWithAllDetails(p, sw360User, mapOfProjects,
-                                !isSearchByName);
-                        if (embeddedProjectResource == null) {
-                            return;
-                        }
-                    }
-                    projectResources.add(embeddedProjectResource);
-                });
+        Consumer<Project> consumer = p -> {
+            Resource<Project> embeddedProjectResource = null;
+            if (!allDetails) {
+                Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
+                embeddedProjectResource = new Resource<>(embeddedProject);
+            } else {
+                embeddedProjectResource = createHalProjectResourceWithAllDetails(p, sw360User, mapOfProjects,
+                        !isSearchByName);
+                if (embeddedProjectResource == null) {
+                    return;
+                }
+            }
+            projectResources.add(embeddedProjectResource);
+        };
 
+        if (luceneSearch) {
+            paginationResult.getResources().stream().forEach(consumer);
+        } else {
+            paginationResult.getResources().stream()
+                    .filter(project -> projectType == null || projectType.equals(project.projectType.name()))
+                    .filter(project -> group == null || group.isEmpty() || group.equals(project.getBusinessUnit()))
+                    .filter(project -> tag == null || tag.isEmpty() || tag.equals(project.getTag())).forEach(consumer);
+        }
         Resources resources;
         if (projectResources.size() == 0) {
             resources = restControllerHelper.emptyPageResource(Project.class, paginationResult);
