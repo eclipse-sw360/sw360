@@ -1537,7 +1537,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         Set<UserGroup> allSecRoles = !CommonUtils.isNullOrEmptyMap(userFromRequest.getSecondaryDepartmentsAndRoles())
                 ? userFromRequest.getSecondaryDepartmentsAndRoles().entrySet().stream().flatMap(entry -> entry.getValue().stream()).collect(Collectors.toSet())
                 : new HashSet<UserGroup>();
-        if (PermissionUtils.isAdmin(userFromRequest) || PermissionUtils.isAdminBySecondaryRoles(allSecRoles)) {
+        if (PermissionUtils.isAdmin(userFromRequest) || PermissionUtils.isAdminBySecondaryRoles(allSecRoles) || PermissionUtils.isSecurityAdmin(userFromRequest) || PermissionUtils.isSecurityAdminBySecondaryRoles(allSecRoles)) {
             long numberOfIncorrectVuls = vuls.stream()
                     .filter(v -> VerificationState.INCORRECT.equals(getVerificationState(v)))
                     .map(VulnerabilityDTO::getExternalId)
