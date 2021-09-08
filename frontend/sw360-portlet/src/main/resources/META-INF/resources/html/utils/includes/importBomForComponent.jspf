@@ -102,6 +102,12 @@
                     var data = dialogDiv.data();
                     var portletNamespace = data.portletNamespace;
 
+                    if ($('#importSBOM').length > 0) $('#importSBOM').remove();
+                    if ($('#importSBOMAsNew').length > 0) $('#importSBOMAsNew').remove();
+                    statusDiv.html("");
+                    contentDiv.show();
+                    var attachmentContentId = "";
+
                     var urls = {};
                     urls.newAttachment = data.newAttachmentUrl;
                     urls.uploadAttachmentPart = data.uploadAttachmentPartUrl;
@@ -187,7 +193,7 @@
                     r.on('fileSuccess', function (file) {
                         console.log("fileSuccess...");
                         statusDiv.html("<h2>Importing ...</h2>");
-                        var attachmentContentId = file.uniqueIdentifier;
+                        attachmentContentId = file.uniqueIdentifier;
                         prepareImportBom(attachmentContentId).then(function (data) {
                             console.log("prepareImportsuccess...");
                             if (neededKeys.every(key => Object.keys(data).includes(key))) {
@@ -219,9 +225,8 @@
                                     $('#spdxBomUploadAction').prepend(importAsNewBtn)
                                 }
                                 $('#importSBOM').on('click', function() {
-                                    console.log('import SBOM');
+                                    if (attachmentContentId === "") return;
                                     importBomFromAttachment(attachmentContentId).then(function (data) {
-                                        console.log('Call import SBOM function');
                                         statusDiv.html("<h2>Imported</h2>");
                                         if ('redirectUrl' in data) {
                                             statusDiv.append("<div>Created as <a href=\"" + data.redirectUrl + "\">" + data.message + "</a>, redirecting ...</div>");
@@ -233,9 +238,8 @@
                                     });
                                 });
                                 $('#importSBOMAsNew').on('click', function() {
-                                    console.log('import SBOM as New');
+                                    if (attachmentContentId === "") return;
                                     importBomAsNewFromAttachment(attachmentContentId, componentVersion+"-sbom-"+attachmentContentId.substring(0,6)).then(function (data) {
-                                        console.log('Call import SBOM as New function');
                                         statusDiv.html("<h2>Imported</h2>");
                                         if ('redirectUrl' in data) {
                                             statusDiv.append("<div>Created as <a href=\"" + data.redirectUrl + "\">" + data.message + "</a>, redirecting ...</div>");
@@ -247,10 +251,14 @@
                                     });
                                 });
                             } else {
+                                if ($('#importSBOM').length > 0) $('#importSBOM').remove();
+                                if ($('#importSBOMAsNew').length > 0) $('#importSBOMAsNew').remove();
                                 statusDiv.append("<div>" + JSON.stringify(data) + "</div>");
                                 contentDiv.show();
                             }
                         }).catch(function (err) {
+                            if ($('#importSBOM').length > 0) $('#importSBOM').remove();
+                            if ($('#importSBOMAsNew').length > 0) $('#importSBOMAsNew').remove();
                             statusDiv.html("<h2>Failed :(</h2>");
                             statusDiv.append("<div>" + JSON.stringify(err) + "</div>");
                             contentDiv.show();
