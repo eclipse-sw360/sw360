@@ -1,7 +1,7 @@
 <core_rt:if test="${not spdxPackageInfo.isEmpty()}">
   <core_rt:set var="package" value="${spdxPackageInfo.iterator().next()}" />
 </core_rt:if>
-<table class="table spdx-table three-columns" id="editPackageInformation">
+<table class="table spdx-table" id="editPackageInformation">
   <thead>
     <tr>
       <th colspan="3">3. Package Information</th>

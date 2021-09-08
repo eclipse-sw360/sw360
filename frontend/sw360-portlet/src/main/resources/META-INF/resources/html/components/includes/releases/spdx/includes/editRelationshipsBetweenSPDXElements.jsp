@@ -1,5 +1,5 @@
 <core_rt:set var="relationships" value="${spdxDocument.relationships}" />
-<table class="table three-columns" id="editRelationshipsBetweenSPDXElements">
+<table class="table spdx-table" id="editRelationshipsBetweenSPDXElements">
   <thead>
     <tr>
       <th colspan="3">7. Relationships between SPDX Elements</th>

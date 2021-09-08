@@ -1,5 +1,5 @@
 <core_rt:set var="otherLicensing" value="${spdxDocument.otherLicensingInformationDetecteds}" />
-<table class="table" id="editOtherLicensingInformationDetected">
+<table class="table spdx-table" id="editOtherLicensingInformationDetected">
   <thead>
     <tr>
       <th colspan="3">6. Other Licensing Information Detected</th>

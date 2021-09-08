@@ -136,7 +136,7 @@
 </form>
 
 <script>
-  require(['jquery', 'components/includes/releases/spdxjs', 'components/includes/releases/test2'], function ($, spdxjs, test2) {
+  require(['jquery', 'components/includes/releases/spdxjs'], function ($, spdxjs) {
     function initDocumentCreation() {
       if (documentCreationInformationObj['spdxVersion'].startsWith('SPDX-')) {
         $('#spdxVersion').val(documentCreationInformationObj['spdxVersion'].substr(5).trim());
@@ -181,6 +181,7 @@
     });
     // 2.6 External Document References
     $('[name=add-externalDocRef]').on('click', function (e) {
+      e.preventDefault();
       let newObj = { 'externalDocumentId': '', 'checksum': { 'algorithm': '', 'checksumValue': '' }, 'spdxDocument': '' };
       documentCreationInformationObj.externalDocumentRefs.push(newObj);
       spdxjs.addMain($(this));
@@ -295,6 +296,8 @@
     // ------------------------- 8 Annotations
     // Add data
     $('[name=add-annotation]').on('click', function(e) {
+      e.preventDefault();
+
       let newObj = { 'annotator': '', 'annotationDate': '', 'annotationType': '', 'annotationComment': '', 'spdxRef': '' };
 
       let source = getAnnotationsSource();
@@ -370,6 +373,8 @@
     }
   }
   $('[name=add-otherLicensing]').on('click', function(e) {
+    e.preventDefault();
+
     let newObj = { 'licenseId': '', 'extractedText': '', 'licenseName': '', 'licenseCrossRefs': [] };
     spdxDocumentObj.otherLicensingInformationDetecteds.push(newObj);
     spdxjs.addMain($(this));
@@ -428,6 +433,8 @@
   }
 
   $('[name=add-relationship]').on('click', function(e) {
+    e.preventDefault();
+
     let newObj = { 'spdxElementId': '', 'relationshipType': '', 'relatedSpdxElement': '', 'relationshipComment': '' };
     spdxDocumentObj.relationships.push(newObj);
     spdxjs.addMain($(this));
@@ -480,6 +487,8 @@
   // ------------------------- 5 Snippet Information
   // Add data
   $('[name=add-snippet]').on('click', function(e) {
+    e.preventDefault();
+
     let newObj = { 'SPDXID': '', 'snippetFromFile': '', 'snippetRanges': [], 'licenseConcluded': [], 'licenseInfoInSnippets': [], 'licenseComments': '', 'copyrightText': '', 'comment': '', 'name': '', 'snippetAttributionText': ''};
     spdxDocumentObj.snippets.push(newObj);
     spdxjs.addMain($(this));
@@ -670,10 +679,12 @@
     // ------------------------- 3.21 External References
     // Add data
     $('[name=add-externalRef]').on('click', function(e) {
-        let newObj = { 'referenceCategory': 'referenceCategory_security', 'referenceLocator': '', 'referenceType': 'cpe22Type', 'comment': '' };
-        packageInformationObj.externalRefs.push(newObj);
-        spdxjs.addMain($(this));
-        $('#externalReferences').change();
+      e.preventDefault();
+
+      let newObj = { 'referenceCategory': 'referenceCategory_security', 'referenceLocator': '', 'referenceType': 'cpe22Type', 'comment': '' };
+      packageInformationObj.externalRefs.push(newObj);
+      spdxjs.addMain($(this));
+      $('#externalReferences').change();
     });
 
     // Delete data
