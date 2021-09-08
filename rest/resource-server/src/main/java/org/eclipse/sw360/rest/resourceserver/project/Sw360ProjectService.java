@@ -26,6 +26,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -108,7 +109,22 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public Set<Project> getProjectsForUser(User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        return sw360ProjectClient.getAccessibleProjects(sw360User);
+        int total = sw360ProjectClient.getMyAccessibleProjectCounts(sw360User);
+        PaginationData pageData = new PaginationData();
+        pageData.setAscending(true);
+        Map<PaginationData, List<Project>> pageDtToProjects;
+        Set<Project> projects = new HashSet<>();
+        int displayStart = 0;
+        int rowsPerPage = 500;
+        while (0 < total) {
+            pageData.setDisplayStart(displayStart);
+            pageData.setRowsPerPage(rowsPerPage);
+            displayStart = displayStart + rowsPerPage;
+            pageDtToProjects = sw360ProjectClient.getAccessibleProjectsSummaryWithPagination(sw360User, pageData);
+            projects.addAll(pageDtToProjects.entrySet().iterator().next().getValue());
+            total = total - rowsPerPage;
+        }
+        return projects;
     }
 
     public Project getProjectForUserById(String projectId, User sw360User) throws TException {
