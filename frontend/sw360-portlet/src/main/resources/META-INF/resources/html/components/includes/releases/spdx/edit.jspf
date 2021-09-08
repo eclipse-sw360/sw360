@@ -113,6 +113,10 @@
   #spdxLiteMode {
     margin-left: -1px !important;
   }
+
+  input[type=date] {
+    margin-right: 1rem;
+  }
 </style>
 
 <script>
@@ -162,7 +166,7 @@
         // Need to fill the current user of SW360
       } else {
         for (let i = 0; i < documentCreationInformationObj.creator.length; i++) {
-          $('.spdx-add-button-sub-creator').first().click();
+          spdxjs.addSub($('.spdx-add-button-sub-creator').first());
           $('.creator-type').last().val(documentCreationInformationObj.creator[i].type);
           $('.creator-value').last().val(documentCreationInformationObj.creator[i].value);
         }
