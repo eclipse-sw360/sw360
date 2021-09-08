@@ -1,168 +1,806 @@
-<%--
-  ~ Copyright Toshiba corporation, 2021. Part of the SW360 Portal Project.
-  ~ Copyright Toshiba Software Development (Vietnam) Co., Ltd., 2021. Part of the SW360 Portal Project.
-  ~
-  ~ This program and the accompanying materials are made
-  ~ available under the terms of the Eclipse Public License 2.0
-  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
-  ~
-  ~ SPDX-License-Identifier: EPL-2.0
---%>
-
-
 <style>
-    table {
-        border-collapse: collapse !important;
-        border: none;
-    }
+  table {
+    border-collapse: collapse !important;
+    border: none;
+  }
 
-    tr, td {
-        border: none;
-        border-top-width: 0 !important;
-    }
+  tr,
+  td {
+    border: none;
+    border-top-width: 0 !important;
+  }
 
-    .radio-label {
-        vertical-align: text-bottom !important;
-    }
+  .radio-label {
+    vertical-align: text-bottom !important;
+  }
+
+  .sub-label {
+    margin-right: 0.5rem;
+    margin-top: 0.5rem;
+    font-weight: 400;
+    font-size: 1rem;
+  }
+
+  .sub-title {
+    width: 10rem;
+    margin-top: 0.7rem;
+    margin-right: 1rem;
+  }
+
+  .sub-input {
+    width: auto;
+  }
+
+  .spdx-checkbox {
+    margin-top: 0.75rem;
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .spdx-select {
+    width: auto;
+    flex: auto;
+    margin-right: 2rem;
+  }
+
+  .spdx-radio {
+    margin-top: 0.75rem;
+    margin-right: 0.5rem;
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .spdx-date {
+    width: 12rem;
+    text-align: center;
+  }
+
+  .spdx-time {
+    width: 12rem;
+    text-align: center;
+    margin-left: 0.6rem;
+  }
+
+  .label-select {
+    flex: 1;
+    text-decoration: underline;
+  }
+
+  .spdx-delete-icon-main {
+    margin-top: 0.3rem;
+    margin-right: 1rem;
+    width: 1rem;
+    height: auto;
+
+    cursor: pointer;
+  }
+
+  .spdx-delete-icon-sub {
+    margin-top: 0.3rem;
+    margin-right: 4rem;
+    width: 1rem;
+    height: auto;
+
+    cursor: pointer;
+  }
+
+  .spdx-add-button-main {
+    margin-left: 11rem;
+    margin-bottom: 2rem;
+    width: 10rem;
+  }
+
+  .spdx-add-button-sub {
+    width: 10rem;
+  }
+
+  thead {
+    cursor: pointer;
+  }
+
+  .spdx-table .form-group {
+    margin-right: 1rem;
+  }
+
+  .spdx-table textarea {
+    margin-left: 0 !important;
+  }
+
+  .spdx-table .form-control {
+    margin-left: 0 !important;
+  }
+
+  #spdxLiteMode {
+    margin-left: -1px !important;
+  }
 </style>
 
-<%@include file="/html/components/includes/releases/spdx/includes/script.jsp" %>
-
 <script>
-    let spdxDocumentObj = jQuery.parseJSON(spdxDocument);
-    let packageInformationObj = jQuery.parseJSON(packageInformation);
-    let documentCreationInformationObj = jQuery.parseJSON(documentCreationInformation);
+  let spdxDocumentObj = jQuery.parseJSON(JSON.stringify(${ spdxDocumentJson }));
+  let packageInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
+  let documentCreationInformationObj = jQuery.parseJSON(JSON.stringify(${ documentCreationInfoJson }));
 </script>
 
 <%@include file="/html/utils/includes/requirejs.jspf" %>
 <form id="editSPDXForm" name="editSPDXForm" class="form needs-validation" novalidate>
-    <div class="form-group btn-group">
-        <button id="spdxFullMode" class="btn btn-info">SPDX Full</button>
-        <button id="spdxLiteMode" class="btn btn-secondary">SPDX Lite</button>
-    </div>
-    <%@include file="/html/components/includes/releases/spdx/includes/editDocumentCreationInformation.jsp" %>
-    <%@include file="/html/components/includes/releases/spdx/includes/editPackageInformation.jsp" %>
-    <%@include file="/html/components/includes/releases/spdx/includes/editSnippetInformation.jsp" %>
-    <%@include file="/html/components/includes/releases/spdx/includes/editOtherLicensingInformationDetected.jsp" %>
-    <%@include file="/html/components/includes/releases/spdx/includes/editRelationshipsBetweenSPDXElements.jsp" %>
-    <%@include file="/html/components/includes/releases/spdx/includes/editAnnotations.jsp" %>
+  <div class="form-group btn-group">
+    <button id="spdxFullMode" class="btn btn-info">SPDX Full</button>
+    <button id="spdxLiteMode" class="btn btn-secondary">SPDX Lite</button>
+  </div>
+  <%@include file="/html/components/includes/releases/spdx/includes/editDocumentCreationInformation.jsp" %>
+  <%@include file="/html/components/includes/releases/spdx/includes/editPackageInformation.jsp" %>
+  <%@include file="/html/components/includes/releases/spdx/includes/editSnippetInformation.jsp" %>
+  <%@include file="/html/components/includes/releases/spdx/includes/editOtherLicensingInformationDetected.jsp" %>
+  <%@include file="/html/components/includes/releases/spdx/includes/editRelationshipsBetweenSPDXElements.jsp"%>
+  <%@include file="/html/components/includes/releases/spdx/includes/editAnnotations.jsp" %>
 </form>
 
 <script>
-    require(['jquery', /* jquery-plugins */ 'jquery-ui'], function($) {
-        // $(".datepicker").datepicker({changeMonth:true,changeYear:true,dateFormat: "yy-mm-dd"});
-
-        $('#spdxFullMode').on('click', function (e) {
-            e.preventDefault();
-
-            $(this).addClass('btn-info');
-            $(this).removeClass('btn-secondary');
-
-            $('#spdxLiteMode').addClass('btn-secondary');
-            $('#spdxLiteMode').removeClass('btn-info');
-
-            $('.spdx-full').css('display', '');
-        });
-
-        $('#spdxLiteMode').on('click', function (e) {
-            e.preventDefault();
-
-            $(this).addClass('btn-info');
-            $(this).removeClass('btn-secondary');
-
-            $('#spdxFullMode').addClass('btn-secondary');
-            $('#spdxFullMode').removeClass('btn-info');
-
-            $('.spdx-full').css('display', 'none');
-        });
-
-        $('.spdx-table button').on('click', function (e) {
-            e.preventDefault();
-        });
-
-        $('.spdx-add-button-main').on('click', function (e) {
-            e.preventDefault();
-        })
-
-        $('.spdx-add-button-sub').on('click', function (e) {
-            e.preventDefault();
-        })
-
-        $(function() {
-            // Expand/collapse section when click on the header
-            $('thead').on('click', function () {
-                if ($(this).next().css('display') == 'none') {
-                    $(this).next().css('display', '');
-                } else {
-                    $(this).next().css('display', 'none');
-                }
-            });
-
-            $('.spdx-radio').on('change', function () {
-                updateRadioButton($(this));
-            });
-
-            $('.section').find('input, select, textarea').not('spdx-select').on('change keyup', function() {
-                if ($(this).hasClass('spdx-select')) {
-                    return;
-                }
-
-                if ($(this).is('select') && !$(this).is(":focus")) {
-                    return;
-                }
-
-                // Store 2.6
-                let index = $('#externalDocumentRefs')[0].selectedIndex;
-                storeExternalDocRef(index);
-
-                // Store 3.21
-                index = $('#externalReferences')[0].selectedIndex;
-                storeExternalRef(index);
-
-                // Store 5
-                index = $('#selectSnippet')[0].selectedIndex;
-                storeSnippet(index);
-
-                // Store 6
-                index = $('#selectOtherLicensing')[0].selectedIndex;
-                storeOtherLicensing(index);
-
-                // Store 7
-                index = $('#selectRelationship')[0].selectedIndex;
-                storeRelationship(index);
-
-                // Store 8
-                index = $('#selectAnnotation')[0].selectedIndex;
-                storeAnnotation(index);
-            });
-
-            function initialize() {
-                initDocumentCreation();
-
-                initPackageInfo();
-
-                initSnippetInfo();
-
-                initOtherLicensing();
-
-                initRelationships();
-
-                initAnnotations();
-            }
-
-            // -------------------------Store data
-            function store() {
-                // 2
-                storeDocumentCreation();
-
-                // 3
-                storePackageInfo();
-
-                // 5, 6, 7, 8: auto
-            }
-
-            initialize();
-            // store();     // Call when submit the form
-        });
+  require(['jquery', 'components/includes/releases/spdxjs', 'components/includes/releases/test2'], function ($, spdxjs, test2) {
+    function initDocumentCreation() {
+      if (documentCreationInformationObj['spdxVersion'].startsWith('SPDX-')) {
+        $('#spdxVersion').val(documentCreationInformationObj['spdxVersion'].substr(5).trim());
+      } else {
+        $('#spdxVersion').val('SPDX-2.2');
+      }
+      if (documentCreationInformationObj['dataLicense'] == '') {
+        $('#dataLicense').val('CC0-1.0');
+      }
+      if (documentCreationInformationObj['SPDXID'].startsWith('SPDXRef-')) {
+        $('#spdxIdentifier').val(documentCreationInformationObj['SPDXID'].substr(8).trim());
+      } else {
+        $('#spdxIdentifier').val('DOCUMENT');
+      }
+      if (documentCreationInformationObj.externalDocumentRefs.length == 0) {
+        spdxjs.enableSection($('.section-external-doc-ref'), false);
+      } else {
+        spdxjs.fillSelectbox('#externalDocumentRefs', documentCreationInformationObj.externalDocumentRefs.length);
+        fillExternalDocRef(0);
+      }
+      if (documentCreationInformationObj.creator.length == 0) {
+        console.log("Creator null");
+        // Need to fill the current user of SW360
+      } else {
+        for (let i = 0; i < documentCreationInformationObj.creator.length; i++) {
+          $('.spdx-add-button-sub-creator').first().click();
+          $('.creator-type').last().val(documentCreationInformationObj.creator[i].type);
+          $('.creator-value').last().val(documentCreationInformationObj.creator[i].value);
+        }
+      }
+      if (documentCreationInformationObj.created == '') {
+        spdxjs.fillDateTime('#createdDate', '#createdTime', (new Date().toISOString()));
+      } else {
+        spdxjs.fillDateTime('#createdDate', '#createdTime', documentCreationInformationObj.created);
+      }
+    }
+    $('[name=add-spdx-creator]').on('click', function (e) {
+      spdxjs.addSub($(this));
     });
+    $('[name=delete-spdx-creator]').on('click', function (e) {
+      spdxjs.deleteSub($(this));
+    });
+    // 2.6 External Document References
+    $('[name=add-externalDocRef]').on('click', function (e) {
+      let newObj = { 'externalDocumentId': '', 'checksum': { 'algorithm': '', 'checksumValue': '' }, 'spdxDocument': '' };
+      documentCreationInformationObj.externalDocumentRefs.push(newObj);
+      spdxjs.addMain($(this));
+      $('#externalDocumentRefs').change();
+    });
+    $('[name=delete-externalDocRef').on('click', function (e) {
+      let selectedIndex = $('#externalDocumentRefs')[0].selectedIndex;
+      documentCreationInformationObj.externalDocumentRefs.splice(selectedIndex, 1);
+      spdxjs.deleteMain($(this));
+    });
+    $('#externalDocumentRefs').on('change', function (e) {
+      let selectedIndex = $('#externalDocumentRefs')[0].selectedIndex;
+      fillExternalDocRef(selectedIndex);
+    });
+    function fillExternalDocRef(index) {
+      index = $('#externalDocumentRefs')[0].selectedIndex;
+
+      let obj = documentCreationInformationObj.externalDocumentRefs[index];
+
+      $('#externalDocumentId').val(obj['externalDocumentId']);
+
+      $('#externalDocument').val(obj['spdxDocument']);
+
+      if (obj['checksum']['algorithm'].startsWith('checksumAlgorithm_')) {
+        $('#checksumAlgorithm').val(obj['checksum']['algorithm'].substr(18));
+      } else {
+        $('#checksumAlgorithm').val('');
+      }
+
+      $('#checksumValue').val(obj['checksum']['checksumValue']);
+    }
+
+    function storeExternalDocRef(index) {
+      let obj = documentCreationInformationObj.externalDocumentRefs[index];
+
+      obj['externalDocumentId'] = $('#externalDocumentId').val().trim();
+      obj['spdxDocument'] = $('#externalDocument').val().trim();
+
+      let algorithm = $('#checksumAlgorithm').val().trim();
+      let checksumValue = $('#checksumValue').val().trim();
+
+      if (algorithm == '' || checksumValue == '') {
+        obj['checksum']['algorithm'] = '';
+        obj['checksum']['checksumValue'] = '';
+      } else {
+        obj['checksum']['algorithm'] = 'checksumAlgorithm_' + algorithm;
+        obj['checksum']['checksumValue'] = checksumValue;
+      }
+    }
+
+    function storeDocumentCreation() {
+      if ($('#spdxVersion').val().trim() == '') {
+        documentCreationInformationObj['spdxVersion'] = 'SPDX-2.2';
+      } else {
+        documentCreationInformationObj['spdxVersion'] = 'SPDX-' + $('#spdxVersion').val().trim();
+      }
+      if ($('#dataLicense').val().trim() == '') {
+        documentCreationInformationObj['dataLicense'] = 'CC0-1.0';
+      } else {
+        documentCreationInformationObj['dataLicense'] = $('#dataLicense').val().trim();
+      }
+      if ($('#spdxIdentifier').val().trim() == '') {
+        documentCreationInformationObj['SPDXID'] = 'SPDXRef-DOCUMENT';
+      } else {
+        documentCreationInformationObj['SPDXID'] = 'SPDXRef-' + $('#spdxIdentifier').val().trim();
+      }
+      documentCreationInformationObj['name'] = $('#documentName').val().trim();
+      documentCreationInformationObj['documentNamespace'] = $('#documentNamespace').val().trim();
+      documentCreationInformationObj['licenseListVersion'] = $('#licenseListVersion').val().trim();
+      documentCreationInformationObj.creator = [];
+      $('[name=creatorRow]').each(function () {
+        if ($(this).find('.creator-type').first().attr('disabled')) {
+          return;
+        }
+
+        let creatorType = $(this).find('.creator-type').first().val().trim();
+        let creatorValue = $(this).find('.creator-value').first().val().trim();
+
+        if (creatorValue != '') {
+          documentCreationInformationObj.creator.push({ 'type': creatorType, 'value': creatorValue });
+        }
+      })
+
+      if (documentCreationInformationObj.creator.length == 0) {
+        // Fill the current user of SW360
+      }
+      documentCreationInformationObj['created'] = spdxjs.readDateTime('#createdDate', '#createdTime');
+      if (documentCreationInformationObj['created'] == '') {
+        documentCreationInformationObj['created'] = (new Date()).toISOString();
+      }
+    }
+    /// Annotations
+      function initAnnotations() {
+      let source = getAnnotationsSource();
+
+      if (source.length == 0) {
+        spdxjs.enableSection($('.section-annotation'), false);
+      } else {
+        spdxjs.fillSelectbox('#selectAnnotation', source.length);
+        fillAnnotation(source, 0);
+      }
+    }
+
+    function getAnnotationsSource() {
+      if ($('#selectAnnotationSource').val() == 'Package') {
+        return packageInformationObj.annotations;
+      }
+
+      return spdxDocumentObj.annotations;
+    }
+
+    // ------------------------- 8 Annotations
+    // Add data
+    $('[name=add-annotation]').on('click', function(e) {
+      let newObj = { 'annotator': '', 'annotationDate': '', 'annotationType': '', 'annotationComment': '', 'spdxRef': '' };
+
+      let source = getAnnotationsSource();
+
+      source.push(newObj);
+
+      spdxjs.addMain($(this));
+
+      $('#selectAnnotation').change();
+    });
+
+    // Delete data
+    $('[name=delete-annotation').on('click', function(e) {
+      let source = getAnnotationsSource();
+
+      let selectedIndex = $('#selectAnnotation')[0].selectedIndex;
+
+      source.splice(selectedIndex, 1);
+
+      spdxjs.deleteMain($(this));
+    });
+
+  // Change data
+  $('#selectAnnotationSource').on('change', function() {
+    initAnnotations();
+  });
+
+  $('#selectAnnotation').on('change', function(e) {
+    let source = getAnnotationsSource();
+
+    let selectedIndex = $('#selectAnnotation')[0].selectedIndex;
+
+    fillAnnotation(source, selectedIndex);
+  });
+
+  function fillAnnotation(source, index) {
+    let obj = source[index];
+
+    spdxjs.fillAnnotator('#annotatorType', obj['annotator']);
+
+    spdxjs.fillDateTime('#annotationCreatedDate', '#annotationCreatedTime', obj['annotationDate']);
+
+    $('#annotationType').val(obj['annotationType']);
+
+    $('#spdxIdRef').val(obj['spdxRef']);
+
+    $('#annotationComment').val(obj['annotationComment']);
+  }
+
+  function storeAnnotation(index) {
+    let source = getAnnotationsSource();
+    let obj = source[index];
+
+    if ($('#annotatorValue').val().trim() != '') {
+      obj['annotator'] = $('#annotatorType').val() + ': ' + $('#annotatorValue').val().trim();
+    } else {
+      obj['annotator'] = '';
+    }
+
+    obj['annotationDate'] = spdxjs.readDateTime('#annotationCreatedDate', '#annotationCreatedTime');
+
+    obj['annotationType'] = $('#annotationType').val().trim();
+    obj['spdxRef'] = $('#spdxIdRef').val().trim();
+    obj['annotationComment'] = $('#annotationComment').val().trim();
+  }
+  /// Other Licensing
+  function initOtherLicensing() {
+    if (spdxDocumentObj.otherLicensingInformationDetecteds.length == 0) {
+      spdxjs.enableSection($('.section-other-licensing'), false);
+    } else {
+      spdxjs.fillSelectbox('#selectOtherLicensing', spdxDocumentObj.otherLicensingInformationDetecteds.length);
+      fillOtherLicensing(0);
+    }
+  }
+  $('[name=add-otherLicensing]').on('click', function(e) {
+    let newObj = { 'licenseId': '', 'extractedText': '', 'licenseName': '', 'licenseCrossRefs': [] };
+    spdxDocumentObj.otherLicensingInformationDetecteds.push(newObj);
+    spdxjs.addMain($(this));
+    $('#selectOtherLicensing').change();
+  });
+  $('[name=delete-otherLicensing').on('click', function(e) {
+    let selectedIndex = $('#selectOtherLicensing')[0].selectedIndex;
+    spdxDocumentObj.otherLicensingInformationDetecteds.splice(selectedIndex, 1);
+    spdxjs.deleteMain($(this));
+  });
+  $('#selectOtherLicensing').on('change', function(e) {
+    let selectedIndex = $('#selectOtherLicensing')[0].selectedIndex;
+    fillOtherLicensing(selectedIndex);
+  });
+
+  function fillOtherLicensing(index) {
+    let obj = spdxDocumentObj.otherLicensingInformationDetecteds[index];
+
+    if (obj.licenseId.startsWith('LicenseRef-')) {
+      $('#licenseId').val(obj.licenseId.substr(11));
+    } else {
+      $('#licenseId').val(obj.licenseName);
+    }
+
+    $('#extractedText').val(obj.extractedText);
+
+    spdxjs.fillMultiOptionsField('#licenseName', obj.licenseName);
+
+    spdxjs.fillArray('#licenseCrossRefs', obj.licenseCrossRefs);
+
+    $('#licenseCommentOnOtherLicensing').val(obj.licenseComment);
+  }
+
+  function storeOtherLicensing(index) {
+    let obj = spdxDocumentObj.otherLicensingInformationDetecteds[index];
+    console.log("spdxDocumentObj " + spdxDocumentObj.otherLicensingInformationDetecteds);
+    console.log("index " + index);
+    if ($('#licenseId').val().trim() != '') {
+      obj['licenseId'] = 'LicenseRef-' + $('#licenseId').val().trim();
+    } else {
+      obj['licenseId'] = 'LicenseRef-' + spdxjs.readMultiOptionField('#licenseName');
+    }
+
+    obj['extractedText'] = $('#extractedText').val().trim();
+
+    obj['licenseName'] = spdxjs.readMultiOptionField('#licenseName');
+  }
+    /// Relationships
+    function initRelationships() {
+    if (spdxDocumentObj.relationships.length == 0) {
+      spdxjs.enableSection($('.section-relationship'), false);
+    } else {
+      spdxjs.fillSelectbox('#selectRelationship', spdxDocumentObj.relationships.length);
+      fillRelationship(0);
+    }
+  }
+
+  $('[name=add-relationship]').on('click', function(e) {
+    let newObj = { 'spdxElementId': '', 'relationshipType': '', 'relatedSpdxElement': '', 'relationshipComment': '' };
+    spdxDocumentObj.relationships.push(newObj);
+    spdxjs.addMain($(this));
+    $('#selectRelationship').change();
+  });
+
+  $('[name=delete-relationship').on('click', function(e) {
+    let selectedIndex = $('#selectRelationship')[0].selectedIndex;
+    spdxDocumentObj.relationships.splice(selectedIndex, 1);
+    spdxjs.deleteMain($(this));
+  });
+
+  $('#selectRelationship').on('change', function(e) {
+    let selectedIndex = $('#selectRelationship')[0].selectedIndex;
+    fillRelationship(selectedIndex);
+  });
+
+  function fillRelationship(index) {
+    let obj = spdxDocumentObj.relationships[index];
+
+    $('#spdxElement').val(obj.spdxElementId);
+    if (obj.relationshipType.startsWith('relationshipType_')) {
+      $('#relationshipType').val(obj.relationshipType.substr(17).toUpperCase());
+    } else {
+      $('#relationshipType').val('');
+    }
+
+    $('#relatedSPDXElement').val(obj.relatedSpdxElement);
+    $('#relationshipComment').val(obj.relationshipComment);
+  }
+
+  function storeRelationship(index) {
+    let obj = spdxDocumentObj.relationships[index];
+
+    obj['spdxElementId'] = $('#spdxElement').val().trim();
+    obj['relationshipType'] = 'relationshipType_' + $('#relationshipType').val().toLowerCase().trim();
+    obj['relatedSpdxElement'] = $('#relatedSPDXElement').val().trim();
+    obj['relationshipComment'] = $('#relationshipComment').val().trim();
+  }
+    /// Snippet Information
+    function initSnippetInfo() {
+    if (spdxDocumentObj.snippets.length == 0) {
+      spdxjs.enableSection($('.section-snippet'), false);
+    } else {
+      spdxjs.fillSelectbox('#selectSnippet', spdxDocumentObj.snippets.length);
+      fillSnippet(0);
+    }
+  }
+
+  // ------------------------- 5 Snippet Information
+  // Add data
+  $('[name=add-snippet]').on('click', function(e) {
+    let newObj = { 'SPDXID': '', 'snippetFromFile': '', 'snippetRanges': [], 'licenseConcluded': [], 'licenseInfoInSnippets': [], 'licenseComments': '', 'copyrightText': '', 'comment': '', 'name': '', 'snippetAttributionText': ''};
+    spdxDocumentObj.snippets.push(newObj);
+    spdxjs.addMain($(this));
+    $('#selectSnippet').change();
+  });
+
+  // Delete data
+  $('[name=delete-snippet').on('click', function(e) {
+    let selectedIndex = $('#selectSnippet')[0].selectedIndex;
+    spdxDocumentObj.snippets.splice(selectedIndex, 1);
+    spdxjs.deleteMain($(this));
+  });
+
+  // Change data
+  $('#selectSnippet').on('change', function(e) {
+    let selectedIndex = $('#selectSnippet')[0].selectedIndex;
+    fillSnippet(selectedIndex);
+  });
+
+  function fillSnippet(index) {
+    const obj = spdxDocumentObj.snippets[index];
+
+    if (obj['SPDXID'].startsWith('SPDXRef-')) {
+      $('#snippetSpdxIdentifier').val(obj['SPDXID'].substr(8));
+    } else {
+      $('#snippetSpdxIdentifier').val('Snippet-' + obj['name']);
+    }
+
+    if (obj['snippetFromFile'].startsWith('SPDXRef-')) {
+      $('#snippetFromFile').val('SPDXRef');
+      $('#snippetFromFileValue').val(obj['snippetFromFile'].substr(8));
+    } else if (obj['snippetFromFile'].startsWith('DocumentRef-')) {
+      $('#snippetFromFile').val('DocumentRef');
+      $('#snippetFromFileValue').val(obj['snippetFromFile'].substr(12));
+    } else {
+      $('#snippetFromFile').val('SPDXRef');
+      $('#snippetFromFileValue').val('');
+    }
+
+    // Check to clear all current ranges
+    if ($('[name=delete-snippetRange].hidden').length == 0) {
+      const rangesNum = $('[name=snippetRange]').length;
+      for (let i = 0; i < rangesNum; i++) {
+        if (i == 0) {
+          $($('[name=snippetRange]')[i]).css('display', 'none');
+          $($('[name=snippetRange]')[i]).find('[name=delete-snippetRange]').addClass('hidden');
+          spdxjs.clearSection($($('[name=snippetRange]')[i]));
+        } else {
+          $('[name=snippetRange]').last().remove();
+        }
+      }
+    }
+
+    for (let i = 0; i < obj.snippetRanges.length; i++) {
+      spdxjs.addSub('#addNewRange');
+
+      $('.range-type').last().val(obj.snippetRanges[i].rangeType);
+      $('.start-pointer').last().val(obj.snippetRanges[i].startPointer);
+      $('.end-pointer').last().val(obj.snippetRanges[i].endPointer);
+      $('.reference').last().val(obj.snippetRanges[i].reference);
+    }
+
+    $('.range-type, .start-pointer, .end-pointer, .reference').bind('change keyup', function() {
+      if ($(this).is(":focus")) {
+        storeSnippet();
+      }
+    });
+
+    $('[name=delete-snippetRange]').bind('click', function() {
+      deleteSub($(this));
+
+      storeSnippet();
+    });
+
+    spdxjs.fillMultiOptionsField('#spdxConcludedLicenseValue', obj.licenseConcluded);
+
+    spdxjs.fillMultiOptionsField('#licenseInfoInFileValue', obj.licenseInfoInSnippets, 'array');
+
+    $('#snippetLicenseComments').val(obj.licenseComments);
+
+    spdxjs.fillMultiOptionsField('#copyrightTextValueSnippet', obj.copyrightText);
+
+    $('#snippetComment').val(obj.comment);
+
+    $('#snippetName').val(obj.name);
+
+    $('#snippetAttributionText').val(obj.snippetAttributionText);
+  }
+
+  $('#addNewRange').on('click', function() {
+    spdxjs.addSub($(this));
+
+    $('[name=delete-snippetRange]').bind('click', function() {
+      spdxjs.deleteSub($(this));
+
+      storeSnippet();
+    });
+
+    $('.range-type, .start-pointer, .end-pointer, .reference').bind('change keyup', function() {
+      if ($(this).is(":focus")) {
+        storeSnippet();
+      }
+    });
+  });
+
+  function storeSnippet(index) {
+    if (typeof(index) == 'undefined') {
+      index = $('#selectSnippet')[0].selectedIndex;
+    }
+
+    let obj = spdxDocumentObj.snippets[index];
+
+    if ($('#snippetSpdxIdentifier').val().trim() != '') {
+      obj['SPDXID'] = 'SPDXRef-' + $('#snippetSpdxIdentifier').val().trim();
+    } else {
+      obj['SPDXID'] = 'SPDXRef-Snippet-' + $('#snippetName').val().trim();
+    }
+
+    if ($('#snippetFromFileValue').val().trim() != '') {
+      obj['snippetFromFile'] = $('#snippetFromFile').val() + '-' + $('#snippetFromFileValue').val().trim();
+    } else {
+      obj['snippetFromFile'] = '';
+    }
+
+    obj['snippetRanges'] = [];
+
+    if ($('[name=snippetRange]').first().css('display') != 'none') {
+      obj['snippetRanges'] = [];
+
+      $('[name=snippetRange]').each(function() {
+        let range = {'rangeType': '', 'startPointer': '', 'endPointer': '', 'reference': ''};
+
+        range['rangeType'] = $(this).find('.range-type').first().val().trim();
+        range['startPointer'] = $(this).find('.start-pointer').first().val().trim();
+        range['endPointer'] = $(this).find('.end-pointer').first().val().trim();
+        range['reference'] = $(this).find('.reference').first().val().trim();
+
+        if (range['startPointer'] != '' || range['endPointer'] != '' || range['reference'] != '') {
+          obj['snippetRanges'].push(range);
+        }
+      })
+    }
+
+    obj['licenseConcluded']     = spdxjs.readMultiOptionField('#spdxConcludedLicenseValue');
+    obj['licenseInfoInSnippets']  = spdxjs.readMultiOptionField('#licenseInfoInFileValue', 'array');
+    obj['licenseComments']    = $('#snippetLicenseComments').val().trim();
+    obj['copyrightText']      = spdxjs.readMultiOptionField('#copyrightTextValueSnippet');
+    obj['comment']        = $('#snippetComment').val().trim();
+    obj['name']           = $('#snippetName').val().trim();
+    obj['snippetAttributionText'] = $('#snippetAttributionText').val().trim();
+  }
+    /// Package Information
+    const referenceCategories = {
+        'referenceCategory_security': ['cpe22Type', 'cpe23Type'],
+        'referenceCategory_packageManager': ['maven-central', 'npm', 'nuget', 'bower', 'purl'],
+        'referenceCategory_persistentId': [],
+        'referenceCategory_other': []
+    }
+
+    $('#referenceCategory').on('change', function() {
+        let category = $('#referenceCategory').val();
+        let types = referenceCategories[category];
+
+        if (types.length > 0) {
+            $("#referenceType-1").css('display', 'block');
+            $("#referenceType-1").val(types[0]);
+            $("#referenceType-2").css('display', 'none');
+
+            $("#referenceType-1").empty();
+
+            for (let i = 0; i < types.length; i++) {
+                let option = '<option>' + types[i] + '</option>';
+                $("#referenceType-1").append(option);
+            }
+        } else {
+            $("#referenceType-1").css('display', 'none');
+            $("#referenceType-2").css('display', 'block');
+            $("#referenceType-2").val('');
+        }
+
+        if ($('#referenceCategory').is(":focus")) {
+            let index = $('#externalReferences')[0].selectedIndex;
+            spdxjs.storeExternalRef(packageInformationObj, index);
+        }
+    });
+
+
+    // ------------------------- 3.21 External References
+    // Add data
+    $('[name=add-externalRef]').on('click', function(e) {
+        let newObj = { 'referenceCategory': 'referenceCategory_security', 'referenceLocator': '', 'referenceType': 'cpe22Type', 'comment': '' };
+        packageInformationObj.externalRefs.push(newObj);
+        spdxjs.addMain($(this));
+        $('#externalReferences').change();
+    });
+
+    // Delete data
+    $('[name=delete-externalRef').on('click', function(e) {
+        let selectedIndex = $('#externalReferences')[0].selectedIndex;
+        packageInformationObj.externalRefs.splice(selectedIndex, 1);
+        spdxjs.deleteMain($(this));
+    });
+
+    // // Change data
+    $('#externalReferences').on('change', function(e) {
+        let selectedIndex = $('#externalReferences')[0].selectedIndex;
+        spdxjs.fillExternalRef(packageInformationObj, selectedIndex);
+    });
+
+    /////////////
+    $('#spdxFullMode').on('click', function (e) {
+      e.preventDefault();
+
+      $(this).addClass('btn-info');
+      $(this).removeClass('btn-secondary');
+
+      $('#spdxLiteMode').addClass('btn-secondary');
+      $('#spdxLiteMode').removeClass('btn-info');
+
+      $('.spdx-full').css('display', '');
+    });
+
+    $('#spdxLiteMode').on('click', function (e) {
+      e.preventDefault();
+
+      $(this).addClass('btn-info');
+      $(this).removeClass('btn-secondary');
+
+      $('#spdxFullMode').addClass('btn-secondary');
+      $('#spdxFullMode').removeClass('btn-info');
+
+      $('.spdx-full').css('display', 'none');
+    });
+
+    $('.spdx-table button').on('click', function (e) {
+      e.preventDefault();
+    });
+
+    $('.spdx-add-button-main').on('click', function (e) {
+      e.preventDefault();
+    })
+
+    $('.spdx-add-button-sub').on('click', function (e) {
+      e.preventDefault();
+    })
+
+    $(function () {
+      // Expand/collapse section when click on the header
+      $('thead').on('click', function () {
+        if ($(this).next().css('display') == 'none') {
+          $(this).next().css('display', '');
+        } else {
+          $(this).next().css('display', 'none');
+        }
+      });
+
+      $('.spdx-radio').on('change', function () {
+        spdxjs.updateRadioButton($(this));
+      });
+
+      $('.section').find('input, select, textarea').not('spdx-select').on('change keyup', function () {
+        if ($(this).hasClass('spdx-select')) {
+          return;
+        }
+
+        if ($(this).is('select') && !$(this).is(":focus")) {
+          return;
+        }
+
+        // Store 2.6
+        let index = $('#externalDocumentRefs')[0].selectedIndex;
+        storeExternalDocRef(index);
+
+        // Store 3.21
+        index = $('#externalReferences')[0].selectedIndex;
+        spdxjs.storeExternalRef(packageInformationObj, index);
+
+        // Store 5
+        index = $('#selectSnippet')[0].selectedIndex;
+        storeSnippet(index);
+
+        // Store 6
+        index = $('#selectOtherLicensing')[0].selectedIndex;
+        storeOtherLicensing(index);
+
+        // Store 7
+        index = $('#selectRelationship')[0].selectedIndex;
+        storeRelationship(index);
+
+        // Store 8
+        index = $('#selectAnnotation')[0].selectedIndex;
+        storeAnnotation(index);
+      });
+
+      function initialize() {
+        initDocumentCreation();
+
+        spdxjs.initPackageInfo(packageInformationObj);
+
+        initSnippetInfo();
+
+        initOtherLicensing();
+
+        initRelationships();
+
+        initAnnotations();
+      }
+
+      // -------------------------Store data
+      function store() {
+        // 2
+        storeDocumentCreation();
+
+        // 3
+        spdxjs.storePackageInfo(packageInformationObj);
+
+        // 5, 6, 7, 8: auto
+      }
+
+      initialize();
+      // store();     // Call when submit the form
+    });
+  });
 </script>

@@ -747,6 +747,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             SPDXDocument spdxDocument = new SPDXDocument();
             DocumentCreationInformation documentCreationInfo = new DocumentCreationInformation();
             Set<PackageInformation> packageInfos = new HashSet<>();
+            PackageInformation packageInfo = new PackageInformation();
             if (!isNullOrEmpty(releaseId)) {
                 release = client.getReleaseByIdForEdit(releaseId, user);
                 request.setAttribute(RELEASE, release);
@@ -777,7 +778,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                     if(spdxPackageInfoIds != null) {
                         PackageInformationService.Iface paClient = thriftClients.makeSPDXPackageInfoClient();
                         for (String spdxPackageInfoId : spdxPackageInfoIds) {
-                            PackageInformation packageInfo = paClient.getPackageInformationById(spdxPackageInfoId, user);
+                            packageInfo = paClient.getPackageInformationById(spdxPackageInfoId, user);
                             packageInfos.add(packageInfo);
                         }
                     }
@@ -824,6 +825,26 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             request.setAttribute(SPDXDOCUMENT, spdxDocument);
             request.setAttribute(SPDX_DOCUMENT_CREATION_INFO, documentCreationInfo);
             request.setAttribute(SPDX_PACKAGE_INFO, packageInfos);
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            try {
+                String spdxDocumentJson = objectMapper.writeValueAsString(spdxDocument);
+                request.setAttribute("spdxDocumentJson", spdxDocumentJson);
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+            try {
+                String documentCreationInfoJson = objectMapper.writeValueAsString(documentCreationInfo);
+                request.setAttribute("documentCreationInfoJson", documentCreationInfoJson);
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+            try {
+                String packageInfoJson = objectMapper.writeValueAsString(packageInfo);
+                request.setAttribute("packageInfoJson", packageInfoJson);
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
 
         } catch (TException e) {
             log.error("Error fetching release from backend!", e);
@@ -1457,14 +1478,6 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 request.setAttribute(SPDXDOCUMENT, spdxDocument);
                 request.setAttribute(SPDX_DOCUMENT_CREATION_INFO, documentCreationInfo);
                 request.setAttribute(SPDX_PACKAGE_INFO, packageInfos);
-                // ObjectMapper objectMapper = new ObjectMapper();
-                // try {
-                //     String spdxDocumentJson = objectMapper.writeValueAsString(spdxDocument);
-                //     request.setAttribute("spdxDocumentJson", spdxDocumentJson);
-                // } catch (JsonProcessingException e) {
-                //     // TODO Auto-generated catch block
-                //     e.printStackTrace();
-                // }
             }
 
         } catch (TException e) {
