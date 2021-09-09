@@ -398,8 +398,8 @@
                 class="form-control" placeholder="Enter Category"
                 name="_sw360_portlet_components_REFERENCE_CATEGORY">
                 <option value="referenceCategory_security">SECURITY</option>
-                <option>PACKAGE-MANAGER</option>
-                <option>PERSISTENT-ID</option>
+                <option value="referenceCategory_packageManager">PACKAGE-MANAGER</option>
+                <option value="referenceCategory_persistentId">PERSISTENT-ID</option>
                 <option value="referenceCategory_other">OTHER</option>
               </select>
             </div>
