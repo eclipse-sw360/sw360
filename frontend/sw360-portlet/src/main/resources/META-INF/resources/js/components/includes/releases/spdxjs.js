@@ -338,7 +338,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
           $('#FilesAnalyzedFalse').click();
         }
         for (let i = 0; i < packageInformationObj.checksums.length; i++) {
-          addSub($('.spdx-add-button-sub-checksum'));
+          addSub($('.spdx-add-button-sub-checksum').first());
     
           let algorithm   = packageInformationObj.checksums[i].algorithm;
           let checksumValue = packageInformationObj.checksums[i].checksumValue;

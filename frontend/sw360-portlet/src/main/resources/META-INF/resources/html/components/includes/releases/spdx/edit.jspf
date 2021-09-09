@@ -574,7 +574,7 @@
     });
 
     $('[name=delete-snippetRange]').bind('click', function() {
-      deleteSub($(this));
+      spdxjs.deleteSub($(this));
 
       storeSnippet();
     });
@@ -765,7 +765,13 @@
         spdxjs.updateRadioButton($(this));
       });
 
+      let isInitialzing = true;
+
       $('.section').find('input, select, textarea').not('spdx-select').on('change keyup', function () {
+        if (isInitialzing) {
+          return;
+        }
+
         if ($(this).hasClass('spdx-select')) {
           return;
         }
@@ -792,14 +798,16 @@
 
         // Store 7
         index = $('#selectRelationship')[0].selectedIndex;
-        // storeRelationship(index);
+        storeRelationship(index);
 
         // Store 8
         index = $('#selectAnnotation')[0].selectedIndex;
-        // storeAnnotation(index);
+        storeAnnotation(index);
       });
 
       function initialize() {
+        isInitialzing = true;
+
         initDocumentCreation();
 
         spdxjs.initPackageInfo(packageInformationObj);
@@ -811,6 +819,8 @@
         initRelationships();
 
         initAnnotations();
+
+        isInitialzing = false;
       }
 
       // -------------------------Store data
