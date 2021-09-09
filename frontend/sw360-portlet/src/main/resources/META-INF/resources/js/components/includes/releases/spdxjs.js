@@ -377,7 +377,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         packageInformationObj['supplier'] = readMultiOptionField('#supplierType', 'annotator');
         packageInformationObj['originator'] = readMultiOptionField('#originatorType', 'annotator');
         packageInformationObj['downloadLocation'] = readMultiOptionField('#downloadLocationValue');
-        packageInformationObj['filesAnalyzed'] = $('[name=_sw360_portlet_components_FILES_ANALYZED]:checked').val();e
+        packageInformationObj['filesAnalyzed'] = $('[name=_sw360_portlet_components_FILES_ANALYZED]:checked').val();
         if (packageInformationObj['filesAnalyzed']) {
           packageInformationObj['packageVerificationCode']['value'] = $('#verificationCodeValue').val().trim();
           packageInformationObj['packageVerificationCode']['excludedFiles'] = readArray('#excludedFiles');

@@ -105,7 +105,7 @@ public class SpdxDocumentCreationInfoModerator
         Set<ExternalDocumentReferences> actuals = documentCreationInfo.getExternalDocumentRefs();
         Iterator<ExternalDocumentReferences> additionsIterator = documentCreationInfoAdditions.getExternalDocumentRefsIterator();
         Iterator<ExternalDocumentReferences> deletionsIterator = documentCreationInfoDeletions.getExternalDocumentRefsIterator();
-        if (additionsIterator == null || deletionsIterator == null) {
+        if (additionsIterator == null && deletionsIterator == null) {
             return documentCreationInfo;
         }
         if (actuals == null) {
@@ -134,7 +134,7 @@ public class SpdxDocumentCreationInfoModerator
         Set<Creator> actuals = documentCreationInfo.getCreator();
         Iterator<Creator> additionsIterator = documentCreationInfoAdditions.getCreatorIterator();
         Iterator<Creator> deletionsIterator = documentCreationInfoDeletions.getCreatorIterator();
-        if (additionsIterator == null || deletionsIterator == null) {
+        if (additionsIterator == null && deletionsIterator == null) {
             return documentCreationInfo;
         }
         if (actuals == null) {
