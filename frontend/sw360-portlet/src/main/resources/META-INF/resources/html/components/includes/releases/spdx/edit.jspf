@@ -493,7 +493,17 @@
   $('[name=add-snippet]').on('click', function(e) {
     e.preventDefault();
 
-    let newObj = { 'SPDXID': '', 'snippetFromFile': '', 'snippetRanges': [], 'licenseConcluded': [], 'licenseInfoInSnippets': [], 'licenseComments': '', 'copyrightText': '', 'comment': '', 'name': '', 'snippetAttributionText': ''};
+    let newObj = {'SPDXID': '',
+                  'snippetFromFile': '',
+                  'snippetRanges': [''],
+                  'licenseConcluded': [],
+                  'licenseInfoInSnippets': [],
+                  'licenseComments': '',
+                  'copyrightText': '',
+                  'comment': '',
+                  'name': '',
+                  'snippetAttributionText': ''};
+    console.log(newObj);
     spdxDocumentObj.snippets.push(newObj);
     spdxjs.addMain($(this));
     $('#selectSnippet').change();
@@ -566,9 +576,7 @@
 
       storeSnippet();
     });
-
     spdxjs.fillMultiOptionsField('#spdxConcludedLicenseValue', obj.licenseConcluded);
-
     spdxjs.fillMultiOptionsField('#licenseInfoInFileValue', obj.licenseInfoInSnippets, 'array');
 
     $('#snippetLicenseComments').val(obj.licenseComments);
@@ -778,15 +786,15 @@
 
         // Store 6
         index = $('#selectOtherLicensing')[0].selectedIndex;
-        storeOtherLicensing(index);
+        // storeOtherLicensing(index);
 
         // Store 7
         index = $('#selectRelationship')[0].selectedIndex;
-        storeRelationship(index);
+        // storeRelationship(index);
 
         // Store 8
         index = $('#selectAnnotation')[0].selectedIndex;
-        storeAnnotation(index);
+        // storeAnnotation(index);
       });
 
       function initialize() {

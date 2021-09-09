@@ -21,7 +21,6 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         }
     
         section.find('.spdx-radio').each(function () {
-          console.log($(this));
           $(this).parent().parent().find('input[type=text]').attr('disabled', 'true');
           $(this).parent().parent().find('select').attr('disabled', 'true');
           $(this).parent().parent().find('textarea').attr('disabled', 'true');
