@@ -122,7 +122,7 @@
 </script>
 
 <%@include file="/html/utils/includes/requirejs.jspf" %>
-<form id="editSPDXForm" name="editSPDXForm" class="form needs-validation" novalidate>
+<div id="editSPDXForm" name="editSPDXForm" class="form needs-validation" novalidate>
   <div class="form-group btn-group">
     <button id="spdxFullMode" class="btn btn-info">SPDX Full</button>
     <button id="spdxLiteMode" class="btn btn-secondary">SPDX Lite</button>
@@ -133,7 +133,7 @@
   <%@include file="/html/components/includes/releases/spdx/includes/editOtherLicensingInformationDetected.jsp" %>
   <%@include file="/html/components/includes/releases/spdx/includes/editRelationshipsBetweenSPDXElements.jsp"%>
   <%@include file="/html/components/includes/releases/spdx/includes/editAnnotations.jsp" %>
-</form>
+</div>
 
 <script>
   require(['jquery', 'components/includes/releases/spdxjs'], function ($, spdxjs) {
@@ -158,8 +158,9 @@
         fillExternalDocRef(0);
       }
       if (documentCreationInformationObj.creator.length == 0) {
-        console.log("Creator null");
-        // Need to fill the current user of SW360
+        $('.spdx-add-button-sub-creator').first().click();
+        $('.creator-type').last().val('Person');
+        $('.creator-value').last().val("<%=themeDisplay.getUser().getEmailAddress()%>");
       } else {
         for (let i = 0; i < documentCreationInformationObj.creator.length; i++) {
           $('.spdx-add-button-sub-creator').first().click();
@@ -410,8 +411,6 @@
 
   function storeOtherLicensing(index) {
     let obj = spdxDocumentObj.otherLicensingInformationDetecteds[index];
-    console.log("spdxDocumentObj " + spdxDocumentObj.otherLicensingInformationDetecteds);
-    console.log("index " + index);
     if ($('#licenseId').val().trim() != '') {
       obj['licenseId'] = 'LicenseRef-' + $('#licenseId').val().trim();
     } else {
