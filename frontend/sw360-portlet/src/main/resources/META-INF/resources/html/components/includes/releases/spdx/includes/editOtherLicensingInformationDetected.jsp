@@ -12,7 +12,7 @@
           <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
             <label for="selectOtherLicensing" style="text-decoration: underline;" class="sub-title">Select
               Other Licensing</label>
-            <select id="selectOtherLicensing" type="text" class="form-control spdx-select">
+            <select id="selectOtherLicensing" type="text" class="form-control spdx-select"></select>
             <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-otherLicensing" data-row-id="" viewBox="0 0 512 512">
               <title><liferay-ui:message key="delete" /></title>
               <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
