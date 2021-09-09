@@ -35,10 +35,8 @@
             8.1 Annotator
           </label>
           <div style="display: flex">
-            <select id="annotatorType" style="flex: 2; margin-right: 1rem;" type="text" class="form-control"
-              placeholder="Enter Type"
-              onchange="generateSelecterOption($(this).find('option:selected').text())">
-              <option value="Organization" selected>Organization</option>
+            <select id="annotatorType" style="flex: 2; margin-right: 1rem;" type="text" class="form-control" placeholder="Enter Type">
+              <option value="Organization" selected="">Organization</option>
               <option value="Person">Person</option>
               <option value="Tool">Tool</option>
             </select>
