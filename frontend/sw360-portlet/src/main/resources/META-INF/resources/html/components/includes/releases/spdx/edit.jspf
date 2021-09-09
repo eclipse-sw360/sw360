@@ -414,8 +414,6 @@
 
   function storeOtherLicensing(index) {
     let obj = spdxDocumentObj.otherLicensingInformationDetecteds[index];
-    console.log("spdxDocumentObj " + spdxDocumentObj.otherLicensingInformationDetecteds);
-    console.log("index " + index);
     if ($('#licenseId').val().trim() != '') {
       obj['licenseId'] = 'LicenseRef-' + $('#licenseId').val().trim();
     } else {
@@ -425,6 +423,10 @@
     obj['extractedText'] = $('#extractedText').val().trim();
 
     obj['licenseName'] = spdxjs.readMultiOptionField('#licenseName');
+
+    obj['licenseCrossRefs'] = spdxjs.readArray('#licenseCrossRefs');
+
+    obj['licenseComment'] = $('#licenseCommentOnOtherLicensing').val().trim();
   }
     /// Relationships
     function initRelationships() {
@@ -786,7 +788,7 @@
 
         // Store 6
         index = $('#selectOtherLicensing')[0].selectedIndex;
-        // storeOtherLicensing(index);
+        storeOtherLicensing(index);
 
         // Store 7
         index = $('#selectRelationship')[0].selectedIndex;
