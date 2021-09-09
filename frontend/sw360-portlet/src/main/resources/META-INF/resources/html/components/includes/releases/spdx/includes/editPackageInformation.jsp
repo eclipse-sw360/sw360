@@ -94,7 +94,7 @@
                 <option>Person</option>
                 <option>Organization</option>
               </select>
-              <input style="flex: 6; margin-right: 1rem;" class="form-control needs-validation"
+              <input style="flex: 6; margin-right: 1rem;" class="form-control needs-validation" id="originatorValue"
                 rule="isDownloadUrl" type="text" name="_sw360_portlet_components_ORIGINATOR_VALUE"
                 placeholder="Enter Package Originator" value="${package.originator}">
             </div>

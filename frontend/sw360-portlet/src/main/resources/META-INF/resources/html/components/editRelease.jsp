@@ -235,7 +235,7 @@
 </core_rt:if>
 
 <script>
-    require(['jquery', 'components/includes/vendors/searchVendor', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup', 'modules/validation' ], function($, vendorsearch, autocomplete, dialog, listgroup, validation) {
+    require(['jquery', 'components/includes/vendors/searchVendor', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup', 'modules/validation', 'components/includes/releases/validateLib' ], function($, vendorsearch, autocomplete, dialog, listgroup, validation, validateLib) {
         document.title = $("<span></span>").html("<sw360:out value='${component.name}'/> - " + document.title).text();
 
         listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
@@ -249,6 +249,9 @@
 
         $('#formSubmit').click(
             function() {
+                if ("${addMode}" == "false") {
+                    validateLib.submitAction();
+                }
                 <core_rt:choose>
                     <core_rt:when test="${addMode || release.permissions[WRITE]}">
                         $('#releaseEditForm').submit();
