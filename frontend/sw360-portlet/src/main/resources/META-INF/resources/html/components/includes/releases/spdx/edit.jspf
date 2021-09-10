@@ -172,6 +172,9 @@
           $('.creator-value').last().val(documentCreationInformationObj.creator[i].value);
         }
       }
+      $('[name=delete-spdx-creator]').bind('click', function() {
+        spdxjs.deleteSub($(this));
+      });
       if (documentCreationInformationObj.created == '') {
         spdxjs.fillDateTime('#createdDate', '#createdTime', (new Date().toISOString()));
       } else {
@@ -180,6 +183,9 @@
     }
     $('[name=add-spdx-creator]').on('click', function (e) {
       spdxjs.addSub($(this));
+      $('[name=delete-spdx-creator]').last().bind('click', function() {
+        spdxjs.deleteSub($(this));
+      });
     });
     $('[name=delete-spdx-creator]').on('click', function (e) {
       spdxjs.deleteSub($(this));
@@ -506,7 +512,6 @@
                   'comment': '',
                   'name': '',
                   'snippetAttributionText': ''};
-    console.log(newObj);
     spdxDocumentObj.snippets.push(newObj);
     spdxjs.addMain($(this));
     $('#selectSnippet').change();
@@ -561,7 +566,6 @@
 
     for (let i = 0; i < obj.snippetRanges.length; i++) {
       spdxjs.addSub('#addNewRange');
-
       $('.range-type').last().val(obj.snippetRanges[i].rangeType);
       $('.start-pointer').last().val(obj.snippetRanges[i].startPointer);
       $('.end-pointer').last().val(obj.snippetRanges[i].endPointer);
@@ -576,7 +580,6 @@
 
     $('[name=delete-snippetRange]').bind('click', function() {
       spdxjs.deleteSub($(this));
-
       storeSnippet();
     });
     spdxjs.fillMultiOptionsField('#spdxConcludedLicenseValue', obj.licenseConcluded);
@@ -805,34 +808,19 @@
         index = $('#selectAnnotation')[0].selectedIndex;
         storeAnnotation(index);
       });
-
       function initialize() {
         isInitialzing = true;
-
         initDocumentCreation();
-
         spdxjs.initPackageInfo(packageInformationObj);
-
         initSnippetInfo();
-
         initOtherLicensing();
-
         initRelationships();
-
         initAnnotations();
-
         isInitialzing = false;
       }
-
-      // -------------------------Store data
       function store() {
-        // 2
         storeDocumentCreation();
-
-        // 3
         spdxjs.storePackageInfo(packageInformationObj);
-
-        // 5, 6, 7, 8: auto
       }
 
       initialize();
