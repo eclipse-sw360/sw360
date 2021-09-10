@@ -502,7 +502,7 @@
 
     let newObj = {'SPDXID': '',
                   'snippetFromFile': '',
-                  'snippetRanges': [''],
+                  'snippetRanges': [],
                   'licenseConcluded': [],
                   'licenseInfoInSnippets': [],
                   'licenseComments': '',
@@ -780,7 +780,7 @@
         if ($(this).hasClass('spdx-select')) {
           return;
         }
-        if ($(this).is('select') && !$(this).is(":focus")) {
+        if (!$(this).is(":focus")) {
           return;
         }
         // Store 2.6
