@@ -407,6 +407,10 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
       }
     
       function storeExternalRef(packageInformationObj, index) {
+        if (index < 0 || index > packageInformationObj.externalRefs.length - 1) {
+          return;
+        }
+
         let obj = packageInformationObj.externalRefs[index];
     
         obj['referenceCategory'] = $('#referenceCategory').val().trim();

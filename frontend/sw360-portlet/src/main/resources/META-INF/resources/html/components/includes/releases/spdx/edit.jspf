@@ -226,14 +226,15 @@
     }
 
     function storeExternalDocRef(index) {
+      if (index < 0 || index > documentCreationInformationObj.externalDocumentRefs.length - 1) {
+        return;
+      }
       let obj = documentCreationInformationObj.externalDocumentRefs[index];
-
       obj['externalDocumentId'] = $('#externalDocumentId').val().trim();
       obj['spdxDocument'] = $('#externalDocument').val().trim();
 
       let algorithm = $('#checksumAlgorithm').val().trim();
       let checksumValue = $('#checksumValue').val().trim();
-
       if (algorithm == '' || checksumValue == '') {
         obj['checksum']['algorithm'] = '';
         obj['checksum']['checksumValue'] = '';
@@ -300,7 +301,6 @@
       if ($('#selectAnnotationSource').val() == 'Package') {
         return packageInformationObj.annotations;
       }
-
       return spdxDocumentObj.annotations;
     }
 
@@ -338,38 +338,31 @@
 
   $('#selectAnnotation').on('change', function(e) {
     let source = getAnnotationsSource();
-
     let selectedIndex = $('#selectAnnotation')[0].selectedIndex;
-
     fillAnnotation(source, selectedIndex);
   });
 
   function fillAnnotation(source, index) {
     let obj = source[index];
-
     spdxjs.fillAnnotator('#annotatorType', obj['annotator']);
-
     spdxjs.fillDateTime('#annotationCreatedDate', '#annotationCreatedTime', obj['annotationDate']);
-
     $('#annotationType').val(obj['annotationType']);
-
     $('#spdxIdRef').val(obj['spdxRef']);
-
     $('#annotationComment').val(obj['annotationComment']);
   }
 
   function storeAnnotation(index) {
     let source = getAnnotationsSource();
+    if (index < 0 || index > source.length - 1) {
+      return;
+    }
     let obj = source[index];
-
     if ($('#annotatorValue').val().trim() != '') {
       obj['annotator'] = $('#annotatorType').val() + ': ' + $('#annotatorValue').val().trim();
     } else {
       obj['annotator'] = '';
     }
-
     obj['annotationDate'] = spdxjs.readDateTime('#annotationCreatedDate', '#annotationCreatedTime');
-
     obj['annotationType'] = $('#annotationType').val().trim();
     obj['spdxRef'] = $('#spdxIdRef').val().trim();
     obj['annotationComment'] = $('#annotationComment').val().trim();
@@ -385,7 +378,6 @@
   }
   $('[name=add-otherLicensing]').on('click', function(e) {
     e.preventDefault();
-
     let newObj = { 'licenseId': '', 'extractedText': '', 'licenseName': '', 'licenseCrossRefs': [] };
     spdxDocumentObj.otherLicensingInformationDetecteds.push(newObj);
     spdxjs.addMain($(this));
@@ -420,6 +412,9 @@
   }
 
   function storeOtherLicensing(index) {
+    if (index < 0 || index > spdxDocumentObj.otherLicensingInformationDetecteds - 1) {
+      return;
+    }
     let obj = spdxDocumentObj.otherLicensingInformationDetecteds[index];
     if ($('#licenseId').val().trim() != '') {
       obj['licenseId'] = 'LicenseRef-' + $('#licenseId').val().trim();
@@ -480,6 +475,9 @@
   }
 
   function storeRelationship(index) {
+    if (index < 0 || index > spdxDocumentObj.relationships - 1) {
+      return;
+    }
     let obj = spdxDocumentObj.relationships[index];
 
     obj['spdxElementId'] = $('#spdxElement').val().trim();
@@ -531,6 +529,7 @@
   });
 
   function fillSnippet(index) {
+    isInitialzing = true;
     const obj = spdxDocumentObj.snippets[index];
 
     if (obj['SPDXID'].startsWith('SPDXRef-')) {
@@ -594,6 +593,8 @@
     $('#snippetName').val(obj.name);
 
     $('#snippetAttributionText').val(obj.snippetAttributionText);
+
+    isInitialzing = false;
   }
 
   $('#addNewRange').on('click', function() {
@@ -601,7 +602,6 @@
 
     $('[name=delete-snippetRange]').bind('click', function() {
       spdxjs.deleteSub($(this));
-
       storeSnippet();
     });
 
@@ -616,7 +616,9 @@
     if (typeof(index) == 'undefined') {
       index = $('#selectSnippet')[0].selectedIndex;
     }
-
+    if (index < 0 || index > spdxDocumentObj.snippets - 1) {
+      return;
+    }
     let obj = spdxDocumentObj.snippets[index];
 
     if ($('#snippetSpdxIdentifier').val().trim() != '') {
@@ -775,35 +777,27 @@
         if (isInitialzing) {
           return;
         }
-
         if ($(this).hasClass('spdx-select')) {
           return;
         }
-
         if ($(this).is('select') && !$(this).is(":focus")) {
           return;
         }
-
         // Store 2.6
         let index = $('#externalDocumentRefs')[0].selectedIndex;
         storeExternalDocRef(index);
-
         // Store 3.21
         index = $('#externalReferences')[0].selectedIndex;
         spdxjs.storeExternalRef(packageInformationObj, index);
-
         // Store 5
         index = $('#selectSnippet')[0].selectedIndex;
         storeSnippet(index);
-
         // Store 6
         index = $('#selectOtherLicensing')[0].selectedIndex;
         storeOtherLicensing(index);
-
         // Store 7
         index = $('#selectRelationship')[0].selectedIndex;
         storeRelationship(index);
-
         // Store 8
         index = $('#selectAnnotation')[0].selectedIndex;
         storeAnnotation(index);
@@ -822,7 +816,6 @@
         storeDocumentCreation();
         spdxjs.storePackageInfo(packageInformationObj);
       }
-
       initialize();
       // store();     // Call when submit the form
     });
