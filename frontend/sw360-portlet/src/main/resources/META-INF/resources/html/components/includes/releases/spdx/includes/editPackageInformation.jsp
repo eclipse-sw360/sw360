@@ -179,7 +179,7 @@
                   placeholder="Enter Algorithm">
                 <input style="flex: 6; margin-right: 2rem;" type="text" class="form-control checksum-value"
                   placeholder="Enter Value">
-                <svg class="disabled lexicon-icon spdx-delete-icon-sub" data-row-id=""
+                <svg class="disabled lexicon-icon spdx-delete-icon-sub checksum-delete" data-row-id=""
                   viewBox="0 0 512 512">
                   <title><liferay-ui:message key="delete" /></title>
                   <path class="lexicon-icon-outline lx-trash-body-border" d="M64.4,440.7c0,39.3,31.9,71.3,71.3,71.3h240.6c39.3,0,71.3-31.9,71.3-71.3v-312H64.4V440.7z M128.2,192.6h255.5v231.7c0,13.1-10.7,23.8-23.8,23.8H152c-13.1,0-23.8-10.7-23.8-23.8V192.6z"></path>
@@ -188,7 +188,7 @@
                   <rect class="lexicon-icon-outline lx-trash-line-1" x="160.2" y="223.6" width="63.9" height="191.6"></rect>
                 </svg>
               </div>
-              <button class="spdx-add-button-sub spdx-add-button-sub-checksum" >Add new algorithm</button>
+              <button id="addNewAlgorithm" class="spdx-add-button-sub spdx-add-button-sub-checksum" >Add new algorithm</button>
             </div>
           </div>
         </div>

@@ -339,16 +339,19 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         }
         for (let i = 0; i < packageInformationObj.checksums.length; i++) {
           addSub($('.spdx-add-button-sub-checksum').first());
-    
+          $('.checksum-delete').last().bind('click', function() {
+            deleteSub($(this));
+          });
+
           let algorithm   = packageInformationObj.checksums[i].algorithm;
           let checksumValue = packageInformationObj.checksums[i].checksumValue;
-    
+
           if (algorithm.startsWith('checksumAlgorithm_')) {
             $('.checksum-algorithm').last().val(algorithm.substr(18));
           } else {
             $('.checksum-algorithm').last().val('');
           }
-    
+
           $('.checksum-value').last().val(packageInformationObj.checksums[i].checksumValue);
         }
         fillMultiOptionsField('#packageHomepageValue', packageInformationObj.homepage);

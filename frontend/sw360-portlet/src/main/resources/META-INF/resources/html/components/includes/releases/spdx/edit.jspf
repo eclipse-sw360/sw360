@@ -694,8 +694,13 @@
             spdxjs.storeExternalRef(packageInformationObj, index);
         }
     });
+    $('#addNewAlgorithm').on('click', function() {
+      spdxjs.addSub($(this));
 
-
+      $('.checksum-delete').last().bind('click', function() {
+        spdxjs.deleteSub($(this));
+      });
+    });
     // ------------------------- 3.21 External References
     // Add data
     $('[name=add-externalRef]').on('click', function(e) {
