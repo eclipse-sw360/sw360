@@ -286,12 +286,14 @@
       }
     }
     /// Annotations
-      function initAnnotations() {
+    function initAnnotations() {
       let source = getAnnotationsSource();
 
       if (source.length == 0) {
         spdxjs.enableSection($('.section-annotation'), false);
+        $('#selectAnnotation').find('option').remove();
       } else {
+        spdxjs.enableSection($('.section-annotation'), true);
         spdxjs.fillSelectbox('#selectAnnotation', source.length);
         fillAnnotation(source, 0);
       }

@@ -19,6 +19,8 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
           section.find('.spdx-delete-icon-main').css('cursor', 'pointer');
           section.find('.spdx-delete-icon-sub').css('cursor', 'pointer');
         }
+
+        section.find('.always-enable').removeAttr('disabled');
     
         section.find('.spdx-radio').each(function () {
           $(this).parent().parent().find('input[type=text]').attr('disabled', 'true');

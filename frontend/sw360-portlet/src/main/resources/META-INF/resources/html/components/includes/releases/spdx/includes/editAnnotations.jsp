@@ -10,7 +10,7 @@
       <td>
         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem; padding-left: 1rem;">
           <label for="selectAnnotationSource" style="text-decoration: underline;" class="sub-title">Select Source</label>
-          <select id="selectAnnotationSource" type="text" class="form-control spdx-select" style="margin-right: 4rem;">
+          <select id="selectAnnotationSource" type="text" class="form-control spdx-select always-enable" style="margin-right: 4rem;">
             <option>SPDX Document</option>
             <option>Package</option>
           </select>
