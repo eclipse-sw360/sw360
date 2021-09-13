@@ -128,14 +128,6 @@
                                     <liferay-ui:message key="changes" /></a>
                                 </div>
                             </div>
-                            <div class="list-group-companion" data-belong-to="tab-SPDX">
-                                <div class="nav nav-pills justify-content-center bg-light font-weight-bold d-inline-flex" id="pills-tab" role="tablist">
-                                    <a class="nav-item nav-link active" id="spdx-tab" data-toggle="pill" href="#pills-spdx" role="tab" aria-controls="pills-spdx" aria-selected="true">
-                                    <liferay-ui:message key="spdx" /></a>
-                                    <a class="nav-item nav-link" id="spdxLite-tab" data-toggle="pill" href="#pills-spdxLite" role="tab" aria-controls="pills-spdxLite" aria-selected="false">
-                                    <liferay-ui:message key="spdx.lite" /></a>
-                                </div>
-                            </div>
                         </div>
                     </div>
                     <div class="col portlet-title text-truncate" title="<sw360:out value="${release.name}"/> <sw360:out value="${release.version}"/>">

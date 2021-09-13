@@ -605,7 +605,10 @@
 	</tbody>
 </table>
 
-<core_rt:set var="annotations" value="${spdxDocument.annotations}" />
+<core_rt:set var="documentAnnotations" value="${spdxDocument.annotations}" />
+<core_rt:if test="${not spdxPackageInfo.isEmpty()}">
+	<core_rt:set var="packageAnnotations" value="${spdxPackageInfo.iterator().next().annotations}" />
+</core_rt:if>
 <table class="table label-value-table spdx-table spdx-full" id="Annotations">
 	<thead class="spdx-thead">
 		<tr>
@@ -615,12 +618,21 @@
 	<tbody class="section" data-size="5">
 		<tr>
 			<td class="spdx-flex-row">
-				<div class="spdx-col-1 spdx-label-index">Index</div>
-				<select id="annotationSelect" class="spdx-col-2" onchange="displayIndex(this)"></select>
+				<div class="spdx-col-1 spdx-label-index">Source</div>
+				<select id="annotationSourceSelect" class="spdx-col-2" onchange="changeAnnotationSource(this)">
+					<option>SPDX Document</option>
+					<option>Package</option>
+				</select>
 			</td>
 		</tr>
-		<core_rt:forEach items="${annotations}" var="annotationsData" varStatus="loop">
-			<tr>
+		<tr>
+			<td class="spdx-flex-row">
+				<div class="spdx-col-1 spdx-label-index">Index</div>
+				<select id="annotationSelect" class="spdx-col-2" onchange="displayAnnotationIndex(this)"></select>
+			</td>
+		</tr>
+		<core_rt:forEach items="${documentAnnotations}" var="annotationsData" varStatus="loop">
+			<tr class="annotation-document-${loop.count}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">8.1 Annotator</div>
 					<p class="spdx-col-2 spdx-p">
@@ -629,7 +641,7 @@
 					</div>
 				</td>
 			</tr>
-			<tr>
+			<tr class="annotation-document-${loop.count}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">8.2 Annotation Date</div>
 					<p class="spdx-col-2 spdx-p">
@@ -637,7 +649,7 @@
 					</p>
 				</td>
 			</tr>
-			<tr>
+			<tr class="annotation-document-${loop.count}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">8.3 Annotation Type</div>
 					<div class="spdx-col-2">
@@ -650,7 +662,7 @@
 					</div>
 				</td>
 			</tr>
-			<tr>
+			<tr class="annotation-document-${loop.count}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">8.4 SPDX Identifier Reference</div>
 					<div class="spdx-col-2">
@@ -658,7 +670,55 @@
 					</div>
 				</td>
 			</tr>
-			<tr>
+			<tr class="annotation-document-${loop.count}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">8.5 Annotation Comment</div>
+					<p class="spdx-col-2 spdx-p">
+						<sw360:out value="${annotationsData.annotationComment}" stripNewlines="false" />
+					</p>
+				</td>
+			</tr>
+		</core_rt:forEach>
+		<core_rt:forEach items="${packageAnnotations}" var="annotationsData" varStatus="loop">
+			<tr class="annotation-package-${loop.count}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">8.1 Annotator</div>
+					<p class="spdx-col-2 spdx-p">
+						<sw360:out value="${annotationsData.annotator}" />
+					</p>
+					</div>
+				</td>
+			</tr>
+			<tr class="annotation-package-${loop.count}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">8.2 Annotation Date</div>
+					<p class="spdx-col-2 spdx-p">
+						<sw360:out value="${annotationsData.annotationDate}" />
+					</p>
+				</td>
+			</tr>
+			<tr class="annotation-package-${loop.count}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">8.3 Annotation Type</div>
+					<div class="spdx-col-2">
+						<div class="spdx-flex-row">
+							<!-- <div class="spdx-col-1 spdx-key">Organization</div> -->
+							<div class="spdx-col-3">
+								<sw360:out value="${annotationsData.annotationType}" />
+							</div>
+						</div>
+					</div>
+				</td>
+			</tr>
+			<tr class="annotation-package-${loop.count}">
+				<td class="spdx-flex-row">
+					<div class="spdx-col-1">8.4 SPDX Identifier Reference</div>
+					<div class="spdx-col-2">
+						<sw360:out value="${annotationsData.spdxIdRef}" />
+					</div>
+				</td>
+			</tr>
+			<tr class="annotation-package-${loop.count}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">8.5 Annotation Comment</div>
 					<p class="spdx-col-2 spdx-p">
@@ -762,6 +822,8 @@
 	});
 
 	function generateSelecterOption(selectId, length) {
+		$('#' + selectId).find('option').remove();
+
 		for (var i = 1; i <= length; i++) {
 			var option = document.createElement("option");
 			option.text = i;
@@ -771,7 +833,7 @@
 	generateSelecterOption('snippetInfoSelect', "${snippets.size()}");
 	generateSelecterOption('otherLicensingSelect', "${otherLicensing.size()}");
 	generateSelecterOption('relationshipSelect', "${relationships.size()}");
-	generateSelecterOption('annotationSelect', "${annotations.size()}");
+	generateSelecterOption('annotationSelect', "${documentAnnotations.size()}");
 	generateSelecterOption('externalReferenceSelect', "${package.externalRefs.size()}");
 	generateSelecterOption('externalDocumentRefs', "${spdxDocumentCreationInfo.externalDocumentRefs.size()}");
 
@@ -786,5 +848,35 @@
 		for (var i = 0; i < size; i++) {
 			section.children().eq(size * (index - 1) + i + 1).css('display', '');
 		}
+	}
+
+	function displayAnnotationIndex(el) {
+		var index = $(el).val();
+		var section = $(el).closest('.section');
+		var size = section.data()['size'];
+
+		section.children().css('display', 'none');
+		section.children().eq(0).css('display', '');
+		section.children().eq(1).css('display', '');
+
+		console.log();
+		if ($('#annotationSourceSelect').val() == 'SPDX Document') {
+			$('.annotation-document-' + index).css('display', 'table-row');
+		} else {
+			$('.annotation-package-' + index).css('display', 'table-row');
+		}
+	}
+
+	function changeAnnotationSource(el) {
+		if ($('#annotationSourceSelect').val() == 'Package') {
+			generateSelecterOption('annotationSelect', '${spdxPackageInfo.iterator().next().annotations.size()}');
+			$('.annotation-document').css('display', 'none');
+			$('.annotation-package').css('display', 'table-row');
+		} else {
+			generateSelecterOption('annotationSelect', '${documentAnnotations.size()}');
+			$('.annotation-document').css('display', 'table-row');
+			$('.annotation-package').css('display', 'none');
+		}
+		$('#annotationSelect').change();
 	}
 </script>
