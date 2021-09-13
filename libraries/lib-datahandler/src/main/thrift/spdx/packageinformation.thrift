@@ -26,7 +26,7 @@ struct PackageInformation {
     6: optional string SPDXID,              // 3.2
     7: optional string versionInfo,         // 3.3
     8: optional string packageFileName,     // 3.4
-    9: optional string supplier,            // 3.5  
+    9: optional string supplier,            // 3.5
     10: optional string originator,         // 3.6
     11: optional string downloadLocation,   // 3.7
     12: optional bool filesAnalyzed,        // 3.8

@@ -10,36 +10,41 @@
 
 package org.eclipse.sw360.portal.portlets.components.spdx;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
 import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.liferay.portal.kernel.xml.Element;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.liferay.portal.kernel.json.JSONException;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.json.JSONArray;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.ExternalDocumentReferences;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.Creator;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.CheckSum;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformationService;
+import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetRange;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocumentService;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageVerificationCode;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReference;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformationService;
+import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelements.RelationshipsBetweenSPDXElements;
+import org.eclipse.sw360.datahandler.thrift.spdx.otherlicensinginformationdetected.OtherLicensingInformationDetected;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.*;
-import org.eclipse.sw360.portal.common.PortalConstants;
-import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 
@@ -55,7 +60,8 @@ public abstract class SpdxPortlet {
     }
 
     private static final Logger log = LogManager.getLogger(SpdxPortlet.class);
-    private static final ObjectMapper mapper = new ObjectMapper();
+    private static final ObjectMapper mapper = new ObjectMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     private static SPDXDocument parseSPDXDocumentFromRequest(String jsonData) {
         SPDXDocument spdx = new SPDXDocument();
@@ -63,10 +69,27 @@ public abstract class SpdxPortlet {
             return null;
         }
         try {
-            spdx = mapper.readValue(jsonData, SPDXDocument.class);
-        } catch (JsonMappingException e) {
-            e.printStackTrace();
-        } catch (JsonProcessingException e) {
+            JSONObject json = JSONFactoryUtil.createJSONObject(jsonData);
+            Set<SnippetInformation> snippets = parseSnippets(json);
+            json.remove("snippets");
+            Set<RelationshipsBetweenSPDXElements> relationships = parseRelationships(json);
+            json.remove("relationships");
+            Set<Annotations> annotations = parseAnnotations(json);
+            json.remove("annotations");
+            Set<OtherLicensingInformationDetected> licensingInfo = parseLicensingInfo(json);
+            json.remove("otherLicensingInformationDetecteds");
+            json.remove("documentState");
+            json.remove("permissions");
+            try {
+                spdx = mapper.readValue(json.toJSONString(), SPDXDocument.class);
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+            spdx.setSnippets(snippets);
+            spdx.setRelationships(relationships);
+            spdx.setAnnotations(annotations);
+            spdx.setOtherLicensingInformationDetecteds(licensingInfo);
+        } catch (JSONException e) {
             e.printStackTrace();
         }
         return spdx;
@@ -78,13 +101,56 @@ public abstract class SpdxPortlet {
             return null;
         }
         try {
-            documentCreationInfo = mapper.readValue(jsonData, DocumentCreationInformation.class);
-        } catch (JsonMappingException e) {
-            e.printStackTrace();
-        } catch (JsonProcessingException e) {
+            JSONObject json = JSONFactoryUtil.createJSONObject(jsonData);
+            Set<ExternalDocumentReferences> externalDocumentRefs = parseExternalDocumentReferences(json);
+            json.remove("externalDocumentRefs");
+            Set<Creator> creator = parseCreator(json);
+            json.remove("creator");
+            json.remove("documentState");
+            json.remove("permissions");
+            try {
+                documentCreationInfo = mapper.readValue(json.toJSONString(), DocumentCreationInformation.class);
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+            documentCreationInfo.setExternalDocumentRefs(externalDocumentRefs);
+            documentCreationInfo.setCreator(creator);
+        } catch (JSONException e) {
             e.printStackTrace();
         }
         return documentCreationInfo;
+    }
+
+    private static PackageInformation parsePackageInfoFromRequest(String jsonData) {
+        PackageInformation packageInfo = new PackageInformation();
+        if (jsonData == null) {
+            return null;
+        }
+        try {
+            JSONObject json = JSONFactoryUtil.createJSONObject(jsonData);
+            PackageVerificationCode packageVerificationCode = parsePackageVerificationCode(json);
+            json.remove("packageVerificationCode");
+            Set<CheckSum> checksums = parseChecksum(json);
+            json.remove("checksums");
+            Set<ExternalReference> externalRefs = parseExternalReference(json);
+            json.remove("externalReferences");
+            Set<Annotations> annotations = parseAnnotations(json);
+            json.remove("annotations");
+            json.remove("documentState");
+            json.remove("permissions");
+            try {
+                packageInfo = mapper.readValue(json.toJSONString(), PackageInformation.class);
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+            packageInfo.setPackageVerificationCode(packageVerificationCode);
+            packageInfo.setChecksums(checksums);
+            packageInfo.setExternalRefs(externalRefs);
+            packageInfo.setAnnotations(annotations);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return packageInfo;
     }
 
     private static Set<PackageInformation> parsePackageInfosFromRequest(String jsonData) {
@@ -92,46 +158,48 @@ public abstract class SpdxPortlet {
         if (jsonData == null) {
             return null;
         }
-        ObjectMapper mapper = new ObjectMapper();
-        JsonFactory factory = mapper.getFactory();
-        JsonParser parser;
+        jsonData = "[" + jsonData + "]";
         try {
-            parser = factory.createParser(jsonData);
-            JsonNode packageInfosJsonNode = mapper.readTree(parser);
-            packageInfosJsonNode.forEach(packageInfoJson -> {
-                PackageInformation packageInfo = new PackageInformation();
-                try {
-                    packageInfo = mapper.readValue(packageInfoJson.toString(), PackageInformation.class);
-                } catch (JsonProcessingException e) {
-                    e.printStackTrace();
+            JSONArray arrayPackages = JSONFactoryUtil.createJSONArray(jsonData);
+            if (arrayPackages == null) {
+                return packageInfos;
+            }
+            for (int i = 0; i < arrayPackages.length(); i++) {
+                PackageInformation packageInfo = parsePackageInfoFromRequest(arrayPackages.getJSONObject(i).toJSONString());
+                if (packageInfo != null) {
+                    packageInfos.add(packageInfo);
                 }
-                packageInfos.add(packageInfo);
-            });
-        } catch (IOException e1) {
-            e1.printStackTrace();
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
-
         return packageInfos;
     }
 
     public static void updateSPDX(ActionRequest request, ActionResponse response, User user, String releaseId) throws TException {
         String spdxDocumentData = request.getParameter(SPDXDocument._Fields.TYPE.toString());
-        String documentCreationInfoData = request.getParameter(SPDXDocument._Fields.TYPE.toString());
-        String packageInfoData = request.getParameter(SPDXDocument._Fields.TYPE.toString());
-        String spdxDocumentId = "d2ecec57c2de49dc826cbc9b26cdbbbe";
-        //
-        // spdxDocumentData = "{ \"snippets\": [ { \"SPDXID\": \"SPDXRef-Snippet1\", \"snippetFromFile\": \"./src/org/spdx/parser/DOAPProject.java\", \"snippetRanges\": [ { \"rangeType\": \"LINE\", \"startPointer\": \"5\", \"endPointer\": \"23\", \"reference\": \"./src/org/spdx/parser/DOAPProject.java\" }, { \"rangeType\": \"BYTE\", \"startPointer\": \"310\", \"endPointer\": \"420\", \"reference\": \"./src/org/spdx/parser/DOAPProject.java\" } ], \"licenseConcluded\": \"GPL-2.0\", \"licenseInfoInSnippets\": [ \"GPL-2.0\" ], \"licenseComments\": \"The concluded license was taken from package xyz, from which the snippet was copied into the current file. The concluded license information was found in the COPYING.txt file in package xyz.\", \"copyrightText\": \"Copyright 2008-2010 John Smith\", \"comment\": \"This snippet was identified as significant and highlighted in this Apache-2.0 file, when a commercial scanner identified it as being derived from file foo.c in package xyz which is licensed under GPL-2.0.\", \"name\": \"from linux kernel\", \"snippetAttributionText\": \"AAAAAAAAA\" }, { \"SPDXID\": \"SPDXRef-sdasdSnippet\", \"snippetFromFile\": \"./src/org/spdx/parser/DOAPdsadasroject.java\", \"snippetRanges\": [ { \"rangeType\": \"LINE\", \"startPointer\": \"dsadas5\", \"endPointer\": \"2dasda3\", \"reference\": \"./src/org/spdx/parser/DdasdasdOAPProject.java\" }, { \"rangeType\": \"BYTE\", \"startPointer\": \"310\", \"endPointer\": \"420\", \"reference\": \"./src/org/spdx/pdasdarser/DOAPProject.java\" } ], \"licenseConcluded\": \"GPL-2.0\", \"licenseInfoInSnippets\": [ \"GPL-2.0\" ], \"licenseComments\": \"The concluded licensedasdas was taken from package xyz, from which the snippet was copied into the current file. The concluded license information was found in the COPYING.txt file in package xyz.\", \"copyrightText\": \"Copyright 2008-2010 John Smith\", \"comment\": \"This snippet was identified adasdas significant and highlighted in this Apache-2.0 file, when a commercial scanner identified it as being derived from file foo.c in package xyz which is licensed under GPL-2.0.\", \"name\": \"from linux kernel\", \"snippetAttributionText\": \"AAAAdasdaAAAAA\" } ], \"relationships\": [ { \"spdxElementId\": \"SPDXRef-File\", \"relationshipType\": \"relationshipType_describes\", \"relatedSpdxElement\": \"./package/foo.c\", \"relationshipComment\": \"AAAAAÂÂÂAÂAA\" }, { \"spdxElementId\": \"SPDXRef-Package\", \"relationshipType\": \"relationshipType_contains\", \"relatedSpdxElement\": \"glibc\" }, { \"spdxElementId\": \"SPDXRef-Package\", \"relationshipType\": \"relationshipType_describes\", \"relatedSpdxElement\": \"glibc\" } ], \"annotations\": [ { \"annotator\": \"Person: Jane Doe ()\", \"annotationDate\": \"2010-01-29T18:30:22Z\", \"annotationType\": \"OTHER\", \"annotationComment\": \"Document level annotation\", \"spdxIdRef\": \"spdxIdRef\" }, { \"annotator\": \"Person: Jane ddsdsDoe ()\", \"annotationDate\": \"2011-01-29T18:30:22Z\", \"annotationType\": \"OTHER\", \"annotationComment\": \"Document sdsdlevel annotation\", \"spdxIdRef\": \"sdsdpdxRef\" } ], \"otherLicensingInformationDetecteds\": [ { \"licenseId\": \"Person: Jane Doe ()\", \"extractedText\": \"2010-01-29T18:30:22Z\", \"licenseName\": \"OTHER1\", \"licenseCrossRefs\": [ \"Document level annotation\", \"AAAAAAA\" ], \"licenseComment\": \"spdxRef\" }, { \"licenseId\": \"Person:dsadasd Jane Doe ()\", \"extractedText\": \"2010-01-2sdasda9T18:30:22Z\", \"licenseName\": \"OTHER\", \"licenseCrossRefs\": [ \"Document level annosdsadasdtation\", \"BBBBBBBBBBB\" ], \"licenseComment\": \"spdxdsdRef\" } ] }";
-        // documentCreationInfoData = "{ \"id\":\"e6b87831f67c4b10ace8ded287ed5e23\", \"revision\":\"2-1f670d738275cdd6c346e8a3f351e81d\", \"spdxVersion\": \"SPDX-2.0\", \"SPDXID\": \"SPDX-2.0\", \"dataLicense\": \"CC0-1.0\", \"name\": \"SPDX-Tools-v2.0\", \"documentNamespace\": \"aaaaaaaaaaaaaaa1aaaaaaaaaaaaaaaaaaaaaa\", \"externalDocumentRefs\": [ { \"externalDocumentId\": \"DocumentRef\", \"checksum\": { \"algorithm\": \"checksumAlgorithm_sha1\", \"checksumValue\": \"d6a770ba38583ed4bb4525bd96e50461655d2759\" }, \"spdxDocument\": \"aaaaaaaaaaaaa1aaaaaaaaaaaaaaaa\" }, { \"externalDocumentId\": \"DocumentR1gsdgsdgef\", \"checksum\": { \"algorithm\": \"checksumAlgoritsdgsdghm_sha1\", \"checksumValue\": \"d6a770ba38583edsdgsdg4bb4525b1d96e50461655d2759\" }, \"spdxDocument\": \"aaaaaaaaaaaaaaaaaaaaaaaaaa1aaaaaaaaaaaaaaaaaaaaaaaaa\" } ], \"licenseListVersion\": \"1.1997\", \"creator\": [ { \"type\": \"Organization\", \"value\": \"ExampleCodeInspect\" }, { \"type\": \"Tool\", \"value\": \"LicenseFind-1.0\" }, { \"type\": \"Person\", \"value\": \"Jane Doe1\" } ], \"created\": \"2010-01-29T18:20:22Z\", \"creatorComment\": \"This package has been shipped in source and binary form. The binaries were created with gcc 4.5.1 and expect to link to compatible system run time libraries.1\", \"documentComment\": \"This document was created using SPDX 2.0 using licenses from the web sites.1\", \"createdBy\": \"admin@sw360.org\" }";
-        // packageInfoData = "[ { \"id\":\"3ef5f778ea9e447cba90496f5206455d\", \"revision\":\"2-3f29474b35b6abf2be61f10a39d854bc\", \"name\": \"glibc\", \"SPDXID\": \"SPDXRef-Package1\", \"versionInfo\": \"2.11.11\", \"packageFileName\": \"glibc-2.11.1.tar.gz1\", \"supplier\": \"Person: Jane Doe (jane.doe@example.com)1\", \"originator\": \"Organization: ExampleCodeInspect (contact@example.com)1\", \"downloadLocation\": \"http://ftp.gnu.org/gnu/glibc/glibc-ports-2.15.tar.gz1\", \"filesAnalyzed\": false, \"packageVerificationCode\": { \"excludedFiles\": [ \"excludes: ./package.spdx\", \"AAAAAAAAAAAAAAAAAAAAAAAAA1\", \"SSSSSSSSSSSSSSSSSSSSSSSSS\" ], \"value\": \"d6a770ba38583ed4bb4525bd96e50461655d27581\" }, \"checksums\": [ { \"algorithm\": \"22222222222222221\", \"checksumValue\": \"111111111111111\" }, { \"algorithm\": \"2222222222222\", \"checksumValue\": \"22222222222221\" } ], \"homepage\": \"http://ftp.gnu.org/gnu/glibc1\", \"sourceInfo\": \"uses glibc-2_11-branch from git://sourceware.org/git/glibc.git.1\", \"licenseConcluded\": \"ewqewqeeeeee1\", \"licenseInfoFromFiles\": [ \"GPL-2.01\", \"LicenseRef-2\", \"LicenseRef-1\" ], \"licenseDeclared\": \"(LicenseRef-3 AND LGPL-2.01)\", \"licenseComments\": \"The license for this project changed with the release of version x.y.  The version of the project included here post-dates the license change.1\", \"copyrightText\": \"Copyright 2008-2010 John Smith a1\", \"summary\": \"GNU C library.1\", \"description\": \"The GNU C Libra1ry defines functions that are specified by the ISO C standard, as well as additional features specific to POSIX and other derivatives of the Unix operating system, and extensions specific to GNU systems.\", \"externalRefs\": [ { \"referenceCategory\": \"referenceCategory_other1\", \"referenceLocator\": \"acmecorp/acmenator/4.1.3-alpha1\", \"referenceType\": \"http://spdx.org/spdxdocs/spdx-example-444504E0-4F89-41D3-9A0C-0305E82C3301#LocationRef-acmeforge\", \"comment\": \"This is the external ref for Acme\" }, { \"referenceCategory\": \"referenceCategory_security\", \"referenceLocator\": \"cpe:2.3:a:pivotal_software:spring_frame1work:4.1.0:*:*:*:*:*:*:*\", \"referenceType\": \"cpe23Type\" } ], \"attributionText\": [], \"annotations\": [ { \"annotator\": \"Person: Package Commenter\", \"annotationDate\": \"2011-01-29T18:30:22Z\", \"annotationType\": \"OTHER\", \"annotationComment\": \"Package level annotation\" }, { \"annotator\": \"Person: Packdsdsdsge Commenter\", \"annotationDate\": \"2011-11-29T18:30:22Z\", \"annotationType\": \"OTHER\", \"annotationComment\": \"Package levedsadasdaddasl annotation\" } ]} ]";
-        //
+        String documentCreationInfoData = request.getParameter(SPDXDocument._Fields.SPDX_DOCUMENT_CREATION_INFO_ID.toString());
+        String packageInfoData = request.getParameter(SPDXDocument._Fields.SPDX_PACKAGE_INFO_IDS.toString());
+        String spdxDocumentId = "";
+
+        log.info("spdxDocumentData : " + spdxDocumentData);
+        log.info("documentCreationInfoData : " + documentCreationInfoData);
+        log.info("packageInfoData : " + packageInfoData);
+        // spdxDocumentData = "";
+        // documentCreationInfoData = "";
+        //packageInfoData = "";
+
         if (!isNullOrEmpty(spdxDocumentData)) {
             SPDXDocument spdx = parseSPDXDocumentFromRequest(spdxDocumentData);
             SPDXDocumentService.Iface spdxClient = new ThriftClients().makeSPDXClient();
             if (spdx != null) {
-                if (isNullOrEmpty(spdx.getReleaseId()) && ! isNullOrEmpty(releaseId)) {
+                if (isNullOrEmpty(spdx.getReleaseId()) && !isNullOrEmpty(releaseId)) {
                     spdx.setReleaseId(releaseId);
                 }
+                log.info("spdx : " + spdx);
                 if (isNullOrEmpty(spdx.getId())) {
+                    spdx.unsetId();
+                    spdx.unsetRevision();
                     spdxDocumentId = spdxClient.addSPDXDocument(spdx, user).getId();
                 } else {
                     spdxClient.updateSPDXDocument(spdx, user);
@@ -141,12 +209,15 @@ public abstract class SpdxPortlet {
         }
         if (!isNullOrEmpty(documentCreationInfoData)) {
             DocumentCreationInformation document = parseDocumentCreationInfoFromRequest(documentCreationInfoData);
-            if (isNullOrEmpty(document.getSpdxDocumentId())) {
-                document.setSpdxDocumentId(spdxDocumentId);
-            }
             if (document != null) {
                 DocumentCreationInformationService.Iface documentClient = new ThriftClients().makeSPDXDocumentInfoClient();
+                if (isNullOrEmpty(document.getSpdxDocumentId())) {
+                    document.setSpdxDocumentId(spdxDocumentId);
+                }
+                log.info("document : " + document);
                 if (isNullOrEmpty(document.getId())) {
+                    document.unsetId();
+                    document.unsetRevision();
                     documentClient.addDocumentCreationInformation(document, user);
                 } else {
                     documentClient.updateDocumentCreationInformation(document, user);
@@ -159,9 +230,12 @@ public abstract class SpdxPortlet {
                 PackageInformationService.Iface packageClient = new ThriftClients().makeSPDXPackageInfoClient();
                 for (PackageInformation packageInfo : packageInfos) {
                     if (isNullOrEmpty(packageInfo.getSpdxDocumentId())) {
-                       packageInfo.setSpdxDocumentId(spdxDocumentId);
+                        packageInfo.setSpdxDocumentId(spdxDocumentId);
                     }
+                    log.info("packageInfo : " + packageInfo);
                     if (isNullOrEmpty(packageInfo.getId())) {
+                        packageInfo.unsetId();
+                        packageInfo.unsetRevision();
                         packageClient.addPackageInformation(packageInfo, user);
                     } else {
                         packageClient.updatePackageInformation(packageInfo, user);
@@ -169,6 +243,166 @@ public abstract class SpdxPortlet {
                 }
             }
         }
+    }
+
+    private static Set<SnippetInformation> parseSnippets(JSONObject json) {
+        Set<SnippetInformation> snippets = new HashSet<>();
+        JSONArray arraySnippets = json.getJSONArray("snippets");
+        if (arraySnippets == null) {
+            return snippets;
+        }
+        for (int i = 0; i < arraySnippets.length(); i++) {
+            try {
+                JSONObject objectSnippet = arraySnippets.getJSONObject(i);
+                JSONArray arraySnippet = objectSnippet.getJSONArray("snippetRanges");
+                objectSnippet.remove("snippetRanges");
+                SnippetInformation snippet = mapper.readValue(objectSnippet.toJSONString(), SnippetInformation.class);
+                Set<SnippetRange> snippetRanges = new HashSet<>();
+                for (int j = 0; j < arraySnippet.length(); j++) {
+                    snippetRanges.add(mapper.readValue(arraySnippet.getString(j), SnippetRange.class));
+                }
+                snippet.setSnippetRanges(snippetRanges);
+                snippets.add(snippet);
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+        }
+        return snippets;
+    }
+
+    private static Set<RelationshipsBetweenSPDXElements> parseRelationships(JSONObject json) {
+        Set<RelationshipsBetweenSPDXElements> relationships = new HashSet<>();
+        JSONArray arrayRelationships = json.getJSONArray("relationships");
+        if (arrayRelationships == null) {
+            return relationships;
+        }
+        for (int i = 0; i < arrayRelationships.length(); i++) {
+            try {
+                relationships
+                        .add(mapper.readValue(arrayRelationships.getString(i), RelationshipsBetweenSPDXElements.class));
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+        }
+        return relationships;
+    }
+
+    private static Set<Annotations> parseAnnotations(JSONObject json) {
+        Set<Annotations> annotations = new HashSet<>();
+        JSONArray arrayAnnotations = json.getJSONArray("annotations");
+        if (arrayAnnotations == null) {
+            return annotations;
+        }
+        for (int i = 0; i < arrayAnnotations.length(); i++) {
+            try {
+                annotations.add(mapper.readValue(arrayAnnotations.getString(i), Annotations.class));
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+        }
+        return annotations;
+    }
+
+    private static Set<OtherLicensingInformationDetected> parseLicensingInfo(JSONObject json) {
+        Set<OtherLicensingInformationDetected> licensingInfo = new HashSet<>();
+        JSONArray arrayLicensingInfo = json.getJSONArray("otherLicensingInformationDetecteds");
+        if (arrayLicensingInfo == null) {
+            return licensingInfo;
+        }
+        for (int i = 0; i < arrayLicensingInfo.length(); i++) {
+            try {
+                licensingInfo.add(
+                        mapper.readValue(arrayLicensingInfo.getString(i), OtherLicensingInformationDetected.class));
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+        }
+        return licensingInfo;
+    }
+
+    private static Set<ExternalDocumentReferences> parseExternalDocumentReferences(JSONObject json) {
+        Set<ExternalDocumentReferences> externalDocumentRefs = new HashSet<>();
+        JSONArray arrayExternalDocumentRefs = json.getJSONArray("externalDocumentRefs");
+        if (arrayExternalDocumentRefs == null) {
+            return externalDocumentRefs;
+        }
+        for (int i = 0; i < arrayExternalDocumentRefs.length(); i++) {
+            try {
+                JSONObject objectExternalDocumentRef = arrayExternalDocumentRefs.getJSONObject(i);
+                JSONObject objectChecksum = objectExternalDocumentRef.getJSONObject("checksum");
+                objectExternalDocumentRef.remove("checksum");
+                ExternalDocumentReferences externalDocumentRef = mapper.readValue(objectExternalDocumentRef.toJSONString(), ExternalDocumentReferences.class);
+                CheckSum checksum = mapper.readValue(objectChecksum.toJSONString(), CheckSum.class);
+                externalDocumentRef.setChecksum(checksum);
+                externalDocumentRefs.add(externalDocumentRef);
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+        }
+        return externalDocumentRefs;
+    }
+
+    private static Set<Creator> parseCreator(JSONObject json) {
+        Set<Creator> creator = new HashSet<>();
+        JSONArray arrayCreator = json.getJSONArray("creator");
+        if (arrayCreator == null) {
+            return creator;
+        }
+        for (int i = 0; i < arrayCreator.length(); i++) {
+            try {
+                creator.add(mapper.readValue(arrayCreator.getString(i), Creator.class));
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+        }
+        return creator;
+    }
+
+    private static PackageVerificationCode parsePackageVerificationCode(JSONObject json) {
+        PackageVerificationCode packageVerificationCode = new PackageVerificationCode();
+        JSONObject objectPackageVerificationCode = json.getJSONObject("packageVerificationCode");
+        if (objectPackageVerificationCode == null) {
+            return packageVerificationCode;
+        }
+        try {
+            packageVerificationCode = mapper.readValue(objectPackageVerificationCode.toJSONString(),
+                    PackageVerificationCode.class);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return packageVerificationCode;
+    }
+
+    private static Set<CheckSum> parseChecksum(JSONObject json) {
+        Set<CheckSum> checkSums = new HashSet<>();
+        JSONArray arrayCheckSums = json.getJSONArray("checksums");
+        if (arrayCheckSums == null) {
+            return checkSums;
+        }
+        for (int i = 0; i < arrayCheckSums.length(); i++) {
+            try {
+                checkSums.add(mapper.readValue(arrayCheckSums.getString(i), CheckSum.class));
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+        }
+        return checkSums;
+    }
+
+    private static Set<ExternalReference> parseExternalReference(JSONObject json) {
+        Set<ExternalReference> externalRefs = new HashSet<>();
+        JSONArray arrayExternalRefs = json.getJSONArray("externalRefs");
+        if (arrayExternalRefs == null) {
+            return externalRefs;
+        }
+        for (int i = 0; i < arrayExternalRefs.length(); i++) {
+            try {
+                externalRefs.add(mapper.readValue(arrayExternalRefs.getString(i), ExternalReference.class));
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+        }
+        return externalRefs;
     }
 
 }

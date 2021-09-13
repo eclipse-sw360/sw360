@@ -59,12 +59,8 @@ import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
-import org.eclipse.sw360.datahandler.thrift.spdx.otherlicensinginformationdetected.OtherLicensingInformationDetected;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation._Fields;
-import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.*;
-import org.eclipse.sw360.datahandler.thrift.spdx.annotations.*;
-import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelements.*;
 import org.eclipse.sw360.exporter.ComponentExporter;
 import org.eclipse.sw360.portal.common.*;
 import org.eclipse.sw360.portal.common.datatables.PaginationParser;
@@ -871,55 +867,15 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     private SPDXDocument generateSpdxDocument() {
         SPDXDocument spdxDocument = new SPDXDocument();
         for (SPDXDocument._Fields field : SPDXDocument._Fields.values()) {
-
-            switch (field) {
-                // case SNIPPETS: {
-                //     Set<SnippetInformation> snippets = new HashSet<>();
-                //     SnippetInformation snippet = new SnippetInformation();
-                //     snippet.snippetFromFile = "";
-                //     Set<SnippetRange> snippetRanges = new HashSet<>();
-                //     SnippetRange snippetRange = new SnippetRange();
-                //     snippetRanges.add(snippetRange);
-                //     snippet.setSnippetRanges(snippetRanges);
-                //     snippets.add(snippet);
-                //     spdxDocument.setSnippets(snippets);
-                //     break;
-                // }
-                // case RELATIONSHIPS: {
-                //     Set<RelationshipsBetweenSPDXElements> relationships = new HashSet<>();
-                //     RelationshipsBetweenSPDXElements relationship = new RelationshipsBetweenSPDXElements();
-                //     relationship.relationshipType = "";
-                //     relationships.add(relationship);
-                //     spdxDocument.setRelationships(relationships);
-                //     break;
-                // }
-                // case ANNOTATIONS: {
-                //     Set<Annotations> annotations = new HashSet<>();
-                //     annotations.add(new Annotations());
-                //     spdxDocument.setAnnotations(annotations);
-                //     break;
-                // }
-                // case OTHER_LICENSING_INFORMATION_DETECTEDS: {
-                //     Set<OtherLicensingInformationDetected> otherLicensingInformationDetecteds = new HashSet<>();
-                //     OtherLicensingInformationDetected otherLicensingInformationDetected = new OtherLicensingInformationDetected();
-                //     otherLicensingInformationDetected.licenseId = "";
-                //     otherLicensingInformationDetecteds.add(otherLicensingInformationDetected);
-                //     spdxDocument.setOtherLicensingInformationDetecteds(otherLicensingInformationDetecteds);
-                //     break;
-                // }
-                default: {
-                    switch (SPDXDocument.metaDataMap.get(field).valueMetaData.type) {
-                        case TType.SET:
-                            spdxDocument.setFieldValue(field, new HashSet<>());
-                            break;
-                        case TType.STRING:
-                            spdxDocument.setFieldValue(field, "");
-                            break;
-                        default:
-                            break;
-                    }
+            switch (SPDXDocument.metaDataMap.get(field).valueMetaData.type) {
+                case TType.SET:
+                    spdxDocument.setFieldValue(field, new HashSet<>());
                     break;
-                }
+                case TType.STRING:
+                    spdxDocument.setFieldValue(field, "");
+                    break;
+                default:
+                    break;
             }
         }
         return spdxDocument;
@@ -928,38 +884,15 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     private DocumentCreationInformation generateDocumentCreationInformation() {
         DocumentCreationInformation documentCreationInfo = new DocumentCreationInformation();
         for (DocumentCreationInformation._Fields field : DocumentCreationInformation._Fields.values()) {
-
-            switch (field) {
-                // case EXTERNAL_DOCUMENT_REFS: {
-                //     Set<ExternalDocumentReferences> externalDocumentRefs = new HashSet<>();
-                //     ExternalDocumentReferences externalDocumentRef = new ExternalDocumentReferences();
-                //     CheckSum checksum = new CheckSum();
-                //     checksum.algorithm = "";
-                //     externalDocumentRef.setChecksum(checksum);
-                //     externalDocumentRefs.add(externalDocumentRef);
-                //     documentCreationInfo.setExternalDocumentRefs(externalDocumentRefs);
-                //     break;
-                // }
-                // case CREATOR: {
-                //     Set<Creator> creators = new HashSet<>();
-                //     Creator creator = new Creator();
-                //     creators.add(creator);
-                //     documentCreationInfo.setCreator(creators);
-                //     break;
-                // }
-                default: {
-                    switch (DocumentCreationInformation.metaDataMap.get(field).valueMetaData.type) {
-                        case TType.SET:
-                        documentCreationInfo.setFieldValue(field, new HashSet<>());
-                        break;
-                    case TType.STRING:
-                        documentCreationInfo.setFieldValue(field, "");
-                        break;
-                    default:
-                        break;
-                    }
-                    break;
-                }
+            switch (DocumentCreationInformation.metaDataMap.get(field).valueMetaData.type) {
+                case TType.SET:
+                documentCreationInfo.setFieldValue(field, new HashSet<>());
+                break;
+            case TType.STRING:
+                documentCreationInfo.setFieldValue(field, "");
+                break;
+            default:
+                break;
             }
         }
         return documentCreationInfo;
@@ -976,27 +909,6 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                     packageInfo.setPackageVerificationCode(packageVerificationCode);
                     break;
                 }
-                // case CHECKSUMS: {
-                //     Set<CheckSum> checkSums = new HashSet<>();
-                //     CheckSum checkSum = new CheckSum();
-                //     checkSum.algorithm = "";
-                //     checkSums.add(checkSum);
-                //     packageInfo.setChecksums(checkSums);
-                //     break;
-                // }
-                // case EXTERNAL_REFS: {
-                //     Set<ExternalReference> externalRefs = new HashSet<>();
-                //     ExternalReference externalRef = new ExternalReference();
-                //     externalRefs.add(externalRef);
-                //     packageInfo.setExternalRefs(externalRefs);
-                //     break;
-                // }
-                // case ANNOTATIONS: {
-                //     Set<Annotations> annotations = new HashSet<>();
-                //     annotations.add(new Annotations());
-                //     packageInfo.setAnnotations(annotations);
-                //     break;
-                // }
                 default: {
                     this.field = field;
                     switch (PackageInformation.metaDataMap.get(field).valueMetaData.type) {
@@ -1007,7 +919,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                         packageInfo.setFieldValue(field, "");
                         break;
                     case TType.BOOL:
-                        packageInfo.setFieldValue(field, false);
+                        packageInfo.setFieldValue(field, true);
                     default:
                         break;
                     }
