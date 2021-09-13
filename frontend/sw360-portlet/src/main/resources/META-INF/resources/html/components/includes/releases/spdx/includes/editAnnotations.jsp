@@ -30,9 +30,7 @@
     <tr>
       <td style="display: flex">
         <div class="form-group" style="flex: 3">
-          <label class="mandatory" for="annotator">
-            8.1 Annotator
-          </label>
+          <label class="mandatory" for="annotator">8.1 Annotator</label>
           <div style="display: flex">
             <select id="annotatorType" style="flex: 2; margin-right: 1rem;" type="text" class="form-control" placeholder="Enter Type">
               <option value="Organization" selected="">Organization</option>
@@ -40,20 +38,16 @@
               <option value="Tool">Tool</option>
             </select>
             <input style="flex: 6; margin-right: 1rem;" id="annotatorValue" type="text" class="form-control"
-              placeholder="Enter Value" value="">
+              placeholder="Enter Value" >
           </div>
         </div>
         <div class="form-group" style="flex: 1">
-          <label class="mandatory" for="annotationCreatedDate">
-            8.2 Annotation Date
-          </label>
+          <label class="mandatory" for="annotationCreatedDate">8.2 Annotation Date </label>
           <div style="display: flex">
             <input id="annotationCreatedDate" style="width: 12rem; text-align: center;" type="date"
-              class="form-control" name="_sw360_portlet_components_SPDX_CREATED_DATE"
-              placeholder="creation.date.yyyy.mm.dd" value="">
+              class="form-control" placeholder="creation.date.yyyy.mm.dd" >
             <input id="annotationCreatedTime" style="width: 12rem; text-align: center; margin-left: 10px;"
-              type="time" step="1" class="form-control" name="_sw360_portlet_components_SPDX_CREATED_TIME"
-              placeholder="creation.time.hh.mm.ss" value="">
+              type="time" step="1" class="form-control" placeholder="creation.time.hh.mm.ss" >
           </div>
         </div>
       </td>
@@ -61,20 +55,13 @@
     <tr>
       <td style="display: flex">
         <div class="form-group" style="flex: 1">
-          <label class="mandatory" for="annotationType">
-            8.3 Annotation Type
-          </label>
-          <input id="annotationType" class="form-control needs-validation"
-            name="_sw360_portlet_components_ANNOTATION_TYPE" type="text" placeholder="Enter Annotation Type"
-            value="">
+          <label class="mandatory" for="annotationType">8.3 Annotation Type</label>
+          <input id="annotationType" class="form-control needs-validation" type="text" placeholder="Enter Annotation Type" >
         </div>
         <div class="form-group" style="flex: 1">
-          <label class="mandatory" for="spdxIdRef">
-            8.4 SPDX Identifier Reference
-          </label>
-          <input id="spdxIdRef" class="form-control needs-validation"
-            name="_sw360_portlet_components_SPDX_IDENTIFIER_REF" type="text"
-            placeholder="Enter SPDX Identifier Reference" value="">
+          <label class="mandatory" for="spdxIdRef">8.4 SPDX Identifier Reference</label>
+          <input id="spdxIdRef" class="form-control needs-validation" type="text"
+            placeholder="Enter SPDX Identifier Reference" >
         </div>
       </td>
     </tr>
@@ -83,7 +70,6 @@
         <div class="form-group">
           <label class="mandatory" for="annotationComment">8.5 Annotation Comment</label>
           <textarea class="form-control" id="annotationComment" rows="5"
-            name="_sw360_portlet_components_ANNOTATION_COMMENT"
             placeholder="Enter License Comment"></textarea>
         </div>
       </td>

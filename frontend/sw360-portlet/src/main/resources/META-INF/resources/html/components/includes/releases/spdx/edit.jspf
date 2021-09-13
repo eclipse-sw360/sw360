@@ -144,6 +144,7 @@
 
 <script>
   require(['jquery', 'components/includes/releases/spdxjs'], function ($, spdxjs) {
+    let userDisplay;
     function initDocumentCreation() {
       if (documentCreationInformationObj['spdxVersion'].startsWith('SPDX-')) {
         $('#spdxVersion').val(documentCreationInformationObj['spdxVersion'].substr(5).trim());
@@ -173,7 +174,7 @@
         } else {
           middleName = " " + middleName + " ";
         }
-        let userDisplay = "<%=themeDisplay.getUser().getFirstName()%>" + middleName + "<%=themeDisplay.getUser().getLastName()%>" + " (<%=themeDisplay.getUser().getEmailAddress()%>)";
+        userDisplay = "<%=themeDisplay.getUser().getFirstName()%>" + middleName + "<%=themeDisplay.getUser().getLastName()%>" + " (<%=themeDisplay.getUser().getEmailAddress()%>)";
         $('.creator-value').last().val(userDisplay);
       } else {
         for (let i = 0; i < documentCreationInformationObj.creator.length; i++) {
@@ -288,14 +289,14 @@
       })
 
       if (documentCreationInformationObj.creator.length == 0) {
-        // Fill the current user of SW360
+        documentCreationInformationObj.creator.push({ 'type': 'Person', 'value': userDisplay });
       }
       documentCreationInformationObj['created'] = spdxjs.readDateTime('#createdDate', '#createdTime');
       if (documentCreationInformationObj['created'] == '') {
         documentCreationInformationObj['created'] = (new Date()).toISOString();
       }
     }
-    /// Annotations
+    // Annotations
     function initAnnotations() {
       let source = getAnnotationsSource();
 
@@ -316,7 +317,6 @@
       return spdxDocumentObj.annotations;
     }
 
-    // 8 Annotations
     // Add data
     $('[name=add-annotation]').on('click', function(e) {
       e.preventDefault();
@@ -379,7 +379,8 @@
     obj['spdxRef'] = $('#spdxIdRef').val().trim();
     obj['annotationComment'] = $('#annotationComment').val().trim();
   }
-  /// Other Licensing
+
+  // Other Licensing
   function initOtherLicensing() {
     if (spdxDocumentObj.otherLicensingInformationDetecteds.length == 0) {
       spdxjs.enableSection($('.section-other-licensing'), false);
@@ -442,8 +443,8 @@
 
     obj['licenseComment'] = $('#licenseCommentOnOtherLicensing').val().trim();
   }
-    /// Relationships
-    function initRelationships() {
+    // Relationships
+  function initRelationships() {
     if (spdxDocumentObj.relationships.length == 0) {
       spdxjs.enableSection($('.section-relationship'), false);
     } else {
@@ -497,8 +498,8 @@
     obj['relatedSpdxElement'] = $('#relatedSPDXElement').val().trim();
     obj['relationshipComment'] = $('#relationshipComment').val().trim();
   }
-    /// Snippet Information
-    function initSnippetInfo() {
+  // Snippet Information
+  function initSnippetInfo() {
     if (spdxDocumentObj.snippets.length == 0) {
       spdxjs.enableSection($('.section-snippet'), false);
     } else {
@@ -506,9 +507,7 @@
       fillSnippet(0);
     }
   }
-
   // 5 Snippet Information
-  // Add data
   $('[name=add-snippet]').on('click', function(e) {
     e.preventDefault();
 
@@ -527,14 +526,12 @@
     $('#selectSnippet').change();
   });
 
-  // Delete data
   $('[name=delete-snippet').on('click', function(e) {
     let selectedIndex = $('#selectSnippet')[0].selectedIndex;
     spdxDocumentObj.snippets.splice(selectedIndex, 1);
     spdxjs.deleteMain($(this));
   });
 
-  // Change data
   $('#selectSnippet').on('change', function(e) {
     let selectedIndex = $('#selectSnippet')[0].selectedIndex;
     fillSnippet(selectedIndex);
@@ -561,7 +558,6 @@
       $('#snippetFromFileValue').val('');
     }
 
-    // Check to clear all current ranges
     if ($('[name=delete-snippetRange].hidden').length == 0) {
       const rangesNum = $('[name=snippetRange]').length;
       for (let i = 0; i < rangesNum; i++) {
@@ -672,7 +668,7 @@
     obj['name']           = $('#snippetName').val().trim();
     obj['snippetAttributionText'] = $('#snippetAttributionText').val().trim();
   }
-    /// Package Information
+  // Package Information
     const referenceCategories = {
         'referenceCategory_security': ['cpe22Type', 'cpe23Type'],
         'referenceCategory_packageManager': ['maven-central', 'npm', 'nuget', 'bower', 'purl'],
@@ -713,8 +709,7 @@
         spdxjs.deleteSub($(this));
       });
     });
-    // 3.21 External References
-    // Add data
+
     $('[name=add-externalRef]').on('click', function(e) {
       e.preventDefault();
 
@@ -724,14 +719,12 @@
       $('#externalReferences').change();
     });
 
-    // Delete data
     $('[name=delete-externalRef').on('click', function(e) {
         let selectedIndex = $('#externalReferences')[0].selectedIndex;
         packageInformationObj.externalRefs.splice(selectedIndex, 1);
         spdxjs.deleteMain($(this));
     });
 
-    // Change data
     $('#externalReferences').on('change', function(e) {
         let selectedIndex = $('#externalReferences')[0].selectedIndex;
         spdxjs.fillExternalRef(packageInformationObj, selectedIndex);
@@ -774,7 +767,6 @@
     })
 
     $(function () {
-      // Expand/collapse section when click on the header
       $('thead').on('click', function () {
         if ($(this).next().css('display') == 'none') {
           $(this).next().css('display', '');
