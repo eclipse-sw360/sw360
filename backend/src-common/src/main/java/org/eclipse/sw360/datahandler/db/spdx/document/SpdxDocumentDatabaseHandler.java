@@ -23,6 +23,8 @@ import org.eclipse.sw360.datahandler.thrift.changelogs.*;
 import org.eclipse.sw360.datahandler.db.ReleaseRepository;
 import org.eclipse.sw360.datahandler.db.VendorRepository;
 import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
+import org.eclipse.sw360.datahandler.db.spdx.documentcreationinfo.SpdxDocumentCreationInfoDatabaseHandler;
+import org.eclipse.sw360.datahandler.db.spdx.packageinfo.SpdxPackageInfoDatabaseHandler;
 import org.eclipse.sw360.datahandler.entitlement.SpdxDocumentModerator;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
@@ -56,6 +58,9 @@ public class SpdxDocumentDatabaseHandler {
     private DatabaseHandlerUtil dbHandlerUtil;
     private final SpdxDocumentModerator moderator;
 
+    private final SpdxDocumentCreationInfoDatabaseHandler creationInfoDatabaseHandler;
+    private final SpdxPackageInfoDatabaseHandler packageInfoDatabaseHandler;
+
     public SpdxDocumentDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException {
         db = new DatabaseConnectorCloudant(httpClient, dbName);
 
@@ -70,6 +75,8 @@ public class SpdxDocumentDatabaseHandler {
         // Create the changelogs
         dbChangeLogs = new DatabaseConnectorCloudant(httpClient, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
+        this.creationInfoDatabaseHandler = new SpdxDocumentCreationInfoDatabaseHandler(httpClient, dbName);
+        this.packageInfoDatabaseHandler = new SpdxPackageInfoDatabaseHandler(httpClient, dbName);
     }
 
     public List<SPDXDocument> getSPDXDocumentSummary(User user) {
@@ -137,9 +144,9 @@ public class SpdxDocumentDatabaseHandler {
 
     public RequestStatus updateSPDXDocument(SPDXDocument spdx, User user) throws SW360Exception {
         prepareSPDXDocument(spdx);
-        if (!makePermission(spdx, user).isActionAllowed(RequestedAction.WRITE)) {
-            return moderator.updateSPDXDocument(spdx, user);
-        }
+        // if (!makePermission(spdx, user).isActionAllowed(RequestedAction.WRITE)) {
+        //     return moderator.updateSPDXDocument(spdx, user);
+        // }
         SPDXDocument actual = SPDXDocumentRepository.get(spdx.getId());
         assertNotNull(actual, "Could not find SPDX Document to update!");
         SPDXDocumentRepository.update(spdx);
@@ -166,7 +173,9 @@ public class SpdxDocumentDatabaseHandler {
         }
         Set<String> packageInfoIds = spdx.getSpdxPackageInfoIds();
         if (packageInfoIds != null) {
-            return RequestStatus.IN_USE;
+            for (String packageInfoId : packageInfoIds) {
+                packageInfoDatabaseHandler.deletePackageInformation(packageInfoId, user);
+            }
         }
 
         Set<String> fileInfoIds = spdx.getSpdxFileInfoIds();
@@ -176,11 +185,13 @@ public class SpdxDocumentDatabaseHandler {
 
         String documentCreationId = spdx.getSpdxDocumentCreationInfoId();
         if (documentCreationId != null) {
-            return RequestStatus.IN_USE;
+            creationInfoDatabaseHandler.deleteDocumentCreationInformation(documentCreationId, user);
         }
 
-        SPDXDocumentRepository.remove(spdx);
-        dbHandlerUtil.addChangeLogs(null, spdx, user.getEmail(), Operation.DELETE, null, Lists.newArrayList(), null, null);
+        spdx.unsetSpdxPackageInfoIds();
+        spdx.unsetSpdxDocumentCreationInfoId();
+
+        SPDXDocumentRepository.remove(id);
         String releaseId = spdx.getReleaseId();
         if (isNotNullEmptyOrWhitespace(releaseId)) {
             Release release = releaseRepository.get(releaseId);

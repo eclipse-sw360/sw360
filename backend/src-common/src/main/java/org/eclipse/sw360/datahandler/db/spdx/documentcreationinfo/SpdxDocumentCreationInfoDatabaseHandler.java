@@ -133,9 +133,9 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
         DocumentCreationInformation actual = SPDXDocumentCreationInfoRepository.get(documentCreationInfo.getId());
         assertNotNull(actual, "Could not find SPDX Document Creation Information to update!");
         prepareSpdxDocumentCreationInfo(documentCreationInfo);
-        if (!makePermission(documentCreationInfo, user).isActionAllowed(RequestedAction.WRITE)) {
-            return moderator.updateSpdxDocumentCreationInfo(documentCreationInfo, user);
-        }
+        // if (!makePermission(documentCreationInfo, user).isActionAllowed(RequestedAction.WRITE)) {
+        //     return moderator.updateSpdxDocumentCreationInfo(documentCreationInfo, user);
+        // }
         SPDXDocumentCreationInfoRepository.update(documentCreationInfo);
         dbHandlerUtil.addChangeLogs(documentCreationInfo, actual, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, null);
         return RequestStatus.SUCCESS;
@@ -159,7 +159,6 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
             return moderator.deleteSpdxDocumentCreationInfo(documentCreationInfo, user);
         }
         SPDXDocumentCreationInfoRepository.remove(documentCreationInfo);
-        dbHandlerUtil.addChangeLogs(null, documentCreationInfo, user.getEmail(), Operation.DELETE, null, Lists.newArrayList(), null, null);
         String spdxDocumentId = documentCreationInfo.getSpdxDocumentId();
         if (isNotNullEmptyOrWhitespace(spdxDocumentId)) {
             SPDXDocument spdxDocument = SPDXDocumentRepository.get(spdxDocumentId);
