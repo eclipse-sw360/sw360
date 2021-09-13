@@ -2168,9 +2168,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
                 InputStream spdxInputStream;
                 String fileType = getFileType(attachmentContent.getFilename());
-                if (isRdfXmlFile(fileType)) {
-                    spdxInputStream = inputStream;
-                } else {
+                if (isJSONFile(fileType)) {
                     final File sourceFile = DatabaseHandlerUtil.saveAsTempFile(user, inputStream, attachmentContentId, "."+fileType);
                     final String sourceFileName = sourceFile.getPath().toString();
                     final String targetFileName = attachmentContentId + ".rdf";
@@ -2179,6 +2177,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     spdxInputStream = new FileInputStream(new File(targetFileName));
 
                     Files.delete(Paths.get(sourceFileName));
+                } else {
+                    spdxInputStream = inputStream;
                 }
 
                 ImportBomRequestPreparation importBomRequestPreparation = spdxBOMImporter.prepareImportSpdxBOMAsRelease(spdxInputStream, attachmentContent);
@@ -2215,12 +2215,12 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
                 InputStream spdxInputStream;
                 String fileType = getFileType(attachmentContent.getFilename());
-                if (isRdfXmlFile(fileType)) {
-                    spdxInputStream = inputStream;
-                } else {
+                if (isJSONFile(fileType)) {
                     final String targetFileName = attachmentContentId + ".rdf";
                     spdxInputStream = new FileInputStream(new File(targetFileName));
                     Files.delete(Paths.get(targetFileName));
+                } else {
+                    spdxInputStream = inputStream;
                 }
 
                 return spdxBOMImporter.importSpdxBOMAsRelease(spdxInputStream, attachmentContent, newReleaseVersion, releaseId);
@@ -2244,8 +2244,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 		return ext;
     }
 
-    private boolean isRdfXmlFile(String fileType) {
-        return (!isNullEmptyOrWhitespace(fileType) && fileType.equals("rdf"));
+    private boolean isJSONFile(String fileType) {
+        return (!isNullEmptyOrWhitespace(fileType) && fileType.equals("json"));
     }
 
     private void removeLeadingTrailingWhitespace(Release release) {
