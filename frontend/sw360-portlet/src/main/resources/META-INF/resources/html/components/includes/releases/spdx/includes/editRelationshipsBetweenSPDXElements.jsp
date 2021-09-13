@@ -1,4 +1,3 @@
-<core_rt:set var="relationships" value="${spdxDocument.relationships}" />
 <table class="table spdx-table" id="editRelationshipsBetweenSPDXElements">
   <thead>
     <tr>

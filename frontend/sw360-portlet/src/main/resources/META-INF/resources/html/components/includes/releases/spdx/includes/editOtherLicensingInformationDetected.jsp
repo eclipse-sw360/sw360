@@ -1,4 +1,3 @@
-<core_rt:set var="otherLicensing" value="${spdxDocument.otherLicensingInformationDetecteds}" />
 <table class="table spdx-table" id="editOtherLicensingInformationDetected">
   <thead>
     <tr>

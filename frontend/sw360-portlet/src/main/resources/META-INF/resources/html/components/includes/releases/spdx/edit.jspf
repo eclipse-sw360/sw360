@@ -137,6 +137,9 @@
   <%@include file="/html/components/includes/releases/spdx/includes/editOtherLicensingInformationDetected.jsp" %>
   <%@include file="/html/components/includes/releases/spdx/includes/editRelationshipsBetweenSPDXElements.jsp"%>
   <%@include file="/html/components/includes/releases/spdx/includes/editAnnotations.jsp" %>
+  <input style="display: none;" type="text" id="spdxDocumentData" name="<portlet:namespace/><%=SPDXDocument._Fields.TYPE%>" value="" />
+  <input style="display: none;" type="text" id="documentCreationInfoData" name="<portlet:namespace/><%=SPDXDocument._Fields.SPDX_DOCUMENT_CREATION_INFO_ID%>" value="" />
+  <input style="display: none;" type="text" id="packageInfoData" name="<portlet:namespace/><%=SPDXDocument._Fields.SPDX_PACKAGE_INFO_IDS%>" value="" />
 </div>
 
 <script>
@@ -164,7 +167,14 @@
       if (documentCreationInformationObj.creator.length == 0) {
         $('.spdx-add-button-sub-creator').first().click();
         $('.creator-type').last().val('Person');
-        $('.creator-value').last().val("<%=themeDisplay.getUser().getEmailAddress()%>");
+        let middleName = "<%=themeDisplay.getUser().getMiddleName()%>"
+        if (middleName == "") {
+          middleName = " ";
+        } else {
+          middleName = " " + middleName + " ";
+        }
+        let userDisplay = "<%=themeDisplay.getUser().getFirstName()%>" + middleName + "<%=themeDisplay.getUser().getLastName()%>" + " (<%=themeDisplay.getUser().getEmailAddress()%>)";
+        $('.creator-value').last().val(userDisplay);
       } else {
         for (let i = 0; i < documentCreationInformationObj.creator.length; i++) {
           spdxjs.addSub($('.spdx-add-button-sub-creator').first());
@@ -306,7 +316,7 @@
       return spdxDocumentObj.annotations;
     }
 
-    // ------------------------- 8 Annotations
+    // 8 Annotations
     // Add data
     $('[name=add-annotation]').on('click', function(e) {
       e.preventDefault();
@@ -497,7 +507,7 @@
     }
   }
 
-  // ------------------------- 5 Snippet Information
+  // 5 Snippet Information
   // Add data
   $('[name=add-snippet]').on('click', function(e) {
     e.preventDefault();
@@ -703,7 +713,7 @@
         spdxjs.deleteSub($(this));
       });
     });
-    // ------------------------- 3.21 External References
+    // 3.21 External References
     // Add data
     $('[name=add-externalRef]').on('click', function(e) {
       e.preventDefault();
@@ -721,13 +731,12 @@
         spdxjs.deleteMain($(this));
     });
 
-    // // Change data
+    // Change data
     $('#externalReferences').on('change', function(e) {
         let selectedIndex = $('#externalReferences')[0].selectedIndex;
         spdxjs.fillExternalRef(packageInformationObj, selectedIndex);
     });
 
-    /////////////
     $('#spdxFullMode').on('click', function (e) {
       e.preventDefault();
 
@@ -790,22 +799,16 @@
         if (!$(this).is(":focus")) {
           return;
         }
-        // Store 2.6
         let index = $('#externalDocumentRefs')[0].selectedIndex;
         storeExternalDocRef(index);
-        // Store 3.21
         index = $('#externalReferences')[0].selectedIndex;
         spdxjs.storeExternalRef(packageInformationObj, index);
-        // Store 5
         index = $('#selectSnippet')[0].selectedIndex;
         storeSnippet(index);
-        // Store 6
         index = $('#selectOtherLicensing')[0].selectedIndex;
         storeOtherLicensing(index);
-        // Store 7
         index = $('#selectRelationship')[0].selectedIndex;
         storeRelationship(index);
-        // Store 8
         index = $('#selectAnnotation')[0].selectedIndex;
         storeAnnotation(index);
       });
@@ -824,7 +827,10 @@
         spdxjs.storePackageInfo(packageInformationObj);
       }
       initialize();
-      // store();     // Call when submit the form
+      store();
+      $('#spdxDocumentData').val(JSON.stringify(spdxDocumentObj));
+      $('#documentCreationInfoData').val(JSON.stringify(documentCreationInformationObj));
+      $('#packageInfoData').val(JSON.stringify(packageInformationObj));
     });
   });
 </script>

@@ -1,4 +1,3 @@
-<core_rt:set var="snippets" value="${spdxDocument.snippets}" />
 <table class="table spdx-table" id="editSnippetInformation">
   <thead>
     <tr>
