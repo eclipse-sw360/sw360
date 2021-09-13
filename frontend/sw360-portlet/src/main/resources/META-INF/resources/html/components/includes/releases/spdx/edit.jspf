@@ -822,15 +822,15 @@
         initAnnotations();
         isInitialzing = false;
       }
-      function store() {
-        storeDocumentCreation();
-        spdxjs.storePackageInfo(packageInformationObj);
-      }
       initialize();
-      store();
-      $('#spdxDocumentData').val(JSON.stringify(spdxDocumentObj));
-      $('#documentCreationInfoData').val(JSON.stringify(documentCreationInformationObj));
-      $('#packageInfoData').val(JSON.stringify(packageInformationObj));
+    });
+    $('#formSubmit').click(
+      function() {
+          storeDocumentCreation();
+          spdxjs.storePackageInfo(packageInformationObj);
+          $('#spdxDocumentData').val(JSON.stringify(spdxDocumentObj));
+          $('#documentCreationInfoData').val(JSON.stringify(documentCreationInformationObj));
+          $('#packageInfoData').val(JSON.stringify(packageInformationObj));
     });
   });
 </script>
