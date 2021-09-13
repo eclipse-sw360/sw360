@@ -408,7 +408,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         packageInformationObj['summary'] = $('#summary').val().trim();
         packageInformationObj['description'] = $('#description').val().trim();
         packageInformationObj['packageComment'] = $('#spdxPackageComment').val().trim();
-        packageInformationObj['attributionText'] = readMultiOptionField('#spdxPackageAttributionText');
+        packageInformationObj['attributionText'] = readMultiOptionField('#spdxPackageAttributionText', 'array');
       }
     
       function storeExternalRef(packageInformationObj, index) {
