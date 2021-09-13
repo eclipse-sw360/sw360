@@ -10,9 +10,7 @@
     <tr>
       <td style="display: flex">
         <div class="form-group" style="flex: 1">
-          <label class="mandatory" for="spdxVersion">
-            2.1 SPDX Version
-          </label>
+          <label class="mandatory" for="spdxVersion">2.1 SPDX Version</label>
           <div style="display: flex">
             <label class="sub-label">SPDX-</label>
             <input id="spdxVersion" class="form-control needs-validation" rule="regex:^[0-9]+\.[0-9]+$"
@@ -26,9 +24,7 @@
           </div>
         </div>
         <div class="form-group" style="flex: 1">
-          <label class="mandatory" for="dataLicense">
-            2.2 Data License
-          </label>
+          <label class="mandatory" for="dataLicense">2.2 Data License</label>
           <input id="dataLicense" class="form-control needs-validation" rule="regex:^[0-9a-zA-Z.-]+$"
             name="_sw360_portlet_components_DATA_LICENSE" type="text"
             placeholder="<liferay-ui:message key="enter.data.license" />"
@@ -40,9 +36,7 @@
           </div>
         </div>
         <div class="form-group" style="flex: 1">
-          <label class="mandatory" for="spdxIdentifier">
-            2.3 SPDX Identifier
-          </label>
+          <label class="mandatory" for="spdxIdentifier">2.3 SPDX Identifier</label>
           <div style="display: flex">
             <label class="sub-label">SPDXRef-</label>
             <input id="spdxIdentifier" class="form-control needs-validation" rule="regex:^[0-9a-zA-Z.-]+$"
@@ -60,29 +54,30 @@
     <tr>
       <td>
         <div class="form-group">
-          <label class="mandatory" for="documentName">
-            2.4. Document Name
-          </label>
+          <label class="mandatory" for="documentName">2.4. Document Name</label>
           <input id="documentName" name="_sw360_portlet_components_DOCUMENT_NAME" type="text"
-            class="form-control" placeholder="<liferay-ui:message key=" enter.spdx.document.name" />"
-          value="${spdxDocumentCreationInfo.name}">
+            class="form-control needs-validation" rule="regex:^[0-9a-zA-Z.-]+$"
+            placeholder="<liferay-ui:message key="enter.spdx.document.name" />" value="${spdxDocumentCreationInfo.name}">
+        </div>
+        <div id="documentName-error-messages">
+          <div class="invalid-feedback" rule="regex">
+            <liferay-ui:message key="formatting.must.be.document.name" />
+          </div>
         </div>
       </td>
     </tr>
     <tr>
       <td>
         <div class="form-group">
-          <label class="mandatory" for="documentNamespace">
-            2.5 SPDX Document Namespace
-          </label>
+          <label class="mandatory" for="documentNamespace">2.5 SPDX Document Namespace</label>
           <input id="documentNamespace" class="form-control needs-validation" rule="isUrl"
             name="_sw360_portlet_components_DOCUMENT_NAMESPACE" type="text"
             placeholder="<liferay-ui:message key=" enter.spdx.document.namespace" />"
-          value="${spdxDocumentCreationInfo.documentNamespace}">
+            value="${spdxDocumentCreationInfo.documentNamespace}">
         </div>
         <div id="documentNamespace-error-messages">
           <div class="invalid-feedback" rule="isUrl">
-            <liferay-ui:message key="formatting.must.be.an.URI" />
+            <liferay-ui:message key="formatting.must.be.an.uri" />
           </div>
         </div>
       </td>
@@ -90,9 +85,7 @@
     <tr>
       <td class="spdx-full">
         <div class="form-group section section-external-doc-ref">
-          <label for="externalDocumentRefs">
-            2.6 External Document References
-          </label>
+          <label for="externalDocumentRefs">2.6 External Document References</label>
           <div style="display: flex; flex-direction: column; padding-left: 1rem;">
             <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
               <label for="externalDocumentRefs" style="text-decoration: underline;"
@@ -134,9 +127,7 @@
     <tr class="spdx-full">
       <td>
         <div class="form-group">
-          <label for="licenseListVersion">
-            2.7 License List Version
-          </label>
+          <label for="licenseListVersion">2.7 License List Version</label>
           <input id="licenseListVersion" class="form-control needs-validation"
             name="_sw360_portlet_components_LICENSE_LIST_VERSION" type="text"
             placeholder="Enter License List Version" value="${spdxDocumentCreationInfo.licenseListVersion}">
@@ -146,9 +137,7 @@
     <tr>
       <td>
         <div class="form-group">
-          <label class="mandatory" for="creator">
-            2.8 Creator
-          </label>
+          <label class="mandatory" for="creator">2.8 Creator </label>
           <div style="display: flex; flex-direction: column;">
             <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
               <label class="sub-title" for="creator-anonymous">Anonymous</label>
@@ -189,9 +178,7 @@
     <tr>
       <td style="display: flex; flex-direction: column;">
         <div class="form-group">
-          <label class="mandatory" for="createdDate">
-            2.9 Created
-          </label>
+          <label class="mandatory" for="createdDate">2.9 Created</label>
           <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
             <input id="createdDate" type="date" class="form-control spdx-date"
               name="_sw360_portlet_components_CREATED_DATE" placeholder="created.date.yyyy.mm.dd">

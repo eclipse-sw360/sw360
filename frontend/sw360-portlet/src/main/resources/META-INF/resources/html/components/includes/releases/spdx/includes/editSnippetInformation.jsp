@@ -30,7 +30,7 @@
             <label class="sub-label">SPDXRef-</label>
             <input id="snippetSpdxIdentifier" class="form-control needs-validation"
               rule="regex:^[0-9a-zA-Z.-]+$" name="_sw360_portlet_components_SPDXSPDX_IDENTIFIER"
-              type="text" placeholder="Enter Snippet SPDX Identifier" value="">
+              type="text" placeholder="Enter Snippet SPDX Identifier" >
           </div>
         </div>
         <div class="form-group" style="flex: 1">
@@ -45,7 +45,7 @@
             <div style="margin: 0.5rem;">-</div>
             <input style="flex: 3;" id="snippetFromFileValue" class="form-control needs-validation"
               rule="regex:^[0-9]+\.[0-9]+$" name="_sw360_portlet_components_SPDXSPDX_VERSION" type="text"
-              placeholder="Enter Snippet from File SPDX Identifier" value="">
+              placeholder="Enter Snippet from File SPDX Identifier" >
           </div>
         </div>
       </td>
@@ -183,7 +183,7 @@
             5.10 Snippet Name
           </label>
           <input id="snippetName" name="_sw360_portlet_components_SPDXSPDX_NAME" type="text"
-            class="form-control" placeholder="Enter Snippet Name" value="">
+            class="form-control" placeholder="Enter Snippet Name" >
         </div>
       </td>
     </tr>

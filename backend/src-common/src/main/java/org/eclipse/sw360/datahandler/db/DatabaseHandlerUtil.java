@@ -10,6 +10,7 @@
 package org.eclipse.sw360.datahandler.db;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -44,6 +45,7 @@ import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
@@ -112,6 +114,7 @@ public class DatabaseHandlerUtil {
     private static final boolean IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED;
     private static final String ATTACHMENT_STORE_FILE_SYSTEM_LOCATION;
     private static final String ATTACHMENT_STORE_FILE_SYSTEM_PERMISSION;
+    // private static final String TEMPLE_FILE_LOCATION;
     private static ExecutorService ATTACHMENT_FILE_SYSTEM_STORE_THREAD_POOL = Executors.newFixedThreadPool(5);
     private static final String ATTACHMENT_DELETE_NO_OF_DAYS;
     static {
@@ -120,6 +123,7 @@ public class DatabaseHandlerUtil {
                 "/opt/sw360tempattachments");
         ATTACHMENT_STORE_FILE_SYSTEM_PERMISSION = props.getProperty("attachment.store.file.system.permission",
                 "rwx------");
+                // TEMPLE_FILE_LOCATION = props.getProperty("temp.dir", "../temp")
         IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED = Boolean.parseBoolean(props.getProperty("enable.attachment.store.to.file.system", "false"));
         ATTACHMENT_DELETE_NO_OF_DAYS = props.getProperty("attachemnt.delete.no.of.days",
                 "30");
@@ -879,5 +883,15 @@ public class DatabaseHandlerUtil {
                 }
             });
         }
+    }
+
+    public static File saveAsTempFile(User user, InputStream inputStream, String prefix, String suffix) throws IOException {
+        final File tempFile = File.createTempFile(prefix, suffix);
+        tempFile.deleteOnExit();
+        // Set append to false, overwrite if file existed
+        try (FileOutputStream outputStream = new FileOutputStream(tempFile, false)) {
+            IOUtils.copy(inputStream, outputStream);
+        }
+        return tempFile;
     }
 }

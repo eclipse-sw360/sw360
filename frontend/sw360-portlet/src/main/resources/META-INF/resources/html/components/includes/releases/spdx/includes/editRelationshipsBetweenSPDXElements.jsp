@@ -9,8 +9,7 @@
       <td>
         <div style="display: flex; flex-direction: column; padding-left: 1rem;">
           <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
-            <label for="selectRelationship" style="text-decoration: underline;" class="sub-title">Select
-              Relationship</label>
+            <label for="selectRelationship" style="text-decoration: underline;" class="sub-title">Select Relationship</label>
             <select id="selectRelationship" type="text" class="form-control spdx-select"></select>
             <svg class="disabled lexicon-icon spdx-delete-icon-main" name="delete-relationship" data-row-id="" viewBox="0 0 512 512">
               <title><liferay-ui:message key="delete" /></title>
@@ -24,18 +23,16 @@
     <tr>
       <td>
         <div class="form-group">
-          <label class="mandatory" for="spdxElement">
-            7.1 Relationship
-          </label>
+          <label class="mandatory" for="spdxElement">7.1 Relationship</label>
           <div style="display: flex">
             <input style="margin-right: 1rem;" id="spdxElement" class="form-control"
               name="_sw360_portlet_components_LICENSE_ID" type="text" placeholder="Enter SPDX Element"
-              value="">
+             >
             <input style="margin-right: 1rem;" id="relationshipType" class="form-control"
               name="_sw360_portlet_components_LICENSE_ID" type="text"
-              placeholder="Enter Relationship Type" value="">
+              placeholder="Enter Relationship Type">
             <input id="relatedSPDXElement" class="form-control" name="_sw360_portlet_components_LICENSE_ID"
-              type="text" placeholder="Enter Related SPDX Element" value="">
+              type="text" placeholder="Enter Related SPDX Element">
           </div>
         </div>
       </td>
