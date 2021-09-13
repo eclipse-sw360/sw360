@@ -60,7 +60,7 @@
             <div class="modal-content">
                 <div class="modal-body container" id="spdxBomUploadUpload">
                     <h2>Upload BOM document as ${documentType}</h2>
-                    <p>This currently only supports SPDX RDF/XML files with a uniq described top level node.</p>
+                    <p>This currently only supports SPDX RDF/XML or JSON files with a uniq described top level node.</p>
                     <div class="lfr-dynamic-uploader">
                         <div class="lfr-upload-container">
                             <div id="spdx-fileupload-drop" class="upload-target">
@@ -197,32 +197,40 @@
                         prepareImportBom(attachmentContentId).then(function (data) {
                             console.log("prepareImportsuccess...");
                             if (neededKeys.every(key => Object.keys(data).includes(key))) {
-                                $('#spdxBomUploadAction').prepend(importBtn)
-                                componentName = data.name
-                                componentVersion = data.version
+                                $('#spdxBomUploadAction').prepend(importBtn);
+                                componentName = data.name;
+                                componentVersion = data.version;
                                 actualComponentName = $('#import-spdx-bom').data().componentName;
-                                if (!data.isComponentDuplicate) {
-                                    if (actualComponentName) {
-                                        statusDiv.html("<h3>The provided SBOM file does not contain "+actualComponentName+".<br>The new Component and new Release will be created, do you want to import?</h3>");
+                                if (actualComponentName) {
+                                    if (actualComponentName === componentName) {
+                                        if (!data.isReleaseDuplicate) {
+                                            statusDiv.html("<h3>The new Release will be created, do you want to import?</h3>");
+                                            statusDiv.append("<div>New Release: <b>"+componentName+" "+componentVersion+"</b></div>");
+                                        } else {
+                                            statusDiv.html("<h3>The Release existed, do you want:</h3>");
+                                            statusDiv.append("<div>Update Release: <b>"+componentName+" "+componentVersion+"</b> (please choose Import button)</div>");
+                                            statusDiv.append("<div>Create new Release: <b>"+componentName+" ("+componentVersion+"-sbom-"+attachmentContentId.substring(0,6)+")</b> (please choose Import As New button)</div>");
+                                            $('#spdxBomUploadAction').prepend(importAsNewBtn);
+                                        }
                                     } else {
-                                        statusDiv.html("<h3>The new Component and new Release will be created, do you want to import?</h3>");
+                                        $('#importSBOM').remove();
+                                        statusDiv.html("<h3>The provided SPDX file is not a release of \""+actualComponentName+"\" component.</h3>");
+                                        contentDiv.show();
                                     }
-                                    statusDiv.append("<div>New Component: <b>"+componentName+"</b></div>");
-                                    statusDiv.append("<div>New Release:   <b>"+componentName+" "+componentVersion+"</b></div>");
-                                } else if (!data.isReleaseDuplicate) {
-                                    statusDiv.html("<h3>The new Release will be created, do you want to import?</h3>");
-                                    statusDiv.append("<div>New Release: <b>"+componentName+" "+componentVersion+"</b></div>");
                                 } else {
-                                    if (actualComponentName) {
-                                        statusDiv.html("<h3>The Release existed, do you want:</h3>");
-                                        statusDiv.append("<div>Update Release:     <b>"+componentName+" "+componentVersion+"</b> (please choose Import button)</div>");
-                                        statusDiv.append("<div>Create new Release: <b>"+componentName+" ("+componentVersion+"-sbom-"+attachmentContentId.substring(0,6)+")</b> (please choose Import As New button)</div>");
+                                    if (!data.isComponentDuplicate) {
+                                        statusDiv.html("<h3>The new Component and new Release will be created, do you want to import?</h3>");
+                                        statusDiv.append("<div>New Component: <b>"+componentName+"</b></div>");
+                                        statusDiv.append("<div>New Release: <b>"+componentName+" "+componentVersion+"</b></div>");
+                                    } else if (!data.isReleaseDuplicate) {
+                                        statusDiv.html("<h3>The new Release will be created, do you want to import?</h3>");
+                                        statusDiv.append("<div>New Release: <b>"+componentName+" "+componentVersion+"</b></div>");
                                     } else {
                                         statusDiv.html("<h3>The Component and Release existed, do you want:</h3>");
-                                        statusDiv.append("<div>Update Release:                   <b>"+componentName+" "+componentVersion+"</b> (please choose Import button)</div>");
+                                        statusDiv.append("<div>Update Release: <b>"+componentName+" "+componentVersion+"</b> (please choose Import button)</div>");
                                         statusDiv.append("<div>Create new Component and Release: <b>"+componentName+" ("+componentVersion+"-sbom-"+attachmentContentId.substring(0,6)+")</b> (please choose Import As New button)</div>");
+                                        $('#spdxBomUploadAction').prepend(importAsNewBtn);
                                     }
-                                    $('#spdxBomUploadAction').prepend(importAsNewBtn)
                                 }
                                 $('#importSBOM').on('click', function() {
                                     if (attachmentContentId === "") return;
