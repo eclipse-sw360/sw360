@@ -1,5 +1,6 @@
 /*
- * Copyright . Part of the SW360 Portal Project.
+ * Copyright Toshiba corporation, 2021. Part of the SW360 Portal Project.
+ * Copyright Toshiba Software Development (Vietnam) Co., Ltd., 2021. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -182,13 +183,6 @@ public abstract class SpdxPortlet {
         String packageInfoData = request.getParameter(SPDXDocument._Fields.SPDX_PACKAGE_INFO_IDS.toString());
         String spdxDocumentId = "";
 
-        log.info("spdxDocumentData : " + spdxDocumentData);
-        log.info("documentCreationInfoData : " + documentCreationInfoData);
-        log.info("packageInfoData : " + packageInfoData);
-        // spdxDocumentData = "";
-        // documentCreationInfoData = "";
-        //packageInfoData = "";
-
         if (!isNullOrEmpty(spdxDocumentData)) {
             SPDXDocument spdx = parseSPDXDocumentFromRequest(spdxDocumentData);
             SPDXDocumentService.Iface spdxClient = new ThriftClients().makeSPDXClient();
@@ -196,7 +190,6 @@ public abstract class SpdxPortlet {
                 if (isNullOrEmpty(spdx.getReleaseId()) && !isNullOrEmpty(releaseId)) {
                     spdx.setReleaseId(releaseId);
                 }
-                log.info("spdx : " + spdx);
                 if (isNullOrEmpty(spdx.getId())) {
                     spdx.unsetId();
                     spdx.unsetRevision();
@@ -214,7 +207,6 @@ public abstract class SpdxPortlet {
                 if (isNullOrEmpty(document.getSpdxDocumentId())) {
                     document.setSpdxDocumentId(spdxDocumentId);
                 }
-                log.info("document : " + document);
                 if (isNullOrEmpty(document.getId())) {
                     document.unsetId();
                     document.unsetRevision();
@@ -232,7 +224,6 @@ public abstract class SpdxPortlet {
                     if (isNullOrEmpty(packageInfo.getSpdxDocumentId())) {
                         packageInfo.setSpdxDocumentId(spdxDocumentId);
                     }
-                    log.info("packageInfo : " + packageInfo);
                     if (isNullOrEmpty(packageInfo.getId())) {
                         packageInfo.unsetId();
                         packageInfo.unsetRevision();
