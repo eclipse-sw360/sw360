@@ -374,6 +374,20 @@ include::{snippets}/should_document_create_project/curl-request.adoc[]
 ===== Example response
 include::{snippets}/should_document_create_project/http-response.adoc[]
 
+[[resources-projects-create-duplicate]]
+==== Creating a duplicate project
+
+A `POST` request is used to create a duplicate project
+
+===== Request structure
+include::{snippets}/should_document_create_duplicate_project/request-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_create_duplicate_project/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_create_duplicate_project/http-response.adoc[]
+
 [[resources-projects-update]]
 ==== Update a project
 

@@ -294,6 +294,37 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = PROJECTS_URL + "/duplicate/{id}", method = RequestMethod.POST)
+    public ResponseEntity<Resource<Project>> createDuplicateProject(@PathVariable("id") String id,
+            @RequestBody Map<String, Object> reqBodyMap) throws TException {
+        if (!reqBodyMap.containsKey("name") && !reqBodyMap.containsKey("version")) {
+            throw new HttpMessageNotReadableException(
+                    "Field name or version should be present in request body to create duplicate of a project");
+        }
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        Project sw360Project = projectService.getProjectForUserById(id, user);
+        Project updateProject = convertToProject(reqBodyMap);
+        sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap,
+                mapOfProjectFieldsToRequestBody);
+        sw360Project.unsetId();
+        sw360Project.unsetRevision();
+        sw360Project.unsetAttachments();
+        sw360Project.unsetClearingRequestId();
+        String linkedObligationId = sw360Project.getLinkedObligationId();
+        sw360Project.unsetLinkedObligationId();
+        Project createDuplicateProject = projectService.createProject(sw360Project, user);
+        sw360Project.setLinkedObligationId(linkedObligationId);
+        projectService.copyLinkedObligationsForClonedProject(createDuplicateProject, sw360Project, user);
+
+        HalResource<Project> halResource = createHalProject(createDuplicateProject, user);
+
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
+                .buildAndExpand(createDuplicateProject.getId()).toUri();
+
+        return ResponseEntity.created(location).body(halResource);
+    }
+
+    @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = PROJECTS_URL + "/{id}/releases", method = RequestMethod.POST)
     public ResponseEntity linkReleases(
             @PathVariable("id") String id,

@@ -2234,7 +2234,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                         Project sourceProject = client.getProjectById(sourceProjectId, user);
                         if (CommonUtils.isNotNullEmptyOrWhitespace(sourceProject.getLinkedObligationId())) {
                             project.setId(newProjectId);
-                            copyLinkedObligationsForClonedProject(request, project, sourceProject, client, user);
+                            SW360Utils.copyLinkedObligationsForClonedProject(project, sourceProject, client, user);
                         }
                     }
                     copyAttachmentUsagesForClonedProject(request, sourceProjectId, newProjectId);
@@ -2318,30 +2318,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             log.error("Failed to add/update obligation for project: " + project.getId(), exception);
         }
         return RequestStatus.FAILURE;
-    }
-
-    private void copyLinkedObligationsForClonedProject(ActionRequest request, Project newProject, Project sourceProject, ProjectService.Iface client, User user) {
-        try {
-            ObligationList obligation = client.getLinkedObligations(sourceProject.getLinkedObligationId(), user);
-            Set<String> newLinkedReleaseIds = newProject.getReleaseIdToUsage().keySet();
-            Set<String> sourceLinkedReleaseIds = sourceProject.getReleaseIdToUsage().keySet();
-            Map<String, ObligationStatusInfo> linkedObligations = obligation.getLinkedObligationStatus();
-            if (!newLinkedReleaseIds.equals(sourceLinkedReleaseIds)) {
-                linkedObligations = obligation.getLinkedObligationStatus().entrySet().stream().filter(entry -> {
-                    Set<String> releaseIds = entry.getValue().getReleaseIdToAcceptedCLI().keySet();
-                    releaseIds.retainAll(newLinkedReleaseIds);
-                    if (releaseIds.isEmpty()) {
-                        return false;
-                    }
-                    return true;
-                }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-            }
-            if (!linkedObligations.isEmpty()) {
-                client.addLinkedObligations(new ObligationList().setProjectId(newProject.getId()).setLinkedObligationStatus(linkedObligations), user);
-            }
-        } catch (TException e) {
-            log.error("Error duplicating obligations for project: " + newProject.getId(), e);
-        }
     }
 
     private void copyAttachmentUsagesForClonedProject(ActionRequest request, String sourceProjectId, String newProjectId)
