@@ -256,6 +256,15 @@
                     validateLib.validate();
                     if (readDocumentCreator().length == 0) {
                         validateLib.addError('spdxCreator', ['isNotNull']);
+                        $('.creator-value').each(function () {
+                            if ($(this).val().trim() == '') {
+                                this.setCustomValidity('error');
+                            }
+                        });
+                    } else {
+                        $('.creator-value').each(function () {
+                            this.setCustomValidity('');
+                        });
                     }
                     validateLib.showAllErrors();
                 }
