@@ -14,6 +14,7 @@ import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -614,6 +615,7 @@ public class SpdxBOMImporter {
         attachment.setAttachmentType(AttachmentType.SBOM);
         attachment.setCreatedComment("Used for SPDX Bom import");
         attachment.setFilename(attachmentContent.getFilename());
+        attachment.setCheckStatus(CheckStatus.NOTCHECKED);
 
         return attachment;
     }
