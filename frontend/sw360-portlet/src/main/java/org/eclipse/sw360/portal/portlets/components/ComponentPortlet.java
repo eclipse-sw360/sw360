@@ -821,7 +821,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                         DocumentCreationInformationService.Iface doClient = thriftClients.makeSPDXDocumentInfoClient();
                         documentCreationInfo = doClient.getDocumentCreationInformationById(spdxDocumentCreationInfoId, user);
                     }
-                    if(spdxPackageInfoIds != null) {
+                    if(spdxPackageInfoIds != null && !spdxPackageInfoIds.isEmpty()){
                         PackageInformationService.Iface paClient = thriftClients.makeSPDXPackageInfoClient();
                         for (String spdxPackageInfoId : spdxPackageInfoIds) {
                             packageInfo = paClient.getPackageInformationById(spdxPackageInfoId, user);
@@ -2028,7 +2028,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                     AddDocumentRequestStatus status = summary.getRequestStatus();
                     switch(status){
                         case SUCCESS:
-                            SpdxPortlet.updateSPDX(request, response, user, summary.getId());
+                            // SpdxPortlet.updateSPDX(request, response, user, summary.getId());
                             response.setRenderParameter(RELEASE_ID, summary.getId());
                             String successMsg = "Release " + printName(release) + " added successfully";
                             SessionMessages.add(request, "request_processed", successMsg);
