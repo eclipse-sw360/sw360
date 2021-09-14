@@ -122,8 +122,32 @@
 </div>
 
 <script>
+  let middleName = "<%=themeDisplay.getUser().getMiddleName()%>"
+  if (middleName == "") {
+    middleName = " ";
+  } else {
+    middleName = " " + middleName + " ";
+  }
+  let userDisplay = "<%=themeDisplay.getUser().getFirstName()%>" + middleName + "<%=themeDisplay.getUser().getLastName()%>" + " (<%=themeDisplay.getUser().getEmailAddress()%>)";
+  function readDocumentCreator() {
+    let creators = [];
+    $('[name=creatorRow]').each(function () {
+      if ($(this).css('display') == 'none') {
+        return;
+      }
+      if ($(this).find('.creator-type').first().attr('disabled')) {
+        return;
+      }
+      let creatorType = $(this).find('.creator-type').first().val().trim();
+      let creatorValue = $(this).find('.creator-value').first().val().trim();
+
+      if (creatorValue != '') {
+        creators.push({ 'type': creatorType, 'value': creatorValue });
+      }
+    })
+    return creators;
+  }
   require(['jquery', 'components/includes/releases/spdxjs'], function ($, spdxjs) {
-    let userDisplay;
     function initDocumentCreation() {
       if (documentCreationInformationObj['spdxVersion'].startsWith('SPDX-')) {
         $('#spdxVersion').val(documentCreationInformationObj['spdxVersion'].substr(5).trim());
@@ -147,13 +171,6 @@
       if (documentCreationInformationObj.creator.length == 0) {
         $('.spdx-add-button-sub-creator').first().click();
         $('.creator-type').last().val('Person');
-        let middleName = "<%=themeDisplay.getUser().getMiddleName()%>"
-        if (middleName == "") {
-          middleName = " ";
-        } else {
-          middleName = " " + middleName + " ";
-        }
-        userDisplay = "<%=themeDisplay.getUser().getFirstName()%>" + middleName + "<%=themeDisplay.getUser().getLastName()%>" + " (<%=themeDisplay.getUser().getEmailAddress()%>)";
         $('.creator-value').last().val(userDisplay);
       } else {
         for (let i = 0; i < documentCreationInformationObj.creator.length; i++) {
@@ -254,24 +271,6 @@
       if (documentCreationInformationObj['created'] == '') {
         documentCreationInformationObj['created'] = (new Date()).toISOString();
       }
-    }
-    function readDocumentCreator() {
-      let creators = [];
-      $('[name=creatorRow]').each(function () {
-        if ($(this).find('.creator-type').first().attr('disabled')) {
-          return;
-        }
-        let creatorType = $(this).find('.creator-type').first().val().trim();
-        let creatorValue = $(this).find('.creator-value').first().val().trim();
-
-        if (creatorValue != '') {
-          creators.push({ 'type': creatorType, 'value': creatorValue });
-        }
-      })
-      if (creators.length == 0) {
-        creators.push({ 'type': 'Person', 'value': userDisplay });
-      }
-      return creators;
     }
     function initAnnotations() {
       let source = getAnnotationsSource();

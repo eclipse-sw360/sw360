@@ -133,7 +133,7 @@
     <tr>
       <td>
         <div class="form-group">
-          <label class="mandatory" for="creator">2.8 Creator </label>
+          <label class="mandatory" for="creator">2.8 Creator</label>
           <div style="display: flex; flex-direction: column;">
             <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
               <label class="sub-title" for="creator-anonymous">Anonymous</label>
@@ -162,6 +162,11 @@
                   </svg>
                 </div>
                 <button class="spdx-add-button-sub spdx-add-button-sub-creator" name="add-spdx-creator">Add new creator</button>
+              </div>
+            </div>
+            <div id="spdxCreator-error-messages">
+              <div class="invalid-feedback" rule="isNotNull">
+                <liferay-ui:message key="this.field.must.be.not.empty" />
               </div>
             </div>
           </div>

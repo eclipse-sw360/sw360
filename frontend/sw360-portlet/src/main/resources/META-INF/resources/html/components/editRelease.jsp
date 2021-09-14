@@ -254,6 +254,9 @@
                 if ("${addMode}" == "false") {
                     validateLib.setFormId('editSPDXForm');
                     validateLib.validate();
+                    if (readDocumentCreator().length == 0) {
+                        validateLib.addError('spdxCreator', ['isNotNull']);
+                    }
                     validateLib.showAllErrors();
                 }
                 <core_rt:choose>

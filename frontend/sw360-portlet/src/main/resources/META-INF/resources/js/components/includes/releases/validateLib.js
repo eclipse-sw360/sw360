@@ -203,22 +203,20 @@ define('components/includes/releases/validateLib', ['jquery'], function ($) {
     }
 
     function showError(elementId, rules) {
-        if (rules.length == 0) {
-            $('#' + elementId)[0].setCustomValidity('');
-            return;
+        try {
+            if (rules.length == 0) {
+                $('#' + elementId)[0].setCustomValidity('');
+                return;
+            }
+
+            $('#' + elementId)[0].setCustomValidity('error');
+        } catch {
+            console.log('Cannot show error');
         }
 
-        $('#' + elementId)[0].setCustomValidity('error');
         rules.forEach(rule => {
-            var tmp = "[rule='" + rule + "']";
-            var tmp2 = "[rule=\"${rule}\"]";
-            console.log(tmp);
-            console.log(tmp2);
-            $('#' + elementId + '-error-messages').find(tmp).addClass('d-block');
+            $('#' + elementId + '-error-messages').find("[rule='" + rule + "']").addClass('d-block');
         })
-
-        // $('#' + elementId)[0].setCustomValidity('error');
-        // $('#error-invalid-char').addClass('d-block');
     }
 
     function hideAllErrors() {
@@ -232,10 +230,22 @@ define('components/includes/releases/validateLib', ['jquery'], function ($) {
         }
     }
 
+    function addError(elementId, elementErrors) {
+        errors.push({
+            id: elementId,
+            rules: elementErrors
+        });
+
+        totalErrors += elementErrors.length;
+    }
+
     return {
         setFormId: setFormId,
         validate: validate,
         allValid: allValid,
+        addError: function(elementId, elementErrors) {
+            return addError(elementId, elementErrors);
+        },
         showAllErrors: showAllErrors,
     }
 });
