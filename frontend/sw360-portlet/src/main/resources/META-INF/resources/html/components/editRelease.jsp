@@ -261,8 +261,17 @@
                                 this.setCustomValidity('error');
                             }
                         });
-                        $('#spdxCreator')[0].setCustomValidity('error')
-                        $('#creator-anonymous').get(0).scrollIntoView({behavior: "auto", block: "center", inline: "nearest"})
+                        $('#spdxCreator')[0].setCustomValidity('error');
+                        let gotErrorBeforeCreator = false;
+                        for (let i = 1; i < 4; i++) {
+                            if ($($('#editDocumentCreationInformation').find('tr')[i]).find('.invalid-feedback.d-block').length > 0) {
+                                gotErrorBeforeCreator = true;
+                                break;
+                            }
+                        }
+                        if (!gotErrorBeforeCreator) {
+                            $('#creator-anonymous').get(0).scrollIntoView({behavior: "auto", block: "center", inline: "nearest"})
+                        }
                     } else {
                         $('.creator-value').each(function () {
                             this.setCustomValidity('');
