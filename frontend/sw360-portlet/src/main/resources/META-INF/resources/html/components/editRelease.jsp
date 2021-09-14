@@ -261,10 +261,13 @@
                                 this.setCustomValidity('error');
                             }
                         });
+                        $('#spdxCreator')[0].setCustomValidity('error')
+                        $('#creator-anonymous').get(0).scrollIntoView({behavior: "auto", block: "center", inline: "nearest"})
                     } else {
                         $('.creator-value').each(function () {
                             this.setCustomValidity('');
                         });
+                        $('#spdxCreator')[0].setCustomValidity('')
                     }
                     validateLib.showAllErrors();
                 }

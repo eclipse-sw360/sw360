@@ -164,6 +164,7 @@
                 <button class="spdx-add-button-sub spdx-add-button-sub-creator" name="add-spdx-creator">Add new creator</button>
               </div>
             </div>
+            <input id="spdxCreator" class="form-control" style="display: none" rule="isNotNull" type="text">
             <div id="spdxCreator-error-messages">
               <div class="invalid-feedback" rule="isNotNull">
                 <liferay-ui:message key="this.field.must.be.not.empty" />
