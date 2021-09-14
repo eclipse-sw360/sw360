@@ -26,12 +26,12 @@
           <label class="mandatory" for="licenseId">6.1 License Identifier</label>
           <div style="display: flex">
             <label class="sub-label">LicenseRef-</label>
-            <input id="licenseId" class="form-control needs-validation" rule="regex:^[0-9a-zA-Z.-]+$"
+            <input id="licenseId" class="form-control needs-validation" rule="isNotNull"
               type="text" placeholder="Enter License Identifier">
           </div>
           <div id="licenseId-error-messages">
-            <div class="invalid-feedback" rule="regex">
-              <liferay-ui:message key="string.containing.letters.numbers.and/or.-" />
+            <div class="invalid-feedback" rule="isNotNull">
+              <liferay-ui:message key="this.field.must.be.not.empty" />
             </div>
           </div>
         </div>
@@ -41,8 +41,13 @@
       <td>
         <div class="form-group">
           <label class="mandatory" for="extractedText">6.2 Extracted Text</label>
-          <textarea class="form-control" id="extractedText" rows="5"
+          <textarea class="form-control needs-validation" rule="isNotNull" id="extractedText" rows="5"
             name="_sw360_portlet_components_EXTRACTED_TEXT" placeholder="Enter Extracted Text"></textarea>
+        </div>
+        <div id="extractedText-error-messages">
+          <div class="invalid-feedback" rule="isNotNull">
+            <liferay-ui:message key="this.field.must.be.not.empty" />
+          </div>
         </div>
       </td>
     </tr>
@@ -54,7 +59,7 @@
             <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
               <input class="spdx-radio" id="licenseNameExist" type="radio" value="EXIST">
               <input style="flex: 6; margin-right: 1rem;" id="licenseName"
-                class="form-control needs-validation" rule="isDownloadUrl" type="text"
+                class="form-control" type="text"
                 placeholder="Enter License Name">
             </div>
             <div style="flex: 2;">

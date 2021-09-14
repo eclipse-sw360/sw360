@@ -13,18 +13,28 @@
         <div class="form-group" style="flex: 1">
           <label class="mandatory" for="packageName">3.1 Package Name</label>
           <div style="display: flex">
-            <input id="packageName" class="form-control needs-validation" type="text"
+            <input id="packageName" class="form-control needs-validation" rule="isNotNull" type="text"
               placeholder="Enter Package Name" name="_sw360_portlet_components_PACKAGE_NAME"
               value="${package.name}">
+          </div>
+          <div id="packageName-error-messages">
+            <div class="invalid-feedback" rule="isNotNull">
+              <liferay-ui:message key="this.field.must.be.not.empty" />
+            </div>
           </div>
         </div>
         <div class="form-group" style="flex: 1">
           <label class="mandatory" for="packageSPDXId">3.2 Package SPDX Identifier</label>
           <div style="display: flex">
             <label class="sub-label">SPDXRef-</label>
-            <input id="packageSPDXId" class="form-control needs-validation" type="text"
+            <input id="packageSPDXId" class="form-control needs-validation" rule="isNotNull" type="text"
               placeholder="Enter Package SPDX Identifier" name="_sw360_portlet_components_PACKAGE_SPDX_ID"
               value="${package.SPDXID}">
+          </div>
+          <div id="packageSPDXId-error-messages">
+            <div class="invalid-feedback" rule="isNotNull">
+              <liferay-ui:message key="this.field.must.be.not.empty" />
+            </div>
           </div>
         </div>
       </td>
@@ -108,7 +118,7 @@
               <input class="spdx-radio" type="radio" id="downloadLocationExist"
                 name="_sw360_portlet_components_DOWNLOAD_LOCATION" value="EXIST">
               <input style="flex: 6; margin-right: 1rem;" class="form-control needs-validation"
-                id="downloadLocationValue" rule="isDownloadUrl" type="text"
+                id="downloadLocationValue" rule="isNotNull" type="text"
                 name="_sw360_portlet_components_DOWNLOAD_LOCATION_VALUE"
                 placeholder="Enter Package Download Location" value="${package.downloadLocation}">
             </div>
@@ -124,8 +134,8 @@
             </div>
           </div>
           <div id="downloadLocationValue-error-messages">
-            <div class="invalid-feedback" rule="isDownloadUrl">
-              <liferay-ui:message key="formatting.must.be.an.url" />
+            <div class="invalid-feedback" rule="isNotNull">
+              <liferay-ui:message key="this.field.must.be.not.empty" />
             </div>
           </div>
         </div>
@@ -201,7 +211,7 @@
               <input class="spdx-radio" id="packageHomepageExist" type="radio"
                 name="_sw360_portlet_components_PACKAGE_HOMEPAGE" value="EXIST">
               <input style="flex: 6; margin-right: 1rem;" id="packageHomepageValue"
-                class="form-control needs-validation" rule="isUrl" type="text"
+                class="form-control" type="text"
                 name="_sw360_portlet_components_PACKAGE_HOMEPAGE_VALUE"
                 placeholder="Enter Package Homepage" value="${package.homepage}">
             </div>
@@ -214,11 +224,6 @@
                 name="_sw360_portlet_components_PACKAGE_HOMEPAGE" value="NOASSERTION">
               <label class="form-check-label radio-label"
                 for="packageHomepageNoAssertion">NOASSERTION</label>
-            </div>
-          </div>
-          <div id="packageHomepageValue-error-messages">
-            <div class="invalid-feedback" rule="isUrl">
-              <liferay-ui:message key="formatting.must.be.an.url" />
             </div>
           </div>
         </div>
@@ -242,7 +247,7 @@
               <input class="spdx-radio" id="licenseConcludedExist" type="radio"
                 name="_sw360_portlet_components_LICENSE_CONCLUDED" value="EXIST">
               <input style="flex: 6; margin-right: 1rem;" class="form-control needs-validation"
-                rule="regex:^[0-9a-zA-Z.-]+$" id="licenseConcludedValue" type="text"
+                rule="isNotNull" id="licenseConcludedValue" type="text"
                 name="_sw360_portlet_components_LICENSE_CONCLUDED_VALUE"
                 placeholder="Enter Concluded License" value="${package.licenseConcluded}">
             </div>
@@ -258,8 +263,8 @@
             </div>
           </div>
           <div id="licenseConcludedValue-error-messages">
-            <div class="invalid-feedback" rule="regex">
-              <liferay-ui:message key="string.containing.letters.numbers.and/or.-" />
+            <div class="invalid-feedback" rule="isNotNull">
+              <liferay-ui:message key="this.field.must.be.not.empty" />
             </div>
           </div>
         </div>
@@ -274,7 +279,7 @@
               <input class="spdx-radio" id="licenseInfoFromFilesExist" type="radio"
                 name="_sw360_portlet_components_LICENSE_INFO_FROM_FILES" value="EXIST">
               <textarea style="flex: 6; margin-right: 1rem;" id="licenseInfoFromFilesValue" rows="5"
-                class="form-control needs-validation" type="text"
+                class="form-control" type="text"
                 name="_sw360_portlet_components_LICENSE_INFO_FROM_FILES_VALUE"
                 placeholder="Enter All Licenses Information from Files"><sw360:out value="${package.licenseInfoFromFiles.toString()}" hashSet="true"/></textarea>
             </div>
@@ -301,7 +306,7 @@
               <input class="spdx-radio" id="licenseDeclaredExist" type="radio"
                 name="_sw360_portlet_components_DECLARED_LICENSE" value="EXIST">
               <input style="flex: 6; margin-right: 1rem;" id="licenseDeclaredValue"
-                class="form-control needs-validation" type="text" rule="regex:^[0-9a-zA-Z.-]+$"
+                class="form-control needs-validation" type="text" rule="isNotNull"
                 name="_sw360_portlet_components_DECLARED_LICENSE_VALUE"
                 placeholder="Enter Declared License" value="${package.licenseDeclared}">
             </div>
@@ -317,8 +322,8 @@
             </div>
           </div>
           <div id="licenseDeclaredValue-error-messages">
-            <div class="invalid-feedback" rule="regex">
-              <liferay-ui:message key="string.containing.letters.numbers.and/or.-" />
+            <div class="invalid-feedback" rule="isNotNull">
+              <liferay-ui:message key="this.field.must.be.not.empty" />
             </div>
           </div>
         </div>
@@ -343,7 +348,7 @@
               <input class="spdx-radio" id="copyrightTextExist" type="radio"
                 name="_sw360_portlet_components_COPYRIGHT_TEXT" value="EXIST">
               <textarea style="flex: 6; margin-right: 1rem;" id="copyrightTextValue" rows="5"
-                class="form-control needs-validation" type="text"
+                class="form-control needs-validation" rule="isNotNull" type="text"
                 name="_sw360_portlet_components_COPYRIGHT_TEXT_VALUE"
                 placeholder="Enter Copyright Text">${package.copyrightText}</textarea>
             </div>
@@ -356,6 +361,11 @@
                 name="_sw360_portlet_components_COPYRIGHT_TEXT" value="NOASSERTION">
               <label class="form-check-label radio-label"
                 for="copyrightTextNoAssertion">NOASSERTION</label>
+            </div>
+          </div>
+          <div id="copyrightTextValue-error-messages">
+            <div class="invalid-feedback" rule="isNotNull">
+              <liferay-ui:message key="this.field.must.be.not.empty" />
             </div>
           </div>
         </div>

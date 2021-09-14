@@ -114,6 +114,12 @@ define('components/includes/releases/validateLib', ['jquery'], function ($) {
                     }
                     return null;
                     break;
+                case 'date':
+                    return $(element).val();
+                    break;
+                case 'time':
+                    return $(element).val();
+                    break;
                 default:
                     return undefined;
                     break;
@@ -142,15 +148,17 @@ define('components/includes/releases/validateLib', ['jquery'], function ($) {
         const elements = $('#' + formId).find('.needs-validation');
         for (var i = 0; i < elements.length; i++) {
             const element = elements[i];
-            const elementId = String($(element).attr('id'));
-            const elementErrors = validateElement(element);
+            if (typeof $(element).attr('disabled') === 'undefined') {
+                const elementId = String($(element).attr('id'));
+                const elementErrors = validateElement(element);
 
-            errors.push({
-                id: elementId,
-                rules: elementErrors
-            });
+                errors.push({
+                    id: elementId,
+                    rules: elementErrors
+                });
 
-            totalErrors += elementErrors.length;
+                totalErrors += elementErrors.length;
+            }
         }
     }
 

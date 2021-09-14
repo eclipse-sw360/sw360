@@ -28,8 +28,8 @@
           </label>
           <div style="display: flex">
             <label class="sub-label">SPDXRef-</label>
-            <input id="snippetSpdxIdentifier" class="form-control needs-validation"
-              rule="regex:^[0-9a-zA-Z.-]+$" name="_sw360_portlet_components_SPDXSPDX_IDENTIFIER"
+            <input id="snippetSpdxIdentifier" class="form-control"
+              name="_sw360_portlet_components_SPDXSPDX_IDENTIFIER"
               type="text" placeholder="Enter Snippet SPDX Identifier" >
           </div>
         </div>
@@ -43,8 +43,8 @@
               <option>DocumentRef</option>
             </select>
             <div style="margin: 0.5rem;">-</div>
-            <input style="flex: 3;" id="snippetFromFileValue" class="form-control needs-validation"
-              rule="regex:^[0-9]+\.[0-9]+$" name="_sw360_portlet_components_SPDXSPDX_VERSION" type="text"
+            <input style="flex: 3;" id="snippetFromFileValue" class="form-control"
+              name="_sw360_portlet_components_SPDXSPDX_VERSION" type="text"
               placeholder="Enter Snippet from File SPDX Identifier" >
           </div>
         </div>
@@ -84,7 +84,7 @@
               <input class="spdx-radio" id="spdxConcludedLicenseExist" type="radio"
                 name="_sw360_portlet_components_CONCLUDED_LICENSE" value="EXIST">
               <input style="flex: 6; margin-right: 1rem;" id="spdxConcludedLicenseValue"
-                class="form-control needs-validation" type="text"
+                class="form-control" type="text"
                 name="_sw360_portlet_components_CONCLUDED_LICENSE_VALUE"
                 placeholder="Enter Snippet Concluded License">
             </div>
@@ -111,7 +111,7 @@
               <input class="spdx-radio" id="licenseInfoInFile" type="radio"
                 name="_sw360_portlet_components_LICENSE_INFO_IN_FILE" value="EXIST">
               <textarea style="flex: 6; margin-right: 1rem;" id="licenseInfoInFileValue" rows="5"
-                class="form-control needs-validation" type="text"
+                class="form-control" type="text"
                 name="_sw360_portlet_components_LICENSE_INFO_IN_FILE_SOURCE"
                 placeholder="Enter License Information in Snippet"></textarea>
             </div>
@@ -134,7 +134,6 @@
         <div class="form-group">
           <label for="snippetLicenseComments">5.7 Snippet Comments on License</label>
           <textarea class="form-control" id="snippetLicenseComments" rows="5"
-            name="_sw360_portlet_components_SNIPPET_LICENSE_COMMENTS"
             placeholder="Enter Snippet Comments on License"></textarea>
         </div>
       </td>
@@ -145,20 +144,16 @@
           <label class="mandatory">5.8 Copyright Text</label>
           <div style="display: flex; flex-direction: row;">
             <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
-              <input class="spdx-radio" id="snippetCopyrightText" type="radio"
-                name="_sw360_portlet_components_SNIPPET_COPYRIGHT_TEXT" value="EXIST">
+              <input class="spdx-radio" id="snippetCopyrightText" type="radio" value="EXIST">
               <textarea style="flex: 6; margin-right: 1rem;" id="copyrightTextValueSnippet" rows="5"
-                class="form-control needs-validation" type="text"
-                name="_sw360_portlet_components_COPYRIGHT_TEXT_VALUE"
+                class="form-control" type="text"
                 placeholder="Enter Copyright Text"></textarea>
             </div>
             <div style="flex: 2;">
-              <input class="spdx-radio" id="snippetCopyrightTextNone" type="radio"
-                name="_sw360_portlet_components_SNIPPET_COPYRIGHT_TEXT" value="NONE">
+              <input class="spdx-radio" id="snippetCopyrightTextNone" type="radio" value="NONE">
               <label style="margin-right: 2rem;" class="form-check-label radio-label"
                 for="snippetCopyrightTextNone">NONE</label>
-              <input class="spdx-radio" id="snippetCopyrightTextNoAssertion" type="radio"
-                name="_sw360_portlet_components_SNIPPET_COPYRIGHT_TEXT" value="NOASSERTION">
+              <input class="spdx-radio" id="snippetCopyrightTextNoAssertion" type="radio" value="NOASSERTION">
               <label class="form-check-label radio-label"
                 for="snippetCopyrightTextNoAssertion">NOASSERTION</label>
             </div>
@@ -171,7 +166,6 @@
         <div class="form-group">
           <label for="snippetComment">5.9 Snippet Comments</label>
           <textarea class="form-control" id="snippetComment" rows="5"
-            name="_sw360_portlet_components_SNIPPET_COMMENT"
             placeholder="Enter Snippet Comments"></textarea>
         </div>
       </td>
@@ -182,7 +176,7 @@
           <label class="mandatory" for="snippetName">
             5.10 Snippet Name
           </label>
-          <input id="snippetName" name="_sw360_portlet_components_SPDXSPDX_NAME" type="text"
+          <input id="snippetName" type="text"
             class="form-control" placeholder="Enter Snippet Name" >
         </div>
       </td>
@@ -192,7 +186,6 @@
         <div class="form-group">
           <label for="snippetAttributionText">5.11 Snippet Attribution Text</label>
           <textarea class="form-control" id="snippetAttributionText" rows="5"
-            name="_sw360_portlet_components_SNIPPET_ATTRIBUTION_TEXT"
             placeholder="Enter Snippet Attribution Text"></textarea>
         </div>
       </td>
