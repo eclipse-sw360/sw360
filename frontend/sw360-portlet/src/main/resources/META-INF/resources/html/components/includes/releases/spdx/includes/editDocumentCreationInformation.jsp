@@ -13,25 +13,24 @@
           <label class="mandatory" for="spdxVersion">2.1 SPDX Version</label>
           <div style="display: flex">
             <label class="sub-label">SPDX-</label>
-            <input id="spdxVersion" class="form-control needs-validation" rule="regex:^[0-9]+\.[0-9]+$"
-              name="_sw360_portlet_components_SPDX_VERSION" type="text" placeholder="Enter SPDX Version"
+            <input id="spdxVersion" class="form-control needs-validation" rule="isNotNull"
+              type="text" placeholder="Enter SPDX Version"
               value="${spdxDocumentCreationInfo.spdxVersion}">
           </div>
           <div id="spdxVersion-error-messages">
-            <div class="invalid-feedback" rule="regex">
-              <liferay-ui:message key="formatting.must.be.SPDX-M.N" />
+            <div class="invalid-feedback" rule="isNotNull">
+              <liferay-ui:message key="this.field.must.be.not.empty" />
             </div>
           </div>
         </div>
         <div class="form-group" style="flex: 1">
           <label class="mandatory" for="dataLicense">2.2 Data License</label>
-          <input id="dataLicense" class="form-control needs-validation" rule="regex:^[0-9a-zA-Z.-]+$"
-            name="_sw360_portlet_components_DATA_LICENSE" type="text"
+          <input id="dataLicense" class="form-control needs-validation" rule="isNotNull" type="text"
             placeholder="<liferay-ui:message key="enter.data.license" />"
             value="<sw360:out value="${spdxDocumentCreationInfo.dataLicense}" />">
           <div id="dataLicense-error-messages">
-            <div class="invalid-feedback" rule="regex">
-              <liferay-ui:message key="string.containing.letters.numbers.and/or.-" />
+            <div class="invalid-feedback" rule="isNotNull">
+              <liferay-ui:message key="this.field.must.be.not.empty" />
             </div>
           </div>
         </div>
@@ -39,13 +38,12 @@
           <label class="mandatory" for="spdxIdentifier">2.3 SPDX Identifier</label>
           <div style="display: flex">
             <label class="sub-label">SPDXRef-</label>
-            <input id="spdxIdentifier" class="form-control needs-validation" rule="regex:^[0-9a-zA-Z.-]+$"
-              name="_sw360_portlet_components_SPDX_IDENTIFIER" type="text"
+            <input id="spdxIdentifier" class="form-control needs-validation" rule="isNotNull" type="text"
               placeholder="Enter SPDX Identifier" value="${spdxDocumentCreationInfo.SPDXID}">
           </div>
           <div id="spdxIdentifier-error-messages">
-            <div class="invalid-feedback" rule="regex">
-              <liferay-ui:message key="formatting.must.be.SPDXRef.document" />
+            <div class="invalid-feedback" rule="isNotNull">
+              <liferay-ui:message key="this.field.must.be.not.empty" />
             </div>
           </div>
         </div>
@@ -55,13 +53,13 @@
       <td>
         <div class="form-group">
           <label class="mandatory" for="documentName">2.4. Document Name</label>
-          <input id="documentName" name="_sw360_portlet_components_DOCUMENT_NAME" type="text"
-            class="form-control needs-validation" rule="regex:^[0-9a-zA-Z.-]+$"
+          <input id="documentName" type="text"
+            class="form-control needs-validation" rule="isNotNull"
             placeholder="<liferay-ui:message key="enter.spdx.document.name" />" value="${spdxDocumentCreationInfo.name}">
         </div>
         <div id="documentName-error-messages">
-          <div class="invalid-feedback" rule="regex">
-            <liferay-ui:message key="formatting.must.be.document.name" />
+          <div class="invalid-feedback" rule="isNotNull">
+            <liferay-ui:message key="this.field.must.be.not.empty" />
           </div>
         </div>
       </td>
@@ -70,14 +68,13 @@
       <td>
         <div class="form-group">
           <label class="mandatory" for="documentNamespace">2.5 SPDX Document Namespace</label>
-          <input id="documentNamespace" class="form-control needs-validation" rule="isUrl"
-            name="_sw360_portlet_components_DOCUMENT_NAMESPACE" type="text"
+          <input id="documentNamespace" class="form-control needs-validation" rule="isNotNull" type="text"
             placeholder="<liferay-ui:message key=" enter.spdx.document.namespace" />"
             value="${spdxDocumentCreationInfo.documentNamespace}">
         </div>
         <div id="documentNamespace-error-messages">
-          <div class="invalid-feedback" rule="isUrl">
-            <liferay-ui:message key="formatting.must.be.an.uri" />
+          <div class="invalid-feedback" rule="isNotNull">
+            <liferay-ui:message key="this.field.must.be.not.empty" />
           </div>
         </div>
       </td>
@@ -128,8 +125,7 @@
       <td>
         <div class="form-group">
           <label for="licenseListVersion">2.7 License List Version</label>
-          <input id="licenseListVersion" class="form-control needs-validation"
-            name="_sw360_portlet_components_LICENSE_LIST_VERSION" type="text"
+          <input id="licenseListVersion" class="form-control" type="text"
             placeholder="Enter License List Version" value="${spdxDocumentCreationInfo.licenseListVersion}">
         </div>
       </td>
@@ -141,8 +137,7 @@
           <div style="display: flex; flex-direction: column;">
             <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
               <label class="sub-title" for="creator-anonymous">Anonymous</label>
-              <input id="creator-anonymous" class="spdx-checkbox" type="checkbox" onclick="setAnonymous()"
-                name="_sw360_portlet_components_CREATOR_ANONYNOUS">
+              <input id="creator-anonymous" class="spdx-checkbox" type="checkbox" onclick="setAnonymous()" >
             </div>
             <div style="display: flex;">
               <label class="sub-title">List</label>
@@ -156,11 +151,9 @@
                     <option value="Tool">Tool</option>
                   </select>
                   <input style="flex: 6; margin-right: 2rem;" type="text"
-                    class="form-control creator-value" placeholder="Enter Value"
-                    value="">
+                    class="form-control creator-value" placeholder="Enter Value">
                   <svg class="disabled lexicon-icon spdx-delete-icon-sub"
-                    name="delete-spdx-creator" data-row-id=""
-                    viewBox="0 0 512 512">
+                    name="delete-spdx-creator" data-row-id="" viewBox="0 0 512 512">
                     <title><liferay-ui:message key="delete" /></title>
                     <path class="lexicon-icon-outline lx-trash-body-border" d="M64.4,440.7c0,39.3,31.9,71.3,71.3,71.3h240.6c39.3,0,71.3-31.9,71.3-71.3v-312H64.4V440.7z M128.2,192.6h255.5v231.7c0,13.1-10.7,23.8-23.8,23.8H152c-13.1,0-23.8-10.7-23.8-23.8V192.6z"></path>
                     <polygon class="lexicon-icon-outline lx-trash-lid" points="351.8,32.9 351.8,0 160.2,0 160.2,32.9 64.4,32.9 64.4,96.1 447.6,96.1 447.6,32.9 "></polygon>
@@ -180,10 +173,22 @@
         <div class="form-group">
           <label class="mandatory" for="createdDate">2.9 Created</label>
           <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
-            <input id="createdDate" type="date" class="form-control spdx-date"
-              name="_sw360_portlet_components_CREATED_DATE" placeholder="created.date.yyyy.mm.dd">
-            <input id="createdTime" type="time" step="1" class="form-control spdx-time"
-              name="_sw360_portlet_components_CREATED_TIME" placeholder="created.time.hh.mm.ss">
+            <input id="createdDate" type="date" class="form-control spdx-date needs-validation"
+              rule="isNotNull" placeholder="created.date.yyyy.mm.dd">
+            <input id="createdTime" type="time" step="1" class="form-control spdx-time needs-validation"
+              rule="isNotNull" placeholder="created.time.hh.mm.ss">
+          </div>
+          <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
+            <div id="createdDate-error-messages">
+              <div class="invalid-feedback" rule="isNotNull">
+                <liferay-ui:message key="this.field.must.be.not.empty" />
+              </div>
+            </div>
+            <div id="createdTime-error-messages">
+              <div class="invalid-feedback" rule="isNotNull">
+                <liferay-ui:message key="this.field.must.be.not.empty" />
+              </div>
+            </div>
           </div>
         </div>
       </td>

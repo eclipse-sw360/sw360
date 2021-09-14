@@ -56,11 +56,11 @@
       <td style="display: flex">
         <div class="form-group" style="flex: 1">
           <label class="mandatory" for="annotationType">8.3 Annotation Type</label>
-          <input id="annotationType" class="form-control needs-validation" type="text" placeholder="Enter Annotation Type" >
+          <input id="annotationType" class="form-control" type="text" placeholder="Enter Annotation Type" >
         </div>
         <div class="form-group" style="flex: 1">
           <label class="mandatory" for="spdxIdRef">8.4 SPDX Identifier Reference</label>
-          <input id="spdxIdRef" class="form-control needs-validation" type="text"
+          <input id="spdxIdRef" class="form-control" type="text"
             placeholder="Enter SPDX Identifier Reference" >
         </div>
       </td>

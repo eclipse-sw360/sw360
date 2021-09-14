@@ -455,8 +455,8 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         fillDateTime:function (datePicker, timePicker, value) {
           return fillDateTime(datePicker, timePicker, value);
         },
-        fillMultiOptionsField:function (inputTag, value, type = 'text') {
-          return fillMultiOptionsField(inputTag, value, type = 'text');
+        fillMultiOptionsField:function (inputTag, value, type) {
+          return fillMultiOptionsField(inputTag, value, type);
         },
         fillArray:function (textarea, value) {
           return fillArray(textarea, value);
@@ -464,8 +464,8 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         fillAnnotator:function (typeTag, value) {
           return fillAnnotator(typeTag, value);
         },
-        readMultiOptionField:function (inputTag, type = 'text') {
-          return readMultiOptionField(inputTag, type = 'text');
+        readMultiOptionField:function (inputTag, type) {
+          return readMultiOptionField(inputTag, type);
         },
         readArray:function (textarea) {
           return readArray(textarea);
