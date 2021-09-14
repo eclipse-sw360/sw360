@@ -250,7 +250,9 @@
         $('#formSubmit').click(
             function() {
                 if ("${addMode}" == "false") {
-                    validateLib.submitAction();
+                    validateLib.setFormId('editSPDXForm');
+                    validateLib.validate();
+                    validateLib.showAllErrors();
                 }
                 <core_rt:choose>
                     <core_rt:when test="${addMode || release.permissions[WRITE]}">
