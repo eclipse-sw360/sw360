@@ -77,7 +77,9 @@
             <div class="col-3 sidebar">
                 <div id="detailTab" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
                     <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab"><liferay-ui:message key="summary" /></a>
-                    <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-SPDX'}">active</core_rt:if>" href="#tab-SPDX" data-toggle="list" role="tab"><liferay-ui:message key="spdx.document" /></a>
+                    <core_rt:if test="${not addMode}" >
+                        <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-SPDX'}">active</core_rt:if>" href="#tab-SPDX" data-toggle="list" role="tab"><liferay-ui:message key="spdx.document" /></a>
+                    </core_rt:if>
                     <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-linkedReleases'}">active</core_rt:if>" href="#tab-linkedReleases" data-toggle="list" role="tab"><liferay-ui:message key="linked.releases" /></a>
 
                     <core_rt:if test="${not addMode}" >
@@ -152,9 +154,6 @@
                                 <div id="tab-linkedReleases" class="tab-pane <core_rt:if test="${selectedTab == 'tab-linkedReleases'}">active show</core_rt:if>" >
                                     <%@include file="/html/utils/includes/editLinkedReleases.jspf" %>
                                 </div>
-                                <div id="tab-SPDX" class="tab-pane <core_rt:if test="${selectedTab == 'tab-SPDX'}">active show</core_rt:if>" >
-                                    <%@include file="/html/components/includes/releases/spdx/edit.jspf" %>
-                                </div>
                                 <div id="tab-ClearingDetails" class="tab-pane <core_rt:if test="${selectedTab == 'tab-ClearingDetails'}">active show</core_rt:if>" >
                                     <%@include file="/html/components/includes/releases/editReleaseClearingInformation.jspf" %>
                                 </div>
@@ -164,6 +163,9 @@
                                 <core_rt:if test="${not addMode}" >
                                     <div id="tab-Attachments" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Attachments'}">active show</core_rt:if>">
                                         <%@include file="/html/utils/includes/editAttachments.jspf" %>
+                                    </div>
+                                    <div id="tab-SPDX" class="tab-pane <core_rt:if test="${selectedTab == 'tab-SPDX'}">active show</core_rt:if>" >
+                                        <%@include file="/html/components/includes/releases/spdx/edit.jspf" %>
                                     </div>
                                 </core_rt:if>
                                  <core_rt:if test="${cotsMode}">
