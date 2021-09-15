@@ -178,7 +178,7 @@ public class SpdxBOMImporter {
         final SPDXDocument doc = getSpdxDocumentFromRelease(releaseId);
         doc.setReleaseId(releaseId);
         try {
-            final SpdxSnippet[] spdxSnippets = spdxDocument.getDocumentContainer().findAllSnippets().toArray(new SpdxSnippet[0]);;
+            final SpdxSnippet[] spdxSnippets = spdxDocument.getDocumentContainer().findAllSnippets().toArray(new SpdxSnippet[0]);
             final Relationship[] spdxRelationships = spdxDocument.getRelationships();
             final Annotation[] spdxAnnotations = spdxDocument.getAnnotations();
             final ExtractedLicenseInfo[] extractedLicenseInfos = spdxDocument.getExtractedLicenseInfos();
@@ -316,6 +316,8 @@ public class SpdxBOMImporter {
         for (Relationship spdxRelationship : spdxRelationships) {
             String relatedSpdxElementId = spdxRelationship.getRelatedSpdxElement().getId();
             String type = spdxRelationship.getRelationshipType().toString();
+
+            /// ?????
             String relatedSpdxElement = spdxRelationship.getRelatedSpdxElement().toString();
             String comment = spdxRelationship.getComment();
 
@@ -401,8 +403,8 @@ public class SpdxBOMImporter {
                 String externalDocumentId = externalDocumentRef.getExternalDocumentId();
                 String spdxDocumentNamespace = externalDocumentRef.getSpdxDocumentNamespace();
                 CheckSum checksum = new CheckSum();
-                checksum.setAlgorithm(verifyOrSetDefault(spdxChecksum.getAlgorithm().toString()))
-                        .setChecksumValue(verifyOrSetDefault(spdxChecksum.getValue()));
+                checksum.setAlgorithm(org.spdx.rdfparser.model.Checksum.CHECKSUM_ALGORITHM_TO_TAG.get(spdxChecksum.getAlgorithm()).replace(":", ""))
+                        .setChecksumValue(spdxChecksum.getValue());
 
                 ExternalDocumentReferences ref = new ExternalDocumentReferences();
                 ref.setExternalDocumentId(verifyOrSetDefault(externalDocumentId))

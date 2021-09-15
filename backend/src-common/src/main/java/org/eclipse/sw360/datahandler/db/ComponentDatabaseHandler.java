@@ -61,6 +61,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.spdx.SpdxBOMImporter;
 import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
+import org.eclipse.sw360.spdx.SpdxBOMExporter;
+import org.eclipse.sw360.spdx.SpdxBOMExporterSink;
 import org.jetbrains.annotations.NotNull;
 import org.spdx.rdfparser.InvalidSPDXAnalysisException;
 import org.spdx.tools.SpdxConverter;
@@ -71,6 +73,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -2203,6 +2206,27 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             throw new SW360Exception(e.getMessage());
         }
     }
+    public RequestSummary exportSPDX(User user, String releaseId, String outputFormat) throws SW360Exception {
+        RequestSummary requestSummary = new RequestSummary();
+
+        try {
+            final SpdxBOMExporterSink spdxBOMExporterSink = new SpdxBOMExporterSink(user, null, this);
+            final SpdxBOMExporter spdxBOMExporter = new SpdxBOMExporter(spdxBOMExporterSink);
+            try {
+                return spdxBOMExporter.exportSPDXFile(releaseId, outputFormat);
+            } catch (InvalidSPDXAnalysisException e) {
+                e.printStackTrace();
+            }
+        } catch (IOException e) {
+            throw new SW360Exception(e.getMessage());
+        }
+        return requestSummary.setRequestStatus(RequestStatus.FAILURE);
+    }
+    // public RequestSummary importBomFromSpdxMap(User user, Map<String, Object> spdxMap) {
+    //     final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
+    //     final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
+    //     return spdxBOMImporter.importSpdxBOMAsRelease(spdxInputStream, attachmentContent);
+    // }
 
     public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId, String newReleaseVersion, String releaseId) throws SW360Exception {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
