@@ -374,7 +374,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         if ($('#packageSPDXId').val().trim() == '') {
           packageInformationObj['SPDXID'] = 'SPDXRef-Package-' + packageInformationObj['name'];
         } else {
-          packageInformationObj['SPDXID'] = 'SPDXRef-Package-' + $('#packageSPDXId').val().trim();
+          packageInformationObj['SPDXID'] = 'SPDXRef-' + $('#packageSPDXId').val().trim();
         }
         packageInformationObj['versionInfo'] = $('#versionInfo').val().trim();
         packageInformationObj['packageFileName'] = $('#packageFileName').val().trim();

@@ -69,7 +69,7 @@
         <div class="form-group">
           <label class="mandatory" for="documentNamespace">2.5 SPDX Document Namespace</label>
           <input id="documentNamespace" class="form-control needs-validation" rule="isNotNull" type="text"
-            placeholder="<liferay-ui:message key=" enter.spdx.document.namespace" />"
+            placeholder="<liferay-ui:message key="enter.spdx.document.namespace" />"
             value="${spdxDocumentCreationInfo.documentNamespace}">
         </div>
         <div id="documentNamespace-error-messages">
