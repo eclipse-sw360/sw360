@@ -543,7 +543,9 @@
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">6.4 License Cross Reference</div>
 					<p class="spdx-col-2 spdx-p">
-						<sw360:out value="${otherLicensingData.licenseCrossRefs}" stripNewlines="false" />
+						<core_rt:forEach items="${otherLicensingData.licenseCrossRefs}" var="licenseCrossRefsData" varStatus="loop">
+							<sw360:out value="${licenseCrossRefsData} " /> <br>
+						</core_rt:forEach>
 					</p>
 				</td>
 			</tr>
