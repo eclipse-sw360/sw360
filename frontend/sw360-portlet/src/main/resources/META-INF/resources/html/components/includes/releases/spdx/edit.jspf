@@ -268,6 +268,8 @@
       documentCreationInformationObj['licenseListVersion'] = $('#licenseListVersion').val().trim();
       documentCreationInformationObj.creator = readDocumentCreator();
       documentCreationInformationObj['created'] = spdxjs.readDateTime('#createdDate', '#createdTime');
+      documentCreationInformationObj['creatorComment'] = $('#creatorComment').val().trim();
+      documentCreationInformationObj['documentComment'] = $('#documentComment').val().trim();
       if (documentCreationInformationObj['created'] == '') {
         documentCreationInformationObj['created'] = (new Date()).toISOString();
       }

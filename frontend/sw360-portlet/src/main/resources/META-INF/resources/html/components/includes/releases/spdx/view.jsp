@@ -130,6 +130,22 @@
 				</div>
 			</td>
 		</tr>
+		<tr class="spdx-full">
+			<td class="spdx-flex-row">
+				<div class="spdx-col-1">2.10 Creator Comment</div>
+				<div class="spdx-col-2">
+					<sw360:out value="${spdxDocumentCreationInfo.creatorComment}" />
+				</div>
+			</td>
+		</tr>
+		<tr class="spdx-full">
+			<td class="spdx-flex-row">
+				<div class="spdx-col-1">2.11 Document Comment</div>
+				<div class="spdx-col-2">
+					<sw360:out value="${spdxDocumentCreationInfo.documentComment}" />
+				</div>
+			</td>
+		</tr>
 	</tbody>
 </table>
 <core_rt:if test="${not spdxPackageInfo.isEmpty()}">

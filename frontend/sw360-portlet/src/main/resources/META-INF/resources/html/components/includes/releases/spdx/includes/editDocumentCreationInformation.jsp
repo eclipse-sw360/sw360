@@ -199,6 +199,24 @@
         </div>
       </td>
     </tr>
+    <tr class="spdx-full">
+      <td colspan="3">
+        <div class="form-group">
+          <label for="creatorComment">2.10. Creator Comment</label>
+          <textarea class="form-control" id="creatorComment" rows="5"
+            placeholder="Enter Comment">${spdxDocumentCreationInfo.creatorComment}</textarea>
+        </div>
+      </td>
+    </tr>
+    <tr class="spdx-full">
+      <td colspan="3">
+        <div class="form-group">
+          <label for="documentComment">2.11. Document Comment</label>
+          <textarea class="form-control" id="documentComment" rows="5"
+            placeholder="Enter Comment">${spdxDocumentCreationInfo.documentComment}</textarea>
+        </div>
+      </td>
+    </tr>
   </tbody>
 </table>
 
