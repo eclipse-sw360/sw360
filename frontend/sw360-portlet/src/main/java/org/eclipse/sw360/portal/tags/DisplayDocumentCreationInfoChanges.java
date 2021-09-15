@@ -223,7 +223,7 @@ public class DisplayDocumentCreationInfoChanges extends UserAwareTag {
                         field, fieldMetaData, "");
             }
         }
-        return "<h3>"+LanguageUtil.get(resourceBundle,"changes.in.external.document.references")+ "</h3>"
+        return "<h3>"+LanguageUtil.get(resourceBundle,"changes.in.creator")+ "</h3>"
                 + String.format("<table class=\"%s\" id=\"%schanges\" >", tableClasses, idPrefix)
                 + String.format("<thead><tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr></thead><tbody>",
                 LanguageUtil.get(resourceBundle,"field.name"), LanguageUtil.get(resourceBundle,"current.value"),

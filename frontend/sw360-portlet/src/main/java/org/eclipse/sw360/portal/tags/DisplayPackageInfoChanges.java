@@ -250,28 +250,28 @@ public class DisplayPackageInfoChanges extends UserAwareTag {
         if (! actual.isSet(PackageInformation._Fields.EXTERNAL_REFS)){
             actual.externalRefs = new HashSet<>();
         }
-        Iterator<ExternalReference> externalDocumentRefsAdditionsIterator = additions.getExternalRefsIterator();
-        Iterator<ExternalReference> externalDocumentRefsDeletionsIterator = deletions.getExternalRefsIterator();
-        for (ExternalReference externalDocumentRefs : actual.getExternalRefs()) {
-            ExternalReference externalDocumentRefsAdditions = new ExternalReference();
-            if (externalDocumentRefsAdditionsIterator.hasNext()) {
-                externalDocumentRefsAdditions = externalDocumentRefsAdditionsIterator.next();
+        Iterator<ExternalReference> externalRefsAdditionsIterator = additions.getExternalRefsIterator();
+        Iterator<ExternalReference> externalRefsDeletionsIterator = deletions.getExternalRefsIterator();
+        for (ExternalReference externalRefs : actual.getExternalRefs()) {
+            ExternalReference externalRefsAdditions = new ExternalReference();
+            if (externalRefsAdditionsIterator.hasNext()) {
+                externalRefsAdditions = externalRefsAdditionsIterator.next();
             }
-            ExternalReference externalDocumentRefsDeletions = new ExternalReference();
-            if (externalDocumentRefsDeletionsIterator.hasNext()) {
-                externalDocumentRefsDeletions = externalDocumentRefsDeletionsIterator.next();
+            ExternalReference externalRefsDeletions = new ExternalReference();
+            if (externalRefsDeletionsIterator.hasNext()) {
+                externalRefsDeletions = externalRefsDeletionsIterator.next();
             }
             for (ExternalReference._Fields field : ExternalReference._Fields.values()) {
                 FieldMetaData fieldMetaData = ExternalReference.metaDataMap.get(field);
                 displaySimpleFieldOrSet(
                         display,
-                        externalDocumentRefs,
-                        externalDocumentRefsAdditions,
-                        externalDocumentRefsDeletions,
+                        externalRefs,
+                        externalRefsAdditions,
+                        externalRefsDeletions,
                         field, fieldMetaData, "");
             }
         }
-        return "<h3>"+LanguageUtil.get(resourceBundle,"changes.in.external.document.references")+ "</h3>"
+        return "<h3>"+LanguageUtil.get(resourceBundle,"changes.in.external.references")+ "</h3>"
                 + String.format("<table class=\"%s\" id=\"%schanges\" >", tableClasses, idPrefix)
                 + String.format("<thead><tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr></thead><tbody>",
                 LanguageUtil.get(resourceBundle,"field.name"), LanguageUtil.get(resourceBundle,"current.value"),
