@@ -1,4 +1,4 @@
-<table class="table spdx-table" id="editRelationshipsBetweenSPDXElements">
+<table class="table spdx-table spdx-full" id="editRelationshipsBetweenSPDXElements">
   <thead>
     <tr>
       <th colspan="3">7. Relationships between SPDX Elements</th>

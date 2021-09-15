@@ -457,7 +457,7 @@
         </div>
       </td>
     </tr>
-    <tr>
+    <tr class="spdx-full">
       <td colspan="3">
         <div class="form-group">
           <label for="spdxPackageComment">3.23 Package Attribution Text</label>

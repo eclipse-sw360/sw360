@@ -1,4 +1,4 @@
-<table class="table spdx-table" id="editSnippetInformation">
+<table class="table spdx-table spdx-full" id="editSnippetInformation">
   <thead>
     <tr>
       <th>5. Snippet Information</th>

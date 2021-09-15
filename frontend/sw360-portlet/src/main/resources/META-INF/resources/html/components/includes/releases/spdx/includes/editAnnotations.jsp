@@ -1,4 +1,4 @@
-<table class="table spdx-table" id="editAnnotations">
+<table class="table spdx-table spdx-full" id="editAnnotations">
   <thead>
     <tr>
       <th colspan="3">8. Annotations</th>
