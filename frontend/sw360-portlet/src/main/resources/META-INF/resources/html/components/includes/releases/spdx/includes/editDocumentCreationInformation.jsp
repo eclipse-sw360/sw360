@@ -1,9 +1,7 @@
 <table class="table spdx-table" id="editDocumentCreationInformation">
   <thead>
     <tr>
-      <th colspan="3">
-        <liferay-ui:message key="2.document.creation.information" />
-      </th>
+      <th colspan="3">2. Document Creation Information</th>
     </tr>
   </thead>
   <tbody>
@@ -52,7 +50,7 @@
     <tr>
       <td>
         <div class="form-group">
-          <label class="mandatory" for="documentName">2.4. Document Name</label>
+          <label class="mandatory" for="documentName">2.4 Document Name</label>
           <input id="documentName" type="text"
             class="form-control needs-validation" rule="isNotNull"
             placeholder="<liferay-ui:message key="enter.spdx.document.name" />" value="${spdxDocumentCreationInfo.name}">
@@ -202,7 +200,7 @@
     <tr class="spdx-full">
       <td colspan="3">
         <div class="form-group">
-          <label for="creatorComment">2.10. Creator Comment</label>
+          <label for="creatorComment">2.10 Creator Comment</label>
           <textarea class="form-control" id="creatorComment" rows="5"
             placeholder="Enter Comment">${spdxDocumentCreationInfo.creatorComment}</textarea>
         </div>
@@ -211,7 +209,7 @@
     <tr class="spdx-full">
       <td colspan="3">
         <div class="form-group">
-          <label for="documentComment">2.11. Document Comment</label>
+          <label for="documentComment">2.11 Document Comment</label>
           <textarea class="form-control" id="documentComment" rows="5"
             placeholder="Enter Comment">${spdxDocumentCreationInfo.documentComment}</textarea>
         </div>

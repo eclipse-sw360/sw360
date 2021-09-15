@@ -205,7 +205,7 @@
     <tr>
       <td>
         <div class="form-group">
-          <label class="mandatory">3.11 Package Homepage</label>
+          <label>3.11 Package Homepage</label>
           <div style="display: flex; flex-direction: row;">
             <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
               <input class="spdx-radio" id="packageHomepageExist" type="radio"

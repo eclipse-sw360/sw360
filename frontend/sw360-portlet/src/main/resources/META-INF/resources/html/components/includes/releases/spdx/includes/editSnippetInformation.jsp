@@ -23,9 +23,7 @@
     <tr>
       <td style="display: flex">
         <div class="form-group" style="flex: 1">
-          <label class="mandatory" for="snippetSpdxIdentifier">
-            5.1 Snippet SPDX Identifier
-          </label>
+          <label class="mandatory" for="snippetSpdxIdentifier">5.1 Snippet SPDX Identifier</label>
           <div style="display: flex">
             <label class="sub-label">SPDXRef-</label>
             <input id="snippetSpdxIdentifier" class="form-control"
@@ -34,9 +32,7 @@
           </div>
         </div>
         <div class="form-group" style="flex: 1">
-          <label class="mandatory" for="snippetFromFile">
-            5.2 Snippet from File SPDX Identifier
-          </label>
+          <label class="mandatory" for="snippetFromFile">5.2 Snippet from File SPDX Identifier</label>
           <div style="display: flex">
             <select id="snippetFromFile" class="form-control" style="flex: 1;">
               <option>SPDXRef</option>
@@ -53,9 +49,7 @@
     <tr>
       <td>
         <div class="form-group">
-          <label class="mandatory">
-            5.3 & 5.4 Snippet Ranges
-          </label>
+          <label class="mandatory">5.3 & 5.4 Snippet Ranges</label>
           <div style="display: flex; flex-direction: column; padding-left: 1rem;">
             <div style="display: none; margin-bottom: 0.75rem;" name="snippetRange">
               <select style="flex: 1; margin-right: 1rem;" type="text" class="form-control range-type" placeholder="Enter Type">
@@ -105,7 +99,7 @@
     <tr>
       <td>
         <div class="form-group">
-          <label class="mandatory">5.6 License Information in Snippet</label>
+          <label>5.6 License Information in Snippet</label>
           <div style="display: flex; flex-direction: row;">
             <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
               <input class="spdx-radio" id="licenseInfoInFile" type="radio"
@@ -173,9 +167,7 @@
     <tr>
       <td>
         <div class="form-group">
-          <label class="mandatory" for="snippetName">
-            5.10 Snippet Name
-          </label>
+          <label for="snippetName">5.10 Snippet Name</label>
           <input id="snippetName" type="text"
             class="form-control" placeholder="Enter Snippet Name" >
         </div>

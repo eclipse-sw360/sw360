@@ -23,11 +23,10 @@
     <tr>
       <td>
         <div class="form-group">
-          <label class="mandatory" for="spdxElement">7.1 Relationship</label>
+          <label for="spdxElement">7.1 Relationship</label>
           <div style="display: flex">
             <input style="margin-right: 1rem;" id="spdxElement" class="form-control"
-              name="_sw360_portlet_components_LICENSE_ID" type="text" placeholder="Enter SPDX Element"
-             >
+              name="_sw360_portlet_components_LICENSE_ID" type="text" placeholder="Enter SPDX Element">
             <input style="margin-right: 1rem;" id="relationshipType" class="form-control"
               name="_sw360_portlet_components_LICENSE_ID" type="text"
               placeholder="Enter Relationship Type">
