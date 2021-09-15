@@ -32,7 +32,7 @@ import java.util.ResourceBundle;
 import static org.eclipse.sw360.portal.tags.TagUtils.*;
 
 /**
- * Display the fields that have changed in the release
+ * Display the fields that have changed in the SPDX Document
  *
  * @author hieu1.phamvan@toshiba.co.jp
  */

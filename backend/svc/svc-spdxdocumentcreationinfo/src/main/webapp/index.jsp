@@ -1,5 +1,5 @@
 <!--
-Copyright Toshiba corporation, 2021. Part of the SW360 Portal Project.
+Copyright TOSHIBA CORPORATION, 2021. Part of the SW360 Portal Project.
 Copyright Toshiba Software Development (Vietnam) Co., Ltd., 2021. Part of the SW360 Portal Project.
 
 This program and the accompanying materials are made
@@ -8,9 +8,9 @@ which is available at https://www.eclipse.org/legal/epl-2.0/
 
 SPDX-License-Identifier: EPL-2.0
 
-Author : cedric.bodet@tngtech.com
+Author : hieu1.phamvan@toshiba.co.jp
 
-Description: Welcome file for SPDX Service
+Description: Welcome file for SPDX Document Creation Information Service
 -->
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <html>

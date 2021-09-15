@@ -16,8 +16,6 @@ import com.liferay.portal.kernel.util.ResourceBundleUtil;
 
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
 
-import jdk.internal.org.jline.utils.Log;
-
 import org.apache.thrift.meta_data.FieldMetaData;
 
 import javax.servlet.http.HttpServletRequest;
@@ -32,7 +30,7 @@ import java.util.Set;
 import static org.eclipse.sw360.portal.tags.TagUtils.*;
 
 /**
- * Display the fields that have changed in the release
+ * Display the fields that have changed in the SPDX Document Creation Info
  *
  * @author hieu1.phamvan@toshiba.co.jp
  */

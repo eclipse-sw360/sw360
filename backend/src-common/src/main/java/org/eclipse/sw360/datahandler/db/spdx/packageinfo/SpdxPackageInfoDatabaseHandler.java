@@ -1,5 +1,5 @@
 /*
- * Copyright Toshiba corporation, 2021. Part of the SW360 Portal Project.
+ * Copyright TOSHIBA CORPORATION, 2021. Part of the SW360 Portal Project.
  * Copyright Toshiba Software Development (Vietnam) Co., Ltd., 2021. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
@@ -39,7 +39,7 @@ import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePerm
 import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.prepareSpdxPackageInfo;
 
 /**
- * Class for accessing the CouchDB database
+ * Class for accessing SPDX Package Information from the database
  *
  * @author hieu1.phamvan@toshiba.co.jp
  */

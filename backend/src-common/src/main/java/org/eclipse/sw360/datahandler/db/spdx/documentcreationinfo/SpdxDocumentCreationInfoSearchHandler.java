@@ -1,5 +1,5 @@
 /*
- * Copyright Toshiba corporation, 2021. Part of the SW360 Portal Project.
+ * Copyright TOSHIBA CORPORATION, 2021. Part of the SW360 Portal Project.
  * Copyright Toshiba Software Development (Vietnam) Co., Ltd., 2021. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
@@ -23,6 +23,11 @@ import java.util.function.Supplier;
 
 import static org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector.prepareWildcardQuery;
 
+/**
+ * Class for accessing the Lucene connector on the CouchDB database
+ *
+ * @author hieu1.phamvan@toshiba.co.jp
+ */
 public class SpdxDocumentCreationInfoSearchHandler {
 
     private static final LuceneSearchView luceneSearchView

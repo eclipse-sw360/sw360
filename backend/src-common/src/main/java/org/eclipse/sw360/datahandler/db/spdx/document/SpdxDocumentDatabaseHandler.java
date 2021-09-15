@@ -1,5 +1,5 @@
 /*
- * Copyright Toshiba corporation, 2021. Part of the SW360 Portal Project.
+ * Copyright TOSHIBA CORPORATION, 2021. Part of the SW360 Portal Project.
  * Copyright Toshiba Software Development (Vietnam) Co., Ltd., 2021. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
@@ -41,6 +41,11 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.prepareSPDXDocument;
 
+/**
+ * Class for accessing SPDXDocument information from the database
+ *
+ * @author hieu1.phamvan@toshiba.co.jp
+ */
 public class SpdxDocumentDatabaseHandler {
 
     private static final Logger log = LogManager.getLogger(SpdxDocumentDatabaseHandler.class);

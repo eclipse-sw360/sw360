@@ -1,5 +1,5 @@
 /*
- * Copyright Toshiba corporation, 2021. Part of the SW360 Portal Project.
+ * Copyright TOSHIBA CORPORATION, 2021. Part of the SW360 Portal Project.
  * Copyright Toshiba Software Development (Vietnam) Co., Ltd., 2021. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
@@ -13,7 +13,6 @@ package org.eclipse.sw360.components.summary;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
 
 import static org.eclipse.sw360.datahandler.thrift.ThriftUtils.copyField;
-import static org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation._Fields;
 
 /**
  * Created by HieuPV on 22/07/21.
@@ -28,12 +27,13 @@ public class DocumentCreationInformationSummary extends DocumentSummary<Document
         DocumentCreationInformation copy = new DocumentCreationInformation();
 
         switch (type) {
-            case EXPORT_SUMMARY:
             case SUMMARY:
                 copyField(document, copy, DocumentCreationInformation._Fields.ID);
                 copyField(document, copy, DocumentCreationInformation._Fields.SPDXID);
                 copyField(document, copy, DocumentCreationInformation._Fields.NAME);
+                break;
             default:
+                break;
         }
 
         return copy;

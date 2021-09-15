@@ -1,5 +1,5 @@
 /*
- * Copyright Toshiba corporation, 2021. Part of the SW360 Portal Project.
+ * Copyright TOSHIBA CORPORATION, 2021. Part of the SW360 Portal Project.
  * Copyright Toshiba Software Development (Vietnam) Co., Ltd., 2021. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
@@ -28,7 +28,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 
 /**
- * Moderation for the SPDX Document service
+ * Moderation for the SPDX DocumentCreationInformation service
  *
  * @author hieu1.phamvan@toshiba.co.jp
  */
