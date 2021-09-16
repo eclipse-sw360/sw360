@@ -183,6 +183,7 @@
                     r.on('fileAdded', function (file) {
                         console.log("fileAdded...");
                         contentDiv.hide();
+                        $('#cancelImportSBOM').hide();
                         statusDiv.show();
                         r.upload();
                         statusDiv.html("<h2>Uploading ...</h2>");
@@ -195,6 +196,7 @@
                         statusDiv.html("<h2>Importing ...</h2>");
                         attachmentContentId = file.uniqueIdentifier;
                         prepareImportBom(attachmentContentId).then(function (data) {
+                            $('#cancelImportSBOM').show();
                             console.log("prepareImportsuccess...");
                             if (neededKeys.every(key => Object.keys(data).includes(key))) {
                                 $('#spdxBomUploadAction').prepend(importBtn);
