@@ -324,6 +324,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
       }
 
       function initPackageInfo(packageInformationObj) {
+        $('#packageName').val(packageInformationObj['name']);
         if (packageInformationObj.SPDXID.startsWith('SPDXRef-')) {
           $('#packageSPDXId').val(packageInformationObj.SPDXID.substr(8));
         } else {
