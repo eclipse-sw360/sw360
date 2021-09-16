@@ -340,7 +340,7 @@ public class SpdxBOMImporter {
             String licenseId = spdxExtractedLicense.getLicenseId();
             String extractedText = spdxExtractedLicense.getExtractedText();
             String name = spdxExtractedLicense.getName();
-            Set<String> crossRef = new HashSet<String>(Arrays.asList(spdxExtractedLicense.getCrossRef()));
+            Set<String> crossRef = new HashSet<String>(Arrays.asList(verifyOrSetDefault(spdxExtractedLicense.getCrossRef())));
             String comment = spdxExtractedLicense.getComment();
 
             OtherLicensingInformationDetected otherLicense = new OtherLicensingInformationDetected();
@@ -476,7 +476,7 @@ public class SpdxBOMImporter {
             final String description = spdxPackage.getDescription();
             final String comment = spdxPackage.getComment();
             final Set<ExternalReference> externalRefs = createExternalReferenceFromSpdxPackage(spdxPackage);
-            final Set<String> attributionText = new HashSet<String>(Arrays.asList(spdxPackage.getAttributionText()));
+            final Set<String> attributionText = new HashSet<String>(Arrays.asList(verifyOrSetDefault(spdxPackage.getAttributionText())));
             final Set<Annotations> annotations = createAnnotationsFromSpdxAnnotations(spdxPackage.getAnnotations());
 
             pInfo.setName(verifyOrSetDefault(name))
@@ -488,6 +488,7 @@ public class SpdxBOMImporter {
                 .setDownloadLocation(verifyOrSetDefault(downloadLocation))
                 .setFilesAnalyzed(fileAnalyzed)
                 .setPackageVerificationCode(PVC)
+                .setChecksums(checksums)
                 .setHomepage(verifyOrSetDefault(homepage))
                 .setSourceInfo(verifyOrSetDefault(sourceInfo))
                 .setLicenseConcluded(verifyOrSetDefault(licenseConcluded))
@@ -513,7 +514,7 @@ public class SpdxBOMImporter {
 
         try {
             final SpdxPackageVerificationCode spdxPVC = spdxPackage.getPackageVerificationCode();
-            final Set<String> excludedFileNames = new HashSet<String>(Arrays.asList(spdxPVC.getExcludedFileNames()));
+            final Set<String> excludedFileNames = new HashSet<String>(Arrays.asList(verifyOrSetDefault(spdxPVC.getExcludedFileNames())));
             final String value = spdxPVC.getValue();
 
             PVC.setExcludedFiles(excludedFileNames)
@@ -569,8 +570,8 @@ public class SpdxBOMImporter {
             String copyrightText = spdxFile.getCopyrightText();
             String comment = spdxFile.getComment();
             String noticeText = spdxFile.getNoticeText();
-            Set<String> fileContributors = new HashSet<String>(Arrays.asList(spdxFile.getFileContributors()));
-            Set<String> attributionText = new HashSet<String>(Arrays.asList(spdxFile.getAttributionText()));
+            Set<String> fileContributors = new HashSet<String>(Arrays.asList(verifyOrSetDefault(spdxFile.getFileContributors())));
+            Set<String> attributionText = new HashSet<String>(Arrays.asList(verifyOrSetDefault(spdxFile.getAttributionText())));
             Set<Annotations> annotations = createAnnotationsFromSpdxAnnotations(spdxFile.getAnnotations());
 
             FileInformation file = new FileInformation();
@@ -796,5 +797,9 @@ public class SpdxBOMImporter {
 
     private String verifyOrSetDefault(String value) {
         return (isNotNullEmptyOrWhitespace(value)) ? value : "";
+    }
+
+    private String[] verifyOrSetDefault(String[] values) {
+        return (values != null && values.length > 0) ? values : new String[0];
     }
 }
