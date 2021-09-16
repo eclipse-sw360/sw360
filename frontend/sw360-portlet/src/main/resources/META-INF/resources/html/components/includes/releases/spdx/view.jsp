@@ -845,7 +845,12 @@
 		for (var i = 1; i <= length; i++) {
 			var option = document.createElement("option");
 			option.text = i;
-			document.getElementById(selectId).add(option);
+			$('#' + selectId).append(option);
+		}
+		if (length == 0) {
+			$('#' + selectId).attr('disabled', 'disabled');
+		} else {
+			$('#' + selectId).removeAttr('disabled', 'disabled');
 		}
 	}
 	generateSelecterOption('snippetInfoSelect', "${snippets.size()}");
