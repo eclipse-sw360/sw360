@@ -152,7 +152,7 @@
       if (documentCreationInformationObj['spdxVersion'].startsWith('SPDX-')) {
         $('#spdxVersion').val(documentCreationInformationObj['spdxVersion'].substr(5).trim());
       } else {
-        $('#spdxVersion').val('SPDX-2.2');
+        $('#spdxVersion').val('2.2');
       }
       if (documentCreationInformationObj['dataLicense'] == '') {
         $('#dataLicense').val('CC0-1.0');
@@ -225,7 +225,7 @@
       if (obj['checksum']['algorithm'].startsWith('checksumAlgorithm_')) {
         $('#checksumAlgorithm').val(obj['checksum']['algorithm'].substr(18));
       } else {
-        $('#checksumAlgorithm').val('');
+        $('#checksumAlgorithm').val(obj['checksum']['algorithm']);
       }
       $('#checksumValue').val(obj['checksum']['checksumValue']);
     }
@@ -698,6 +698,9 @@
       function initialize() {
         isInitialzing = true;
         initDocumentCreation();
+        if (packageInformationObj['name'] == '') {
+          packageInformationObj['name'] = "${component.name}";
+        }
         spdxjs.initPackageInfo(packageInformationObj);
         initSnippetInfo();
         initOtherLicensing();

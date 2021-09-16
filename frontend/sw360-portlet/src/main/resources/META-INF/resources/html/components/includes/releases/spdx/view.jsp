@@ -125,7 +125,7 @@
 		<tr>
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1">2.9 Created</div>
-				<div class="spdx-col-2">
+				<div class="spdx-col-2" id="createdDateTime">
 					<sw360:out value="${spdxDocumentCreationInfo.created}" />
 				</div>
 			</td>
@@ -217,7 +217,7 @@
 		<tr>
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1">3.8 File Analyzed</div>
-				<div class="spdx-col-2">
+				<div class="spdx-col-2 spdx-uppercase">
 					<sw360:out value="${package.filesAnalyzed}" />
 				</div>
 			</td>
@@ -252,7 +252,7 @@
 					<core_rt:forEach items="${package.checksums}" var="checksumData" varStatus="loop">
 						<div class="spdx-flex-row">
 							<div class="spdx-col-1 spdx-key">
-								<sw360:out value="${checksumData.algorithm}" />
+								<sw360:out value="${checksumData.algorithm.replace('checksumAlgorithm_', '')}" />
 							</div>
 							<div class="spdx-col-3">
 								<sw360:out value="${checksumData.checksumValue}" />
@@ -357,8 +357,8 @@
 					<core_rt:forEach items="${package.externalRefs}" var="externalRefsData" varStatus="loop">
 						<div class="spdx-flex-row">
 							<div class="spdx-col-1 spdx-key">Category</div>
-							<div class="spdx-col-3">
-								<sw360:out value="${externalRefsData.referenceCategory}" />
+							<div class="spdx-col-3 spdx-uppercase">
+								<sw360:out value="${externalRefsData.referenceCategory.replace('referenceCategory_', '')}" />
 							</div>
 						</div>
 						<div class="spdx-flex-row">
@@ -662,7 +662,7 @@
 			<tr class="annotation-document-${loop.count}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">8.2 Annotation Date</div>
-					<p class="spdx-col-2 spdx-p">
+					<p class="spdx-col-2 spdx-p" id="annotation-document-date-${loop.count}">
 						<sw360:out value="${annotationsData.annotationDate}" />
 					</p>
 				</td>
@@ -710,7 +710,7 @@
 			<tr class="annotation-package-${loop.count}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">8.2 Annotation Date</div>
-					<p class="spdx-col-2 spdx-p">
+					<p class="spdx-col-2 spdx-p" id="annotation-package-date-${loop.count}">
 						<sw360:out value="${annotationsData.annotationDate}" />
 					</p>
 				</td>
@@ -792,6 +792,10 @@
 
 	.spdx-thead {
 		cursor: pointer;
+	}
+
+	.spdx-uppercase {
+		text-transform: uppercase;
 	}
 </style>
 
@@ -901,5 +905,38 @@
 			$('.annotation-package').css('display', 'none');
 		}
 		$('#annotationSelect').change();
+	}
+
+	<core_rt:forEach items="${documentAnnotations}" var="documentAnnotationData" varStatus="loop">
+		displayDateTime('annotation-document-date-${loop.count}', '${documentAnnotationData.annotationDate}');
+	</core_rt:forEach>
+
+	displayDateTime('createdDateTime', "${spdxDocumentCreationInfo.created}");
+
+	<core_rt:forEach items="${packageAnnotations}" var="packageAnnotationData" varStatus="loop">
+		displayDateTime('annotation-package-date-${loop.count}', '${packageAnnotationData.annotationDate}');
+	</core_rt:forEach>
+
+	function displayDateTime(id, value) {
+		if (value == '') {
+			return;
+		}
+
+        let timeStamp = Date.parse(value);
+
+        let date = new Date(timeStamp);
+
+        let localTimeStamp = timeStamp - date.getTimezoneOffset();
+
+        let localDate = new Date(localTimeStamp);
+
+		let dateTime = localDate.getFullYear()
+					+ '-' + (localDate.getMonth() + 1).toString().padStart(2, '0')
+					+ '-' + localDate.getDate().toString().padStart(2, '0')
+					+ ' ' + date.getHours().toString().padStart(2, '0')
+					+ ':' + date.getMinutes().toString().padStart(2, '0')
+					+ ':' + date.getSeconds().toString().padStart(2, '0');
+
+		document.getElementById(id).innerHTML = dateTime;
 	}
 </script>
