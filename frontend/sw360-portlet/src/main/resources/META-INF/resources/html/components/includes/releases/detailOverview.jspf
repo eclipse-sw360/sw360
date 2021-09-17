@@ -102,15 +102,14 @@
 
                             <div id="btnExportGroup" class="btn-group" role="group">
                                 <button id="btnExport" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    <liferay-ui:message key="export.spreadsheet" />
+                                    <liferay-ui:message key="export.sbom" />
                                     <clay:icon symbol="caret-bottom" />
                                 </button>
                                 <div class="dropdown-menu" aria-labelledby="btnExport">
-                                    <a class="dropdown-item" href="#" data-type="XLS" data-release-id="${release.id}"><liferay-ui:message key="spdx.document.xls" /></a>
-                                    <a class="dropdown-item" href="#" data-type="XML" data-release-id="${release.id}"><liferay-ui:message key="spdx.document.xml" /></a>
-                                    <a class="dropdown-item" href="#" data-type="RDF" data-release-id="${release.id}"><liferay-ui:message key="spdx.document.rdf" /></a>
-                                    <a class="dropdown-item" href="#" data-type="JSON" data-release-id="${release.id}"><liferay-ui:message key="spdx.document.json" /></a>
-                                    <a class="dropdown-item" href="#" data-type="SPDX" data-release-id="${release.id}"><liferay-ui:message key="spdx.document.spdx" /></a>
+                                    <a class="dropdown-item" href="#" data-type="SPDX" data-release-id="${release.id}"><liferay-ui:message key="tag" /></a>
+                                    <a class="dropdown-item" href="#" data-type="RDF" data-release-id="${release.id}"><liferay-ui:message key="RDF/XML" /></a>
+                                    <a class="dropdown-item" href="#" data-type="JSON" data-release-id="${release.id}"><liferay-ui:message key="JSON" /></a>
+                                    <a class="dropdown-item" href="#" data-type="XLS" data-release-id="${release.id}"><liferay-ui:message key="XLS" /></a>
 
                                 </div>
                             </div>

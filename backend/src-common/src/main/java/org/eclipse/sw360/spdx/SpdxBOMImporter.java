@@ -490,7 +490,6 @@ public class SpdxBOMImporter {
                 .setPackageVerificationCode(PVC)
                 .setChecksums(checksums)
                 .setHomepage(verifyOrSetDefault(homepage))
-                .setChecksums(checksums)
                 .setSourceInfo(verifyOrSetDefault(sourceInfo))
                 .setLicenseConcluded(verifyOrSetDefault(licenseConcluded))
                 .setLicenseInfoFromFiles(licenseInfosFromFiles)

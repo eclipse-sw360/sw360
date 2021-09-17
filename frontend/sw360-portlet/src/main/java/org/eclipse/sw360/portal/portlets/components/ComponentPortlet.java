@@ -256,15 +256,17 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         String outputFormat = request.getParameter(PortalConstants.WHAT);
         User user = UserCacheHolder.getUserFromRequest(request);
 
-
         String filename = releaseId + "." + outputFormat.toLowerCase();
         try {
+            String exportFileName = componentClient.getReleaseById(releaseId, user).getName().replaceAll("[\\/:*?\"<>|\\s]","_")
+            + "_" + componentClient.getReleaseById(releaseId, user).getVersion().replaceAll("[\\/:*?\"<>|\\s]","_")
+            + "_" + SW360Utils.getCreatedOn() + "." + outputFormat.toLowerCase();
             final RequestSummary requestSummary = componentClient.exportSPDX(user, releaseId, outputFormat);
 
             if (requestSummary.getRequestStatus() == RequestStatus.SUCCESS) {
                 try {
                     InputStream inputStream = new FileInputStream(new File(filename));
-                    PortletResponseUtil.sendFile(request, response, filename, inputStream, CONTENT_TYPE_OPENXML_SPREADSHEET);
+                    PortletResponseUtil.sendFile(request, response, exportFileName, inputStream, CONTENT_TYPE_OPENXML_SPREADSHEET);
                     log.info("Export SPDX file success !!!");
                 } catch (IOException e) {
                     e.printStackTrace();

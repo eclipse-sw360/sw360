@@ -224,19 +224,6 @@ public class SpdxBOMExporter {
             String spdxSnippetFromFileName = sw360SnippetInfo.getSnippetFromFile();
             SpdxFile spdxSnippetFromFile = new SpdxFile(spdxSnippetFromFileName, null, null, null, null, null, SpdxRdfConstants.NOASSERTION_VALUE,
             null, null, null, null, null, null);
-            //spdxSnippetFromFile.setName(spdxSnippetFromFileName);
-            
-            // todo:
-            // fix Misssing sha and checksum workaroud
-            // fix Missing required concluded license
-            // value is hardcode
-            // ChecksumAlgorithm algorithm = Checksum.CHECKSUM_TAG_TO_ALGORITHM.get("SHA1:");
-            // Checksum checksum = new Checksum(algorithm, "d6a770ba38583ed4bb4525bd96e50461655d1997");
-
-            // spdxSnippetFromFile.addChecksum(checksum);
-            // ExtractedLicenseInfo spdxlicenseConcluded1 = new ExtractedLicenseInfo("LicenseRef-namnp", "");
-            // spdxSnippetFromFile.setLicenseConcluded(spdxlicenseConcluded1);
-            
             snippet.setSnippetFromFile(spdxSnippetFromFile);
 
             StartEndPointer spdxByteRange;
@@ -429,8 +416,15 @@ public class SpdxBOMExporter {
 
         SpdxPackageVerificationCode packageVerificationCode = new SpdxPackageVerificationCode(sw360PackageInfo.getPackageVerificationCode().getValue(),
         sw360PackageInfo.getPackageVerificationCode().getExcludedFiles().toArray(String[]::new));
-        //packageVerificationCode.setValue(sw360PackageInfo.getPackageVerificationCode().getValue());
         spdxPackage.setPackageVerificationCode(packageVerificationCode);
+
+        List<org.spdx.rdfparser.model.Checksum> checksums = new ArrayList<>();
+        for (CheckSum sw360cCheckSum: sw360PackageInfo.getChecksums()) {
+            ChecksumAlgorithm algorithm = org.spdx.rdfparser.model.Checksum.CHECKSUM_TAG_TO_ALGORITHM.get(sw360cCheckSum.getAlgorithm() +":");
+            org.spdx.rdfparser.model.Checksum checksum = new org.spdx.rdfparser.model.Checksum(algorithm, sw360cCheckSum.getChecksumValue());
+            checksums.add(checksum);
+        }
+        spdxPackage.setChecksums(checksums.toArray(org.spdx.rdfparser.model.Checksum[]::new));
 
         spdxPackage.setHomepage(sw360PackageInfo.getHomepage());
 
