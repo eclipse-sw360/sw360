@@ -490,6 +490,7 @@ public class SpdxBOMImporter {
                 .setPackageVerificationCode(PVC)
                 .setChecksums(checksums)
                 .setHomepage(verifyOrSetDefault(homepage))
+                .setChecksums(checksums)
                 .setSourceInfo(verifyOrSetDefault(sourceInfo))
                 .setLicenseConcluded(verifyOrSetDefault(licenseConcluded))
                 .setLicenseInfoFromFiles(licenseInfosFromFiles)
@@ -599,7 +600,7 @@ public class SpdxBOMImporter {
         Set<CheckSum> checksums = new HashSet<CheckSum>();
 
         for (Checksum spdxChecksum : spdxChecksums) {
-            String algorithm = spdxChecksum.getAlgorithm().toString();
+            String algorithm = org.spdx.rdfparser.model.Checksum.CHECKSUM_ALGORITHM_TO_TAG.get(spdxChecksum.getAlgorithm()).replace(":", "");
             String value = spdxChecksum.getValue();
 
             CheckSum checksum = new CheckSum();
