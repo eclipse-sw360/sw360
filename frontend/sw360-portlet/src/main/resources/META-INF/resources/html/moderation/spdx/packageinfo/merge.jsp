@@ -81,8 +81,8 @@
                     </div>
                     <div id="current-document" class="collapse" aria-labelledby="current-document-heading" data-parent="#moderation-wizard">
                         <div class="card-body">
-                            <core_rt:set var="package" value="${actual_PackageInfo}" scope="request"/>
-                            <core_rt:set var="spdxPackageInfo" value="" scope="request"/>
+                            <core_rt:set var="package" value="${actual_PackageInfo}" />
+                            <core_rt:set var="packageAnnotations" value="${actual_PackageInfo.annotations}" />
                             <%@include file="/html/utils/includes/requirejs.jspf" %>
                             <%@include file="/html/components/includes/releases/spdx/view.jsp"%>
                         </div>
@@ -92,3 +92,14 @@
         </div>
     </div>
 </div>
+
+<script>
+    $('#spdxFullMode').hide();
+    $('#spdxLiteMode').hide();
+    $('#DocumentCreationInformation').hide();
+    $('#SnippetInformation').hide();
+    $('#OtherLicensingInformationDetected').hide();
+    $('#RelationshipsbetweenSPDXElements').hide();
+    $('#annotationSourceSelect').val('Package');
+    changeAnnotationSource($('#annotationSourceSelect'));
+</script>

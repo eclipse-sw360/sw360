@@ -148,7 +148,7 @@
 		</tr>
 	</tbody>
 </table>
-<core_rt:if test="${not spdxPackageInfo.isEmpty()}">
+<core_rt:if test="${not empty spdxPackageInfo}">
 	<core_rt:set var="package" value="${spdxPackageInfo.iterator().next()}" />
 </core_rt:if>
 <table class="table label-value-table spdx-table" id="PackageInformation">
@@ -624,7 +624,7 @@
 </table>
 
 <core_rt:set var="documentAnnotations" value="${spdxDocument.annotations}" />
-<core_rt:if test="${not spdxPackageInfo.isEmpty()}">
+<core_rt:if test="${not empty spdxPackageInfo}">
 	<core_rt:set var="packageAnnotations" value="${spdxPackageInfo.iterator().next().annotations}" />
 </core_rt:if>
 <table class="table label-value-table spdx-table spdx-full" id="Annotations">
@@ -886,7 +886,6 @@
 		section.children().eq(0).css('display', '');
 		section.children().eq(1).css('display', '');
 
-		console.log();
 		if ($('#annotationSourceSelect').val() == 'SPDX Document') {
 			$('.annotation-document-' + index).css('display', 'table-row');
 		} else {
@@ -896,7 +895,7 @@
 
 	function changeAnnotationSource(el) {
 		if ($('#annotationSourceSelect').val() == 'Package') {
-			generateSelecterOption('annotationSelect', '${spdxPackageInfo.iterator().next().annotations.size()}');
+			generateSelecterOption('annotationSelect', '${packageAnnotations.size()}');
 			$('.annotation-document').css('display', 'none');
 			$('.annotation-package').css('display', 'table-row');
 		} else {

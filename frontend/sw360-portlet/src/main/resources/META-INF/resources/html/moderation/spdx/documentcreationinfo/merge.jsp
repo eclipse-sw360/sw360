@@ -90,3 +90,13 @@
         </div>
     </div>
 </div>
+
+<script>
+    $('#spdxFullMode').hide();
+    $('#spdxLiteMode').hide();
+    $('#PackageInformation').hide();
+    $('#SnippetInformation').hide();
+    $('#OtherLicensingInformationDetected').hide();
+    $('#RelationshipsbetweenSPDXElements').hide();
+    $('#Annotations').hide();
+</script>
