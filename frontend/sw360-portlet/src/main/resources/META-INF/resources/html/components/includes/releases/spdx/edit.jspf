@@ -222,11 +222,8 @@
 
       $('#externalDocument').val(obj['spdxDocument']);
 
-      if (obj['checksum']['algorithm'].startsWith('checksumAlgorithm_')) {
-        $('#checksumAlgorithm').val(obj['checksum']['algorithm'].substr(18));
-      } else {
-        $('#checksumAlgorithm').val(obj['checksum']['algorithm']);
-      }
+      $('#checksumAlgorithm').val(obj['checksum']['algorithm']);
+
       $('#checksumValue').val(obj['checksum']['checksumValue']);
     }
     function storeExternalDocRef(index) {
@@ -243,7 +240,7 @@
         obj['checksum']['algorithm'] = '';
         obj['checksum']['checksumValue'] = '';
       } else {
-        obj['checksum']['algorithm'] = 'checksumAlgorithm_' + algorithm;
+        obj['checksum']['algorithm'] = algorithm;
         obj['checksum']['checksumValue'] = checksumValue;
       }
     }
