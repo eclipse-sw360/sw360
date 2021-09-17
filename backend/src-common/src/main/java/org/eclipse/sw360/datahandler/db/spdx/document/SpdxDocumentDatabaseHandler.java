@@ -149,9 +149,9 @@ public class SpdxDocumentDatabaseHandler {
 
     public RequestStatus updateSPDXDocument(SPDXDocument spdx, User user) throws SW360Exception {
         prepareSPDXDocument(spdx);
-        // if (!makePermission(spdx, user).isActionAllowed(RequestedAction.WRITE)) {
-        //     return moderator.updateSPDXDocument(spdx, user);
-        // }
+        if (!makePermission(spdx, user).isActionAllowed(RequestedAction.WRITE)) {
+            return moderator.updateSPDXDocument(spdx, user);
+        }
         SPDXDocument actual = SPDXDocumentRepository.get(spdx.getId());
         assertNotNull(actual, "Could not find SPDX Document to update!");
         SPDXDocumentRepository.update(spdx);

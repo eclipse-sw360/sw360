@@ -81,3 +81,12 @@
         </div>
     </div>
 </div>
+
+<script>
+    $('#spdxFullMode').hide();
+    $('#spdxLiteMode').hide();
+    $('#DocumentCreationInformation').hide();
+    $('#PackageInformation').hide();
+    $('#annotationSourceSelect').val('SPDX Document');
+    changeAnnotationSource($('#annotationSourceSelect'));
+</script>
