@@ -463,7 +463,7 @@
           <label for="spdxPackageComment">3.23 Package Attribution Text</label>
           <textarea class="form-control" id="spdxPackageAttributionText" rows="5"
             name="_sw360_portlet_components_PACKAGE_COMMENT"
-            placeholder="Enter Package Comment"><sw360:out value="${package.attributionText.toString()}" stripNewlines="false" hashSet="true"/></textarea>
+            placeholder="Enter Package Attribution Text"><sw360:out value="${package.attributionText.toString()}" stripNewlines="false" hashSet="true"/></textarea>
         </div>
       </td>
     </tr>
