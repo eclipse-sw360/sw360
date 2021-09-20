@@ -708,7 +708,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     private void writeSpdxLicenseInfoIntoRelease(ResourceRequest request, ResourceResponse response) {
         User user = UserCacheHolder.getUserFromRequest(request);
         String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
-        String attachmentContentId = request.getParameter(ATTACHMENT_CONTENT_ID);
+        String attachmentContentId = request.getParameter(PortalConstants.ATTACHMENT_ID);
         ComponentService.Iface componentClient = thriftClients.makeComponentClient();
 
         RequestStatus result = null;
