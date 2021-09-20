@@ -349,13 +349,8 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
           let algorithm   = packageInformationObj.checksums[i].algorithm;
           let checksumValue = packageInformationObj.checksums[i].checksumValue;
 
-          if (algorithm.startsWith('checksumAlgorithm_')) {
-            $('.checksum-algorithm').last().val(algorithm.substr(18));
-          } else {
-            $('.checksum-algorithm').last().val('');
-          }
-
-          $('.checksum-value').last().val(packageInformationObj.checksums[i].checksumValue);
+          $('.checksum-algorithm').last().val(algorithm);
+          $('.checksum-value').last().val(checksumValue);
         }
         fillMultiOptionsField('#packageHomepageValue', packageInformationObj.homepage);
         fillMultiOptionsField('#licenseConcludedValue', packageInformationObj.licenseConcluded);
@@ -395,8 +390,8 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
           let algorithm = $(this).find('.checksum-algorithm').first().val().trim();
           let checksumValue = $(this).find('.checksum-value').first().val().trim();
     
-          if (checksumValue != '') {
-            packageInformationObj['checksums'].push({ 'algorithm': 'checksumAlgorithm_' + algorithm, 'checksumValue': checksumValue });
+          if (algorithm !='' && checksumValue != '') {
+            packageInformationObj['checksums'].push({ 'algorithm': algorithm, 'checksumValue': checksumValue });
           }
         });
         packageInformationObj['homepage'] = readMultiOptionField('#packageHomepageValue');

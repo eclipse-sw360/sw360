@@ -87,7 +87,7 @@
 							<div class="spdx-col-2 spdx-key">Checksum</div>
 							<div class="spdx-col-3">
 								<sw360:out
-									value="${externalDocumentRefeData.checksum.algorithm.replace('checksumAlgorithm_', '')}" />
+									value="${externalDocumentRefeData.checksum.algorithm}" />
 								~
 								<sw360:out value="${externalDocumentRefeData.checksum.checksumValue}" />
 							</div>
@@ -252,7 +252,7 @@
 					<core_rt:forEach items="${package.checksums}" var="checksumData" varStatus="loop">
 						<div class="spdx-flex-row">
 							<div class="spdx-col-1 spdx-key">
-								<sw360:out value="${checksumData.algorithm.replace('checksumAlgorithm_', '')}" />
+								<sw360:out value="${checksumData.algorithm}" />
 							</div>
 							<div class="spdx-col-3">
 								<sw360:out value="${checksumData.checksumValue}" />
