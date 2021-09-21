@@ -472,6 +472,7 @@ public class PortalConstants {
     public static final String IMPORT_BOM = "importBom";
     public static final String IMPORT_BOM_AS_NEW = "importBomAsNew";
     public static final String NEW_RELEASE_VERSION = "newRleaseVersion";
+    public static final String RDF_FILE_PATH = "rdfFilePath";
 
     // project actions
     public static final String VIEW_LINKED_PROJECTS = "view_linked_projects";
