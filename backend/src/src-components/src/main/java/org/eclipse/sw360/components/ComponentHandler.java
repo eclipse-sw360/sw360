@@ -508,10 +508,10 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     @Override
-    public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId, String newReleaseVersion, String releaseId) throws TException {
+    public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId, String newReleaseVersion, String releaseId, String rdfFilePath) throws TException {
         assertNotNull(attachmentContentId);
         assertUser(user);
-        return handler.importBomFromAttachmentContent(user, attachmentContentId, newReleaseVersion, releaseId);
+        return handler.importBomFromAttachmentContent(user, attachmentContentId, newReleaseVersion, releaseId, rdfFilePath);
     }
 
 
