@@ -97,13 +97,11 @@
     margin-right: 1rem;
   }
 </style>
-
 <script>
   let spdxDocumentObj = jQuery.parseJSON(JSON.stringify(${ spdxDocumentJson }));
   let packageInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
   let documentCreationInformationObj = jQuery.parseJSON(JSON.stringify(${ documentCreationInfoJson }));
 </script>
-
 <%@include file="/html/utils/includes/requirejs.jspf" %>
 <div id="editSPDXForm" name="editSPDXForm" class="form needs-validation" novalidate>
   <div class="form-group btn-group">
@@ -120,7 +118,6 @@
   <input style="display: none;" type="text" id="documentCreationInfoData" name="<portlet:namespace/><%=SPDXDocument._Fields.SPDX_DOCUMENT_CREATION_INFO_ID%>" value="" />
   <input style="display: none;" type="text" id="packageInfoData" name="<portlet:namespace/><%=SPDXDocument._Fields.SPDX_PACKAGE_INFO_IDS%>" value="" />
 </div>
-
 <script>
   let middleName = "<%=themeDisplay.getUser().getMiddleName()%>"
   if (middleName == "") {
@@ -140,7 +137,6 @@
       }
       let creatorType = $(this).find('.creator-type').first().val().trim();
       let creatorValue = $(this).find('.creator-value').first().val().trim();
-
       if (creatorValue != '') {
         creators.push({ 'type': creatorType, 'value': creatorValue });
       }
@@ -148,6 +144,10 @@
     return creators;
   }
   require(['jquery', 'components/includes/releases/spdxjs', 'components/includes/releases/validateLib'], function ($, spdxjs, validateLib) {
+    spdxDocumentObj.snippets.sort(spdxjs.dynamicSort('index', 'int'));
+    spdxDocumentObj.relationships.sort(spdxjs.dynamicSort('index', 'int'));
+    spdxDocumentObj.annotations.sort(spdxjs.dynamicSort('index', 'int'));
+    spdxDocumentObj.otherLicensingInformationDetecteds.sort(spdxjs.dynamicSort('index', 'int'));
     function initDocumentCreation() {
       if (documentCreationInformationObj['spdxVersion'].startsWith('SPDX-')) {
         $('#spdxVersion').val(documentCreationInformationObj['spdxVersion'].substr(5).trim());
@@ -215,15 +215,10 @@
     });
     function fillExternalDocRef(index) {
       index = $('#externalDocumentRefs')[0].selectedIndex;
-
       let obj = documentCreationInformationObj.externalDocumentRefs[index];
-
       $('#externalDocumentId').val(obj['externalDocumentId']);
-
       $('#externalDocument').val(obj['spdxDocument']);
-
       $('#checksumAlgorithm').val(obj['checksum']['algorithm']);
-
       $('#checksumValue').val(obj['checksum']['checksumValue']);
     }
     function storeExternalDocRef(index) {
@@ -233,7 +228,6 @@
       let obj = documentCreationInformationObj.externalDocumentRefs[index];
       obj['externalDocumentId'] = $('#externalDocumentId').val().trim();
       obj['spdxDocument'] = $('#externalDocument').val().trim();
-
       let algorithm = $('#checksumAlgorithm').val().trim();
       let checksumValue = $('#checksumValue').val().trim();
       if (algorithm == '' || checksumValue == '') {

@@ -1,4 +1,28 @@
 define('components/includes/releases/spdxjs', ['jquery'], function($) {
+    function dynamicSort(property, type) {
+        var sortOrder = 1;
+        if(property[0] === "-") {
+            sortOrder = -1;
+            property = property.substr(1);
+        }
+        return function (a,b) {
+            /* next line works with strings and numbers,
+             * and you may want to customize it to your needs
+             */
+            var result;
+            switch (type) {
+              case 'int':
+                result = (parseInt(a[property]) < parseInt(b[property])) ? -1 : (parseInt(a[property]) > (b[property])) ? 1 : 0;
+                break;
+              case 'string':
+              default:
+                result = (a[property] < b[property]) ? -1 : (a[property] > b[property]) ? 1 : 0;
+            }
+
+            return  result * sortOrder;
+        }
+    }
+
     function enableSection(section, state) {
         if (!state) {
           section.find('button').attr('disabled', 'disabled');
@@ -486,6 +510,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         },
         storeExternalRef:function (packageInformationObj, index) {
           return storeExternalRef(packageInformationObj, index)
-        }
+        },
+        dynamicSort: dynamicSort
       };
 });
