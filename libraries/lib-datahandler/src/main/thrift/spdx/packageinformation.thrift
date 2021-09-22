@@ -71,6 +71,7 @@ struct ExternalReference {
     2: optional string referenceLocator,
     3: optional string referenceType,
     4: optional string comment,
+    5: optional string index,
 }
 
 service PackageInformationService {
