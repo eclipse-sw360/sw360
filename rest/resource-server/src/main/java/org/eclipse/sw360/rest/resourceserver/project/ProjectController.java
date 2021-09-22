@@ -564,7 +564,21 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
 
             Map<String, List<VulnerabilityCheckStatus>> releaseIdToStatus = vulnerabilityIdToReleaseIdToStatus.computeIfAbsent(vulnerabilityId, k -> new HashMap<>());
             List<VulnerabilityCheckStatus> vulnerabilityCheckStatusHistory = releaseIdToStatus.computeIfAbsent(releaseId, k -> new ArrayList<>());
-            vulnerabilityCheckStatusHistory.add(vulStatusCheck[i]);
+            VulnerabilityCheckStatus statustoBeUpdated = vulStatusCheck[i];
+            if (!vulnerabilityCheckStatusHistory.isEmpty()) {
+                VulnerabilityCheckStatus latestStatusFromHistory = vulnerabilityCheckStatusHistory
+                        .get(vulnerabilityCheckStatusHistory.size() - 1);
+                if (StringUtils.isEmpty(statustoBeUpdated.getComment())) {
+                    statustoBeUpdated.setComment(latestStatusFromHistory.getComment());
+                }
+                if (StringUtils.isEmpty(statustoBeUpdated.getProjectAction())) {
+                    statustoBeUpdated.setProjectAction(latestStatusFromHistory.getProjectAction());
+                }
+                if (Objects.isNull(statustoBeUpdated.getVulnerabilityRating())) {
+                    statustoBeUpdated.setVulnerabilityRating(latestStatusFromHistory.getVulnerabilityRating());
+                }
+            }
+            vulnerabilityCheckStatusHistory.add(statustoBeUpdated);
         }
 
         return projectVulnerabilityRating;
