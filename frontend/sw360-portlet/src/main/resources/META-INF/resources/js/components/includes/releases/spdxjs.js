@@ -450,6 +450,128 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         obj['comment'] = $('#externalReferencesComment').val().trim();
       }
 
+      function initSnippetInfo() {
+        if (spdxDocumentObj.snippets.length == 0) {
+          enableSection($('.section-snippet'), false);
+        } else {
+          fillSelectbox('#selectSnippet', spdxDocumentObj.snippets.length);
+          fillSnippet(0);
+        }
+      }
+      $('[name=add-snippet]').on('click', function(e) {
+        e.preventDefault();
+        let newObj = {'SPDXID': '',
+                      'snippetFromFile': '',
+                      'snippetRanges': [],
+                      'licenseConcluded': '',
+                      'licenseInfoInSnippets': [],
+                      'licenseComments': '',
+                      'copyrightText': '',
+                      'comment': '',
+                      'name': '',
+                      'snippetAttributionText': ''};
+        spdxDocumentObj.snippets.push(newObj);
+        addMain($(this));
+        $('#selectSnippet').change();
+      });
+
+      function fillSnippet(index) {
+        isInitialzing = true;
+        const obj = spdxDocumentObj.snippets[index];
+        if (obj['SPDXID'].startsWith('SPDXRef-')) {
+          $('#snippetSpdxIdentifier').val(obj['SPDXID'].substr(8));
+        } else {
+          $('#snippetSpdxIdentifier').val('Snippet-' + obj['name']);
+        }
+        if (obj['snippetFromFile'].startsWith('SPDXRef-')) {
+          $('#snippetFromFile').val('SPDXRef');
+          $('#snippetFromFileValue').val(obj['snippetFromFile'].substr(8));
+        } else if (obj['snippetFromFile'].startsWith('DocumentRef-')) {
+          $('#snippetFromFile').val('DocumentRef');
+          $('#snippetFromFileValue').val(obj['snippetFromFile'].substr(12));
+        } else {
+          $('#snippetFromFile').val('SPDXRef');
+          $('#snippetFromFileValue').val('');
+        }
+        if ($('[name=delete-snippetRange].hidden').length == 0) {
+          const rangesNum = $('[name=snippetRange]').length;
+          for (let i = 0; i < rangesNum; i++) {
+            if (i == 0) {
+              $($('[name=snippetRange]')[i]).css('display', 'none');
+              $($('[name=snippetRange]')[i]).find('[name=delete-snippetRange]').addClass('hidden');
+              clearSection($($('[name=snippetRange]')[i]));
+            } else {
+              $('[name=snippetRange]').last().remove();
+            }
+          }
+        }
+        for (let i = 0; i < obj.snippetRanges.length; i++) {
+          addSub('#addNewRange');
+          $('.range-type').last().val(obj.snippetRanges[i].rangeType);
+          $('.start-pointer').last().val(obj.snippetRanges[i].startPointer);
+          $('.end-pointer').last().val(obj.snippetRanges[i].endPointer);
+          $('.reference').last().val(obj.snippetRanges[i].reference);
+        }
+        $('.range-type, .start-pointer, .end-pointer, .reference').bind('change keyup', function() {
+          if ($(this).is(":focus")) {
+            storeSnippet();
+          }
+        });
+        $('[name=delete-snippetRange]').bind('click', function() {
+          deleteSub($(this));
+          storeSnippet();
+        });
+        fillMultiOptionsField('#spdxConcludedLicenseValue', obj.licenseConcluded);
+        fillMultiOptionsField('#licenseInfoInFileValue', obj.licenseInfoInSnippets, 'array');
+        $('#snippetLicenseComments').val(obj.licenseComments);
+        fillMultiOptionsField('#copyrightTextValueSnippet', obj.copyrightText);
+        $('#snippetComment').val(obj.comment);
+        $('#snippetName').val(obj.name);
+        $('#snippetAttributionText').val(obj.snippetAttributionText);
+        isInitialzing = false;
+      }
+
+      function storeSnippet(index) {
+        if (typeof(index) == 'undefined') {
+          index = $('#selectSnippet')[0].selectedIndex;
+        }
+        if (index < 0 || index > spdxDocumentObj.snippets - 1) {
+          return;
+        }
+        let obj = spdxDocumentObj.snippets[index];
+        if ($('#snippetSpdxIdentifier').val().trim() != '') {
+          obj['SPDXID'] = 'SPDXRef-' + $('#snippetSpdxIdentifier').val().trim();
+        } else {
+          obj['SPDXID'] = 'SPDXRef-Snippet-' + $('#snippetName').val().trim();
+        }
+        if ($('#snippetFromFileValue').val().trim() != '') {
+          obj['snippetFromFile'] = $('#snippetFromFile').val() + '-' + $('#snippetFromFileValue').val().trim();
+        } else {
+          obj['snippetFromFile'] = '';
+        }
+        obj['snippetRanges'] = [];
+        if ($('[name=snippetRange]').first().css('display') != 'none') {
+          obj['snippetRanges'] = [];
+          $('[name=snippetRange]').each(function() {
+            let range = {'rangeType': '', 'startPointer': '', 'endPointer': '', 'reference': ''};
+            range['rangeType'] = $(this).find('.range-type').first().val().trim();
+            range['startPointer'] = $(this).find('.start-pointer').first().val().trim();
+            range['endPointer'] = $(this).find('.end-pointer').first().val().trim();
+            range['reference'] = $(this).find('.reference').first().val().trim();
+            if (range['startPointer'] != '' || range['endPointer'] != '' || range['reference'] != '') {
+              obj['snippetRanges'].push(range);
+            }
+          })
+        }
+        obj['licenseConcluded'] = readMultiOptionField('#spdxConcludedLicenseValue');
+        obj['licenseInfoInSnippets']  = readMultiOptionField('#licenseInfoInFileValue', 'array');
+        obj['licenseComments'] = $('#snippetLicenseComments').val().trim();
+        obj['copyrightText'] = readMultiOptionField('#copyrightTextValueSnippet');
+        obj['comment'] = $('#snippetComment').val().trim();
+        obj['name'] = $('#snippetName').val().trim();
+        obj['snippetAttributionText'] = $('#snippetAttributionText').val().trim();
+      }
+
       return {
         enableSection:function (section, state) {
           return enableSection(section, state);
@@ -511,6 +633,9 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         storeExternalRef:function (packageInformationObj, index) {
           return storeExternalRef(packageInformationObj, index)
         },
+        initSnippetInfo: initSnippetInfo,
+        fillSnippet: fillSnippet,
+        storeSnippet: storeSnippet,
         dynamicSort: dynamicSort
       };
 });

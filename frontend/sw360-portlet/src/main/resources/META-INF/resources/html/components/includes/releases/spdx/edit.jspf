@@ -99,8 +99,8 @@
 </style>
 <script>
   let spdxDocumentObj = jQuery.parseJSON(JSON.stringify(${ spdxDocumentJson }));
-  let packageInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
   let documentCreationInformationObj = jQuery.parseJSON(JSON.stringify(${ documentCreationInfoJson }));
+  let packageInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
 </script>
 <%@include file="/html/utils/includes/requirejs.jspf" %>
 <div id="editSPDXForm" name="editSPDXForm" class="form needs-validation" novalidate>
@@ -148,6 +148,13 @@
     spdxDocumentObj.relationships.sort(spdxjs.dynamicSort('index', 'int'));
     spdxDocumentObj.annotations.sort(spdxjs.dynamicSort('index', 'int'));
     spdxDocumentObj.otherLicensingInformationDetecteds.sort(spdxjs.dynamicSort('index', 'int'));
+    for (let i = 0; i < spdxDocumentObj.snippets.length; i++) {
+      spdxDocumentObj.snippets[i].snippetRanges.sort(spdxjs.dynamicSort('index', 'int'));
+    }
+    documentCreationInformationObj.externalDocumentRefs.sort(spdxjs.dynamicSort('index', 'int'));
+    documentCreationInformationObj.creator.sort(spdxjs.dynamicSort('index', 'int'));
+    packageInformationObj.checksums.sort(spdxjs.dynamicSort('index', 'int'));
+    packageInformationObj.annotations.sort(spdxjs.dynamicSort('index', 'int'));
     function initDocumentCreation() {
       if (documentCreationInformationObj['spdxVersion'].startsWith('SPDX-')) {
         $('#spdxVersion').val(documentCreationInformationObj['spdxVersion'].substr(5).trim());
@@ -452,30 +459,6 @@
     obj['relatedSpdxElement'] = $('#relatedSPDXElement').val().trim();
     obj['relationshipComment'] = $('#relationshipComment').val().trim();
   }
-  function initSnippetInfo() {
-    if (spdxDocumentObj.snippets.length == 0) {
-      spdxjs.enableSection($('.section-snippet'), false);
-    } else {
-      spdxjs.fillSelectbox('#selectSnippet', spdxDocumentObj.snippets.length);
-      fillSnippet(0);
-    }
-  }
-  $('[name=add-snippet]').on('click', function(e) {
-    e.preventDefault();
-    let newObj = {'SPDXID': '',
-                  'snippetFromFile': '',
-                  'snippetRanges': [],
-                  'licenseConcluded': '',
-                  'licenseInfoInSnippets': [],
-                  'licenseComments': '',
-                  'copyrightText': '',
-                  'comment': '',
-                  'name': '',
-                  'snippetAttributionText': ''};
-    spdxDocumentObj.snippets.push(newObj);
-    spdxjs.addMain($(this));
-    $('#selectSnippet').change();
-  });
   $('[name=delete-snippet').on('click', function(e) {
     let selectedIndex = $('#selectSnippet')[0].selectedIndex;
     spdxDocumentObj.snippets.splice(selectedIndex, 1);
@@ -483,115 +466,20 @@
   });
   $('#selectSnippet').on('change', function(e) {
     let selectedIndex = $('#selectSnippet')[0].selectedIndex;
-    fillSnippet(selectedIndex);
+    spdxjs.fillSnippet(selectedIndex);
   });
-  function fillSnippet(index) {
-    isInitialzing = true;
-    const obj = spdxDocumentObj.snippets[index];
-    if (obj['SPDXID'].startsWith('SPDXRef-')) {
-      $('#snippetSpdxIdentifier').val(obj['SPDXID'].substr(8));
-    } else {
-      $('#snippetSpdxIdentifier').val('Snippet-' + obj['name']);
-    }
-    if (obj['snippetFromFile'].startsWith('SPDXRef-')) {
-      $('#snippetFromFile').val('SPDXRef');
-      $('#snippetFromFileValue').val(obj['snippetFromFile'].substr(8));
-    } else if (obj['snippetFromFile'].startsWith('DocumentRef-')) {
-      $('#snippetFromFile').val('DocumentRef');
-      $('#snippetFromFileValue').val(obj['snippetFromFile'].substr(12));
-    } else {
-      $('#snippetFromFile').val('SPDXRef');
-      $('#snippetFromFileValue').val('');
-    }
-    if ($('[name=delete-snippetRange].hidden').length == 0) {
-      const rangesNum = $('[name=snippetRange]').length;
-      for (let i = 0; i < rangesNum; i++) {
-        if (i == 0) {
-          $($('[name=snippetRange]')[i]).css('display', 'none');
-          $($('[name=snippetRange]')[i]).find('[name=delete-snippetRange]').addClass('hidden');
-          spdxjs.clearSection($($('[name=snippetRange]')[i]));
-        } else {
-          $('[name=snippetRange]').last().remove();
-        }
-      }
-    }
-    for (let i = 0; i < obj.snippetRanges.length; i++) {
-      spdxjs.addSub('#addNewRange');
-      $('.range-type').last().val(obj.snippetRanges[i].rangeType);
-      $('.start-pointer').last().val(obj.snippetRanges[i].startPointer);
-      $('.end-pointer').last().val(obj.snippetRanges[i].endPointer);
-      $('.reference').last().val(obj.snippetRanges[i].reference);
-    }
-    $('.range-type, .start-pointer, .end-pointer, .reference').bind('change keyup', function() {
-      if ($(this).is(":focus")) {
-        storeSnippet();
-      }
-    });
-    $('[name=delete-snippetRange]').bind('click', function() {
-      spdxjs.deleteSub($(this));
-      storeSnippet();
-    });
-    spdxjs.fillMultiOptionsField('#spdxConcludedLicenseValue', obj.licenseConcluded);
-    spdxjs.fillMultiOptionsField('#licenseInfoInFileValue', obj.licenseInfoInSnippets, 'array');
-    $('#snippetLicenseComments').val(obj.licenseComments);
-    spdxjs.fillMultiOptionsField('#copyrightTextValueSnippet', obj.copyrightText);
-    $('#snippetComment').val(obj.comment);
-    $('#snippetName').val(obj.name);
-    $('#snippetAttributionText').val(obj.snippetAttributionText);
-    isInitialzing = false;
-  }
   $('#addNewRange').on('click', function() {
     spdxjs.addSub($(this));
     $('[name=delete-snippetRange]').bind('click', function() {
       spdxjs.deleteSub($(this));
-      storeSnippet();
+      spdxjs.storeSnippet();
     });
     $('.range-type, .start-pointer, .end-pointer, .reference').bind('change keyup', function() {
       if ($(this).is(":focus")) {
-        storeSnippet();
+        spdxjs.storeSnippet();
       }
     });
   });
-  function storeSnippet(index) {
-    if (typeof(index) == 'undefined') {
-      index = $('#selectSnippet')[0].selectedIndex;
-    }
-    if (index < 0 || index > spdxDocumentObj.snippets - 1) {
-      return;
-    }
-    let obj = spdxDocumentObj.snippets[index];
-    if ($('#snippetSpdxIdentifier').val().trim() != '') {
-      obj['SPDXID'] = 'SPDXRef-' + $('#snippetSpdxIdentifier').val().trim();
-    } else {
-      obj['SPDXID'] = 'SPDXRef-Snippet-' + $('#snippetName').val().trim();
-    }
-    if ($('#snippetFromFileValue').val().trim() != '') {
-      obj['snippetFromFile'] = $('#snippetFromFile').val() + '-' + $('#snippetFromFileValue').val().trim();
-    } else {
-      obj['snippetFromFile'] = '';
-    }
-    obj['snippetRanges'] = [];
-    if ($('[name=snippetRange]').first().css('display') != 'none') {
-      obj['snippetRanges'] = [];
-      $('[name=snippetRange]').each(function() {
-        let range = {'rangeType': '', 'startPointer': '', 'endPointer': '', 'reference': ''};
-        range['rangeType'] = $(this).find('.range-type').first().val().trim();
-        range['startPointer'] = $(this).find('.start-pointer').first().val().trim();
-        range['endPointer'] = $(this).find('.end-pointer').first().val().trim();
-        range['reference'] = $(this).find('.reference').first().val().trim();
-        if (range['startPointer'] != '' || range['endPointer'] != '' || range['reference'] != '') {
-          obj['snippetRanges'].push(range);
-        }
-      })
-    }
-    obj['licenseConcluded'] = spdxjs.readMultiOptionField('#spdxConcludedLicenseValue');
-    obj['licenseInfoInSnippets']  = spdxjs.readMultiOptionField('#licenseInfoInFileValue', 'array');
-    obj['licenseComments'] = $('#snippetLicenseComments').val().trim();
-    obj['copyrightText'] = spdxjs.readMultiOptionField('#copyrightTextValueSnippet');
-    obj['comment'] = $('#snippetComment').val().trim();
-    obj['name'] = $('#snippetName').val().trim();
-    obj['snippetAttributionText'] = $('#snippetAttributionText').val().trim();
-  }
     const referenceCategories = {
         'referenceCategory_security': ['cpe22Type', 'cpe23Type'],
         'referenceCategory_packageManager': ['maven-central', 'npm', 'nuget', 'bower', 'purl'],
@@ -688,7 +576,7 @@
         index = $('#externalReferences')[0].selectedIndex;
         spdxjs.storeExternalRef(packageInformationObj, index);
         index = $('#selectSnippet')[0].selectedIndex;
-        storeSnippet(index);
+        spdxjs.storeSnippet(index);
         index = $('#selectOtherLicensing')[0].selectedIndex;
         storeOtherLicensing(index);
         index = $('#selectRelationship')[0].selectedIndex;
@@ -703,7 +591,7 @@
           packageInformationObj['name'] = "${component.name}";
         }
         spdxjs.initPackageInfo(packageInformationObj);
-        initSnippetInfo();
+        spdxjs.initSnippetInfo();
         initOtherLicensing();
         initRelationships();
         initAnnotations();
