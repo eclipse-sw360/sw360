@@ -573,66 +573,26 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
       }
 
       return {
-        enableSection:function (section, state) {
-          return enableSection(section, state);
-        },
-        clearSection:function (section) {
-          return clearSection(section);
-        },
-        deleteMain:function (deleteBtn) {
-          return deleteMain(deleteBtn);
-        },
-        deleteSub:function (deleteBtn) {
-          return deleteSub(deleteBtn);
-        },
-        addMain:function (addBtn) {
-          return addMain(addBtn);
-        },
-        addSub:function (addBtn) {
-          return addSub(addBtn);
-        },
-        updateRadioButton:function (button) {
-          return updateRadioButton(button);
-        },
-        fillDateTime:function (datePicker, timePicker, value) {
-          return fillDateTime(datePicker, timePicker, value);
-        },
-        fillMultiOptionsField:function (inputTag, value, type) {
-          return fillMultiOptionsField(inputTag, value, type);
-        },
-        fillArray:function (textarea, value) {
-          return fillArray(textarea, value);
-        },
-        fillAnnotator:function (typeTag, value) {
-          return fillAnnotator(typeTag, value);
-        },
-        readMultiOptionField:function (inputTag, type) {
-          return readMultiOptionField(inputTag, type);
-        },
-        readArray:function (textarea) {
-          return readArray(textarea);
-        },
-        readAnnotator:function (typeTag) {
-          return readAnnotator(typeTag);
-        },
-        readDateTime:function (datePicker, timePicker) {
-          return readDateTime(datePicker, timePicker);
-        },
-        fillSelectbox:function (selectbox, num) {
-          return fillSelectbox(selectbox, num);
-        },
-        fillExternalRef:function (packageInformationObj, index) {
-          return fillExternalRef(packageInformationObj, index);
-        },
-        initPackageInfo:function (packageInformationObj) {
-          return initPackageInfo(packageInformationObj);
-        },
-        storePackageInfo:function (packageInformationObj) {
-          return storePackageInfo(packageInformationObj)
-        },
-        storeExternalRef:function (packageInformationObj, index) {
-          return storeExternalRef(packageInformationObj, index)
-        },
+        enableSection: enableSection,
+        clearSection: clearSection,
+        deleteMain: deleteMain,
+        deleteSub: deleteSub,
+        addMain: addMain,
+        addSub: addSub,
+        updateRadioButton: updateRadioButton,
+        fillDateTime: fillDateTime,
+        fillMultiOptionsField: fillMultiOptionsField,
+        fillArray: fillArray,
+        fillAnnotator: fillAnnotator,
+        readMultiOptionField: readMultiOptionField,
+        readArray: readArray,
+        readAnnotator: readAnnotator,
+        readDateTime: readDateTime,
+        fillSelectbox: fillSelectbox,
+        fillExternalRef: fillExternalRef,
+        initPackageInfo: initPackageInfo,
+        storePackageInfo: storePackageInfo,
+        storeExternalRef: storeExternalRef,
         initSnippetInfo: initSnippetInfo,
         fillSnippet: fillSnippet,
         storeSnippet: storeSnippet,
