@@ -22,7 +22,7 @@ struct SnippetInformation {
     8: optional string comment,             // 5.9
     9: optional string name,                // 5.10
     10: optional string snippetAttributionText, // 5.11
-    11: optional string index,
+    11: optional i32 index,
 }
 
 struct SnippetRange {
@@ -30,5 +30,5 @@ struct SnippetRange {
     2: optional string startPointer,
     3: optional string endPointer,
     4: optional string reference,
-    5: optional string index,
+    5: optional i32 index,
 }

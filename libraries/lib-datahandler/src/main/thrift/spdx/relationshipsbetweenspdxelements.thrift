@@ -16,5 +16,5 @@ struct RelationshipsBetweenSPDXElements {
     2: optional string relationshipType,    // 7.1
     3: optional string relatedSpdxElement,  // 7.1
     4: optional string relationshipComment, // 7.2
-    5: optional string index,
+    5: optional i32 index,
 }

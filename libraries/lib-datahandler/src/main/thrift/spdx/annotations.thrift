@@ -17,5 +17,5 @@ struct Annotations {
     3: optional string annotationType,      // 8.3
     4: optional string spdxIdRef,           // 8.4
     5: optional string annotationComment,   // 8.5
-    6: optional string index,
+    6: optional i32 index,
 }

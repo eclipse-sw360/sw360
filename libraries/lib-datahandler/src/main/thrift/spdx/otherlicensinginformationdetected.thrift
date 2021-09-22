@@ -17,5 +17,5 @@ struct OtherLicensingInformationDetected {
     3: optional string licenseName,             // 6.3
     4: optional set<string> licenseCrossRefs,   // 6.4
     5: optional string licenseComment,          // 6.5
-    6: optional string index,
+    6: optional i32 index,
 }
