@@ -4,7 +4,7 @@
       <th colspan="3">6. Other Licensing Information Detected</th>
     </tr>
   </thead>
-  <tbody class="section section-other-licensing">
+  <tbody id="sectionOtherLicensing" class="section section-other-licensing">
     <tr>
       <td>
         <div style="display: flex; flex-direction: column; padding-left: 1rem;">

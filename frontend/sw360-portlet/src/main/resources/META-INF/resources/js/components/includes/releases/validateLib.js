@@ -146,6 +146,7 @@ define('components/includes/releases/validateLib', ['jquery'], function ($) {
         totalErrors = 0;
 
         const elements = $('#' + formId).find('.needs-validation');
+
         for (var i = 0; i < elements.length; i++) {
             const element = elements[i];
             if (typeof $(element).attr('disabled') === 'undefined') {
@@ -220,7 +221,7 @@ define('components/includes/releases/validateLib', ['jquery'], function ($) {
     }
 
     function hideAllErrors() {
-        $('#' + formId).removeClass('needs-validation');
+        $('#' + formId).removeClass('was-validated');
         const elements = $('#' + formId).find('.needs-validation');
 
         for (var i = 0; i < elements.length; i++) {
@@ -243,9 +244,8 @@ define('components/includes/releases/validateLib', ['jquery'], function ($) {
         setFormId: setFormId,
         validate: validate,
         allValid: allValid,
-        addError: function(elementId, elementErrors) {
-            return addError(elementId, elementErrors);
-        },
+        addError: addError,
         showAllErrors: showAllErrors,
+        hideAllErrors: hideAllErrors
     }
 });

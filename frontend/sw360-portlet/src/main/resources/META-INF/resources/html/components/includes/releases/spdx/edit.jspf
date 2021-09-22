@@ -147,7 +147,7 @@
     })
     return creators;
   }
-  require(['jquery', 'components/includes/releases/spdxjs'], function ($, spdxjs) {
+  require(['jquery', 'components/includes/releases/spdxjs', 'components/includes/releases/validateLib'], function ($, spdxjs, validateLib) {
     function initDocumentCreation() {
       if (documentCreationInformationObj['spdxVersion'].startsWith('SPDX-')) {
         $('#spdxVersion').val(documentCreationInformationObj['spdxVersion'].substr(5).trim());
@@ -353,10 +353,17 @@
   }
   $('[name=add-otherLicensing]').on('click', function(e) {
     e.preventDefault();
-    let newObj = { 'licenseId': '', 'extractedText': '', 'licenseName': '', 'licenseCrossRefs': [] };
-    spdxDocumentObj.otherLicensingInformationDetecteds.push(newObj);
-    spdxjs.addMain($(this));
-    $('#selectOtherLicensing').change();
+    validateLib.setFormId('sectionOtherLicensing');
+    validateLib.validate();
+    if (!validateLib.allValid()) {
+      validateLib.showAllErrors();
+    } else {
+      validateLib.hideAllErrors();
+      let newObj = { 'licenseId': '', 'extractedText': '', 'licenseName': '', 'licenseCrossRefs': [] };
+      spdxDocumentObj.otherLicensingInformationDetecteds.push(newObj);
+      spdxjs.addMain($(this));
+      $('#selectOtherLicensing').change();
+    }
   });
   $('[name=delete-otherLicensing').on('click', function(e) {
     let selectedIndex = $('#selectOtherLicensing')[0].selectedIndex;
