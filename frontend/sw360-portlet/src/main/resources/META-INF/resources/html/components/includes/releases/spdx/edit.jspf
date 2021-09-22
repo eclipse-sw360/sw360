@@ -273,7 +273,6 @@
     }
     function initAnnotations() {
       let source = getAnnotationsSource();
-
       if (source.length == 0) {
         spdxjs.enableSection($('.section-annotation'), false);
         $('#selectAnnotation').find('option').remove();
@@ -291,24 +290,16 @@
     }
     $('[name=add-annotation]').on('click', function(e) {
       e.preventDefault();
-
       let newObj = { 'annotator': '', 'annotationDate': '', 'annotationType': '', 'annotationComment': '', 'spdxRef': '' };
-
       let source = getAnnotationsSource();
-
       source.push(newObj);
-
       spdxjs.addMain($(this));
-
       $('#selectAnnotation').change();
     });
     $('[name=delete-annotation').on('click', function(e) {
       let source = getAnnotationsSource();
-
       let selectedIndex = $('#selectAnnotation')[0].selectedIndex;
-
       source.splice(selectedIndex, 1);
-
       spdxjs.deleteMain($(this));
     });
   $('#selectAnnotationSource').on('change', function() {
@@ -351,13 +342,16 @@
       fillOtherLicensing(0);
     }
   }
+  let newOtherLicensing = false;
   $('[name=add-otherLicensing]').on('click', function(e) {
     e.preventDefault();
+    newOtherLicensing = false;
     validateLib.setFormId('sectionOtherLicensing');
     validateLib.validate();
     if (!validateLib.allValid()) {
       validateLib.showAllErrors();
     } else {
+      newOtherLicensing = true;
       validateLib.hideAllErrors();
       let newObj = { 'licenseId': '', 'extractedText': '', 'licenseName': '', 'licenseCrossRefs': [] };
       spdxDocumentObj.otherLicensingInformationDetecteds.push(newObj);
@@ -366,28 +360,41 @@
     }
   });
   $('[name=delete-otherLicensing').on('click', function(e) {
+    newOtherLicensing = true;
     let selectedIndex = $('#selectOtherLicensing')[0].selectedIndex;
     spdxDocumentObj.otherLicensingInformationDetecteds.splice(selectedIndex, 1);
     spdxjs.deleteMain($(this));
   });
   $('#selectOtherLicensing').on('change', function(e) {
     let selectedIndex = $('#selectOtherLicensing')[0].selectedIndex;
-    fillOtherLicensing(selectedIndex);
+    validateLib.setFormId('sectionOtherLicensing');
+    if (newOtherLicensing) {
+      validateLib.hideAllErrors();
+      fillOtherLicensing(selectedIndex);
+      $(this).data('prev', selectedIndex);
+      newOtherLicensing = false;
+      return;
+    }
+    validateLib.validate();
+    if (!validateLib.allValid()) {
+      validateLib.showAllErrors();
+      $(this).val($(this).data('prev') + 1);
+    } else {
+      validateLib.hideAllErrors();
+      fillOtherLicensing(selectedIndex);
+      $(this).data('prev', selectedIndex);
+    }
   });
   function fillOtherLicensing(index) {
     let obj = spdxDocumentObj.otherLicensingInformationDetecteds[index];
-
     if (obj.licenseId.startsWith('LicenseRef-')) {
       $('#licenseId').val(obj.licenseId.substr(11));
     } else {
       $('#licenseId').val(obj.licenseName);
     }
     $('#extractedText').val(obj.extractedText);
-
     spdxjs.fillMultiOptionsField('#licenseName', obj.licenseName);
-
     spdxjs.fillArray('#licenseCrossRefs', obj.licenseCrossRefs);
-
     $('#licenseCommentOnOtherLicensing').val(obj.licenseComment);
   }
   function storeOtherLicensing(index) {
@@ -400,13 +407,9 @@
     } else {
       obj['licenseId'] = 'LicenseRef-' + spdxjs.readMultiOptionField('#licenseName');
     }
-
     obj['extractedText'] = $('#extractedText').val().trim();
-
     obj['licenseName'] = spdxjs.readMultiOptionField('#licenseName');
-
     obj['licenseCrossRefs'] = spdxjs.readArray('#licenseCrossRefs');
-
     obj['licenseComment'] = $('#licenseCommentOnOtherLicensing').val().trim();
   }
   function initRelationships() {
@@ -587,12 +590,12 @@
         }
       })
     }
-    obj['licenseConcluded']     = spdxjs.readMultiOptionField('#spdxConcludedLicenseValue');
+    obj['licenseConcluded'] = spdxjs.readMultiOptionField('#spdxConcludedLicenseValue');
     obj['licenseInfoInSnippets']  = spdxjs.readMultiOptionField('#licenseInfoInFileValue', 'array');
-    obj['licenseComments']    = $('#snippetLicenseComments').val().trim();
-    obj['copyrightText']      = spdxjs.readMultiOptionField('#copyrightTextValueSnippet');
-    obj['comment']        = $('#snippetComment').val().trim();
-    obj['name']           = $('#snippetName').val().trim();
+    obj['licenseComments'] = $('#snippetLicenseComments').val().trim();
+    obj['copyrightText'] = spdxjs.readMultiOptionField('#copyrightTextValueSnippet');
+    obj['comment'] = $('#snippetComment').val().trim();
+    obj['name'] = $('#snippetName').val().trim();
     obj['snippetAttributionText'] = $('#snippetAttributionText').val().trim();
   }
     const referenceCategories = {
