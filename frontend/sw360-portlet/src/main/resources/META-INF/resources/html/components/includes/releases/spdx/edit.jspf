@@ -128,6 +128,7 @@
   let userDisplay = "<%=themeDisplay.getUser().getFirstName()%>" + middleName + "<%=themeDisplay.getUser().getLastName()%>" + " (<%=themeDisplay.getUser().getEmailAddress()%>)";
   function readDocumentCreator() {
     let creators = [];
+    let index = 0;
     $('[name=creatorRow]').each(function () {
       if ($(this).css('display') == 'none') {
         return;
@@ -138,7 +139,8 @@
       let creatorType = $(this).find('.creator-type').first().val().trim();
       let creatorValue = $(this).find('.creator-value').first().val().trim();
       if (creatorValue != '') {
-        creators.push({ 'type': creatorType, 'value': creatorValue });
+        creators.push({ 'type': creatorType, 'value': creatorValue, 'index': index });
+        index += 1;
       }
     })
     return creators;
@@ -206,7 +208,11 @@
     });
     $('[name=add-externalDocRef]').on('click', function (e) {
       e.preventDefault();
-      let newObj = { 'externalDocumentId': '', 'checksum': { 'algorithm': '', 'checksumValue': '' }, 'spdxDocument': '' };
+      let index = 0;
+      if (documentCreationInformationObj.externalDocumentRefs.length > 0) {
+        index = parseInt(documentCreationInformationObj.externalDocumentRefs[documentCreationInformationObj.externalDocumentRefs.length - 1].index) + 1;
+      }
+      let newObj = { 'externalDocumentId': '', 'checksum': { 'algorithm': '', 'checksumValue': '' }, 'spdxDocument': '', 'index': index };
       documentCreationInformationObj.externalDocumentRefs.push(newObj);
       spdxjs.addMain($(this));
       $('#externalDocumentRefs').change();
@@ -291,8 +297,12 @@
     }
     $('[name=add-annotation]').on('click', function(e) {
       e.preventDefault();
-      let newObj = { 'annotator': '', 'annotationDate': '', 'annotationType': '', 'annotationComment': '', 'spdxRef': '' };
       let source = getAnnotationsSource();
+      let index = 0;
+      if (source.length > 0) {
+        index = parseInt(source[source.length - 1].index) + 1;
+      }
+      let newObj = { 'annotator': '', 'annotationDate': '', 'annotationType': '', 'annotationComment': '', 'spdxRef': '', 'index': index };
       source.push(newObj);
       spdxjs.addMain($(this));
       $('#selectAnnotation').change();
@@ -354,7 +364,11 @@
     } else {
       newOtherLicensing = true;
       validateLib.hideAllErrors();
-      let newObj = { 'licenseId': '', 'extractedText': '', 'licenseName': '', 'licenseCrossRefs': [] };
+      let index = 0;
+      if (spdxDocumentObj.otherLicensingInformationDetecteds.length > 0) {
+        index = parseInt(spdxDocumentObj.otherLicensingInformationDetecteds[spdxDocumentObj.otherLicensingInformationDetecteds.length - 1].index) + 1;
+      }
+      let newObj = { 'licenseId': '', 'extractedText': '', 'licenseName': '', 'licenseCrossRefs': [], 'index': index };
       spdxDocumentObj.otherLicensingInformationDetecteds.push(newObj);
       spdxjs.addMain($(this));
       $('#selectOtherLicensing').change();
@@ -423,8 +437,11 @@
   }
   $('[name=add-relationship]').on('click', function(e) {
     e.preventDefault();
-
-    let newObj = { 'spdxElementId': '', 'relationshipType': '', 'relatedSpdxElement': '', 'relationshipComment': '' };
+    let index = 0;
+    if (spdxDocumentObj.relationships.length > 0) {
+      index = parseInt(spdxDocumentObj.relationships[spdxDocumentObj.relationships.length - 1].index) + 1;
+    }
+    let newObj = { 'spdxElementId': '', 'relationshipType': '', 'relatedSpdxElement': '', 'relationshipComment': '', 'index': index };
     spdxDocumentObj.relationships.push(newObj);
     spdxjs.addMain($(this));
     $('#selectRelationship').change();

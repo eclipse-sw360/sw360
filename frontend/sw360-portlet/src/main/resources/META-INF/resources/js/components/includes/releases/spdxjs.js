@@ -410,12 +410,14 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
           packageInformationObj['packageVerificationCode']['excludedFiles'] = '';
         }
         packageInformationObj['checksums'] = [];
+        let index = 0;
         $('[name=checksumRow]').each(function() {
           let algorithm = $(this).find('.checksum-algorithm').first().val().trim();
           let checksumValue = $(this).find('.checksum-value').first().val().trim();
     
           if (algorithm !='' && checksumValue != '') {
-            packageInformationObj['checksums'].push({ 'algorithm': algorithm, 'checksumValue': checksumValue });
+            packageInformationObj['checksums'].push({ 'algorithm': algorithm, 'checksumValue': checksumValue, 'index': index });
+            index += 1;
           }
         });
         packageInformationObj['homepage'] = readMultiOptionField('#packageHomepageValue');
@@ -460,6 +462,10 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
       }
       $('[name=add-snippet]').on('click', function(e) {
         e.preventDefault();
+        let index = 0;
+        if (spdxDocumentObj.snippets.length > 0) {
+          index = parseInt(spdxDocumentObj.snippets[spdxDocumentObj.snippets.length - 1].index) + 1;
+        }
         let newObj = {'SPDXID': '',
                       'snippetFromFile': '',
                       'snippetRanges': [],
@@ -469,7 +475,8 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
                       'copyrightText': '',
                       'comment': '',
                       'name': '',
-                      'snippetAttributionText': ''};
+                      'snippetAttributionText': '',
+                      'index': index};
         spdxDocumentObj.snippets.push(newObj);
         addMain($(this));
         $('#selectSnippet').change();
@@ -552,12 +559,15 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         obj['snippetRanges'] = [];
         if ($('[name=snippetRange]').first().css('display') != 'none') {
           obj['snippetRanges'] = [];
+          let index = 0;
           $('[name=snippetRange]').each(function() {
             let range = {'rangeType': '', 'startPointer': '', 'endPointer': '', 'reference': ''};
             range['rangeType'] = $(this).find('.range-type').first().val().trim();
             range['startPointer'] = $(this).find('.start-pointer').first().val().trim();
             range['endPointer'] = $(this).find('.end-pointer').first().val().trim();
             range['reference'] = $(this).find('.reference').first().val().trim();
+            range['index'] = index;
+            index += 1;
             if (range['startPointer'] != '' || range['endPointer'] != '' || range['reference'] != '') {
               obj['snippetRanges'].push(range);
             }
