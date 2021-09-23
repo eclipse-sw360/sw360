@@ -329,7 +329,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
 
         let localDate = new Date($(datePicker).val() + ' ' + $(timePicker).val());
 
-        return localDate.toISOString();
+        return localDate.toISOString().slice(0, -5) + 'Z';
       }
 
       function fillSelectbox(selectbox, num) {
