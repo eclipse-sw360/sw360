@@ -201,6 +201,7 @@ public class SpdxBOMImporter {
 
     private Set<Annotations> createAnnotationsFromSpdxAnnotations(Annotation[] spdxAnnotations) {
         Set<Annotations> annotations = new HashSet<Annotations>();
+        int index = 0;
 
         for(Annotation spdxAnn : spdxAnnotations) {
             String annotator = spdxAnn.getAnnotator();
@@ -212,9 +213,11 @@ public class SpdxBOMImporter {
             ann.setAnnotator(verifyOrSetDefault(annotator))
                 .setAnnotationDate(verifyOrSetDefault(date))
                 .setAnnotationType(verifyOrSetDefault(type))
-                .setAnnotationComment(verifyOrSetDefault(comment));
+                .setAnnotationComment(verifyOrSetDefault(comment))
+                .setIndex(index);
 
             annotations.add(ann);
+            index++;
         }
 
         return annotations;
@@ -222,6 +225,7 @@ public class SpdxBOMImporter {
 
     private Set<SnippetInformation> createSnippetsFromSpdxSnippets(SpdxSnippet[] spdxSnippets) {
         Set<SnippetInformation> snippets = new HashSet<SnippetInformation>();
+        int index = 0;
 
         try {
             for (SpdxSnippet spdxSnippet : spdxSnippets) {
@@ -248,9 +252,11 @@ public class SpdxBOMImporter {
                         .setCopyrightText(verifyOrSetDefault(copyrightText))
                         .setComment(verifyOrSetDefault(comment))
                         .setName(verifyOrSetDefault(name))
-                        .setSnippetAttributionText(verifyOrSetDefault(attributionText));
+                        .setSnippetAttributionText(verifyOrSetDefault(attributionText))
+                        .setIndex(index);
 
                 snippets.add(snippet);
+                index++;
             }
         } catch (InvalidSPDXAnalysisException e) {
             log.error(e);
@@ -266,7 +272,8 @@ public class SpdxBOMImporter {
         snippetByteRange.setRangeType("BYTE")
                 .setStartPointer(byteRanges[0])
                 .setEndPointer(byteRanges[1])
-                .setReference(spdxByteRange.getStartPointer().getReference().toString());
+                .setReference(spdxByteRange.getStartPointer().getReference().toString())
+                .setIndex(0);
 
         StartEndPointer spdxLineRange = spdxSnippet.getLineRange();
         String[] lineRanges = rangeToStrs(spdxLineRange);
@@ -274,7 +281,8 @@ public class SpdxBOMImporter {
         snippetLineRange.setRangeType("LINE")
                 .setStartPointer(lineRanges[0])
                 .setEndPointer(lineRanges[1])
-                .setReference(spdxLineRange.getStartPointer().getReference().toString());
+                .setReference(spdxLineRange.getStartPointer().getReference().toString())
+                .setIndex(1);
 
         return new HashSet<SnippetRange>(Arrays.asList(snippetByteRange, snippetLineRange));
     }
@@ -312,6 +320,7 @@ public class SpdxBOMImporter {
 
     private Set<RelationshipsBetweenSPDXElements> createRelationshipsFromSpdxRelationships(Relationship[] spdxRelationships) {
         Set<RelationshipsBetweenSPDXElements> relationships = new HashSet<RelationshipsBetweenSPDXElements>();
+        int index = 0;
 
         for (Relationship spdxRelationship : spdxRelationships) {
             String relatedSpdxElementId = spdxRelationship.getRelatedSpdxElement().getId();
@@ -325,9 +334,11 @@ public class SpdxBOMImporter {
             relationship.setSpdxElementId(verifyOrSetDefault(relatedSpdxElementId))
                         .setRelationshipType(verifyOrSetDefault(type))
                         .setRelatedSpdxElement(verifyOrSetDefault(relatedSpdxElement))
-                        .setRelationshipComment(verifyOrSetDefault(comment));
+                        .setRelationshipComment(verifyOrSetDefault(comment))
+                        .setIndex(index);
 
             relationships.add(relationship);
+            index++;
         }
 
         return relationships;
@@ -335,6 +346,7 @@ public class SpdxBOMImporter {
 
     private Set<OtherLicensingInformationDetected> createOtherLicensesFromSpdxExtractedLicenses(ExtractedLicenseInfo[] spdxExtractedLicenses) {
         Set<OtherLicensingInformationDetected> otherLicenses = new HashSet<OtherLicensingInformationDetected>();
+        int index = 0;
 
         for (ExtractedLicenseInfo spdxExtractedLicense : spdxExtractedLicenses) {
             String licenseId = spdxExtractedLicense.getLicenseId();
@@ -348,9 +360,11 @@ public class SpdxBOMImporter {
                         .setExtractedText(verifyOrSetDefault(extractedText))
                         .setLicenseName(verifyOrSetDefault(name))
                         .setLicenseCrossRefs(crossRef)
-                        .setLicenseComment(verifyOrSetDefault(comment));
+                        .setLicenseComment(verifyOrSetDefault(comment))
+                        .setIndex(index);
 
             otherLicenses.add(otherLicense);
+            index++;
         }
 
         return otherLicenses;
@@ -393,6 +407,7 @@ public class SpdxBOMImporter {
 
     private Set<ExternalDocumentReferences> createExternalDocumentRefsFromSpdxDocument(SpdxDocument spdxDocument) {
         Set<ExternalDocumentReferences> refs = new HashSet<ExternalDocumentReferences>();
+        int index = 0;
 
         try {
             ExternalDocumentRef[] externalDocumentRefs = spdxDocument.getDocumentContainer().getExternalDocumentRefs();
@@ -409,9 +424,11 @@ public class SpdxBOMImporter {
                 ExternalDocumentReferences ref = new ExternalDocumentReferences();
                 ref.setExternalDocumentId(verifyOrSetDefault(externalDocumentId))
                     .setChecksum(checksum)
-                    .setSpdxDocument(verifyOrSetDefault(spdxDocumentNamespace));
+                    .setSpdxDocument(verifyOrSetDefault(spdxDocumentNamespace))
+                    .setIndex(index);
 
                 refs.add(ref);
+                index++;
             }
         } catch (InvalidSPDXAnalysisException e) {
             log.error(e);
@@ -422,6 +439,7 @@ public class SpdxBOMImporter {
 
     private Set<Creator> createCreatorFromSpdxDocument(SpdxDocument spdxDocument) {
         Set<Creator> creators = new HashSet<Creator>();
+        int index = 0;
 
         try {
             String[] spdxCreators = spdxDocument.getCreationInfo().getCreators();
@@ -438,8 +456,10 @@ public class SpdxBOMImporter {
                 Creator creator = new Creator();
                 creator.setType(verifyOrSetDefault(type));
                 creator.setValue(verifyOrSetDefault(value));
+                creator.setIndex(index);
 
                 creators.add(creator);
+                index++;
             }
         } catch (InvalidSPDXAnalysisException e) {
             log.error(e);
@@ -528,6 +548,7 @@ public class SpdxBOMImporter {
 
     private Set<ExternalReference> createExternalReferenceFromSpdxPackage(SpdxPackage spdxPackage) {
         Set<ExternalReference> refs = new HashSet<ExternalReference>();
+        int index = 0;
 
         try {
             ExternalRef[] spdxExternalRefs = spdxPackage.getExternalRefs();
@@ -541,9 +562,11 @@ public class SpdxBOMImporter {
                 ref.setReferenceCategory(verifyOrSetDefault(category))
                     .setReferenceLocator(verifyOrSetDefault(locator))
                     .setReferenceType(verifyOrSetDefault(type))
-                    .setComment(verifyOrSetDefault(comment));
+                    .setComment(verifyOrSetDefault(comment))
+                    .setIndex(index);
 
                 refs.add(ref);
+                index++;
             }
         } catch (InvalidSPDXAnalysisException e) {
             log.error(e);
@@ -597,6 +620,7 @@ public class SpdxBOMImporter {
 
     private Set<CheckSum> createCheckSumsFromSpdxChecksums(Checksum[] spdxChecksums) {
         Set<CheckSum> checksums = new HashSet<CheckSum>();
+        int index = 0;
 
         for (Checksum spdxChecksum : spdxChecksums) {
             String algorithm = org.spdx.rdfparser.model.Checksum.CHECKSUM_ALGORITHM_TO_TAG.get(spdxChecksum.getAlgorithm()).replace(":", "");
@@ -604,9 +628,11 @@ public class SpdxBOMImporter {
 
             CheckSum checksum = new CheckSum();
             checksum.setAlgorithm(verifyOrSetDefault(algorithm))
-                    .setChecksumValue(verifyOrSetDefault(value));
+                    .setChecksumValue(verifyOrSetDefault(value))
+                    .setIndex(index);
 
             checksums.add(checksum);
+            index++;
         }
 
         return checksums;
