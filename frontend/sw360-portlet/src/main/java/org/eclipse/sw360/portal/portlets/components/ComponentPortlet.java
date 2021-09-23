@@ -248,38 +248,40 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             writeJSON(request, response, dataForChangeLogs);
         } else if (action.equals("export-spdx")) {
             exportSPDX(request, response);
+        } else if (action.equals("download-export-spdx")) {
+            downloadSPDX(request, response);
         }
     }
-    private void exportSPDX(ResourceRequest request, ResourceResponse response) {
+
+    private void downloadSPDX(ResourceRequest request, ResourceResponse response) {
         final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
         String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
         String outputFormat = request.getParameter(PortalConstants.WHAT);
         User user = UserCacheHolder.getUserFromRequest(request);
-
         String filename = releaseId + "." + outputFormat.toLowerCase();
-        try {
-            String exportFileName = componentClient.getReleaseById(releaseId, user).getName().replaceAll("[\\/:*?\"<>|\\s]","_")
-            + "_" + componentClient.getReleaseById(releaseId, user).getVersion().replaceAll("[\\/:*?\"<>|\\s]","_")
-            + "_" + SW360Utils.getCreatedOn() + "." + outputFormat.toLowerCase();
-            final RequestSummary requestSummary = componentClient.exportSPDX(user, releaseId, outputFormat);
+        String exportFileName = null;
 
-            if (requestSummary.getRequestStatus() == RequestStatus.SUCCESS) {
-                try {
-                    InputStream inputStream = new FileInputStream(new File(filename));
-                    PortletResponseUtil.sendFile(request, response, exportFileName, inputStream, CONTENT_TYPE_OPENXML_SPREADSHEET);
-                    log.info("Export SPDX file success !!!");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            } else {
-                log.error("Failed to export SPDX file.");
-            }
-
-        } catch (TException e) {
-            log.error("Failed to export SPDX file.", e);
+        if (PortalConstants.ACTION_CANCEL.equals(request.getParameter(PortalConstants.ACTION_CANCEL))) {
+            deleteFileExport(outputFormat, releaseId, filename);
+            return;
         }
 
-        // delete file after user download
+        try {
+            log.info("Download SPDX file");
+            exportFileName = componentClient.getReleaseById(releaseId, user).getName().replaceAll("[\\/:*?\"<>|\\s]","_")
+                + "_" + componentClient.getReleaseById(releaseId, user).getVersion().replaceAll("[\\/:*?\"<>|\\s]","_")
+                + "_" + SW360Utils.getCreatedOn() + "." + outputFormat.toLowerCase();
+            InputStream inputStream = new FileInputStream(filename);
+            PortletResponseUtil.sendFile(request, response, exportFileName, inputStream, CONTENT_TYPE_OPENXML_SPREADSHEET);
+            log.info("Download SPDX file success !!!");
+        } catch (IOException | TException e) {
+            e.printStackTrace();
+        }
+        deleteFileExport(outputFormat, releaseId, filename);
+    }
+
+    // delete file after user download
+    private void deleteFileExport(String outputFormat, String releaseId, String filename) {
         try {
             if (outputFormat.equals("RDF")) {
                 Files.delete(Paths.get(releaseId + ".spdx"));
@@ -291,6 +293,20 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         } catch (IOException e) {
                 e.printStackTrace();
                 log.error("Failed to delete files.");
+        }
+    }
+
+    private void exportSPDX(ResourceRequest request, ResourceResponse response) {
+        final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
+        String outputFormat = request.getParameter(PortalConstants.WHAT);
+        User user = UserCacheHolder.getUserFromRequest(request);
+
+        try {
+            final RequestSummary requestSummary = componentClient.exportSPDX(user, releaseId, outputFormat);
+            renderRequestSummary(request, response, requestSummary);
+        } catch (TException e) {
+            log.error("Failed to export SPDX file.", e);
         }
     }
 
