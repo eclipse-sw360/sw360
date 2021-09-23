@@ -97,13 +97,11 @@
     margin-right: 1rem;
   }
 </style>
-
 <script>
   let spdxDocumentObj = jQuery.parseJSON(JSON.stringify(${ spdxDocumentJson }));
-  let packageInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
   let documentCreationInformationObj = jQuery.parseJSON(JSON.stringify(${ documentCreationInfoJson }));
+  let packageInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
 </script>
-
 <%@include file="/html/utils/includes/requirejs.jspf" %>
 <div id="editSPDXForm" name="editSPDXForm" class="form needs-validation" novalidate>
   <div class="form-group btn-group">
@@ -120,7 +118,6 @@
   <input style="display: none;" type="text" id="documentCreationInfoData" name="<portlet:namespace/><%=SPDXDocument._Fields.SPDX_DOCUMENT_CREATION_INFO_ID%>" value="" />
   <input style="display: none;" type="text" id="packageInfoData" name="<portlet:namespace/><%=SPDXDocument._Fields.SPDX_PACKAGE_INFO_IDS%>" value="" />
 </div>
-
 <script>
   let middleName = "<%=themeDisplay.getUser().getMiddleName()%>"
   if (middleName == "") {
@@ -131,6 +128,7 @@
   let userDisplay = "<%=themeDisplay.getUser().getFirstName()%>" + middleName + "<%=themeDisplay.getUser().getLastName()%>" + " (<%=themeDisplay.getUser().getEmailAddress()%>)";
   function readDocumentCreator() {
     let creators = [];
+    let index = 0;
     $('[name=creatorRow]').each(function () {
       if ($(this).css('display') == 'none') {
         return;
@@ -140,14 +138,25 @@
       }
       let creatorType = $(this).find('.creator-type').first().val().trim();
       let creatorValue = $(this).find('.creator-value').first().val().trim();
-
       if (creatorValue != '') {
-        creators.push({ 'type': creatorType, 'value': creatorValue });
+        creators.push({ 'type': creatorType, 'value': creatorValue, 'index': index });
+        index += 1;
       }
     })
     return creators;
   }
-  require(['jquery', 'components/includes/releases/spdxjs'], function ($, spdxjs) {
+  require(['jquery', 'components/includes/releases/spdxjs', 'components/includes/releases/validateLib'], function ($, spdxjs, validateLib) {
+    spdxDocumentObj.snippets.sort(spdxjs.dynamicSort('index', 'int'));
+    spdxDocumentObj.relationships.sort(spdxjs.dynamicSort('index', 'int'));
+    spdxDocumentObj.annotations.sort(spdxjs.dynamicSort('index', 'int'));
+    spdxDocumentObj.otherLicensingInformationDetecteds.sort(spdxjs.dynamicSort('index', 'int'));
+    for (let i = 0; i < spdxDocumentObj.snippets.length; i++) {
+      spdxDocumentObj.snippets[i].snippetRanges.sort(spdxjs.dynamicSort('index', 'int'));
+    }
+    documentCreationInformationObj.externalDocumentRefs.sort(spdxjs.dynamicSort('index', 'int'));
+    documentCreationInformationObj.creator.sort(spdxjs.dynamicSort('index', 'int'));
+    packageInformationObj.checksums.sort(spdxjs.dynamicSort('index', 'int'));
+    packageInformationObj.annotations.sort(spdxjs.dynamicSort('index', 'int'));
     function initDocumentCreation() {
       if (documentCreationInformationObj['spdxVersion'].startsWith('SPDX-')) {
         $('#spdxVersion').val(documentCreationInformationObj['spdxVersion'].substr(5).trim());
@@ -199,7 +208,11 @@
     });
     $('[name=add-externalDocRef]').on('click', function (e) {
       e.preventDefault();
-      let newObj = { 'externalDocumentId': '', 'checksum': { 'algorithm': '', 'checksumValue': '' }, 'spdxDocument': '' };
+      let index = 0;
+      if (documentCreationInformationObj.externalDocumentRefs.length > 0) {
+        index = parseInt(documentCreationInformationObj.externalDocumentRefs[documentCreationInformationObj.externalDocumentRefs.length - 1].index) + 1;
+      }
+      let newObj = { 'externalDocumentId': '', 'checksum': { 'algorithm': '', 'checksumValue': '' }, 'spdxDocument': '', 'index': index };
       documentCreationInformationObj.externalDocumentRefs.push(newObj);
       spdxjs.addMain($(this));
       $('#externalDocumentRefs').change();
@@ -215,15 +228,10 @@
     });
     function fillExternalDocRef(index) {
       index = $('#externalDocumentRefs')[0].selectedIndex;
-
       let obj = documentCreationInformationObj.externalDocumentRefs[index];
-
       $('#externalDocumentId').val(obj['externalDocumentId']);
-
       $('#externalDocument').val(obj['spdxDocument']);
-
       $('#checksumAlgorithm').val(obj['checksum']['algorithm']);
-
       $('#checksumValue').val(obj['checksum']['checksumValue']);
     }
     function storeExternalDocRef(index) {
@@ -233,7 +241,6 @@
       let obj = documentCreationInformationObj.externalDocumentRefs[index];
       obj['externalDocumentId'] = $('#externalDocumentId').val().trim();
       obj['spdxDocument'] = $('#externalDocument').val().trim();
-
       let algorithm = $('#checksumAlgorithm').val().trim();
       let checksumValue = $('#checksumValue').val().trim();
       if (algorithm == '' || checksumValue == '') {
@@ -273,7 +280,6 @@
     }
     function initAnnotations() {
       let source = getAnnotationsSource();
-
       if (source.length == 0) {
         spdxjs.enableSection($('.section-annotation'), false);
         $('#selectAnnotation').find('option').remove();
@@ -291,24 +297,20 @@
     }
     $('[name=add-annotation]').on('click', function(e) {
       e.preventDefault();
-
-      let newObj = { 'annotator': '', 'annotationDate': '', 'annotationType': '', 'annotationComment': '', 'spdxRef': '' };
-
       let source = getAnnotationsSource();
-
+      let index = 0;
+      if (source.length > 0) {
+        index = parseInt(source[source.length - 1].index) + 1;
+      }
+      let newObj = { 'annotator': '', 'annotationDate': '', 'annotationType': '', 'annotationComment': '', 'spdxRef': '', 'index': index };
       source.push(newObj);
-
       spdxjs.addMain($(this));
-
       $('#selectAnnotation').change();
     });
     $('[name=delete-annotation').on('click', function(e) {
       let source = getAnnotationsSource();
-
       let selectedIndex = $('#selectAnnotation')[0].selectedIndex;
-
       source.splice(selectedIndex, 1);
-
       spdxjs.deleteMain($(this));
     });
   $('#selectAnnotationSource').on('change', function() {
@@ -351,36 +353,63 @@
       fillOtherLicensing(0);
     }
   }
+  let newOtherLicensing = false;
   $('[name=add-otherLicensing]').on('click', function(e) {
     e.preventDefault();
-    let newObj = { 'licenseId': '', 'extractedText': '', 'licenseName': '', 'licenseCrossRefs': [] };
-    spdxDocumentObj.otherLicensingInformationDetecteds.push(newObj);
-    spdxjs.addMain($(this));
-    $('#selectOtherLicensing').change();
+    newOtherLicensing = false;
+    validateLib.setFormId('sectionOtherLicensing');
+    validateLib.validate();
+    if (!validateLib.allValid()) {
+      validateLib.showAllErrors();
+    } else {
+      newOtherLicensing = true;
+      validateLib.hideAllErrors();
+      let index = 0;
+      if (spdxDocumentObj.otherLicensingInformationDetecteds.length > 0) {
+        index = parseInt(spdxDocumentObj.otherLicensingInformationDetecteds[spdxDocumentObj.otherLicensingInformationDetecteds.length - 1].index) + 1;
+      }
+      let newObj = { 'licenseId': '', 'extractedText': '', 'licenseName': '', 'licenseCrossRefs': [], 'index': index };
+      spdxDocumentObj.otherLicensingInformationDetecteds.push(newObj);
+      spdxjs.addMain($(this));
+      $('#selectOtherLicensing').change();
+    }
   });
   $('[name=delete-otherLicensing').on('click', function(e) {
+    newOtherLicensing = true;
     let selectedIndex = $('#selectOtherLicensing')[0].selectedIndex;
     spdxDocumentObj.otherLicensingInformationDetecteds.splice(selectedIndex, 1);
     spdxjs.deleteMain($(this));
   });
   $('#selectOtherLicensing').on('change', function(e) {
     let selectedIndex = $('#selectOtherLicensing')[0].selectedIndex;
-    fillOtherLicensing(selectedIndex);
+    validateLib.setFormId('sectionOtherLicensing');
+    if (newOtherLicensing) {
+      validateLib.hideAllErrors();
+      fillOtherLicensing(selectedIndex);
+      $(this).data('prev', selectedIndex);
+      newOtherLicensing = false;
+      return;
+    }
+    validateLib.validate();
+    if (!validateLib.allValid()) {
+      validateLib.showAllErrors();
+      $(this).val($(this).data('prev') + 1);
+    } else {
+      validateLib.hideAllErrors();
+      fillOtherLicensing(selectedIndex);
+      $(this).data('prev', selectedIndex);
+    }
   });
   function fillOtherLicensing(index) {
     let obj = spdxDocumentObj.otherLicensingInformationDetecteds[index];
-
     if (obj.licenseId.startsWith('LicenseRef-')) {
       $('#licenseId').val(obj.licenseId.substr(11));
     } else {
       $('#licenseId').val(obj.licenseName);
     }
     $('#extractedText').val(obj.extractedText);
-
     spdxjs.fillMultiOptionsField('#licenseName', obj.licenseName);
-
     spdxjs.fillArray('#licenseCrossRefs', obj.licenseCrossRefs);
-
     $('#licenseCommentOnOtherLicensing').val(obj.licenseComment);
   }
   function storeOtherLicensing(index) {
@@ -393,13 +422,9 @@
     } else {
       obj['licenseId'] = 'LicenseRef-' + spdxjs.readMultiOptionField('#licenseName');
     }
-
     obj['extractedText'] = $('#extractedText').val().trim();
-
     obj['licenseName'] = spdxjs.readMultiOptionField('#licenseName');
-
     obj['licenseCrossRefs'] = spdxjs.readArray('#licenseCrossRefs');
-
     obj['licenseComment'] = $('#licenseCommentOnOtherLicensing').val().trim();
   }
   function initRelationships() {
@@ -412,8 +437,11 @@
   }
   $('[name=add-relationship]').on('click', function(e) {
     e.preventDefault();
-
-    let newObj = { 'spdxElementId': '', 'relationshipType': '', 'relatedSpdxElement': '', 'relationshipComment': '' };
+    let index = 0;
+    if (spdxDocumentObj.relationships.length > 0) {
+      index = parseInt(spdxDocumentObj.relationships[spdxDocumentObj.relationships.length - 1].index) + 1;
+    }
+    let newObj = { 'spdxElementId': '', 'relationshipType': '', 'relatedSpdxElement': '', 'relationshipComment': '', 'index': index };
     spdxDocumentObj.relationships.push(newObj);
     spdxjs.addMain($(this));
     $('#selectRelationship').change();
@@ -448,30 +476,6 @@
     obj['relatedSpdxElement'] = $('#relatedSPDXElement').val().trim();
     obj['relationshipComment'] = $('#relationshipComment').val().trim();
   }
-  function initSnippetInfo() {
-    if (spdxDocumentObj.snippets.length == 0) {
-      spdxjs.enableSection($('.section-snippet'), false);
-    } else {
-      spdxjs.fillSelectbox('#selectSnippet', spdxDocumentObj.snippets.length);
-      fillSnippet(0);
-    }
-  }
-  $('[name=add-snippet]').on('click', function(e) {
-    e.preventDefault();
-    let newObj = {'SPDXID': '',
-                  'snippetFromFile': '',
-                  'snippetRanges': [],
-                  'licenseConcluded': '',
-                  'licenseInfoInSnippets': [],
-                  'licenseComments': '',
-                  'copyrightText': '',
-                  'comment': '',
-                  'name': '',
-                  'snippetAttributionText': ''};
-    spdxDocumentObj.snippets.push(newObj);
-    spdxjs.addMain($(this));
-    $('#selectSnippet').change();
-  });
   $('[name=delete-snippet').on('click', function(e) {
     let selectedIndex = $('#selectSnippet')[0].selectedIndex;
     spdxDocumentObj.snippets.splice(selectedIndex, 1);
@@ -479,115 +483,20 @@
   });
   $('#selectSnippet').on('change', function(e) {
     let selectedIndex = $('#selectSnippet')[0].selectedIndex;
-    fillSnippet(selectedIndex);
+    spdxjs.fillSnippet(selectedIndex);
   });
-  function fillSnippet(index) {
-    isInitialzing = true;
-    const obj = spdxDocumentObj.snippets[index];
-    if (obj['SPDXID'].startsWith('SPDXRef-')) {
-      $('#snippetSpdxIdentifier').val(obj['SPDXID'].substr(8));
-    } else {
-      $('#snippetSpdxIdentifier').val('Snippet-' + obj['name']);
-    }
-    if (obj['snippetFromFile'].startsWith('SPDXRef-')) {
-      $('#snippetFromFile').val('SPDXRef');
-      $('#snippetFromFileValue').val(obj['snippetFromFile'].substr(8));
-    } else if (obj['snippetFromFile'].startsWith('DocumentRef-')) {
-      $('#snippetFromFile').val('DocumentRef');
-      $('#snippetFromFileValue').val(obj['snippetFromFile'].substr(12));
-    } else {
-      $('#snippetFromFile').val('SPDXRef');
-      $('#snippetFromFileValue').val('');
-    }
-    if ($('[name=delete-snippetRange].hidden').length == 0) {
-      const rangesNum = $('[name=snippetRange]').length;
-      for (let i = 0; i < rangesNum; i++) {
-        if (i == 0) {
-          $($('[name=snippetRange]')[i]).css('display', 'none');
-          $($('[name=snippetRange]')[i]).find('[name=delete-snippetRange]').addClass('hidden');
-          spdxjs.clearSection($($('[name=snippetRange]')[i]));
-        } else {
-          $('[name=snippetRange]').last().remove();
-        }
-      }
-    }
-    for (let i = 0; i < obj.snippetRanges.length; i++) {
-      spdxjs.addSub('#addNewRange');
-      $('.range-type').last().val(obj.snippetRanges[i].rangeType);
-      $('.start-pointer').last().val(obj.snippetRanges[i].startPointer);
-      $('.end-pointer').last().val(obj.snippetRanges[i].endPointer);
-      $('.reference').last().val(obj.snippetRanges[i].reference);
-    }
-    $('.range-type, .start-pointer, .end-pointer, .reference').bind('change keyup', function() {
-      if ($(this).is(":focus")) {
-        storeSnippet();
-      }
-    });
-    $('[name=delete-snippetRange]').bind('click', function() {
-      spdxjs.deleteSub($(this));
-      storeSnippet();
-    });
-    spdxjs.fillMultiOptionsField('#spdxConcludedLicenseValue', obj.licenseConcluded);
-    spdxjs.fillMultiOptionsField('#licenseInfoInFileValue', obj.licenseInfoInSnippets, 'array');
-    $('#snippetLicenseComments').val(obj.licenseComments);
-    spdxjs.fillMultiOptionsField('#copyrightTextValueSnippet', obj.copyrightText);
-    $('#snippetComment').val(obj.comment);
-    $('#snippetName').val(obj.name);
-    $('#snippetAttributionText').val(obj.snippetAttributionText);
-    isInitialzing = false;
-  }
   $('#addNewRange').on('click', function() {
     spdxjs.addSub($(this));
     $('[name=delete-snippetRange]').bind('click', function() {
       spdxjs.deleteSub($(this));
-      storeSnippet();
+      spdxjs.storeSnippet();
     });
     $('.range-type, .start-pointer, .end-pointer, .reference').bind('change keyup', function() {
       if ($(this).is(":focus")) {
-        storeSnippet();
+        spdxjs.storeSnippet();
       }
     });
   });
-  function storeSnippet(index) {
-    if (typeof(index) == 'undefined') {
-      index = $('#selectSnippet')[0].selectedIndex;
-    }
-    if (index < 0 || index > spdxDocumentObj.snippets - 1) {
-      return;
-    }
-    let obj = spdxDocumentObj.snippets[index];
-    if ($('#snippetSpdxIdentifier').val().trim() != '') {
-      obj['SPDXID'] = 'SPDXRef-' + $('#snippetSpdxIdentifier').val().trim();
-    } else {
-      obj['SPDXID'] = 'SPDXRef-Snippet-' + $('#snippetName').val().trim();
-    }
-    if ($('#snippetFromFileValue').val().trim() != '') {
-      obj['snippetFromFile'] = $('#snippetFromFile').val() + '-' + $('#snippetFromFileValue').val().trim();
-    } else {
-      obj['snippetFromFile'] = '';
-    }
-    obj['snippetRanges'] = [];
-    if ($('[name=snippetRange]').first().css('display') != 'none') {
-      obj['snippetRanges'] = [];
-      $('[name=snippetRange]').each(function() {
-        let range = {'rangeType': '', 'startPointer': '', 'endPointer': '', 'reference': ''};
-        range['rangeType'] = $(this).find('.range-type').first().val().trim();
-        range['startPointer'] = $(this).find('.start-pointer').first().val().trim();
-        range['endPointer'] = $(this).find('.end-pointer').first().val().trim();
-        range['reference'] = $(this).find('.reference').first().val().trim();
-        if (range['startPointer'] != '' || range['endPointer'] != '' || range['reference'] != '') {
-          obj['snippetRanges'].push(range);
-        }
-      })
-    }
-    obj['licenseConcluded']     = spdxjs.readMultiOptionField('#spdxConcludedLicenseValue');
-    obj['licenseInfoInSnippets']  = spdxjs.readMultiOptionField('#licenseInfoInFileValue', 'array');
-    obj['licenseComments']    = $('#snippetLicenseComments').val().trim();
-    obj['copyrightText']      = spdxjs.readMultiOptionField('#copyrightTextValueSnippet');
-    obj['comment']        = $('#snippetComment').val().trim();
-    obj['name']           = $('#snippetName').val().trim();
-    obj['snippetAttributionText'] = $('#snippetAttributionText').val().trim();
-  }
     const referenceCategories = {
         'referenceCategory_security': ['cpe22Type', 'cpe23Type'],
         'referenceCategory_packageManager': ['maven-central', 'npm', 'nuget', 'bower', 'purl'],
@@ -684,7 +593,7 @@
         index = $('#externalReferences')[0].selectedIndex;
         spdxjs.storeExternalRef(packageInformationObj, index);
         index = $('#selectSnippet')[0].selectedIndex;
-        storeSnippet(index);
+        spdxjs.storeSnippet(index);
         index = $('#selectOtherLicensing')[0].selectedIndex;
         storeOtherLicensing(index);
         index = $('#selectRelationship')[0].selectedIndex;
@@ -699,7 +608,7 @@
           packageInformationObj['name'] = "${component.name}";
         }
         spdxjs.initPackageInfo(packageInformationObj);
-        initSnippetInfo();
+        spdxjs.initSnippetInfo();
         initOtherLicensing();
         initRelationships();
         initAnnotations();

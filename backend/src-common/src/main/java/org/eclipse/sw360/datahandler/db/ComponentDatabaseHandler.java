@@ -2163,23 +2163,32 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     public ImportBomRequestPreparation prepareImportBom(User user, String attachmentContentId) throws SW360Exception {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
         final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
+        String sourceFilePath = null;
+        String targetFilePath = null;
         try {
             final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
             try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
                 final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
                 final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
 
-                InputStream spdxInputStream;
+                InputStream spdxInputStream = null;
                 String fileType = getFileType(attachmentContent.getFilename());
                 if (isJSONFile(fileType)) {
-                    final File sourceFile = DatabaseHandlerUtil.saveAsTempFile(user, inputStream, attachmentContentId, "."+fileType);
-                    final String sourceFileName = sourceFile.getPath().toString();
-                    final String targetFileName = attachmentContentId + ".rdf";
+                    final String ext = "." + fileType;
+                    final File sourceFile = DatabaseHandlerUtil.saveAsTempFile(user, inputStream, attachmentContentId, ext);
+                    sourceFilePath = sourceFile.getAbsolutePath().toString();
+                    targetFilePath = sourceFilePath.replace(ext, ".rdf");
 
-                    SpdxConverter.convert(sourceFile.getPath().toString(), targetFileName);
-                    spdxInputStream = new FileInputStream(new File(targetFileName));
+                    try {
+                        SpdxConverter.convert(sourceFilePath, targetFilePath);
+                        File targetFile = new File(targetFilePath);
+                        spdxInputStream = new FileInputStream(targetFile);
+                    } catch (SpdxConverterException e) {
+                        log.error(e);
+                    } finally {
+                        Files.delete(Paths.get(sourceFilePath));
+                    }
 
-                    Files.delete(Paths.get(sourceFileName));
                 } else {
                     spdxInputStream = inputStream;
                 }
@@ -2198,11 +2207,12 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                         importBomRequestPreparation.setIsComponentDuplicate(true);
                         importBomRequestPreparation.setIsReleaseDuplicate(true);
                     }
+                    importBomRequestPreparation.setMessage(targetFilePath);
                 }
 
                 return importBomRequestPreparation;
             }
-        } catch (InvalidSPDXAnalysisException | IOException | SpdxConverterException e) {
+        } catch (InvalidSPDXAnalysisException | IOException e) {
             throw new SW360Exception(e.getMessage());
         }
     }
@@ -2228,7 +2238,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     //     return spdxBOMImporter.importSpdxBOMAsRelease(spdxInputStream, attachmentContent);
     // }
 
-    public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId, String newReleaseVersion, String releaseId) throws SW360Exception {
+    public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId, String newReleaseVersion, String releaseId, String rdfFilePath) throws SW360Exception {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
         final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
         try {
@@ -2239,10 +2249,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
                 InputStream spdxInputStream;
                 String fileType = getFileType(attachmentContent.getFilename());
-                if (isJSONFile(fileType)) {
-                    final String targetFileName = attachmentContentId + ".rdf";
-                    spdxInputStream = new FileInputStream(new File(targetFileName));
-                    Files.delete(Paths.get(targetFileName));
+                if (isJSONFile(fileType) && isNotNullEmptyOrWhitespace(rdfFilePath)) {
+                    spdxInputStream = new FileInputStream(new File(rdfFilePath));
+                    Files.delete(Paths.get(rdfFilePath));
                 } else {
                     spdxInputStream = inputStream;
                 }

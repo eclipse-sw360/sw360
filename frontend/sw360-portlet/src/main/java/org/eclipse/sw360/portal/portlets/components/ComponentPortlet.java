@@ -314,9 +314,10 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
         User user = UserCacheHolder.getUserFromRequest(request);
         String attachmentContentId = request.getParameter(ATTACHMENT_CONTENT_ID);
+        String rdfFilePath = request.getParameter(RDF_FILE_PATH);
 
         try {
-            final RequestSummary requestSummary = componentClient.importBomFromAttachmentContent(user, attachmentContentId, null, null);
+            final RequestSummary requestSummary = componentClient.importBomFromAttachmentContent(user, attachmentContentId, null, null, rdfFilePath);
 
             LiferayPortletURL releaseUrl = createDetailLinkTemplate(request);
             releaseUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_RELEASE_DETAIL);
@@ -336,9 +337,10 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         User user = UserCacheHolder.getUserFromRequest(request);
         String attachmentContentId = request.getParameter(ATTACHMENT_CONTENT_ID);
         String newReleaseVersion = request.getParameter(NEW_RELEASE_VERSION);
+        String rdfFilePath = request.getParameter(RDF_FILE_PATH);
 
         try {
-            final RequestSummary requestSummary = componentClient.importBomFromAttachmentContent(user, attachmentContentId, newReleaseVersion, null);
+            final RequestSummary requestSummary = componentClient.importBomFromAttachmentContent(user, attachmentContentId, newReleaseVersion, null, rdfFilePath);
 
             LiferayPortletURL releaseUrl = createDetailLinkTemplate(request);
             releaseUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_RELEASE_DETAIL);
@@ -724,7 +726,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     private void writeSpdxLicenseInfoIntoRelease(ResourceRequest request, ResourceResponse response) {
         User user = UserCacheHolder.getUserFromRequest(request);
         String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
-        String attachmentContentId = request.getParameter(ATTACHMENT_CONTENT_ID);
+        String attachmentContentId = request.getParameter(PortalConstants.ATTACHMENT_ID);
         ComponentService.Iface componentClient = thriftClients.makeComponentClient();
 
         RequestStatus result = null;
@@ -753,7 +755,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             }
             result = componentClient.updateRelease(release, user);
 
-            componentClient.importBomFromAttachmentContent(user, attachmentContentId, null, releaseId);
+            componentClient.importBomFromAttachmentContent(user, attachmentContentId, null, releaseId, null);
         } catch (TException | IOException e) {
             log.error("Cannot write license info into release " + releaseId + ".", e);
             response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "500");

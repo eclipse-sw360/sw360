@@ -49,16 +49,19 @@ struct ExternalDocumentReferences {
     1: optional string externalDocumentId,
     2: optional CheckSum checksum,
     3: optional string spdxDocument,
+    4: optional i32 index,
 }
 
 struct CheckSum {
     1: optional string algorithm,
     2: optional string checksumValue,
+    3: optional i32 index,
 }
 
 struct Creator {
     1: optional string type,
     2: optional string value,
+    3: optional i32 index,
 }
 
 service DocumentCreationInformationService {
