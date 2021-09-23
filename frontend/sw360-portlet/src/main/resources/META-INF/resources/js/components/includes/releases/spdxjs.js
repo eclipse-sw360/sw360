@@ -224,6 +224,9 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
 
       function fillMultiOptionsField(inputTag, value, type = 'text') {
         if (!Array.isArray(value) && (value.toUpperCase() == 'NONE' || value.toUpperCase() == 'NOASSERTION')) {
+          $(inputTag)[0].selectedIndex = 0;
+          $(inputTag).parent().find('input').val('');
+          $(inputTag).parent().find('textarea').val('');
           $(inputTag).parent().parent().find('input[value=' + value + ']').click();
         } else {
           switch (type) {
