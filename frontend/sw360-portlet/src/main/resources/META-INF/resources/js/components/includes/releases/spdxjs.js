@@ -223,10 +223,17 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
       }
 
       function fillMultiOptionsField(inputTag, value, type = 'text') {
+        if (type == 'array' && value.length == 1) {
+          if (value[0].toUpperCase() == 'NONE' || value[0].toUpperCase() == 'NOASSERTION') {
+            $('#licenseInfoFromFilesValue').val('')
+            $(inputTag).parent().parent().find('input[value=' + value + ']').click();
+            return;
+          }
+        }
+
         if (!Array.isArray(value) && (value.toUpperCase() == 'NONE' || value.toUpperCase() == 'NOASSERTION')) {
           $(inputTag)[0].selectedIndex = 0;
           $(inputTag).parent().find('input').val('');
-          $(inputTag).parent().find('textarea').val('');
           $(inputTag).parent().parent().find('input[value=' + value + ']').click();
         } else {
           switch (type) {
@@ -247,7 +254,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
 
       function fillArray(textarea, value) {
         if (Array.isArray(value)) {
-          $(textarea).val(value.join('\n'));
+          $(textarea).val(value.sort().join('\n'));
         } else {
           $(textarea).val('');
         }
@@ -271,7 +278,11 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
 
       function readMultiOptionField(inputTag, type = 'text') {
         if ($(inputTag).attr('disabled')) {
-          return $(inputTag).parent().parent().find('[type=radio]:checked').val();
+          if (type == 'array') {
+            return [$(inputTag).parent().parent().find('[type=radio]:checked').val()];
+          } else {
+            return $(inputTag).parent().parent().find('[type=radio]:checked').val();
+          }
         } else {
           switch (type) {
             case 'array':
@@ -292,7 +303,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
           result[i] = result[i].trim();
         }
 
-        return result.filter(function(e) { return e !== '' });
+        return result.filter(function(e) { return e !== '' }).sort();
       }
 
       function readAnnotator(typeTag) {
