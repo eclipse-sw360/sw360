@@ -106,11 +106,10 @@
                                     <clay:icon symbol="caret-bottom" />
                                 </button>
                                 <div class="dropdown-menu" aria-labelledby="btnExport">
-                                    <a class="dropdown-item" href="#" data-type="SPDX" data-release-id="${release.id}"><liferay-ui:message key="tag" /></a>
-                                    <a class="dropdown-item" href="#" data-type="RDF" data-release-id="${release.id}"><liferay-ui:message key="RDF/XML" /></a>
-                                    <a class="dropdown-item" href="#" data-type="JSON" data-release-id="${release.id}"><liferay-ui:message key="JSON" /></a>
-                                    <a class="dropdown-item" href="#" data-type="XLS" data-release-id="${release.id}"><liferay-ui:message key="XLS" /></a>
-
+                                    <button class="dropdown-item export-sbom" type="button" data-type="SPDX" data-release-id="${release.id}">Tag</button>
+                                    <button class="dropdown-item export-sbom" type="button" data-type="RDF" data-release-id="${release.id}">RDF/XML</button>
+                                    <button class="dropdown-item export-sbom" type="button" data-type="JSON" data-release-id="${release.id}">JSON</button>
+                                    <button class="dropdown-item export-sbom" type="button" data-type="XLS" data-release-id="${release.id}">XLS</button>
                                 </div>
                             </div>
 
@@ -211,7 +210,7 @@
 <script>
 	document.title = $("<span></span>").html("<sw360:out value='${component.name}'/> - " + document.title).text();
 
-    require(['jquery', 'components/includes/releases/linkProject', 'modules/button', 'modules/listgroup', 'utils/includes/clipboard'], function($, linkProject, button, listgroup, clipboard) {
+    require(['jquery', 'components/includes/releases/linkProject', 'modules/button', 'modules/listgroup', 'utils/includes/clipboard', 'modules/dialog'], function($, linkProject, button, listgroup, clipboard, dialog) {
         linkProject.initialize();
         listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
 
@@ -271,19 +270,87 @@
             clipboard.copyToClipboard(textToCopy, textSelector);
         });
 
-        $('#btnExportGroup a.dropdown-item').on('click', function(event) {
-            //var releaseId = $(event.currentTarget).data('data-release-id');
+        var portletURL
+        $('#btnExportGroup button.dropdown-item').on('click', function(event) {
+            $('#btnExport').prop('disabled', true)
+            var $dialog;
             var releaseId = $(event.currentTarget).data().releaseId;
-            exportSpreadsheet($(event.currentTarget).data('type'), releaseId);
+            var type = $(event.currentTarget).data('type')
+
+            function downloadFileExport (callback) {
+                $('#confirmDialog').hide()
+                $('#confirmDialog').modal('hide');
+                var portletURLDownload = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>')
+                    .setParameter('<%=PortalConstants.ACTION%>', 'download-export-spdx')
+                    .setParameter('<%=PortalConstants.WHAT%>', type)
+                    .setParameter('<%=PortalConstants.RELEASE_ID%>', releaseId);
+                window.location.href = portletURLDownload.toString();
+            }
+
+            $.ajax({
+                url: exportSpreadsheet(type, releaseId),
+                cache: false,
+                dataType: "json",
+            }).done(function (data) {
+                $('#btnExport').prop('disabled', false)
+                $dialog = dialog.confirm(
+                    null,
+                    'question-circle',
+                    '<liferay-ui:message key="export.sbom" />',
+                    '<p><liferay-ui:message key="no.warning.error.export.sbom" />' +
+                    '<p style="display: none;"><liferay-ui:message key="export.sbom.have.some.warining" />:' +
+                    '<p style="display: none;"><liferay-ui:message key="export.sbom.have.some.error" />:' +
+                    '<div style="display: none;" class="alert alert-warning" id="verifySPDX"></div>',
+                    '<liferay-ui:message key="export" />',
+                    {},
+                    function(submit, callback) {
+                        downloadFileExport(callback);
+                    }
+                );
+                $('#confirmDialog button.btn.btn-primary').prop('disabled', true)
+                var log = data.message.replaceAll('|||','<br/> - ')
+                if (log != null) {
+                    $('#confirmDialog > div > div > div.modal-body > p:nth-child(1)').attr("style","display: none;")
+                    $('#verifySPDX').attr("style","overflow: auto; max-height: 20rem;")
+                    $('#verifySPDX').append("<strong> - " +log+ "</strong>")
+                }
+                if (data.result == 'SUCCESS') {
+                    $('#confirmDialog > div > div > div.modal-body > p:nth-child(2)').attr("style","color: red;")
+                    $('#confirmDialog button.btn.btn-primary').prop('disabled', false)
+                    cancelExport()
+                } else {
+                    $('#confirmDialog > div > div > div.modal-body > p:nth-child(3)').attr("style","color: red;")
+                }
+            });
+
+            function cancelExport() {
+                var portletURLCancel = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>')
+                        .setParameter('<%=PortalConstants.ACTION%>', 'download-export-spdx')
+                        .setParameter('<%=PortalConstants.WHAT%>', type)
+                        .setParameter('<%=PortalConstants.RELEASE_ID%>', releaseId)
+                        .setParameter('<%=PortalConstants.ACTION_CANCEL%>', 'action_cancel');
+                $('#confirmDialog > div > div > div.modal-footer > button.btn.btn-light').on('click', function(event) {
+                    $.ajax({
+                        url: portletURLCancel.toString(),
+                        cache: false,
+                    })
+                })
+                $('#confirmDialog > div > div > div.modal-header > button').on('click', function(event) {
+                    $.ajax({
+                        url: portletURLCancel.toString(),
+                        cache: false,
+                    })
+                })
+            }
         });
 
         // Export Spreadsheet action
         function exportSpreadsheet(type, releaseId){
-            var portletURL = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>')
+            portletURL = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>')
                     .setParameter('<%=PortalConstants.ACTION%>', 'export-spdx')
                     .setParameter('<%=PortalConstants.WHAT%>', type)
                     .setParameter('<%=PortalConstants.RELEASE_ID%>', releaseId);
-            window.location.href = portletURL.toString();
+            return portletURL.toString()
         }
 
         function doAjax(url, successCallback, errorCallback) {

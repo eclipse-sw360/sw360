@@ -62,11 +62,16 @@ public class SpdxBOMExporter {
     public RequestSummary exportSPDXFile(String releaseId, String outputFormat) throws SW360Exception, MalformedURLException, InvalidSPDXAnalysisException {
         RequestSummary requestSummary = new RequestSummary();
         SpdxDocument doc = null;
+        List<String> message = new LinkedList<String>();
         try {
             log.info("Creating SpdxDocument object from sw360spdx...");
             doc = createSpdxDocumentFromSw360Spdx(releaseId);
+            message = doc.verify();
+            requestSummary.setMessage(String.join("|||", message));
         } catch (Exception e) {
             log.error("Error create SpdxDocument: " + e.getMessage());
+            requestSummary.setMessage(e.getMessage());
+            return requestSummary.setRequestStatus(RequestStatus.FAILURE);
         }
 
         final String targetFileName = releaseId + "." + outputFormat.toLowerCase();
