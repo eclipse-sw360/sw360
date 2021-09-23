@@ -57,13 +57,13 @@
           <label class="mandatory">6.3 License Name</label>
           <div style="display: flex; flex-direction: row;">
             <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
-              <input class="spdx-radio" id="licenseNameExist" type="radio" value="EXIST">
+              <input class="spdx-radio" id="licenseNameExist" type="radio" name="_sw360_portlet_components_LICENSE_NAME" value="EXIST">
               <input style="flex: 6; margin-right: 1rem;" id="licenseName"
                 class="form-control" type="text"
                 placeholder="Enter License Name">
             </div>
             <div style="flex: 2;">
-              <input class="spdx-radio" id="licenseNameNoAssertion" type="radio" value="NOASSERTION">
+              <input class="spdx-radio" id="licenseNameNoAssertion" type="radio" name="_sw360_portlet_components_LICENSE_NAME" value="NOASSERTION">
               <label class="form-check-label radio-label" for="licenseNameNoAssertion">NOASSERTION</label>
             </div>
           </div>
