@@ -324,7 +324,7 @@ public class SpdxBOMImporter {
 
         for (Relationship spdxRelationship : spdxRelationships) {
             String relatedSpdxElementId = spdxRelationship.getRelatedSpdxElement().getId();
-            String type = spdxRelationship.getRelationshipType().toString();
+            String type = spdxRelationship.getRelationshipType().toTag();
 
             /// ?????
             String relatedSpdxElement = spdxRelationship.getRelatedSpdxElement().toString();
@@ -553,7 +553,7 @@ public class SpdxBOMImporter {
         try {
             ExternalRef[] spdxExternalRefs = spdxPackage.getExternalRefs();
             for (ExternalRef spdxRef : spdxExternalRefs) {
-                String category = spdxRef.getReferenceCategory().toString();
+                String category = spdxRef.getReferenceCategory().getTag();
                 String locator = spdxRef.getReferenceLocator();
                 String type = spdxRef.getReferenceType().toString();
                 String comment = spdxRef.getComment();
