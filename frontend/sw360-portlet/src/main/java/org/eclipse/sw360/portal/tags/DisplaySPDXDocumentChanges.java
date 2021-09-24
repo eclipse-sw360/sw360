@@ -18,6 +18,7 @@ import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
 import org.eclipse.sw360.datahandler.thrift.spdx.otherlicensinginformationdetected.OtherLicensingInformationDetected;
 import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelements.RelationshipsBetweenSPDXElements;
 import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetRange;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.*;
 import org.apache.thrift.meta_data.FieldMetaData;
 
@@ -28,6 +29,7 @@ import javax.servlet.jsp.JspWriter;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.ResourceBundle;
+import java.util.Set;
 
 import static org.eclipse.sw360.portal.tags.TagUtils.*;
 
@@ -174,17 +176,44 @@ public class DisplaySPDXDocumentChanges extends UserAwareTag {
         if (! actual.isSet(SPDXDocument._Fields.SNIPPETS)){
             actual.snippets = new HashSet<>();
         }
-        Iterator<SnippetInformation> snippetAdditionsIterator = additions.getSnippetsIterator();
+
         Iterator<SnippetInformation> snippetDeletionsIterator = deletions.getSnippetsIterator();
-        for (SnippetInformation snippet : actual.getSnippets()) {
+        Iterator<SnippetInformation> snippetAdditionsIterator = additions.getSnippetsIterator();
+        Set<SnippetInformation> additionsSnippetInformations = additions.getSnippets();
+        Set<SnippetInformation> deletionsSnippetInformations = deletions.getSnippets();
+
+        int changeSize = deletionsSnippetInformations.size() + additionsSnippetInformations.size();
+
+        for (int i = 0; i < changeSize; i++) {
+
+            SnippetInformation snippetDeletions = new SnippetInformation();
             SnippetInformation snippetAdditions = new SnippetInformation();
+            SnippetInformation snippet = new SnippetInformation();
+            Iterator<SnippetInformation> snippetsIterator = actual.getSnippetsIterator();
             if (snippetAdditionsIterator.hasNext()) {
                 snippetAdditions = snippetAdditionsIterator.next();
-            }
-            SnippetInformation snippetDeletions = new SnippetInformation();
-            if (snippetDeletionsIterator.hasNext()) {
+                while (snippetsIterator.hasNext()) {
+                    snippet = snippetsIterator.next();
+                    if (snippetAdditions.getIndex() == snippet.getIndex()) {
+                        break;
+                    } else {
+                        snippet = new SnippetInformation();
+                    }
+                }
+                snippet.setIndex(snippetAdditions.getIndex());
+                snippetDeletions.setIndex(snippetAdditions.getIndex());
+
+            } else if (snippetDeletionsIterator.hasNext()) {
                 snippetDeletions = snippetDeletionsIterator.next();
+                while (snippetsIterator.hasNext()) {
+                    snippet = snippetsIterator.next();
+                    if (snippetDeletions.getIndex() == snippet.getIndex()) {
+                        break;
+                    }
+                }
+                snippetAdditions.setIndex(snippet.getIndex());
             }
+
             for (SnippetInformation._Fields field : SnippetInformation._Fields.values()) {
                 FieldMetaData fieldMetaData = SnippetInformation.metaDataMap.get(field);
                 displaySimpleFieldOrSet(
@@ -213,24 +242,51 @@ public class DisplaySPDXDocumentChanges extends UserAwareTag {
         if (! actual.isSet(SPDXDocument._Fields.RELATIONSHIPS)){
             actual.relationships = new HashSet<>();
         }
-        Iterator<RelationshipsBetweenSPDXElements> relationshipsAdditionsIterator = additions.getRelationshipsIterator();
+
         Iterator<RelationshipsBetweenSPDXElements> relationshipsDeletionsIterator = deletions.getRelationshipsIterator();
-        for (RelationshipsBetweenSPDXElements relationships : actual.getRelationships()) {
-            RelationshipsBetweenSPDXElements relationshipsAdditions = new RelationshipsBetweenSPDXElements();
+        Iterator<RelationshipsBetweenSPDXElements> relationshipsAdditionsIterator = additions.getRelationshipsIterator();
+        Set<RelationshipsBetweenSPDXElements> additionsRelationshipsBetweenSPDXElementss = additions.getRelationships();
+        Set<RelationshipsBetweenSPDXElements> deletionsRelationshipsBetweenSPDXElementss = deletions.getRelationships();
+
+        int changeSize = deletionsRelationshipsBetweenSPDXElementss.size() + additionsRelationshipsBetweenSPDXElementss.size();
+
+        for (int i = 0; i < changeSize; i++) {
+
+            RelationshipsBetweenSPDXElements relationshipDeletions = new RelationshipsBetweenSPDXElements();
+            RelationshipsBetweenSPDXElements relationshipAdditions = new RelationshipsBetweenSPDXElements();
+            RelationshipsBetweenSPDXElements relationship = new RelationshipsBetweenSPDXElements();
+            Iterator<RelationshipsBetweenSPDXElements> relationshipsIterator = actual.getRelationshipsIterator();
             if (relationshipsAdditionsIterator.hasNext()) {
-                relationshipsAdditions = relationshipsAdditionsIterator.next();
+                relationshipAdditions = relationshipsAdditionsIterator.next();
+                while (relationshipsIterator.hasNext()) {
+                    relationship = relationshipsIterator.next();
+                    if (relationshipAdditions.getIndex() == relationship.getIndex()) {
+                        break;
+                    } else {
+                        relationship = new RelationshipsBetweenSPDXElements();
+                    }
+                }
+                relationship.setIndex(relationshipAdditions.getIndex());
+                relationshipDeletions.setIndex(relationshipAdditions.getIndex());
+
+            } else if (relationshipsDeletionsIterator.hasNext()) {
+                relationshipDeletions = relationshipsDeletionsIterator.next();
+                while (relationshipsIterator.hasNext()) {
+                    relationship = relationshipsIterator.next();
+                    if (relationshipDeletions.getIndex() == relationship.getIndex()) {
+                        break;
+                    }
+                }
+                relationshipAdditions.setIndex(relationship.getIndex());
             }
-            RelationshipsBetweenSPDXElements relationshipsDeletions = new RelationshipsBetweenSPDXElements();
-            if (relationshipsDeletionsIterator.hasNext()) {
-                relationshipsDeletions = relationshipsDeletionsIterator.next();
-            }
+
             for (RelationshipsBetweenSPDXElements._Fields field : RelationshipsBetweenSPDXElements._Fields.values()) {
                 FieldMetaData fieldMetaData = RelationshipsBetweenSPDXElements.metaDataMap.get(field);
                 displaySimpleFieldOrSet(
                         display,
-                        relationships,
-                        relationshipsAdditions,
-                        relationshipsDeletions,
+                        relationship,
+                        relationshipAdditions,
+                        relationshipDeletions,
                         field, fieldMetaData, "");
             }
         }
@@ -252,24 +308,51 @@ public class DisplaySPDXDocumentChanges extends UserAwareTag {
         if (! actual.isSet(SPDXDocument._Fields.ANNOTATIONS)){
             actual.annotations = new HashSet<>();
         }
-        Iterator<Annotations> annotationsAdditionsIterator = additions.getAnnotationsIterator();
-        Iterator<Annotations> annotationsDeletionsIterator = deletions.getAnnotationsIterator();
-        for (Annotations annotations : actual.getAnnotations()) {
-            Annotations annotationsAdditions = new Annotations();
-            if (annotationsAdditionsIterator.hasNext()) {
-                annotationsAdditions = annotationsAdditionsIterator.next();
+
+        Iterator<Annotations> annotationDeletionsIterator = deletions.getAnnotationsIterator();
+        Iterator<Annotations> annotationAdditionsIterator = additions.getAnnotationsIterator();
+        Set<Annotations> additionsAnnotationss = additions.getAnnotations();
+        Set<Annotations> deletionsAnnotationss = deletions.getAnnotations();
+
+        int changeSize = deletionsAnnotationss.size() + additionsAnnotationss.size();
+
+        for (int i = 0; i < changeSize; i++) {
+
+            Annotations annotationDeletions = new Annotations();
+            Annotations annotationAdditions = new Annotations();
+            Annotations annotation = new Annotations();
+            Iterator<Annotations> annotationsIterator = actual.getAnnotationsIterator();
+            if (annotationAdditionsIterator.hasNext()) {
+                annotationAdditions = annotationAdditionsIterator.next();
+                while (annotationsIterator.hasNext()) {
+                    annotation = annotationsIterator.next();
+                    if (annotationAdditions.getIndex() == annotation.getIndex()) {
+                        break;
+                    } else {
+                        annotation = new Annotations();
+                    }
+                }
+                annotation.setIndex(annotationAdditions.getIndex());
+                annotationDeletions.setIndex(annotationAdditions.getIndex());
+
+            } else if (annotationDeletionsIterator.hasNext()) {
+                annotationDeletions = annotationDeletionsIterator.next();
+                while (annotationsIterator.hasNext()) {
+                    annotation = annotationsIterator.next();
+                    if (annotationDeletions.getIndex() == annotation.getIndex()) {
+                        break;
+                    }
+                }
+                annotationAdditions.setIndex(annotation.getIndex());
             }
-            Annotations annotationsDeletions = new Annotations();
-            if (annotationsDeletionsIterator.hasNext()) {
-                annotationsDeletions = annotationsDeletionsIterator.next();
-            }
+
             for (Annotations._Fields field : Annotations._Fields.values()) {
                 FieldMetaData fieldMetaData = Annotations.metaDataMap.get(field);
                 displaySimpleFieldOrSet(
                         display,
-                        annotations,
-                        annotationsAdditions,
-                        annotationsDeletions,
+                        annotation,
+                        annotationAdditions,
+                        annotationDeletions,
                         field, fieldMetaData, "");
             }
         }
@@ -291,16 +374,42 @@ public class DisplaySPDXDocumentChanges extends UserAwareTag {
         if (! actual.isSet(SPDXDocument._Fields.OTHER_LICENSING_INFORMATION_DETECTEDS)){
             actual.otherLicensingInformationDetecteds = new HashSet<>();
         }
-        Iterator<OtherLicensingInformationDetected> otherLicensingAdditions = additions.getOtherLicensingInformationDetecteds().iterator();
-        Iterator<OtherLicensingInformationDetected> otherLicensingDeletions = deletions.getOtherLicensingInformationDetecteds().iterator();
-        for (OtherLicensingInformationDetected otherLicensing : actual.getOtherLicensingInformationDetecteds()) {
-            OtherLicensingInformationDetected otherLicensingAddition = new OtherLicensingInformationDetected();
-            if (otherLicensingAdditions.hasNext()) {
-                otherLicensingAddition = otherLicensingAdditions.next();
-            }
-            OtherLicensingInformationDetected otherLicensingDeletion = new OtherLicensingInformationDetected();
-            if (otherLicensingDeletions.hasNext()) {
-                otherLicensingDeletion = otherLicensingDeletions.next();
+
+        Iterator<OtherLicensingInformationDetected> otherLicensingDeletionsIterator = deletions.getOtherLicensingInformationDetectedsIterator();
+        Iterator<OtherLicensingInformationDetected> otherLicensingAdditionsIterator = additions.getOtherLicensingInformationDetectedsIterator();
+        Set<OtherLicensingInformationDetected> additionsOtherLicensingInformationDetecteds = additions.getOtherLicensingInformationDetecteds();
+        Set<OtherLicensingInformationDetected> deletionsOtherLicensingInformationDetecteds = deletions.getOtherLicensingInformationDetecteds();
+
+        int changeSize = deletionsOtherLicensingInformationDetecteds.size() + additionsOtherLicensingInformationDetecteds.size();
+
+        for (int i = 0; i < changeSize; i++) {
+
+            OtherLicensingInformationDetected otherLicensingDeletions = new OtherLicensingInformationDetected();
+            OtherLicensingInformationDetected otherLicensingAdditions = new OtherLicensingInformationDetected();
+            OtherLicensingInformationDetected otherLicensing = new OtherLicensingInformationDetected();
+            Iterator<OtherLicensingInformationDetected> otherLicensingsIterator = actual.getOtherLicensingInformationDetectedsIterator();
+            if (otherLicensingAdditionsIterator.hasNext()) {
+                otherLicensingAdditions = otherLicensingAdditionsIterator.next();
+                while (otherLicensingsIterator.hasNext()) {
+                    otherLicensing = otherLicensingsIterator.next();
+                    if (otherLicensingAdditions.getIndex() == otherLicensing.getIndex()) {
+                        break;
+                    } else {
+                        otherLicensing = new OtherLicensingInformationDetected();
+                    }
+                }
+                otherLicensing.setIndex(otherLicensingAdditions.getIndex());
+                otherLicensingDeletions.setIndex(otherLicensingAdditions.getIndex());
+
+            } else if (otherLicensingDeletionsIterator.hasNext()) {
+                otherLicensingDeletions = otherLicensingDeletionsIterator.next();
+                while (otherLicensingsIterator.hasNext()) {
+                    otherLicensing = otherLicensingsIterator.next();
+                    if (otherLicensingDeletions.getIndex() == otherLicensing.getIndex()) {
+                        break;
+                    }
+                }
+                otherLicensingAdditions.setIndex(otherLicensing.getIndex());
             }
 
             for (OtherLicensingInformationDetected._Fields field : OtherLicensingInformationDetected._Fields.values()) {
@@ -308,8 +417,8 @@ public class DisplaySPDXDocumentChanges extends UserAwareTag {
                 displaySimpleFieldOrSet(
                         display,
                         otherLicensing,
-                        otherLicensingAddition,
-                        otherLicensingDeletion,
+                        otherLicensingAdditions,
+                        otherLicensingDeletions,
                         field, fieldMetaData, "");
             }
         }
@@ -320,5 +429,39 @@ public class DisplaySPDXDocumentChanges extends UserAwareTag {
                 LanguageUtil.get(resourceBundle,"former.value"), LanguageUtil.get(resourceBundle,"suggested.value"))
                 + display.toString() + "</tbody></table>";
     }
+
+    // private String renderSnippetRange(SnippetRange actualSnippetRange, SnippetRange additionsSnippetRange, SnippetRange deletionsSnippetRange) {
+
+    //     if (deletionsSnippetRange.isSet(SnippetRange._Fields.CHECKSUM)
+    //         && !additionsSnippetRange.isSet(SnippetRange._Fields.CHECKSUM)) {
+    //         return "";
+    //     }
+
+    //     if (!actualSnippetRange.isSet(SnippetRange._Fields.CHECKSUM)) {
+    //         actualSnippetRange.checksum = new SnippetRange();
+    //         actualSnippetRange.checksum.algorithm = "";
+    //         actualSnippetRange.checksum.checksumValue = "";
+    //     }
+
+    //     if (!deletionsSnippetRange.isSet(SnippetRange._Fields.CHECKSUM)) {
+    //         deletionsSnippetRange.checksum = new SnippetRange();
+    //         deletionsSnippetRange.checksum.algorithm = "";
+    //         deletionsSnippetRange.checksum.checksumValue = "";
+    //     }
+
+    //     if (actualSnippetRange.checksum.algorithm.equals(additionsSnippetRange.checksum.algorithm)
+    //         && actualSnippetRange.checksum.checksumValue.equals(additionsSnippetRange.checksum.checksumValue)) {
+    //         return "";
+    //     }
+
+    //     String display = "<tr> <td>SnippetRange:</td> <td> <ul> <li>algorithm: "
+    //                 + actualSnippetRange.checksum.algorithm + "</li> <li>checksumValue: "
+    //                 + actualSnippetRange.checksum.checksumValue +  "</li> </ul> </td> <td> <li>algorithm: "
+    //                 + deletionsSnippetRange.checksum.algorithm + "</li> <li>checksumValue: </li>"
+    //                 + deletionsSnippetRange.checksum.checksumValue +  "</td> <td> <ul> <li>algorithm: "
+    //                 + additionsSnippetRange.checksum.algorithm + " </li> <li>checksumValue: "
+    //                 + additionsSnippetRange.checksum.checksumValue + "</li> </ul> </td> </tr>";
+    //     return display;
+    // }
 
 }
