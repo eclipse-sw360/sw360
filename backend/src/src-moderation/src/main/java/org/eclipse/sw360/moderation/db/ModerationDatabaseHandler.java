@@ -536,9 +536,10 @@ public class ModerationDatabaseHandler {
         addOrUpdate(request, user);
     }
 
-    private Set<String> getSPDXDocumentModerators(String department) {
+    private Set<String> getSPDXDocumentModerators(String department, String createdBy) {
         // Define moderators
         Set<String> moderators = new HashSet<>();
+        CommonUtils.add(moderators, createdBy);
         CommonUtils.addAll(moderators, getUsersAtLeast(UserGroup.ECC_ADMIN, department, false, true));
         CommonUtils.addAll(moderators, getUsersAtLeast(UserGroup.ADMIN));
         return moderators;
@@ -553,7 +554,7 @@ public class ModerationDatabaseHandler {
             return RequestStatus.FAILURE;
         }
         // Define moderators
-        Set<String> moderators = getSPDXDocumentModerators(user.getDepartment());
+        Set<String> moderators = getSPDXDocumentModerators(user.getDepartment(), dbSpdx.getCreatedBy());
         ModerationRequest request = createStubRequest(user, isDeleteRequest, spdx.getId(), moderators);
 
         // Set meta-data
@@ -576,7 +577,7 @@ public class ModerationDatabaseHandler {
             return RequestStatus.FAILURE;
         }
         // Define moderators
-        Set<String> moderators = getSPDXDocumentModerators(user.getDepartment());
+        Set<String> moderators = getSPDXDocumentModerators(user.getDepartment(), dbDocumentCreationInfo.getCreatedBy());
         ModerationRequest request = createStubRequest(user, isDeleteRequest, documentCreationInfo.getId(), moderators);
         // Set meta-data
         request.setDocumentType(DocumentType.SPDX_DOCUMENT_CREATION_INFO);
@@ -597,7 +598,7 @@ public class ModerationDatabaseHandler {
             return RequestStatus.FAILURE;
         }
         // Define moderators
-        Set<String> moderators = getSPDXDocumentModerators(user.getDepartment());
+        Set<String> moderators = getSPDXDocumentModerators(user.getDepartment(), dbPackageInfo.getCreatedBy());
         ModerationRequest request = createStubRequest(user, isDeleteRequest, packageInfo.getId(), moderators);
         // Set meta-data
         request.setDocumentType(DocumentType.SPDX_PACKAGE_INFO);

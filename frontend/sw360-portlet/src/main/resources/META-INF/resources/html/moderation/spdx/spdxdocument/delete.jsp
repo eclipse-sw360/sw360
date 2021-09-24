@@ -21,7 +21,7 @@
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 
 <jsp:useBean id="moderationRequest" class="org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest" scope="request"/>
-<jsp:useBean id="actual_SPDXDocument" class="org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocuments" scope="request" />
+<jsp:useBean id="actual_SPDXDocument" class="org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument" scope="request" />
 
 <core_rt:set var="spdxDocument" value="${actual_SPDXDocument}" scope="request"/>
 <div class="container" id="moderation-request-merge" data-document-type="<%=DocumentType.SPDXDOCUMENT%>">

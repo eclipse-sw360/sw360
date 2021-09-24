@@ -223,6 +223,14 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
       }
 
       function fillMultiOptionsField(inputTag, value, type = 'text') {
+        if (type == 'array' && value.length == 1) {
+          if (value[0].toUpperCase() == 'NONE' || value[0].toUpperCase() == 'NOASSERTION') {
+            $(inputTag).val('');
+            $(inputTag).parent().parent().find('input[value=' + value + ']').click();
+            return;
+          }
+        }
+
         if (!Array.isArray(value) && (value.toUpperCase() == 'NONE' || value.toUpperCase() == 'NOASSERTION')) {
           $(inputTag)[0].selectedIndex = 0;
           $(inputTag).parent().find('input').val('');
@@ -247,7 +255,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
 
       function fillArray(textarea, value) {
         if (Array.isArray(value)) {
-          $(textarea).val(value.join('\n'));
+          $(textarea).val(value.sort().join('\n'));
         } else {
           $(textarea).val('');
         }
@@ -271,7 +279,11 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
 
       function readMultiOptionField(inputTag, type = 'text') {
         if ($(inputTag).attr('disabled')) {
-          return $(inputTag).parent().parent().find('[type=radio]:checked').val();
+          if (type == 'array') {
+            return [$(inputTag).parent().parent().find('[type=radio]:checked').val()];
+          } else {
+            return $(inputTag).parent().parent().find('[type=radio]:checked').val();
+          }
         } else {
           switch (type) {
             case 'array':
@@ -292,7 +304,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
           result[i] = result[i].trim();
         }
 
-        return result.filter(function(e) { return e !== '' });
+        return result.filter(function(e) { return e !== '' }).sort();
       }
 
       function readAnnotator(typeTag) {
@@ -318,7 +330,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
 
         let localDate = new Date($(datePicker).val() + ' ' + $(timePicker).val());
 
-        return localDate.toISOString();
+        return localDate.toISOString().slice(0, -5) + 'Z';
       }
 
       function fillSelectbox(selectbox, num) {
@@ -339,7 +351,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         $('#referenceCategory').val(obj['referenceCategory']);
         $('#referenceCategory').change();
 
-        if (obj['referenceCategory'] == 'referenceCategory_security' || obj['referenceCategory'] == 'referenceCategory_packageManager') {
+        if (obj['referenceCategory'] == 'SECURITY' || obj['referenceCategory'] == 'PACKAGE-MANAGER') {
             $('#referenceType-1').val(obj['referenceType']);
         } else {
             $('#referenceType-2').val(obj['referenceType']);
@@ -365,6 +377,8 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
           fillArray('#excludedFiles', packageInformationObj.packageVerificationCode.excludedFiles);
         } else {
           $('#FilesAnalyzedFalse').click();
+          $('#verificationCodeValue').val('');
+          $('#excludedFiles').val('');
         }
         for (let i = 0; i < packageInformationObj.checksums.length; i++) {
           addSub($('.spdx-add-button-sub-checksum').first());
@@ -404,7 +418,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         packageInformationObj['originator'] = readMultiOptionField('#originatorType', 'annotator');
         packageInformationObj['downloadLocation'] = readMultiOptionField('#downloadLocationValue');
         packageInformationObj['filesAnalyzed'] = $('[name=_sw360_portlet_components_FILES_ANALYZED]:checked').val();
-        if (packageInformationObj['filesAnalyzed']) {
+        if (packageInformationObj['filesAnalyzed'] == 'true') {
           packageInformationObj['packageVerificationCode']['value'] = $('#verificationCodeValue').val().trim();
           packageInformationObj['packageVerificationCode']['excludedFiles'] = readArray('#excludedFiles');
         } else {
@@ -428,7 +442,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         packageInformationObj['licenseInfoFromFiles'] = readMultiOptionField('#licenseInfoFromFilesValue', 'array');
         packageInformationObj['licenseDeclared'] = readMultiOptionField('#licenseDeclaredValue');
         packageInformationObj['licenseComments'] = $('#licenseComments').val().trim();
-        packageInformationObj['copyrightText'] = $('#copyrightTextValue').val().trim();
+        packageInformationObj['copyrightText'] = readMultiOptionField('#copyrightTextValue');
         packageInformationObj['summary'] = $('#summary').val().trim();
         packageInformationObj['description'] = $('#description').val().trim();
         packageInformationObj['packageComment'] = $('#spdxPackageComment').val().trim();
@@ -444,7 +458,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
 
         obj['referenceCategory'] = $('#referenceCategory').val().trim();
 
-        if (obj['referenceCategory'] == 'referenceCategory_security' || obj['referenceCategory'] == 'referenceCategory_packageManager') {
+        if (obj['referenceCategory'] == 'SECURITY' || obj['referenceCategory'] == 'PACKAGE-MANAGER') {
           obj['referenceType'] = $('#referenceType-1').val().trim();
         } else {
           obj['referenceType'] = $('#referenceType-2').val().trim();

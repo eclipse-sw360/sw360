@@ -135,7 +135,7 @@ public class SpdxDocumentDatabaseHandler {
             return requestSummary.setRequestStatus(AddDocumentRequestStatus.DUPLICATE)
                             .setId(release.getSpdxId());
         }
-        spdx.setCreatedBy(user.getEmail());
+        spdx.setCreatedBy(release.getCreatedBy());
         SPDXDocumentRepository.add(spdx);
         String spdxId = spdx.getId();
         Release oldRelease  = release.deepCopy();
@@ -149,11 +149,15 @@ public class SpdxDocumentDatabaseHandler {
 
     public RequestStatus updateSPDXDocument(SPDXDocument spdx, User user) throws SW360Exception {
         prepareSPDXDocument(spdx);
-        if (!makePermission(spdx, user).isActionAllowed(RequestedAction.WRITE)) {
-            return moderator.updateSPDXDocument(spdx, user);
-        }
         SPDXDocument actual = SPDXDocumentRepository.get(spdx.getId());
         assertNotNull(actual, "Could not find SPDX Document to update!");
+        if (!makePermission(spdx, user).isActionAllowed(RequestedAction.WRITE)) {
+            if (isChanged(actual, spdx)) {
+                return moderator.updateSPDXDocument(spdx, user);
+            } else {
+                return RequestStatus.SUCCESS;
+            }
+        }
         SPDXDocumentRepository.update(spdx);
         dbHandlerUtil.addChangeLogs(spdx, actual, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, null);
         return RequestStatus.SUCCESS;
@@ -208,5 +212,20 @@ public class SpdxDocumentDatabaseHandler {
         }
         return RequestStatus.SUCCESS;
     }
+
+    private boolean isChanged(SPDXDocument actual, SPDXDocument update) {
+
+            for (SPDXDocument._Fields field : SPDXDocument._Fields.values()) {
+                if(update.getFieldValue(field) == null) {
+                    continue;
+                } else if (actual.getFieldValue(field) == null) {
+                    return true;
+                } else if (!actual.getFieldValue(field).equals(update.getFieldValue(field))) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
 }
