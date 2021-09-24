@@ -439,6 +439,7 @@ public class DisplaySPDXDocumentChanges extends UserAwareTag {
 
     private String renderSnippetRange(SnippetInformation actual, SnippetInformation additions, SnippetInformation deletions) {
         StringBuilder display = new StringBuilder();
+        display.append("<tr><td>snippetRange:</td></tr>");
         if (! actual.isSet(SnippetInformation._Fields.SNIPPET_RANGES)){
             actual.snippetRanges = new HashSet<>();
         }
@@ -491,17 +492,32 @@ public class DisplaySPDXDocumentChanges extends UserAwareTag {
                 }
                 creatorAdditions.setIndex(creator.getIndex());
             }
+            String render1 = "";
+            String render2 = "";
+            String render3 = "";
             for (SnippetRange._Fields field : SnippetRange._Fields.values()) {
-                FieldMetaData fieldMetaData = SnippetRange.metaDataMap.get(field);
-                displaySimpleFieldOrSet(
-                        display,
-                        creator,
-                        creatorAdditions,
-                        creatorDeletions,
-                        field, fieldMetaData, "");
+                if (!SnippetRange._Fields.INDEX.equals(field)) {
+                    render1 = render1 + "<li>" + field.getFieldName() + ": " + creator.getFieldValue(field) + "</li>";
+                }
             }
+            for (SnippetRange._Fields field : SnippetRange._Fields.values()) {
+                if (!SnippetRange._Fields.INDEX.equals(field)) {
+                    render2 = render2 + "<li>" + field.getFieldName() + ": " + creatorDeletions.getFieldValue(field) + "</li>";
+                }
+            }
+            for (SnippetRange._Fields field : SnippetRange._Fields.values()) {
+                if (!SnippetRange._Fields.INDEX.equals(field)) {
+                    render3 = render3 + "<li>" + field.getFieldName() + ": " + creatorAdditions.getFieldValue(field) + "</li>";
+                }
+            }
+
+            String renderTotal = "<tr><td></td><td> <ul>" + render1 + "</ul> </td> <td> <ul>"
+                                + render2 + "</ul> </td> <td> <ul>"
+                                + render3 + "</ul> </td> </tr>";
+            display.append(renderTotal);
         }
-        return "<tr> <td>snippetRanges:</td> </tr>" + display.toString();
+        System.out.println(display.toString());
+        return display.toString();
     }
 
 }
