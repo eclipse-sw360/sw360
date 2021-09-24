@@ -119,6 +119,7 @@ public class SpdxDocumentCreationInfoModerator
                     actual.setFieldValue(field, additions.getFieldValue(field));
                 }
             }
+            actuals.add(actual);
         }
         while (deletionsIterator.hasNext()) {
             ExternalDocumentReferences deletions = deletionsIterator.next();
@@ -148,6 +149,7 @@ public class SpdxDocumentCreationInfoModerator
                     actual.setFieldValue(field, additions.getFieldValue(field));
                 }
             }
+            actuals.add(actual);
         }
         while (deletionsIterator.hasNext()) {
             Creator deletions = deletionsIterator.next();

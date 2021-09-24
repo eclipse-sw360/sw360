@@ -17,6 +17,7 @@ import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.CheckSum;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReference;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageVerificationCode;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
@@ -25,6 +26,8 @@ import org.apache.logging.log4j.Logger;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+
+import com.github.andrewoma.dexx.collection.internal.base.Break;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
@@ -92,6 +95,9 @@ public class SpdxPackageInfoModerator extends Moderator<PackageInformation._Fiel
                 case ANNOTATIONS:
                     packageInfo = updateAnnotaions(packageInfo, packageInfoAdditions, packageInfoDeletions);
                     break;
+                case PACKAGE_VERIFICATION_CODE:
+                    packageInfo = updatePackageVerificationCode(packageInfo, packageInfoAdditions, packageInfoDeletions);
+                    break;
                 default:
                     packageInfo = updateBasicField(field, PackageInformation.metaDataMap.get(field), packageInfo, packageInfoAdditions, packageInfoDeletions);
             }
@@ -118,6 +124,7 @@ public class SpdxPackageInfoModerator extends Moderator<PackageInformation._Fiel
                     actual.setFieldValue(field, additions.getFieldValue(field));
                 }
             }
+            actuals.add(actual);
         }
         while (deletionsIterator.hasNext()) {
             Annotations deletions = deletionsIterator.next();
@@ -145,6 +152,7 @@ public class SpdxPackageInfoModerator extends Moderator<PackageInformation._Fiel
                     actual.setFieldValue(field, additions.getFieldValue(field));
                 }
             }
+            actuals.add(actual);
         }
         while (deletionsIterator.hasNext()) {
             CheckSum deletions = deletionsIterator.next();
@@ -172,6 +180,7 @@ public class SpdxPackageInfoModerator extends Moderator<PackageInformation._Fiel
                     actual.setFieldValue(field, additions.getFieldValue(field));
                 }
             }
+            actuals.add(actual);
         }
         while (deletionsIterator.hasNext()) {
             ExternalReference deletions = deletionsIterator.next();
@@ -181,6 +190,27 @@ public class SpdxPackageInfoModerator extends Moderator<PackageInformation._Fiel
         return packageInfo;
     }
 
+    private PackageInformation updatePackageVerificationCode(PackageInformation packageInfo, PackageInformation packageInfoAdditions, PackageInformation packageInfoDeletions) {
+        PackageVerificationCode actual = packageInfo.getPackageVerificationCode();
+        PackageVerificationCode additions = packageInfoAdditions.getPackageVerificationCode();
+        PackageVerificationCode deletions = packageInfoDeletions.getPackageVerificationCode();
+
+        if (additions == null && deletions == null) {
+            return packageInfo;
+        }
+        if (actual == null) {
+            actual = new PackageVerificationCode();
+        }
+
+        for (PackageVerificationCode._Fields field : PackageVerificationCode._Fields.values()) {
+            if (additions.isSet(field)) {
+                actual.setFieldValue(field, additions.getFieldValue(field));
+            }
+        }
+
+        packageInfo.setPackageVerificationCode(actual);
+        return packageInfo;
+    }
 
 }
 

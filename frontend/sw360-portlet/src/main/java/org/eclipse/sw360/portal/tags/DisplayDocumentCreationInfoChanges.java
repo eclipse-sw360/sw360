@@ -151,28 +151,55 @@ public class DisplayDocumentCreationInfoChanges extends UserAwareTag {
         if (! actual.isSet(DocumentCreationInformation._Fields.EXTERNAL_DOCUMENT_REFS)){
             actual.externalDocumentRefs = new HashSet<>();
         }
-        Iterator<ExternalDocumentReferences> externalDocumentRefsAdditionsIterator = additions.getExternalDocumentRefsIterator();
+
         Iterator<ExternalDocumentReferences> externalDocumentRefsDeletionsIterator = deletions.getExternalDocumentRefsIterator();
-        for (ExternalDocumentReferences externalDocumentRefs : actual.getExternalDocumentRefs()) {
-            ExternalDocumentReferences externalDocumentRefsAdditions = new ExternalDocumentReferences();
+        Iterator<ExternalDocumentReferences> externalDocumentRefsAdditionsIterator = additions.getExternalDocumentRefsIterator();
+        Set<ExternalDocumentReferences> additionsExternalDocumentRefs = additions.getExternalDocumentRefs();
+        Set<ExternalDocumentReferences> deletionsExternalDocumentRefs = deletions.getExternalDocumentRefs();
+
+        int changeSize = deletionsExternalDocumentRefs.size() + additionsExternalDocumentRefs.size();
+
+        for (int i = 0; i < changeSize; i++) {
+
+            ExternalDocumentReferences externalDocumentRefDeletions = new ExternalDocumentReferences();
+            ExternalDocumentReferences externalDocumentRefAdditions = new ExternalDocumentReferences();
+            ExternalDocumentReferences externalDocumentRef = new ExternalDocumentReferences();
+            Iterator<ExternalDocumentReferences> ExternalDocumentRefsIterator = actual.getExternalDocumentRefsIterator();
             if (externalDocumentRefsAdditionsIterator.hasNext()) {
-                externalDocumentRefsAdditions = externalDocumentRefsAdditionsIterator.next();
+                externalDocumentRefAdditions = externalDocumentRefsAdditionsIterator.next();
+                while (ExternalDocumentRefsIterator.hasNext()) {
+                    externalDocumentRef = ExternalDocumentRefsIterator.next();
+                    if (externalDocumentRefAdditions.getIndex() == externalDocumentRef.getIndex()) {
+                        break;
+                    } else {
+                        externalDocumentRef = new ExternalDocumentReferences();
+                    }
+                }
+                externalDocumentRef.setIndex(externalDocumentRefAdditions.getIndex());
+                externalDocumentRefDeletions.setIndex(externalDocumentRefAdditions.getIndex());
+
+            } else if (externalDocumentRefsDeletionsIterator.hasNext()) {
+                externalDocumentRefDeletions = externalDocumentRefsDeletionsIterator.next();
+                while (ExternalDocumentRefsIterator.hasNext()) {
+                    externalDocumentRef = ExternalDocumentRefsIterator.next();
+                    if (externalDocumentRefDeletions.getIndex() == externalDocumentRef.getIndex()) {
+                        break;
+                    }
+                }
+                externalDocumentRefAdditions.setIndex(externalDocumentRef.getIndex());
             }
-            ExternalDocumentReferences externalDocumentRefsDeletions = new ExternalDocumentReferences();
-            if (externalDocumentRefsDeletionsIterator.hasNext()) {
-                externalDocumentRefsDeletions = externalDocumentRefsDeletionsIterator.next();
-            }
+
             String checkSumRendeString = null;
             for (ExternalDocumentReferences._Fields field : ExternalDocumentReferences._Fields.values()) {
                 FieldMetaData fieldMetaData = ExternalDocumentReferences.metaDataMap.get(field);
                 if (field == ExternalDocumentReferences._Fields.CHECKSUM) {
-                    checkSumRendeString = renderCheckSum(externalDocumentRefs, externalDocumentRefsAdditions, externalDocumentRefsDeletions);
+                    checkSumRendeString = renderCheckSum(externalDocumentRef, externalDocumentRefAdditions, externalDocumentRefDeletions);
                 } else {
                     displaySimpleFieldOrSet(
                             display,
-                            externalDocumentRefs,
-                            externalDocumentRefsAdditions,
-                            externalDocumentRefsDeletions,
+                            externalDocumentRef,
+                            externalDocumentRefAdditions,
+                            externalDocumentRefDeletions,
                             field, fieldMetaData, "");
                 }
             }
@@ -198,20 +225,42 @@ public class DisplayDocumentCreationInfoChanges extends UserAwareTag {
         if (! actual.isSet(DocumentCreationInformation._Fields.CREATOR)){
             actual.creator = new HashSet<>();
         }
-        Iterator<Creator> creatorAdditionsIterator = additions.getCreatorIterator();
+
         Iterator<Creator> creatorDeletionsIterator = deletions.getCreatorIterator();
-        Set<Creator> creators = actual.getCreator();
-        while(creators.size() < additions.getCreatorSize()) {
-            creators.add(new Creator());
-        }
-        for (Creator creator : creators) {
+        Iterator<Creator> creatorAdditionsIterator = additions.getCreatorIterator();
+        Set<Creator> additionsCreators = additions.getCreator();
+        Set<Creator> deletionsCreators = deletions.getCreator();
+
+        int changeSize = deletionsCreators.size() + additionsCreators.size();
+
+        for (int i = 0; i < changeSize; i++) {
+
+            Creator creatorDeletions = new Creator();
             Creator creatorAdditions = new Creator();
+            Creator creator = new Creator();
+            Iterator<Creator> creatorsIterator = actual.getCreatorIterator();
             if (creatorAdditionsIterator.hasNext()) {
                 creatorAdditions = creatorAdditionsIterator.next();
-            }
-            Creator creatorDeletions = new Creator();
-            if (creatorDeletionsIterator.hasNext()) {
+                while (creatorsIterator.hasNext()) {
+                    creator = creatorsIterator.next();
+                    if (creatorAdditions.getIndex() == creator.getIndex()) {
+                        break;
+                    } else {
+                        creator = new Creator();
+                    }
+                }
+                creator.setIndex(creatorAdditions.getIndex());
+                creatorDeletions.setIndex(creatorAdditions.getIndex());
+
+            } else if (creatorDeletionsIterator.hasNext()) {
                 creatorDeletions = creatorDeletionsIterator.next();
+                while (creatorsIterator.hasNext()) {
+                    creator = creatorsIterator.next();
+                    if (creatorDeletions.getIndex() == creator.getIndex()) {
+                        break;
+                    }
+                }
+                creatorAdditions.setIndex(creator.getIndex());
             }
             for (Creator._Fields field : Creator._Fields.values()) {
                 FieldMetaData fieldMetaData = Creator.metaDataMap.get(field);
@@ -235,6 +284,23 @@ public class DisplayDocumentCreationInfoChanges extends UserAwareTag {
 
         if (deletionsChecsum.isSet(ExternalDocumentReferences._Fields.CHECKSUM)
             && !additionsChecsum.isSet(ExternalDocumentReferences._Fields.CHECKSUM)) {
+            return "";
+        }
+
+        if (!actualChecsum.isSet(ExternalDocumentReferences._Fields.CHECKSUM)) {
+            actualChecsum.checksum = new CheckSum();
+            actualChecsum.checksum.algorithm = "";
+            actualChecsum.checksum.checksumValue = "";
+        }
+
+        if (!deletionsChecsum.isSet(ExternalDocumentReferences._Fields.CHECKSUM)) {
+            deletionsChecsum.checksum = new CheckSum();
+            deletionsChecsum.checksum.algorithm = "";
+            deletionsChecsum.checksum.checksumValue = "";
+        }
+
+        if (actualChecsum.checksum.algorithm.equals(additionsChecsum.checksum.algorithm)
+            && actualChecsum.checksum.checksumValue.equals(additionsChecsum.checksum.checksumValue)) {
             return "";
         }
 
