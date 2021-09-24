@@ -108,9 +108,9 @@
 		<tr>
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1">2.8 Creator</div>
-				<div class="spdx-col-2">
+				<div class="spdx-col-2" id="creators">
 					<core_rt:forEach items="${creators}" var="creatorData" varStatus="loop">
-						<div class="spdx-flex-row">
+						<div class="spdx-flex-row creator" data-index="${creatorData.index}">
 							<div class="spdx-col-1 spdx-key">
 								<sw360:out value="${creatorData.type}" />
 							</div>
@@ -798,6 +798,12 @@
 </style>
 
 <script type="text/javascript">
+	function sortElements(parent, elements) {
+		for (let i = 0; i < elements.length; i++) {
+			$(parent).find('[data-index=' + i + ']').appendTo($(parent));
+		}
+	}
+
 	$(function () {
 		$('#spdxFullMode').on('click', function (e) {
 			e.preventDefault();
@@ -837,6 +843,8 @@
 				$(this).attr('disabled', 'true');
 			}
 		});
+
+		sortElements('#creators', $('.creator').toArray());
 
 		$('.spdx-table select').change();
 	});
