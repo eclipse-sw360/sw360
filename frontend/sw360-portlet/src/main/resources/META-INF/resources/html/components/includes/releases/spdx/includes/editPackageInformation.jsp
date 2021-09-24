@@ -422,10 +422,10 @@
               <select style="width: auto; flex: auto;" id="referenceCategory" type="text"
                 class="form-control" placeholder="Enter Category"
                 name="_sw360_portlet_components_REFERENCE_CATEGORY">
-                <option value="referenceCategory_security">SECURITY</option>
-                <option value="referenceCategory_packageManager">PACKAGE-MANAGER</option>
-                <option value="referenceCategory_persistentId">PERSISTENT-ID</option>
-                <option value="referenceCategory_other">OTHER</option>
+                <option value="SECURITY">SECURITY</option>
+                <option value="PACKAGE-MANAGER">PACKAGE-MANAGER</option>
+                <option value="PERSISTENT-ID">PERSISTENT-ID</option>
+                <option value="OTHER">OTHER</option>
               </select>
             </div>
             <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
