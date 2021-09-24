@@ -114,7 +114,6 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
     public AddDocumentRequestSummary addDocumentCreationInformation(DocumentCreationInformation documentCreationInfo, User user) throws SW360Exception {
         AddDocumentRequestSummary requestSummary= new AddDocumentRequestSummary();
         prepareSpdxDocumentCreationInfo(documentCreationInfo);
-        documentCreationInfo.setCreatedBy(user.getEmail());
         String spdxDocumentId = documentCreationInfo.getSpdxDocumentId();
         SPDXDocument spdxDocument = SPDXDocumentRepository.get(spdxDocumentId);
         assertNotNull(spdxDocument, "Could not find SPDX Document to add SPDX Document Creation Info!");
@@ -123,6 +122,7 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
             return requestSummary.setRequestStatus(AddDocumentRequestStatus.DUPLICATE)
                             .setId(spdxDocumentId);
         }
+        documentCreationInfo.setCreatedBy(spdxDocument.getCreatedBy());
         SPDXDocumentCreationInfoRepository.add(documentCreationInfo);
         String documentCreationInfoId = documentCreationInfo.getId();
         SPDXDocument oldSpdxDocument = spdxDocument.deepCopy();

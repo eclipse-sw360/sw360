@@ -146,7 +146,7 @@ public class SpdxPackageInfoDatabaseHandler {
         }
         for (PackageInformation packageInfo : packageInfos) {
             prepareSpdxPackageInfo(packageInfo);
-            packageInfo.setCreatedBy(user.getEmail());
+            packageInfo.setCreatedBy(spdxDocument.getCreatedBy());
             PackageInfoRepository.add(packageInfo);
             packageInfoIds.add(packageInfo.getId());
             dbHandlerUtil.addChangeLogs(packageInfo, null, user.getEmail(), Operation.CREATE, null, Lists.newArrayList(), null, null);
