@@ -156,6 +156,7 @@
     documentCreationInformationObj.externalDocumentRefs.sort(spdxjs.dynamicSort('index', 'int'));
     documentCreationInformationObj.creator.sort(spdxjs.dynamicSort('index', 'int'));
     packageInformationObj.checksums.sort(spdxjs.dynamicSort('index', 'int'));
+    packageInformationObj.externalRefs.sort(spdxjs.dynamicSort('index', 'int'));
     packageInformationObj.annotations.sort(spdxjs.dynamicSort('index', 'int'));
     function initDocumentCreation() {
       if (documentCreationInformationObj['spdxVersion'].startsWith('SPDX-')) {
@@ -533,7 +534,11 @@
     });
     $('[name=add-externalRef]').on('click', function(e) {
       e.preventDefault();
-      let newObj = { 'referenceCategory': 'SECURITY', 'referenceLocator': '', 'referenceType': 'cpe22Type', 'comment': '' };
+      let index = 0;
+      if (packageInformationObj.externalRefs.length > 0) {
+        index = parseInt(packageInformationObj.externalRefs[packageInformationObj.externalRefs.length - 1].index) + 1;
+      }
+      let newObj = { 'referenceCategory': 'SECURITY', 'referenceLocator': '', 'referenceType': 'cpe22Type', 'comment': '', 'index': index };
       packageInformationObj.externalRefs.push(newObj);
       spdxjs.addMain($(this));
       $('#externalReferences').change();
