@@ -298,7 +298,7 @@
                     'question-circle',
                     '<liferay-ui:message key="export.sbom" />',
                     '<p><liferay-ui:message key="no.warning.error.export.sbom" />' +
-                    '<p style="display: none;"><liferay-ui:message key="export.sbom.have.some.warining" />:' +
+                    '<p style="display: none;"><liferay-ui:message key="export.sbom.have.some.warning" />:' +
                     '<p style="display: none;"><liferay-ui:message key="export.sbom.have.some.error" />:' +
                     '<div style="display: none;" class="alert alert-warning" id="verifySPDX"></div>',
                     '<liferay-ui:message key="export" />',
