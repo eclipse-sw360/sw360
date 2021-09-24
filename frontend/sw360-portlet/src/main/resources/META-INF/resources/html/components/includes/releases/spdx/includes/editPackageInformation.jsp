@@ -67,7 +67,7 @@
               <input class="spdx-radio" type="radio" name="_sw360_portlet_components_SUPPLIER"
                 value="EXIST">
               <select id="supplierType" style="flex: 2; margin-right: 1rem;" class="form-control">
-                <option selected>Organization</option>
+                <option>Organization</option>
                 <option>Person</option>
               </select>
               <input style="flex: 6; margin-right: 1rem;" id="supplierValue"
@@ -93,8 +93,8 @@
               <input class="spdx-radio" type="radio" name="_sw360_portlet_components_ORIGINATOR"
                 value="EXIST">
               <select id="originatorType" style="flex: 2; margin-right: 1rem;" class="form-control">
-                <option>Person</option>
                 <option>Organization</option>
+                <option>Person</option>
               </select>
               <input style="flex: 6; margin-right: 1rem;" class="form-control" id="originatorValue"
                 type="text" name="_sw360_portlet_components_ORIGINATOR_VALUE"

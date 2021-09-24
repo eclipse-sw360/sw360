@@ -302,7 +302,7 @@
       if (source.length > 0) {
         index = parseInt(source[source.length - 1].index) + 1;
       }
-      let newObj = { 'annotator': '', 'annotationDate': '', 'annotationType': '', 'annotationComment': '', 'spdxRef': '', 'index': index };
+      let newObj = { 'annotator': '', 'annotationDate': '', 'annotationType': '', 'annotationComment': '', 'spdxIdRef': '', 'index': index };
       source.push(newObj);
       spdxjs.addMain($(this));
       $('#selectAnnotation').change();
@@ -342,7 +342,7 @@
     }
     obj['annotationDate'] = spdxjs.readDateTime('#annotationCreatedDate', '#annotationCreatedTime');
     obj['annotationType'] = $('#annotationType').val().trim();
-    obj['spdxRef'] = $('#spdxIdRef').val().trim();
+    obj['spdxIdRef'] = $('#spdxIdRef').val().trim();
     obj['annotationComment'] = $('#annotationComment').val().trim();
   }
   function initOtherLicensing() {
