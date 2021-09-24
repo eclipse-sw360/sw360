@@ -124,6 +124,7 @@ public class SpdxPackageInfoModerator extends Moderator<PackageInformation._Fiel
                     actual.setFieldValue(field, additions.getFieldValue(field));
                 }
             }
+            actuals.add(actual);
         }
         while (deletionsIterator.hasNext()) {
             Annotations deletions = deletionsIterator.next();
@@ -151,6 +152,7 @@ public class SpdxPackageInfoModerator extends Moderator<PackageInformation._Fiel
                     actual.setFieldValue(field, additions.getFieldValue(field));
                 }
             }
+            actuals.add(actual);
         }
         while (deletionsIterator.hasNext()) {
             CheckSum deletions = deletionsIterator.next();
@@ -178,6 +180,7 @@ public class SpdxPackageInfoModerator extends Moderator<PackageInformation._Fiel
                     actual.setFieldValue(field, additions.getFieldValue(field));
                 }
             }
+            actuals.add(actual);
         }
         while (deletionsIterator.hasNext()) {
             ExternalReference deletions = deletionsIterator.next();

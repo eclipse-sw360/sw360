@@ -146,6 +146,7 @@ public class SpdxDocumentModerator extends Moderator<SPDXDocument._Fields, SPDXD
                     actual.setFieldValue(field, additions.getFieldValue(field));
                 }
             }
+            actuals.add(actual);
         }
         while (deletionsIterator.hasNext()) {
             RelationshipsBetweenSPDXElements deletions = deletionsIterator.next();
@@ -173,6 +174,7 @@ public class SpdxDocumentModerator extends Moderator<SPDXDocument._Fields, SPDXD
                     actual.setFieldValue(field, additions.getFieldValue(field));
                 }
             }
+            actuals.add(actual);
         }
         while (deletionsIterator.hasNext()) {
             Annotations deletions = deletionsIterator.next();
@@ -200,6 +202,7 @@ public class SpdxDocumentModerator extends Moderator<SPDXDocument._Fields, SPDXD
                     actual.setFieldValue(field, additions.getFieldValue(field));
                 }
             }
+            actuals.add(actual);
         }
         while (deletionsIterator.hasNext()) {
             SnippetInformation deletions = deletionsIterator.next();
