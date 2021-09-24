@@ -209,8 +209,8 @@ public class SpdxBOMExporter {
             for (SpdxSnippet spdxSnippet : spdxSnippets) {
                 spdxDocument.getDocumentContainer().addElement(spdxSnippet);
             }
-            spdxDocument.setRelationships(spdxRelationships);
             spdxDocument.setAnnotations(spdxAnnotations);
+            spdxDocument.setRelationships(spdxRelationships);
         } catch (Exception e) {
             log.error("Error setSPDXDocument: " +e);
         }
@@ -290,25 +290,35 @@ public class SpdxBOMExporter {
             // relatedSpdxElement.setId(sw360Relationship.getSpdxElementId());
             
             RelationshipType relationshipType;
-            relationshipType = RelationshipType.fromString(sw360Relationship.getRelationshipType());
-        
+            relationshipType = RelationshipType.fromTag(sw360Relationship.getRelationshipType());
             String comment = sw360Relationship.getRelationshipComment();
 
             if (relationshipType == Relationship.RelationshipType.DESCRIBES && checkIsPackageInfo == false) {
-                SpdxPackage relatedSpdxPackage = new SpdxPackage(sw360Relationship.getRelatedSpdxElement(), null,null, null, 
+                SpdxPackage relatedSpdxPackage = new SpdxPackage(sw360Relationship.getRelatedSpdxElement(), null,null, null,
                 null, null, null, null, null, null,null, null, null, null, null, null, null, null, null, null, null, true, null);
                 try {
                     createSpdxPackageInfoFromSw360PackageInfo(relatedSpdxPackage, SPDXDocId);
                 } catch (SW360Exception | URISyntaxException e) {
                     e.printStackTrace();
                 }
-
                 Relationship relationship = new Relationship(relatedSpdxPackage, relationshipType, comment);
-                
                 spdxRelationships.add(relationship);
                 checkIsPackageInfo = true;
+            } else if (sw360Relationship.getSpdxElementId().equals("SPDXRef-Package")) {
+                SpdxPackage relatedSpdxPackage = new SpdxPackage(sw360Relationship.getRelatedSpdxElement(), null,null, null,
+                null, null, null, null, null, null,null, null, null, null, null, null, null, null, null, null, null, true, null);
+                relatedSpdxPackage.setId(sw360Relationship.getSpdxElementId());
+                Relationship relationship = new Relationship(relatedSpdxPackage, relationshipType, comment);
+                spdxRelationships.add(relationship);
+            } else if (sw360Relationship.getSpdxElementId().equals("SPDXRef-File")) {
+                SpdxFile relatedSpdxElement = new SpdxFile(sw360Relationship.getRelatedSpdxElement(), null, null, null, null, null, null,
+                null, null, null, null, null, null);
+                relatedSpdxElement.setId(sw360Relationship.getSpdxElementId());
+                Relationship relationship = new Relationship(relatedSpdxElement, relationshipType, comment);
+                spdxRelationships.add(relationship);
             } else {
                 SpdxElement relatedSpdxElement = new SpdxElement(sw360Relationship.getRelatedSpdxElement(), null, null, null);
+                relatedSpdxElement.setId(sw360Relationship.getSpdxElementId());
                 Relationship relationship = new Relationship(relatedSpdxElement, relationshipType, comment);
                 spdxRelationships.add(relationship);
             }
