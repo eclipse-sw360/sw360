@@ -231,21 +231,25 @@ public class SpdxBOMExporter {
             null, null, null, null, null, null);
             snippet.setSnippetFromFile(spdxSnippetFromFile);
 
-            StartEndPointer spdxByteRange;
-            Integer OFFSET1_1 = new Integer(new ArrayList<>(sw360SnippetInfo.getSnippetRanges()).get(0).getStartPointer());
-            Integer OFFSET1_2 = new Integer(new ArrayList<>(sw360SnippetInfo.getSnippetRanges()).get(0).getEndPointer());
-            ByteOffsetPointer BOP_POINTER1_1 = new ByteOffsetPointer(spdxSnippetFromFile, OFFSET1_1);
-            ByteOffsetPointer BOP_POINTER1_2 = new ByteOffsetPointer(spdxSnippetFromFile, OFFSET1_2);
-            spdxByteRange = new StartEndPointer(BOP_POINTER1_1, BOP_POINTER1_2);
-            snippet.setByteRange(spdxByteRange);
-
-            StartEndPointer spdxLineRange;
-            Integer LINE1_1 = new Integer(new ArrayList<>(sw360SnippetInfo.getSnippetRanges()).get(1).getStartPointer());
-            Integer LINE1_2 = new Integer(new ArrayList<>(sw360SnippetInfo.getSnippetRanges()).get(1).getEndPointer());
-            LineCharPointer LCP_POINTER1_1 = new LineCharPointer(spdxSnippetFromFile, LINE1_1);
-            LineCharPointer LCP_POINTER1_2 = new LineCharPointer(spdxSnippetFromFile, LINE1_2);
-            spdxLineRange = new StartEndPointer(LCP_POINTER1_1, LCP_POINTER1_2);
-            snippet.setLineRange(spdxLineRange);
+            for (SnippetRange range : sw360SnippetInfo.getSnippetRanges()) {
+                if (range.getRangeType().equals("BYTE")) {
+                    StartEndPointer spdxByteRange;
+                    Integer OFFSET1_1 = Integer.parseInt(range.getStartPointer());
+                    Integer OFFSET1_2 = Integer.parseInt(range.getEndPointer());
+                    ByteOffsetPointer BOP_POINTER1_1 = new ByteOffsetPointer(spdxSnippetFromFile, OFFSET1_1);
+                    ByteOffsetPointer BOP_POINTER1_2 = new ByteOffsetPointer(spdxSnippetFromFile, OFFSET1_2);
+                    spdxByteRange = new StartEndPointer(BOP_POINTER1_1, BOP_POINTER1_2);
+                    snippet.setByteRange(spdxByteRange);
+                } else {
+                    StartEndPointer spdxLineRange;
+                    Integer LINE1_1 = Integer.parseInt(range.getStartPointer());
+                    Integer LINE1_2 = Integer.parseInt(range.getEndPointer());
+                    LineCharPointer LCP_POINTER1_1 = new LineCharPointer(spdxSnippetFromFile, LINE1_1);
+                    LineCharPointer LCP_POINTER1_2 = new LineCharPointer(spdxSnippetFromFile, LINE1_2);
+                    spdxLineRange = new StartEndPointer(LCP_POINTER1_1, LCP_POINTER1_2);
+                    snippet.setLineRange(spdxLineRange);
+                }
+            }
 
             ExtractedLicenseInfo spdxlicenseConcluded = new ExtractedLicenseInfo(sw360SnippetInfo.getLicenseConcluded(), "");
             snippet.setLicenseConcluded(existedLicense(spdxlicenseConcluded));
