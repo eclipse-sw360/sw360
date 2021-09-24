@@ -225,7 +225,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
       function fillMultiOptionsField(inputTag, value, type = 'text') {
         if (type == 'array' && value.length == 1) {
           if (value[0].toUpperCase() == 'NONE' || value[0].toUpperCase() == 'NOASSERTION') {
-            $('#licenseInfoFromFilesValue').val('')
+            $(inputTag).val('');
             $(inputTag).parent().parent().find('input[value=' + value + ']').click();
             return;
           }
@@ -234,6 +234,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         if (!Array.isArray(value) && (value.toUpperCase() == 'NONE' || value.toUpperCase() == 'NOASSERTION')) {
           $(inputTag)[0].selectedIndex = 0;
           $(inputTag).parent().find('input').val('');
+          $(inputTag).parent().find('textarea').val('');
           $(inputTag).parent().parent().find('input[value=' + value + ']').click();
         } else {
           switch (type) {
@@ -376,6 +377,8 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
           fillArray('#excludedFiles', packageInformationObj.packageVerificationCode.excludedFiles);
         } else {
           $('#FilesAnalyzedFalse').click();
+          $('#verificationCodeValue').val('');
+          $('#excludedFiles').val('');
         }
         for (let i = 0; i < packageInformationObj.checksums.length; i++) {
           addSub($('.spdx-add-button-sub-checksum').first());
@@ -415,7 +418,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         packageInformationObj['originator'] = readMultiOptionField('#originatorType', 'annotator');
         packageInformationObj['downloadLocation'] = readMultiOptionField('#downloadLocationValue');
         packageInformationObj['filesAnalyzed'] = $('[name=_sw360_portlet_components_FILES_ANALYZED]:checked').val();
-        if (packageInformationObj['filesAnalyzed']) {
+        if (packageInformationObj['filesAnalyzed'] == 'true') {
           packageInformationObj['packageVerificationCode']['value'] = $('#verificationCodeValue').val().trim();
           packageInformationObj['packageVerificationCode']['excludedFiles'] = readArray('#excludedFiles');
         } else {
@@ -439,7 +442,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         packageInformationObj['licenseInfoFromFiles'] = readMultiOptionField('#licenseInfoFromFilesValue', 'array');
         packageInformationObj['licenseDeclared'] = readMultiOptionField('#licenseDeclaredValue');
         packageInformationObj['licenseComments'] = $('#licenseComments').val().trim();
-        packageInformationObj['copyrightText'] = $('#copyrightTextValue').val().trim();
+        packageInformationObj['copyrightText'] = readMultiOptionField('#copyrightTextValue');
         packageInformationObj['summary'] = $('#summary').val().trim();
         packageInformationObj['description'] = $('#description').val().trim();
         packageInformationObj['packageComment'] = $('#spdxPackageComment').val().trim();
