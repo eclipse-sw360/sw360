@@ -14,6 +14,7 @@ import com.google.common.collect.Sets;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -37,7 +38,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.closeQuietly;
@@ -49,6 +53,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.closeQuietly;
 public class CLIParser extends AbstractCLIParser {
 
     private static final Logger log = LogManager.getLogger(CLIParser.class);
+    private static final String COPYRIGHTS_CONTENT_XPATH = "/ComponentLicenseInformation/Copyright";
     private static final String COPYRIGHTS_XPATH = "/ComponentLicenseInformation/Copyright/Content";
     private static final String LICENSES_XPATH = "/ComponentLicenseInformation/License";
     private static final String OBLIGATIONS_XPATH = "/ComponentLicenseInformation/Obligation";
@@ -71,7 +76,41 @@ public class CLIParser extends AbstractCLIParser {
     }
 
     @Override
-    public <T> List<LicenseInfoParsingResult> getLicenseInfos(Attachment attachment, User user, T context) throws TException {
+    public <T> List<LicenseInfoParsingResult> getLicenseInfos(Attachment attachment, User user, T context,
+            boolean includeFilesHash) throws TException {
+        return getLicenseInfosDelegated(attachment, user, context, includeFilesHash);
+    }
+
+    @Override
+    public <T> List<LicenseInfoParsingResult> getLicenseInfos(Attachment attachment, User user, T context)
+            throws TException {
+        return getLicenseInfosDelegated(attachment, user, context, false);
+    }
+
+    @Override
+    public <T> ObligationParsingResult getObligations(Attachment attachment, User user, T context) throws TException {
+        AttachmentContent attachmentContent = attachmentContentProvider.getAttachmentContent(attachment);
+        ObligationParsingResult result = new ObligationParsingResult();
+
+        InputStream attachmentStream = null;
+
+        try {
+            attachmentStream = attachmentConnector.getAttachmentStream(attachmentContent, user, context);
+            Document doc = getDocument(attachmentStream);
+            result.setSha1Hash(getSha1Hash(doc));
+            result.setObligationsAtProject(getObligations(doc));
+            result.setAttachmentContentId(attachment.getAttachmentContentId());
+            result.setStatus(ObligationInfoRequestStatus.SUCCESS);
+        } catch (ParserConfigurationException | IOException | XPathExpressionException | SAXException | SW360Exception e) {
+            log.error(e);
+            result.setStatus(ObligationInfoRequestStatus.FAILURE).setMessage("Error while parsing CLI file: " + e.toString());
+        } finally {
+            closeQuietly(attachmentStream, log);
+        }
+        return result;
+    }
+
+    private <T> List<LicenseInfoParsingResult> getLicenseInfosDelegated(Attachment attachment, User user, T context, boolean includeFilesHash) throws TException {
         AttachmentContent attachmentContent = attachmentContentProvider.getAttachmentContent(attachment);
         LicenseInfo licenseInfo = new LicenseInfo().setFilenames(Arrays.asList(attachmentContent.getFilename()));
         LicenseInfoParsingResult result = new LicenseInfoParsingResult().setLicenseInfo(licenseInfo);
@@ -81,10 +120,16 @@ public class CLIParser extends AbstractCLIParser {
             attachmentStream = attachmentConnector.getAttachmentStream(attachmentContent, user, context);
             Document doc = getDocument(attachmentStream);
 
-            Set<String> copyrights = getCopyrights(doc);
-            licenseInfo.setCopyrights(copyrights);
+            if (includeFilesHash) {
+                Map<String, Set<String>> copyrightsWithFileHash = getCopyrightsWithFileHash(doc);
+                licenseInfo.setCopyrights(copyrightsWithFileHash.keySet());
+                licenseInfo.setCopyrightsWithFilesHash(copyrightsWithFileHash);
+            } else {
+                Set<String> copyrights = getCopyrights(doc);
+                licenseInfo.setCopyrights(copyrights);
+            }
 
-            licenseInfo.setLicenseNamesWithTexts(getLicenseNameWithTexts(doc));
+            licenseInfo.setLicenseNamesWithTexts(getLicenseNameWithTexts(doc, includeFilesHash));
 
             licenseInfo.setSha1Hash(getSha1Hash(doc));
             licenseInfo.setComponentName(getComponent(doc));
@@ -99,43 +144,45 @@ public class CLIParser extends AbstractCLIParser {
         }
         return Collections.singletonList(result);
     }
-
-    @Override
-    public <T> ObligationParsingResult getObligations(Attachment attachment, User user, T context) throws TException {
-        AttachmentContent attachmentContent = attachmentContentProvider.getAttachmentContent(attachment);
-        ObligationParsingResult result = new ObligationParsingResult();
-
-        InputStream attachmentStream = null;
-
-        try {
-            attachmentStream = attachmentConnector.getAttachmentStream(attachmentContent, user, context);
-            Document doc = getDocument(attachmentStream);
-
-            result.setObligationsAtProject(getObligations(doc));
-            result.setAttachmentContentId(attachment.getAttachmentContentId());
-            result.setStatus(ObligationInfoRequestStatus.SUCCESS);
-        } catch (ParserConfigurationException | IOException | XPathExpressionException | SAXException | SW360Exception e) {
-            log.error(e);
-            result.setStatus(ObligationInfoRequestStatus.FAILURE).setMessage("Error while parsing CLI file: " + e.toString());
-        } finally {
-            closeQuietly(attachmentStream, log);
-        }
-        return result;
-    }
-
     private List<ObligationAtProject> getObligations(Document doc) throws XPathExpressionException {
         NodeList obligationNodes = getNodeListByXpath(doc, OBLIGATIONS_XPATH);
         return nodeListToObligationList(obligationNodes);
     }
 
-    private Set<LicenseNameWithText> getLicenseNameWithTexts(Document doc) throws XPathExpressionException {
+    private Set<LicenseNameWithText> getLicenseNameWithTexts(Document doc, boolean includeFilesHash) throws XPathExpressionException {
         NodeList licenseNodes = getNodeListByXpath(doc, LICENSES_XPATH);
-        return nodeListToLicenseNamesWithTextsSet(licenseNodes);
+        return nodeListToLicenseNamesWithTextsSet(licenseNodes, includeFilesHash);
     }
 
     private Set<String> getCopyrights(Document doc) throws XPathExpressionException {
         NodeList copyrightNodes = getNodeListByXpath(doc, COPYRIGHTS_XPATH);
         return nodeListToStringSet(copyrightNodes);
+    }
+
+    private Map<String, Set<String>> getCopyrightsWithFileHash(Document doc) throws XPathExpressionException {
+        NodeList copyrightNodes = getNodeListByXpath(doc, COPYRIGHTS_CONTENT_XPATH);
+
+        Map<String, Set<String>> copyrightMap = new HashMap<String, Set<String>>();
+        for (int i = 0; i < copyrightNodes.getLength(); i++) {
+            Map<String, Set<String>> copyrightWithFileHash = getCopyrightWithFileHash(copyrightNodes.item(i));
+            copyrightMap.putAll(copyrightWithFileHash);
+        }
+        return copyrightMap;
+    }
+
+    protected Map<String, Set<String>> getCopyrightWithFileHash(Node node) {
+        Set<String> filesHash = new HashSet<String>();
+        String sourceFilesHash = findNamedSubelement(node, SOURCE_FILES_HASH_ELEMENT_NAME)
+                .map(AbstractCLIParser::normalizeEscapedXhtml).orElse(null);
+        if (CommonUtils.isNotNullEmptyOrWhitespace(sourceFilesHash)) {
+            filesHash.addAll(Arrays.asList(sourceFilesHash.split("\\n")));
+        }
+
+        String content = findNamedSubelement(node, LICENSE_CONTENT_ELEMENT_NAME)
+                .map(AbstractCLIParser::normalizeEscapedXhtml).orElse(null);
+        Map<String, Set<String>> copyrightWithFileHash = new HashMap<String, Set<String>>();
+        copyrightWithFileHash.put(content, filesHash);
+        return copyrightWithFileHash;
     }
 
     private String getSha1Hash(Document doc) throws XPathExpressionException {
@@ -164,10 +211,11 @@ public class CLIParser extends AbstractCLIParser {
         return result;
     }
 
-    private Set<LicenseNameWithText> nodeListToLicenseNamesWithTextsSet(NodeList nodes){
-        Set<LicenseNameWithText> licenseNamesWithTexts= Sets.newHashSet();
-        for (int i = 0; i < nodes.getLength(); i++){
-            licenseNamesWithTexts.add(getLicenseNameWithTextFromLicenseNode(nodes.item(i)));
+    private Set<LicenseNameWithText> nodeListToLicenseNamesWithTextsSet(NodeList nodes, boolean includeFilesHash) {
+        Set<LicenseNameWithText> licenseNamesWithTexts = Sets.newHashSet();
+        for (int i = 0; i < nodes.getLength(); i++) {
+            licenseNamesWithTexts.add(includeFilesHash ? getLicenseNameWithTextFromLicenseNodeAndFileHash(nodes.item(i))
+                    : getLicenseNameWithTextFromLicenseNode(nodes.item(i)));
         }
         return licenseNamesWithTexts;
     }

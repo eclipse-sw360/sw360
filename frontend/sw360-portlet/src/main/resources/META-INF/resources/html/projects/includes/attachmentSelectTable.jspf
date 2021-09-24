@@ -165,7 +165,7 @@
                     <core_rt:if test="${fn:length(releaseLink.attachments) == 1}">class="selectable highlightSuccess"</core_rt:if>
                     <core_rt:if test="${fn:length(releaseLink.attachments) gt 1}">class="selectable highlightWarning"</core_rt:if>
                 >
-                    <td>
+                    <td <core_rt:if test="${not empty attachment.superAttachmentId}">class="text-white" style="background-color: #adaec1 !important"</core_rt:if>>
                         <input type="checkbox" class="form-check-input attachmentChkbox"
                                 name="<portlet:namespace/><%=PortalConstants.LICENSE_INFO_RELEASE_TO_ATTACHMENT%>"
                                 <core_rt:if test="${projectLinkTableMode == tableModeLicenseInfo}">origvalue='${projectPath.concat(":").concat(releaseLink.id).concat(":").concat(releaseLink.releaseRelationship).concat(":").concat(attachment.attachmentContentId)}'</core_rt:if>
@@ -177,14 +177,14 @@
                                 </core_rt:if>
                         />
                     </td>
-                    <td>
+                    <td <core_rt:if test="${not empty attachment.superAttachmentId}">class="text-white" style="background-color: #adaec1 !important"</core_rt:if>>
                         <sw360:out value="${projectLink.treeLevel + 1}"/>
                     </td>
-                    <td class="filename">
+                    <td <core_rt:if test="${empty attachment.superAttachmentId}">class="filename"</core_rt:if> <core_rt:if test="${not empty attachment.superAttachmentId}">class="filename text-white" style="background-color: #adaec1 !important"</core_rt:if>>
                         <sw360:out value="${attachment.filename}"/>
                     </td>
                     <core_rt:if test='${enableConcludedLicense}'>
-                      <td>
+                      <td <core_rt:if test="${not empty attachment.superAttachmentId}">class="text-white" style="background-color: #adaec1 !important"</core_rt:if>>
                         <core_rt:if test='${attachment.filename.toLowerCase().endsWith(".rdf")}'>
                             <input type="checkbox" class="form-check-input concludedLicense" disabled="true"
                                 name="<portlet:namespace/><%=PortalConstants.INCLUDE_CONCLUDED_LICENSE%>"
@@ -196,7 +196,7 @@
                         </core_rt:if>
                       </td>
                     </core_rt:if>
-                    <td>
+                    <td <core_rt:if test="${not empty attachment.superAttachmentId}">class="text-white" style="background-color: #adaec1 !important"</core_rt:if>>
                             <c:set var="mapKey">${releaseLink.id.concat("_").concat(attachment.attachmentContentId)}</c:set>
                             <core_rt:choose>
                                 <core_rt:when test="${attachmenUsageCountMap[mapKey] != null}">
@@ -207,13 +207,13 @@
                                 </core_rt:otherwise>
                             </core_rt:choose>
                     </td>
-                    <td>
+                    <td <core_rt:if test="${not empty attachment.superAttachmentId}">class="text-white" style="background-color: #adaec1 !important"</core_rt:if>>
                         <sw360:DisplayEnum value="${attachment.checkStatus}"/>
                     </td>
-                    <td>
+                    <td <core_rt:if test="${not empty attachment.superAttachmentId}">class="text-white" style="background-color: #adaec1 !important"</core_rt:if>>
                         <sw360:DisplayUserEmail email="${attachment.createdBy}" bare="true"/>
                     </td>
-                    <td>
+                    <td <core_rt:if test="${not empty attachment.superAttachmentId}">class="text-white" style="background-color: #adaec1 !important"</core_rt:if>>
                         <sw360:out value="${attachment.createdTeam}"/>
                     </td>
                 </tr>
@@ -538,6 +538,11 @@
                         $('#infobar').removeClass('alert-info').addClass('alert-secondary').html($('<span>', {
                             text: "<liferay-ui:message key="no.previous.selection.found.if.you.have.writing.permissions.to.this.project.your.selection.will.be.stored.automatically.when.downloading" />"
                         })).css("width","100%");
+                        $(".attachmentChkbox").each(function() {
+                            if($(this).parents("td:first").hasClass("text-white")) {
+                                $(this).parents("tr:first").remove();
+                            }
+                        });
                     } else {
                         restoreSelection($linkedProjectsInfoTable, result, ttId, prefix, function(error, warnings) {
                             if(prefix) {
@@ -685,6 +690,12 @@
                         }
                     } else {
                         loadCountdown.decrement();
+                    }
+                });
+
+                $(".attachmentChkbox").each(function() {
+                    if($(this).prop("checked") !== true && $(this).parents("td:first").hasClass("text-white")) {
+                        $(this).parents("tr:first").remove();
                     }
                 });
             }

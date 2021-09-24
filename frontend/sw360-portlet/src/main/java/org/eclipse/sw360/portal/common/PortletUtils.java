@@ -562,4 +562,13 @@ public class PortletUtils {
     public static ObjectMapper getObjectMapper() {
         return objectMapper;
     }
+
+    public static String convertObjectToJsonStr(Object obj) {
+        try {
+            return objectMapper.writeValueAsString(obj);
+        } catch (JsonProcessingException e) {
+            LOGGER.error("Error occured while converting Object to Json : ", e);
+            throw new RuntimeException(e);
+        }
+    }
 }
