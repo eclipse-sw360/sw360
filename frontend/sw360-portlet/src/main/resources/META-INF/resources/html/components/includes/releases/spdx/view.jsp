@@ -248,9 +248,9 @@
 		<tr class="spdx-full">
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1">3.10 Package Checksum</div>
-				<div class="spdx-col-2">
+				<div class="spdx-col-2" id="checksums">
 					<core_rt:forEach items="${package.checksums}" var="checksumData" varStatus="loop">
-						<div class="spdx-flex-row">
+						<div class="spdx-flex-row checksum" data-index="${checksumData.index}">
 							<div class="spdx-col-1 spdx-key">
 								<sw360:out value="${checksumData.algorithm}" />
 							</div>
@@ -430,23 +430,23 @@
 			<tr data-index="${snippetsData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">5.3 & 5.4 Snippet Ranges</div>
-					<div class="spdx-col-2 spdx-flex-col">
-						<core_rt:forEach items="${snippetsData.snippetRanges}" var="snippetRangesData" varStatus="loop">
-							<div class="spdx-flex-row">
+					<div class="spdx-col-2 spdx-flex-col" id="snippetRanges-${snippetsData.index}">
+						<core_rt:forEach items="${snippetsData.snippetRanges}" var="snippetRangeData" varStatus="loop">
+							<div class="spdx-flex-row snippetRange-${snippetsData.index}" data-index="${snippetRangeData.index}">
 								<div class="spdx-col-1 spdx-key">
-									<sw360:out value="${snippetRangesData.rangeType}" />
+									<sw360:out value="${snippetRangeData.rangeType}" />
 								</div>
 								<div class="spdx-col-1 spdx-flex-row">
 									<div class="spdx-col-1">
-										<sw360:out value="${snippetRangesData.startPointer}" />
+										<sw360:out value="${snippetRangeData.startPointer}" />
 									</div>
 									<div class="spdx-col-1">~</div>
 									<div class="spdx-col-1">
-										<sw360:out value="${snippetRangesData.endPointer}" />
+										<sw360:out value="${snippetRangeData.endPointer}" />
 									</div>
 								</div>
 								<div class="spdx-col-3">
-									<sw360:out value="${snippetRangesData.reference}" />
+									<sw360:out value="${snippetRangeData.reference}" />
 								</div>
 							</div>
 						</core_rt:forEach>
@@ -845,6 +845,9 @@
 		});
 
 		sortElements('#creators', $('.creator').toArray());
+		sortElements('#checksums', $('.checksum').toArray());
+		let snippetIndex = $('#snippetInfoSelect').val() - 1;
+		sortElements('#snippetRanges-' + snippetIndex, $('.snippetRange-' + snippetIndex).toArray());
 
 		$('.spdx-table select').change();
 	});
@@ -879,6 +882,10 @@
 		section.children().eq(0).css('display', '');
 
 		section.find('[data-index=' + (index - 1).toString() + ']').css('display', '');
+
+		if ($(el).attr('id') == 'snippetInfoSelect') {
+			sortElements('#snippetRanges-' + (index - 1), $('.snippetRange-' + (index - 1)).toArray());
+		}
 	}
 
 	function displayAnnotationIndex(el) {
