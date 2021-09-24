@@ -358,7 +358,7 @@
 						<div class="spdx-flex-row">
 							<div class="spdx-col-1 spdx-key">Category</div>
 							<div class="spdx-col-3 spdx-uppercase">
-								<sw360:out value="${externalRefsData.referenceCategory.replace('referenceCategory_', '')}" />
+								<sw360:out value="${externalRefsData.referenceCategory}" />
 							</div>
 						</div>
 						<div class="spdx-flex-row">

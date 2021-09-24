@@ -498,10 +498,10 @@
     });
   });
     const referenceCategories = {
-        'referenceCategory_security': ['cpe22Type', 'cpe23Type'],
-        'referenceCategory_packageManager': ['maven-central', 'npm', 'nuget', 'bower', 'purl'],
-        'referenceCategory_persistentId': [],
-        'referenceCategory_other': []
+        'SECURITY': ['cpe22Type', 'cpe23Type'],
+        'PACKAGE-MANAGER': ['maven-central', 'npm', 'nuget', 'bower', 'purl'],
+        'PERSISTENT-ID': [],
+        'OTHER': []
     }
     $('#referenceCategory').on('change', function() {
         let category = $('#referenceCategory').val();
@@ -533,7 +533,7 @@
     });
     $('[name=add-externalRef]').on('click', function(e) {
       e.preventDefault();
-      let newObj = { 'referenceCategory': 'referenceCategory_security', 'referenceLocator': '', 'referenceType': 'cpe22Type', 'comment': '' };
+      let newObj = { 'referenceCategory': 'SECURITY', 'referenceLocator': '', 'referenceType': 'cpe22Type', 'comment': '' };
       packageInformationObj.externalRefs.push(newObj);
       spdxjs.addMain($(this));
       $('#externalReferences').change();

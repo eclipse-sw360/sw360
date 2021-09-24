@@ -350,7 +350,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         $('#referenceCategory').val(obj['referenceCategory']);
         $('#referenceCategory').change();
 
-        if (obj['referenceCategory'] == 'referenceCategory_security' || obj['referenceCategory'] == 'referenceCategory_packageManager') {
+        if (obj['referenceCategory'] == 'SECURITY' || obj['referenceCategory'] == 'PACKAGE-MANAGER') {
             $('#referenceType-1').val(obj['referenceType']);
         } else {
             $('#referenceType-2').val(obj['referenceType']);
@@ -455,7 +455,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
 
         obj['referenceCategory'] = $('#referenceCategory').val().trim();
 
-        if (obj['referenceCategory'] == 'referenceCategory_security' || obj['referenceCategory'] == 'referenceCategory_packageManager') {
+        if (obj['referenceCategory'] == 'SECURITY' || obj['referenceCategory'] == 'PACKAGE-MANAGER') {
           obj['referenceType'] = $('#referenceType-1').val().trim();
         } else {
           obj['referenceType'] = $('#referenceType-2').val().trim();
