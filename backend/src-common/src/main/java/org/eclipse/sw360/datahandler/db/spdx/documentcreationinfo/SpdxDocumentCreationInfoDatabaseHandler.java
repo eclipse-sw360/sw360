@@ -139,7 +139,11 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
         assertNotNull(actual, "Could not find SPDX Document Creation Information to update!");
         prepareSpdxDocumentCreationInfo(documentCreationInfo);
         if (!makePermission(documentCreationInfo, user).isActionAllowed(RequestedAction.WRITE)) {
-            return moderator.updateSpdxDocumentCreationInfo(documentCreationInfo, user);
+            if (isChanged(actual, documentCreationInfo)) {
+                return moderator.updateSpdxDocumentCreationInfo(documentCreationInfo, user);
+            } else {
+                return RequestStatus.SUCCESS;
+            }
         }
         SPDXDocumentCreationInfoRepository.update(documentCreationInfo);
         dbHandlerUtil.addChangeLogs(documentCreationInfo, actual, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, null);
@@ -174,6 +178,21 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
             dbHandlerUtil.addChangeLogs(spdxDocument, oldSpdxDocument, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), documentCreationInfo.getId(), Operation.SPDX_DOCUMENT_CREATION_INFO_DELETE);
         }
         return RequestStatus.SUCCESS;
+    }
+
+    private boolean isChanged(DocumentCreationInformation actual, DocumentCreationInformation update) {
+
+        for (DocumentCreationInformation._Fields field : DocumentCreationInformation._Fields.values()) {
+            if(update.getFieldValue(field) == null) {
+                continue;
+            } else if (actual.getFieldValue(field) == null) {
+                return true;
+            } else if (!actual.getFieldValue(field).equals(update.getFieldValue(field))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 }

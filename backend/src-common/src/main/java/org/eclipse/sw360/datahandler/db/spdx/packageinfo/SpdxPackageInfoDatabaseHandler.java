@@ -161,7 +161,11 @@ public class SpdxPackageInfoDatabaseHandler {
         PackageInformation actual = PackageInfoRepository.get(packageInfo.getId());
         assertNotNull(actual, "Could not find SPDX Package Information to update!");
         if (!makePermission(packageInfo, user).isActionAllowed(RequestedAction.WRITE)) {
-            return moderator.updateSpdxPackageInfo(packageInfo, user);
+            if (isChanged(actual, packageInfo)) {
+                return moderator.updateSpdxPackageInfo(packageInfo, user);
+            } else {
+                return RequestStatus.SUCCESS;
+            }
         }
         PackageInfoRepository.update(packageInfo);
         dbHandlerUtil.addChangeLogs(packageInfo, actual, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, null);
@@ -229,6 +233,21 @@ public class SpdxPackageInfoDatabaseHandler {
         }
 
         return RequestStatus.SUCCESS;
+    }
+
+    private boolean isChanged(PackageInformation actual, PackageInformation update) {
+
+        for (PackageInformation._Fields field : PackageInformation._Fields.values()) {
+            if(update.getFieldValue(field) == null) {
+                continue;
+            } else if (actual.getFieldValue(field) == null) {
+                return true;
+            } else if (!actual.getFieldValue(field).equals(update.getFieldValue(field))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 }
