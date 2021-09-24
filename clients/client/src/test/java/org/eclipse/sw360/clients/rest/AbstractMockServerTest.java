@@ -10,8 +10,11 @@
  */
 package org.eclipse.sw360.clients.rest;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
@@ -34,6 +37,7 @@ import org.junit.Rule;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Collection;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -213,6 +217,19 @@ public class AbstractMockServerTest {
     }
 
     /**
+     * Returns a URL to the test file with the given name. The file is
+     * looked up in the /files/integrationtest/ directory of the Wiremock server.
+     *
+     * @param name the name of the desired test file
+     * @return the URL to the test file specified
+     */
+    protected static URL resolveTestFileURLForRealDB(String name) {
+        URL url = AbstractMockServerTest.class.getResource("/__files/integrationtest/" + name);
+        assertThat(url).isNotNull();
+        return url;
+    }
+
+    /**
      * Parses a JSON file specified by the given URL and returns its
      * de-serialized content.
      *
@@ -224,6 +241,21 @@ public class AbstractMockServerTest {
      */
     protected static <T> T readTestJsonFile(URL url, Class<T> type) throws IOException {
         return objectMapper.readValue(url, type);
+    }
+
+    /**
+     * Parses a JSON file specified by the given URL and returns its
+     * de-serialized content.
+     *
+     * @param url  the URL pointing to the file
+     * @param typeReference the class representing the content type
+     * @param <T>  the content type
+     * @return the de-serialized content representation
+     * @throws IOException if an error occurs
+     */
+    protected static <T> List<T> readTestJsonFile(URL url, TypeReference<List<T>> typeReference)
+            throws JsonParseException, JsonMappingException, IOException {
+        return objectMapper.readValue(url, typeReference);
     }
 
     /**

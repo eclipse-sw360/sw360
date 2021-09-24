@@ -11,7 +11,7 @@
 package org.eclipse.sw360.clients.rest.resource.components;
 
 public enum SW360ComponentType {
-    INTERNAL(0), OSS(1), COTS(2), FREESOFTWARE(3), INNER_SOURCE(4), SERVICE(5);
+    INTERNAL(0), OSS(1), COTS(2), FREESOFTWARE(3), INNER_SOURCE(4), SERVICE(5), CODE_SNIPPET(6);
 
     private final int value;
 
@@ -37,6 +37,8 @@ public enum SW360ComponentType {
                 return INNER_SOURCE;
             case 5:
                 return SERVICE;
+            case 6:
+                return CODE_SNIPPET;
             default:
                 return null;
         }
