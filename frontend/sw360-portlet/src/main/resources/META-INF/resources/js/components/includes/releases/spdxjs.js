@@ -403,6 +403,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
           fillSelectbox('#externalReferences', packageInformationObj.externalRefs.length);
           fillExternalRef(packageInformationObj, 0);
         }
+        fillArray('#spdxPackageAttributionText', packageInformationObj.attributionText);
       }
 
       function storePackageInfo(packageInformationObj) {
