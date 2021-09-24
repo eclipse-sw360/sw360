@@ -161,9 +161,9 @@
     <tr>
       <td colspan="3">
         <div class="form-group">
-          <label for="snippetComment">5.9 Snippet Comments</label>
+          <label for="snippetComment">5.9 Snippet Comment</label>
           <textarea class="form-control" id="snippetComment" rows="5"
-            placeholder="Enter Snippet Comments"></textarea>
+            placeholder="Enter Snippet Comment"></textarea>
         </div>
       </td>
     </tr>

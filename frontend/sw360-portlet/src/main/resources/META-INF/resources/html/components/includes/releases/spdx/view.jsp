@@ -234,7 +234,7 @@
 					</div>
 					<div class="spdx-flex-row">
 						<div class="spdx-col-1 spdx-key">Excluded Files</div>
-						<p class="spdx-col-3 spdx-p">
+						<p class="spdx-col-3 spdx-p" id="excludedFiles">
 							<core_rt:forEach items="${package.packageVerificationCode.excludedFiles}"
 								var="excludedFileData" varStatus="loop">
 								<sw360:out value="${excludedFileData}" /> <br>
@@ -289,7 +289,7 @@
 		<tr class="spdx-full">
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1">3.14 All Licenses Information from Files</div>
-				<p class="spdx-col-2 spdx-p">
+				<p class="spdx-col-2 spdx-p" id="licenseInfoFromFile">
 					<core_rt:forEach items="${package.licenseInfoFromFiles}" var="licenseInfoFromFileData"
 						varStatus="loop">
 						<sw360:out value="${licenseInfoFromFileData} " /> <br>
@@ -386,9 +386,9 @@
 		<tr class="spdx-full">
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1">3.23 Package Attribution Text</div>
-				<p class="spdx-col-2 spdx-p">
+				<p class="spdx-col-2 spdx-p" id="attributionText">
 					<core_rt:forEach items="${package.attributionText}" var="attributionTextData" varStatus="loop">
-						<sw360:out value="${attributionTextData} " /> <br>
+						<sw360:out value="${attributionTextData}"/><br>
 					</core_rt:forEach>
 				</p>
 			</td>
@@ -490,7 +490,7 @@
 			</tr>
 			<tr data-index="${snippetsData.index}">
 				<td class="spdx-flex-row">
-					<div class="spdx-col-1">5.9 Snippet Comments</div>
+					<div class="spdx-col-1">5.9 Snippet Comment</div>
 					<p class="spdx-col-2 spdx-p">
 						<sw360:out value="${snippetsData.comment}" stripNewlines="false" />
 					</p>
@@ -558,9 +558,9 @@
 			<tr class="spdx-full" data-index="${otherLicensingData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">6.4 License Cross Reference</div>
-					<p class="spdx-col-2 spdx-p">
+					<p class="spdx-col-2 spdx-p" id="licenseCrossRefs-${otherLicensingData.index}">
 						<core_rt:forEach items="${otherLicensingData.licenseCrossRefs}" var="licenseCrossRefsData" varStatus="loop">
-							<sw360:out value="${licenseCrossRefsData} " /> <br>
+							<sw360:out value="${licenseCrossRefsData}"/><br>
 						</core_rt:forEach>
 					</p>
 				</td>
@@ -804,7 +804,36 @@
 		}
 	}
 
+	function readArray(tag) {
+		let arr = $(tag).text();
+		arr = arr.replaceAll('\t', '').split('\n').map(str => str.trim()).filter(function(str) {
+			return str != '';
+		}).sort();
+		console.log(arr);
+		return arr;
+	}
+
+	function fillArray(tag, value) {
+		$(tag).text('');
+		for (let i = 0; i< value.length; i++) {
+			$(tag).append(value[i]);
+			$(tag).append('<br>');
+		}
+	}
+
+	function formatArrayParagraph(tag) {
+		fillArray(tag, readArray(tag));
+	}
+
 	$(function () {
+		formatArrayParagraph('#excludedFiles');
+		formatArrayParagraph('#licenseInfoFromFile');
+		formatArrayParagraph('#attributionText');
+
+		for (let i = 0; i < $('#otherLicensingSelect').find('option').last().text(); i++) {
+			formatArrayParagraph('#licenseCrossRefs-' + i);
+		}
+
 		$('#spdxFullMode').on('click', function (e) {
 			e.preventDefault();
 
