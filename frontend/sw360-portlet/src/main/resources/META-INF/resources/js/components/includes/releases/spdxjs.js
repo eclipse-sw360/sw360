@@ -226,7 +226,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         if (type == 'array' && value.length == 1) {
           if (value[0].toUpperCase() == 'NONE' || value[0].toUpperCase() == 'NOASSERTION') {
             $(inputTag).val('');
-            $(inputTag).parent().parent().find('input[value=' + value + ']').click();
+            $(inputTag).parent().parent().find('input[value=' + value[0].toUpperCase() + ']').click();
             return;
           }
         }
@@ -303,7 +303,6 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         for (let i = 0; i < result.length; i++) {
           result[i] = result[i].trim();
         }
-
         return result.filter(function(e) { return e !== '' }).sort();
       }
 
