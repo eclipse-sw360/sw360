@@ -230,8 +230,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
             return;
           }
         }
-
-        if (!Array.isArray(value) && (value.toUpperCase() == 'NONE' || value.toUpperCase() == 'NOASSERTION')) {
+        if (type != 'array' && (value.toUpperCase() == 'NONE' || value.toUpperCase() == 'NOASSERTION')) {
           $(inputTag)[0].selectedIndex = 0;
           $(inputTag).parent().find('input').val('');
           $(inputTag).parent().find('textarea').val('');
@@ -292,7 +291,12 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
               return readAnnotator(inputTag);
             case 'text':
             default:
-              return $(inputTag).val().trim();
+              let result = $(inputTag).val().trim();
+              if (result.toUpperCase() == 'NONE' || result.toUpperCase() == 'NOASSERTION') {
+                  return result.toUpperCase();
+              } else {
+                  return result;
+              }
           }
         }
       }
@@ -303,7 +307,11 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         for (let i = 0; i < result.length; i++) {
           result[i] = result[i].trim();
         }
-        return result.filter(function(e) { return e !== '' }).sort();
+        result.filter(function(e) { return e !== '' }).sort();
+        if (result.length == 1 && (result[0].toUpperCase() == 'NONE' || result[0].toUpperCase() == 'NOASSERTION')) {
+              return [result[0].toUpperCase()];
+        }
+        return result;
       }
 
       function readAnnotator(typeTag) {
