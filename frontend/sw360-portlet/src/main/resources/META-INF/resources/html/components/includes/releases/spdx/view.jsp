@@ -816,7 +816,7 @@
 	function fillArray(tag, value) {
 		$(tag).text('');
 		for (let i = 0; i< value.length; i++) {
-			$(tag).append(value[i]);
+			$(tag).append(value[i].replaceAll('<', '&lt;').replaceAll('>', '&gt;'));
 			$(tag).append('<br>');
 		}
 	}
