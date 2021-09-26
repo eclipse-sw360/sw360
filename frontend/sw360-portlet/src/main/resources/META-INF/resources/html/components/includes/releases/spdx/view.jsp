@@ -88,7 +88,7 @@
 							<div class="spdx-col-3">
 								<sw360:out
 									value="${externalDocumentRefeData.checksum.algorithm}" />
-								~
+								:
 								<sw360:out value="${externalDocumentRefeData.checksum.checksumValue}" />
 							</div>
 						</div>
