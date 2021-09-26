@@ -213,15 +213,22 @@ public class DisplaySPDXDocumentChanges extends UserAwareTag {
                 }
                 snippetAdditions.setIndex(snippet.getIndex());
             }
-
+            String snippetRangeRendeString = null;
             for (SnippetInformation._Fields field : SnippetInformation._Fields.values()) {
                 FieldMetaData fieldMetaData = SnippetInformation.metaDataMap.get(field);
-                displaySimpleFieldOrSet(
-                        display,
-                        snippet,
-                        snippetAdditions,
-                        snippetDeletions,
-                        field, fieldMetaData, "");
+                if (field == SnippetInformation._Fields.SNIPPET_RANGES) {
+                    snippetRangeRendeString = renderSnippetRange(snippet, snippetAdditions, snippetDeletions);
+                } else {
+                    displaySimpleFieldOrSet(
+                            display,
+                            snippet,
+                            snippetAdditions,
+                            snippetDeletions,
+                            field, fieldMetaData, "");
+                }
+            }
+            if (snippetRangeRendeString != null) {
+                display.append(snippetRangeRendeString);
             }
         }
         return "<h3>"+LanguageUtil.get(resourceBundle,"changes.in.snippets.information")+ "</h3>"
@@ -430,38 +437,87 @@ public class DisplaySPDXDocumentChanges extends UserAwareTag {
                 + display.toString() + "</tbody></table>";
     }
 
-    // private String renderSnippetRange(SnippetRange actualSnippetRange, SnippetRange additionsSnippetRange, SnippetRange deletionsSnippetRange) {
+    private String renderSnippetRange(SnippetInformation actual, SnippetInformation additions, SnippetInformation deletions) {
+        StringBuilder display = new StringBuilder();
+        display.append("<tr><td>snippetRange:</td></tr>");
+        if (! actual.isSet(SnippetInformation._Fields.SNIPPET_RANGES)){
+            actual.snippetRanges = new HashSet<>();
+        }
 
-    //     if (deletionsSnippetRange.isSet(SnippetRange._Fields.CHECKSUM)
-    //         && !additionsSnippetRange.isSet(SnippetRange._Fields.CHECKSUM)) {
-    //         return "";
-    //     }
+        if (! additions.isSet(SnippetInformation._Fields.SNIPPET_RANGES)){
+            additions.snippetRanges = new HashSet<>();
+        }
 
-    //     if (!actualSnippetRange.isSet(SnippetRange._Fields.CHECKSUM)) {
-    //         actualSnippetRange.checksum = new SnippetRange();
-    //         actualSnippetRange.checksum.algorithm = "";
-    //         actualSnippetRange.checksum.checksumValue = "";
-    //     }
+        if (! deletions.isSet(SnippetInformation._Fields.SNIPPET_RANGES)){
+            deletions.snippetRanges = new HashSet<>();
+        }
 
-    //     if (!deletionsSnippetRange.isSet(SnippetRange._Fields.CHECKSUM)) {
-    //         deletionsSnippetRange.checksum = new SnippetRange();
-    //         deletionsSnippetRange.checksum.algorithm = "";
-    //         deletionsSnippetRange.checksum.checksumValue = "";
-    //     }
+        if (additions.snippetRanges.isEmpty() && deletions.snippetRanges.isEmpty()) {
+            return "";
+        }
 
-    //     if (actualSnippetRange.checksum.algorithm.equals(additionsSnippetRange.checksum.algorithm)
-    //         && actualSnippetRange.checksum.checksumValue.equals(additionsSnippetRange.checksum.checksumValue)) {
-    //         return "";
-    //     }
+        Iterator<SnippetRange> creatorDeletionsIterator = deletions.getSnippetRangesIterator();
+        Iterator<SnippetRange> creatorAdditionsIterator = additions.getSnippetRangesIterator();
+        Set<SnippetRange> additionsSnippetRanges = additions.getSnippetRanges();
+        Set<SnippetRange> deletionsSnippetRanges = deletions.getSnippetRanges();
 
-    //     String display = "<tr> <td>SnippetRange:</td> <td> <ul> <li>algorithm: "
-    //                 + actualSnippetRange.checksum.algorithm + "</li> <li>checksumValue: "
-    //                 + actualSnippetRange.checksum.checksumValue +  "</li> </ul> </td> <td> <li>algorithm: "
-    //                 + deletionsSnippetRange.checksum.algorithm + "</li> <li>checksumValue: </li>"
-    //                 + deletionsSnippetRange.checksum.checksumValue +  "</td> <td> <ul> <li>algorithm: "
-    //                 + additionsSnippetRange.checksum.algorithm + " </li> <li>checksumValue: "
-    //                 + additionsSnippetRange.checksum.checksumValue + "</li> </ul> </td> </tr>";
-    //     return display;
-    // }
+        int changeSize = deletionsSnippetRanges.size() + additionsSnippetRanges.size();
+
+        for (int i = 0; i < changeSize; i++) {
+
+            SnippetRange creatorDeletions = new SnippetRange();
+            SnippetRange creatorAdditions = new SnippetRange();
+            SnippetRange creator = new SnippetRange();
+            Iterator<SnippetRange> creatorsIterator = actual.getSnippetRangesIterator();
+            if (creatorAdditionsIterator.hasNext()) {
+                creatorAdditions = creatorAdditionsIterator.next();
+                while (creatorsIterator.hasNext()) {
+                    creator = creatorsIterator.next();
+                    if (creatorAdditions.getIndex() == creator.getIndex()) {
+                        break;
+                    } else {
+                        creator = new SnippetRange();
+                    }
+                }
+                creator.setIndex(creatorAdditions.getIndex());
+                creatorDeletions.setIndex(creatorAdditions.getIndex());
+
+            } else if (creatorDeletionsIterator.hasNext()) {
+                creatorDeletions = creatorDeletionsIterator.next();
+                while (creatorsIterator.hasNext()) {
+                    creator = creatorsIterator.next();
+                    if (creatorDeletions.getIndex() == creator.getIndex()) {
+                        break;
+                    }
+                }
+                creatorAdditions.setIndex(creator.getIndex());
+            }
+            String render1 = "";
+            String render2 = "";
+            String render3 = "";
+            for (SnippetRange._Fields field : SnippetRange._Fields.values()) {
+                if (!SnippetRange._Fields.INDEX.equals(field)) {
+                    render1 = render1 + "<li>" + field.getFieldName() + ": " + creator.getFieldValue(field) + "</li>";
+                }
+            }
+            for (SnippetRange._Fields field : SnippetRange._Fields.values()) {
+                if (!SnippetRange._Fields.INDEX.equals(field)) {
+                    render2 = render2 + "<li>" + field.getFieldName() + ": " + creatorDeletions.getFieldValue(field) + "</li>";
+                }
+            }
+            for (SnippetRange._Fields field : SnippetRange._Fields.values()) {
+                if (!SnippetRange._Fields.INDEX.equals(field)) {
+                    render3 = render3 + "<li>" + field.getFieldName() + ": " + creatorAdditions.getFieldValue(field) + "</li>";
+                }
+            }
+
+            String renderTotal = "<tr><td></td><td> <ul>" + render1 + "</ul> </td> <td> <ul>"
+                                + render2 + "</ul> </td> <td> <ul>"
+                                + render3 + "</ul> </td> </tr>";
+            display.append(renderTotal);
+        }
+        System.out.println(display.toString());
+        return display.toString();
+    }
 
 }
