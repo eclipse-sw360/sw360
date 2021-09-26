@@ -177,20 +177,22 @@
         <div class="form-group">
           <label class="mandatory" for="createdDate">2.9 Created</label>
           <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
-            <input id="createdDate" type="date" class="form-control spdx-date needs-validation"
-              rule="isNotNull" placeholder="created.date.yyyy.mm.dd">
-            <input id="createdTime" type="time" step="1" class="form-control spdx-time needs-validation"
-              rule="isNotNull" placeholder="created.time.hh.mm.ss">
-          </div>
-          <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
-            <div id="createdDate-error-messages">
-              <div class="invalid-feedback" rule="isNotNull">
-                <liferay-ui:message key="this.field.must.be.not.empty" />
+            <div>
+              <input id="createdDate" type="date" class="form-control spdx-date needs-validation"
+                rule="isNotNull" placeholder="created.date.yyyy.mm.dd">
+              <div id="createdDate-error-messages">
+                <div class="invalid-feedback" rule="isNotNull">
+                  <liferay-ui:message key="invalid.format" />
+                </div>
               </div>
             </div>
-            <div id="createdTime-error-messages">
-              <div class="invalid-feedback" rule="isNotNull">
-                <liferay-ui:message key="this.field.must.be.not.empty" />
+            <div>
+              <input id="createdTime" type="time" step="1" class="form-control spdx-time needs-validation"
+                rule="isNotNull" placeholder="created.time.hh.mm.ss">
+              <div id="createdTime-error-messages">
+                <div class="invalid-feedback" rule="isNotNull">
+                  <liferay-ui:message key="invalid.format" />
+                </div>
               </div>
             </div>
           </div>
