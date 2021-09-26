@@ -234,7 +234,7 @@
         <div class="form-group">
           <label for="sourceInfo">3.12 Source Information</label>
           <textarea class="form-control" id="sourceInfo" rows="5" name="_sw360_portlet_components_SOURCE_INFO"
-            placeholder="Enter Source Information"> ${package.sourceInfo}</textarea>
+            placeholder="Enter Source Information">${package.sourceInfo}</textarea>
         </div>
       </td>
     </tr>
