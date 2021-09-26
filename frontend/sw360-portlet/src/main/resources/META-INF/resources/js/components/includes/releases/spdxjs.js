@@ -235,7 +235,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
           $(inputTag)[0].selectedIndex = 0;
           $(inputTag).parent().find('input').val('');
           $(inputTag).parent().find('textarea').val('');
-          $(inputTag).parent().parent().find('input[value=' + value + ']').click();
+          $(inputTag).parent().parent().find('input[value=' + value.toUpperCase() + ']').click();
         } else {
           switch (type) {
             case 'array':
