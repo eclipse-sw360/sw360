@@ -15,7 +15,7 @@
           <div style="display: flex">
             <input id="packageName" class="form-control needs-validation" rule="isNotNull" type="text"
               placeholder="Enter Package Name" name="_sw360_portlet_components_PACKAGE_NAME"
-              value="${package.name}">
+              value="<sw360:out value="${package.name}" />">
           </div>
           <div id="packageName-error-messages">
             <div class="invalid-feedback" rule="isNotNull">
@@ -29,7 +29,7 @@
             <label class="sub-label">SPDXRef-</label>
             <input id="packageSPDXId" class="form-control needs-validation" rule="isNotNull" type="text"
               placeholder="Enter Package SPDX Identifier" name="_sw360_portlet_components_PACKAGE_SPDX_ID"
-              value="${package.SPDXID}">
+              value="<sw360:out value="${package.SPDXID}" />">
           </div>
           <div id="packageSPDXId-error-messages">
             <div class="invalid-feedback" rule="isNotNull">
@@ -45,7 +45,7 @@
           <label for="versionInfo">3.3 Package Version</label>
           <div style="display: flex">
             <input id="versionInfo" class="form-control" type="text" placeholder="Enter Package Version"
-              name="_sw360_portlet_components_VERSION_INFO" value="${package.versionInfo}">
+              name="_sw360_portlet_components_VERSION_INFO" value="<sw360:out value="${package.versionInfo}" />">
           </div>
         </div>
         <div class="form-group" style="flex: 1">
@@ -53,7 +53,7 @@
           <div style="display: flex">
             <input id="packageFileName" class="form-control" type="text"
               placeholder="Enter Package File Name" name="_sw360_portlet_components_PACKAGE_FILE_NAME"
-              value="${package.packageFileName}">
+              value="<sw360:out value="${package.packageFileName}" />">
           </div>
         </div>
       </td>
