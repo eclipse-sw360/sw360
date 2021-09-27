@@ -614,7 +614,7 @@
 			<tr data-index="${relationshipsData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">7.2 Relationship Comment</div>
-					<p class="spdx-col-2 spdx-p">
+					<p class="spdx-col-2 spdx-p" id="relationshipComment-${relationshipsData.index}">
 						<sw360:out value="${relationshipsData.relationshipComment}" stripNewlines="false" />
 					</p>
 				</td>
@@ -690,7 +690,7 @@
 			<tr class="annotation-document" data-index="${annotationsData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">8.5 Annotation Comment</div>
-					<p class="spdx-col-2 spdx-p">
+					<p class="spdx-col-2 spdx-p" id="documentAnnotationComment-${annotationsData.index}">
 						<sw360:out value="${annotationsData.annotationComment}" stripNewlines="false" />
 					</p>
 				</td>
@@ -737,7 +737,7 @@
 			<tr class="annotation-package" data-index="${annotationsData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">8.5 Annotation Comment</div>
-					<p class="spdx-col-2 spdx-p">
+					<p class="spdx-col-2 spdx-p" id="packageAnnotationComment-${annotationsData.index}">
 						<sw360:out value="${annotationsData.annotationComment}" stripNewlines="false" />
 					</p>
 				</td>
@@ -828,10 +828,6 @@
 	let documentCreationInformationObj = jQuery.parseJSON(JSON.stringify(${ documentCreationInfoJson }));
 	let packageInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
 
-	// console.log(spdxDocumentObj);
-	// console.log(documentCreationInformationObj.documentComment);
-	// console.log(packageInformationObj);
-
 	$(function () {
 		formatArrayParagraph('#excludedFiles');
 		formatArrayParagraph('#licenseInfoFromFile');
@@ -872,6 +868,30 @@
 				if (spdxDocumentObj.otherLicensingInformationDetecteds[j].index == i) {
 					fillArray('#extractedText-' + i, spdxDocumentObj.otherLicensingInformationDetecteds[j].extractedText.split('\n'));
 					fillArray('#otherLicenseComment-' + i, spdxDocumentObj.otherLicensingInformationDetecteds[j].licenseComment.split('\n'));
+				}
+			}
+		}
+
+		for (let i = 0; i < spdxDocumentObj.relationships.length; i++) {
+			for (let j = 0; j < spdxDocumentObj.relationships.length; j++) {
+				if (spdxDocumentObj.relationships[j].index == i) {
+					fillArray('#relationshipComment-' + i, spdxDocumentObj.relationships[j].relationshipComment.split('\n'));
+				}
+			}
+		}
+
+		for (let i = 0; i < spdxDocumentObj.annotations.length; i++) {
+			for (let j = 0; j < spdxDocumentObj.annotations.length; j++) {
+				if (spdxDocumentObj.annotations[j].index == i) {
+					fillArray('#documentAnnotationComment-' + i, spdxDocumentObj.annotations[j].annotationComment.split('\n'));
+				}
+			}
+		}
+
+		for (let i = 0; i < packageInformationObj.annotations.length; i++) {
+			for (let j = 0; j < packageInformationObj.annotations.length; j++) {
+				if (packageInformationObj.annotations[j].index == i) {
+					fillArray('#packageAnnotationComment-' + i, packageInformationObj.annotations[j].annotationComment.split('\n'));
 				}
 			}
 		}
