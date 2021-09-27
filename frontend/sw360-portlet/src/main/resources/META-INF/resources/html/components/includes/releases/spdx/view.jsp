@@ -475,7 +475,7 @@
 			<tr data-index="${snippetsData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">5.7 Snippet Comments on License</div>
-					<p class="spdx-col-2 spdx-p">
+					<p class="spdx-col-2 spdx-p" id="snippetLicenseComments-${snippetsData.index}">
 						<sw360:out value="${snippetsData.licenseComments}" stripNewlines="false" />
 					</p>
 				</td>
@@ -483,7 +483,7 @@
 			<tr data-index="${snippetsData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">5.8 Copyright Text</div>
-					<p class="spdx-col-2 spdx-p">
+					<p class="spdx-col-2 spdx-p" id="snippetCopyrightText-${snippetsData.index}">
 						<sw360:out value="${snippetsData.copyrightText}" stripNewlines="false" />
 					</p>
 				</td>
@@ -491,7 +491,7 @@
 			<tr data-index="${snippetsData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">5.9 Snippet Comment</div>
-					<p class="spdx-col-2 spdx-p">
+					<p class="spdx-col-2 spdx-p" id="snippetComment-${snippetsData.index}">
 						<sw360:out value="${snippetsData.comment}" stripNewlines="false" />
 					</p>
 				</td>
@@ -507,7 +507,7 @@
 			<tr data-index="${snippetsData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">5.11 Snippet Attribution Text</div>
-					<p class="spdx-col-2 spdx-p">
+					<p class="spdx-col-2 spdx-p" id="snippetAttributionText-${snippetsData.index}">
 						<sw360:out value="${snippetsData.snippetAttributionText}" stripNewlines="false" />
 					</p>
 				</td>
@@ -852,6 +852,17 @@
 			for (let j = 0; j < packageInformationObj.externalRefs.length; j++) {
 				if (packageInformationObj.externalRefs[j].index == i) {
 					fillArray('#externalRefComment-' + i, packageInformationObj.externalRefs[j].comment.split('\n'));
+				}
+			}
+		}
+
+		for (let i = 0; i < spdxDocumentObj.snippets.length; i++) {
+			for (let j = 0; j < spdxDocumentObj.snippets.length; j++) {
+				if (spdxDocumentObj.snippets[j].index == i) {
+					fillArray('#snippetLicenseComments-' + i, spdxDocumentObj.snippets[j].licenseComments.split('\n'));
+					fillArray('#snippetCopyrightText-' + i, spdxDocumentObj.snippets[j].copyrightText.split('\n'));
+					fillArray('#snippetComment-' + i, spdxDocumentObj.snippets[j].comment.split('\n'));
+					fillArray('#snippetAttributionText-' + i, spdxDocumentObj.snippets[j].snippetAttributionText.split('\n'));
 				}
 			}
 		}
