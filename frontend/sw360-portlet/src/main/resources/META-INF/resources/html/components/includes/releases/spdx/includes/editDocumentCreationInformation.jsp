@@ -13,7 +13,7 @@
             <label class="sub-label">SPDX-</label>
             <input id="spdxVersion" class="form-control needs-validation" rule="isNotNull"
               type="text" placeholder="Enter SPDX Version"
-              value="${spdxDocumentCreationInfo.spdxVersion}">
+              value="<sw360:out value="${spdxDocumentCreationInfo.spdxVersion}" />">
           </div>
           <div id="spdxVersion-error-messages">
             <div class="invalid-feedback" rule="isNotNull">
@@ -37,7 +37,7 @@
           <div style="display: flex">
             <label class="sub-label">SPDXRef-</label>
             <input id="spdxIdentifier" class="form-control needs-validation" rule="isNotNull" type="text"
-              placeholder="Enter SPDX Identifier" value="${spdxDocumentCreationInfo.SPDXID}">
+              placeholder="Enter SPDX Identifier" value="<sw360:out value="${spdxDocumentCreationInfo.SPDXID}" />">
           </div>
           <div id="spdxIdentifier-error-messages">
             <div class="invalid-feedback" rule="isNotNull">
@@ -53,7 +53,7 @@
           <label class="mandatory" for="documentName">2.4 Document Name</label>
           <input id="documentName" type="text"
             class="form-control needs-validation" rule="isNotNull"
-            placeholder="<liferay-ui:message key="enter.spdx.document.name" />" value="${spdxDocumentCreationInfo.name}">
+            placeholder="<liferay-ui:message key="enter.spdx.document.name" />" value="<sw360:out value="${spdxDocumentCreationInfo.name}" />">
         </div>
         <div id="documentName-error-messages">
           <div class="invalid-feedback" rule="isNotNull">
@@ -68,7 +68,7 @@
           <label class="mandatory" for="documentNamespace">2.5 SPDX Document Namespace</label>
           <input id="documentNamespace" class="form-control needs-validation" rule="isNotNull" type="text"
             placeholder="<liferay-ui:message key="enter.spdx.document.namespace" />"
-            value="${spdxDocumentCreationInfo.documentNamespace}">
+            value="<sw360:out value="${spdxDocumentCreationInfo.documentNamespace}" />">
         </div>
         <div id="documentNamespace-error-messages">
           <div class="invalid-feedback" rule="isNotNull">
