@@ -542,7 +542,7 @@
 			<tr data-index="${otherLicensingData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">6.2 Extracted Text</div>
-					<p class="spdx-col-2 spdx-p">
+					<p class="spdx-col-2 spdx-p" id="extractedText-${otherLicensingData.index}">
 						<sw360:out value="${otherLicensingData.extractedText}" stripNewlines="false" />
 					</p>
 				</td>
@@ -568,7 +568,7 @@
 			<tr data-index="${otherLicensingData.index}">
 				<td class="spdx-flex-row">
 					<div class="spdx-col-1">6.5 License Comment</div>
-					<p class="spdx-col-2 spdx-p">
+					<p class="spdx-col-2 spdx-p" id="otherLicenseComment-${otherLicensingData.index}">
 						<sw360:out value="${otherLicensingData.licenseComment}" stripNewlines="false" />
 					</p>
 				</td>
@@ -863,6 +863,15 @@
 					fillArray('#snippetCopyrightText-' + i, spdxDocumentObj.snippets[j].copyrightText.split('\n'));
 					fillArray('#snippetComment-' + i, spdxDocumentObj.snippets[j].comment.split('\n'));
 					fillArray('#snippetAttributionText-' + i, spdxDocumentObj.snippets[j].snippetAttributionText.split('\n'));
+				}
+			}
+		}
+
+		for (let i = 0; i < spdxDocumentObj.otherLicensingInformationDetecteds.length; i++) {
+			for (let j = 0; j < spdxDocumentObj.otherLicensingInformationDetecteds.length; j++) {
+				if (spdxDocumentObj.otherLicensingInformationDetecteds[j].index == i) {
+					fillArray('#extractedText-' + i, spdxDocumentObj.otherLicensingInformationDetecteds[j].extractedText.split('\n'));
+					fillArray('#otherLicenseComment-' + i, spdxDocumentObj.otherLicensingInformationDetecteds[j].licenseComment.split('\n'));
 				}
 			}
 		}
