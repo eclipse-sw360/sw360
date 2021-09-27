@@ -182,7 +182,12 @@ public class DisplaySPDXDocumentChanges extends UserAwareTag {
         Set<SnippetInformation> additionsSnippetInformations = additions.getSnippets();
         Set<SnippetInformation> deletionsSnippetInformations = deletions.getSnippets();
 
-        int changeSize = deletionsSnippetInformations.size() + additionsSnippetInformations.size();
+        int changeSize = 0;
+        if (additionsSnippetInformations.size() == deletionsSnippetInformations.size()) {
+            changeSize = additionsSnippetInformations.size();
+        } else {
+            changeSize = additionsSnippetInformations.size() + deletionsSnippetInformations.size();
+        }
 
         for (int i = 0; i < changeSize; i++) {
 
@@ -255,7 +260,12 @@ public class DisplaySPDXDocumentChanges extends UserAwareTag {
         Set<RelationshipsBetweenSPDXElements> additionsRelationshipsBetweenSPDXElementss = additions.getRelationships();
         Set<RelationshipsBetweenSPDXElements> deletionsRelationshipsBetweenSPDXElementss = deletions.getRelationships();
 
-        int changeSize = deletionsRelationshipsBetweenSPDXElementss.size() + additionsRelationshipsBetweenSPDXElementss.size();
+        int changeSize = 0;
+        if (additionsRelationshipsBetweenSPDXElementss.size() == deletionsRelationshipsBetweenSPDXElementss.size()) {
+            changeSize = additionsRelationshipsBetweenSPDXElementss.size();
+        } else {
+            changeSize = additionsRelationshipsBetweenSPDXElementss.size() + deletionsRelationshipsBetweenSPDXElementss.size();
+        }
 
         for (int i = 0; i < changeSize; i++) {
 
@@ -321,7 +331,12 @@ public class DisplaySPDXDocumentChanges extends UserAwareTag {
         Set<Annotations> additionsAnnotationss = additions.getAnnotations();
         Set<Annotations> deletionsAnnotationss = deletions.getAnnotations();
 
-        int changeSize = deletionsAnnotationss.size() + additionsAnnotationss.size();
+        int changeSize = 0;
+        if (additionsAnnotationss.size() == deletionsAnnotationss.size()) {
+            changeSize = additionsAnnotationss.size();
+        } else {
+            changeSize = additionsAnnotationss.size() + deletionsAnnotationss.size();
+        }
 
         for (int i = 0; i < changeSize; i++) {
 
@@ -387,7 +402,12 @@ public class DisplaySPDXDocumentChanges extends UserAwareTag {
         Set<OtherLicensingInformationDetected> additionsOtherLicensingInformationDetecteds = additions.getOtherLicensingInformationDetecteds();
         Set<OtherLicensingInformationDetected> deletionsOtherLicensingInformationDetecteds = deletions.getOtherLicensingInformationDetecteds();
 
-        int changeSize = deletionsOtherLicensingInformationDetecteds.size() + additionsOtherLicensingInformationDetecteds.size();
+        int changeSize = 0;
+        if (additionsOtherLicensingInformationDetecteds.size() == deletionsOtherLicensingInformationDetecteds.size()) {
+            changeSize = additionsOtherLicensingInformationDetecteds.size();
+        } else {
+            changeSize = additionsOtherLicensingInformationDetecteds.size() + deletionsOtherLicensingInformationDetecteds.size();
+        }
 
         for (int i = 0; i < changeSize; i++) {
 
@@ -461,7 +481,12 @@ public class DisplaySPDXDocumentChanges extends UserAwareTag {
         Set<SnippetRange> additionsSnippetRanges = additions.getSnippetRanges();
         Set<SnippetRange> deletionsSnippetRanges = deletions.getSnippetRanges();
 
-        int changeSize = deletionsSnippetRanges.size() + additionsSnippetRanges.size();
+        int changeSize = 0;
+        if (additionsSnippetRanges.size() == deletionsSnippetRanges.size()) {
+            changeSize = additionsSnippetRanges.size();
+        } else {
+            changeSize = additionsSnippetRanges.size() + deletionsSnippetRanges.size();
+        }
 
         for (int i = 0; i < changeSize; i++) {
 
@@ -516,7 +541,6 @@ public class DisplaySPDXDocumentChanges extends UserAwareTag {
                                 + render3 + "</ul> </td> </tr>";
             display.append(renderTotal);
         }
-        System.out.println(display.toString());
         return display.toString();
     }
 

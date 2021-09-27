@@ -157,7 +157,12 @@ public class DisplayDocumentCreationInfoChanges extends UserAwareTag {
         Set<ExternalDocumentReferences> additionsExternalDocumentRefs = additions.getExternalDocumentRefs();
         Set<ExternalDocumentReferences> deletionsExternalDocumentRefs = deletions.getExternalDocumentRefs();
 
-        int changeSize = deletionsExternalDocumentRefs.size() + additionsExternalDocumentRefs.size();
+        int changeSize = 0;
+        if (additionsExternalDocumentRefs.size() == deletionsExternalDocumentRefs.size()) {
+            changeSize = additionsExternalDocumentRefs.size();
+        } else {
+            changeSize = additionsExternalDocumentRefs.size() + deletionsExternalDocumentRefs.size();
+        }
 
         for (int i = 0; i < changeSize; i++) {
 
@@ -231,7 +236,12 @@ public class DisplayDocumentCreationInfoChanges extends UserAwareTag {
         Set<Creator> additionsCreators = additions.getCreator();
         Set<Creator> deletionsCreators = deletions.getCreator();
 
-        int changeSize = deletionsCreators.size() + additionsCreators.size();
+        int changeSize = 0;
+        if (additionsCreators.size() == deletionsCreators.size()) {
+            changeSize = additionsCreators.size();
+        } else {
+            changeSize = additionsCreators.size() + deletionsCreators.size();
+        }
 
         for (int i = 0; i < changeSize; i++) {
 

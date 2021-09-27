@@ -178,7 +178,12 @@ public class DisplayPackageInfoChanges extends UserAwareTag {
         Set<CheckSum> additionsCheckSums = additions.getChecksums();
         Set<CheckSum> deletionsCheckSums = deletions.getChecksums();
 
-        int changeSize = deletionsCheckSums.size() + additionsCheckSums.size();
+        int changeSize = 0;
+        if (additionsCheckSums.size() == deletionsCheckSums.size()) {
+            changeSize = additionsCheckSums.size();
+        } else {
+            changeSize = additionsCheckSums.size() + deletionsCheckSums.size();
+        }
 
         for (int i = 0; i < changeSize; i++) {
 
@@ -242,7 +247,12 @@ public class DisplayPackageInfoChanges extends UserAwareTag {
         Set<Annotations> additionsAnnotationss = additions.getAnnotations();
         Set<Annotations> deletionsAnnotationss = deletions.getAnnotations();
 
-        int changeSize = deletionsAnnotationss.size() + additionsAnnotationss.size();
+        int changeSize = 0;
+        if (deletionsAnnotationss.size() == additionsAnnotationss.size()) {
+            changeSize = additionsAnnotationss.size();
+        } else {
+            changeSize = deletionsAnnotationss.size() + additionsAnnotationss.size();
+        }
 
         for (int i = 0; i < changeSize; i++) {
 
@@ -306,7 +316,12 @@ public class DisplayPackageInfoChanges extends UserAwareTag {
         Set<ExternalReference> additionsExternalReferences = additions.getExternalRefs();
         Set<ExternalReference> deletionsExternalReferences = deletions.getExternalRefs();
 
-        int changeSize = deletionsExternalReferences.size() + additionsExternalReferences.size();
+        int changeSize = 0;
+        if (additionsExternalReferences.size() == deletionsExternalReferences.size()) {
+            changeSize = additionsExternalReferences.size();
+        } else {
+            changeSize = additionsExternalReferences.size() + deletionsExternalReferences.size();
+        }
 
         for (int i = 0; i < changeSize; i++) {
 
