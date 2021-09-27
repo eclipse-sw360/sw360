@@ -879,12 +879,12 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 String spdxDocumentId = release.getSpdxId();
                 if(!isNullOrEmpty(spdxDocumentId)) {
                     SPDXDocumentService.Iface SPDXDocumentClient = thriftClients.makeSPDXClient();
-                    spdxDocument = SPDXDocumentClient.getSPDXDocumentById(spdxDocumentId, user);
+                    spdxDocument = SPDXDocumentClient.getSPDXDocumentForEdit(spdxDocumentId, user);
                     String spdxDocumentCreationInfoId = spdxDocument.getSpdxDocumentCreationInfoId();
                     Set<String> spdxPackageInfoIds = spdxDocument.getSpdxPackageInfoIds();
                     if(!isNullOrEmpty(spdxDocumentCreationInfoId)) {
                         DocumentCreationInformationService.Iface doClient = thriftClients.makeSPDXDocumentInfoClient();
-                        documentCreationInfo = doClient.getDocumentCreationInformationById(spdxDocumentCreationInfoId, user);
+                        documentCreationInfo = doClient.getDocumentCreationInfoForEdit(spdxDocumentCreationInfoId, user);
                     }
                     if(spdxPackageInfoIds != null && !spdxPackageInfoIds.isEmpty()){
                         PackageInformationService.Iface paClient = thriftClients.makeSPDXPackageInfoClient();
