@@ -133,17 +133,17 @@
 		<tr class="spdx-full">
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1">2.10 Creator Comment</div>
-				<div class="spdx-col-2">
+				<p class="spdx-col-2" id="creatorComment">
 					<sw360:out value="${spdxDocumentCreationInfo.creatorComment}" />
-				</div>
+				</p>
 			</td>
 		</tr>
 		<tr class="spdx-full">
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1">2.11 Document Comment</div>
-				<div class="spdx-col-2">
+				<p class="spdx-col-2" id="documentComment">
 					<sw360:out value="${spdxDocumentCreationInfo.documentComment}" />
-				</div>
+				</p>
 			</td>
 		</tr>
 	</tbody>
@@ -273,9 +273,9 @@
 		<tr class="spdx-full">
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1">3.12 Source Information</div>
-				<div class="spdx-col-2 spdx-p">
+				<p class="spdx-col-2 spdx-p" id="sourceInfo">
 					<sw360:out value="${package.sourceInfo}" />
-				</div>
+				</p>
 			</td>
 		</tr>
 		<tr>
@@ -308,7 +308,7 @@
 		<tr>
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1">3.16 Comments on License</div>
-				<p class="spdx-col-2 spdx-p">
+				<p class="spdx-col-2 spdx-p" id="licenseComments">
 					<sw360:out value="${package.licenseComments}" stripNewlines="false" />
 				</p>
 			</td>
@@ -316,7 +316,7 @@
 		<tr>
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1">3.17 Copyright Text</div>
-				<p class="spdx-col-2 spdx-p">
+				<p class="spdx-col-2 spdx-p" id="copyrightText">
 					<sw360:out value="${package.copyrightText}" stripNewlines="false" />
 				</p>
 			</td>
@@ -324,7 +324,7 @@
 		<tr class="spdx-full">
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1">3.18 Package Summary Description</div>
-				<p class="spdx-col-2 spdx-p">
+				<p class="spdx-col-2 spdx-p" id="summary">
 					<sw360:out value="${package.summary}" stripNewlines="false" />
 				</p>
 			</td>
@@ -332,7 +332,7 @@
 		<tr class="spdx-full">
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1">3.19 Package Detailed Description</div>
-				<p class="spdx-col-2 spdx-p">
+				<p class="spdx-col-2 spdx-p" id="description">
 					<sw360:out value="${package.description}" stripNewlines="false" />
 				</p>
 			</td>
@@ -340,7 +340,7 @@
 		<tr>
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1">3.20 Package Comment</div>
-				<p class="spdx-col-2 spdx-p">
+				<p class="spdx-col-2 spdx-p" id="packageComment">
 					<sw360:out value="${package.packageComment}" stripNewlines="false" />
 				</p>
 			</td>
@@ -375,9 +375,9 @@
 						</div>
 						<div class="spdx-flex-row" data-index="${externalRefsData.index}">
 							<div class="spdx-col-1 spdx-key">3.22 Comment</div>
-							<div class="spdx-col-3">
+							<p class="spdx-col-3" id="externalRefComment-${externalRefsData.index}">
 								<sw360:out value="${externalRefsData.comment}" />
-							</div>
+							</p>
 						</div>
 					</core_rt:forEach>
 				</div>
@@ -809,7 +809,6 @@
 		arr = arr.replaceAll('\t', '').split('\n').map(str => str.trim()).filter(function(str) {
 			return str != '';
 		}).sort();
-		console.log(arr);
 		return arr;
 	}
 
@@ -825,10 +824,37 @@
 		fillArray(tag, readArray(tag));
 	}
 
+	let spdxDocumentObj = jQuery.parseJSON(JSON.stringify(${ spdxDocumentJson }));
+	let documentCreationInformationObj = jQuery.parseJSON(JSON.stringify(${ documentCreationInfoJson }));
+	let packageInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
+
+	// console.log(spdxDocumentObj);
+	// console.log(documentCreationInformationObj.documentComment);
+	// console.log(packageInformationObj);
+
 	$(function () {
 		formatArrayParagraph('#excludedFiles');
 		formatArrayParagraph('#licenseInfoFromFile');
 		formatArrayParagraph('#attributionText');
+		formatArrayParagraph('#creatorComment');
+
+		fillArray('#creatorComment', documentCreationInformationObj.creatorComment.split('\n'));
+		fillArray('#documentComment', documentCreationInformationObj.documentComment.split('\n'));
+
+		fillArray('#sourceInfo', packageInformationObj.sourceInfo.split('\n'));
+		fillArray('#licenseComments', packageInformationObj.licenseComments.split('\n'));
+		fillArray('#copyrightText', packageInformationObj.copyrightText.split('\n'));
+		fillArray('#summary', packageInformationObj.summary.split('\n'));
+		fillArray('#description', packageInformationObj.description.split('\n'));
+		fillArray('#packageComment', packageInformationObj.packageComment.split('\n'));
+
+		for (let i = 0; i < packageInformationObj.externalRefs.length; i++) {
+			for (let j = 0; j < packageInformationObj.externalRefs.length; j++) {
+				if (packageInformationObj.externalRefs[j].index == i) {
+					fillArray('#externalRefComment-' + i, packageInformationObj.externalRefs[j].comment.split('\n'));
+				}
+			}
+		}
 
 		for (let i = 0; i < $('#otherLicensingSelect').find('option').last().text(); i++) {
 			formatArrayParagraph('#licenseCrossRefs-' + i);
