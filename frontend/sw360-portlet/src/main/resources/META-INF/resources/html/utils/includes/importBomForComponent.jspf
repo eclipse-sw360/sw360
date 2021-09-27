@@ -269,6 +269,7 @@
                                 contentDiv.show();
                             }
                         }).catch(function (err) {
+                            $('#cancelImportSBOM').show();
                             if ($('#importSBOM').length > 0) $('#importSBOM').remove();
                             if ($('#importSBOMAsNew').length > 0) $('#importSBOMAsNew').remove();
                             statusDiv.html("<h2>Failed :(</h2>");
