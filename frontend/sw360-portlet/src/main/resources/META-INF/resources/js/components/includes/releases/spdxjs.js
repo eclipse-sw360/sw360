@@ -593,7 +593,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
             range['reference'] = $(this).find('.reference').first().val().trim();
             range['index'] = index;
             index += 1;
-            if (range['startPointer'] != '' || range['endPointer'] != '' || range['reference'] != '') {
+            if (range['startPointer'] != '' && range['endPointer'] != '' && range['reference'] != '') {
               obj['snippetRanges'].push(range);
             }
           })
