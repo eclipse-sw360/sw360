@@ -327,7 +327,7 @@
     spdxjs.fillAnnotator('#annotatorType', obj['annotator']);
     spdxjs.fillDateTime('#annotationCreatedDate', '#annotationCreatedTime', obj['annotationDate']);
     $('#annotationType').val(obj['annotationType']);
-    $('#spdxIdRef').val(obj['spdxRef']);
+    $('#spdxIdRef').val(obj['spdxIdRef']);
     $('#annotationComment').val(obj['annotationComment']);
   }
   function storeAnnotation(index) {

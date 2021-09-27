@@ -15,7 +15,7 @@
           <div style="display: flex">
             <input id="packageName" class="form-control needs-validation" rule="isNotNull" type="text"
               placeholder="Enter Package Name" name="_sw360_portlet_components_PACKAGE_NAME"
-              value="${package.name}">
+              value="<sw360:out value="${package.name}" />">
           </div>
           <div id="packageName-error-messages">
             <div class="invalid-feedback" rule="isNotNull">
@@ -29,7 +29,7 @@
             <label class="sub-label">SPDXRef-</label>
             <input id="packageSPDXId" class="form-control needs-validation" rule="isNotNull" type="text"
               placeholder="Enter Package SPDX Identifier" name="_sw360_portlet_components_PACKAGE_SPDX_ID"
-              value="${package.SPDXID}">
+              value="<sw360:out value="${package.SPDXID}" />">
           </div>
           <div id="packageSPDXId-error-messages">
             <div class="invalid-feedback" rule="isNotNull">
@@ -45,7 +45,7 @@
           <label for="versionInfo">3.3 Package Version</label>
           <div style="display: flex">
             <input id="versionInfo" class="form-control" type="text" placeholder="Enter Package Version"
-              name="_sw360_portlet_components_VERSION_INFO" value="${package.versionInfo}">
+              name="_sw360_portlet_components_VERSION_INFO" value="<sw360:out value="${package.versionInfo}" />">
           </div>
         </div>
         <div class="form-group" style="flex: 1">
@@ -53,7 +53,7 @@
           <div style="display: flex">
             <input id="packageFileName" class="form-control" type="text"
               placeholder="Enter Package File Name" name="_sw360_portlet_components_PACKAGE_FILE_NAME"
-              value="${package.packageFileName}">
+              value="<sw360:out value="${package.packageFileName}" />">
           </div>
         </div>
       </td>
@@ -72,8 +72,7 @@
               </select>
               <input style="flex: 6; margin-right: 1rem;" id="supplierValue"
                 class="form-control" type="text"
-                name="_sw360_portlet_components_SUPPLIER_VALUE" placeholder="Enter Package Supplier"
-                value="${package.supplier}">
+                name="_sw360_portlet_components_SUPPLIER_VALUE" placeholder="Enter Package Supplier">
             </div>
             <div style="flex: 2">
               <input class="spdx-radio" id="supplierNoAssertion" type="radio"
@@ -98,7 +97,7 @@
               </select>
               <input style="flex: 6; margin-right: 1rem;" class="form-control" id="originatorValue"
                 type="text" name="_sw360_portlet_components_ORIGINATOR_VALUE"
-                placeholder="Enter Package Originator" value="${package.originator}">
+                placeholder="Enter Package Originator">
             </div>
             <div style="flex: 2">
               <input class="spdx-radio" id="originatorNoAssertion" type="radio"
@@ -120,7 +119,7 @@
               <input style="flex: 6; margin-right: 1rem;" class="form-control needs-validation"
                 id="downloadLocationValue" rule="isNotNull" type="text"
                 name="_sw360_portlet_components_DOWNLOAD_LOCATION_VALUE"
-                placeholder="Enter Package Download Location" value="${package.downloadLocation}">
+                placeholder="Enter Package Download Location">
             </div>
             <div style="flex: 2;">
               <input class="spdx-radio" id="downloadLocationNone" type="radio"
@@ -213,7 +212,7 @@
               <input style="flex: 6; margin-right: 1rem;" id="packageHomepageValue"
                 class="form-control" type="text"
                 name="_sw360_portlet_components_PACKAGE_HOMEPAGE_VALUE"
-                placeholder="Enter Package Homepage" value="${package.homepage}">
+                placeholder="Enter Package Homepage">
             </div>
             <div style="flex: 2;">
               <input class="spdx-radio" id="packageHomepageNone" type="radio"
@@ -249,7 +248,7 @@
               <input style="flex: 6; margin-right: 1rem;" class="form-control needs-validation"
                 rule="isNotNull" id="licenseConcludedValue" type="text"
                 name="_sw360_portlet_components_LICENSE_CONCLUDED_VALUE"
-                placeholder="Enter Concluded License" value="${package.licenseConcluded}">
+                placeholder="Enter Concluded License">
             </div>
             <div style="flex: 2;">
               <input class="spdx-radio" id="licenseConcludedNone" type="radio"
@@ -308,7 +307,7 @@
               <input style="flex: 6; margin-right: 1rem;" id="licenseDeclaredValue"
                 class="form-control needs-validation" type="text" rule="isNotNull"
                 name="_sw360_portlet_components_DECLARED_LICENSE_VALUE"
-                placeholder="Enter Declared License" value="${package.licenseDeclared}">
+                placeholder="Enter Declared License">
             </div>
             <div style="flex: 2;">
               <input class="spdx-radio" id="licenseDeclaredNone" type="radio"
