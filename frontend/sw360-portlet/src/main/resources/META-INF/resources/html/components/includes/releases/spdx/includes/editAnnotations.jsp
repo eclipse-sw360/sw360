@@ -44,10 +44,24 @@
         <div class="form-group" style="flex: 1">
           <label class="mandatory" for="annotationCreatedDate">8.2 Annotation Date </label>
           <div style="display: flex">
-            <input id="annotationCreatedDate" style="width: 12rem; text-align: center;" type="date"
-              class="form-control" placeholder="creation.date.yyyy.mm.dd" >
-            <input id="annotationCreatedTime" style="width: 12rem; text-align: center; margin-left: 10px;"
-              type="time" step="1" class="form-control" placeholder="creation.time.hh.mm.ss" >
+            <div>
+              <input id="annotationCreatedDate" style="width: 12rem; text-align: center;" type="date"
+                class="form-control needs-validation" rule="isNotNull" placeholder="creation.date.yyyy.mm.dd" >
+              <div id="annotationCreatedDate-error-messages">
+                <div class="invalid-feedback" rule="isNotNull">
+                  <liferay-ui:message key="invalid.format" />
+                </div>
+              </div>
+            </div>
+            <div>
+              <input id="annotationCreatedTime" style="width: 12rem; text-align: center; margin-left: 10px;"
+                type="time" step="1" class="form-control needs-validation" rule="isNotNull" placeholder="creation.time.hh.mm.ss" >
+              <div id="annotationCreatedTime-error-messages">
+                <div class="invalid-feedback" rule="isNotNull">
+                  <liferay-ui:message key="invalid.format" />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </td>

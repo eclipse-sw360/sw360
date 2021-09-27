@@ -72,8 +72,7 @@
               </select>
               <input style="flex: 6; margin-right: 1rem;" id="supplierValue"
                 class="form-control" type="text"
-                name="_sw360_portlet_components_SUPPLIER_VALUE" placeholder="Enter Package Supplier"
-                value="${package.supplier}">
+                name="_sw360_portlet_components_SUPPLIER_VALUE" placeholder="Enter Package Supplier">
             </div>
             <div style="flex: 2">
               <input class="spdx-radio" id="supplierNoAssertion" type="radio"
@@ -98,7 +97,7 @@
               </select>
               <input style="flex: 6; margin-right: 1rem;" class="form-control" id="originatorValue"
                 type="text" name="_sw360_portlet_components_ORIGINATOR_VALUE"
-                placeholder="Enter Package Originator" value="${package.originator}">
+                placeholder="Enter Package Originator">
             </div>
             <div style="flex: 2">
               <input class="spdx-radio" id="originatorNoAssertion" type="radio"
@@ -120,7 +119,7 @@
               <input style="flex: 6; margin-right: 1rem;" class="form-control needs-validation"
                 id="downloadLocationValue" rule="isNotNull" type="text"
                 name="_sw360_portlet_components_DOWNLOAD_LOCATION_VALUE"
-                placeholder="Enter Package Download Location" value="${package.downloadLocation}">
+                placeholder="Enter Package Download Location">
             </div>
             <div style="flex: 2;">
               <input class="spdx-radio" id="downloadLocationNone" type="radio"
@@ -213,7 +212,7 @@
               <input style="flex: 6; margin-right: 1rem;" id="packageHomepageValue"
                 class="form-control" type="text"
                 name="_sw360_portlet_components_PACKAGE_HOMEPAGE_VALUE"
-                placeholder="Enter Package Homepage" value="${package.homepage}">
+                placeholder="Enter Package Homepage">
             </div>
             <div style="flex: 2;">
               <input class="spdx-radio" id="packageHomepageNone" type="radio"
@@ -249,7 +248,7 @@
               <input style="flex: 6; margin-right: 1rem;" class="form-control needs-validation"
                 rule="isNotNull" id="licenseConcludedValue" type="text"
                 name="_sw360_portlet_components_LICENSE_CONCLUDED_VALUE"
-                placeholder="Enter Concluded License" value="${package.licenseConcluded}">
+                placeholder="Enter Concluded License">
             </div>
             <div style="flex: 2;">
               <input class="spdx-radio" id="licenseConcludedNone" type="radio"
@@ -308,7 +307,7 @@
               <input style="flex: 6; margin-right: 1rem;" id="licenseDeclaredValue"
                 class="form-control needs-validation" type="text" rule="isNotNull"
                 name="_sw360_portlet_components_DECLARED_LICENSE_VALUE"
-                placeholder="Enter Declared License" value="${package.licenseDeclared}">
+                placeholder="Enter Declared License">
             </div>
             <div style="flex: 2;">
               <input class="spdx-radio" id="licenseDeclaredNone" type="radio"

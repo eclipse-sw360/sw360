@@ -124,7 +124,7 @@
         <div class="form-group">
           <label for="licenseListVersion">2.7 License List Version</label>
           <input id="licenseListVersion" class="form-control" type="text"
-            placeholder="Enter License List Version" value="${spdxDocumentCreationInfo.licenseListVersion}">
+            placeholder="Enter License List Version" value="<sw360:out value="${spdxDocumentCreationInfo.licenseListVersion}" />">
         </div>
       </td>
     </tr>
