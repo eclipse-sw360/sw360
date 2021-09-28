@@ -51,6 +51,7 @@
             <td></td>
             <td></td>
             <td></td>
+            <td></td>
         </tr>
     </core_rt:if>
     <%--linked releases of linked projects--%>
@@ -68,6 +69,7 @@
             <td>
 		<sw360:DisplayEnum value="${releaseLink.releaseRelationship}"/>
             </td>
+            <td></td>
             <td></td>
             <td></td>
             <td></td>
