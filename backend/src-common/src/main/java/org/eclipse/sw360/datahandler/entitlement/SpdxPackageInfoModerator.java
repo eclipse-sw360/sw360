@@ -27,8 +27,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import com.github.andrewoma.dexx.collection.internal.base.Break;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 

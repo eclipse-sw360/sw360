@@ -69,9 +69,10 @@ public class ThriftUtils {
             .add(ExternalToolProcess.class, ExternalToolProcessStep.class) // external tools like Fossology service
             .add(Vulnerability.class, ReleaseVulnerabilityRelation.class, ProjectVulnerabilityRating.class)
             .add(ChangeLogs.class) // Changelog Service
-            .add(SPDXDocument.class ) // SPDX service
-            .add(DocumentCreationInformation.class ) // SPDX service
-            .add(PackageInformation.class ) // SPDX service
+            .add(SPDXDocument.class ) // SPDX Document service
+            .add(DocumentCreationInformation.class ) // Document Creation Information service
+            .add(PackageInformation.class ) // Package Information service
+            .add(FileInformation.class) // File Information Service
             .build();
 
     public static final List<Class<?>> THRIFT_NESTED_CLASSES = ImmutableList.<Class<?>>builder()
@@ -85,7 +86,6 @@ public class ThriftUtils {
             .add(ClearingInformation.class) // Component service
             .add(CVEReference.class, VendorAdvisory.class, VulnerabilityCheckStatus.class) // Vulnerability Service
             .add(VerificationStateInfo.class)
-	        .add(FileInformation.class) // SPDXDocument Service
             .build();
 
     public static final Map<Class<?>, JsonDeserializer<?>> CUSTOM_DESERIALIZER = ImmutableMap.of(
