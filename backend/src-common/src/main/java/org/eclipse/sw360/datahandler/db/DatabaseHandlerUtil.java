@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
 import org.apache.thrift.TFieldIdEnum;
@@ -114,6 +115,8 @@ public class DatabaseHandlerUtil {
     private static final String ATTACHMENT_STORE_FILE_SYSTEM_PERMISSION;
     private static ExecutorService ATTACHMENT_FILE_SYSTEM_STORE_THREAD_POOL = Executors.newFixedThreadPool(5);
     private static final String ATTACHMENT_DELETE_NO_OF_DAYS;
+    public static final String CHANGE_LOG_CONFIG_FILE_PATH;
+    private static final boolean IS_SW360_CHANGE_LOG_ENABLED;
     static {
         Properties props = CommonUtils.loadProperties(DatabaseSettings.class, PROPERTIES_FILE_PATH);
         ATTACHMENT_STORE_FILE_SYSTEM_LOCATION = props.getProperty("attachment.store.file.system.location",
@@ -123,6 +126,9 @@ public class DatabaseHandlerUtil {
         IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED = Boolean.parseBoolean(props.getProperty("enable.attachment.store.to.file.system", "false"));
         ATTACHMENT_DELETE_NO_OF_DAYS = props.getProperty("attachemnt.delete.no.of.days",
                 "30");
+        CHANGE_LOG_CONFIG_FILE_PATH = props.getProperty("sw360changelog.config.file.location",
+                "/etc/sw360/log4j2.xml");
+        IS_SW360_CHANGE_LOG_ENABLED = Boolean.parseBoolean(props.getProperty("enable.sw360.change.log", "false"));
     }
 
     public DatabaseHandlerUtil(DatabaseConnectorCloudant db) {
@@ -442,6 +448,11 @@ public class DatabaseHandlerUtil {
         };
 
         Thread changeLogsThread = new Thread(changeLogRunnable);
+        if (IS_SW360_CHANGE_LOG_ENABLED) {
+            File sw360ChangeLogFileLocation = new File(CHANGE_LOG_CONFIG_FILE_PATH);
+            LoggerContext context = (LoggerContext) LogManager.getContext(false);
+            context.setConfigLocation(sw360ChangeLogFileLocation.toURI());
+       }
         changeLogsThread.start();
     }
 
