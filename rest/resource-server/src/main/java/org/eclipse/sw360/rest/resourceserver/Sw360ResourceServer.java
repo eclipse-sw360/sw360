@@ -21,6 +21,7 @@ import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthentic
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -30,6 +31,7 @@ import org.springframework.data.rest.webmvc.config.RepositoryRestConfigurerAdapt
 import org.springframework.hateoas.UriTemplate;
 import org.springframework.hateoas.hal.CurieProvider;
 import org.springframework.hateoas.hal.DefaultCurieProvider;
+import org.springframework.web.filter.ForwardedHeaderFilter;
 
 @SpringBootApplication
 @Import(Sw360CORSFilter.class)
@@ -93,5 +95,12 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
             .properties(PropertyUtils.createDefaultProperties(APPLICATION_ID))
             .build()
             .run(args);
+    }
+
+    @Bean
+    public FilterRegistrationBean<ForwardedHeaderFilter> forwardedHeaderFilter() {
+        FilterRegistrationBean<ForwardedHeaderFilter> bean = new FilterRegistrationBean<>();
+        bean.setFilter(new ForwardedHeaderFilter());
+        return bean;
     }
 }
