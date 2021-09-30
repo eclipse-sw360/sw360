@@ -46,18 +46,18 @@
           <div style="display: flex">
             <div>
               <input id="annotationCreatedDate" style="width: 12rem; text-align: center;" type="date"
-                class="form-control needs-validation" rule="isNotNull" placeholder="creation.date.yyyy.mm.dd" >
+                class="form-control needs-validation" rule="required" placeholder="creation.date.yyyy.mm.dd" >
               <div id="annotationCreatedDate-error-messages">
-                <div class="invalid-feedback" rule="isNotNull">
+                <div class="invalid-feedback" rule="required">
                   <liferay-ui:message key="invalid.format" />
                 </div>
               </div>
             </div>
             <div>
               <input id="annotationCreatedTime" style="width: 12rem; text-align: center; margin-left: 10px;"
-                type="time" step="1" class="form-control needs-validation" rule="isNotNull" placeholder="creation.time.hh.mm.ss" >
+                type="time" step="1" class="form-control needs-validation" rule="required" placeholder="creation.time.hh.mm.ss" >
               <div id="annotationCreatedTime-error-messages">
-                <div class="invalid-feedback" rule="isNotNull">
+                <div class="invalid-feedback" rule="required">
                   <liferay-ui:message key="invalid.format" />
                 </div>
               </div>

@@ -8,7 +8,7 @@ define('components/includes/releases/validateLib', ['jquery'], function ($) {
     const downloadUrlRegex = /(?:git|ssh|https?|ftp|git@[-\w.]+):(\/\/)?(.*?)(\.git)?(\/?|\#[-\d\w._]+?)$/;
 
     function regex(val, params) {
-        if (!isNotNull(val)) {
+        if (!required(val)) {
             return true;
         }
         var regexText = new RegExp(params);
@@ -19,19 +19,11 @@ define('components/includes/releases/validateLib', ['jquery'], function ($) {
         }
     }
 
-    function isNotNull(val) {
+    function required(val) {
         if ((val == null) || (val == '')) {
             return false;
         } else {
             return true;
-        }
-    }
-
-    function required(val, params) {
-        if (value == 'checked') {
-            return true;
-        } else {
-            return false;
         }
     }
 
@@ -70,7 +62,7 @@ define('components/includes/releases/validateLib', ['jquery'], function ($) {
     }
 
     function isUrl(val, params) {
-        if (!isNotNull(val)) {
+        if (!required(val)) {
             return true;
         }
         if (val.match(urlRegex)) {
@@ -81,7 +73,7 @@ define('components/includes/releases/validateLib', ['jquery'], function ($) {
     }
 
     function isDownloadUrl(val, params) {
-        if (!isNotNull(val)) {
+        if (!required(val)) {
             return true;
         }
         if (val.match(downloadUrlRegex)) {

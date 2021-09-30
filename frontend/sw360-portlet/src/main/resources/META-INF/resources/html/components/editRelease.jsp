@@ -255,7 +255,7 @@
                     validateLib.setFormId('editSPDXForm');
                     validateLib.validate();
                     if (readDocumentCreator().length == 0) {
-                        validateLib.addError('spdxCreator', ['isNotNull']);
+                        validateLib.addError('spdxCreator', ['required']);
                         $('.creator-value').each(function () {
                             if ($(this).val().trim() == '') {
                                 this.setCustomValidity('error');
