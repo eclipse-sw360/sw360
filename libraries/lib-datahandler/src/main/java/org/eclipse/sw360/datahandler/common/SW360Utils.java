@@ -670,4 +670,28 @@ public class SW360Utils {
         users.add(project.getCreatedBy());
         return users.contains(user.getEmail());
     }
+
+    public static void copyLinkedObligationsForClonedProject(Project newProject, Project sourceProject, ProjectService.Iface client, User user) {
+        try {
+            ObligationList obligation = client.getLinkedObligations(sourceProject.getLinkedObligationId(), user);
+            Set<String> newLinkedReleaseIds = newProject.getReleaseIdToUsage().keySet();
+            Set<String> sourceLinkedReleaseIds = sourceProject.getReleaseIdToUsage().keySet();
+            Map<String, ObligationStatusInfo> linkedObligations = obligation.getLinkedObligationStatus();
+            if (!newLinkedReleaseIds.equals(sourceLinkedReleaseIds)) {
+                linkedObligations = obligation.getLinkedObligationStatus().entrySet().stream().filter(entry -> {
+                    Set<String> releaseIds = entry.getValue().getReleaseIdToAcceptedCLI().keySet();
+                    releaseIds.retainAll(newLinkedReleaseIds);
+                    if (releaseIds.isEmpty()) {
+                        return false;
+                    }
+                    return true;
+                }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            }
+            if (!linkedObligations.isEmpty()) {
+                client.addLinkedObligations(new ObligationList().setProjectId(newProject.getId()).setLinkedObligationStatus(linkedObligations), user);
+            }
+        } catch (TException e) {
+            log.error("Error duplicating obligations for project: " + newProject.getId(), e);
+        }
+    }
 }

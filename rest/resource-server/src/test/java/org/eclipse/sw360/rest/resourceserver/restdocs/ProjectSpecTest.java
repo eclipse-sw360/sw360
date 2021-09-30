@@ -54,6 +54,7 @@ import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
@@ -142,6 +143,9 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.attachmentServiceMock.getResourcesFromList(anyObject())).willReturn(new Resources<>(attachmentResources));
         given(this.attachmentServiceMock.uploadAttachment(anyObject(), anyObject(), anyObject())).willReturn(attachment);
         given(this.attachmentServiceMock.updateAttachment(anyObject(), anyObject(), anyObject(), anyObject())).willReturn(att2);
+
+        Mockito.doNothing().when(projectServiceMock).copyLinkedObligationsForClonedProject(anyObject(), anyObject(),
+                anyObject());
 
         Map<String, ProjectReleaseRelationship> linkedReleases = new HashMap<>();
         Map<String, ProjectProjectRelationship> linkedProjects = new HashMap<>();
@@ -1164,7 +1168,65 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.createdBy").description("The user who created this project")
                         )));
     }
+    @Test
+    public void should_document_create_duplicate_project() throws Exception {
+        Map<String, Object> projectReqs = new HashMap<>();
+        projectReqs.put("name", "Test Project");
+        projectReqs.put("version", "1.0");
+        projectReqs.put("visibility", "PRIVATE");
+        projectReqs.put("description", "This is the description of my Test Project");
+        projectReqs.put("projectType", ProjectType.PRODUCT.toString());
+        Map<String, ProjectReleaseRelationship> releaseIdToUsage = new HashMap<>();
+        releaseIdToUsage.put("3765276512", new ProjectReleaseRelationship(CONTAINED, OPEN));
+        projectReqs.put("linkedReleases", releaseIdToUsage);
+        Map<String, ProjectProjectRelationship> linkedProjects = new HashMap<>();
+        linkedProjects.put("376576", new ProjectProjectRelationship(ProjectRelationship.CONTAINED).setEnableSvm(true));
+        projectReqs.put("linkedProjects", linkedProjects);
+        projectReqs.put("leadArchitect", "lead@sw360.org");
+        projectReqs.put("moderators", new HashSet<>(Arrays.asList("moderator1@sw360.org", "moderator2@sw360.org")));
+        projectReqs.put("contributors", new HashSet<>(Arrays.asList("contributor1@sw360.org", "contributor2@sw360.org")));
+        projectReqs.put("state", ProjectState.ACTIVE.toString());
+        projectReqs.put("phaseOutSince", "2020-06-24");
 
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        this.mockMvc.perform(post("/api/projects/duplicate/" + project.getId())
+                .contentType(MediaTypes.HAL_JSON)
+                .content(this.objectMapper.writeValueAsString(projectReqs))
+                .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("_embedded.createdBy.email", Matchers.is("admin@sw360.org")))
+                .andDo(this.documentationHandler.document(
+                        requestFields(
+                                fieldWithPath("name").description("The name of the project"),
+                                fieldWithPath("description").description("The project description"),
+                                fieldWithPath("version").description("The version of the new project"),
+                                fieldWithPath("visibility").description("The project visibility, possible values are: " + Arrays.asList(Visibility.values())),
+                                fieldWithPath("projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
+                                subsectionWithPath("linkedReleases").description("The relationship between linked releases of the project"),
+                                subsectionWithPath("linkedProjects").description("The `linked project id` - metadata of linked projects (`enableSvm` - whether linked projects will be part of SVM, `projectRelationship` - relationship between linked project and the project. Possible values: " + Arrays.asList(ProjectRelationship.values())),
+                                fieldWithPath("leadArchitect").description("The lead architect of the project"),
+                                fieldWithPath("contributors").description("An array of contributors to the project"),
+                                fieldWithPath("moderators").description("An array of moderators"),
+                                fieldWithPath("state").description("The project active status, possible values are: " + Arrays.asList(ProjectState.values())),
+                                fieldWithPath("phaseOutSince").description("The project phase-out date")
+                        ),
+                        responseFields(
+                                fieldWithPath("name").description("The name of the project"),
+                                fieldWithPath("version").description("The project version"),
+                                fieldWithPath("visibility").description("The project visibility, possible values are: " + Arrays.asList(Visibility.values())),
+                                fieldWithPath("createdOn").description("The date the project was created"),
+                                fieldWithPath("description").description("The project description"),
+                                fieldWithPath("projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
+                                fieldWithPath("securityResponsibles").description("An array of users responsible for security of the project."),
+                                fieldWithPath("enableSvm").description("Security vulnerability monitoring flag"),
+                                fieldWithPath("enableVulnerabilitiesDisplay").description("Displaying vulnerabilities flag."),
+                                fieldWithPath("state").description("The project active status, possible values are: " + Arrays.asList(ProjectState.values())),
+                                fieldWithPath("phaseOutSince").description("The project phase-out date"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                subsectionWithPath("_embedded.createdBy").description("The user who created this project")
+                        )));
+    }
+    
     @Test
     public void should_document_update_project() throws Exception {
         Project updateProject = new Project();

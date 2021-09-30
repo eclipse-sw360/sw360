@@ -279,7 +279,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return rch.convertToEmbeddedProject(sw360Object).setExternalIds(sw360Object.getExternalIds());
     }
 
-    private ProjectService.Iface getThriftProjectClient() throws TTransportException {
+    public ProjectService.Iface getThriftProjectClient() throws TTransportException {
         THttpClient thriftClient = new THttpClient(thriftServerUrl + "/projects/thrift");
         TProtocol protocol = new TCompactProtocol(thriftClient);
         return new ProjectService.Client(protocol);
@@ -399,5 +399,11 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     public List<Project> refineSearch(Map<String, Set<String>> filterMap, User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         return sw360ProjectClient.refineSearch(null, filterMap, sw360User);
+    }
+
+    public void copyLinkedObligationsForClonedProject(Project createDuplicateProject, Project sw360Project, User user)
+            throws TException {
+        SW360Utils.copyLinkedObligationsForClonedProject(createDuplicateProject, sw360Project, getThriftProjectClient(),
+                user);
     }
 }
