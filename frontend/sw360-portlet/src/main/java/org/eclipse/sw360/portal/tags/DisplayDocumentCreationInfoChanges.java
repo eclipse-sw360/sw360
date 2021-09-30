@@ -314,7 +314,7 @@ public class DisplayDocumentCreationInfoChanges extends UserAwareTag {
             return "";
         }
 
-        String display = "<tr> <td>CheckSum:</td> <td> <ul> <li>algorithm: " 
+        String display = "<tr> <td>CheckSum:</td> <td> <ul> <li>algorithm: "
                     + actualChecsum.checksum.algorithm + "</li> <li>checksumValue: "
                     + actualChecsum.checksum.checksumValue +  "</li> </ul> </td> <td> <li>algorithm: "
                     + deletionsChecsum.checksum.algorithm + "</li> <li>checksumValue: </li>"

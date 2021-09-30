@@ -438,7 +438,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         $('[name=checksumRow]').each(function() {
           let algorithm = $(this).find('.checksum-algorithm').first().val().trim();
           let checksumValue = $(this).find('.checksum-value').first().val().trim();
-    
+
           if (algorithm !='' && checksumValue != '') {
             packageInformationObj['checksums'].push({ 'algorithm': algorithm, 'checksumValue': checksumValue, 'index': index });
             index += 1;

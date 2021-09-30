@@ -88,7 +88,7 @@ public class SpdxBOMExporter {
             convertTagToRdf(sourceFile, targetFileName);
             return requestSummary.setRequestStatus(RequestStatus.SUCCESS);
         } else {
-            // todo: can update when no need temporary file .rdf 
+            // todo: can update when no need temporary file .rdf
             try {
                 String rdfFileName = releaseId+".rdf";
                 convertTagToRdf(sourceFile, rdfFileName);
@@ -124,7 +124,6 @@ public class SpdxBOMExporter {
 
                 Properties constants = CommonCode.getTextFromProperties("org/spdx/tag/SpdxTagValueConstants.properties");
                 CommonCode.printDoc(doc, out, constants);
-                
             } catch (Exception e) {
                 log.error("Error transalting SPDX Document to tag-value format: " + e.getMessage());
             }
@@ -160,7 +159,7 @@ public class SpdxBOMExporter {
 			}
 			log.error("Could not write to the new SPDX RDF file "+ spdxRDFFile.getPath() + "due to error " + e1.getMessage());
         }
-        
+
 		List<String> warnings = new ArrayList<String>();
 		try {
 			TagToRDF.convertTagFileToRdf(spdxTagStream, outStream, outputFormat, warnings);
@@ -169,7 +168,7 @@ public class SpdxBOMExporter {
 				for (String warning:warnings) {
 					log.warn("\t"+warning);
 				}
-            }            
+            }
 		} catch (Exception e) {
 			log.error("Error creating SPDX Analysis: " + e.getMessage());
 		} finally {
@@ -194,7 +193,7 @@ public class SpdxBOMExporter {
         final SPDXDocument sw360SPDXDocument = getSpdxDocumentFromRelease(releaseId);
 
         SpdxDocument spdxDocument = createSpdxDocumentCreationInfoFromSw360DocumentCreationInfo(sw360SPDXDocument.getId(), sw360SPDXDocument);
-        
+
         final Set<SnippetInformation> snippetInfos = sw360SPDXDocument.getSnippets();
         final Set<RelationshipsBetweenSPDXElements> relationships = sw360SPDXDocument.getRelationships();
         final Set<Annotations> annotations = sw360SPDXDocument.getAnnotations();
@@ -272,7 +271,7 @@ public class SpdxBOMExporter {
 
             String name= sw360SnippetInfo.getName();
             snippet.setName(name);
-            
+
             String[] attributionText= sw360SnippetInfo.getSnippetAttributionText().split("|");
             snippet.setAttributionText(attributionText);
 
@@ -292,7 +291,7 @@ public class SpdxBOMExporter {
         for (RelationshipsBetweenSPDXElements sw360Relationship : resultSet) {
             // todo: setId for relatedSpdxElement
             // relatedSpdxElement.setId(sw360Relationship.getSpdxElementId());
-            
+
             RelationshipType relationshipType;
             relationshipType = RelationshipType.fromTag(sw360Relationship.getRelationshipType());
             String comment = sw360Relationship.getRelationshipComment();
@@ -363,7 +362,7 @@ public class SpdxBOMExporter {
     }
 
     private SpdxDocument createSpdxDocumentCreationInfoFromSw360DocumentCreationInfo(String sw360SpdxDocId, SPDXDocument sw360SPDXDocument) throws SW360Exception, InvalidSPDXAnalysisException {
-        DocumentCreationInformation sw360DocumentCreationInformation = getDocCreationInfoFromSpdxDocument(sw360SpdxDocId);        
+        DocumentCreationInformation sw360DocumentCreationInformation = getDocCreationInfoFromSpdxDocument(sw360SpdxDocId);
 
         SpdxDocumentContainer documentContainer = new SpdxDocumentContainer(sw360DocumentCreationInformation.getDocumentNamespace(), sw360DocumentCreationInformation.getSpdxVersion());
         SpdxDocument spdxDocument = documentContainer.getSpdxDocument();
@@ -377,7 +376,7 @@ public class SpdxBOMExporter {
 
         ExtractedLicenseInfo dataLicense = new ExtractedLicenseInfo(sw360DocumentCreationInformation.getDataLicense(), "");
         spdxDocument.setDataLicense(existedLicense(dataLicense));
-        
+
         // todo: can not set a file ID for an SPDX element already in an RDF Model. You must create a new SPDX File with this ID.
         // spdxDocument.setId(sw360DocumentCreationInformation.getSPDXID());
 
@@ -414,8 +413,7 @@ public class SpdxBOMExporter {
 
         return spdxDocument;
     }
-    
-    
+
     private void createSpdxPackageInfoFromSw360PackageInfo(SpdxPackage spdxPackage, String sw360SpdxDocId) throws SW360Exception, InvalidSPDXAnalysisException, URISyntaxException {
         final PackageInformation sw360PackageInfo = getPackageInformationFromSpdxDocument(sw360SpdxDocId);
 
