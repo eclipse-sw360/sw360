@@ -85,8 +85,9 @@
     <h1>$projectTitle</h1>
     <h2>Open Source Software</h2>
     $licenseInfoHeader
-
-#if($externalIds.keySet().size() > 0)
+    #set($anchorRegEx = '(?s).*?<(\s)*?a(\s)+href\s*=.*?>.*?<(\s)*?[\/](\s)*?a(\s)*?>.*?')
+    #set($scriptRegEx = '(?s).*?<(\s)*?script(\s)*?>.*?<(\s)*?[\/](\s)*?script(\s)*?>.*?')
+    #if($externalIds.keySet().size() > 0)
     <h2>External Identifiers for this Product</h2>
     <table>
     <tr>
@@ -136,7 +137,13 @@
                             #set($acks = $acknowledgements.get($releaseName))
     <pre class="acknowledgements">
 #foreach($ack in ${acks})
-$esc.xml($ack)
+    #set($containsLink = $ack.matches($anchorRegEx))
+    #set($containsScript = $ack.matches($scriptRegEx))
+    #set($ackAsHtml = $esc.xml($ack))
+    #if($containsLink && !$containsScript)
+        #set($ackAsHtml = $ack)
+    #end
+$ackAsHtml
 #end
     </pre>
                     #end
@@ -165,7 +172,13 @@ $esc.xml($ack)
                             #set($copyrights = $licenseInfoResults.get($releaseName).licenseInfo.copyrights)
     <pre class="copyrights">
 #foreach($copyright in ${copyrights})
-$esc.xml($copyright)
+    #set($containsLink = $copyright.matches($anchorRegEx))
+    #set($containsScript = $copyright.matches($scriptRegEx))
+    #set($copyrightAsHtml = $esc.xml($copyright))
+    #if($containsLink && !$containsScript)
+        #set($copyrightAsHtml = $copyright)
+    #end
+$copyrightAsHtml
 #end
 <h3><a class="top" href="#releaseHeader">&#8679;</a></h3>
     </pre>
@@ -189,15 +202,21 @@ $esc.xml($copyright)
             #end
 
             #set($licenseText = "&lt;no license text available&gt;")
+            #set($licenseTextAsHtml = $licenseText)
             #if($license.licenseText)
-                #set($licenseText = $esc.xml($license.licenseText))
+                #set($containsLink = $license.licenseText.matches($anchorRegEx))
+                #set($containsScript = $license.licenseText.matches($scriptRegEx))
+                #set($licenseTextAsHtml = $esc.xml($license.licenseText))
+                #if($containsLink && !$containsScript)
+                    #set($licenseTextAsHtml = $license.licenseText)
+                #end
             #end
 
             #set($licenseId = $licenseNameWithTextToReferenceId.get($license))
             <li id="licenseTextItem$licenseId">
                 <h3>$licenseId: $licenseName<a class="top" href="#releaseHeader">&#8679;</a></h3>
     <pre class="licenseText" id="licenseText$licenseId">
-$licenseText
+$licenseTextAsHtml
     </pre>
             </li>
         #end
