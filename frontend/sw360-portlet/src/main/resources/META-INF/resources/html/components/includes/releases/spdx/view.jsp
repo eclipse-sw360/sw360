@@ -8,6 +8,7 @@
   ~
   ~ SPDX-License-Identifier: EPL-2.0
 --%>
+
 <div class="form-group btn-group">
 	<button id="spdxFullMode" class="btn btn-info">SPDX Full</button>
 	<button id="spdxLiteMode" class="btn btn-secondary">SPDX Lite</button>
