@@ -107,6 +107,10 @@
                                 <label class="mb-0"><liferay-ui:message key="report.available" /></label>
                             </li>
                             <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="scanAvailable" data-releaseclearingstate="Scan available"/>
+                                <label class="mb-0"><liferay-ui:message key="scan.available" /></label>
+                            </li>
+                            <li>
                                 <input type="checkbox" class="form-check-input ml-4" id="sentToClearing" data-releaseclearingstate="Sent to clearing tool"/>
                                 <label class="mb-0"><liferay-ui:message key="sent.to.clearing.tool" /></label>
                             </li>
@@ -477,6 +481,7 @@ AUI().use('liferay-portlet-url', function () {
                     case 'Report available':  //->blue
                         return 'bg-info';
                     case 'Sent to clearing tool':  //->orange
+                    case 'Scan available':
                         return 'bg-primary';
                 }
             return '<%=PortalConstants.CLEARING_STATE_UNKNOWN__CSS%>';

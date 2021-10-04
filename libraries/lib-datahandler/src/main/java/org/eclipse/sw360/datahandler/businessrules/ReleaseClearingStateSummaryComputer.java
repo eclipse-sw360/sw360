@@ -29,7 +29,7 @@ import java.util.List;
 public class ReleaseClearingStateSummaryComputer {
 
     public static ReleaseClearingStateSummary computeReleaseClearingStateSummary(List<Release> releases, String clearingTeam) {
-        ReleaseClearingStateSummary summary = new ReleaseClearingStateSummary(0, 0, 0, 0, 0);
+        ReleaseClearingStateSummary summary = new ReleaseClearingStateSummary(0, 0, 0, 0, 0, 0);
 
         if (releases == null) {
             return summary;
@@ -57,6 +57,9 @@ public class ReleaseClearingStateSummaryComputer {
                     break;
                 case APPROVED:
                     summary.approved++;
+                    break;
+                case SCAN_AVAILABLE:
+                    summary.scanAvailable++;
                     break;
                 default:
                     summary.newRelease++;

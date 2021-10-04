@@ -110,17 +110,17 @@
               /*  3 */ { data: "createdTeam", defaultContent: "", render: $.fn.dataTable.render.ellipsis, className: 'content-middle' },
               /*  4 */ { data: "createdBy", defaultContent: "", render: $.fn.dataTable.render.ellipsis, className: 'content-middle'  },
               /*  5 */ { data: "createdOn", defaultContent: "", className: 'content-middle' },
-              /*  6 */ { data: "checkStatus", render: $.fn.dataTable.render.inputSelect('checkStatuses', config.inputCheckStatusName, 'toplabelledInput', 'textlabel stackedLabel') },
+              /*  6 */ { data: "checkStatus", render: $.fn.dataTable.render.inputSelect('checkStatuses', config.inputCheckStatusName, 'toplabelledInput', 'textlabel stackedLabel'), className: 'checkStatus' },
               /*  7 */ { data: "checkedComment", defaultContent: "", render: $.fn.dataTable.render.inputText(config.inputCheckedCommentName, 'toplabelledInput check-comment', 'Enter comments',
                                                       function(value, type, row, meta) {
                                                           if(row.checkStatus == 0) {
                                                               this.attr('readonly', 'readonly');
                                                           }
-                                                      })
+                                                      }), className: 'checkedComment'
                          },
-              /*  8 */ { data: "checkedTeam", defaultContent: "", render: $.fn.dataTable.render.ellipsis, className: 'content-middle' },
-              /*  9 */ { data: "checkedBy", defaultContent: "", render: $.fn.dataTable.render.ellipsis, className: 'content-middle' },
-              /* 10 */ { data: "checkedOn", defaultContent: "", className: 'content-middle' },
+              /*  8 */ { data: "checkedTeam", defaultContent: "", render: $.fn.dataTable.render.ellipsis, className: 'content-middle checkedTeam' },
+              /*  9 */ { data: "checkedBy", defaultContent: "", render: $.fn.dataTable.render.ellipsis, className: 'content-middle checkedBy' },
+              /* 10 */ { data: "checkedOn", defaultContent: "", className: 'content-middle checkedOn' },
               /* 11 */ { data: "actions", orderable: false, render: $.fn.dataTable.render.actions( [{ key: 'attachmentContentId', 'class': 'delete-attachment', icon: 'trash', title: '<liferay-ui:message key="delete.attachment" />', approvalKey: 'checkStatus', usageCountsKey: 'usageCounts'}] ), className: "content-middle one action" }
             ],
             columnDefs: [{
@@ -136,6 +136,14 @@
                           $(options[1]).attr('selected', '');
                       }
                       $.fn.dataTable.render.inputSelect.updateTitle(td);
+                      $(td).find('.attachmentType').each(function() {
+                          $(this).change(function() {
+                              let checkStatus = $(td).parents("tr:first").find(".checkStatus select");
+                              let checkedComment = $(td).parents("tr:first").find(".checkedComment input");
+                              functionForCheckStatusOfInitialScanType($(this).val(), checkStatus);
+                              functionForCheckCommentOfInitialScanType($(this).val(), checkedComment);
+                          });
+                      });
                   }
             }, {
                 targets: 6,
@@ -151,6 +159,7 @@
                             $(td).parents('tr').find('input.check-comment').removeClass('foregroundAlert');
                         }
                     });
+                    functionForCheckStatusOfInitialScanType(rowData.attachmentType, $(td).find('select'));
                 }
               }, {
                   targets: 2,
@@ -163,6 +172,7 @@
                   createdCell: function(td, cellData, rowData, row, col) {
                       $.fn.dataTable.render.inputText.updateTitle(td);
                       $.fn.dataTable.render.inputText.useInputDialog(td, "<liferay-ui:message key="update.approval.comment" />");
+                      functionForCheckCommentOfInitialScanType(rowData.attachmentType, $(td).find('input'));
                   }
             }],
             order: [[0, 'asc']],
@@ -180,6 +190,23 @@
             }
         });
 
+        let functionForCheckStatusOfInitialScanType = function (attachmentType, checkStatus) {
+            if (attachmentType == "19") {
+                checkStatus.val("0").change();
+                checkStatus.attr("disabled", true);
+            } else {
+                checkStatus.attr("disabled", false);
+            }
+        }
+
+        let functionForCheckCommentOfInitialScanType = function (attachmentType, checkedComment) {
+            if (attachmentType == "19") {
+                checkedComment.val("").change();
+                checkedComment.attr("disabled", true);
+            } else {
+                checkedComment.attr("disabled", false);
+            }
+        }
 
         // register event handlers
         $('#upload-attachment-button').on('click', function() {

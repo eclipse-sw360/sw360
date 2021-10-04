@@ -193,6 +193,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }
         } else {
             if (oldBestCR.isPresent()) releaseAfter.setClearingState(ClearingState.NEW_CLEARING);
+            evaluateClearingStateForScanAvailable(releaseAfter);
         }
     }
 
@@ -949,6 +950,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 if (release.getClearingState() == null) {
                     release.setClearingState(ClearingState.NEW_CLEARING);
                 }
+
                 checkSuperAttachmentExists(release);
                 releaseRepository.update(release);
                 String componentId=release.getComponentId();
@@ -974,6 +976,17 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }
 
             return RequestStatus.SUCCESS;
+        }
+    }
+
+    private void evaluateClearingStateForScanAvailable(Release release) {
+        Set<Attachment> attachments = release.getAttachments();
+        if (CommonUtils.isNotEmpty(attachments)) {
+            long initialScanReportcount = attachments.stream()
+                    .filter(att -> att.getAttachmentType() == AttachmentType.INITIAL_SCAN_REPORT).count();
+            if (initialScanReportcount > 0) {
+                release.setClearingState(ClearingState.SCAN_AVAILABLE);
+            }
         }
     }
 
