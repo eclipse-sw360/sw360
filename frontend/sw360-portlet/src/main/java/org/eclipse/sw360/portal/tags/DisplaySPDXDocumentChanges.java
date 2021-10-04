@@ -10,8 +10,8 @@
  */
 package org.eclipse.sw360.portal.tags;
 
-import com.fasterxml.jackson.databind.deser.std.StdNodeBasedDeserializer;
 import com.google.common.base.Strings;
+import org.apache.commons.lang.StringEscapeUtils;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 
@@ -450,9 +450,9 @@ public class DisplaySPDXDocumentChanges extends UserAwareTag {
                     snippetRangeDeletions.setFieldValue(field, NOT_SET);
                 }
                 if (!snippetRange.equals(snippetRangeAdditions) && !SnippetRange._Fields.INDEX.equals(field)) {
-                    renderActual = renderActual + "<li>" + field.getFieldName() + ": " + snippetRange.getFieldValue(field) + "</li>";
-                    renderDeletions = renderDeletions + "<li>" + field.getFieldName() + ": " + snippetRangeDeletions.getFieldValue(field) + "</li>";
-                    renderAdditions = renderAdditions + "<li>" + field.getFieldName() + ": " + snippetRangeAdditions.getFieldValue(field) + "</li>";
+                    renderActual = renderActual + "<li>" + field.getFieldName() + ": " + StringEscapeUtils.escapeXml(snippetRange.getFieldValue(field).toString()) + "</li>";
+                    renderDeletions = renderDeletions + "<li>" + field.getFieldName() + ": " + StringEscapeUtils.escapeXml(snippetRangeDeletions.getFieldValue(field).toString()) + "</li>";
+                    renderAdditions = renderAdditions + "<li>" + field.getFieldName() + ": " + StringEscapeUtils.escapeXml(snippetRangeAdditions.getFieldValue(field).toString()) + "</li>";
                 }
             }
             String renderTotal = "<tr><td></td><td> <ul>" + renderActual + "</ul> </td> <td> <ul>"

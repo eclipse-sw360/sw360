@@ -11,6 +11,7 @@
 package org.eclipse.sw360.portal.tags;
 
 import com.google.common.base.Strings;
+import org.apache.commons.lang.StringEscapeUtils;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
 
@@ -288,12 +289,12 @@ public class DisplayDocumentCreationInfoChanges extends UserAwareTag {
         }
 
         String display = "<tr> <td>CheckSum:</td> <td> <ul> <li>algorithm: "
-                    + actualChecsum.checksum.algorithm + "</li> <li>checksumValue: "
-                    + actualChecsum.checksum.checksumValue +  "</li> </ul> </td> <td> <li>algorithm: "
-                    + deletionsChecsum.checksum.algorithm + "</li> <li>checksumValue: "
-                    + deletionsChecsum.checksum.checksumValue +  "</li> </ul> </td> <td> <li>algorithm: "
-                    + additionsChecsum.checksum.algorithm + " </li> <li>checksumValue: "
-                    + additionsChecsum.checksum.checksumValue + "</li> </ul> </td> </tr>";
+                    + StringEscapeUtils.escapeXml(actualChecsum.checksum.algorithm) + "</li> <li>checksumValue: "
+                    + StringEscapeUtils.escapeXml(actualChecsum.checksum.checksumValue) +  "</li> </ul> </td> <td> <li>algorithm: "
+                    + StringEscapeUtils.escapeXml(deletionsChecsum.checksum.algorithm) + "</li> <li>checksumValue: "
+                    + StringEscapeUtils.escapeXml(deletionsChecsum.checksum.checksumValue) +  "</li> </ul> </td> <td> <li>algorithm: "
+                    + StringEscapeUtils.escapeXml(additionsChecsum.checksum.algorithm) + " </li> <li>checksumValue: "
+                    + StringEscapeUtils.escapeXml(additionsChecsum.checksum.checksumValue) + "</li> </ul> </td> </tr>";
         return display;
     }
 
