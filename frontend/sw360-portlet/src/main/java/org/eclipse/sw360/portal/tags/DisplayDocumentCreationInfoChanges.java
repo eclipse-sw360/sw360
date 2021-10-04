@@ -152,49 +152,22 @@ public class DisplayDocumentCreationInfoChanges extends UserAwareTag {
             actual.externalDocumentRefs = new HashSet<>();
         }
 
-        Iterator<ExternalDocumentReferences> externalDocumentRefsDeletionsIterator = deletions.getExternalDocumentRefsIterator();
-        Iterator<ExternalDocumentReferences> externalDocumentRefsAdditionsIterator = additions.getExternalDocumentRefsIterator();
         Set<ExternalDocumentReferences> additionsExternalDocumentRefs = additions.getExternalDocumentRefs();
         Set<ExternalDocumentReferences> deletionsExternalDocumentRefs = deletions.getExternalDocumentRefs();
-
+        Set<ExternalDocumentReferences> currentExternalDocumentRefs = actual.getExternalDocumentRefs();
         int changeSize = 0;
-        if (additionsExternalDocumentRefs.size() == deletionsExternalDocumentRefs.size()) {
-            changeSize = additionsExternalDocumentRefs.size();
+        if (additionsExternalDocumentRefs.size() > deletionsExternalDocumentRefs.size()) {
+            changeSize = additionsExternalDocumentRefs.size() + currentExternalDocumentRefs.size() - deletionsExternalDocumentRefs.size();
         } else {
-            changeSize = additionsExternalDocumentRefs.size() + deletionsExternalDocumentRefs.size();
+            changeSize = currentExternalDocumentRefs.size();
         }
 
         for (int i = 0; i < changeSize; i++) {
-
-            ExternalDocumentReferences externalDocumentRefDeletions = new ExternalDocumentReferences();
-            ExternalDocumentReferences externalDocumentRefAdditions = new ExternalDocumentReferences();
-            ExternalDocumentReferences externalDocumentRef = new ExternalDocumentReferences();
-            Iterator<ExternalDocumentReferences> ExternalDocumentRefsIterator = actual.getExternalDocumentRefsIterator();
-            if (externalDocumentRefsAdditionsIterator.hasNext()) {
-                externalDocumentRefAdditions = externalDocumentRefsAdditionsIterator.next();
-                while (ExternalDocumentRefsIterator.hasNext()) {
-                    externalDocumentRef = ExternalDocumentRefsIterator.next();
-                    if (externalDocumentRefAdditions.getIndex() == externalDocumentRef.getIndex()) {
-                        break;
-                    } else {
-                        externalDocumentRef = new ExternalDocumentReferences();
-                    }
-                }
-                externalDocumentRef.setIndex(externalDocumentRefAdditions.getIndex());
-                externalDocumentRefDeletions.setIndex(externalDocumentRefAdditions.getIndex());
-
-            } else if (externalDocumentRefsDeletionsIterator.hasNext()) {
-                externalDocumentRefDeletions = externalDocumentRefsDeletionsIterator.next();
-                while (ExternalDocumentRefsIterator.hasNext()) {
-                    externalDocumentRef = ExternalDocumentRefsIterator.next();
-                    if (externalDocumentRefDeletions.getIndex() == externalDocumentRef.getIndex()) {
-                        break;
-                    }
-                }
-                externalDocumentRefAdditions.setIndex(externalDocumentRef.getIndex());
-            }
-
+            ExternalDocumentReferences externalDocumentRefDeletions = getExternalDocumentRefsByIndex(deletions, i);
+            ExternalDocumentReferences externalDocumentRefAdditions = getExternalDocumentRefsByIndex(additions, i);
+            ExternalDocumentReferences externalDocumentRef = getExternalDocumentRefsByIndex(actual, i);
             String checkSumRendeString = null;
+
             for (ExternalDocumentReferences._Fields field : ExternalDocumentReferences._Fields.values()) {
                 FieldMetaData fieldMetaData = ExternalDocumentReferences.metaDataMap.get(field);
                 if (field == ExternalDocumentReferences._Fields.CHECKSUM) {
@@ -220,6 +193,19 @@ public class DisplayDocumentCreationInfoChanges extends UserAwareTag {
                 + display.toString() + "</tbody></table>";
     }
 
+    private ExternalDocumentReferences getExternalDocumentRefsByIndex(DocumentCreationInformation document, int index) {
+        ExternalDocumentReferences externalDocumentRefs;
+        Iterator<ExternalDocumentReferences> externalDocumentRefsIterator = document.getExternalDocumentRefsIterator();
+        while (externalDocumentRefsIterator.hasNext()) {
+            externalDocumentRefs = externalDocumentRefsIterator.next();
+            if (externalDocumentRefs.getIndex() == index) {
+                externalDocumentRefs.setIndex(0);   // Set 0 to not show Index when add or delete
+                return externalDocumentRefs;
+            }
+        }
+        return new ExternalDocumentReferences();
+    }
+
     private String renderCreator() {
         HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
         ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
@@ -231,47 +217,21 @@ public class DisplayDocumentCreationInfoChanges extends UserAwareTag {
             actual.creator = new HashSet<>();
         }
 
-        Iterator<Creator> creatorDeletionsIterator = deletions.getCreatorIterator();
-        Iterator<Creator> creatorAdditionsIterator = additions.getCreatorIterator();
         Set<Creator> additionsCreators = additions.getCreator();
         Set<Creator> deletionsCreators = deletions.getCreator();
-
+        Set<Creator> currentCreators = actual.getCreator();
         int changeSize = 0;
-        if (additionsCreators.size() == deletionsCreators.size()) {
-            changeSize = additionsCreators.size();
+        if (additionsCreators.size() > deletionsCreators.size()) {
+            changeSize = additionsCreators.size() + currentCreators.size() - deletionsCreators.size();
         } else {
-            changeSize = additionsCreators.size() + deletionsCreators.size();
+            changeSize = currentCreators.size();
         }
 
         for (int i = 0; i < changeSize; i++) {
+            Creator creatorDeletions = getCreatorByIndex(deletions, i);
+            Creator creatorAdditions = getCreatorByIndex(additions, i);
+            Creator creator = getCreatorByIndex(actual, i);
 
-            Creator creatorDeletions = new Creator();
-            Creator creatorAdditions = new Creator();
-            Creator creator = new Creator();
-            Iterator<Creator> creatorsIterator = actual.getCreatorIterator();
-            if (creatorAdditionsIterator.hasNext()) {
-                creatorAdditions = creatorAdditionsIterator.next();
-                while (creatorsIterator.hasNext()) {
-                    creator = creatorsIterator.next();
-                    if (creatorAdditions.getIndex() == creator.getIndex()) {
-                        break;
-                    } else {
-                        creator = new Creator();
-                    }
-                }
-                creator.setIndex(creatorAdditions.getIndex());
-                creatorDeletions.setIndex(creatorAdditions.getIndex());
-
-            } else if (creatorDeletionsIterator.hasNext()) {
-                creatorDeletions = creatorDeletionsIterator.next();
-                while (creatorsIterator.hasNext()) {
-                    creator = creatorsIterator.next();
-                    if (creatorDeletions.getIndex() == creator.getIndex()) {
-                        break;
-                    }
-                }
-                creatorAdditions.setIndex(creator.getIndex());
-            }
             for (Creator._Fields field : Creator._Fields.values()) {
                 FieldMetaData fieldMetaData = Creator.metaDataMap.get(field);
                 displaySimpleFieldOrSet(
@@ -290,6 +250,19 @@ public class DisplayDocumentCreationInfoChanges extends UserAwareTag {
                 + display.toString() + "</tbody></table>";
     }
 
+    private Creator getCreatorByIndex(DocumentCreationInformation document, int index) {
+        Creator creator;
+        Iterator<Creator> creatorIterator = document.getCreatorIterator();
+        while (creatorIterator.hasNext()) {
+            creator = creatorIterator.next();
+            if (creator.getIndex() == index) {
+                creator.setIndex(0);    // Set 0 to not show Index when add or delete
+                return creator;
+            }
+        }
+        return new Creator();
+    }
+
     private String renderCheckSum(ExternalDocumentReferences actualChecsum, ExternalDocumentReferences additionsChecsum, ExternalDocumentReferences deletionsChecsum) {
 
         if (deletionsChecsum.isSet(ExternalDocumentReferences._Fields.CHECKSUM)
@@ -299,14 +272,14 @@ public class DisplayDocumentCreationInfoChanges extends UserAwareTag {
 
         if (!actualChecsum.isSet(ExternalDocumentReferences._Fields.CHECKSUM)) {
             actualChecsum.checksum = new CheckSum();
-            actualChecsum.checksum.algorithm = "";
-            actualChecsum.checksum.checksumValue = "";
+            actualChecsum.checksum.algorithm = NOT_SET;
+            actualChecsum.checksum.checksumValue = NOT_SET;
         }
 
         if (!deletionsChecsum.isSet(ExternalDocumentReferences._Fields.CHECKSUM)) {
             deletionsChecsum.checksum = new CheckSum();
-            deletionsChecsum.checksum.algorithm = "";
-            deletionsChecsum.checksum.checksumValue = "";
+            deletionsChecsum.checksum.algorithm = NOT_SET;
+            deletionsChecsum.checksum.checksumValue = NOT_SET;
         }
 
         if (actualChecsum.checksum.algorithm.equals(additionsChecsum.checksum.algorithm)
@@ -317,8 +290,8 @@ public class DisplayDocumentCreationInfoChanges extends UserAwareTag {
         String display = "<tr> <td>CheckSum:</td> <td> <ul> <li>algorithm: "
                     + actualChecsum.checksum.algorithm + "</li> <li>checksumValue: "
                     + actualChecsum.checksum.checksumValue +  "</li> </ul> </td> <td> <li>algorithm: "
-                    + deletionsChecsum.checksum.algorithm + "</li> <li>checksumValue: </li>"
-                    + deletionsChecsum.checksum.checksumValue +  "</td> <td> <ul> <li>algorithm: "
+                    + deletionsChecsum.checksum.algorithm + "</li> <li>checksumValue: "
+                    + deletionsChecsum.checksum.checksumValue +  "</li> </ul> </td> <td> <li>algorithm: "
                     + additionsChecsum.checksum.algorithm + " </li> <li>checksumValue: "
                     + additionsChecsum.checksum.checksumValue + "</li> </ul> </td> </tr>";
         return display;

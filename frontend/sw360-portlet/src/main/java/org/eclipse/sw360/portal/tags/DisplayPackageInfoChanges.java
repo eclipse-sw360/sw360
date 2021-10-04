@@ -173,47 +173,22 @@ public class DisplayPackageInfoChanges extends UserAwareTag {
         if (! actual.isSet(PackageInformation._Fields.CHECKSUMS)){
             actual.checksums = new HashSet<>();
         }
-        Iterator<CheckSum> checkSumDeletionsIterator = deletions.getChecksumsIterator();
-        Iterator<CheckSum> checkSumAdditionsIterator = additions.getChecksumsIterator();
+
         Set<CheckSum> additionsCheckSums = additions.getChecksums();
         Set<CheckSum> deletionsCheckSums = deletions.getChecksums();
-
+        Set<CheckSum> currentCheckSums = actual.getChecksums();
         int changeSize = 0;
-        if (additionsCheckSums.size() == deletionsCheckSums.size()) {
-            changeSize = additionsCheckSums.size();
+        if (additionsCheckSums.size() > deletionsCheckSums.size()) {
+            changeSize = additionsCheckSums.size() + currentCheckSums.size() - deletionsCheckSums.size();
         } else {
-            changeSize = additionsCheckSums.size() + deletionsCheckSums.size();
+            changeSize = currentCheckSums.size();
         }
 
         for (int i = 0; i < changeSize; i++) {
+            CheckSum checkSumDeletions = getChecksumsByIndex(deletions, i);
+            CheckSum checkSumAdditions = getChecksumsByIndex(additions, i);
+            CheckSum checkSum = getChecksumsByIndex(actual, i);
 
-            CheckSum checkSumDeletions = new CheckSum();
-            CheckSum checkSumAdditions = new CheckSum();
-            CheckSum checkSum = new CheckSum();
-            Iterator<CheckSum> checkSumsIterator = actual.getChecksumsIterator();
-            if (checkSumAdditionsIterator.hasNext()) {
-                checkSumAdditions = checkSumAdditionsIterator.next();
-                while (checkSumsIterator.hasNext()) {
-                    checkSum = checkSumsIterator.next();
-                    if (checkSumAdditions.getIndex() == checkSum.getIndex()) {
-                        break;
-                    } else {
-                        checkSum = new CheckSum();
-                    }
-                }
-                checkSum.setIndex(checkSumAdditions.getIndex());
-                checkSumDeletions.setIndex(checkSumAdditions.getIndex());
-
-            } else if (checkSumDeletionsIterator.hasNext()) {
-                checkSumDeletions = checkSumDeletionsIterator.next();
-                while (checkSumsIterator.hasNext()) {
-                    checkSum = checkSumsIterator.next();
-                    if (checkSumDeletions.getIndex() == checkSum.getIndex()) {
-                        break;
-                    }
-                }
-                checkSumAdditions.setIndex(checkSum.getIndex());
-            }
             for (CheckSum._Fields field : CheckSum._Fields.values()) {
                 FieldMetaData fieldMetaData = CheckSum.metaDataMap.get(field);
                 displaySimpleFieldOrSet(
@@ -232,6 +207,19 @@ public class DisplayPackageInfoChanges extends UserAwareTag {
                 + display.toString() + "</tbody></table>";
     }
 
+    private CheckSum getChecksumsByIndex(PackageInformation packageInfo, int index) {
+        CheckSum checksum;
+        Iterator<CheckSum> checksumIterator = packageInfo.getChecksumsIterator();
+        while (checksumIterator.hasNext()) {
+            checksum = checksumIterator.next();
+            if (checksum.getIndex() == index) {
+                checksum.setIndex(0);    // Set 0 to not show Index when add or delete
+                return checksum;
+            }
+        }
+        return new CheckSum();
+    }
+
     private String renderAnnotaions() {
         HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
         ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
@@ -242,47 +230,22 @@ public class DisplayPackageInfoChanges extends UserAwareTag {
         if (! actual.isSet(PackageInformation._Fields.ANNOTATIONS)){
             actual.annotations = new HashSet<>();
         }
-        Iterator<Annotations> annotationDeletionsIterator = deletions.getAnnotationsIterator();
-        Iterator<Annotations> annotationAdditionsIterator = additions.getAnnotationsIterator();
-        Set<Annotations> additionsAnnotationss = additions.getAnnotations();
-        Set<Annotations> deletionsAnnotationss = deletions.getAnnotations();
 
+        Set<Annotations> additionsAnnotations = additions.getAnnotations();
+        Set<Annotations> deletionsAnnotations = deletions.getAnnotations();
+        Set<Annotations> currentAnnotations = actual.getAnnotations();
         int changeSize = 0;
-        if (deletionsAnnotationss.size() == additionsAnnotationss.size()) {
-            changeSize = additionsAnnotationss.size();
+        if (additionsAnnotations.size() > deletionsAnnotations.size()) {
+            changeSize = additionsAnnotations.size() + currentAnnotations.size() - deletionsAnnotations.size();
         } else {
-            changeSize = deletionsAnnotationss.size() + additionsAnnotationss.size();
+            changeSize = currentAnnotations.size();
         }
 
         for (int i = 0; i < changeSize; i++) {
+            Annotations annotationDeletions = getAnnotationsByIndex(deletions, i);
+            Annotations annotationAdditions = getAnnotationsByIndex(additions, i);
+            Annotations annotation = getAnnotationsByIndex(actual, i);
 
-            Annotations annotationDeletions = new Annotations();
-            Annotations annotationAdditions = new Annotations();
-            Annotations annotation = new Annotations();
-            Iterator<Annotations> annotationsIterator = actual.getAnnotationsIterator();
-            if (annotationAdditionsIterator.hasNext()) {
-                annotationAdditions = annotationAdditionsIterator.next();
-                while (annotationsIterator.hasNext()) {
-                    annotation = annotationsIterator.next();
-                    if (annotationAdditions.getIndex() == annotation.getIndex()) {
-                        break;
-                    } else {
-                        annotation = new Annotations();
-                    }
-                }
-                annotation.setIndex(annotationAdditions.getIndex());
-                annotationDeletions.setIndex(annotationAdditions.getIndex());
-
-            } else if (annotationDeletionsIterator.hasNext()) {
-                annotationDeletions = annotationDeletionsIterator.next();
-                while (annotationsIterator.hasNext()) {
-                    annotation = annotationsIterator.next();
-                    if (annotationDeletions.getIndex() == annotation.getIndex()) {
-                        break;
-                    }
-                }
-                annotationAdditions.setIndex(annotation.getIndex());
-            }
             for (Annotations._Fields field : Annotations._Fields.values()) {
                 FieldMetaData fieldMetaData = Annotations.metaDataMap.get(field);
                 displaySimpleFieldOrSet(
@@ -301,6 +264,19 @@ public class DisplayPackageInfoChanges extends UserAwareTag {
                 + display.toString() + "</tbody></table>";
     }
 
+    private Annotations getAnnotationsByIndex(PackageInformation packageInfo, int index) {
+        Annotations annotations;
+        Iterator<Annotations> annotationsIterator = packageInfo.getAnnotationsIterator();
+        while (annotationsIterator.hasNext()) {
+            annotations = annotationsIterator.next();
+            if (annotations.getIndex() == index) {
+                annotations.setIndex(0);    // Set 0 to not show Index when add or delete
+                return annotations;
+            }
+        }
+        return new Annotations();
+    }
+
     private String renderExternalReference() {
         HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
         ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
@@ -311,47 +287,22 @@ public class DisplayPackageInfoChanges extends UserAwareTag {
         if (! actual.isSet(PackageInformation._Fields.EXTERNAL_REFS)){
             actual.externalRefs = new HashSet<>();
         }
-        Iterator<ExternalReference> externalRefDeletionsIterator = deletions.getExternalRefsIterator();
-        Iterator<ExternalReference> externalRefAdditionsIterator = additions.getExternalRefsIterator();
+
         Set<ExternalReference> additionsExternalReferences = additions.getExternalRefs();
         Set<ExternalReference> deletionsExternalReferences = deletions.getExternalRefs();
-
+        Set<ExternalReference> currentExternalReferences = actual.getExternalRefs();
         int changeSize = 0;
-        if (additionsExternalReferences.size() == deletionsExternalReferences.size()) {
-            changeSize = additionsExternalReferences.size();
+        if (additionsExternalReferences.size() > deletionsExternalReferences.size()) {
+            changeSize = additionsExternalReferences.size() + currentExternalReferences.size() - deletionsExternalReferences.size();
         } else {
-            changeSize = additionsExternalReferences.size() + deletionsExternalReferences.size();
+            changeSize = currentExternalReferences.size();
         }
 
         for (int i = 0; i < changeSize; i++) {
+            ExternalReference externalRefDeletions = getExternalReferenceByIndex(deletions, i);
+            ExternalReference externalRefAdditions = getExternalReferenceByIndex(additions, i);
+            ExternalReference externalRef = getExternalReferenceByIndex(actual, i);
 
-            ExternalReference externalRefDeletions = new ExternalReference();
-            ExternalReference externalRefAdditions = new ExternalReference();
-            ExternalReference externalRef = new ExternalReference();
-            Iterator<ExternalReference> externalRefsIterator = actual.getExternalRefsIterator();
-            if (externalRefAdditionsIterator.hasNext()) {
-                externalRefAdditions = externalRefAdditionsIterator.next();
-                while (externalRefsIterator.hasNext()) {
-                    externalRef = externalRefsIterator.next();
-                    if (externalRefAdditions.getIndex() == externalRef.getIndex()) {
-                        break;
-                    } else {
-                        externalRef = new ExternalReference();
-                    }
-                }
-                externalRef.setIndex(externalRefAdditions.getIndex());
-                externalRefDeletions.setIndex(externalRefAdditions.getIndex());
-
-            } else if (externalRefDeletionsIterator.hasNext()) {
-                externalRefDeletions = externalRefDeletionsIterator.next();
-                while (externalRefsIterator.hasNext()) {
-                    externalRef = externalRefsIterator.next();
-                    if (externalRefDeletions.getIndex() == externalRef.getIndex()) {
-                        break;
-                    }
-                }
-                externalRefAdditions.setIndex(externalRef.getIndex());
-            }
             for (ExternalReference._Fields field : ExternalReference._Fields.values()) {
                 FieldMetaData fieldMetaData = ExternalReference.metaDataMap.get(field);
                 displaySimpleFieldOrSet(
@@ -368,6 +319,19 @@ public class DisplayPackageInfoChanges extends UserAwareTag {
                 LanguageUtil.get(resourceBundle,"field.name"), LanguageUtil.get(resourceBundle,"current.value"),
                 LanguageUtil.get(resourceBundle,"former.value"), LanguageUtil.get(resourceBundle,"suggested.value"))
                 + display.toString() + "</tbody></table>";
+    }
+
+    private ExternalReference getExternalReferenceByIndex(PackageInformation packageInfo, int index) {
+        ExternalReference externalReference;
+        Iterator<ExternalReference> externalReferenceIterator = packageInfo.getExternalRefsIterator();
+        while (externalReferenceIterator.hasNext()) {
+            externalReference = externalReferenceIterator.next();
+            if (externalReference.getIndex() == index) {
+                externalReference.setIndex(0);    // Set 0 to not show Index when add or delete
+                return externalReference;
+            }
+        }
+        return new ExternalReference();
     }
 
     private String renderPackageVerificationCode() {
