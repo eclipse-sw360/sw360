@@ -12,10 +12,14 @@ package org.eclipse.sw360.clients.rest;
 
 import org.eclipse.sw360.http.utils.FailedRequestException;
 import org.eclipse.sw360.http.utils.HttpConstants;
+import org.eclipse.sw360.clients.adapter.SW360ComponentClientAdapterAsync;
 import org.eclipse.sw360.clients.adapter.SW360ConnectionFactory;
 import org.eclipse.sw360.clients.adapter.SW360ReleaseClientAdapterAsync;
 import org.eclipse.sw360.clients.rest.resource.attachments.SW360AttachmentType;
 import org.eclipse.sw360.clients.rest.resource.attachments.SW360SparseAttachment;
+import org.eclipse.sw360.clients.rest.resource.components.ComponentSearchParams;
+import org.eclipse.sw360.clients.rest.resource.components.SW360Component;
+import org.eclipse.sw360.clients.rest.resource.components.SW360SparseComponent;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360Release;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360SparseRelease;
 import org.junit.Before;
@@ -45,6 +49,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.sw360.http.utils.HttpUtils.waitFor;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class SW360ReleaseClientIT extends AbstractMockServerTest {
     /**
@@ -60,6 +66,8 @@ public class SW360ReleaseClientIT extends AbstractMockServerTest {
     };
 
     private SW360ReleaseClient releaseClient;
+    private SW360ComponentClient componentClient;
+    private static final String FILE_COMPONENT = "component.json";
 
     @Before
     public void setUp() {
@@ -67,6 +75,9 @@ public class SW360ReleaseClientIT extends AbstractMockServerTest {
             SW360ConnectionFactory scf = new SW360ConnectionFactory();
             SW360ReleaseClientAdapterAsync releaseClientAsync = scf.newConnection(createClientConfig())
                     .getReleaseAdapterAsync();
+            SW360ComponentClientAdapterAsync componentClientAsync = scf.newConnection(createClientConfig())
+                    .getComponentAdapterAsync();
+            componentClient = componentClientAsync.getComponentClient();
             releaseClient = releaseClientAsync.getReleaseClient();
         } else {
             releaseClient = new SW360ReleaseClient(createClientConfig(), createMockTokenProvider());
@@ -95,22 +106,38 @@ public class SW360ReleaseClientIT extends AbstractMockServerTest {
 
     @Test
     public void testGetRelease() throws IOException {
-        final String releaseId = "testRelease";
-        wireMockRule.stubFor(get(urlPathEqualTo("/releases/" + releaseId))
-                .willReturn(aJsonResponse(HttpConstants.STATUS_OK)
-                        .withBodyFile("release.json")));
+        if(!RUN_REST_INTEGRATION_TEST) {
+            final String releaseId = "testRelease";
+            wireMockRule.stubFor(get(urlPathEqualTo("/releases/" + releaseId))
+                    .willReturn(aJsonResponse(HttpConstants.STATUS_OK)
+                            .withBodyFile("release.json")));
 
-        SW360Release release = waitFor(releaseClient.getRelease(releaseId));
-        assertThat(release.getName()).isEqualTo("akka-actor_2.11");
-        assertThat(release.getVersion()).isEqualTo("2.4.12");
-        assertThat(release.getExternalIds()).contains(new AbstractMap.SimpleEntry<>("hash_1", "501887b9053ef9f4341a"));
+            SW360Release release = waitFor(releaseClient.getRelease(releaseId));
+            assertThat(release.getName()).isEqualTo("akka-actor_2.11");
+            assertThat(release.getVersion()).isEqualTo("2.4.12");
+            assertThat(release.getExternalIds()).contains(new AbstractMap.SimpleEntry<>("hash_1", "501887b9053ef9f4341a"));
 
-        Set<SW360SparseAttachment> attachments = release.getEmbedded().getAttachments();
-        assertThat(attachments).hasSize(1);
-        SW360SparseAttachment attachment = attachments.iterator().next();
-        assertThat(attachment.getAttachmentType()).isEqualTo(SW360AttachmentType.SOURCE);
-        assertThat(attachment.getFilename()).isEqualTo("artifact-sources.jar");
-        assertThat(attachment.getSha1()).isEqualTo("9fa75ed24ee85514f63046a39697509c78f536de");
+            Set<SW360SparseAttachment> attachments = release.getEmbedded().getAttachments();
+            assertThat(attachments).hasSize(1);
+            SW360SparseAttachment attachment = attachments.iterator().next();
+            assertThat(attachment.getAttachmentType()).isEqualTo(SW360AttachmentType.SOURCE);
+            assertThat(attachment.getFilename()).isEqualTo("artifact-sources.jar");
+            assertThat(attachment.getSha1()).isEqualTo("9fa75ed24ee85514f63046a39697509c78f536de");
+        } else {
+            cleanupComponent();
+            SW360Component component = componentFromJsonForIntegrationTest();
+            SW360Component createdComponent = waitFor(componentClient.createComponent(component));
+            SW360Release sw360Release = new SW360Release();
+            sw360Release.setComponentId(createdComponent.getId());
+            sw360Release.setVersion("1.1");
+            SW360Release release = waitFor(releaseClient.createRelease(sw360Release));
+            SW360Release get_release = waitFor(releaseClient.getRelease(release.getId()));
+            assertNotNull(get_release);
+            assertThat(release.getName()).isEqualTo(get_release.getName());
+            assertThat(release.getVersion()).isEqualTo(get_release.getVersion());
+            cleanupRelease(release);
+            cleanupComponent();
+        }
     }
 
     @Test
@@ -123,17 +150,35 @@ public class SW360ReleaseClientIT extends AbstractMockServerTest {
 
     @Test
     public void testGetReleasesByExternalIds() throws IOException {
-        Map<String, Object> idMap = new LinkedHashMap<>();
-        idMap.put("id 1", "testRelease");
-        idMap.put("id2", "otherFilter");
-        wireMockRule.stubFor(get(urlPathEqualTo("/releases/searchByExternalIds"))
-                .withQueryParam("id+1", equalTo("testRelease"))
-                .withQueryParam("id2", equalTo("otherFilter"))
-                .willReturn(aJsonResponse(HttpConstants.STATUS_OK)
-                        .withBodyFile("all_releases.json")));
+        if(!RUN_REST_INTEGRATION_TEST) {
+            Map<String, Object> idMap = new LinkedHashMap<>();
+            idMap.put("id 1", "testRelease");
+            idMap.put("id2", "otherFilter");
+            wireMockRule.stubFor(get(urlPathEqualTo("/releases/searchByExternalIds"))
+                    .withQueryParam("id+1", equalTo("testRelease"))
+                    .withQueryParam("id2", equalTo("otherFilter"))
+                    .willReturn(aJsonResponse(HttpConstants.STATUS_OK)
+                            .withBodyFile("all_releases.json")));
 
-        List<SW360SparseRelease> releases = waitFor(releaseClient.getReleasesByExternalIds(idMap));
-        checkReleaseData(releases);
+            List<SW360SparseRelease> releases = waitFor(releaseClient.getReleasesByExternalIds(idMap));
+            checkReleaseData(releases);
+        } else {
+            Map<String, String> idMap = new LinkedHashMap<>();
+            idMap.put("id 1", "testRelease");
+            idMap.put("id2", "otherFilter");
+            cleanupComponent();
+            SW360Component component = componentFromJsonForIntegrationTest();
+            SW360Component createdComponent = waitFor(componentClient.createComponent(component));
+            SW360Release sw360Release = new SW360Release();
+            sw360Release.setExternalIds(idMap);
+            sw360Release.setComponentId(createdComponent.getId());
+            sw360Release.setVersion("1.1");
+            SW360Release release = waitFor(releaseClient.createRelease(sw360Release));
+            List<SW360SparseRelease> releases = waitFor(releaseClient.getReleasesByExternalIds(idMap));
+            assertEquals(releases.size(), 1);
+            cleanupRelease(release);
+            cleanupComponent();
+        }
     }
 
     @Test
@@ -146,27 +191,45 @@ public class SW360ReleaseClientIT extends AbstractMockServerTest {
     }
 
     @Test
-    public void testGetReleasesByExternalIdsError() {
-        wireMockRule.stubFor(get(urlPathEqualTo("/releases/searchByExternalIds"))
-                .willReturn(aJsonResponse(HttpConstants.STATUS_ERR_BAD_REQUEST)));
+    public void testGetReleasesByExternalIdsError() throws IOException {
+        if (!RUN_REST_INTEGRATION_TEST) {
+            wireMockRule.stubFor(get(urlPathEqualTo("/releases/searchByExternalIds"))
+                    .willReturn(aJsonResponse(HttpConstants.STATUS_ERR_BAD_REQUEST)));
 
-        FailedRequestException exception =
-                expectFailedRequest(releaseClient.getReleasesByExternalIds(new HashMap<>()),
-                        HttpConstants.STATUS_ERR_BAD_REQUEST);
-        assertThat(exception.getTag()).isEqualTo(SW360ReleaseClient.TAG_GET_RELEASES_BY_EXTERNAL_IDS);
+            FailedRequestException exception = expectFailedRequest(
+                    releaseClient.getReleasesByExternalIds(new HashMap<>()), HttpConstants.STATUS_ERR_BAD_REQUEST);
+            assertThat(exception.getTag()).isEqualTo(SW360ReleaseClient.TAG_GET_RELEASES_BY_EXTERNAL_IDS);
+        } else {
+            cleanupComponent();
+            List<SW360SparseRelease> releases = waitFor(releaseClient.getReleasesByExternalIds(new HashMap<>()));
+            assertEquals(releases.size(), 0);
+        }
     }
 
     @Test
     public void testCreateRelease() throws IOException {
-        SW360Release release = readTestJsonFile(resolveTestFileURL("release.json"), SW360Release.class);
-        String releaseJson = toJson(release);
-        wireMockRule.stubFor(post(urlEqualTo("/releases"))
-                .withRequestBody(equalToJson(releaseJson))
-                .willReturn(aJsonResponse(HttpConstants.STATUS_CREATED)
-                        .withBody(releaseJson)));
+        if(!RUN_REST_INTEGRATION_TEST) {
+            SW360Release release = readTestJsonFile(resolveTestFileURL("release.json"), SW360Release.class);
+            String releaseJson = toJson(release);
+            wireMockRule.stubFor(post(urlEqualTo("/releases"))
+                    .withRequestBody(equalToJson(releaseJson))
+                    .willReturn(aJsonResponse(HttpConstants.STATUS_CREATED)
+                            .withBody(releaseJson)));
 
-        SW360Release createdRelease = waitFor(releaseClient.createRelease(release));
-        assertThat(createdRelease).isEqualTo(release);
+            SW360Release createdRelease = waitFor(releaseClient.createRelease(release));
+            assertThat(createdRelease).isEqualTo(release);
+        } else {
+            cleanupComponent();
+            SW360Component component = componentFromJsonForIntegrationTest();
+            SW360Component createdComponent = waitFor(componentClient.createComponent(component));
+            SW360Release sw360Release = new SW360Release();
+            sw360Release.setComponentId(createdComponent.getId());
+            sw360Release.setVersion("1.1");
+            SW360Release release = waitFor(releaseClient.createRelease(sw360Release));
+            assertNotNull(release);
+            cleanupRelease(release);
+            cleanupComponent();
+        }
     }
 
     @Test
@@ -183,41 +246,103 @@ public class SW360ReleaseClientIT extends AbstractMockServerTest {
 
     @Test
     public void testPatchRelease() throws IOException {
-        SW360Release release = readTestJsonFile(resolveTestFileURL("release.json"), SW360Release.class);
-        String releaseJson = toJson(release);
-        wireMockRule.stubFor(patch(urlEqualTo("/releases/" + release.getId()))
-                .withRequestBody(equalToJson(releaseJson))
-                .willReturn(aJsonResponse(HttpConstants.STATUS_ACCEPTED)
-                        .withBody(releaseJson)));
+        if (!RUN_REST_INTEGRATION_TEST) {
+            SW360Release release = readTestJsonFile(resolveTestFileURL("release.json"), SW360Release.class);
+            String releaseJson = toJson(release);
+            wireMockRule
+                    .stubFor(patch(urlEqualTo("/releases/" + release.getId())).withRequestBody(equalToJson(releaseJson))
+                            .willReturn(aJsonResponse(HttpConstants.STATUS_ACCEPTED).withBody(releaseJson)));
 
-        SW360Release patchedRelease = waitFor(releaseClient.patchRelease(release));
-        assertThat(patchedRelease).isEqualTo(release);
+            SW360Release patchedRelease = waitFor(releaseClient.patchRelease(release));
+            assertThat(patchedRelease).isEqualTo(release);
+        } else {
+            cleanupComponent();
+            SW360Component component = componentFromJsonForIntegrationTest();
+            SW360Component createdComponent = waitFor(componentClient.createComponent(component));
+            SW360Release sw360Release = new SW360Release();
+            sw360Release.setComponentId(createdComponent.getId());
+            sw360Release.setVersion("1.1");
+            SW360Release release = waitFor(releaseClient.createRelease(sw360Release));
+            SW360Release patchedRelease = waitFor(releaseClient.patchRelease(release));
+            assertEquals(release.getName(), patchedRelease.getName());
+            cleanupRelease(release);
+            cleanupComponent();
+        }
     }
 
     @Test
     public void testPatchReleaseError() throws IOException {
-        SW360Release release = readTestJsonFile(resolveTestFileURL("release.json"), SW360Release.class);
-        wireMockRule.stubFor(patch(urlEqualTo("/releases/" + release.getId()))
-                .withRequestBody(equalToJson(toJson(release)))
-                .willReturn(aJsonResponse(HttpConstants.STATUS_ERR_BAD_REQUEST)));
+        if(!RUN_REST_INTEGRATION_TEST) {
+            SW360Release release = readTestJsonFile(resolveTestFileURL("release.json"), SW360Release.class);
+            wireMockRule.stubFor(patch(urlEqualTo("/releases/" + release.getId()))
+                    .withRequestBody(equalToJson(toJson(release)))
+                    .willReturn(aJsonResponse(HttpConstants.STATUS_ERR_BAD_REQUEST)));
 
-        FailedRequestException exception =
-                expectFailedRequest(releaseClient.patchRelease(release), HttpConstants.STATUS_ERR_BAD_REQUEST);
-        assertThat(exception.getTag()).isEqualTo(SW360ReleaseClient.TAG_UPDATE_RELEASE);
+            FailedRequestException exception =
+                    expectFailedRequest(releaseClient.patchRelease(release), HttpConstants.STATUS_ERR_BAD_REQUEST);
+            assertThat(exception.getTag()).isEqualTo(SW360ReleaseClient.TAG_UPDATE_RELEASE);
+        } else {
+            cleanupComponent();
+            SW360Component component = componentFromJsonForIntegrationTest();
+            SW360Component createdComponent = waitFor(componentClient.createComponent(component));
+            SW360Release sw360Release = new SW360Release();
+            sw360Release.setComponentId(createdComponent.getId());
+            sw360Release.setVersion("1.1");
+            SW360Release release = waitFor(releaseClient.createRelease(sw360Release));
+            release.setComponentId("Blabla");
+            FailedRequestException exception = expectFailedRequest(releaseClient.patchRelease(release),
+                    HttpConstants.STATUS_ERR_BAD_REQUEST);
+            assertThat(exception.getTag()).isEqualTo(SW360ReleaseClient.TAG_UPDATE_RELEASE);
+            cleanupRelease(release);
+            cleanupComponent();
+        }
+    }
+
+    private void cleanupComponent() throws IOException {
+        PagingResult<SW360SparseComponent> allComponentsWithPaging = waitFor(
+                componentClient.search(ComponentSearchParams.ALL_COMPONENTS.builder().build()));
+        List<SW360SparseComponent> allComponents = allComponentsWithPaging.getResult();
+        List<String> componentIds = allComponents.stream().map(x -> x.getId()).collect(Collectors.toList());
+        if (!componentIds.isEmpty()) {
+            waitFor(componentClient.deleteComponents(componentIds));
+        }
+    }
+
+    private void cleanupRelease(SW360Release release) throws IOException {
+        waitFor(releaseClient.deleteReleases(Collections.singleton(release.getId())));
     }
 
     @Test
     public void testDeleteReleases() throws IOException {
-        String relId1 = "res-1";
-        String relId2 = "res-2";
-        wireMockRule.stubFor(delete(urlPathEqualTo("/releases/" + relId1 + "," + relId2))
-                .willReturn(aJsonResponse(HttpConstants.STATUS_MULTI_STATUS)
-                        .withBodyFile("multi_status_success.json")));
+        if(!RUN_REST_INTEGRATION_TEST) {
+            String relId1 = "res-1";
+            String relId2 = "res-2";
+            wireMockRule.stubFor(delete(urlPathEqualTo("/releases/" + relId1 + "," + relId2))
+                    .willReturn(aJsonResponse(HttpConstants.STATUS_MULTI_STATUS)
+                            .withBodyFile("multi_status_success.json")));
 
-        MultiStatusResponse multiResponse = waitFor(releaseClient.deleteReleases(Arrays.asList(relId1, relId2)));
-        assertThat(multiResponse.responseCount()).isEqualTo(2);
-        assertThat(multiResponse.getStatus("res-1")).isEqualTo(200);
-        assertThat(multiResponse.getStatus("res-2")).isEqualTo(200);
+            MultiStatusResponse multiResponse = waitFor(releaseClient.deleteReleases(Arrays.asList(relId1, relId2)));
+            assertThat(multiResponse.responseCount()).isEqualTo(2);
+            assertThat(multiResponse.getStatus("res-1")).isEqualTo(200);
+            assertThat(multiResponse.getStatus("res-2")).isEqualTo(200);
+        } else {
+            cleanupComponent();
+            SW360Component component = componentFromJsonForIntegrationTest();
+            SW360Component createdComponent = waitFor(componentClient.createComponent(component));
+            SW360Release sw360Release = new SW360Release();
+            sw360Release.setComponentId(createdComponent.getId());
+            sw360Release.setVersion("1.1");
+            SW360Release sw360Release1 = new SW360Release();
+            sw360Release1.setComponentId(createdComponent.getId());
+            sw360Release1.setVersion("1.2");
+            SW360Release release = waitFor(releaseClient.createRelease(sw360Release));
+            SW360Release release1 = waitFor(releaseClient.createRelease(sw360Release1));
+            MultiStatusResponse multiResponse = waitFor(releaseClient.deleteReleases(Arrays.asList(release.getId(), release1.getId())));
+            assertThat(multiResponse.responseCount()).isEqualTo(2);
+            assertThat(multiResponse.getStatus(release.getId())).isEqualTo(200);
+            assertThat(multiResponse.getStatus(release1.getId())).isEqualTo(200);
+            cleanupComponent();
+        }
     }
 
     @Test
@@ -229,5 +354,15 @@ public class SW360ReleaseClientIT extends AbstractMockServerTest {
                 expectFailedRequest(releaseClient.deleteReleases(Collections.singleton("relDelFail")),
                         HttpConstants.STATUS_ERR_SERVER);
         assertThat(exception.getTag()).isEqualTo(SW360ReleaseClient.TAG_DELETE_RELEASES);
+    }
+
+    /**
+     * Returns a component instance that was read from the test JSON file.
+     *
+     * @return the component read from JSON
+     * @throws IOException if an error occurs
+     */
+    private static SW360Component componentFromJsonForIntegrationTest() throws IOException {
+        return readTestJsonFile(resolveTestFileURLForRealDB(FILE_COMPONENT), SW360Component.class);
     }
 }
