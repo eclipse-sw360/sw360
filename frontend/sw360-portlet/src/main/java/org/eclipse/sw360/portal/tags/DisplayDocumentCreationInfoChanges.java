@@ -266,7 +266,7 @@ public class DisplayDocumentCreationInfoChanges extends UserAwareTag {
 
     private String renderCheckSum(ExternalDocumentReferences actualChecsum, ExternalDocumentReferences additionsChecsum, ExternalDocumentReferences deletionsChecsum) {
 
-        if (deletionsChecsum.isSet(ExternalDocumentReferences._Fields.CHECKSUM)
+        if (!deletionsChecsum.isSet(ExternalDocumentReferences._Fields.CHECKSUM)
             && !additionsChecsum.isSet(ExternalDocumentReferences._Fields.CHECKSUM)) {
             return "";
         }
@@ -281,6 +281,12 @@ public class DisplayDocumentCreationInfoChanges extends UserAwareTag {
             deletionsChecsum.checksum = new CheckSum();
             deletionsChecsum.checksum.algorithm = NOT_SET;
             deletionsChecsum.checksum.checksumValue = NOT_SET;
+        }
+
+        if (!additionsChecsum.isSet(ExternalDocumentReferences._Fields.CHECKSUM)) {
+            additionsChecsum.checksum = new CheckSum();
+            additionsChecsum.checksum.algorithm = NOT_SET;
+            additionsChecsum.checksum.checksumValue = NOT_SET;
         }
 
         if (actualChecsum.checksum.algorithm.equals(additionsChecsum.checksum.algorithm)
