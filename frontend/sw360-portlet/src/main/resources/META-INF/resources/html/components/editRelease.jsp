@@ -237,7 +237,7 @@
 </core_rt:if>
 
 <script>
-    require(['jquery', 'components/includes/vendors/searchVendor', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup', 'modules/validation', 'components/includes/releases/validateLib' ], function($, vendorsearch, autocomplete, dialog, listgroup, validation, validateLib) {
+    require(['jquery', 'components/includes/vendors/searchVendor', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup', 'modules/validation', 'components/includes/releases/validateLib', 'components/includes/releases/spdxjs'], function($, vendorsearch, autocomplete, dialog, listgroup, validation, validateLib, spdxjs) {
         document.title = $("<span></span>").html("<sw360:out value='${component.name}'/> - " + document.title).text();
 
         listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
@@ -253,22 +253,31 @@
             function() {
                 if ("${addMode}" == "false") {
                     validateLib.setFormId('editSPDXForm');
+
                     validateLib.validate();
-                    if (readDocumentCreator().length == 0) {
+
+                    if (spdxjs.readDocumentCreator().length == 0) {
                         validateLib.addError('spdxCreator', ['required']);
+
                         $('.creator-value').each(function () {
                             if ($(this).val().trim() == '') {
                                 this.setCustomValidity('error');
                             }
                         });
+
                         $('#spdxCreator')[0].setCustomValidity('error');
+
+                        // It does not auto scroll to Creator if there is error with Creator
+                        // So, code below used to scroll to Creator manually
                         let gotErrorBeforeCreator = false;
+
                         for (let i = 1; i < 4; i++) {
                             if ($($('#editDocumentCreationInformation').find('tr')[i]).find('.invalid-feedback.d-block').length > 0) {
                                 gotErrorBeforeCreator = true;
                                 break;
                             }
                         }
+
                         if (!gotErrorBeforeCreator) {
                             $('#creator-anonymous').get(0).scrollIntoView({behavior: "auto", block: "center", inline: "nearest"})
                         }
@@ -276,8 +285,10 @@
                         $('.creator-value').each(function () {
                             this.setCustomValidity('');
                         });
+
                         $('#spdxCreator')[0].setCustomValidity('')
                     }
+
                     validateLib.showAllErrors();
                 }
                 <core_rt:choose>

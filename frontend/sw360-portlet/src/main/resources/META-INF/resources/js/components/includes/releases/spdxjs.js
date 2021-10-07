@@ -260,6 +260,33 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         }
     }
 
+    function readDocumentCreator() {
+        let creators = [];
+
+        let index = 0;
+
+        $('[name=creatorRow]').each(function () {
+            if ($(this).css('display') == 'none') {
+                return;
+            }
+
+            if ($(this).find('.creator-type').first().attr('disabled')) {
+                return;
+            }
+
+            let creatorType = $(this).find('.creator-type').first().val().trim();
+
+            let creatorValue = $(this).find('.creator-value').first().val().trim();
+
+            if (creatorValue != '') {
+                creators.push({ 'type': creatorType, 'value': creatorValue, 'index': index });
+                index += 1;
+            }
+        });
+
+        return creators;
+    }
+
     function fillDateTime(datePicker, timePicker, value) {
         let timeStamp = Date.parse(value);
 
@@ -423,23 +450,135 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         }
     }
 
-    function fillExternalRef(packageInformationObj, index) {
-        let obj = packageInformationObj.externalRefs[index];
+    // --------------------------------- Document Creation ---------------------------------
 
-        $('#referenceCategory').val(obj['referenceCategory']);
-
-        $('#referenceCategory').change();
-
-        if (obj['referenceCategory'] == 'SECURITY' || obj['referenceCategory'] == 'PACKAGE-MANAGER') {
-            $('#referenceType-1').val(obj['referenceType']);
+    function initDocumentCreation(userDisplay) {
+        if (documentCreationInformationObj['spdxVersion'].startsWith('SPDX-')) {
+            $('#spdxVersion').val(documentCreationInformationObj['spdxVersion'].substr(5).trim());
         } else {
-            $('#referenceType-2').val(obj['referenceType']);
+            $('#spdxVersion').val('2.2');
         }
 
-        $('#externalReferencesLocator').val(obj['referenceLocator']);
+        if (documentCreationInformationObj['dataLicense'] == '') {
+            $('#dataLicense').val('CC0-1.0');
+        }
 
-        $('#externalReferencesComment').val(obj['comment']);
+        if (documentCreationInformationObj['SPDXID'].startsWith('SPDXRef-')) {
+            $('#spdxIdentifier').val(documentCreationInformationObj['SPDXID'].substr(8).trim());
+        } else {
+            $('#spdxIdentifier').val('DOCUMENT');
+        }
+
+        if (documentCreationInformationObj.externalDocumentRefs.length == 0) {
+            enableSection($('.section-external-doc-ref'), false);
+        } else {
+            fillSelectbox('#externalDocumentRefs', documentCreationInformationObj.externalDocumentRefs.length);
+
+            fillExternalDocRef(0);
+        }
+
+        if (documentCreationInformationObj.creator.length == 0) {
+            $('.spdx-add-button-sub-creator').first().click();
+            $('.creator-type').last().val('Person');
+            $('.creator-value').last().val(userDisplay);
+        } else {
+            for (let i = 0; i < documentCreationInformationObj.creator.length; i++) {
+                addSub($('.spdx-add-button-sub-creator').first());
+                $('.creator-type').last().val(documentCreationInformationObj.creator[i].type);
+                $('.creator-value').last().val(documentCreationInformationObj.creator[i].value);
+            }
+        }
+
+        $('[name=delete-spdx-creator]').bind('click', function() {
+            deleteSub($(this));
+        });
+
+        if (documentCreationInformationObj.created == '') {
+            fillDateTime('#createdDate', '#createdTime', (new Date().toISOString()));
+        } else {
+            fillDateTime('#createdDate', '#createdTime', documentCreationInformationObj.created);
+        }
     }
+
+    function storeDocumentCreation() {
+        if ($('#spdxVersion').val().trim() == '') {
+            documentCreationInformationObj['spdxVersion'] = 'SPDX-2.2';
+        } else {
+            documentCreationInformationObj['spdxVersion'] = 'SPDX-' + $('#spdxVersion').val().trim();
+        }
+
+        if ($('#dataLicense').val().trim() == '') {
+            documentCreationInformationObj['dataLicense'] = 'CC0-1.0';
+        } else {
+            documentCreationInformationObj['dataLicense'] = $('#dataLicense').val().trim();
+        }
+
+        if ($('#spdxIdentifier').val().trim() == '') {
+            documentCreationInformationObj['SPDXID'] = 'SPDXRef-DOCUMENT';
+        } else {
+            documentCreationInformationObj['SPDXID'] = 'SPDXRef-' + $('#spdxIdentifier').val().trim();
+        }
+
+        documentCreationInformationObj['name'] = $('#documentName').val().trim();
+
+        documentCreationInformationObj['documentNamespace'] = $('#documentNamespace').val().trim();
+
+        documentCreationInformationObj['licenseListVersion'] = $('#licenseListVersion').val().trim();
+
+        documentCreationInformationObj.creator = readDocumentCreator();
+
+        documentCreationInformationObj['created'] = readDateTime('#createdDate', '#createdTime');
+
+        documentCreationInformationObj['creatorComment'] = $('#creatorComment').val().trim();
+
+        documentCreationInformationObj['documentComment'] = $('#documentComment').val().trim();
+
+        if (documentCreationInformationObj['created'] == '') {
+            documentCreationInformationObj['created'] = (new Date()).toISOString();
+        }
+    }
+
+    // --------------------------------- External Document Reference ---------------------------------
+
+    function fillExternalDocRef(index) {
+        index = $('#externalDocumentRefs')[0].selectedIndex;
+
+        let obj = documentCreationInformationObj.externalDocumentRefs[index];
+
+        $('#externalDocumentId').val(obj['externalDocumentId']);
+
+        $('#externalDocument').val(obj['spdxDocument']);
+
+        $('#checksumAlgorithm').val(obj['checksum']['algorithm']);
+
+        $('#checksumValue').val(obj['checksum']['checksumValue']);
+    }
+
+    function storeExternalDocRef(index) {
+        if (index < 0 || index > documentCreationInformationObj.externalDocumentRefs.length - 1) {
+            return;
+        }
+
+        let obj = documentCreationInformationObj.externalDocumentRefs[index];
+
+        obj['externalDocumentId'] = $('#externalDocumentId').val().trim();
+
+        obj['spdxDocument'] = $('#externalDocument').val().trim();
+
+        let algorithm = $('#checksumAlgorithm').val().trim();
+
+        let checksumValue = $('#checksumValue').val().trim();
+
+        if (algorithm == '' || checksumValue == '') {
+            obj['checksum']['algorithm'] = '';
+            obj['checksum']['checksumValue'] = '';
+        } else {
+            obj['checksum']['algorithm'] = algorithm;
+            obj['checksum']['checksumValue'] = checksumValue;
+        }
+    }
+
+    // --------------------------------- Package Information ---------------------------------
 
     function initPackageInfo(packageInformationObj) {
         $('#packageName').val(packageInformationObj['name']);
@@ -576,6 +715,26 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         packageInformationObj['attributionText'] = readMultiOptionField('#spdxPackageAttributionText', 'array');
     }
 
+    // --------------------------------- External Reference ---------------------------------
+
+    function fillExternalRef(packageInformationObj, index) {
+        let obj = packageInformationObj.externalRefs[index];
+
+        $('#referenceCategory').val(obj['referenceCategory']);
+
+        $('#referenceCategory').change();
+
+        if (obj['referenceCategory'] == 'SECURITY' || obj['referenceCategory'] == 'PACKAGE-MANAGER') {
+            $('#referenceType-1').val(obj['referenceType']);
+        } else {
+            $('#referenceType-2').val(obj['referenceType']);
+        }
+
+        $('#externalReferencesLocator').val(obj['referenceLocator']);
+
+        $('#externalReferencesComment').val(obj['comment']);
+    }
+
     function storeExternalRef(packageInformationObj, index) {
         if (index < 0 || index > packageInformationObj.externalRefs.length - 1) {
             return;
@@ -596,6 +755,8 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         obj['comment'] = $('#externalReferencesComment').val().trim();
     }
 
+    // --------------------------------- Snippet Information ---------------------------------
+
     function initSnippetInfo() {
         if (spdxDocumentObj.snippets.length == 0) {
           enableSection($('.section-snippet'), false);
@@ -606,37 +767,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         }
     }
 
-    $('[name=add-snippet]').on('click', function(e) {
-        e.preventDefault();
-
-        let index = 0;
-
-        if (spdxDocumentObj.snippets.length > 0) {
-            index = parseInt(spdxDocumentObj.snippets[spdxDocumentObj.snippets.length - 1].index) + 1;
-        }
-
-        let newObj = {'SPDXID': '',
-                      'snippetFromFile': '',
-                      'snippetRanges': [],
-                      'licenseConcluded': '',
-                      'licenseInfoInSnippets': [],
-                      'licenseComments': '',
-                      'copyrightText': '',
-                      'comment': '',
-                      'name': '',
-                      'snippetAttributionText': '',
-                      'index': index};
-
-        spdxDocumentObj.snippets.push(newObj);
-
-        addMain($(this));
-
-        $('#selectSnippet').change();
-    });
-
     function fillSnippet(index) {
-        isInitialzing = true;
-
         const obj = spdxDocumentObj.snippets[index];
 
         if (obj['SPDXID'].startsWith('SPDXRef-')) {
@@ -712,8 +843,6 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         $('#snippetName').val(obj.name);
 
         $('#snippetAttributionText').val(obj.snippetAttributionText);
-
-        isInitialzing = false;
     }
 
     function storeSnippet(index) {
@@ -782,30 +911,206 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         obj['snippetAttributionText'] = $('#snippetAttributionText').val().trim();
     }
 
+    // --------------------------------- Other Licensing ---------------------------------
+
+    function initOtherLicensing() {
+        if (spdxDocumentObj.otherLicensingInformationDetecteds.length == 0) {
+            enableSection($('.section-other-licensing'), false);
+        } else {
+            fillSelectbox('#selectOtherLicensing', spdxDocumentObj.otherLicensingInformationDetecteds.length);
+
+            fillOtherLicensing(0);
+        }
+    }
+
+    function fillOtherLicensing(index) {
+        let obj = spdxDocumentObj.otherLicensingInformationDetecteds[index];
+
+        if (obj.licenseId.startsWith('LicenseRef-')) {
+            $('#licenseId').val(obj.licenseId.substr(11));
+        } else {
+            $('#licenseId').val(obj.licenseName);
+        }
+
+        $('#extractedText').val(obj.extractedText);
+
+        fillMultiOptionsField('#licenseName', obj.licenseName);
+
+        fillArray('#licenseCrossRefs', obj.licenseCrossRefs);
+
+        $('#licenseCommentOnOtherLicensing').val(obj.licenseComment);
+    }
+
+    function storeOtherLicensing(index) {
+        if (index < 0 || index > spdxDocumentObj.otherLicensingInformationDetecteds - 1) {
+            return;
+        }
+
+        let obj = spdxDocumentObj.otherLicensingInformationDetecteds[index];
+
+        if ($('#licenseId').val().trim() != '') {
+            obj['licenseId'] = 'LicenseRef-' + $('#licenseId').val().trim();
+        } else {
+            obj['licenseId'] = 'LicenseRef-' + readMultiOptionField('#licenseName');
+        }
+
+        obj['extractedText'] = $('#extractedText').val().trim();
+
+        obj['licenseName'] = readMultiOptionField('#licenseName');
+
+        obj['licenseCrossRefs'] = readArray('#licenseCrossRefs');
+
+        obj['licenseComment'] = $('#licenseCommentOnOtherLicensing').val().trim();
+    }
+
+    // --------------------------------- Relationship ---------------------------------
+
+    function initRelationships() {
+        if (spdxDocumentObj.relationships.length == 0) {
+            enableSection($('.section-relationship'), false);
+        } else {
+            fillSelectbox('#selectRelationship', spdxDocumentObj.relationships.length);
+
+            fillRelationship(0);
+        }
+    }
+
+    function fillRelationship(index) {
+        let obj = spdxDocumentObj.relationships[index];
+
+        $('#spdxElement').val(obj.spdxElementId);
+
+        if (obj.relationshipType.startsWith('relationshipType_')) {
+            $('#relationshipType').val(obj.relationshipType.substr(17).toUpperCase());
+        } else {
+            $('#relationshipType').val('');
+        }
+
+        $('#relatedSPDXElement').val(obj.relatedSpdxElement);
+
+        $('#relationshipComment').val(obj.relationshipComment);
+    }
+
+    function storeRelationship(index) {
+        if (index < 0 || index > spdxDocumentObj.relationships - 1) {
+            return;
+        }
+
+        let obj = spdxDocumentObj.relationships[index];
+
+        obj['spdxElementId'] = $('#spdxElement').val().trim();
+
+        obj['relationshipType'] = 'relationshipType_' + $('#relationshipType').val().toLowerCase().trim();
+
+        obj['relatedSpdxElement'] = $('#relatedSPDXElement').val().trim();
+
+        obj['relationshipComment'] = $('#relationshipComment').val().trim();
+    }
+
+    // --------------------------------- Annotation ---------------------------------
+
+    function getAnnotationsSource() {
+        if ($('#selectAnnotationSource').val() == 'Package') {
+            return packageInformationObj.annotations;
+        }
+
+        return spdxDocumentObj.annotations;
+    }
+
+    function initAnnotations() {
+        let source = getAnnotationsSource();
+
+        if (source.length == 0) {
+            enableSection($('.section-annotation'), false);
+
+            $('#selectAnnotation').find('option').remove();
+        } else {
+            enableSection($('.section-annotation'), true);
+
+            fillSelectbox('#selectAnnotation', source.length);
+
+            fillAnnotation(source, 0);
+        }
+    }
+
+    function fillAnnotation(source, index) {
+        let obj = source[index];
+
+        fillAnnotator('#annotatorType', obj['annotator']);
+
+        fillDateTime('#annotationCreatedDate', '#annotationCreatedTime', obj['annotationDate']);
+
+        $('#annotationType').val(obj['annotationType']);
+
+        $('#spdxIdRef').val(obj['spdxIdRef']);
+
+        $('#annotationComment').val(obj['annotationComment']);
+    }
+
+    function storeAnnotation(index) {
+        let source = getAnnotationsSource();
+
+        if (index < 0 || index > source.length - 1) {
+            return;
+        }
+
+        let obj = source[index];
+
+        if ($('#annotatorValue').val().trim() != '') {
+            obj['annotator'] = $('#annotatorType').val() + ': ' + $('#annotatorValue').val().trim();
+        } else {
+            obj['annotator'] = '';
+        }
+
+        obj['annotationDate'] = readDateTime('#annotationCreatedDate', '#annotationCreatedTime');
+
+        obj['annotationType'] = $('#annotationType').val().trim();
+
+        obj['spdxIdRef'] = $('#spdxIdRef').val().trim();
+
+        obj['annotationComment'] = $('#annotationComment').val().trim();
+    }
+
     return {
-        enableSection: enableSection,
-        clearSection: clearSection,
+        dynamicSort: dynamicSort,
+
         addMain: addMain,
         addSub: addSub,
         deleteMain: deleteMain,
         deleteSub: deleteSub,
+
         updateRadioButton: updateRadioButton,
-        fillDateTime: fillDateTime,
-        fillMultiOptionsField: fillMultiOptionsField,
-        fillArray: fillArray,
-        fillAnnotator: fillAnnotator,
-        readMultiOptionField: readMultiOptionField,
-        readArray: readArray,
-        readAnnotator: readAnnotator,
-        readDateTime: readDateTime,
-        fillSelectbox: fillSelectbox,
-        fillExternalRef: fillExternalRef,
+
+        initDocumentCreation: initDocumentCreation,
+        storeDocumentCreation: storeDocumentCreation,
+
+        changeCreatorType: changeCreatorType,
+        readDocumentCreator: readDocumentCreator,
+
+        fillExternalDocRef: fillExternalDocRef,
+        storeExternalDocRef: storeExternalDocRef,
+
         initPackageInfo: initPackageInfo,
         storePackageInfo: storePackageInfo,
+
+        fillExternalRef: fillExternalRef,
         storeExternalRef: storeExternalRef,
+
         initSnippetInfo: initSnippetInfo,
         fillSnippet: fillSnippet,
         storeSnippet: storeSnippet,
-        dynamicSort: dynamicSort
+
+        initOtherLicensing: initOtherLicensing,
+        fillOtherLicensing: fillOtherLicensing,
+        storeOtherLicensing: storeOtherLicensing,
+
+        initRelationships: initRelationships,
+        fillRelationship: fillRelationship,
+        storeRelationship: storeRelationship,
+
+        getAnnotationsSource: getAnnotationsSource,
+        initAnnotations: initAnnotations,
+        fillAnnotation: fillAnnotation,
+        storeAnnotation: storeAnnotation
     };
 });
