@@ -980,11 +980,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
 
         $('#spdxElement').val(obj.spdxElementId);
 
-        if (obj.relationshipType.startsWith('relationshipType_')) {
-            $('#relationshipType').val(obj.relationshipType.substr(17).toUpperCase());
-        } else {
-            $('#relationshipType').val('');
-        }
+        $('#relationshipType').val(obj.relationshipType.toUpperCase());
 
         $('#relatedSPDXElement').val(obj.relatedSpdxElement);
 
@@ -1000,7 +996,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
 
         obj['spdxElementId'] = $('#spdxElement').val().trim();
 
-        obj['relationshipType'] = 'relationshipType_' + $('#relationshipType').val().toLowerCase().trim();
+        obj['relationshipType'] = $('#relationshipType').val().toUpperCase().trim();
 
         obj['relatedSpdxElement'] = $('#relatedSPDXElement').val().trim();
 
