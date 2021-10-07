@@ -58,22 +58,6 @@ import static org.eclipse.sw360.datahandler.common.SW360Utils.getBUFromOrganisat
 public class ProjectRepository extends SummaryAwareRepository<Project> {
     private static final String ALL = "function(doc) { if (doc.type == 'project') emit(null, doc._id) }";
 
-    private static final String MY_PROJECTS_VIEW =
-            "function(doc) {" +
-                    "  if (doc.type == 'project') {" +
-                    "    if(doc.createdBy)" +
-                    "      emit(doc.createdBy, doc._id);" +
-                    "    if(doc.leadArchitect)" +
-                    "      emit(doc.leadArchitect, doc._id);" +
-                    "    for(var i in doc.moderators) {" +
-                    "      emit(doc.moderators[i], doc._id);" +
-                    "    }" +
-                    "    for(var i in doc.contributors) {" +
-                    "      emit(doc.contributors[i], doc._id);" +
-                    "    }" +
-                    "  }" +
-                    "}";
-
     private static final String FULL_MY_PROJECTS_VIEW =
             "function(doc) {\n" +
                     "  if (doc.type == 'project') {\n" +
@@ -96,7 +80,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
                     "      acc[doc.securityResponsibles[i]]=1;\n" +
                     "    }\n" +
                     "    for(var i in acc){\n" +
-                    "      emit(i,doc);\n" +
+                    "      emit(i,doc._id);\n" +
                     "    }\n" +
                     "  }\n" +
                     "}";
@@ -174,13 +158,6 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
                     "  }" +
                     "}";
 
-    private static final String FULL_BU_PROJECTS_VIEW =
-            "function(doc) {" +
-                    "  if (doc.type == 'project') {" +
-                    "    emit(doc.businessUnit, doc);" +
-                    "  }" +
-                    "}";
-
     private static final String BY_NAME_VIEW =
             "function(doc) {" +
                     "  if (doc.type == 'project') {" +
@@ -217,21 +194,12 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
             "function(doc) {" +
                     "  if (doc.type == 'project') {" +
                     "    for(var i in doc.releaseIdToUsage) {" +
-                    "      emit(i, doc);" +
-                    "    }" +
-                    "  }" +
-                    "}";
-
-    private static final String BY_LINKING_PROJECT_ID_VIEW =
-            "function(doc) {" +
-                    "  if (doc.type == 'project') {" +
-                    "    for(var i in doc.linkedProjects) {" +
                     "      emit(i, doc._id);" +
                     "    }" +
                     "  }" +
                     "}";
 
-    private static final String FULL_BY_LINKING_PROJECT_ID_VIEW =
+    private static final String BY_LINKING_PROJECT_ID_VIEW =
             "function(doc) {" +
                     "  if (doc.type == 'project') {" +
                     "    for(var i in doc.linkedProjects) {" +
@@ -270,11 +238,8 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         views.put("byreleaseid", createMapReduce(BY_RELEASE_ID_VIEW, null));
         views.put("fullbyreleaseid", createMapReduce(FULL_BY_RELEASE_ID_VIEW, null));
         views.put("bylinkingprojectid", createMapReduce(BY_LINKING_PROJECT_ID_VIEW, null));
-        views.put("fullbylinkingprojectid", createMapReduce(FULL_BY_LINKING_PROJECT_ID_VIEW, null));
-        views.put("myprojects", createMapReduce(MY_PROJECTS_VIEW, null));
         views.put("fullmyprojects", createMapReduce(FULL_MY_PROJECTS_VIEW, null));
         views.put("buprojects", createMapReduce(BU_PROJECTS_VIEW, null));
-        views.put("fullbuprojects", createMapReduce(FULL_BU_PROJECTS_VIEW, null));
         views.put("byexternalids", createMapReduce(BY_EXTERNAL_IDS, null));
         views.put("all", createMapReduce(ALL, null));
         views.put("myfullprojectscount", createMapReduce(MY_ACCESSIBLE_PROJECTS_COUNT, "_count"));
@@ -313,11 +278,13 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
     }
 
     public Set<Project> searchByReleaseId(String id) {
-        return new HashSet<>(queryView("fullbyreleaseid", id));
+        Set<String> projectIds = queryForIdsAsValue("fullbyreleaseid", id);
+        return getFullProjectDocsById(projectIds);
     }
 
     public Set<Project> searchByReleaseId(Set<String> ids) {
-        return new HashSet<>(queryByIds("fullbyreleaseid", ids));
+        Set<String> projectIds = queryForIdsAsValue("fullbyreleaseid", ids);
+        return getFullProjectDocsById(projectIds);
     }
 
     public Set<Project> searchByLinkingProjectId(String id, User user) {
@@ -334,12 +301,9 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         return new HashSet<>(queryView("bylinkingprojectid", id));
     }
 
-    private Set<String> getMyProjectsIds(String user) {
-        return queryForIds("myprojects", user);
-    }
-
     private Set<Project> getMyProjects(String user) {
-        return new HashSet<Project>(queryView("fullmyprojects", user));
+        Set<String> queryForIds = queryForIds("fullmyprojects", user);
+        return getFullProjectDocsById(queryForIds);
     }
 
     public List<Project> getMyProjectsSummary(String user) {
@@ -348,12 +312,6 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
 
     public List<Project> getMyProjectsFull(String user) {
         return new ArrayList<>(getMyProjects(user));
-    }
-
-    private Set<String> getBUProjectsIds(String organisation) {
-        // Filter BU to first three blocks
-        String bu = getBUFromOrganisation(organisation);
-        return queryForIdsByPrefix("buprojects", bu);
     }
 
     public List<Project> getBUProjects(String organisation) {
@@ -574,5 +532,17 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
             return getConnector().getDocumentCount(Project.class, "myfullprojectscountca", keyss);
         }
         return getConnector().getDocumentCount(Project.class, "myfullprojectscount", keys);
+    }
+
+    private Set<Project> getFullProjectDocsById(Set<String> projectIds) {
+        Set<Project> projects = new HashSet<>();
+        if (CommonUtils.isNullOrEmptyCollection(projectIds)) {
+            return projects;
+        }
+        List<Project> listOfProjects = get(projectIds);
+        if (CommonUtils.isNotEmpty(listOfProjects)) {
+            projects.addAll(listOfProjects);
+        }
+        return projects;
     }
 }
