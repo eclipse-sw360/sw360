@@ -825,11 +825,11 @@
 		fillArray(tag, readArray(tag));
 	}
 
-	let spdxDocumentObj = jQuery.parseJSON(JSON.stringify(${ spdxDocumentJson }));
-	let documentCreationInformationObj = jQuery.parseJSON(JSON.stringify(${ documentCreationInfoJson }));
-	let packageInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
-
 	$(function () {
+		let spdxDocumentObj = jQuery.parseJSON(JSON.stringify(${ spdxDocumentJson }));
+		let documentCreationInformationObj = jQuery.parseJSON(JSON.stringify(${ documentCreationInfoJson }));
+		let packageInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
+
 		formatArrayParagraph('#excludedFiles');
 		formatArrayParagraph('#licenseInfoFromFile');
 		formatArrayParagraph('#attributionText');
