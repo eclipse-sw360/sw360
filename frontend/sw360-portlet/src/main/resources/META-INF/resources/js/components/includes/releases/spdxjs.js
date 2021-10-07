@@ -191,32 +191,6 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         }
     }
 
-    function setAnonymous() {
-        let selectboxes = $('#creator-anonymous').parent().next().find('select');
-
-        if ($('#creator-anonymous').is(':checked')) {
-            selectboxes.each(function (index) {
-                if ($(this).val() == 'Organization' || $(this).val() == 'Person') {
-                    $(this).attr('disabled', 'true');
-
-                    $(this).next().attr('disabled', 'true');
-
-                    $(this).next().next().css('cursor', 'not-allowed');
-                }
-            });
-        } else {
-            selectboxes.each(function (index) {
-                if ($(this).val() == 'Organization' || $(this).val() == 'Person') {
-                    $(this).removeAttr('disabled');
-
-                    $(this).next().removeAttr('disabled');
-
-                    $(this).next().next().css('cursor', 'pointer');
-                }
-            });
-        }
-    }
-
     function updateRadioButton(button) {
         if ($(button).attr('id') == 'FilesAnalyzedFalse' && $(button).is(':checked')) {
             $('#verificationCodeValue').attr('disabled', 'true');
@@ -246,17 +220,6 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
             button.parent().parent().find('select').removeAttr('disabled');
 
             button.parent().parent().find('textarea').removeAttr('disabled');
-        }
-    }
-
-    function changeCreatorType(selectbox) {
-        if ($('#creator-anonymous').is(':checked') &&
-            ($(selectbox).val() == 'Organization' || $(selectbox).val() == 'Person')) {
-            $(selectbox).attr('disabled', 'true');
-
-            $(selectbox).next().attr('disabled', 'true');
-
-            $(selectbox).next().next().css('cursor', 'not-allowed');
         }
     }
 
@@ -1080,7 +1043,6 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         initDocumentCreation: initDocumentCreation,
         storeDocumentCreation: storeDocumentCreation,
 
-        changeCreatorType: changeCreatorType,
         readDocumentCreator: readDocumentCreator,
 
         fillExternalDocRef: fillExternalDocRef,
