@@ -187,23 +187,23 @@
 
     let userDisplay = "<%=themeDisplay.getUser().getFirstName()%>" + middleName + "<%=themeDisplay.getUser().getLastName()%>" + " (<%=themeDisplay.getUser().getEmailAddress()%>)";
 
-    require(['jquery', 'components/includes/releases/spdxjs', 'components/includes/releases/validateLib'], function ($, spdxjs, validateLib) {
+    require(['jquery', 'components/includes/releases/spdxjs', 'components/includes/releases/validateLib', 'utils/array'], function ($, spdxjs, validateLib) {
         // Sort data based on index
-        spdxDocumentObj.snippets.sort(spdxjs.dynamicSort('index', 'int'));
-        spdxDocumentObj.relationships.sort(spdxjs.dynamicSort('index', 'int'));
-        spdxDocumentObj.annotations.sort(spdxjs.dynamicSort('index', 'int'));
-        spdxDocumentObj.otherLicensingInformationDetecteds.sort(spdxjs.dynamicSort('index', 'int'));
+        spdxDocumentObj.snippets.sort(dynamicSort('index', 'int'));
+        spdxDocumentObj.relationships.sort(dynamicSort('index', 'int'));
+        spdxDocumentObj.annotations.sort(dynamicSort('index', 'int'));
+        spdxDocumentObj.otherLicensingInformationDetecteds.sort(dynamicSort('index', 'int'));
 
         for (let i = 0; i < spdxDocumentObj.snippets.length; i++) {
-            spdxDocumentObj.snippets[i].snippetRanges.sort(spdxjs.dynamicSort('index', 'int'));
+            spdxDocumentObj.snippets[i].snippetRanges.sort(dynamicSort('index', 'int'));
         }
 
-        documentCreationInformationObj.externalDocumentRefs.sort(spdxjs.dynamicSort('index', 'int'));
-        documentCreationInformationObj.creator.sort(spdxjs.dynamicSort('index', 'int'));
+        documentCreationInformationObj.externalDocumentRefs.sort(dynamicSort('index', 'int'));
+        documentCreationInformationObj.creator.sort(dynamicSort('index', 'int'));
 
-        packageInformationObj.checksums.sort(spdxjs.dynamicSort('index', 'int'));
-        packageInformationObj.externalRefs.sort(spdxjs.dynamicSort('index', 'int'));
-        packageInformationObj.annotations.sort(spdxjs.dynamicSort('index', 'int'));
+        packageInformationObj.checksums.sort(dynamicSort('index', 'int'));
+        packageInformationObj.externalRefs.sort(dynamicSort('index', 'int'));
+        packageInformationObj.annotations.sort(dynamicSort('index', 'int'));
 
         // 2.6 External Document Reference - Add
         $('[name=add-externalDocRef]').on('click', function (e) {
