@@ -1,26 +1,12 @@
 <%--
-  ~ Copyright Siemens AG, 2019.
-  ~ Part of the SW360 Portal Project.
-  ~
-  ~ This program and the accompanying materials are made
-  ~ available under the terms of the Eclipse Public License 2.0
-  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
-  ~
-  ~ SPDX-License-Identifier: EPL-2.0
-  --%>
+    ~ Copyright TOSHIBA CORPORATION, 2021. Part of the SW360 Portal Project.
+    ~ Copyright Toshiba Software Development (Vietnam) Co., Ltd., 2021. Part of the SW360 Portal Project.
 
-<%--
-    Description:             Import SPDX BOM to SW360
+    ~ This program and the accompanying materials are made
+    ~ available under the terms of the Eclipse Public License 2.0
+    ~ which is available at https://www.eclipse.org/legal/epl-2.0/
 
-    Required Buttons:        - <button type="button" class="btn btn-primary" data-action="import-spdx-bom">Import SPDX BOM</button>
-
-    Required Imports:        - org.eclipse.sw360.portal.common.PortalConstants
-
-    Required Beans:          - documentType
-
-    Required Stylesheets:    - jquery-ui
-
-    Included JSPFs:            (none)
+    ~ SPDX-License-Identifier: EPL-2.0
 --%>
 
 <portlet:resourceURL var="newAttachmentAjaxURL">
@@ -75,6 +61,8 @@
                 </div>
                 <div id="spdxBomUploadStatus"></div>
                 <div id="spdxBomUploadAction" class="modal-footer">
+                    <button id="importSBOM" type="button" class="btn btn-primary" data-dismiss="modal" style="display: none">Import</button>
+                    <button id="importSBOMAsNew" type="button" class="btn btn-secondary" data-dismiss="modal" style="display: none">Import As New</button>
                     <button id="cancelImportSBOM" type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
                 </div>
             </div>
@@ -84,9 +72,177 @@
 
 <script>
     require(['jquery', 'resumable', 'modules/dialog', 'modules/validation'], function($, Resumable, dialog, validation) {
-        $('#import-spdx-bom').on('click', function() {
-            var dialogDivId = '#spdxBomUpload';
+        var dialogDivId = '#spdxBomUpload';
 
+        var dialogDiv = $(dialogDivId);
+        var contentDiv = dialogDiv.find("#spdxBomUploadUpload");
+        var statusDiv = dialogDiv.find("#spdxBomUploadStatus");
+        var dialogData = dialogDiv.data();
+        var portletNamespace = dialogData.portletNamespace;
+
+        var urls = {};
+        urls.newAttachment = dialogData.newAttachmentUrl;
+        urls.uploadAttachmentPart = dialogData.uploadAttachmentPartUrl;
+        urls.prepareImportBom = dialogData.prepareImportBomUrl;
+        urls.importBom = dialogData.importBomUrl;
+        urls.importBomAsNew = dialogData.importBomAsNewUrl;
+
+        var attachmentContentId = '';
+        var rdfFilePath = '';
+
+        const neededKeys = ['isComponentDuplicate','isReleaseDuplicate','name','version'];
+
+        function getAttachmentIdPromise(file) {
+            var data = {};
+            data[portletNamespace + "fileName"] = file.fileName || file.name;
+
+            return $.ajax({
+                url: urls.newAttachment,
+                cache: false,
+                dataType: 'text',
+                data: data
+            });
+        }
+
+        function prepareImportBom(attachmentContentId) {
+            var data = {};
+
+            data[portletNamespace + "<%=PortalConstants.ATTACHMENT_CONTENT_ID%>"] = attachmentContentId;
+
+            return $.ajax({
+                url: urls.prepareImportBom,
+                cache: false,
+                dataType: "json",
+                data: data
+            });
+        }
+
+        function importBomFromAttachment(attachmentContentId, rdfFilePath) {
+            var data = {};
+
+            data[portletNamespace + "<%=PortalConstants.ATTACHMENT_CONTENT_ID%>"] = attachmentContentId;
+            data[portletNamespace + "<%=PortalConstants.RDF_FILE_PATH%>"] = rdfFilePath;
+
+            return $.ajax({
+                url: urls.importBom,
+                cache: false,
+                dataType: "json",
+                data: data
+            });
+        }
+
+        function importBomAsNewFromAttachment(attachmentContentId, newReleaseVersion, rdfFilePath) {
+            var data = {};
+
+            data[portletNamespace + "<%=PortalConstants.ATTACHMENT_CONTENT_ID%>"] = attachmentContentId;
+            data[portletNamespace + "<%=PortalConstants.NEW_RELEASE_VERSION%>"] = newReleaseVersion;
+            data[portletNamespace + "<%=PortalConstants.RDF_FILE_PATH%>"] = rdfFilePath;
+
+            return $.ajax({
+                url: urls.importBomAsNew,
+                cache: false,
+                dataType: "json",
+                data: data
+            });
+        }
+
+        var r = new Resumable({
+            target: urls.uploadAttachmentPart,
+            parameterNamespace: portletNamespace,
+            simultaneousUploads: 1,
+            generateUniqueIdentifier: getAttachmentIdPromise,
+            chunkRetryInterval: 2000,
+            maxChunkRetries: 3
+        });
+
+        r.assignBrowse($('#spdx-fileupload-browse')[0]);
+        r.assignDrop($('#spdx-fileupload-drop')[0]);
+
+        r.on('fileAdded', function (file) {
+            console.log("fileAdded...");
+            contentDiv.hide();
+            $('#cancelImportSBOM').hide();
+            statusDiv.show();
+            r.upload();
+            statusDiv.html("<h2>Uploading ...</h2>");
+        });
+        r.on('fileProgress', function (file) {
+            console.log("fileProgress...");
+        });
+        r.on('fileSuccess', function (file) {
+            console.log("fileSuccess...");
+            statusDiv.html("<h2>Importing ...</h2>");
+            attachmentContentId = file.uniqueIdentifier;
+            prepareImportBom(attachmentContentId).then(function (data) {
+                rdfFilePath = data.message;
+
+                $('#cancelImportSBOM').show();
+
+                console.log("prepareImportsuccess...");
+
+                if (neededKeys.every(key => Object.keys(data).includes(key))) {
+                    $('#importSBOM').css('display', 'block');
+
+                    componentName = data.name;
+
+                    componentVersion = data.version;
+
+                    actualComponentName = $('#import-spdx-bom').data().componentName;
+
+                    if (actualComponentName) {
+                        if (actualComponentName === componentName) {
+                            if (!data.isReleaseDuplicate) {
+                                statusDiv.html("<h3>The new Release will be created, do you want to import?</h3>");
+                                statusDiv.append("<div>New Release: <b>"+componentName+" "+componentVersion+"</b></div>");
+                            } else {
+                                statusDiv.html("<h3>The Release existed, do you want:</h3>");
+                                statusDiv.append("<div>Update Release: <b>"+componentName+" "+componentVersion+"</b> (please choose Import button)</div>");
+                                statusDiv.append("<div>Create new Release: <b>"+componentName+" ("+componentVersion+"-sbom-"+attachmentContentId.substring(0,6)+")</b> (please choose Import As New button)</div>");
+                                $('#importSBOMAsNew').show();
+                            }
+                        } else {
+                            $('#importSBOM').hide();
+                            statusDiv.html("<h3>The provided SPDX file is not a release of \""+actualComponentName+"\" component.</h3>");
+                            contentDiv.show();
+                        }
+                    } else {
+                        if (!data.isComponentDuplicate) {
+                            statusDiv.html("<h3>The new Component and new Release will be created, do you want to import?</h3>");
+                            statusDiv.append("<div>New Component: <b>"+componentName+"</b></div>");
+                            statusDiv.append("<div>New Release: <b>"+componentName+" "+componentVersion+"</b></div>");
+                        } else if (!data.isReleaseDuplicate) {
+                            statusDiv.html("<h3>The new Release will be created, do you want to import?</h3>");
+                            statusDiv.append("<div>New Release: <b>"+componentName+" "+componentVersion+"</b></div>");
+                        } else {
+                            statusDiv.html("<h3>The Component and Release existed, do you want:</h3>");
+                            statusDiv.append("<div>Update Release: <b>"+componentName+" "+componentVersion+"</b> (please choose Import button)</div>");
+                            statusDiv.append("<div>Create new Component and Release: <b>"+componentName+" ("+componentVersion+"-sbom-"+attachmentContentId.substring(0,6)+")</b> (please choose Import As New button)</div>");
+                            $('#importSBOMAsNew').show();
+                        }
+                    }
+                } else {
+                    $('#importSBOM').hide();
+                    $('#importSBOMAsNew').hide();
+                    $('#cancelImportSBOM').show();
+                    statusDiv.append("<div>" + JSON.stringify(data) + "</div>");
+                    contentDiv.show();
+                }
+            }).catch(function (err) {
+                $('#importSBOM').hide();
+                $('#importSBOMAsNew').hide();
+                $('#cancelImportSBOM').show();
+                statusDiv.html("<h2>Failed :(</h2>");
+                statusDiv.append("<div>" + JSON.stringify(err) + "</div>");
+                contentDiv.show();
+            });
+        });
+        r.on('fileError', function (file) {
+            console.log("fileError...");
+            statusDiv.html("<h2>Failed</h2>");
+            statusDiv.append("<div>with fileError</div>");
+        });
+
+        $('#import-spdx-bom').on('click', function() {
             //function open(selector, data, submitCallback, beforeShowFn, afterShowFn) {
             $dialog = dialog.open(dialogDivId,
                 {}, // data
@@ -96,196 +252,46 @@
                 function() {
                     // beforeShowFn
 
-                    var dialogDiv = $(dialogDivId);
-                    var contentDiv = dialogDiv.find("#spdxBomUploadUpload");
-                    var statusDiv = dialogDiv.find("#spdxBomUploadStatus");
-                    var data = dialogDiv.data();
-                    var portletNamespace = data.portletNamespace;
-
-                    if ($('#importSBOM').length > 0) $('#importSBOM').remove();
-                    if ($('#importSBOMAsNew').length > 0) $('#importSBOMAsNew').remove();
                     statusDiv.html("");
                     contentDiv.show();
-                    var attachmentContentId = "";
 
-                    var urls = {};
-                    urls.newAttachment = data.newAttachmentUrl;
-                    urls.uploadAttachmentPart = data.uploadAttachmentPartUrl;
-                    urls.prepareImportBom = data.prepareImportBomUrl;
-                    urls.importBom = data.importBomUrl;
-                    urls.importBomAsNew = data.importBomAsNewUrl;
+                    $('#importSBOM').hide();
+                    $('#importSBOMAsNew').hide();
 
-                    var importBtn='<button id="importSBOM" type="button" class="btn btn-primary" data-dismiss="modal">Import</button>'
-                    var importAsNewBtn='<button id="importSBOMAsNew" type="button" class="btn btn-secondary" data-dismiss="modal">Import As New</button>'
-                    const neededKeys = ['isComponentDuplicate','isReleaseDuplicate','name','version'];
-
-                    function getAttachmentIdPromise(file) {
-                        var data = {};
-                        data[portletNamespace + "fileName"] = file.fileName || file.name;
-
-                        return $.ajax({
-                            url: urls.newAttachment,
-                            cache: false,
-                            dataType: 'text',
-                            data: data
-                        });
-                    }
-
-                    function prepareImportBom(attachmentContentId) {
-                        var data = {};
-                        data[portletNamespace + "<%=PortalConstants.ATTACHMENT_CONTENT_ID%>"] = attachmentContentId;
-
-                        return $.ajax({
-                            url: urls.prepareImportBom,
-                            cache: false,
-                            dataType: "json",
-                            data: data
-                        });
-                    }
-
-                    function importBomFromAttachment(attachmentContentId, rdfFilePath) {
-                        var data = {};
-                        data[portletNamespace + "<%=PortalConstants.ATTACHMENT_CONTENT_ID%>"] = attachmentContentId;
-                        data[portletNamespace + "<%=PortalConstants.RDF_FILE_PATH%>"] = rdfFilePath;
-
-                        return $.ajax({
-                            url: urls.importBom,
-                            cache: false,
-                            dataType: "json",
-                            data: data
-                        });
-                    }
-
-                    function importBomAsNewFromAttachment(attachmentContentId, newReleaseVersion, rdfFilePath) {
-                        var data = {};
-                        data[portletNamespace + "<%=PortalConstants.ATTACHMENT_CONTENT_ID%>"] = attachmentContentId;
-                        data[portletNamespace + "<%=PortalConstants.NEW_RELEASE_VERSION%>"] = newReleaseVersion;
-                        data[portletNamespace + "<%=PortalConstants.RDF_FILE_PATH%>"] = rdfFilePath;
-
-                        return $.ajax({
-                            url: urls.importBomAsNew,
-                            cache: false,
-                            dataType: "json",
-                            data: data
-                        });
-                    }
-
-                    var r = new Resumable({
-                        target: urls.uploadAttachmentPart,
-                        parameterNamespace: portletNamespace,
-                        simultaneousUploads: 1,
-                        generateUniqueIdentifier: getAttachmentIdPromise,
-                        chunkRetryInterval: 2000,
-                        maxChunkRetries: 3
-                    });
-
-                    r.assignBrowse($('#spdx-fileupload-browse')[0]);
-                    r.assignDrop($('#spdx-fileupload-drop')[0]);
-
-                    r.on('fileAdded', function (file) {
-                        console.log("fileAdded...");
-                        contentDiv.hide();
-                        $('#cancelImportSBOM').hide();
-                        statusDiv.show();
-                        r.upload();
-                        statusDiv.html("<h2>Uploading ...</h2>");
-                    });
-                    r.on('fileProgress', function (file) {
-                        console.log("fileProgress...");
-                    });
-                    r.on('fileSuccess', function (file) {
-                        console.log("fileSuccess...");
-                        statusDiv.html("<h2>Importing ...</h2>");
-                        attachmentContentId = file.uniqueIdentifier;
-                        prepareImportBom(attachmentContentId).then(function (data) {
-                            $('#cancelImportSBOM').show();
-                            console.log("prepareImportsuccess...");
-                            if (neededKeys.every(key => Object.keys(data).includes(key))) {
-                                $('#spdxBomUploadAction').prepend(importBtn);
-                                componentName = data.name;
-                                componentVersion = data.version;
-                                actualComponentName = $('#import-spdx-bom').data().componentName;
-                                if (actualComponentName) {
-                                    if (actualComponentName === componentName) {
-                                        if (!data.isReleaseDuplicate) {
-                                            statusDiv.html("<h3>The new Release will be created, do you want to import?</h3>");
-                                            statusDiv.append("<div>New Release: <b>"+componentName+" "+componentVersion+"</b></div>");
-                                        } else {
-                                            statusDiv.html("<h3>The Release existed, do you want:</h3>");
-                                            statusDiv.append("<div>Update Release: <b>"+componentName+" "+componentVersion+"</b> (please choose Import button)</div>");
-                                            statusDiv.append("<div>Create new Release: <b>"+componentName+" ("+componentVersion+"-sbom-"+attachmentContentId.substring(0,6)+")</b> (please choose Import As New button)</div>");
-                                            $('#spdxBomUploadAction').prepend(importAsNewBtn);
-                                        }
-                                    } else {
-                                        $('#importSBOM').remove();
-                                        statusDiv.html("<h3>The provided SPDX file is not a release of \""+actualComponentName+"\" component.</h3>");
-                                        contentDiv.show();
-                                    }
-                                } else {
-                                    if (!data.isComponentDuplicate) {
-                                        statusDiv.html("<h3>The new Component and new Release will be created, do you want to import?</h3>");
-                                        statusDiv.append("<div>New Component: <b>"+componentName+"</b></div>");
-                                        statusDiv.append("<div>New Release: <b>"+componentName+" "+componentVersion+"</b></div>");
-                                    } else if (!data.isReleaseDuplicate) {
-                                        statusDiv.html("<h3>The new Release will be created, do you want to import?</h3>");
-                                        statusDiv.append("<div>New Release: <b>"+componentName+" "+componentVersion+"</b></div>");
-                                    } else {
-                                        statusDiv.html("<h3>The Component and Release existed, do you want:</h3>");
-                                        statusDiv.append("<div>Update Release: <b>"+componentName+" "+componentVersion+"</b> (please choose Import button)</div>");
-                                        statusDiv.append("<div>Create new Component and Release: <b>"+componentName+" ("+componentVersion+"-sbom-"+attachmentContentId.substring(0,6)+")</b> (please choose Import As New button)</div>");
-                                        $('#spdxBomUploadAction').prepend(importAsNewBtn);
-                                    }
-                                }
-                                $('#importSBOM').on('click', function() {
-                                    if (attachmentContentId === "") return;
-                                    importBomFromAttachment(attachmentContentId, data.message).then(function (data) {
-                                        statusDiv.html("<h2>Imported</h2>");
-                                        if ('redirectUrl' in data) {
-                                            statusDiv.append("<div>Created as <a href=\"" + data.redirectUrl + "\">" + data.message + "</a>, redirecting ...</div>");
-                                            window.location.href = data.redirectUrl;
-                                        } else {
-                                            statusDiv.append("<div>" + JSON.stringify(data) + "</div>");
-                                            contentDiv.show();
-                                        }
-                                    });
-                                });
-                                $('#importSBOMAsNew').on('click', function() {
-                                    if (attachmentContentId === "") return;
-                                    importBomAsNewFromAttachment(attachmentContentId, componentVersion+"-sbom-"+attachmentContentId.substring(0,6), data.message).then(function (data) {
-                                        statusDiv.html("<h2>Imported</h2>");
-                                        if ('redirectUrl' in data) {
-                                            statusDiv.append("<div>Created as <a href=\"" + data.redirectUrl + "\">" + data.message + "</a>, redirecting ...</div>");
-                                            window.location.href = data.redirectUrl;
-                                        } else {
-                                            statusDiv.append("<div>" + JSON.stringify(data) + "</div>");
-                                            contentDiv.show();
-                                        }
-                                    });
-                                });
+                    $('#importSBOM').on('click', function() {
+                        if (attachmentContentId === "") return;
+                        importBomFromAttachment(attachmentContentId, rdfFilePath).then(function (data) {
+                            statusDiv.html("<h2>Imported</h2>");
+                            if ('redirectUrl' in data) {
+                                statusDiv.append("<div>Created as <a href=\"" + data.redirectUrl + "\">" + data.message + "</a>, redirecting ...</div>");
+                                window.location.href = data.redirectUrl;
                             } else {
-                                if ($('#importSBOM').length > 0) $('#importSBOM').remove();
-                                if ($('#importSBOMAsNew').length > 0) $('#importSBOMAsNew').remove();
                                 statusDiv.append("<div>" + JSON.stringify(data) + "</div>");
                                 contentDiv.show();
                             }
-                        }).catch(function (err) {
-                            $('#cancelImportSBOM').show();
-                            if ($('#importSBOM').length > 0) $('#importSBOM').remove();
-                            if ($('#importSBOMAsNew').length > 0) $('#importSBOMAsNew').remove();
-                            statusDiv.html("<h2>Failed :(</h2>");
-                            statusDiv.append("<div>" + JSON.stringify(err) + "</div>");
-                            contentDiv.show();
                         });
                     });
-                    r.on('fileError', function (file) {
-                        console.log("fileError...");
-                        statusDiv.html("<h2>Failed</h2>");
-                        statusDiv.append("<div>with fileError</div>");
+
+                    $('#importSBOMAsNew').on('click', function() {
+                        if (attachmentContentId === "") return;
+                        importBomAsNewFromAttachment(attachmentContentId, componentVersion+"-sbom-"+attachmentContentId.substring(0,6), rdfFilePath).then(function (data) {
+                            statusDiv.html("<h2>Imported</h2>");
+                            if ('redirectUrl' in data) {
+                                statusDiv.append("<div>Created as <a href=\"" + data.redirectUrl + "\">" + data.message + "</a>, redirecting ...</div>");
+                                window.location.href = data.redirectUrl;
+                            } else {
+                                statusDiv.append("<div>" + JSON.stringify(data) + "</div>");
+                                contentDiv.show();
+                            }
+                        });
+                    });
+
+                    $('#cancelImportSBOM').on('click', function() {
+                        r.cancel();
                     });
                 },
                 function() {
                     // afterShowFn
-
                 }
             );
         });
