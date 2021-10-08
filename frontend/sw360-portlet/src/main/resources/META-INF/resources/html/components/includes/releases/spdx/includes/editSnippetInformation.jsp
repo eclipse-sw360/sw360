@@ -152,16 +152,16 @@
                     <label class="mandatory">5.8 Copyright Text</label>
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
-                            <input class="spdx-radio" id="snippetCopyrightText" type="radio" value="EXIST">
+                            <input class="spdx-radio" id="snippetCopyrightText" type="radio" name="_sw360_portlet_components_SNIPPET_COPYRIGHT_TEXT" value="EXIST">
                             <textarea style="flex: 6; margin-right: 1rem;" id="copyrightTextValueSnippet" rows="5"
                                 class="form-control" type="text"
                                 placeholder="Enter Copyright Text"></textarea>
                         </div>
                         <div style="flex: 2;">
-                            <input class="spdx-radio" id="snippetCopyrightTextNone" type="radio" value="NONE">
+                            <input class="spdx-radio" id="snippetCopyrightTextNone" type="radio" name="_sw360_portlet_components_SNIPPET_COPYRIGHT_TEXT" value="NONE">
                             <label style="margin-right: 2rem;" class="form-check-label radio-label"
                                 for="snippetCopyrightTextNone">NONE</label>
-                            <input class="spdx-radio" id="snippetCopyrightTextNoAssertion" type="radio" value="NOASSERTION">
+                            <input class="spdx-radio" id="snippetCopyrightTextNoAssertion" type="radio" name="_sw360_portlet_components_SNIPPET_COPYRIGHT_TEXT" value="NOASSERTION">
                             <label class="form-check-label radio-label"
                                 for="snippetCopyrightTextNoAssertion">NOASSERTION</label>
                         </div>
