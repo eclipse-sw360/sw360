@@ -168,6 +168,15 @@ public class DatabaseRepositoryCloudantClient<T> {
         return ids.stream().map(Object::toString).collect(Collectors.toSet());
     }
 
+    public Set<String> queryForIdsAsValue(UnpaginatedRequestBuilder query) {
+        ViewResponse<String, Object> rows = queryQueryResponse(query);
+        HashSet<Object> ids = new HashSet<>();
+        for (ViewResponse.Row row : rows.getRows()) {
+            ids.add(row.getValue());
+        }
+        return ids.stream().map(Object::toString).collect(Collectors.toSet());
+    }
+
     public Set<String> queryForIdsFromReqBuilder(UnpaginatedRequestBuilder query) {
         ViewResponse<String, Object> rows = queryQueryResponse(query);
         HashSet<Object> ids = new HashSet<>();
@@ -185,11 +194,22 @@ public class DatabaseRepositoryCloudantClient<T> {
         return queryForIds(viewName, prefix, prefix + HIGH_VALUE_UNICODE_CHARACTER);
     }
 
+    public Set<String> queryForIdsAsValueByPrefix(String viewName, String prefix) {
+        return queryForIdsAsValue(viewName, prefix, prefix + HIGH_VALUE_UNICODE_CHARACTER);
+    }
+
     public Set<String> queryForIds(String queryName, String startKey, String endKey) {
         ViewRequestBuilder query = connector.createQuery(type, queryName);
         UnpaginatedRequestBuilder req = query.newRequest(Key.Type.STRING, Object.class).startKey(startKey)
                 .endKey(endKey);
         return queryForIds(req);
+    }
+
+    public Set<String> queryForIdsAsValue(String queryName, String startKey, String endKey) {
+        ViewRequestBuilder query = connector.createQuery(type, queryName);
+        UnpaginatedRequestBuilder req = query.newRequest(Key.Type.STRING, Object.class).startKey(startKey)
+                .endKey(endKey);
+        return queryForIdsAsValue(req);
     }
 
     public Set<String> queryForIds(String queryName, String key) {
