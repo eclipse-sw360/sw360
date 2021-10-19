@@ -111,6 +111,7 @@ public class ThriftEnumUtils {
             .put(AttachmentType.SCREENSHOT, "Screenshot of website")
             .put(AttachmentType.README_OSS, "ReadMe OSS")
             .put(AttachmentType.OTHER, "Other")
+            .put(AttachmentType.SECURITY_ASSESSMENT, "Security Assessment")
             .build();
 
     // @formatter:off
@@ -134,6 +135,7 @@ public class ThriftEnumUtils {
             .put(AttachmentType.SCREENSHOT, "SCR")
             .put(AttachmentType.README_OSS, "RDM")
             .put(AttachmentType.OTHER, "OTH")
+            .put(AttachmentType.SECURITY_ASSESSMENT, "SECA")
             .build();
 
     private static final ImmutableMap<ClearingState, String> MAP_CLEARING_STATUS_STRING = ImmutableMap.of(
