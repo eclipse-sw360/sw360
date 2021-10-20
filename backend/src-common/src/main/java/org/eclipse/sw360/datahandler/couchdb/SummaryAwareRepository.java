@@ -13,11 +13,14 @@ import org.eclipse.sw360.components.summary.DocumentSummary;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by bodet on 17/02/15.
@@ -72,4 +75,15 @@ public class SummaryAwareRepository<T> extends DatabaseRepositoryCloudantClient<
         return summary.makeSummaryWithPermissionsFromFullDocs(type,docs,user);
     }
 
+    public Set<T> getFullDocsById(Set<String> docIds) {
+        Set<T> docs = new HashSet<>();
+        if (CommonUtils.isNullOrEmptyCollection(docIds)) {
+            return docs;
+        }
+        List<T> listOfDocs = get(docIds);
+        if (CommonUtils.isNotEmpty(listOfDocs)) {
+            docs.addAll(listOfDocs);
+        }
+        return docs;
+    }
 }

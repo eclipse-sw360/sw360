@@ -98,6 +98,7 @@ public class ReleaseSummary extends DocumentSummary<Release> {
 
     private void setShortSummaryFields(Release document, Release copy) {
         copyField(document, copy, _Fields.ID);
+        copyField(document, copy, _Fields.REVISION);
         copyField(document, copy, _Fields.NAME);
         copyField(document, copy, _Fields.VERSION);
         copyField(document, copy, _Fields.COMPONENT_ID);

@@ -279,12 +279,12 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
 
     public Set<Project> searchByReleaseId(String id) {
         Set<String> projectIds = queryForIdsAsValue("fullbyreleaseid", id);
-        return getFullProjectDocsById(projectIds);
+        return getFullDocsById(projectIds);
     }
 
     public Set<Project> searchByReleaseId(Set<String> ids) {
         Set<String> projectIds = queryForIdsAsValue("fullbyreleaseid", ids);
-        return getFullProjectDocsById(projectIds);
+        return getFullDocsById(projectIds);
     }
 
     public Set<Project> searchByLinkingProjectId(String id, User user) {
@@ -302,8 +302,8 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
     }
 
     private Set<Project> getMyProjects(String user) {
-        Set<String> queryForIds = queryForIds("fullmyprojects", user);
-        return getFullProjectDocsById(queryForIds);
+        Set<String> myProjectsIds = queryForIdsAsValue("fullmyprojects", user);
+        return getFullDocsById(myProjectsIds);
     }
 
     public List<Project> getMyProjectsSummary(String user) {
@@ -532,17 +532,5 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
             return getConnector().getDocumentCount(Project.class, "myfullprojectscountca", keyss);
         }
         return getConnector().getDocumentCount(Project.class, "myfullprojectscount", keys);
-    }
-
-    private Set<Project> getFullProjectDocsById(Set<String> projectIds) {
-        Set<Project> projects = new HashSet<>();
-        if (CommonUtils.isNullOrEmptyCollection(projectIds)) {
-            return projects;
-        }
-        List<Project> listOfProjects = get(projectIds);
-        if (CommonUtils.isNotEmpty(listOfProjects)) {
-            projects.addAll(listOfProjects);
-        }
-        return projects;
     }
 }

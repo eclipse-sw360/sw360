@@ -36,8 +36,8 @@ import java.util.*;
  * @author Johannes.Najjar@tngtech.com
  */
 public class ComponentRepository extends SummaryAwareRepository<Component> {
-    private static final String ALL = "function(doc) { if (doc.type == 'component') emit(null, doc) }";
-    private static final String BYCREATEDON = "function(doc) { if(doc.type == 'component') { emit(doc.createdOn, doc) } }";
+    private static final String ALL = "function(doc) { if (doc.type == 'component') emit(null, doc._id) }";
+    private static final String BYCREATEDON = "function(doc) { if(doc.type == 'component') { emit(doc.createdOn, doc._id) } }";
     private static final String USEDATTACHMENTCONTENTS = "function(doc) { " +
             "    if(doc.type == 'release' || doc.type == 'component' || doc.type == 'project') {" +
             "        for(var i in doc.attachments){" +
@@ -47,7 +47,7 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
             "}";
     private static final String MYCOMPONENTS = "function(doc) {" +
             "  if (doc.type == 'component') {" +
-            "    emit(doc.createdBy, doc);" +
+            "    emit(doc.createdBy, doc._id);" +
             "  } " +
             "}";
     private static final String SUBSCRIBERS = "function(doc) {" +
@@ -69,7 +69,7 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
             "}";
     private static final String FULLBYNAME = "function(doc) {" +
             "  if (doc.type == 'component') {" +
-            "    emit(doc.name, doc);" +
+            "    emit(doc.name, doc._id);" +
             "  } " +
             "}";
     private static final String BYLINKINGRELEASE = "function(doc) {" +
@@ -174,8 +174,8 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
         if (limit >= 0){
             unPagnReques.limit(limit);
         }
-        List<Component> components = queryView(unPagnReques);
 
+        List<Component> components = new ArrayList<Component>(getFullDocsById(queryForIdsAsValue(unPagnReques)));
         return makeSummaryWithPermissionsFromFullDocs(SummaryType.SUMMARY, components, user);
     }
 
@@ -184,7 +184,8 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
     }
 
     public Collection<Component> getMyComponents(String user) {
-        return queryByPrefix("mycomponents", user);
+        Set<String> componentIds = queryForIdsAsValueByPrefix("mycomponents", user);
+        return getFullDocsById(componentIds);
     }
 
     public List<Component> getSubscribedComponents(String user) {
@@ -215,7 +216,8 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
     }
 
     public List<Component> searchByNameForExport(String name) {
-        final List<Component> componentList = queryByPrefix("fullbyname", name);
+        Set<String> componentIds = queryForIdsAsValueByPrefix("fullbyname", name);
+        final List<Component> componentList = new ArrayList<Component>(getFullDocsById(componentIds));
         return makeSummaryFromFullDocs(SummaryType.EXPORT_SUMMARY, componentList);
     }
 
