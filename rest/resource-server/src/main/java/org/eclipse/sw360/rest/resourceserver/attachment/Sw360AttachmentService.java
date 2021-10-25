@@ -211,6 +211,18 @@ public class Sw360AttachmentService {
             attachment.setCreatedComment(createdComment);
         }
 
+        if (checkStatus != null &&
+                (checkStatus == CheckStatus.ACCEPTED || checkStatus == CheckStatus.REJECTED))
+        {
+            if (CommonUtils.isNotNullEmptyOrWhitespace(attachment.getCreatedBy())) {
+                attachment.setCheckedBy(attachment.getCreatedBy());
+            }
+
+            if (CommonUtils.isNotNullEmptyOrWhitespace(attachment.getCreatedTeam())) {
+                attachment.setCheckedTeam(attachment.getCreatedTeam());
+            }
+        }
+
         return attachment;
     }
 
