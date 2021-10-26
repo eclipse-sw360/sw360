@@ -1,0 +1,61 @@
+#
+# Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+# Copyright Bosch.IO GmbH 2020
+#
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+
+server:
+  port: 8091
+
+management:
+  endpoints:
+    enabled-by-default: false
+    web:
+      base-path:
+  endpoint:
+    health:
+      enabled: true
+      show-details: always
+    info:
+      enabled: true
+    web:
+      base-path: /
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 600MB
+
+# logging:
+#   level:
+#     org.springframework.web: DEBUG
+
+security:
+  oauth2:
+    resource:
+      id: sw360-REST-API
+      jwt:
+        keyValue: |
+          -----BEGIN PUBLIC KEY-----
+          MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApz8Cr1o5yHMv/FUdF5uy
+          VptilqdWtNvw5S6Tr4IaQ4XR9QPt8nlRsjOngfG4QCcKMBWJISldFg8PlJWUBeV+
+          6TwQUidxokl2GbO6/+QA+lz1a5Ei1Y1pcnvFeRb2pdYlH3Yg6fXMxS6QwDLk27pZ
+          5xbpSDIGISDesyaIMvwaKdhAbFW/tTb/oJY7rCPvmYLT80kJzilijJ/W01jMMSHg
+          9Yi5cCt1eU/s78co+pxHzwNXO0Ul4iRpo/CXprQCsSIsdWkJTo6btal1xzd292Da
+          d+9xq499JEsNbcqLfCq8DBQ7CEz6aJjMvPkvZiCrFIGxC/Gqmw35DQ4688rbkKSJ
+          PQIDAQAB
+          -----END PUBLIC KEY-----
+
+sw360:
+  thrift-server-url: ${SW360_THRIFT_SERVER_URL:http://localhost:8080}
+  test-user-id: admin@sw360.org
+  test-user-password: sw360-password
+  couchdb-url: ${SW360_COUCHDB_URL:http://localhost:5984}
+  cors:
+    allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:#{null}}

@@ -15,7 +15,7 @@ check_deployment_status() {
     sleep 30s
     response=$(curl --max-time 360 --connect-timeout 360 http://127.0.0.1:8080/resource/health)
     echo "$response"
-    if [[ "$response" != *"\"status\":\"UP\""* ]]; then
+    if [[ "$response" != *"\"SW360Rest\":{\"status\":\"UP\""* ]]; then
         echo "Error occured while deloying backend."
         exit 4;
     fi
