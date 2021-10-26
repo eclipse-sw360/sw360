@@ -49,6 +49,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.Source;
@@ -310,6 +311,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         sw360Project.unsetRevision();
         sw360Project.unsetAttachments();
         sw360Project.unsetClearingRequestId();
+        sw360Project.setClearingState(ProjectClearingState.OPEN);
         String linkedObligationId = sw360Project.getLinkedObligationId();
         sw360Project.unsetLinkedObligationId();
         Project createDuplicateProject = projectService.createProject(sw360Project, user);
