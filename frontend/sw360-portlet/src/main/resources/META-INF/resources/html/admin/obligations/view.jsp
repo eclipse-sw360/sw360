@@ -86,11 +86,14 @@
                 result = [];
 
             <core_rt:forEach items="${obligList}" var="oblig">
+                var obligText = "<sw360:out value='${oblig.text}' stripNewlines='false' jsQuoting='true'/>";
+                obligText = obligText.replace(/[\r\n]/g, '<br>');
+                obligText = obligText.replace(/\t/g, '&ensp;&ensp;&ensp;&ensp;');
                 result.push({
                     DT_RowId: "${oblig.id}",
                     id: "${oblig.id}",
                     title: "<sw360:out value='${oblig.title}'/>",
-                    text: "<sw360:out value='${oblig.text}'/>",
+                    text: '<p style="overflow: auto; max-height: 10rem;">'+obligText+'</p>',
                     obligationLevel: "<sw360:DisplayEnum value="${oblig.obligationLevel}"/>"
                 });
             </core_rt:forEach>

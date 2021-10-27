@@ -14,6 +14,7 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import org.eclipse.sw360.projects.Sw360ThriftServlet;
 
 import java.net.MalformedURLException;
+import java.io.IOException;
 
 /**
  * Thrift Servlet instantiation
@@ -23,7 +24,7 @@ import java.net.MalformedURLException;
  */
 public class LicenseServlet extends Sw360ThriftServlet {
 
-    public LicenseServlet() throws MalformedURLException {
+    public LicenseServlet() throws MalformedURLException, IOException {
         // Create a service processor using the provided handler
         super(new LicenseService.Processor<>(new LicenseHandler()), new TCompactProtocol.Factory());
     }

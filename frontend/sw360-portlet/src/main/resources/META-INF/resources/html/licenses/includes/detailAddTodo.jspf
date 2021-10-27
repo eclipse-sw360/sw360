@@ -49,12 +49,15 @@
     require(['jquery', 'modules/dialog', 'bridges/datatables', 'modules/validation', 'utils/render'], function($, dialog, datatables, validation, render) {
         var licenseObligationJSON = [];
         <core_rt:forEach var="ob" varStatus="status" items="${linkedObligations}">
+            var obligText = "<sw360:out value='${ob.text}' stripNewlines='false' jsQuoting='true'/>";
+            obligText = obligText.replace(/[\r\n]/g, '<br>');
+            obligText = obligText.replace(/\t/g, '&ensp;&ensp;&ensp;&ensp;');
             licenseObligationJSON.push({
                 "DT_RowId": "oblLinkRow${ob.id}",
                 "obligationId": "<sw360:out value='${ob.id}'/>",
                 "obligationTitle": "<sw360:out value='${ob.title}'/>",
                 "obligationType": "<sw360:DisplayEnum value='${ob.obligationType}'/>",
-                "text": "<sw360:out value='${ob.text}'/>",
+                "text": '<p style="overflow: auto; max-height: 20rem;">'+obligText+'</p>',
             });
         </core_rt:forEach>
 

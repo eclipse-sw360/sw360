@@ -257,6 +257,9 @@ public class PortalConstants {
     public static final String PROJECT_SEARCH = "projectSearch";
     public static final String RELEASE_SEARCH = "releaseSearch";
     public static final String RELEASE_SEARCH_BY_VENDOR = "releaseSearchByVendor";
+    public static final String OBLIGATION_ELEMENT_SEARCH = "obligationElementSearch";
+    public static final String OBLIGATION_ELEMENT_ID = "obligationElementId";
+
     public static final String RELEASE_LIST_FROM_LINKED_PROJECTS = "releaseListFromLinkedProjects";
     public static final String STATE;
     public static final String PROJECT_TYPE;
@@ -321,6 +324,7 @@ public class PortalConstants {
     public static final String DUPLICATE_PROJECTS = "duplicateProjects";
     public static final String ACTION_DELETE_ALL_LICENSE_INFORMATION = "deleteAllLicenseInformation";
     public static final String ACTION_IMPORT_SPDX_LICENSE_INFORMATION = "importSpdxLicenseInformation";
+    public static final String ACTION_IMPORT_OSADL_LICENSE_INFORMATION = "importOSADLLicenseInformation";
 
 
     //! Specialized keys for vulnerability management
@@ -378,6 +382,12 @@ public class PortalConstants {
     public static final String LICENSE_INFO_RELEASE_TO_ATTACHMENT = "licenseInfoAttachmentSelected";
     public static final String LICENSE_INFO_EMPTY_FILE = "isEmptyFile";
     public static final String SW360_USER = "sw360User";
+
+    //! Specialized keys for obligation node
+    public static final String OBLIGATION_NODE_LIST = "obligationNodeList";
+
+    //! Specialized keys for obligation element
+    public static final String OBLIGATION_ELEMENT_LIST = "obligationElementList";
 
     //! Serve resource generic keywords
     public static final String ACTION = "action";
@@ -549,6 +559,9 @@ public class PortalConstants {
     // license actions
     public static final String LICENSE_PREFIX = "license";
     public static final String LICENSE_SEARCH = LICENSE_PREFIX + "search";
+
+    // obligation actions
+    public static final String VIEW_IMPORT_OBLIGATION_ELEMENTS = "view_import_obligation_elements";
 
     //vulnerability actions
     public static  final String UPDATE_VULNERABILITIES_RELEASE = "updateVulnerabilitiesRelease";

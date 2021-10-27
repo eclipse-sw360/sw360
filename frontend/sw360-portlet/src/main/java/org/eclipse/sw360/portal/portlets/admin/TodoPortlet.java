@@ -16,6 +16,8 @@ import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationElement;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationNode;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
@@ -28,6 +30,7 @@ import javax.portlet.*;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import static com.google.common.base.Strings.isNullOrEmpty;
 
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
 
@@ -56,21 +59,43 @@ public class TodoPortlet extends Sw360Portlet {
 
     //! Serve resource and helpers
     @Override
-    public void serveResource(ResourceRequest request, ResourceResponse response) {
 
+    public void serveResource(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
+        String action = request.getParameter(ACTION);
+        String where = request.getParameter(WHERE);
         final String id = request.getParameter("id");
         final User user = UserCacheHolder.getUserFromRequest(request);
 
         LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
 
-
-        try {
-            RequestStatus status = licenseClient.deleteObligations(id, user);
-            renderRequestStatus(request,response, status);
-        } catch (TException e) {
-            log.error("Error deleting oblig", e);
-            renderRequestStatus(request,response, RequestStatus.FAILURE);
+        if (REMOVE_TODO.equals(action)) {
+            try {
+                RequestStatus status = licenseClient.deleteObligations(id, user);
+                renderRequestStatus(request,response, status);
+            } catch (TException e) {
+                log.error("Error deleting oblig", e);
+                renderRequestStatus(request,response, RequestStatus.FAILURE);
+            }
+        } else if (VIEW_IMPORT_OBLIGATION_ELEMENTS.equals(action)) {
+            serveObligationElementSearchResults(request, response, where);
         }
+    }
+
+    private void serveObligationElementSearchResults(ResourceRequest request, ResourceResponse response, String searchText) throws IOException, PortletException {
+        List<ObligationElement> searchResult;
+        try {
+            LicenseService.Iface client = thriftClients.makeLicenseClient();
+            if (isNullOrEmpty(searchText)) {
+                searchResult = client.getObligationElements();
+            } else {
+                searchResult = client.searchObligationElement(searchText);
+            }
+        } catch (TException e) {
+            log.error("Error searching Obligation Element", e);
+            searchResult = Collections.emptyList();
+        }
+        request.setAttribute(OBLIGATION_ELEMENT_SEARCH, searchResult);
+        include("/html/admin/obligations/ajax/searchObligationElementsAjax.jsp", request, response, PortletRequest.RESOURCE_PHASE);
     }
 
 
@@ -81,6 +106,23 @@ public class TodoPortlet extends Sw360Portlet {
 
         String pageName = request.getParameter(PAGENAME);
         if (PAGENAME_ADD.equals(pageName)) {
+            List<ObligationNode> obligationNodeList;
+            List<ObligationElement> obligationElementList;
+            List<Obligation> obligationList;
+            try {
+                LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
+                obligationNodeList = licenseClient.getObligationNodes();
+                obligationElementList = licenseClient.getObligationElements();
+                obligationList = licenseClient.getObligations();
+            } catch (Exception e) {
+                log.error("Could not get Obligation node from backend ", e);
+                obligationNodeList = Collections.emptyList();
+                obligationElementList = Collections.emptyList();
+                obligationList = Collections.emptyList();
+            }
+            request.setAttribute(OBLIGATION_NODE_LIST, obligationNodeList);
+            request.setAttribute(OBLIGATION_ELEMENT_LIST, obligationElementList);
+            request.setAttribute(TODO_LIST, obligationList);
             include("/html/admin/obligations/add.jsp", request, response);
         } else {
             prepareStandardView(request);
@@ -109,11 +151,14 @@ public class TodoPortlet extends Sw360Portlet {
 
         final Obligation oblig = new Obligation();
         ComponentPortletUtils.updateTodoFromRequest(request, oblig);
-
+        LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
+        final User user = UserCacheHolder.getUserFromRequest(request);
+        String jsonString = request.getParameter(Obligation._Fields.TEXT.toString());
         try {
-            LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
-            final User user = UserCacheHolder.getUserFromRequest(request);
-
+            String obligationNode = licenseClient.addNodes(jsonString, user);
+            String obligationText = licenseClient.buildObligationText(obligationNode, "0");
+            oblig.setText(obligationText);
+            oblig.setNode(obligationNode);
             licenseClient.addObligations(oblig, user);
         } catch (TException e) {
             log.error("Error adding oblig", e);

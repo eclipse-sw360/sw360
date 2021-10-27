@@ -230,6 +230,9 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
             </core_rt:forEach>
         </core_rt:if>
 
+        var obligText = "<sw360:out value='${projectObligations.text}' stripNewlines='false' jsQuoting='true'/>";
+        obligText = obligText.replace(/[\r\n]/g, '<br>');
+        obligText = obligText.replace(/\t/g, '&ensp;&ensp;&ensp;&ensp;');
         obligationJSON.push({
             "obligation": "<sw360:out value='${entry.key}'/>",
             "licenseLinks": licenseLinks,
@@ -240,7 +243,7 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
             "level": "${projectObligations.obligationLevel}",
             "id": "<sw360:out value='${projectObligations.id}'/>",
             "comment": "<sw360:out value='${projectObligations.comment}'/>",
-            "text": '<sw360:out value="${projectObligations.text}"/>',
+            "text": '<p style="overflow: auto; max-height: 20rem;">'+obligText+'</p>',
             "modifiedBy": "${projectObligations.modifiedBy}",
             "modifiedOn": "${projectObligations.modifiedOn}"
         });
@@ -526,13 +529,16 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
     
     //project Obligation
     <core_rt:forEach items="${projectLevelObligations}" var="projOblig" varStatus="loop">
+    var obligText = "<sw360:out value='${projOblig.value.text}' stripNewlines='false' jsQuoting='true'/>";
+    obligText = obligText.replace(/[\r\n]/g, '<br>');
+    obligText = obligText.replace(/\t/g, '&ensp;&ensp;&ensp;&ensp;');
     projectObligationJSON.push({
         "obligation": "<sw360:out value='${projOblig.key}'/>",
         "status": '<sw360:DisplayEnumOptions type="<%=ObligationStatus.class%>" selected="${projOblig.value.status}" />',
         "type": "<sw360:DisplayEnum value='${projOblig.value.obligationType}'/>",
         "id": "<sw360:out value='${projOblig.value.id}'/>",
         "comment": "<sw360:out value='${projOblig.value.comment}'/>",
-        "text": '<sw360:out value="${projOblig.value.text}"/>',
+        "text": '<p style="overflow: auto; max-height: 20rem;">'+obligText+'</p>',
         "modifiedBy": "${projOblig.value.modifiedBy}",
         "modifiedOn": "${projOblig.value.modifiedOn}"
     });
@@ -614,13 +620,16 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
     
     //component Obligation
     <core_rt:forEach items="${componentLevelObligations}" var="compOblig" varStatus="loop">
+    var obligText = "<sw360:out value='${compOblig.value.text}' stripNewlines='false' jsQuoting='true'/>";
+    obligText = obligText.replace(/[\r\n]/g, '<br>');
+    obligText = obligText.replace(/\t/g, '&ensp;&ensp;&ensp;&ensp;');
     compObligationJSON.push({
         "obligation": "<sw360:out value='${compOblig.key}'/>",
         "status": '<sw360:DisplayEnumOptions type="<%=ObligationStatus.class%>" selected="${compOblig.value.status}" />',
         "type": "<sw360:DisplayEnum value='${compOblig.value.obligationType}'/>",
         "id": "<sw360:out value='${compOblig.value.id}'/>",
         "comment": "<sw360:out value='${compOblig.value.comment}'/>",
-        "text": '<sw360:out value="${compOblig.value.text}"/>',
+        "text": '<p style="overflow: auto; max-height: 20rem;">'+obligText+'</p>',
         "modifiedBy": "${compOblig.value.modifiedBy}",
         "modifiedOn": "${compOblig.value.modifiedOn}"
     });
@@ -702,13 +711,16 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
     
     //Org Obligation
     <core_rt:forEach items="${organisationLevelObligations}" var="orgOblig" varStatus="loop">
+      var obligText = "<sw360:out value='${orgOblig.value.text}' stripNewlines='false' jsQuoting='true'/>";
+      obligText = obligText.replace(/[\r\n]/g, '<br>');
+      obligText = obligText.replace(/\t/g, '&ensp;&ensp;&ensp;&ensp;');
       orgObligationJSON.push({
           "obligation": "<sw360:out value='${orgOblig.key}'/>",
           "status": '<sw360:DisplayEnumOptions type="<%=ObligationStatus.class%>" selected="${orgOblig.value.status}" />',
           "type": "<sw360:DisplayEnum value='${orgOblig.value.obligationType}'/>",
           "id": "<sw360:out value='${orgOblig.value.id}'/>",
           "comment": "<sw360:out value='${orgOblig.value.comment}'/>",
-          "text": '<sw360:out value="${orgOblig.value.text}"/>',
+          "text": '<p style="overflow: auto; max-height: 20rem;">'+obligText+'</p>',
           "modifiedBy": "${orgOblig.value.modifiedBy}",
           "modifiedOn": "${orgOblig.value.modifiedOn}"
       });

@@ -23,6 +23,10 @@
     <packaging>jar</packaging>
     <name>src-licenses</name>
         
+    <properties>
+        <liferay.portal.kernel.version>8.1.0</liferay.portal.kernel.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.spdx</groupId>
@@ -36,6 +40,12 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.liferay.portal</groupId>
+            <artifactId>com.liferay.portal.kernel</artifactId>
+            <version>${liferay.portal.kernel.version}</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>

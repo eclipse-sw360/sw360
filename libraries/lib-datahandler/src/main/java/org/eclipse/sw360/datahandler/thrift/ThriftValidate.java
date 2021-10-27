@@ -69,6 +69,20 @@ public class ThriftValidate {
         licenseType.setType(TYPE_LICENSETYPE);
     }
 
+    public static void prepareObligationElement(ObligationElement obligationElement) throws SW360Exception {
+        // Check required fields
+        assertNotNull(obligationElement);
+        // Check type
+        obligationElement.setType(TYPE_OBLIGATIONELEMENT);
+    }
+
+    public static void prepareObligationNode(ObligationNode obligationNode) throws SW360Exception {
+        // Check required fields
+        assertNotNull(obligationNode);
+        // Check type
+        obligationNode.setType(TYPE_OBLIGATIONNODE);
+    }
+
     public static void prepareLicense(License license) throws SW360Exception {
         // Check required fields
         assertNotNull(license);
