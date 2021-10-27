@@ -438,8 +438,8 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     @Override
-    public List<Component> searchComponentForExport(String name) throws TException {
-        return handler.searchComponentByNameForExport(name);
+    public List<Component> searchComponentForExport(String name, boolean caseSensitive) throws TException {
+        return handler.searchComponentByNameForExport(name, caseSensitive);
     }
 
     @Override
