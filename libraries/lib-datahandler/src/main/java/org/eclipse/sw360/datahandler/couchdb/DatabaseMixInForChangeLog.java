@@ -20,6 +20,16 @@ import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Repository;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.CheckSum;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.Creator;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.ExternalDocumentReferences;
+import org.eclipse.sw360.datahandler.thrift.spdx.otherlicensinginformationdetected.OtherLicensingInformationDetected;
+import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelements.RelationshipsBetweenSPDXElements;
+import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetRange;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReference;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageVerificationCode;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -226,4 +236,115 @@ public class DatabaseMixInForChangeLog {
     })
     public static abstract class ProjectReleaseRelationshipMixin extends ProjectReleaseRelationship {
     }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties({
+        "setAlgorithm",
+        "setChecksumValue",
+        "setIndex"
+    })
+    public static abstract class CheckSumMixin extends CheckSum {
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties({
+        "setAnnotator",
+        "setAnnotationDate",
+        "setAnnotationType",
+        "setSpdxIdRef",
+        "setAnnotationComment",
+        "setIndex"
+    })
+    public static abstract class AnnotationsMixin extends Annotations {
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties({
+        "setExternalDocumentId",
+        "setCheckSum",
+        "setSpdxDocument",
+        "setIndex"
+    })
+    public static abstract class ExternalDocumentReferencesMixin extends ExternalDocumentReferences {
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties({
+        "setType",
+        "setValue",
+        "setIndex"
+    })
+    public static abstract class CreatorMixin extends Creator {
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties({
+        "setLicenseId",
+        "setExtractedText",
+        "setLicenseName",
+        "setLicenseCrossRefs",
+        "setLicenseComment",
+        "setIndex"
+    })
+    public static abstract class OtherLicensingInformationDetectedMixin extends OtherLicensingInformationDetected {
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties({
+        "setExcludedFiles",
+        "setValue"
+    })
+    public static abstract class PackageVerificationCodeMixin extends PackageVerificationCode {
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties({
+        "setReferenceCategory",
+        "setReferenceLocator",
+        "setReferenceType",
+        "setComment",
+        "setIndex"
+    })
+    public static abstract class ExternalReferenceMixin extends ExternalReference {
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties({
+        "setSpdxElementId",
+        "setRelationshipType",
+        "setRelatedSpdxElement",
+        "setRelationshipComment",
+        "setIndex"
+    })
+    public static abstract class RelationshipsBetweenSPDXElementsMixin extends RelationshipsBetweenSPDXElements {
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties({
+        "setSPDXID",
+        "setSnippetFromFile",
+        "setSnippetRanges",
+        "setLicenseConcluded",
+        "setLicenseInfoInSnippets",
+        "setLicenseComments",
+        "setCopyrightText",
+        "setComment",
+        "setName",
+        "setSnippetAttributionText",
+        "setIndex"
+    })
+    public static abstract class SnippetInformationMixin extends SnippetInformation {
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties({
+        "setRangeType",
+        "setStartPointer",
+        "setEndPointer",
+        "setReference",
+        "setIndex"
+    })
+    public static abstract class SnippetRangeMixin extends SnippetRange {
+    }
+
 }
