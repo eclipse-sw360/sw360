@@ -12,7 +12,7 @@
 <table class="table spdx-table spdx-full" id="editAnnotations">
     <thead>
         <tr>
-            <th colspan="3">8. Annotations</th>
+            <th colspan="3">12. Annotations</th>
         </tr>
     </thead>
     <tbody class="section section-annotation">
@@ -41,7 +41,7 @@
         <tr>
             <td style="display: flex">
                 <div class="form-group" style="flex: 3">
-                    <label class="mandatory" for="annotator">8.1 Annotator</label>
+                    <label class="mandatory" for="annotator">12.1 Annotator</label>
                     <div style="display: flex">
                         <select id="annotatorType" style="flex: 2; margin-right: 1rem;" type="text" class="form-control" placeholder="Enter Type">
                             <option value="Organization" selected="">Organization</option>
@@ -53,7 +53,7 @@
                     </div>
                 </div>
                 <div class="form-group" style="flex: 1">
-                    <label class="mandatory" for="annotationCreatedDate">8.2 Annotation Date </label>
+                    <label class="mandatory" for="annotationCreatedDate">12.2 Annotation Date </label>
                     <div style="display: flex">
                         <div>
                             <input id="annotationCreatedDate" style="width: 12rem; text-align: center;" type="date"
@@ -80,11 +80,11 @@
         <tr>
             <td style="display: flex">
                 <div class="form-group" style="flex: 1">
-                    <label class="mandatory" for="annotationType">8.3 Annotation Type</label>
+                    <label class="mandatory" for="annotationType">12.3 Annotation Type</label>
                     <input id="annotationType" class="form-control" type="text" placeholder="Enter Annotation Type" >
                 </div>
                 <div class="form-group" style="flex: 1">
-                    <label class="mandatory" for="spdxIdRef">8.4 SPDX Identifier Reference</label>
+                    <label class="mandatory" for="spdxIdRef">12.4 SPDX Identifier Reference</label>
                     <input id="spdxIdRef" class="form-control" type="text"
                         placeholder="Enter SPDX Identifier Reference" >
                 </div>
@@ -93,7 +93,7 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label class="mandatory" for="annotationComment">8.5 Annotation Comment</label>
+                    <label class="mandatory" for="annotationComment">12.5 Annotation Comment</label>
                     <textarea class="form-control" id="annotationComment" rows="5"
                         placeholder="Enter License Comment"></textarea>
                 </div>

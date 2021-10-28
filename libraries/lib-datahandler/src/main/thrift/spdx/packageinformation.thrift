@@ -32,29 +32,29 @@ struct PackageInformation {
     2: optional string revision,
     3: optional string type = "packageInformation",
     4: optional string spdxDocumentId,  // Id of the parent SPDX Document
-    5: optional string name,                // 3.1
-    6: optional string SPDXID,              // 3.2
-    7: optional string versionInfo,         // 3.3
-    8: optional string packageFileName,     // 3.4
-    9: optional string supplier,            // 3.5
-    10: optional string originator,         // 3.6
-    11: optional string downloadLocation,   // 3.7
-    12: optional bool filesAnalyzed,        // 3.8
-    13: optional PackageVerificationCode packageVerificationCode,   // 3.9
-    14: optional set<CheckSum> checksums,   // 3.10
-    15: optional string homepage,           // 3.11
-    16: optional string sourceInfo,         // 3.12
-    17: optional string licenseConcluded,   // 3.13
-    18: optional set<string> licenseInfoFromFiles,  // 3.14
-    19: optional string licenseDeclared,    // 3.15
-    20: optional string licenseComments,    // 3.16
-    21: optional string copyrightText,      // 3.17
-    22: optional string summary,            // 3.18
-    23: optional string description,        // 3.19
-    24: optional string packageComment,     // 3.20
-    25: optional set<ExternalReference> externalRefs,   //3.21
-    26: optional set<string> attributionText,   // 3.22
-    27: optional set<Annotation> annotations,   // 3.23
+    5: optional string name,                // 7.1
+    6: optional string SPDXID,              // 7.2
+    7: optional string versionInfo,         // 7.3
+    8: optional string packageFileName,     // 7.4
+    9: optional string supplier,            // 7.5
+    10: optional string originator,         // 7.6
+    11: optional string downloadLocation,   // 7.7
+    12: optional bool filesAnalyzed,        // 7.8
+    13: optional PackageVerificationCode packageVerificationCode,   // 7.9
+    14: optional set<CheckSum> checksums,   // 7.10
+    15: optional string homepage,           // 7.11
+    16: optional string sourceInfo,         // 7.12
+    17: optional string licenseConcluded,   // 7.13
+    18: optional set<string> licenseInfoFromFiles,  // 7.14
+    19: optional string licenseDeclared,    // 7.15
+    20: optional string licenseComments,    // 7.16
+    21: optional string copyrightText,      // 7.17
+    22: optional string summary,            // 7.18
+    23: optional string description,        // 7.19
+    24: optional string packageComment,     // 7.20
+    25: optional set<ExternalReference> externalRefs,   //7.21
+    26: optional set<string> attributionText,   // 7.22
+    27: optional set<Annotation> annotations,   // 7.23
     // Information for ModerationRequests
     30: optional DocumentState documentState,
     31: optional map<RequestedAction, bool> permissions,

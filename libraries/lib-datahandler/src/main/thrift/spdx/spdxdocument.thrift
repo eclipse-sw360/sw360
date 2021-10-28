@@ -39,10 +39,10 @@ struct SPDXDocument {
     5: optional string spdxDocumentCreationInfoId,  // Id of Document Creation Info
     6: optional set<string> spdxPackageInfoIds,     // Ids of Package Info
     7: optional set<string> spdxFileInfoIds,        // Ids of File Info
-    8: optional set<SnippetInformation> snippets,   // 5. Snippet Information
-    9: optional set<RelationshipsBetweenSPDXElements> relationships,    // 7. Relationships
-    10: optional set<Annotations> annotations,      // 8. Annotations
-    11: optional set<OtherLicensingInformationDetected> otherLicensingInformationDetecteds, // 6. Other Licensing Information Detected
+    8: optional set<SnippetInformation> snippets,   // 9. Snippet Information
+    9: optional set<RelationshipsBetweenSPDXElements> relationships,    // 11. Relationships
+    10: optional set<Annotations> annotations,      // 12. Annotations
+    11: optional set<OtherLicensingInformationDetected> otherLicensingInformationDetecteds, // 10. Other Licensing Information Detected
     // Information for ModerationRequests
     20: optional DocumentState documentState,
     21: optional map<RequestedAction, bool> permissions,

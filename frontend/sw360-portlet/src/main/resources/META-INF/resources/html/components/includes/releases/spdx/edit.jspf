@@ -205,7 +205,7 @@
         packageInformationObj.externalRefs.sort(dynamicSort('index', 'int'));
         packageInformationObj.annotations.sort(dynamicSort('index', 'int'));
 
-        // 2.6 External Document Reference - Add
+        // 6.6 External Document Reference - Add
         $('[name=add-externalDocRef]').on('click', function (e) {
             e.preventDefault();
 
@@ -227,7 +227,7 @@
             $('#externalDocumentRefs').change();
         });
 
-        // 2.6 External Document Reference - Delete
+        // 6.6 External Document Reference - Delete
         $('[name=delete-externalDocRef').on('click', function (e) {
             let selectedIndex = $('#externalDocumentRefs')[0].selectedIndex;
 
@@ -236,14 +236,14 @@
             spdxjs.deleteMain($(this));
         });
 
-        // 2.6 External Document Reference - Change
+        // 6.6 External Document Reference - Change
         $('#externalDocumentRefs').on('change', function (e) {
             let selectedIndex = $('#externalDocumentRefs')[0].selectedIndex;
 
             spdxjs.fillExternalDocRef(selectedIndex);
         });
 
-        // 2.8 SPDX Document creator - Add
+        // 6.8 SPDX Document creator - Add
         $('[name=add-spdx-creator]').on('click', function (e) {
             spdxjs.addSub($(this));
 
@@ -252,12 +252,12 @@
             });
         });
 
-        // 2.8 SPDX Document creator - Delete
+        // 6.8 SPDX Document creator - Delete
         $('[name=delete-spdx-creator]').on('click', function (e) {
             spdxjs.deleteSub($(this));
         });
 
-        // 3.10 Checksum - Add
+        // 7.10 Checksum - Add
         $('#addNewAlgorithm').on('click', function() {
             spdxjs.addSub($(this));
 
@@ -266,7 +266,7 @@
             });
         });
 
-        // 3.21 External Reference - Add
+        // 7.21 External Reference - Add
         $('[name=add-externalRef]').on('click', function(e) {
             e.preventDefault();
 
@@ -289,7 +289,7 @@
             $('#externalReferences').change();
         });
 
-        // 3.21 External Reference - Delete
+        // 7.21 External Reference - Delete
         $('[name=delete-externalRef').on('click', function(e) {
             let selectedIndex = $('#externalReferences')[0].selectedIndex;
 
@@ -298,14 +298,14 @@
             spdxjs.deleteMain($(this));
         });
 
-        // 3.21 External Reference - Change
+        // 7.21 External Reference - Change
         $('#externalReferences').on('change', function(e) {
             let selectedIndex = $('#externalReferences')[0].selectedIndex;
 
             spdxjs.fillExternalRef(packageInformationObj, selectedIndex);
         });
 
-        // 3.21 External Reference Category
+        // 7.21 External Reference Category
         const referenceCategories = { 'SECURITY': ['cpe22Type', 'cpe23Type'],
                                       'PACKAGE-MANAGER': ['maven-central', 'npm', 'nuget', 'bower', 'purl'],
                                       'PERSISTENT-ID': [],
@@ -339,7 +339,7 @@
             }
         });
 
-        // 5 Snippet - Add
+        // 9 Snippet - Add
         $('[name=add-snippet]').on('click', function(e) {
             e.preventDefault();
 
@@ -368,7 +368,7 @@
             $('#selectSnippet').change();
         });
 
-        // 5 Snippet - Delete
+        // 9 Snippet - Delete
         $('[name=delete-snippet').on('click', function(e) {
             let selectedIndex = $('#selectSnippet')[0].selectedIndex;
 
@@ -377,14 +377,14 @@
             spdxjs.deleteMain($(this));
         });
 
-        // 5 Snippet - Change
+        // 9 Snippet - Change
         $('#selectSnippet').on('change', function(e) {
             let selectedIndex = $('#selectSnippet')[0].selectedIndex;
 
             spdxjs.fillSnippet(selectedIndex);
         });
 
-        // 5.3 & 5.4 Snippet Range - Add
+        // 9.3 & 9.4 Snippet Range - Add
         $('#addNewRange').on('click', function() {
             spdxjs.addSub($(this));
 
@@ -401,7 +401,7 @@
             });
         });
 
-        // 6 Other Licensing - Add
+        // 10 Other Licensing - Add
         let newOtherLicensing = false;
 
         $('[name=add-otherLicensing]').on('click', function(e) {
@@ -440,7 +440,7 @@
             }
         });
 
-        // 6 Other Licensing - Delete
+        // 10 Other Licensing - Delete
         $('[name=delete-otherLicensing').on('click', function(e) {
             newOtherLicensing = true;
 
@@ -451,7 +451,7 @@
             spdxjs.deleteMain($(this));
         });
 
-        // 6 Other Licensing - Change
+        // 10 Other Licensing - Change
         $('#selectOtherLicensing').on('change', function(e) {
             let selectedIndex = $('#selectOtherLicensing')[0].selectedIndex;
 
@@ -484,7 +484,7 @@
             }
         });
 
-        // 7 Relationship - Add
+        // 11 Relationship - Add
         $('[name=add-relationship]').on('click', function(e) {
             e.preventDefault();
 
@@ -507,7 +507,7 @@
             $('#selectRelationship').change();
         });
 
-        // 7 Relationship - Delete
+        // 11 Relationship - Delete
         $('[name=delete-relationship').on('click', function(e) {
             let selectedIndex = $('#selectRelationship')[0].selectedIndex;
 
@@ -516,18 +516,18 @@
             spdxjs.deleteMain($(this));
         });
 
-        // 7 Relationship - Change
+        // 11 Relationship - Change
         $('#selectRelationship').on('change', function(e) {
             let selectedIndex = $('#selectRelationship')[0].selectedIndex;
             spdxjs.fillRelationship(selectedIndex);
         });
 
-        // 8 Annotation - Change source
+        // 12 Annotation - Change source
         $('#selectAnnotationSource').on('change', function() {
             spdxjs.initAnnotations();
         });
 
-        // 8 Annotation - Add
+        // 12 Annotation - Add
         $('[name=add-annotation]').on('click', function(e) {
             e.preventDefault();
 
@@ -553,7 +553,7 @@
             $('#selectAnnotation').change();
         });
 
-        // 8 Annotation - Delete
+        // 12 Annotation - Delete
         $('[name=delete-annotation').on('click', function(e) {
             let source = spdxjs.getAnnotationsSource();
 
@@ -564,7 +564,7 @@
             spdxjs.deleteMain($(this));
         });
 
-        // 8 Annotation - Change
+        // 12 Annotation - Change
         $('#selectAnnotation').on('change', function(e) {
             let source = spdxjs.getAnnotationsSource();
 

@@ -12,7 +12,7 @@
 <table class="table spdx-table spdx-full" id="editSnippetInformation">
     <thead>
         <tr>
-            <th>5. Snippet Information</th>
+            <th>9. Snippet Information</th>
         </tr>
     </thead>
     <tbody class="section section-snippet">
@@ -34,7 +34,7 @@
         <tr>
             <td style="display: flex">
                 <div class="form-group" style="flex: 1">
-                    <label class="mandatory" for="snippetSpdxIdentifier">5.1 Snippet SPDX Identifier</label>
+                    <label class="mandatory" for="snippetSpdxIdentifier">9.1 Snippet SPDX Identifier</label>
                     <div style="display: flex">
                         <label class="sub-label">SPDXRef-</label>
                         <input id="snippetSpdxIdentifier" class="form-control"
@@ -43,7 +43,7 @@
                     </div>
                 </div>
                 <div class="form-group" style="flex: 1">
-                    <label class="mandatory" for="snippetFromFile">5.2 Snippet from File SPDX Identifier</label>
+                    <label class="mandatory" for="snippetFromFile">9.2 Snippet from File SPDX Identifier</label>
                     <div style="display: flex">
                         <select id="snippetFromFile" class="form-control" style="flex: 1;">
                             <option>SPDXRef</option>
@@ -60,7 +60,7 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label class="mandatory">5.3 & 5.4 Snippet Ranges</label>
+                    <label class="mandatory">9.3 & 9.4 Snippet Ranges</label>
                     <div style="display: flex; flex-direction: column; padding-left: 1rem;">
                         <div style="display: none; margin-bottom: 0.75rem;" name="snippetRange">
                             <select style="flex: 1; margin-right: 1rem;" type="text" class="form-control range-type" placeholder="Enter Type">
@@ -86,7 +86,7 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label class="mandatory">5.5 Snippet Concluded License</label>
+                    <label class="mandatory">9.5 Snippet Concluded License</label>
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" id="spdxConcludedLicenseExist" type="radio"
@@ -113,7 +113,7 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label>5.6 License Information in Snippet</label>
+                    <label>9.6 License Information in Snippet</label>
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" id="licenseInfoInFile" type="radio"
@@ -140,7 +140,7 @@
         <tr>
             <td colspan="3">
                 <div class="form-group">
-                    <label for="snippetLicenseComments">5.7 Snippet Comments on License</label>
+                    <label for="snippetLicenseComments">9.7 Snippet Comments on License</label>
                     <textarea class="form-control" id="snippetLicenseComments" rows="5"
                         placeholder="Enter Snippet Comments on License"></textarea>
                 </div>
@@ -149,7 +149,7 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label class="mandatory">5.8 Copyright Text</label>
+                    <label class="mandatory">9.8 Copyright Text</label>
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" id="snippetCopyrightText" type="radio" name="_sw360_portlet_components_SNIPPET_COPYRIGHT_TEXT" value="EXIST">
@@ -172,7 +172,7 @@
         <tr>
             <td colspan="3">
                 <div class="form-group">
-                    <label for="snippetComment">5.9 Snippet Comment</label>
+                    <label for="snippetComment">9.9 Snippet Comment</label>
                     <textarea class="form-control" id="snippetComment" rows="5"
                         placeholder="Enter Snippet Comment"></textarea>
                 </div>
@@ -181,7 +181,7 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label for="snippetName">5.10 Snippet Name</label>
+                    <label for="snippetName">9.10 Snippet Name</label>
                     <input id="snippetName" type="text"
                         class="form-control" placeholder="Enter Snippet Name" >
                 </div>
@@ -190,7 +190,7 @@
         <tr>
             <td colspan="3">
                 <div class="form-group">
-                    <label for="snippetAttributionText">5.11 Snippet Attribution Text</label>
+                    <label for="snippetAttributionText">9.11 Snippet Attribution Text</label>
                     <textarea class="form-control" id="snippetAttributionText" rows="5"
                         placeholder="Enter Snippet Attribution Text"></textarea>
                 </div>

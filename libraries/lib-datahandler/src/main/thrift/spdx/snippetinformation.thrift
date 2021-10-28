@@ -12,16 +12,16 @@ namespace java org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation
 namespace php sw360.thrift.spdx.snippetinformation
 
 struct SnippetInformation {
-    1: optional string SPDXID,  // 5.1
-    2: optional string snippetFromFile ,    // 5.2
-    3: optional set<SnippetRange> snippetRanges,    // 5.3, 5.4
-    4: optional string licenseConcluded,    // 5.5
-    5: optional set<string> licenseInfoInSnippets,  // 5.6
-    6: optional string licenseComments,     // 5.6
-    7: optional string copyrightText,       // 5.8
-    8: optional string comment,             // 5.9
-    9: optional string name,                // 5.10
-    10: optional string snippetAttributionText, // 5.11
+    1: optional string SPDXID,  // 9.1
+    2: optional string snippetFromFile ,    // 9.2
+    3: optional set<SnippetRange> snippetRanges,    // 9.3, 9.4
+    4: optional string licenseConcluded,    // 9.5
+    5: optional set<string> licenseInfoInSnippets,  // 9.6
+    6: optional string licenseComments,     // 9.6
+    7: optional string copyrightText,       // 9.8
+    8: optional string comment,             // 9.9
+    9: optional string name,                // 9.10
+    10: optional string snippetAttributionText, // 9.11
     11: optional i32 index,
 }
 

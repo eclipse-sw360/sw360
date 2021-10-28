@@ -12,7 +12,7 @@
 <table class="table spdx-table spdx-full" id="editRelationshipsBetweenSPDXElements">
     <thead>
         <tr>
-            <th colspan="3">7. Relationships between SPDX Elements</th>
+            <th colspan="3">11. Relationships between SPDX Elements</th>
         </tr>
     </thead>
     <tbody class="section section-relationship">
@@ -34,7 +34,7 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label for="spdxElement">7.1 Relationship</label>
+                    <label for="spdxElement">11.1 Relationship</label>
                     <div style="display: flex">
                         <input style="margin-right: 1rem;" id="spdxElement" class="form-control"
                             name="_sw360_portlet_components_LICENSE_ID" type="text" placeholder="Enter SPDX Element">
@@ -50,7 +50,7 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label for="relationshipComment">7.2 Relationship Comment</label>
+                    <label for="relationshipComment">11.2 Relationship Comment</label>
                     <textarea class="form-control" id="relationshipComment" rows="5"
                         name="_sw360_portlet_components_RELATIONSHIP_COMMENT"
                         placeholder="Enter License Comment"></textarea>
