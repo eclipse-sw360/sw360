@@ -39,7 +39,7 @@
                         <label class="sub-label">SPDXRef-</label>
                         <input id="snippetSpdxIdentifier" class="form-control"
                             name="_sw360_portlet_components_SPDXSPDX_IDENTIFIER"
-                            type="text" placeholder="Enter Snippet SPDX Identifier" >
+                            type="text" placeholder="Enter snippet SPDX identifier" >
                     </div>
                 </div>
                 <div class="form-group" style="flex: 1">
@@ -52,7 +52,7 @@
                         <div style="margin: 0.5rem;">-</div>
                         <input style="flex: 3;" id="snippetFromFileValue" class="form-control"
                             name="_sw360_portlet_components_SPDXSPDX_VERSION" type="text"
-                            placeholder="Enter Snippet from File SPDX Identifier" >
+                            placeholder="Enter snippet from file SPDX identifier" >
                     </div>
                 </div>
             </td>
@@ -63,13 +63,13 @@
                     <label class="mandatory">9.3 & 9.4 Snippet ranges</label>
                     <div style="display: flex; flex-direction: column; padding-left: 1rem;">
                         <div style="display: none; margin-bottom: 0.75rem;" name="snippetRange">
-                            <select style="flex: 1; margin-right: 1rem;" type="text" class="form-control range-type" placeholder="Enter Type">
+                            <select style="flex: 1; margin-right: 1rem;" type="text" class="form-control range-type" placeholder="Enter type">
                                 <option value="BYTE" selected>BYTE</option>
                                 <option value="LINE">LINE</option>
                             </select>
-                            <input style="flex: 2; margin-right: 1rem;" type="text" class="form-control start-pointer" placeholder="Enter Start Pointer">
-                            <input style="flex: 2; margin-right: 1rem;" type="text" class="form-control end-pointer" placeholder="Enter End Pointer">
-                            <input style="flex: 4; margin-right: 2rem;" type="text" class="form-control reference" placeholder="Enter Reference">
+                            <input style="flex: 2; margin-right: 1rem;" type="text" class="form-control start-pointer" placeholder="Enter start pointer">
+                            <input style="flex: 2; margin-right: 1rem;" type="text" class="form-control end-pointer" placeholder="Enter end pointer">
+                            <input style="flex: 4; margin-right: 2rem;" type="text" class="form-control reference" placeholder="Enter reference">
                             <svg class="lexicon-icon spdx-delete-icon-sub hidden" name="delete-snippetRange" data-row-id="" viewBox="0 0 512 512">
                                 <title><liferay-ui:message key="delete" /></title>
                                 <path class="lexicon-icon-outline lx-trash-body-border" d="M64.4,440.7c0,39.3,31.9,71.3,71.3,71.3h240.6c39.3,0,71.3-31.9,71.3-71.3v-312H64.4V440.7z M128.2,192.6h255.5v231.7c0,13.1-10.7,23.8-23.8,23.8H152c-13.1,0-23.8-10.7-23.8-23.8V192.6z"></path>
@@ -94,7 +94,7 @@
                             <input style="flex: 6; margin-right: 1rem;" id="spdxConcludedLicenseValue"
                                 class="form-control" type="text"
                                 name="_sw360_portlet_components_CONCLUDED_LICENSE_VALUE"
-                                placeholder="Enter Snippet Concluded License">
+                                placeholder="Enter snippet concluded license">
                         </div>
                         <div style="flex: 2;">
                             <input class="spdx-radio" id="spdxConcludedLicenseNone" type="radio"
@@ -121,7 +121,7 @@
                             <textarea style="flex: 6; margin-right: 1rem;" id="licenseInfoInFileValue" rows="5"
                                 class="form-control" type="text"
                                 name="_sw360_portlet_components_LICENSE_INFO_IN_FILE_SOURCE"
-                                placeholder="Enter License Information in Snippet"></textarea>
+                                placeholder="Enter license information in snippet"></textarea>
                         </div>
                         <div style="flex: 2;">
                             <input class="spdx-radio" id="licenseInfoInFileNone" type="radio"
@@ -142,7 +142,7 @@
                 <div class="form-group">
                     <label for="snippetLicenseComments">9.7 Snippet comments on license</label>
                     <textarea class="form-control" id="snippetLicenseComments" rows="5"
-                        placeholder="Enter Snippet Comments on License"></textarea>
+                        placeholder="Enter snippet comments on license"></textarea>
                 </div>
             </td>
         </tr>
@@ -155,7 +155,7 @@
                             <input class="spdx-radio" id="snippetCopyrightText" type="radio" name="_sw360_portlet_components_SNIPPET_COPYRIGHT_TEXT" value="EXIST">
                             <textarea style="flex: 6; margin-right: 1rem;" id="copyrightTextValueSnippet" rows="5"
                                 class="form-control" type="text"
-                                placeholder="Enter Copyright Text"></textarea>
+                                placeholder="Enter snippet copyright text"></textarea>
                         </div>
                         <div style="flex: 2;">
                             <input class="spdx-radio" id="snippetCopyrightTextNone" type="radio" name="_sw360_portlet_components_SNIPPET_COPYRIGHT_TEXT" value="NONE">
@@ -174,7 +174,7 @@
                 <div class="form-group">
                     <label for="snippetComment">9.9 Snippet comment</label>
                     <textarea class="form-control" id="snippetComment" rows="5"
-                        placeholder="Enter Snippet Comment"></textarea>
+                        placeholder="Enter snippet comment"></textarea>
                 </div>
             </td>
         </tr>
@@ -183,7 +183,7 @@
                 <div class="form-group">
                     <label for="snippetName">9.10 Snippet name</label>
                     <input id="snippetName" type="text"
-                        class="form-control" placeholder="Enter Snippet Name" >
+                        class="form-control" placeholder="Enter snippet name" >
                 </div>
             </td>
         </tr>
@@ -192,7 +192,7 @@
                 <div class="form-group">
                     <label for="snippetAttributionText">9.11 Snippet attribution text</label>
                     <textarea class="form-control" id="snippetAttributionText" rows="5"
-                        placeholder="Enter Snippet Attribution Text"></textarea>
+                        placeholder="Enter snippet attribution text"></textarea>
                 </div>
             </td>
         </tr>

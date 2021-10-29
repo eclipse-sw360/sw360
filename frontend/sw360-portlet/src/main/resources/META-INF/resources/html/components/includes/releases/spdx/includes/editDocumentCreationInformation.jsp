@@ -23,7 +23,7 @@
                     <div style="display: flex">
                         <label class="sub-label">SPDX-</label>
                         <input id="spdxVersion" class="form-control needs-validation" rule="required"
-                          type="text" placeholder="Enter SPDX Version"
+                          type="text" placeholder="Enter SPDX version"
                           value="<sw360:out value="${spdxDocumentCreationInfo.spdxVersion}" />">
                     </div>
                     <div id="spdxVersion-error-messages">
@@ -35,7 +35,7 @@
                 <div class="form-group" style="flex: 1">
                     <label class="mandatory" for="dataLicense">6.2 Data license</label>
                     <input id="dataLicense" class="form-control needs-validation" rule="required" type="text"
-                        placeholder="<liferay-ui:message key="enter.data.license" />"
+                        placeholder="Enter data license"
                         value="<sw360:out value="${spdxDocumentCreationInfo.dataLicense}" />">
                     <div id="dataLicense-error-messages">
                         <div class="invalid-feedback" rule="required">
@@ -48,7 +48,7 @@
                         <div style="display: flex">
                             <label class="sub-label">SPDXRef-</label>
                             <input id="spdxIdentifier" class="form-control needs-validation" rule="required" type="text"
-                            placeholder="Enter SPDX Identifier" value="<sw360:out value="${spdxDocumentCreationInfo.SPDXID}" />">
+                            placeholder="Enter SPDX identifier" value="<sw360:out value="${spdxDocumentCreationInfo.SPDXID}" />">
                         </div>
                     <div id="spdxIdentifier-error-messages">
                         <div class="invalid-feedback" rule="required">
@@ -64,7 +64,7 @@
                     <label class="mandatory" for="documentName">6.4 Document name</label>
                     <input id="documentName" type="text"
                     class="form-control needs-validation" rule="required"
-                    placeholder="<liferay-ui:message key="enter.spdx.document.name" />" value="<sw360:out value="${spdxDocumentCreationInfo.name}" />">
+                    placeholder="Enter document name" value="<sw360:out value="${spdxDocumentCreationInfo.name}" />">
                 </div>
                 <div id="documentName-error-messages">
                     <div class="invalid-feedback" rule="required">
@@ -78,7 +78,7 @@
                 <div class="form-group">
                     <label class="mandatory" for="documentNamespace">6.5 SPDX document namespace</label>
                     <input id="documentNamespace" class="form-control needs-validation" rule="required" type="text"
-                        placeholder="<liferay-ui:message key="enter.spdx.document.namespace" />"
+                        placeholder="Enter SPDX document namespace"
                         value="<sw360:out value="${spdxDocumentCreationInfo.documentNamespace}" />">
                 </div>
                 <div id="documentNamespace-error-messages">
@@ -106,21 +106,21 @@
                     <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                         <label class="sub-title" for="externalDocumentId">External document ID</label>
                         <input id="externalDocumentId" style="width: auto; flex: auto;" type="text" class="form-control"
-                          placeholder="Enter External Document ID">
+                          placeholder="Enter external document ID">
                     </div>
                     <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                         <label class="sub-title" for="externalDocument">External document</label>
                         <input id="externalDocument" style="width: auto; flex: auto;" type="text" class="form-control"
-                          placeholder="Enter External Document">
+                          placeholder="Enter external document">
                     </div>
                     <div style="display: flex;">
                         <label class="sub-title">Checksum</label>
                         <div style="display: flex; flex-direction: column; flex: 7">
                             <div style="display: flex; margin-bottom: 0.75rem;">
                                 <input style="flex: 2; margin-right: 1rem;" type="text" class="form-control"
-                                id="checksumAlgorithm" placeholder="Enter Algorithm">
+                                id="checksumAlgorithm" placeholder="Enter algorithm">
                                 <input style="flex: 6;" type="text" class="form-control" id="checksumValue"
-                                placeholder="Enter Value">
+                                placeholder="Enter value">
                             </div>
                         </div>
                     </div>
@@ -132,7 +132,7 @@
                 <div class="form-group">
                     <label for="licenseListVersion">6.7 License list version</label>
                     <input id="licenseListVersion" class="form-control" type="text"
-                        placeholder="Enter License List Version" value="<sw360:out value="${spdxDocumentCreationInfo.licenseListVersion}" />">
+                        placeholder="Enter license list version" value="<sw360:out value="${spdxDocumentCreationInfo.licenseListVersion}" />">
                 </div>
             </td>
         </tr>
@@ -150,14 +150,14 @@
                             <div style="display: flex; flex-direction: column; flex: 7">
                                 <div style="display: none; margin-bottom: 0.75rem;" name="creatorRow">
                                     <select style="flex: 2; margin-right: 1rem;" type="text"
-                                        class="form-control creator-type" placeholder="Enter Type"
+                                        class="form-control creator-type" placeholder="Enter type"
                                         onchange="changeCreatorType(this)">
                                         <option value="Organization" selected>Organization</option>
                                         <option value="Person">Person</option>
                                         <option value="Tool">Tool</option>
                                     </select>
                                     <input style="flex: 6; margin-right: 2rem;" type="text"
-                                        class="form-control creator-value" placeholder="Enter Value">
+                                        class="form-control creator-value" placeholder="Enter value">
                                     <svg class="disabled lexicon-icon spdx-delete-icon-sub"
                                         name="delete-spdx-creator" data-row-id="" viewBox="0 0 512 512">
                                         <title><liferay-ui:message key="delete" /></title>
@@ -212,7 +212,7 @@
                 <div class="form-group">
                     <label for="creatorComment">6.10 Creator comment</label>
                     <textarea class="form-control" id="creatorComment" rows="5"
-                        placeholder="Enter Creator Comment">${spdxDocumentCreationInfo.creatorComment}</textarea>
+                        placeholder="Enter creator comment">${spdxDocumentCreationInfo.creatorComment}</textarea>
                 </div>
             </td>
         </tr>
@@ -221,7 +221,7 @@
                 <div class="form-group">
                     <label for="documentComment">6.11 Document comment</label>
                     <textarea class="form-control" id="documentComment" rows="5"
-                        placeholder="Enter Document Comment">${spdxDocumentCreationInfo.documentComment}</textarea>
+                        placeholder="Enter document comment">${spdxDocumentCreationInfo.documentComment}</textarea>
                 </div>
             </td>
         </tr>

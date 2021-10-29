@@ -37,12 +37,12 @@
                     <label for="spdxElement">11.1 Relationship</label>
                     <div style="display: flex">
                         <input style="margin-right: 1rem;" id="spdxElement" class="form-control"
-                            name="_sw360_portlet_components_LICENSE_ID" type="text" placeholder="Enter SPDX Element">
+                            name="_sw360_portlet_components_LICENSE_ID" type="text" placeholder="Enter SPDX element">
                         <input style="margin-right: 1rem;" id="relationshipType" class="form-control"
                             name="_sw360_portlet_components_LICENSE_ID" type="text"
-                            placeholder="Enter Relationship Type">
+                            placeholder="Enter relationship type">
                         <input id="relatedSPDXElement" class="form-control" name="_sw360_portlet_components_LICENSE_ID"
-                            type="text" placeholder="Enter Related SPDX Element">
+                            type="text" placeholder="Enter related SPDX element">
                     </div>
                 </div>
             </td>
@@ -53,7 +53,7 @@
                     <label for="relationshipComment">11.2 Relationship comment</label>
                     <textarea class="form-control" id="relationshipComment" rows="5"
                         name="_sw360_portlet_components_RELATIONSHIP_COMMENT"
-                        placeholder="Enter License Comment"></textarea>
+                        placeholder="Enter relationship comment"></textarea>
                 </div>
             </td>
         </tr>

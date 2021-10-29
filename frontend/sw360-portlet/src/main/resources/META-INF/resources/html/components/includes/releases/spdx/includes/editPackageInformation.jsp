@@ -25,7 +25,7 @@
                     <label class="mandatory" for="packageName">7.1 Package name</label>
                     <div style="display: flex">
                         <input id="packageName" class="form-control needs-validation" rule="required" type="text"
-                            placeholder="Enter Package Name" name="_sw360_portlet_components_PACKAGE_NAME"
+                            placeholder="Enter package name" name="_sw360_portlet_components_PACKAGE_NAME"
                             value="<sw360:out value="${package.name}" />">
                     </div>
                     <div id="packageName-error-messages">
@@ -39,7 +39,7 @@
                     <div style="display: flex">
                         <label class="sub-label">SPDXRef-</label>
                         <input id="packageSPDXId" class="form-control needs-validation" rule="required" type="text"
-                            placeholder="Enter Package SPDX Identifier" name="_sw360_portlet_components_PACKAGE_SPDX_ID"
+                            placeholder="Enter package SPDX identifier" name="_sw360_portlet_components_PACKAGE_SPDX_ID"
                             value="<sw360:out value="${package.SPDXID}" />">
                     </div>
                     <div id="packageSPDXId-error-messages">
@@ -55,7 +55,7 @@
                 <div class="form-group" style="flex: 1">
                     <label for="versionInfo">7.3 Package version</label>
                     <div style="display: flex">
-                        <input id="versionInfo" class="form-control" type="text" placeholder="Enter Package Version"
+                        <input id="versionInfo" class="form-control" type="text" placeholder="Enter package version"
                             name="_sw360_portlet_components_VERSION_INFO" value="<sw360:out value="${package.versionInfo}" />">
                     </div>
                 </div>
@@ -63,7 +63,7 @@
                     <label for="packageFileName">7.4 Package file name</label>
                     <div style="display: flex">
                         <input id="packageFileName" class="form-control" type="text"
-                            placeholder="Enter Package File Name" name="_sw360_portlet_components_PACKAGE_FILE_NAME"
+                            placeholder="Enter package file name" name="_sw360_portlet_components_PACKAGE_FILE_NAME"
                             value="<sw360:out value="${package.packageFileName}" />">
                     </div>
                 </div>
@@ -83,7 +83,7 @@
                             </select>
                             <input style="flex: 6; margin-right: 1rem;" id="supplierValue"
                                 class="form-control" type="text"
-                                name="_sw360_portlet_components_SUPPLIER_VALUE" placeholder="Enter Package Supplier">
+                                name="_sw360_portlet_components_SUPPLIER_VALUE" placeholder="Enter package supplier">
                         </div>
                         <div style="flex: 2">
                             <input class="spdx-radio" id="supplierNoAssertion" type="radio"
@@ -108,7 +108,7 @@
                             </select>
                             <input style="flex: 6; margin-right: 1rem;" class="form-control" id="originatorValue"
                                 type="text" name="_sw360_portlet_components_ORIGINATOR_VALUE"
-                                placeholder="Enter Package Originator">
+                                placeholder="Enter package originator">
                         </div>
                         <div style="flex: 2">
                             <input class="spdx-radio" id="originatorNoAssertion" type="radio"
@@ -130,7 +130,7 @@
                             <input style="flex: 6; margin-right: 1rem;" class="form-control needs-validation"
                                 id="downloadLocationValue" rule="required" type="text"
                                 name="_sw360_portlet_components_DOWNLOAD_LOCATION_VALUE"
-                                placeholder="Enter Package Download Location">
+                                placeholder="Enter package download location">
                         </div>
                         <div style="flex: 2;">
                             <input class="spdx-radio" id="downloadLocationNone" type="radio"
@@ -176,10 +176,10 @@
                     <div>
                         <input style="margin-bottom: 0.75rem;" class="form-control" id="verificationCodeValue"
                             name="_sw360_portlet_components_VERIFICATION_CODE_VALUE"
-                            placeholder="Enter Verification Code Value"></input>
+                            placeholder="Enter verification code value"></input>
                         <textarea class="form-control" id="excludedFiles" rows="5"
                             name="_sw360_portlet_components_EXCLUDED_FILES"
-                            placeholder="Enter Excluded Files"><sw360:out value="${package.packageVerificationCode.excludedFiles.toString()}" hashSet="true"/></textarea>
+                            placeholder="Enter excluded files"><sw360:out value="${package.packageVerificationCode.excludedFiles.toString()}" hashSet="true"/></textarea>
                     </div>
                 </div>
             </td>
@@ -193,9 +193,9 @@
                         <div style="display: flex; flex-direction: column; flex: 7">
                             <div style="display: none; margin-bottom: 0.75rem;" name="checksumRow">
                                 <input style="flex: 2; margin-right: 1rem;" type="text" class="form-control checksum-algorithm"
-                                    placeholder="Enter Algorithm">
+                                    placeholder="Enter algorithm">
                                 <input style="flex: 6; margin-right: 2rem;" type="text" class="form-control checksum-value"
-                                    placeholder="Enter Value">
+                                    placeholder="Enter value">
                                 <svg class="disabled lexicon-icon spdx-delete-icon-sub checksum-delete" data-row-id=""
                                     viewBox="0 0 512 512">
                                     <title><liferay-ui:message key="delete" /></title>
@@ -223,7 +223,7 @@
                             <input style="flex: 6; margin-right: 1rem;" id="packageHomepageValue"
                                 class="form-control" type="text"
                                 name="_sw360_portlet_components_PACKAGE_HOMEPAGE_VALUE"
-                                placeholder="Enter Package Homepage">
+                                placeholder="Enter package home page">
                         </div>
                         <div style="flex: 2;">
                             <input class="spdx-radio" id="packageHomepageNone" type="radio"
@@ -244,7 +244,7 @@
                 <div class="form-group">
                     <label for="sourceInfo">7.12 Source information</label>
                     <textarea class="form-control" id="sourceInfo" rows="5" name="_sw360_portlet_components_SOURCE_INFO"
-                        placeholder="Enter Source Information">${package.sourceInfo}</textarea>
+                        placeholder="Enter source information">${package.sourceInfo}</textarea>
                 </div>
             </td>
         </tr>
@@ -259,7 +259,7 @@
                             <input style="flex: 6; margin-right: 1rem;" class="form-control needs-validation"
                                 rule="required" id="licenseConcludedValue" type="text"
                                 name="_sw360_portlet_components_LICENSE_CONCLUDED_VALUE"
-                                placeholder="Enter Concluded License">
+                                placeholder="Enter concluded license">
                         </div>
                         <div style="flex: 2;">
                             <input class="spdx-radio" id="licenseConcludedNone" type="radio"
@@ -291,7 +291,7 @@
                             <textarea style="flex: 6; margin-right: 1rem;" id="licenseInfoFromFilesValue" rows="5"
                                 class="form-control" type="text"
                                 name="_sw360_portlet_components_LICENSE_INFO_FROM_FILES_VALUE"
-                                placeholder="Enter All Licenses Information from Files"><sw360:out value="${package.licenseInfoFromFiles.toString()}" hashSet="true"/></textarea>
+                                placeholder="Enter all licenses information from files"><sw360:out value="${package.licenseInfoFromFiles.toString()}" hashSet="true"/></textarea>
                         </div>
                         <div style="flex: 2;">
                             <input class="spdx-radio" id="licenseInfoFromFilesNone" type="radio"
@@ -318,7 +318,7 @@
                             <input style="flex: 6; margin-right: 1rem;" id="licenseDeclaredValue"
                                 class="form-control needs-validation" type="text" rule="required"
                                 name="_sw360_portlet_components_DECLARED_LICENSE_VALUE"
-                                placeholder="Enter Declared License">
+                                placeholder="Enter declared license">
                         </div>
                         <div style="flex: 2;">
                             <input class="spdx-radio" id="licenseDeclaredNone" type="radio"
@@ -345,7 +345,7 @@
                     <label for="licenseComments">7.16 Comments on license</label>
                     <textarea class="form-control" id="licenseComments" rows="5"
                         name="_sw360_portlet_components_LICENSE_COMMENTS"
-                        placeholder="Enter Comments On License">${package.licenseComments}</textarea>
+                        placeholder="Enter comments on license">${package.licenseComments}</textarea>
                 </div>
             </td>
         </tr>
@@ -360,7 +360,7 @@
                             <textarea style="flex: 6; margin-right: 1rem;" id="copyrightTextValue" rows="5"
                                 class="form-control needs-validation" rule="required" type="text"
                                 name="_sw360_portlet_components_COPYRIGHT_TEXT_VALUE"
-                                placeholder="Enter Copyright Text">${package.copyrightText}</textarea>
+                                placeholder="Enter copyright text">${package.copyrightText}</textarea>
                         </div>
                         <div style="flex: 2;">
                             <input class="spdx-radio" id="copyrightTextNone" type="radio"
@@ -387,7 +387,7 @@
                     <label for="summary">7.18 Package summary description</label>
                     <textarea class="form-control" id="summary" rows="5"
                         name="_sw360_portlet_components_PACKAGE_SUMMARY"
-                        placeholder="Enter Package Summary Description">${package.summary}</textarea>
+                        placeholder="Enter package summary description">${package.summary}</textarea>
                 </div>
             </td>
         </tr>
@@ -397,7 +397,7 @@
                     <label for="description">7.19 Package detailed description</label>
                     <textarea class="form-control" id="description" rows="5"
                         name="_sw360_portlet_components_PACKAGE_DESCRIPTION"
-                        placeholder="Enter Package Detailed Description">${package.description}</textarea>
+                        placeholder="Enter package detailed description">${package.description}</textarea>
                 </div>
             </td>
         </tr>
@@ -407,7 +407,7 @@
                     <label for="spdxPackageComment">7.20 Package comment</label>
                     <textarea class="form-control" id="spdxPackageComment" rows="5"
                         name="_sw360_portlet_components_PACKAGE_COMMENT"
-                        placeholder="Enter Package Comment">${package.packageComment}</textarea>
+                        placeholder="Enter package comment">${package.packageComment}</textarea>
                 </div>
             </td>
         </tr>
@@ -428,7 +428,7 @@
                         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                             <label class="sub-title">Category</label>
                             <select style="width: auto; flex: auto;" id="referenceCategory" type="text"
-                                class="form-control" placeholder="Enter Category"
+                                class="form-control" placeholder="Enter category"
                                 name="_sw360_portlet_components_REFERENCE_CATEGORY">
                                 <option value="SECURITY">SECURITY</option>
                                 <option value="PACKAGE-MANAGER">PACKAGE-MANAGER</option>
@@ -439,26 +439,26 @@
                         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                             <label class="sub-title">Type</label>
                             <select style="width: auto; flex: auto;" id="referenceType-1" type="text"
-                                class="form-control" placeholder="Enter Type"
+                                class="form-control" placeholder="Enter type"
                                 name="_sw360_portlet_components_REFERENCE_TYPE-1">
                                 <option>cpe22Type</option>
                                 <option>cpe23Type</option>
                             </select>
                             <input style="width: auto; flex: auto; display: none;" id="referenceType-2" type="text"
-                                class="form-control" placeholder="Enter Type"
+                                class="form-control" placeholder="Enter type"
                                 name="_sw360_portlet_components_REFERENCE_TYPE-2">
                             </select>
                         </div>
                         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                             <label class="sub-title">Locator</label>
                             <input style="width: auto; flex: auto;" type="text" class="form-control"
-                                id="externalReferencesLocator" placeholder="Enter Locator"
+                                id="externalReferencesLocator" placeholder="Enter locator"
                                 name="_sw360_portlet_components_REFERENCE_LOCATOR">
                         </div>
                         <div style="display: flex; flex-direction: row;">
                             <label class="sub-title">7.22 Comment</label>
                             <textarea style="width: auto; flex: auto;" type="text" rows="5" class="form-control"
-                                id="externalReferencesComment" placeholder="Enter Comment"
+                                id="externalReferencesComment" placeholder="Enter comment"
                                 name="_sw360_portlet_components_REFERENCE_COMMENT"></textarea>
                         </div>
                     </div>
@@ -471,7 +471,7 @@
                     <label for="spdxPackageComment">7.23 Package attribution text</label>
                     <textarea class="form-control" id="spdxPackageAttributionText" rows="5"
                         name="_sw360_portlet_components_PACKAGE_COMMENT"
-                        placeholder="Enter Package Attribution Text"><sw360:out value="${package.attributionText.toString()}" stripNewlines="false" hashSet="true"/></textarea>
+                        placeholder="Enter package attribution text"><sw360:out value="${package.attributionText.toString()}" stripNewlines="false" hashSet="true"/></textarea>
                 </div>
             </td>
         </tr>

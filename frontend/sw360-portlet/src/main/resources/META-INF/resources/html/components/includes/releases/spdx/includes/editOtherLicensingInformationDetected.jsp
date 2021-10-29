@@ -38,7 +38,7 @@
                     <div style="display: flex">
                         <label class="sub-label">LicenseRef-</label>
                         <input id="licenseId" class="form-control needs-validation" rule="required"
-                            type="text" placeholder="Enter License Identifier">
+                            type="text" placeholder="Enter license identifier">
                     </div>
                     <div id="licenseId-error-messages">
                         <div class="invalid-feedback" rule="required">
@@ -53,7 +53,7 @@
                 <div class="form-group">
                     <label class="mandatory" for="extractedText">10.2 Extracted text</label>
                     <textarea class="form-control needs-validation" rule="required" id="extractedText" rows="5"
-                        name="_sw360_portlet_components_EXTRACTED_TEXT" placeholder="Enter Extracted Text"></textarea>
+                        name="_sw360_portlet_components_EXTRACTED_TEXT" placeholder="Enter extracted text"></textarea>
                 </div>
                 <div id="extractedText-error-messages">
                     <div class="invalid-feedback" rule="required">
@@ -71,7 +71,7 @@
                             <input class="spdx-radio" id="licenseNameExist" type="radio" name="_sw360_portlet_components_LICENSE_NAME" value="EXIST">
                             <input style="flex: 6; margin-right: 1rem;" id="licenseName"
                                 class="form-control" type="text"
-                                placeholder="Enter License Name">
+                                placeholder="Enter license name">
                         </div>
                         <div style="flex: 2;">
                             <input class="spdx-radio" id="licenseNameNoAssertion" type="radio" name="_sw360_portlet_components_LICENSE_NAME" value="NOASSERTION">
@@ -86,7 +86,7 @@
                 <div class="form-group">
                     <label for="licenseCrossRefs">10.4 License cross reference</label>
                     <textarea class="form-control" id="licenseCrossRefs" rows="5"
-                        placeholder="Enter License Cross Reference"></textarea>
+                        placeholder="Enter license cross reference"></textarea>
                 </div>
             </td>
         </tr>
@@ -95,7 +95,7 @@
                 <div class="form-group">
                     <label for="licenseComment">10.5 License comment</label>
                     <textarea class="form-control" id="licenseCommentOnOtherLicensing" rows="5"
-                        placeholder="Enter License Comment"></textarea>
+                        placeholder="Enter license comment"></textarea>
                 </div>
             </td>
         </tr>

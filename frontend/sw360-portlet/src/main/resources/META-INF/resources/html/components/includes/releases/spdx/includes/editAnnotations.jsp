@@ -43,13 +43,13 @@
                 <div class="form-group" style="flex: 3">
                     <label class="mandatory" for="annotator">12.1 Annotator</label>
                     <div style="display: flex">
-                        <select id="annotatorType" style="flex: 2; margin-right: 1rem;" type="text" class="form-control" placeholder="Enter Type">
+                        <select id="annotatorType" style="flex: 2; margin-right: 1rem;" type="text" class="form-control" placeholder="Enter type">
                             <option value="Organization" selected="">Organization</option>
                             <option value="Person">Person</option>
                             <option value="Tool">Tool</option>
                         </select>
                         <input style="flex: 6; margin-right: 1rem;" id="annotatorValue" type="text" class="form-control"
-                            placeholder="Enter Value" >
+                            placeholder="Enter value" >
                     </div>
                 </div>
                 <div class="form-group" style="flex: 1">
@@ -81,12 +81,12 @@
             <td style="display: flex">
                 <div class="form-group" style="flex: 1">
                     <label class="mandatory" for="annotationType">12.3 Annotation type</label>
-                    <input id="annotationType" class="form-control" type="text" placeholder="Enter Annotation Type" >
+                    <input id="annotationType" class="form-control" type="text" placeholder="Enter annotation type" >
                 </div>
                 <div class="form-group" style="flex: 1">
                     <label class="mandatory" for="spdxIdRef">12.4 SPDX identifier reference</label>
                     <input id="spdxIdRef" class="form-control" type="text"
-                        placeholder="Enter SPDX Identifier Reference" >
+                        placeholder="Enter SPDX identifier reference" >
                 </div>
             </td>
         </tr>
@@ -95,7 +95,7 @@
                 <div class="form-group">
                     <label class="mandatory" for="annotationComment">12.5 Annotation comment</label>
                     <textarea class="form-control" id="annotationComment" rows="5"
-                        placeholder="Enter License Comment"></textarea>
+                        placeholder="Enter annotation comment"></textarea>
                 </div>
             </td>
         </tr>
