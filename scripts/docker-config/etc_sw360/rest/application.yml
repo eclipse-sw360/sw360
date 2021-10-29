@@ -15,6 +15,8 @@ server:
 management:
   endpoints:
     enabled-by-default: false
+    web:
+      base-path:
   endpoint:
     health:
       enabled: true
