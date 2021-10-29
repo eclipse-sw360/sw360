@@ -76,7 +76,7 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label class="mandatory" for="documentNamespace">6.5 SPDX Document name space</label>
+                    <label class="mandatory" for="documentNamespace">6.5 SPDX document namespace</label>
                     <input id="documentNamespace" class="form-control needs-validation" rule="required" type="text"
                         placeholder="<liferay-ui:message key="enter.spdx.document.namespace" />"
                         value="<sw360:out value="${spdxDocumentCreationInfo.documentNamespace}" />">
