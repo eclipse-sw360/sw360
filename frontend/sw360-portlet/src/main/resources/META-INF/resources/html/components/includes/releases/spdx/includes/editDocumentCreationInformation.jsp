@@ -19,7 +19,7 @@
         <tr>
             <td style="display: flex">
                 <div class="form-group" style="flex: 1">
-                    <label class="mandatory" for="spdxVersion">6.1 SPDX Version</label>
+                    <label class="mandatory" for="spdxVersion">6.1 SPDX version</label>
                     <div style="display: flex">
                         <label class="sub-label">SPDX-</label>
                         <input id="spdxVersion" class="form-control needs-validation" rule="required"
@@ -33,7 +33,7 @@
                     </div>
                 </div>
                 <div class="form-group" style="flex: 1">
-                    <label class="mandatory" for="dataLicense">6.2 Data License</label>
+                    <label class="mandatory" for="dataLicense">6.2 Data license</label>
                     <input id="dataLicense" class="form-control needs-validation" rule="required" type="text"
                         placeholder="<liferay-ui:message key="enter.data.license" />"
                         value="<sw360:out value="${spdxDocumentCreationInfo.dataLicense}" />">
@@ -44,7 +44,7 @@
                     </div>
                 </div>
                 <div class="form-group" style="flex: 1">
-                    <label class="mandatory" for="spdxIdentifier">6.3 SPDX Identifier</label>
+                    <label class="mandatory" for="spdxIdentifier">6.3 SPDX identifier</label>
                         <div style="display: flex">
                             <label class="sub-label">SPDXRef-</label>
                             <input id="spdxIdentifier" class="form-control needs-validation" rule="required" type="text"
@@ -61,7 +61,7 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label class="mandatory" for="documentName">6.4 Document Name</label>
+                    <label class="mandatory" for="documentName">6.4 Document name</label>
                     <input id="documentName" type="text"
                     class="form-control needs-validation" rule="required"
                     placeholder="<liferay-ui:message key="enter.spdx.document.name" />" value="<sw360:out value="${spdxDocumentCreationInfo.name}" />">
@@ -76,7 +76,7 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label class="mandatory" for="documentNamespace">6.5 SPDX Document Namespace</label>
+                    <label class="mandatory" for="documentNamespace">6.5 SPDX Document name space</label>
                     <input id="documentNamespace" class="form-control needs-validation" rule="required" type="text"
                         placeholder="<liferay-ui:message key="enter.spdx.document.namespace" />"
                         value="<sw360:out value="${spdxDocumentCreationInfo.documentNamespace}" />">
@@ -91,7 +91,7 @@
         <tr>
             <td class="spdx-full">
                 <div class="form-group section section-external-doc-ref">
-                    <label for="externalDocumentRefs">6.6 External Document References</label>
+                    <label for="externalDocumentRefs">6.6 External document references</label>
                     <div style="display: flex; flex-direction: column; padding-left: 1rem;">
                         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                             <label for="externalDocumentRefs" style="text-decoration: underline;" class="sub-title">Select Reference</label>
@@ -104,12 +104,12 @@
                         <button class="spdx-add-button-main" name="add-externalDocRef">Add new Reference</button>
                     </div>
                     <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
-                        <label class="sub-title" for="externalDocumentId">External Document ID</label>
+                        <label class="sub-title" for="externalDocumentId">External document ID</label>
                         <input id="externalDocumentId" style="width: auto; flex: auto;" type="text" class="form-control"
                           placeholder="Enter External Document ID">
                     </div>
                     <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
-                        <label class="sub-title" for="externalDocument">External Document</label>
+                        <label class="sub-title" for="externalDocument">External document</label>
                         <input id="externalDocument" style="width: auto; flex: auto;" type="text" class="form-control"
                           placeholder="Enter External Document">
                     </div>
@@ -130,7 +130,7 @@
         <tr class="spdx-full">
             <td>
                 <div class="form-group">
-                    <label for="licenseListVersion">6.7 License List Version</label>
+                    <label for="licenseListVersion">6.7 License list version</label>
                     <input id="licenseListVersion" class="form-control" type="text"
                         placeholder="Enter License List Version" value="<sw360:out value="${spdxDocumentCreationInfo.licenseListVersion}" />">
                 </div>
@@ -139,7 +139,7 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label class="mandatory" for="creator">6.8 Creator</label>
+                    <label class="mandatory" for="creator">6.8 Creators</label>
                     <div style="display: flex; flex-direction: column;">
                         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                             <label class="sub-title" for="creator-anonymous">Anonymous</label>
@@ -210,7 +210,7 @@
         <tr class="spdx-full">
             <td colspan="3">
                 <div class="form-group">
-                    <label for="creatorComment">6.10 Creator Comment</label>
+                    <label for="creatorComment">6.10 Creator comment</label>
                     <textarea class="form-control" id="creatorComment" rows="5"
                         placeholder="Enter Creator Comment">${spdxDocumentCreationInfo.creatorComment}</textarea>
                 </div>
@@ -219,7 +219,7 @@
         <tr class="spdx-full">
             <td colspan="3">
                 <div class="form-group">
-                    <label for="documentComment">6.11 Document Comment</label>
+                    <label for="documentComment">6.11 Document comment</label>
                     <textarea class="form-control" id="documentComment" rows="5"
                         placeholder="Enter Document Comment">${spdxDocumentCreationInfo.documentComment}</textarea>
                 </div>

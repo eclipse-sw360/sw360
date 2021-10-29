@@ -22,7 +22,7 @@
         <tr>
             <td style="display: flex">
                 <div class="form-group" style="flex: 1">
-                    <label class="mandatory" for="packageName">7.1 Package Name</label>
+                    <label class="mandatory" for="packageName">7.1 Package name</label>
                     <div style="display: flex">
                         <input id="packageName" class="form-control needs-validation" rule="required" type="text"
                             placeholder="Enter Package Name" name="_sw360_portlet_components_PACKAGE_NAME"
@@ -35,7 +35,7 @@
                     </div>
                 </div>
                 <div class="form-group" style="flex: 1">
-                    <label class="mandatory" for="packageSPDXId">7.2 Package SPDX Identifier</label>
+                    <label class="mandatory" for="packageSPDXId">7.2 Package SPDX identifier</label>
                     <div style="display: flex">
                         <label class="sub-label">SPDXRef-</label>
                         <input id="packageSPDXId" class="form-control needs-validation" rule="required" type="text"
@@ -53,14 +53,14 @@
         <tr>
             <td style="display: flex">
                 <div class="form-group" style="flex: 1">
-                    <label for="versionInfo">7.3 Package Version</label>
+                    <label for="versionInfo">7.3 Package version</label>
                     <div style="display: flex">
                         <input id="versionInfo" class="form-control" type="text" placeholder="Enter Package Version"
                             name="_sw360_portlet_components_VERSION_INFO" value="<sw360:out value="${package.versionInfo}" />">
                     </div>
                 </div>
                 <div class="form-group" style="flex: 1">
-                    <label for="packageFileName">7.4 Package File Name</label>
+                    <label for="packageFileName">7.4 Package file name</label>
                     <div style="display: flex">
                         <input id="packageFileName" class="form-control" type="text"
                             placeholder="Enter Package File Name" name="_sw360_portlet_components_PACKAGE_FILE_NAME"
@@ -72,7 +72,7 @@
         <tr class="spdx-full">
             <td style="display: flex; flex-direction: column;">
                 <div class="form-group">
-                    <label>7.5 Package Supplier</label>
+                    <label>7.5 Package supplier</label>
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" type="radio" name="_sw360_portlet_components_SUPPLIER"
@@ -97,7 +97,7 @@
         <tr class="spdx-full">
             <td style="display: flex; flex-direction: column;">
                 <div class="form-group">
-                    <label>7.6 Package Originator</label>
+                    <label>7.6 Package originator</label>
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" type="radio" name="_sw360_portlet_components_ORIGINATOR"
@@ -122,7 +122,7 @@
         <tr>
             <td style="display: flex; flex-direction: column;">
                 <div class="form-group">
-                    <label class="mandatory">7.7 Package Download Location</label>
+                    <label class="mandatory">7.7 Package download location</label>
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" type="radio" id="downloadLocationExist"
@@ -154,7 +154,7 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label>7.8 Files Analyzed</label>
+                    <label>7.8 Files analyzed</label>
                     <div style="display: flex; flex-direction: row;">
                         <div>
                             <input class="spdx-radio" id="FilesAnalyzedTrue" type="radio"
@@ -172,7 +172,7 @@
         <tr class="spdx-full">
             <td>
                 <div class="form-group">
-                    <label for="verificationCodeValue">7.9 Package Verification Code</label>
+                    <label for="verificationCodeValue">7.9 Package verification code</label>
                     <div>
                         <input style="margin-bottom: 0.75rem;" class="form-control" id="verificationCodeValue"
                             name="_sw360_portlet_components_VERIFICATION_CODE_VALUE"
@@ -187,7 +187,7 @@
         <tr class="spdx-full">
             <td>
                 <div class="form-group">
-                    <label>7.10 Package Checksum</label>
+                    <label>7.10 Package checksum</label>
                     <div style="display: flex;">
                         <label class="sub-title">Checksum</label>
                         <div style="display: flex; flex-direction: column; flex: 7">
@@ -215,7 +215,7 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label>7.11 Package Homepage</label>
+                    <label>7.11 Package home page</label>
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" id="packageHomepageExist" type="radio"
@@ -242,7 +242,7 @@
         <tr class="spdx-full">
             <td>
                 <div class="form-group">
-                    <label for="sourceInfo">7.12 Source Information</label>
+                    <label for="sourceInfo">7.12 Source information</label>
                     <textarea class="form-control" id="sourceInfo" rows="5" name="_sw360_portlet_components_SOURCE_INFO"
                         placeholder="Enter Source Information">${package.sourceInfo}</textarea>
                 </div>
@@ -251,7 +251,7 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label class="mandatory">7.13 Concluded License</label>
+                    <label class="mandatory">7.13 Concluded license</label>
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" id="licenseConcludedExist" type="radio"
@@ -283,7 +283,7 @@
         <tr class="spdx-full">
             <td>
                 <div class="form-group">
-                    <label class="mandatory">7.14 All Licenses Information from Files</label>
+                    <label class="mandatory">7.14 All licenses information from files</label>
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" id="licenseInfoFromFilesExist" type="radio"
@@ -310,7 +310,7 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label class="mandatory">7.15 Declared License</label>
+                    <label class="mandatory">7.15 Declared license</label>
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" id="licenseDeclaredExist" type="radio"
@@ -342,7 +342,7 @@
         <tr>
             <td colspan="3">
                 <div class="form-group">
-                    <label for="licenseComments">7.16 Comments On License</label>
+                    <label for="licenseComments">7.16 Comments on license</label>
                     <textarea class="form-control" id="licenseComments" rows="5"
                         name="_sw360_portlet_components_LICENSE_COMMENTS"
                         placeholder="Enter Comments On License">${package.licenseComments}</textarea>
@@ -352,7 +352,7 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label class="mandatory">7.17 Copyright Text</label>
+                    <label class="mandatory">7.17 Copyright text</label>
                     <div style="display: flex; flex-direction: row;">
                         <div style="display: inline-flex; flex: 3; margin-right: 1rem;">
                             <input class="spdx-radio" id="copyrightTextExist" type="radio"
@@ -384,7 +384,7 @@
         <tr class="spdx-full">
             <td>
                 <div class="form-group">
-                    <label for="summary">7.18 Package Summary Description</label>
+                    <label for="summary">7.18 Package summary description</label>
                     <textarea class="form-control" id="summary" rows="5"
                         name="_sw360_portlet_components_PACKAGE_SUMMARY"
                         placeholder="Enter Package Summary Description">${package.summary}</textarea>
@@ -394,7 +394,7 @@
         <tr class="spdx-full">
             <td>
                 <div class="form-group">
-                    <label for="description">7.19 Package Detailed Description</label>
+                    <label for="description">7.19 Package detailed description</label>
                     <textarea class="form-control" id="description" rows="5"
                         name="_sw360_portlet_components_PACKAGE_DESCRIPTION"
                         placeholder="Enter Package Detailed Description">${package.description}</textarea>
@@ -404,7 +404,7 @@
         <tr>
             <td colspan="3">
                 <div class="form-group">
-                    <label for="spdxPackageComment">7.20 Package Comment</label>
+                    <label for="spdxPackageComment">7.20 Package comment</label>
                     <textarea class="form-control" id="spdxPackageComment" rows="5"
                         name="_sw360_portlet_components_PACKAGE_COMMENT"
                         placeholder="Enter Package Comment">${package.packageComment}</textarea>
@@ -414,7 +414,7 @@
         <tr class="spdx-full">
             <td>
                 <div class="form-group section section-external-ref">
-                    <label>7.21 External References</label>
+                    <label>7.21 External references</label>
                     <div style="display: flex; flex-direction: column; padding-left: 1rem;">
                         <div style="display: flex; flex-direction: row; margin-bottom: 0.75rem;">
                             <label style="text-decoration: underline;" class="sub-title">Select Reference</label>
@@ -468,7 +468,7 @@
         <tr class="spdx-full">
             <td colspan="3">
                 <div class="form-group">
-                    <label for="spdxPackageComment">7.23 Package Attribution Text</label>
+                    <label for="spdxPackageComment">7.23 Package attribution text</label>
                     <textarea class="form-control" id="spdxPackageAttributionText" rows="5"
                         name="_sw360_portlet_components_PACKAGE_COMMENT"
                         placeholder="Enter Package Attribution Text"><sw360:out value="${package.attributionText.toString()}" stripNewlines="false" hashSet="true"/></textarea>

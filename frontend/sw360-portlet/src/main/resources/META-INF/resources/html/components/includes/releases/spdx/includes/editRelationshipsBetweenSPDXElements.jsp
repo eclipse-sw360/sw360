@@ -12,7 +12,7 @@
 <table class="table spdx-table spdx-full" id="editRelationshipsBetweenSPDXElements">
     <thead>
         <tr>
-            <th colspan="3">11. Relationships between SPDX Elements</th>
+            <th colspan="3">11. Relationship between SPDX Elements Information</th>
         </tr>
     </thead>
     <tbody class="section section-relationship">
@@ -50,7 +50,7 @@
         <tr>
             <td>
                 <div class="form-group">
-                    <label for="relationshipComment">11.2 Relationship Comment</label>
+                    <label for="relationshipComment">11.2 Relationship comment</label>
                     <textarea class="form-control" id="relationshipComment" rows="5"
                         name="_sw360_portlet_components_RELATIONSHIP_COMMENT"
                         placeholder="Enter License Comment"></textarea>
