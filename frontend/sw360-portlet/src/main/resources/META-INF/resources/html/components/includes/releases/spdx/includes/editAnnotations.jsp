@@ -49,7 +49,7 @@
                             <option value="Tool">Tool</option>
                         </select>
                         <input style="flex: 6; margin-right: 1rem;" id="annotatorValue" type="text" class="form-control"
-                            placeholder="Enter value" >
+                            placeholder="Enter annotator" >
                     </div>
                 </div>
                 <div class="form-group" style="flex: 1">

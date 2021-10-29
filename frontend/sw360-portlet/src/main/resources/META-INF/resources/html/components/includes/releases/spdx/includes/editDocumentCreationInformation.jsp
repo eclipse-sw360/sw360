@@ -157,7 +157,7 @@
                                         <option value="Tool">Tool</option>
                                     </select>
                                     <input style="flex: 6; margin-right: 2rem;" type="text"
-                                        class="form-control creator-value" placeholder="Enter value">
+                                        class="form-control creator-value" placeholder="Enter creator">
                                     <svg class="disabled lexicon-icon spdx-delete-icon-sub"
                                         name="delete-spdx-creator" data-row-id="" viewBox="0 0 512 512">
                                         <title><liferay-ui:message key="delete" /></title>
