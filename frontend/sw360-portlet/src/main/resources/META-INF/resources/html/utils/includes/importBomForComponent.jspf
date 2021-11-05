@@ -221,10 +221,17 @@
                         }
                     }
                 } else {
+                    let errorKey = "Missing:";
+                    neededKeys.forEach(key => {
+                        if (!Object.keys(data).includes(key)) {
+                            errorKey += " " + key;
+                        }
+                    });
                     $('#importSBOM').hide();
                     $('#importSBOMAsNew').hide();
                     $('#cancelImportSBOM').show();
-                    statusDiv.append("<div>" + JSON.stringify(data) + "</div>");
+                    statusDiv.html("<h2>Failed :(</h2>");
+                    statusDiv.append("<div>" + errorKey + "</div>");
                     contentDiv.show();
                 }
             }).catch(function (err) {

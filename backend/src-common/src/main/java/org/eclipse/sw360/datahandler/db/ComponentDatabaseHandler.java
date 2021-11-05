@@ -478,11 +478,17 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private boolean isDuplicate(String componentName, boolean caseInsenstive) {
+        if (isNullEmptyOrWhitespace(componentName)) {
+            return false;
+        }
         Set<String> duplicates = componentRepository.getComponentIdsByName(componentName, caseInsenstive);
         return duplicates.size()>0;
     }
 
     private boolean isDuplicate(String releaseName, String releaseVersion) {
+        if (isNullEmptyOrWhitespace(releaseName)) {
+            return false;
+        }
         List<Release> duplicates = releaseRepository.searchByNameAndVersion(releaseName, releaseVersion);
         return duplicates.size()>0;
     }
