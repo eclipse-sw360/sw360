@@ -609,6 +609,7 @@ public class PortalConstants {
     public static final String ACTUAL_SPDXDOCUMENT = "actual_SPDXDocument";
     public static final String ACTUAL_DOCUMENT_CREATION_INFO = "actual_DocumentCreationInfo";
     public static final String ACTUAL_PACKAGE_INFO = "actual_PackageInfo";
+    public static final Set<String> SET_RELATIONSHIP_TYPE;
 
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);
@@ -646,6 +647,7 @@ public class PortalConstants {
         CLEARING_REPORT_TEMPLATE_TO_FILENAMEMAPPING = props.getProperty("org.eclipse.sw360.licensinfo.projectclearing.templatemapping", "");
         CLEARING_REPORT_TEMPLATE_FORMAT = props.getProperty("org.eclipse.sw360.licensinfo.projectclearing.templateformat", "docx");
         PREDEFINED_TAGS = props.getProperty("project.tag", "[]");
+        SET_RELATIONSHIP_TYPE = CommonUtils.splitToSet(props.getProperty("relationship.type", "DESCRIBES,DESCRIBED_BY,CONTAINS,CONTAINED_BY,DEPENDS_ON,DEPENDENCY_OF,DEPENDENCY_MANIFEST_OF,BUILD_DEPENDENCY_OF,DEV_DEPENDENCY_OF,OPTIONAL_DEPENDENCY_OF,PROVIDED_DEPENDENCY_OF,TEST_DEPENDENCY_OF,RUNTIME_DEPENDENCY_OF,EXAMPLE_OF,GENERATES,GENERATED_FROM,ANCESTOR_OF,DESCENDANT_OF,VARIANT_OF,DISTRIBUTION_ARTIFACT,PATCH_FOR,PATCH_APPLIED,COPY_OF,FILE_ADDED,FILE_DELETED,FILE_MODIFIED,EXPANDED_FROM_ARCHIVE,DYNAMIC_LINK,STATIC_LINK,DATA_FILE_OF,TEST_CASE_OF,BUILD_TOOL_OF,DEV_TOOL_OF,TEST_OF,TEST_TOOL_OF,DOCUMENTATION_OF,OPTIONAL_COMPONENT_OF,METAFILE_OF,PACKAGE_OF,AMENDS,PREREQUISITE_FOR,HAS_PREREQUISITE,OTHER"));
     }
 
     private PortalConstants() {

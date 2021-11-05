@@ -114,6 +114,7 @@
     let packageInformationObj = jQuery.parseJSON(JSON.stringify(${ packageInfoJson }));
 </script>
 <%@include file="/html/utils/includes/requirejs.jspf" %>
+<core_rt:set var="setRelationshipType" value='<%=PortalConstants.SET_RELATIONSHIP_TYPE%>'/>
 <div id="editSPDXForm" name="editSPDXForm" class="form needs-validation" novalidate>
     <div class="form-group btn-group">
         <button id="spdxFullMode" class="btn btn-info">SPDX Full</button>
