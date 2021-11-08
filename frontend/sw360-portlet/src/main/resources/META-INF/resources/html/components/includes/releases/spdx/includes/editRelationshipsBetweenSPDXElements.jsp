@@ -38,7 +38,7 @@
                     <div style="display: flex">
                         <input style="margin-right: 1rem;" id="spdxElement" class="form-control"
                             name="_sw360_portlet_components_LICENSE_ID" type="text" placeholder="Enter SPDX element">
-                        <select class="form-control" id="relationshipType" >
+                        <select class="form-control" id="relationshipType" style="margin-right: 1rem;" >
                             <option value="" selected=""></option>
                             <core_rt:forEach items="${setRelationshipType}" var="entry">
                                 <option value="${entry}" class="textlabel stackedLabel">${entry}</option>
