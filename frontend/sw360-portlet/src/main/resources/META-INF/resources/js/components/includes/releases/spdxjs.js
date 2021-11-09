@@ -172,6 +172,14 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
 
             $('#excludedFiles').attr('disabled', 'true');
 
+            $('#licenseInfoFromFilesExist').attr('disabled', 'true');
+
+            $('#licenseInfoFromFilesValue').attr('disabled', 'true');
+
+            $('#licenseInfoFromFilesNone').attr('disabled', 'true');
+
+            $('#licenseInfoFromFilesNoAssertion').attr('disabled', 'true');
+
             return;
         }
 
@@ -179,6 +187,20 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
             $('#verificationCodeValue').removeAttr('disabled');
 
             $('#excludedFiles').removeAttr('disabled');
+
+            $('#licenseInfoFromFilesExist').removeAttr('disabled');
+
+            $('#licenseInfoFromFilesNone').removeAttr('disabled');
+
+            $('#licenseInfoFromFilesNoAssertion').removeAttr('disabled');
+
+            if (!$('#licenseInfoFromFilesNone').is(':checked') && !$('#licenseInfoFromFilesNoAssertion').is(':checked')) {
+                $('#licenseInfoFromFilesExist').click();
+            }
+
+            if ($('#licenseInfoFromFilesExist').is(':checked')) {
+                $('#licenseInfoFromFilesValue').removeAttr('disabled');
+            }
 
             return;
         }
@@ -354,7 +376,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
         let val = $(typeTag).parent().parent().find('.spdx-radio:checked').val();
 
         if (val != 'EXIST') {
-            $(typeTag).parent().parent().find('[type=radio]:checked').val();            //?
+            $(typeTag).parent().parent().find('[type=radio]:checked').val();
         }
 
         if ($(typeTag).next().val().trim() != '') {
@@ -636,7 +658,11 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
 
         packageInformationObj['licenseConcluded'] = readMultiOptionField('#licenseConcludedValue');
 
-        packageInformationObj['licenseInfoFromFiles'] = readMultiOptionField('#licenseInfoFromFilesValue', 'array');
+        if (packageInformationObj['filesAnalyzed'] == 'true') {
+            packageInformationObj['licenseInfoFromFiles'] = readMultiOptionField('#licenseInfoFromFilesValue', 'array');
+        } else {
+            packageInformationObj['licenseInfoFromFiles'] = [];
+        }
 
         packageInformationObj['licenseDeclared'] = readMultiOptionField('#licenseDeclaredValue');
 

@@ -348,7 +348,7 @@
 		</tr>
 		<tr class="spdx-full">
 			<td class="spdx-flex-row">
-				<div class="spdx-col-1">7.21 External reference</div>
+				<div class="spdx-col-1">7.21 External references </div>
 				<div class="spdx-col-2 section" data-size="4">
 					<div class="spdx-flex-row">
 						<div class="spdx-col-1 spdx-label-index">Index</div>

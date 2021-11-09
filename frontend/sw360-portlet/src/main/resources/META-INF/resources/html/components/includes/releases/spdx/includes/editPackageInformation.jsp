@@ -172,7 +172,7 @@
         <tr class="spdx-full">
             <td>
                 <div class="form-group">
-                    <label for="verificationCodeValue">7.9 Package verification code</label>
+                    <label for="verificationCodeValue" class="mandatory">7.9 Package verification code</label>
                     <div>
                         <input style="margin-bottom: 0.75rem;" class="form-control" id="verificationCodeValue"
                             name="_sw360_portlet_components_VERIFICATION_CODE_VALUE"
