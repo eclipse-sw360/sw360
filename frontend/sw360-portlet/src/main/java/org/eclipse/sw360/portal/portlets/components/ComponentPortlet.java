@@ -1642,11 +1642,11 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 addReleaseBreadcrumb(request, response, release);
             }
             String spdxDocumentId = release.getSpdxId();
+            SPDXDocument spdxDocument = new SPDXDocument();
+            DocumentCreationInformation documentCreationInfo = new DocumentCreationInformation();
+            PackageInformation packageInfo = new PackageInformation();
+            Set<PackageInformation> packageInfos = new HashSet<>();
             if (!isNullOrEmpty(spdxDocumentId)) {
-                SPDXDocument spdxDocument = new SPDXDocument();
-                DocumentCreationInformation documentCreationInfo = new DocumentCreationInformation();
-                PackageInformation packageInfo = new PackageInformation();
-                Set<PackageInformation> packageInfos = new HashSet<>();
                 SPDXDocumentService.Iface SPDXDocumentClient = thriftClients.makeSPDXClient();
                 spdxDocument = SPDXDocumentClient.getSPDXDocumentById(spdxDocumentId, user);
                 String spdxDocumentCreationInfoId = spdxDocument.getSpdxDocumentCreationInfoId();
@@ -1665,35 +1665,35 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 request.setAttribute(SPDXDOCUMENT, spdxDocument);
                 request.setAttribute(SPDX_DOCUMENT_CREATION_INFO, documentCreationInfo);
                 request.setAttribute(SPDX_PACKAGE_INFO, packageInfos);
+           }
 
-                ObjectMapper objectMapper = new ObjectMapper();
-                try {
-                    if (!spdxDocument.isSetId()) {
-                        spdxDocument = generateSpdxDocument();
-                    }
-                    String spdxDocumentJson = objectMapper.writeValueAsString(spdxDocument);
-                    request.setAttribute("spdxDocumentJson", spdxDocumentJson);
-                } catch (JsonProcessingException e) {
-                    e.printStackTrace();
+            ObjectMapper objectMapper = new ObjectMapper();
+            try {
+                if (!spdxDocument.isSetId()) {
+                    spdxDocument = generateSpdxDocument();
                 }
-                try {
-                    if (!documentCreationInfo.isSetId()) {
-                        documentCreationInfo = generateDocumentCreationInformation();
-                    }
-                    String documentCreationInfoJson = objectMapper.writeValueAsString(documentCreationInfo);
-                    request.setAttribute("documentCreationInfoJson", documentCreationInfoJson);
-                } catch (JsonProcessingException e) {
-                    e.printStackTrace();
+                String spdxDocumentJson = objectMapper.writeValueAsString(spdxDocument);
+                request.setAttribute("spdxDocumentJson", spdxDocumentJson);
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+            try {
+                if (!documentCreationInfo.isSetId()) {
+                    documentCreationInfo = generateDocumentCreationInformation();
                 }
-                try {
-                    if (!packageInfo.isSetId()) {
-                        packageInfo = generatePackageInfomation();
-                    }
-                    String packageInfoJson = objectMapper.writeValueAsString(packageInfo);
-                    request.setAttribute("packageInfoJson", packageInfoJson);
-                } catch (JsonProcessingException e) {
-                    e.printStackTrace();
+                String documentCreationInfoJson = objectMapper.writeValueAsString(documentCreationInfo);
+                request.setAttribute("documentCreationInfoJson", documentCreationInfoJson);
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+            try {
+                if (!packageInfo.isSetId()) {
+                    packageInfo = generatePackageInfomation();
                 }
+                String packageInfoJson = objectMapper.writeValueAsString(packageInfo);
+                request.setAttribute("packageInfoJson", packageInfoJson);
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
             }
 
         } catch (TException e) {

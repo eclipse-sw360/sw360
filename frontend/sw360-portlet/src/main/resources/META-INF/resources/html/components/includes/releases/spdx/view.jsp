@@ -39,7 +39,7 @@
 		</tr>
 		<tr>
 			<td class="spdx-flex-row">
-				<div class="spdx-col-1">6.3 SPDX indentifier</div>
+				<div class="spdx-col-1">6.3 SPDX identifier</div>
 				<div class="spdx-col-2">
 					<sw360:out value="${spdxDocumentCreationInfo.SPDXID}" />
 				</div>
