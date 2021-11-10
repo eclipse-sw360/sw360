@@ -283,6 +283,8 @@ public class DatabaseMixInForChangeLog {
         "setExtractedText",
         "setLicenseName",
         "setLicenseCrossRefs",
+        "licenseCrossRefsSize",
+        "licenseCrossRefsIterator",
         "setLicenseComment",
         "setIndex"
     })
@@ -292,6 +294,8 @@ public class DatabaseMixInForChangeLog {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonIgnoreProperties({
         "setExcludedFiles",
+        "excludedFilesSize",
+        "excludedFilesIterator",
         "setValue"
     })
     public static abstract class PackageVerificationCodeMixin extends PackageVerificationCode {
@@ -324,8 +328,12 @@ public class DatabaseMixInForChangeLog {
         "setSPDXID",
         "setSnippetFromFile",
         "setSnippetRanges",
+        "snippetRangesSize",
+        "snippetRangesIterator",
         "setLicenseConcluded",
         "setLicenseInfoInSnippets",
+        "licenseInfoInSnippetsSize",
+        "licenseInfoInSnippetsIterator",
         "setLicenseComments",
         "setCopyrightText",
         "setComment",
