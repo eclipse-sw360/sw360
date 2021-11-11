@@ -241,6 +241,7 @@ public class DatabaseMixInForChangeLog {
     @JsonIgnoreProperties({
         "setAlgorithm",
         "setChecksumValue",
+        "index",
         "setIndex"
     })
     public static abstract class CheckSumMixin extends CheckSum {
@@ -253,6 +254,7 @@ public class DatabaseMixInForChangeLog {
         "setAnnotationType",
         "setSpdxIdRef",
         "setAnnotationComment",
+        "index",
         "setIndex"
     })
     public static abstract class AnnotationsMixin extends Annotations {
@@ -261,8 +263,9 @@ public class DatabaseMixInForChangeLog {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonIgnoreProperties({
         "setExternalDocumentId",
-        "setCheckSum",
+        "setChecksum",
         "setSpdxDocument",
+        "index",
         "setIndex"
     })
     public static abstract class ExternalDocumentReferencesMixin extends ExternalDocumentReferences {
@@ -272,6 +275,7 @@ public class DatabaseMixInForChangeLog {
     @JsonIgnoreProperties({
         "setType",
         "setValue",
+        "index",
         "setIndex"
     })
     public static abstract class CreatorMixin extends Creator {
@@ -286,6 +290,7 @@ public class DatabaseMixInForChangeLog {
         "licenseCrossRefsSize",
         "licenseCrossRefsIterator",
         "setLicenseComment",
+        "index",
         "setIndex"
     })
     public static abstract class OtherLicensingInformationDetectedMixin extends OtherLicensingInformationDetected {
@@ -296,6 +301,8 @@ public class DatabaseMixInForChangeLog {
         "setExcludedFiles",
         "excludedFilesSize",
         "excludedFilesIterator",
+        "index",
+        "setIndex",
         "setValue"
     })
     public static abstract class PackageVerificationCodeMixin extends PackageVerificationCode {
@@ -307,6 +314,7 @@ public class DatabaseMixInForChangeLog {
         "setReferenceLocator",
         "setReferenceType",
         "setComment",
+        "index",
         "setIndex"
     })
     public static abstract class ExternalReferenceMixin extends ExternalReference {
@@ -318,6 +326,7 @@ public class DatabaseMixInForChangeLog {
         "setRelationshipType",
         "setRelatedSpdxElement",
         "setRelationshipComment",
+        "index",
         "setIndex"
     })
     public static abstract class RelationshipsBetweenSPDXElementsMixin extends RelationshipsBetweenSPDXElements {
@@ -339,6 +348,7 @@ public class DatabaseMixInForChangeLog {
         "setComment",
         "setName",
         "setSnippetAttributionText",
+        "index",
         "setIndex"
     })
     public static abstract class SnippetInformationMixin extends SnippetInformation {
@@ -350,6 +360,7 @@ public class DatabaseMixInForChangeLog {
         "setStartPointer",
         "setEndPointer",
         "setReference",
+        "index",
         "setIndex"
     })
     public static abstract class SnippetRangeMixin extends SnippetRange {
