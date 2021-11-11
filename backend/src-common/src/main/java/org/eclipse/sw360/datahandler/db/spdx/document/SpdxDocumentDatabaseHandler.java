@@ -138,11 +138,9 @@ public class SpdxDocumentDatabaseHandler {
         spdx.setCreatedBy(release.getCreatedBy());
         SPDXDocumentRepository.add(spdx);
         String spdxId = spdx.getId();
-        Release oldRelease  = release.deepCopy();
         release.setSpdxId(spdxId);
         releaseRepository.update(release);
         dbHandlerUtil.addChangeLogs(spdx, null, user.getEmail(), Operation.CREATE, null, Lists.newArrayList(), null, null);
-        dbHandlerUtil.addChangeLogs(release, oldRelease, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), spdxId, Operation.SPDXDOCUMENT_CREATE);
         return requestSummary.setRequestStatus(AddDocumentRequestStatus.SUCCESS)
                             .setId(spdx.getId());
     }

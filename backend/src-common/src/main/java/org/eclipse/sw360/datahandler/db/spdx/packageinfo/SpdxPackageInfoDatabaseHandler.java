@@ -121,7 +121,6 @@ public class SpdxPackageInfoDatabaseHandler {
         String spdxDocumentId = packageInfo.getSpdxDocumentId();
         SPDXDocument spdxDocument = SPDXDocumentRepository.get(spdxDocumentId);
         assertNotNull(spdxDocument, "Could not find SPDX Document by id: " + spdxDocumentId);
-        SPDXDocument oldSpdxDocument = spdxDocument.deepCopy();
         Set<String> spdxPackageInfoIds = new HashSet<>();
         if (spdxDocument.getSpdxPackageInfoIds() != null) {
             spdxPackageInfoIds = spdxDocument.getSpdxPackageInfoIds();
@@ -130,7 +129,6 @@ public class SpdxPackageInfoDatabaseHandler {
         spdxDocument.setSpdxPackageInfoIds(spdxPackageInfoIds);
         SPDXDocumentRepository.update(spdxDocument);
         dbHandlerUtil.addChangeLogs(packageInfo, null, user.getEmail(), Operation.CREATE, null, Lists.newArrayList(), null, null);
-        dbHandlerUtil.addChangeLogs(spdxDocument, oldSpdxDocument, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), packageInfoId, Operation.SPDX_PACKAGE_INFO_CREATE);
         return requestSummary.setRequestStatus(AddDocumentRequestStatus.SUCCESS).setId(packageInfoId);
     }
 
@@ -139,7 +137,6 @@ public class SpdxPackageInfoDatabaseHandler {
         String spdxDocumentId = packageInfos.iterator().next().getSpdxDocumentId();
         SPDXDocument spdxDocument = SPDXDocumentRepository.get(spdxDocumentId);
         assertNotNull(spdxDocument, "Could not find SPDX Document by id: " + spdxDocumentId);
-        SPDXDocument oldSpdxDocument = spdxDocument.deepCopy();
         Set<String> packageInfoIds = new HashSet<>();
         if (spdxDocument.getSpdxPackageInfoIds() != null) {
             packageInfoIds = spdxDocument.getSpdxPackageInfoIds();
@@ -153,7 +150,6 @@ public class SpdxPackageInfoDatabaseHandler {
         }
         spdxDocument.setSpdxPackageInfoIds(packageInfoIds);
         SPDXDocumentRepository.update(spdxDocument);
-        dbHandlerUtil.addChangeLogs(spdxDocument, oldSpdxDocument, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, Operation.SPDX_PACKAGE_INFO_CREATE);
         return requestSummary.setRequestStatus(AddDocumentRequestStatus.SUCCESS).setId(spdxDocumentId);
     }
 

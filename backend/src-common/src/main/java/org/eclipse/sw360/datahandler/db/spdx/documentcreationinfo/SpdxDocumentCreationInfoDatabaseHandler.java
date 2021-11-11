@@ -125,11 +125,9 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
         documentCreationInfo.setCreatedBy(spdxDocument.getCreatedBy());
         SPDXDocumentCreationInfoRepository.add(documentCreationInfo);
         String documentCreationInfoId = documentCreationInfo.getId();
-        SPDXDocument oldSpdxDocument = spdxDocument.deepCopy();
         spdxDocument.setSpdxDocumentCreationInfoId(documentCreationInfoId);
         SPDXDocumentRepository.update(spdxDocument);
         dbHandlerUtil.addChangeLogs(documentCreationInfo, null, user.getEmail(), Operation.CREATE, null, Lists.newArrayList(), null, null);
-        dbHandlerUtil.addChangeLogs(spdxDocument, oldSpdxDocument, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), documentCreationInfoId, Operation.SPDX_DOCUMENT_CREATION_INFO_CREATE);
         return requestSummary.setRequestStatus(AddDocumentRequestStatus.SUCCESS)
                             .setId(documentCreationInfoId);
     }
