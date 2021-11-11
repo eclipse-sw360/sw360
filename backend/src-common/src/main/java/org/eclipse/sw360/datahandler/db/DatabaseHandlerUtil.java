@@ -638,7 +638,7 @@ public class DatabaseHandlerUtil {
     }
 
     private static String getTimeStamp() {
-        SimpleDateFormat timestampPattern = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat timestampPattern = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSSSS");
         Date timeNow = new Date(System.currentTimeMillis());
         return timestampPattern.format(timeNow);
     }

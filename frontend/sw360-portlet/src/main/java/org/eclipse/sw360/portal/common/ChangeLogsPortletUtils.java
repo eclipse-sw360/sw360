@@ -142,6 +142,7 @@ public class ChangeLogsPortletUtils {
         if (isReleaseChangesLog(changeLogsList)) {
             changeLogsList = getChangesLogsForSPDX(request, changeLogsList, changeLogsClient);
         }
+        changeLogsList.stream().forEach(cl -> cl.setChangeTimestamp(cl.getChangeTimestamp().split(" ")[0]));
         JSONArray jsonProjects = getChangeLogData(changeLogsList, paginationParameters, request);
         JSONObject jsonResult = createJSONObject();
         jsonResult.put(DATATABLE_RECORDS_TOTAL, changeLogsList.size());
@@ -185,7 +186,7 @@ public class ChangeLogsPortletUtils {
                 SPDXChangeLogsList.addAll(packagesChangeLogsList);
                 Set<ChangeLogs> hashSet = new HashSet<>(SPDXChangeLogsList);
                 SPDXChangeLogsList = new ArrayList<>(hashSet);
-                SPDXChangeLogsList = sortByTimeStamp(SPDXChangeLogsList);
+                Collections.sort(SPDXChangeLogsList, Comparator.comparing(ChangeLogs::getChangeTimestamp).reversed());
             }
         } catch (TException e) {
             log.error("Error while getting change logs for SPDX" + e);
@@ -296,13 +297,6 @@ public class ChangeLogsPortletUtils {
     private Comparator<ChangeLogs> compareByType(boolean isAscending) {
         Comparator<ChangeLogs> comparator = Comparator.comparing(cl -> nullToEmptyString(cl.getDocumentType()));
         return isAscending ? comparator : comparator.reversed();
-    }
-
-    private List<ChangeLogs> sortByTimeStamp(List<ChangeLogs> SPDXChangeLogsList) {
-        SPDXChangeLogsList = SPDXChangeLogsList.stream().filter(Objects::nonNull).collect(Collectors.toList());
-        Collections.sort(SPDXChangeLogsList, Comparator.comparing(ChangeLogs::getChangeTimestamp).reversed());
-        SPDXChangeLogsList.stream().forEach(cl -> cl.setChangeTimestamp(cl.getChangeTimestamp().split(" ")[0]));
-        return SPDXChangeLogsList;
     }
 
     private static ObjectMapper initAndGetObjectMapper() {

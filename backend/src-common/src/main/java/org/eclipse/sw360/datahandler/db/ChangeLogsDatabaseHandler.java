@@ -58,7 +58,6 @@ public class ChangeLogsDatabaseHandler {
         changeLogsByDocId = changeLogsByDocId.stream().filter(Objects::nonNull).filter(changeLog -> isNotEmptyChangeLog(changeLog))
                 .collect(Collectors.toList());
         Collections.sort(changeLogsByDocId, Comparator.comparing(ChangeLogs::getChangeTimestamp).reversed());
-        changeLogsByDocId.stream().forEach(cl -> cl.setChangeTimestamp(cl.getChangeTimestamp().split(" ")[0]));
         return changeLogsByDocId;
     }
 
