@@ -12,6 +12,7 @@ package org.eclipse.sw360.rest.resourceserver.security.apiToken;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -32,6 +33,7 @@ public class ApiTokenAuthenticationFilter implements Filter {
 
     private static final Logger log = LogManager.getLogger(ApiTokenAuthenticationFilter.class);
     private static final String AUTHENTICATION_TOKEN_PARAMETER = "authorization";
+    private static final String OIDC_AUTHENTICATION_TOKEN_PARAMETER = "oidcauthorization";
 
     @Override
     public void init(FilterConfig filterConfig) {
@@ -53,6 +55,14 @@ public class ApiTokenAuthenticationFilter implements Filter {
                     Authentication auth = new ApiTokenAuthentication(token[1]);
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 }
+            } else if (Sw360ResourceServer.IS_JWKS_VALIDATION_ENABLED && !headers.isEmpty()
+                    && headers.containsKey(OIDC_AUTHENTICATION_TOKEN_PARAMETER)) {
+                String authorization = headers.get(OIDC_AUTHENTICATION_TOKEN_PARAMETER);
+                String[] token = authorization.trim().split("\\s+");
+                if (token.length == 2 && token[0].equalsIgnoreCase("Bearer")) {
+                    Authentication auth = new ApiTokenAuthentication(token[1]).setType(AuthType.JWKS);
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                }
             }
         }
 
@@ -63,9 +73,16 @@ public class ApiTokenAuthenticationFilter implements Filter {
     public void destroy() {
     }
 
+    enum AuthType {
+        JWKS;
+    }
+
     class ApiTokenAuthentication implements Authentication {
         private static final long serialVersionUID = 1L;
+
         private String token;
+
+        private AuthType type;
 
         private ApiTokenAuthentication(String token) {
             this.token = token;
@@ -103,6 +120,15 @@ public class ApiTokenAuthenticationFilter implements Filter {
         @Override
         public String getName() {
             return null;
+        }
+
+        public AuthType getType() {
+            return type;
+        }
+
+        public ApiTokenAuthentication setType(AuthType type) {
+            this.type = type;
+            return this;
         }
     }
 }

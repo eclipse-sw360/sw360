@@ -115,6 +115,10 @@
                             <td><liferay-ui:message key="secondary.departments.and.roles" />:</td>
                             <td><sw360:DisplayMapOfSecondaryGroupAndRoles value="${userObj.secondaryDepartmentsAndRoles}" /></td>
                         </tr>
+                        <tr>
+                            <td><liferay-ui:message key="oidc.client" />:</td>
+                            <td><sw360:DisplayMapOfOidcClientAndAcess value="${userObj.oidcClientInfos}" /></td>
+                        </tr>
                     </table>
                 </div>
             </div>

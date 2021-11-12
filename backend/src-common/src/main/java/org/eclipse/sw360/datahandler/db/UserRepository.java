@@ -57,6 +57,11 @@ public class UserRepository extends SummaryAwareRepository<User> {
             "    emit(doc.restApiTokens[i].token, doc._id)" +
             "  }" +
             "}";
+    private static final String BYOIDCCLIENTID = "function(doc) { if (doc.type == 'user') " +
+            "  for (var i in doc.oidcClientInfos) {" +
+            "    emit(i, doc._id)" +
+            "  }" +
+            "}";
     private static final String BYEMAIL = "function(doc) { " +
             "  if (doc.type == 'user') {" +
             "    emit(doc.email, doc._id); " +
@@ -87,6 +92,7 @@ public class UserRepository extends SummaryAwareRepository<User> {
         views.put("all", createMapReduce(ALL, null));
         views.put("byExternalId", createMapReduce(BYEXTERNALID, null));
         views.put("byApiToken", createMapReduce(BYAPITOKEN, null));
+        views.put("byOidcClientId", createMapReduce(BYOIDCCLIENTID, null));
         views.put("byEmail", createMapReduce(BYEMAIL, null));
         views.put("userDepartments", createMapReduce(USERS_ALL_DEPARTMENT_VIEW, null));
         views.put("userEmails", createMapReduce(USERS_ALL_EMAIL_VIEW, null));
@@ -242,5 +248,10 @@ public class UserRepository extends SummaryAwareRepository<User> {
         }
         result.put(pageData, users);
         return result;
+    }
+
+    public User getByOidcClientId(String clientId) {
+        final Set<String> userIds = queryForIdsAsValue("byOidcClientId", clientId);
+        return getUserFromIds(userIds);
     }
 }

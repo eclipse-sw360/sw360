@@ -640,6 +640,9 @@ public class PortalConstants {
     public static final String USERS_PRESENT_IN_COUCH_DB = "usersPresentInCouchDb";
     public static final String USERS_ABSENT_IN_COUCH_DB = "usersAbsentInCouchDb";
     public static final String USER_OBJ = "userObj";
+    public static final String USER_CLIENT_ID_KEY = "userClientIdKey";
+    public static final String USER_CLIENT_ID_ACCESS_VALUE = "userClientIdAccessValue";
+    public static final String USER_CLIENT_ID_NAME_VALUE = "userClientIdNameValue";
 
     // Rest API constants
     public static final UserGroup API_WRITE_ACCESS_USERGROUP;

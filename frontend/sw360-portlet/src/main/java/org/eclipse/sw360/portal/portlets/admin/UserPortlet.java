@@ -37,6 +37,8 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.users.ClientMetadata;
+import org.eclipse.sw360.datahandler.thrift.users.UserAccess;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.portal.common.ErrorMessages;
@@ -338,13 +340,15 @@ public class UserPortlet extends Sw360Portlet {
 
         Map<String, Set<UserGroup>> secondaryDepartmentAndRolesMapFromRequest = PortletUtils
                 .getSecondaryDepartmentAndRolesMapFromRequest(request, departmentFromReq);
-
+        Map<String, ClientMetadata> userAccessFromRequest = PortletUtils
+                .getOidcClientMapFromRequest(request);
         String originalEmail = CommonUtils.nullToEmptyString(userByEmailFromCouchDB.getEmail());
         org.eclipse.sw360.datahandler.thrift.users.User updatedUserForDisplay = userByEmailFromCouchDB.deepCopy();
         updatedUserForDisplay.setGivenname(givenNameFromReq).setLastname(lastNameFromReq)
                 .setDepartment(departmentFromReq).setExternalid(externalIdFromReq)
                 .setUserGroup(UserGroup.valueOf(primaryRoleFromReq)).setPrimaryRoles(null)
-                .setSecondaryDepartmentsAndRoles(secondaryDepartmentAndRolesMapFromRequest);
+                .setSecondaryDepartmentsAndRoles(secondaryDepartmentAndRolesMapFromRequest)
+                .setOidcClientInfos(userAccessFromRequest);
         request.setAttribute(PortalConstants.USER_OBJ, updatedUserForDisplay);
         if (isLiferayUserNew) {
             if (!emailFromReq.equals(originalEmail)) {
@@ -451,6 +455,7 @@ public class UserPortlet extends Sw360Portlet {
 
                 org.eclipse.sw360.datahandler.thrift.users.User newlyCreatedUser = userClient.getByEmail(emailFromReq);
                 newlyCreatedUser.setSecondaryDepartmentsAndRoles(secondaryDepartmentAndRolesMapFromRequest)
+                .setOidcClientInfos(userAccessFromRequest)
                 .setFullname(liferayCreatedOrUpdated.getFullName())
                         .setPrimaryRoles(null).setUserGroup(userGroupFromString(primaryRoleFromReq));
                 userClient.updateUser(newlyCreatedUser);
@@ -466,7 +471,8 @@ public class UserPortlet extends Sw360Portlet {
                 .setDepartment(departmentFromReq).setExternalid(externalIdFromReq)
                 .setFullname(liferayCreatedOrUpdated.getFullName()).setUserGroup(UserGroup.valueOf(primaryRoleFromReq))
                 .setPrimaryRoles(null);
-        userByEmailFromCouchDB.setSecondaryDepartmentsAndRoles(secondaryDepartmentAndRolesMapFromRequest);
+        userByEmailFromCouchDB.setSecondaryDepartmentsAndRoles(secondaryDepartmentAndRolesMapFromRequest)
+        .setOidcClientInfos(userAccessFromRequest);
         if (isCouchDBUserNew || userByEmailFromCouchDB.getId() == null) {
             userClient.addUser(userByEmailFromCouchDB.setEmail(emailFromReq));
         } else {

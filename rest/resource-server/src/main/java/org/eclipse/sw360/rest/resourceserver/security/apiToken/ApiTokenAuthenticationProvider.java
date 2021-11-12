@@ -14,15 +14,24 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserAccess;
+import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
+import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationFilter.ApiTokenAuthentication;
+import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationFilter.AuthType;
+import org.eclipse.sw360.rest.resourceserver.security.jwksvalidation.JWTValidator;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.jetbrains.annotations.NotNull;
+import org.jose4j.jwt.JwtClaims;
+import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.CredentialsExpiredException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.Authentication;
@@ -37,6 +46,7 @@ import java.util.Date;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.lang.Math.min;
 import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.*;
@@ -50,7 +60,7 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
 
     @NotNull
     private final Sw360UserService userService;
-
+    
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         if (authentication.isAuthenticated()) {
@@ -60,24 +70,44 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
 
         // Get the corresponding sw360 user and restApiToken based on entered token
         String tokenFromAuthentication = (String) authentication.getCredentials();
-        String tokenHash = BCrypt.hashpw(tokenFromAuthentication, API_TOKEN_HASH_SALT);
-        User sw360User = getUserFromTokenHash(tokenHash);
-        if (sw360User == null || sw360User.isDeactivated()) {
-            throw new DisabledException("User is deactivated");
-        }
-        Optional<RestApiToken> restApiToken = getApiTokenFromUser(tokenHash, sw360User);
-
-        if (restApiToken.isPresent()) {
-            if (!isApiTokenExpired(restApiToken.get())) {
-                // User authenticated successfully
-                log.trace("Valid token authentication for user: " + sw360User.getEmail());
-                return authenticatedApiUser(sw360User, tokenFromAuthentication, restApiToken.get());
-            } else {
-                throw new CredentialsExpiredException("Your entered API token is expired.");
+        if (Sw360ResourceServer.IS_JWKS_VALIDATION_ENABLED && authentication instanceof ApiTokenAuthentication
+                && ((ApiTokenAuthentication) authentication).getType() == AuthType.JWKS) {
+            JWTValidator validator = new JWTValidator(Sw360ResourceServer.JWKS_ISSUER_URL,
+                    Sw360ResourceServer.JWKS_ENDPOINT_URL);
+            JwtClaims jwtClaims = null;
+            try {
+                jwtClaims = validator.validateJWT(tokenFromAuthentication);
+            } catch (InvalidJwtException exp) {
+                throw new BadCredentialsException(exp.getMessage());
             }
+            Object clientIdAsObject = jwtClaims.getClaimValue("client_id");
+            if (clientIdAsObject == null || clientIdAsObject.toString().isBlank()) {
+                throw new BadCredentialsException("Client Id cannot be null or empty");
+            }
+
+            String clientIdAsStr = clientIdAsObject.toString();
+            User sw360User = getUserFromClientId(clientIdAsStr);
+            return authenticatedOidcUser(sw360User, clientIdAsStr);
         } else {
-            log.trace("Could not load API token form user " + sw360User.getEmail());
-            throw new AuthenticationServiceException("Your entered API token is not valid.");
+            String tokenHash = BCrypt.hashpw(tokenFromAuthentication, API_TOKEN_HASH_SALT);
+            User sw360User = getUserFromTokenHash(tokenHash);
+            if (sw360User == null || sw360User.isDeactivated()) {
+                throw new DisabledException("User is deactivated");
+            }
+            Optional<RestApiToken> restApiToken = getApiTokenFromUser(tokenHash, sw360User);
+
+            if (restApiToken.isPresent()) {
+                if (!isApiTokenExpired(restApiToken.get())) {
+                    // User authenticated successfully
+                    log.trace("Valid token authentication for user: " + sw360User.getEmail());
+                    return authenticatedApiUser(sw360User, tokenFromAuthentication, restApiToken.get());
+                } else {
+                    throw new CredentialsExpiredException("Your entered API token is expired.");
+                }
+            } else {
+                log.trace("Could not load API token form user " + sw360User.getEmail());
+                throw new AuthenticationServiceException("Your entered API token is not valid.");
+            }
         }
     }
 
@@ -90,6 +120,16 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
         }
     }
 
+    private User getUserFromClientId(String clientId) {
+        try {
+            return userService.getUserFromClientId(clientId);
+        } catch (RuntimeException e) {
+            log.debug("Could not find any user for the entered clientId " + clientId);
+            throw new AuthenticationServiceException(
+                    "Your entered OIDC token is not associated with any user for authorization.");
+        }
+    }
+    
     private Optional<RestApiToken> getApiTokenFromUser(String tokenHash, User sw360User) {
         return sw360User.getRestApiTokens()
                 .stream()
@@ -112,11 +152,26 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toSet());
     }
+    
+    private Set<GrantedAuthority> getGrantedAuthoritiesFromUserAccess(UserAccess userAccess) {
+        return Stream.of(userAccess.name().split("_"))
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toSet());
+    }
 
     private PreAuthenticatedAuthenticationToken authenticatedApiUser(User user, String credentials, RestApiToken restApiToken) {
         Set<GrantedAuthority> grantedAuthorities = getGrantedAuthoritiesFromApiToken(restApiToken);
         PreAuthenticatedAuthenticationToken preAuthenticatedAuthenticationToken =
                 new PreAuthenticatedAuthenticationToken(user.getEmail(), credentials, grantedAuthorities);
+        preAuthenticatedAuthenticationToken.setAuthenticated(true);
+        return preAuthenticatedAuthenticationToken;
+    }
+
+    private PreAuthenticatedAuthenticationToken authenticatedOidcUser(User user, String credentials) {
+        Set<GrantedAuthority> grantedAuthorities = getGrantedAuthoritiesFromUserAccess(
+                user.getOidcClientInfos().get(credentials).getAccess());
+        PreAuthenticatedAuthenticationToken preAuthenticatedAuthenticationToken = new PreAuthenticatedAuthenticationToken(
+                user.getEmail(), credentials, grantedAuthorities);
         preAuthenticatedAuthenticationToken.setAuthenticated(true);
         return preAuthenticatedAuthenticationToken;
     }

@@ -72,6 +72,15 @@ public class Sw360UserService {
         }
     }
 
+    public User getUserFromClientId(String clientId) {
+        try {
+            UserService.Iface sw360UserClient = getThriftUserClient();
+            return sw360UserClient.getByOidcClientId(clientId);
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private UserService.Iface getThriftUserClient() throws TTransportException {
         THttpClient thriftClient = new THttpClient(thriftServerUrl + "/users/thrift");
         TProtocol protocol = new TCompactProtocol(thriftClient);
