@@ -18,15 +18,11 @@ import static org.eclipse.sw360.portal.common.PortalConstants.DATATABLE_RECORDS_
 import static org.eclipse.sw360.portal.common.PortalConstants.DATATABLE_RECORDS_TOTAL;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.portlet.PortletRequest;
 import javax.portlet.ResourceRequest;
@@ -175,17 +171,19 @@ public class ChangeLogsPortletUtils {
                 String spdxDocumentCreationInfoId = spdxDocument.getSpdxDocumentCreationInfoId();
                 Set<String> packageInfoIds = spdxDocument.getSpdxPackageInfoIds();
                 List<ChangeLogs> spdxChangeLogsList = getFilteredChangeLogList(request, changeLogsClient, spdxId);
-                List<ChangeLogs> spdxDocumentChangeLogsList = getFilteredChangeLogList(request, changeLogsClient, spdxDocumentCreationInfoId);
-                List<ChangeLogs> packagesChangeLogsList = Lists.newArrayList();
-                for (String packageInfoId : packageInfoIds) {
-                    List<ChangeLogs> packageChangeLogsList = getFilteredChangeLogList(request, changeLogsClient, packageInfoId);
-                    packagesChangeLogsList.addAll(packageChangeLogsList);
-                }
                 SPDXChangeLogsList.addAll(spdxChangeLogsList);
-                SPDXChangeLogsList.addAll(spdxDocumentChangeLogsList);
-                SPDXChangeLogsList.addAll(packagesChangeLogsList);
-                Set<ChangeLogs> hashSet = new HashSet<>(SPDXChangeLogsList);
-                SPDXChangeLogsList = new ArrayList<>(hashSet);
+                if (!isNullOrEmpty(spdxDocumentCreationInfoId)) {
+                    List<ChangeLogs> spdxDocumentChangeLogsList = getFilteredChangeLogList(request, changeLogsClient, spdxDocumentCreationInfoId);
+                    SPDXChangeLogsList.addAll(spdxDocumentChangeLogsList);
+                }
+                if (packageInfoIds != null) {
+                    List<ChangeLogs> packagesChangeLogsList = Lists.newArrayList();
+                    for (String packageInfoId : packageInfoIds) {
+                        List<ChangeLogs> packageChangeLogsList = getFilteredChangeLogList(request, changeLogsClient, packageInfoId);
+                        packagesChangeLogsList.addAll(packageChangeLogsList);
+                    }
+                    SPDXChangeLogsList.addAll(packagesChangeLogsList);
+                }
                 Collections.sort(SPDXChangeLogsList, Comparator.comparing(ChangeLogs::getChangeTimestamp).reversed());
             }
         } catch (TException e) {
