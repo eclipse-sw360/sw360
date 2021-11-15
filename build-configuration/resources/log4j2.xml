@@ -10,32 +10,34 @@
 ~ SPDX-License-Identifier: EPL-2.0
 -->
 <Configuration status="WARN">
-   <Properties>
-      <Property name="filepath">/var/log/</Property>
-   </Properties>
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n"/>
         </Console>
         <!-- environment variables can be set in the format of "$ {env: LOG_ROOT}" -->
-        <RollingFile name="ChangeLogFile" fileName="${filepath}sw360changelog.log"
-                filePattern="${filepath}sw360changelog-%d{yyyy-MM-dd}-%i.log" >
+<!--         <RollingFile name="ChangeLogFile" fileName="${env:LIFERAY_INSTALL}/sw360changelog/sw360changelog.log"
+                filePattern="${env:LIFERAY_INSTALL}/sw360changelog/sw360changelog-%d{yyyy-MM-dd}-%i.log" >
             <PatternLayout pattern="%m%n"/>
             <Policies>
                 <SizeBasedTriggeringPolicy size="10MB" />
             </Policies>
             <DefaultRolloverStrategy max="10"/>
-        </RollingFile>
+        </RollingFile>  -->
     </Appenders>
     <Loggers>
         <Logger name="org.eclipse.sw360" level="info"/>
-        <Logger name="sw360changelog" level="debug" >
+<!--         <Logger name="sw360changelog" level="debug" >
             <AppenderRef ref="ChangeLogFile" />
+        </Logger>
+        <Logger name="org.eclipse.sw360" level="debug" additivity="false">
             <AppenderRef ref="Console"/>
         </Logger>
+        <Root level="warn">
+            <AppenderRef ref="ChangeLogFile"/>
+        </Root>  -->
+<!--    To place this file in etc/sw360 comment the below Root attribute of console and uncomment the above to log in changeLogFile. -->
         <Root level="warn">
             <AppenderRef ref="Console"/>
         </Root>
     </Loggers>
 </Configuration>
-

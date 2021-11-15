@@ -41,12 +41,20 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.ConsoleAppender;
+import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.core.config.builder.api.AppenderComponentBuilder;
+import org.apache.logging.log4j.core.config.builder.api.ComponentBuilder;
+import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilder;
+import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilderFactory;
+import org.apache.logging.log4j.core.config.builder.api.LayoutComponentBuilder;
+import org.apache.logging.log4j.core.config.builder.impl.BuiltConfiguration;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
 import org.apache.thrift.TFieldIdEnum;
@@ -90,9 +98,9 @@ import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 
-import com.cloudant.client.api.CloudantClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 
 /**
  * @author smruti.sahoo@siemens.com
@@ -115,8 +123,12 @@ public class DatabaseHandlerUtil {
     private static final String ATTACHMENT_STORE_FILE_SYSTEM_PERMISSION;
     private static ExecutorService ATTACHMENT_FILE_SYSTEM_STORE_THREAD_POOL = Executors.newFixedThreadPool(5);
     private static final String ATTACHMENT_DELETE_NO_OF_DAYS;
-    public static final String CHANGE_LOG_CONFIG_FILE_PATH;
-    private static final boolean IS_SW360_CHANGE_LOG_ENABLED;
+    private static final boolean IS_SW360CHANGELOG_ENABLED;
+    private static final String CHANGE_LOG_CONFIG_FILE_PATH;
+    private static final String SW360CHANGELOG_OUTPUT_PATH;
+    private static boolean isChangeLogDisabledMessageLogged = false;
+    private static boolean isLiferayEnvVarNotPresent = true;
+
     static {
         Properties props = CommonUtils.loadProperties(DatabaseSettings.class, PROPERTIES_FILE_PATH);
         ATTACHMENT_STORE_FILE_SYSTEM_LOCATION = props.getProperty("attachment.store.file.system.location",
@@ -126,9 +138,11 @@ public class DatabaseHandlerUtil {
         IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED = Boolean.parseBoolean(props.getProperty("enable.attachment.store.to.file.system", "false"));
         ATTACHMENT_DELETE_NO_OF_DAYS = props.getProperty("attachemnt.delete.no.of.days",
                 "30");
+        IS_SW360CHANGELOG_ENABLED = Boolean.parseBoolean(props.getProperty("enable.sw360.change.log", "false"));
         CHANGE_LOG_CONFIG_FILE_PATH = props.getProperty("sw360changelog.config.file.location",
                 "/etc/sw360/log4j2.xml");
-        IS_SW360_CHANGE_LOG_ENABLED = Boolean.parseBoolean(props.getProperty("enable.sw360.change.log", "false"));
+        SW360CHANGELOG_OUTPUT_PATH = props.getProperty("sw360changelog.output.path",
+                "sw360changelog/sw360changelog");
     }
 
     public DatabaseHandlerUtil(DatabaseConnectorCloudant db) {
@@ -429,6 +443,15 @@ public class DatabaseHandlerUtil {
      * @param attachmentConnector
      */
     public static <T extends TBase> void addSelectLogs(T newDocVersion, String userEdited, AttachmentConnector attachmentConnector) {
+
+        if (!IS_SW360CHANGELOG_ENABLED) {
+            if (!isChangeLogDisabledMessageLogged) {
+                log.info("sw360change log is disabled");
+                isChangeLogDisabledMessageLogged = true;
+            }
+            return;
+        }
+
         Runnable changeLogRunnable = ()-> {
           try {
               log.info("Generating SelectLogs.");
@@ -448,11 +471,20 @@ public class DatabaseHandlerUtil {
         };
 
         Thread changeLogsThread = new Thread(changeLogRunnable);
-        if (IS_SW360_CHANGE_LOG_ENABLED) {
-            File sw360ChangeLogFileLocation = new File(CHANGE_LOG_CONFIG_FILE_PATH);
+        File sw360ChangeLogFileLocation = new File(CHANGE_LOG_CONFIG_FILE_PATH);
+        if (sw360ChangeLogFileLocation.exists()) {
             LoggerContext context = (LoggerContext) LogManager.getContext(false);
             context.setConfigLocation(sw360ChangeLogFileLocation.toURI());
-       }
+        } else {
+            Map<String, String> env = System.getenv();
+            if (!env.containsKey("LIFERAY_INSTALL") && isLiferayEnvVarNotPresent) {
+                log.info("LIFERAY_INSTALL is not set as environment variable to store the changelog.");
+                isLiferayEnvVarNotPresent = false;
+                return;
+            }
+            String LIFERAY_HOME = env.get("LIFERAY_INSTALL");
+            configureLog4J(SW360CHANGELOG_OUTPUT_PATH, LIFERAY_HOME);
+        }
         changeLogsThread.start();
     }
 
@@ -466,7 +498,6 @@ public class DatabaseHandlerUtil {
                 || DatabaseSettings.COUCH_DB_ATTACHMENTS.contains("test")) {
             return;
         }
-
         Runnable changeLogRunnable = prepareChangeLogRunnable(newDocVersion, oldDocVersion, userEdited, operation,
                 attachmentConnector, referenceDocLogList, parentDocId, parentOperation);
 
@@ -896,4 +927,35 @@ public class DatabaseHandlerUtil {
             });
         }
     }
+
+    private static void configureLog4J(String outputpath, String liferayhome) {
+	        ConfigurationBuilder< BuiltConfiguration > builder = ConfigurationBuilderFactory.newConfigurationBuilder();
+	        builder.setStatusLevel(Level.WARN);
+	        builder.setConfigurationName("RollingBuilder");
+	        // create a console appender
+	        AppenderComponentBuilder appenderBuilder = builder.newAppender("Stdout", "Console").addAttribute("target",
+		    ConsoleAppender.Target.SYSTEM_OUT);
+	        appenderBuilder.add(builder.newLayout("PatternLayout")
+			.addAttribute("pattern", "%d [%t] %-5level: %msg%n%throwable"));
+	        builder.add(appenderBuilder);
+	        // create a rolling file appender
+	        LayoutComponentBuilder layoutBuilder = builder.newLayout("PatternLayout")
+	        .addAttribute("pattern", "%d [%t] %-5level: %msg%n");
+	        ComponentBuilder<?> triggeringPolicy = builder.newComponent("Policies")
+	        .addComponent(builder.newComponent("CronTriggeringPolicy").addAttribute("schedule", "0 0 0 * * ?"))
+	        .addComponent(builder.newComponent("SizeBasedTriggeringPolicy").addAttribute("size", "10M"));
+	        appenderBuilder = builder.newAppender("ChangeLogFile", "RollingFile")
+		    .addAttribute("fileName", liferayhome + outputpath +".log")
+		    .addAttribute("filePattern", liferayhome + outputpath + "-%d{MM-dd-yy}.log.gz")
+	        .add(layoutBuilder)
+	        .addComponent(triggeringPolicy);
+	        builder.add(appenderBuilder);
+	        // create the new logger sw360changelog
+	        builder.add( builder.newLogger("sw360changelog", Level.DEBUG)
+	        .add( builder.newAppenderRef("ChangeLogFile")));
+	        builder.add( builder.newRootLogger(Level.WARN)
+	       .add( builder.newAppenderRef("ChangeLogFile")));
+	       Configurator.reconfigure(builder.build());
+       }
 }
+
