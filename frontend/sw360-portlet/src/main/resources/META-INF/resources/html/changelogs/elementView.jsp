@@ -251,6 +251,8 @@
                 if(fieldValueOld === null || fieldValueOld === undefined ||
                         fieldValueNew === null || fieldValueNew === undefined )
                 {
+                    removeIndexFields(fieldValueOld);
+                    removeIndexFields(fieldValueNew);
                     jsonStrOld = JSON.stringify(fieldValueOld, undefined, 5).replace(/\\n/g, '\n').replace(/\\r/g, '\r');
                     jsonStrNew = JSON.stringify(fieldValueNew, undefined, 5).replace(/\\n/g, '\n').replace(/\\r/g, '\r');
                 }
@@ -310,10 +312,13 @@
                 for (let primaryValue of primaryField) {
                     if(typeof primaryValue === 'object') {
                         let matched = false;
+                        let indexKey = "index";
                         for(let secondaryValue of secondaryField) {
-                            if (isEqualObject(secondaryValue, primaryValue)) {
+                            if (isEqualObject(secondaryValue, primaryValue, selector, indexKey)) {
                                 matched = true;
                                 if(differentiateObject) {
+                                    delete primaryValue[indexKey];
+                                    delete secondaryValue[indexKey];
                                     diffObject(primaryValue, secondaryValue, primarySpanHightlighter, secondarySpanHighlighter, indentlevel);
                                     primaryFieldTmp.push(primaryValue);
                                     secondaryFieldTmp.push(secondaryValue);
@@ -322,7 +327,8 @@
                             }
                         }
                         if(!matched) {
-                            let jsonString = JSON.stringify(primaryValue, undefined, 5*indentlevel);
+                            removeIndexFields(primaryValue);
+                            let jsonString = JSON.stringify(primaryValue, undefined, 10*indentlevel);
                             jsonString = jsonString.substring(0, jsonString.length-1) + spaceForClosingBraces + jsonString.substring(jsonString.length-1);
                             primaryFieldTmp.push($($.parseHTML(primarySpanHightlighter)).text(jsonString)[0].outerHTML);
                         }
@@ -336,16 +342,31 @@
                 }
             }
 
-            function isEqualObject(object1, object2) {
-                if (object1.length !== object2.length) {
-                    return false;
+            function isEqualObject(secondaryValue, primaryValue, selector, indexKey) {
+                if (primaryValue[selector] === secondaryValue[selector] && typeof primaryValue[indexKey] === 'undefined') {
+                    return true;
                 }
-                for (key in object1) {
-                    if (object1[key] !== object2[key]) {
-                        return false;
+                if (primaryValue[indexKey] === secondaryValue[indexKey] && typeof primaryValue[selector] === 'undefined') {
+                    return true;
+                }
+                return false;
+            }
+
+            function removeIndexFields(object) {
+                if (Array.isArray(object)) {
+                    for (let objectValue of object) {
+                        removeIndexFields(objectValue);
+                    }
+                } else if (typeof object === 'object') {
+                    for (key in object) {
+                        if (key === 'index') {
+                            delete object[key];
+                        }
+                        if (typeof object[key] === 'object') {
+                            removeIndexFields(object[key]);
+                        }
                     }
                 }
-                return true;
             }
 
             function copyFromSourceToDestinationArray(srcArr, destArr) {
