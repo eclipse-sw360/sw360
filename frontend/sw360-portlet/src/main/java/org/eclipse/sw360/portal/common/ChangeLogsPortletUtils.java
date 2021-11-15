@@ -157,12 +157,11 @@ public class ChangeLogsPortletUtils {
         return false;
     }
 
-    private List<ChangeLogs> getChangesLogsForSPDX(ResourceRequest request, List<ChangeLogs> changeLogsList, ChangeLogsService.Iface changeLogsClient) {
+    private List<ChangeLogs> getChangesLogsForSPDX(ResourceRequest request, List<ChangeLogs> SPDXChangeLogsList, ChangeLogsService.Iface changeLogsClient) {
         ComponentService.Iface componentClient = thriftClients.makeComponentClient();
         SPDXDocumentService.Iface SPDXClient = thriftClients.makeSPDXClient();
         User user = UserCacheHolder.getUserFromRequest(request);
         String releaseId = request.getParameter(PortalConstants.DOCUMENT_ID);
-        List<ChangeLogs> SPDXChangeLogsList = changeLogsList;
         try {
             Release release = componentClient.getReleaseById(releaseId, user);
             String spdxId = release.getSpdxId();

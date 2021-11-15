@@ -349,7 +349,8 @@ public class DatabaseMixInForChangeLog {
         "setName",
         "setSnippetAttributionText",
         "index",
-        "setIndex"
+        "setIndex",
+        "spdxid"
     })
     public static abstract class SnippetInformationMixin extends SnippetInformation {
     }

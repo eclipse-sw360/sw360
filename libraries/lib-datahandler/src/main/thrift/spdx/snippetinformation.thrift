@@ -17,7 +17,7 @@ struct SnippetInformation {
     3: optional set<SnippetRange> snippetRanges,    // 9.3, 9.4
     4: optional string licenseConcluded,    // 9.5
     5: optional set<string> licenseInfoInSnippets,  // 9.6
-    6: optional string licenseComments,     // 9.6
+    6: optional string licenseComments,     // 9.7
     7: optional string copyrightText,       // 9.8
     8: optional string comment,             // 9.9
     9: optional string name,                // 9.10
