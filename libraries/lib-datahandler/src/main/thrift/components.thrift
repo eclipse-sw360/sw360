@@ -653,7 +653,7 @@ service ComponentService {
     /**
      * get export summary for components whose name is matching parameter name
      **/
-    list<Component> searchComponentForExport(1: string name);
+    list<Component> searchComponentForExport(1: string name, 2: bool caseSensitive);
 
     /**
      *  get component with fossologyId equal to uploadId, filled with releases and main licenses,

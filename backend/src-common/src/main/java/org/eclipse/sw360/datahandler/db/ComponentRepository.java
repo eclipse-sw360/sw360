@@ -215,8 +215,13 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
         return queryForIdsAsValue("byname", name);
     }
 
-    public List<Component> searchByNameForExport(String name) {
-        Set<String> componentIds = queryForIdsAsValueByPrefix("fullbyname", name);
+    public List<Component> searchByNameForExport(String name, boolean caseSensitive) {
+        Set<String> componentIds;
+        if (caseSensitive) {
+            componentIds = queryForIdsAsValueByPrefix("fullbyname", name);
+        } else {
+            componentIds = queryForIdsAsValueByPrefix("bynamelowercase", name);
+        }
         final List<Component> componentList = new ArrayList<Component>(getFullDocsById(componentIds));
         return makeSummaryFromFullDocs(SummaryType.EXPORT_SUMMARY, componentList);
     }

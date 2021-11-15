@@ -155,7 +155,7 @@ public class ThriftExchange {
 
     public Optional<List<Component>> searchComponentByName(String name) {
         try {
-            return Optional.of(thriftClients.makeComponentClient().searchComponentForExport(name));
+            return Optional.of(thriftClients.makeComponentClient().searchComponentForExport(name, true));
         } catch (TException e) {
             LOGGER.error("Could not fetch Component list for name=[" + name + "]:" + e);
             return Optional.empty();

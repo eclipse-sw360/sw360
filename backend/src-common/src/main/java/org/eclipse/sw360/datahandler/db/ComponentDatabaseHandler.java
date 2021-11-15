@@ -1875,8 +1875,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return DatabaseHandlerUtil.getCyclicLinkedPath(release, this, user);
     }
 
-    public List<Component> searchComponentByNameForExport(String name) {
-        return componentRepository.searchByNameForExport(name);
+    public List<Component> searchComponentByNameForExport(String name, boolean caseSensitive) {
+        return componentRepository.searchByNameForExport(name, caseSensitive);
     }
 
     public Set<Component> getUsingComponents(String releaseId) {

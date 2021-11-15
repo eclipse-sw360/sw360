@@ -146,7 +146,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
 
     public List<Component> searchComponentByName(String name) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        return sw360ComponentClient.searchComponentForExport(name);
+        return sw360ComponentClient.searchComponentForExport(name.toLowerCase(), false);
     }
 
     private ComponentService.Iface getThriftComponentClient() throws TTransportException {
