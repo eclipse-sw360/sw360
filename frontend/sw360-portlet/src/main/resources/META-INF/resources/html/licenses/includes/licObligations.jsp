@@ -46,12 +46,15 @@
     	
     var licenseObligationJSON = [];
     <core_rt:forEach var="ob" varStatus="status" items="${obligationList}">
+        var obligText = "<sw360:out value='${ob.text}' stripNewlines='false' jsQuoting='true'/>";
+        obligText = obligText.replace(/[\r\n]/g, '<br>');
+        obligText = obligText.replace(/\t/g, '&ensp;&ensp;&ensp;&ensp;');
     	licenseObligationJSON.push({
     		"DT_RowId": "oblLinkRow${ob.id}",
             "obligationId": "<sw360:out value='${ob.id}'/>",
             "obligationType": "<sw360:DisplayEnum value='${ob.obligationType}'/>", 
             "obligationTitle": "<sw360:out value='${ob.title}'/>",
-            "text": "<sw360:out value='${ob.text}'/>",
+            "text": '<p style="overflow: auto; max-height: 10rem;">'+obligText+'</p>',
         });
     </core_rt:forEach>
     

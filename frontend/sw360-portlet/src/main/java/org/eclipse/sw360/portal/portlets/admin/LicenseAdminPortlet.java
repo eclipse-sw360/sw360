@@ -89,6 +89,13 @@ public class LicenseAdminPortlet extends Sw360Portlet {
                     throw new PortletException(e);
                 }
                 break;
+            case PortalConstants.ACTION_IMPORT_OSADL_LICENSE_INFORMATION:
+                try {
+                    importLicensesFromOSADL(request, response);
+                } catch (TException e) {
+                    throw new PortletException(e);
+                }
+                break;
             default:
                 log.warn("The LicenseAdminPortlet was called with unsupported action=[" + action + "]");
         }
@@ -114,6 +121,13 @@ public class LicenseAdminPortlet extends Sw360Portlet {
                 inputStream.close();
             }
         }
+    }
+
+    private void importLicensesFromOSADL(ResourceRequest request, ResourceResponse response) throws TException {
+        User user = UserCacheHolder.getUserFromRequest(request);
+        LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
+        RequestSummary requestSummary = licenseClient.importAllOSADLLicenses(user);
+        renderRequestSummary(request, response, requestSummary);
     }
 
     private void deleteAllLicenseInformation(ResourceRequest request, ResourceResponse response){

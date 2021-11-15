@@ -92,3 +92,41 @@ table  {
 		vertical-align: top;
 	}
 }
+
+.table-license-list {
+	height: auto;
+	max-height: 190px;
+
+	overflow: auto;
+
+	font-size: 14px;
+
+	table {
+		border-collapse: collapse;
+		width: 100%;
+	}
+
+	th {
+		position: sticky;
+		top: 0;
+		z-index: 1;
+		background: #5d8ea9;
+		color:white;
+		border: 1px solid #e7e7ed;
+		border-top: 2px;
+		border-bottom: 2px;
+		height: 47px;
+
+		font-weight: 600;
+
+		padding: 0.75rem;
+	}
+	td {
+		border: 1px solid #e7e7ed;
+		color: #272833;
+		height: 47px;
+		font-weight: 400;
+
+		padding: 0.75rem;
+	}
+}

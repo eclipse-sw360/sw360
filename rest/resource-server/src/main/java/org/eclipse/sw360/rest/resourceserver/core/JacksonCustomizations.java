@@ -581,6 +581,7 @@ public class JacksonCustomizations {
                 "comments",
                 "additionalData",
                 "additionalDataSize",
+                "node",
                 "setId",
                 "setRevision",
                 "setType",
@@ -596,7 +597,8 @@ public class JacksonCustomizations {
                 "setComments",
                 "setObligationLevel",
                 "setObligationType",
-                "setAdditionalData"
+                "setAdditionalData",
+                "setNode"
         })
         static abstract class ObligationMixin extends Obligation {
         }

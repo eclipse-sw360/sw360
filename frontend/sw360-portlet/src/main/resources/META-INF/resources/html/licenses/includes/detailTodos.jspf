@@ -114,11 +114,14 @@
         var licenseObligationJSON = [];
         <core_rt:forEach var="ob" varStatus="status" items="${licenseDetail.obligations}">
             <core_rt:if test="${not empty ob.whitelist}">
+            var obText = "<sw360:out value='${ob.text}' stripNewlines='false' jsQuoting='true'/>";
+            obText = obText.replace(/[\r\n]/g, '<br>');
+            obText = obText.replace(/\t/g, '&ensp;&ensp;&ensp;&ensp;');
             licenseObligationJSON.push({
                 "obligationId": "<sw360:out value='${ob.id}'/>",
                 "obligationType": "<sw360:DisplayEnum value='${ob.obligationType}'/>",
                 "obligationTitle": "<sw360:out value='${ob.title}'/>",
-                "text": "<sw360:out value='${ob.text}'/>",
+                "text": obText,
             });
             </core_rt:if>
         </core_rt:forEach>
