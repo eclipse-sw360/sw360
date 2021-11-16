@@ -135,7 +135,7 @@ public class SpdxDocumentDatabaseHandler {
             return requestSummary.setRequestStatus(AddDocumentRequestStatus.DUPLICATE)
                             .setId(release.getSpdxId());
         }
-        spdx.setCreatedBy(release.getCreatedBy());
+        spdx.setCreatedBy(user.getEmail());
         SPDXDocumentRepository.add(spdx);
         String spdxId = spdx.getId();
         release.setSpdxId(spdxId);

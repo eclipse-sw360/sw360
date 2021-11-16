@@ -122,7 +122,7 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
             return requestSummary.setRequestStatus(AddDocumentRequestStatus.DUPLICATE)
                             .setId(spdxDocumentId);
         }
-        documentCreationInfo.setCreatedBy(spdxDocument.getCreatedBy());
+        documentCreationInfo.setCreatedBy(user.getEmail());
         SPDXDocumentCreationInfoRepository.add(documentCreationInfo);
         String documentCreationInfoId = documentCreationInfo.getId();
         spdxDocument.setSpdxDocumentCreationInfoId(documentCreationInfoId);
