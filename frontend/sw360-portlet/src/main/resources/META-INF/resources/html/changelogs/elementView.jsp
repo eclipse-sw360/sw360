@@ -387,6 +387,11 @@
 
             function highlightObject(fieldValuePrimary, fieldValueSecondary, primarySpanHightlighter, secondarySpanHighlighter, differentiateCommonObject, spaceForClosingBraces, indentlevel) {
                 for(key in fieldValuePrimary) {
+                    if (key === 'index') {
+                        delete fieldValuePrimary[key];
+                        delete fieldValueSecondary[key];
+                        continue;
+                    }
                     if(fieldValueSecondary[key] === null || fieldValueSecondary[key] === undefined) {
                         let highlighted = fieldValuePrimary[key];
                         if(typeof fieldValuePrimary[key] === 'object') {
