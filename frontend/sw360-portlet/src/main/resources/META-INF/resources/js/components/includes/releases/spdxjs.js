@@ -369,7 +369,7 @@ define('components/includes/releases/spdxjs', ['jquery'], function($) {
             return [result[0].toUpperCase()];
         }
 
-        return result;
+        return result.filter(function(v) { return v !=='' } );
     }
 
     function readAnnotator(typeTag) {
