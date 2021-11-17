@@ -2101,7 +2101,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
                         request.setAttribute(WebKeys.REDIRECT, redirectUrl.toString());
                         sendRedirect(request, response);
-                        SpdxPortlet.updateSPDX(request, response, user, releaseId);
+                        SpdxPortlet.updateSPDX(request, response, user, releaseId, false);
                     }
                 } else {
                     release = new Release();
@@ -2123,7 +2123,26 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                     AddDocumentRequestStatus status = summary.getRequestStatus();
                     switch(status){
                         case SUCCESS:
-                            // SpdxPortlet.updateSPDX(request, response, user, summary.getId());
+                            ObjectMapper objectMapper = new ObjectMapper();
+                            try {
+                                String spdxDocumentJson = objectMapper.writeValueAsString(generateSpdxDocument());
+                                request.setAttribute(SPDXDocument._Fields.TYPE.toString(), spdxDocumentJson);
+                            } catch (JsonProcessingException e) {
+                                e.printStackTrace();
+                            }
+                            try {
+                                String documentCreationInfoJson = objectMapper.writeValueAsString(generateDocumentCreationInformation());
+                                request.setAttribute(SPDXDocument._Fields.SPDX_DOCUMENT_CREATION_INFO_ID.toString(), documentCreationInfoJson);
+                            } catch (JsonProcessingException e) {
+                                e.printStackTrace();
+                            }
+                            try {
+                                String packageInfoJson = objectMapper.writeValueAsString(generatePackageInfomation());
+                                request.setAttribute(SPDXDocument._Fields.SPDX_PACKAGE_INFO_IDS.toString(), packageInfoJson);
+                            } catch (JsonProcessingException e) {
+                                e.printStackTrace();
+                            }
+                            SpdxPortlet.updateSPDX(request, response, user, summary.getId(), true);
                             response.setRenderParameter(RELEASE_ID, summary.getId());
                             String successMsg = "Release " + printName(release) + " added successfully";
                             SessionMessages.add(request, "request_processed", successMsg);

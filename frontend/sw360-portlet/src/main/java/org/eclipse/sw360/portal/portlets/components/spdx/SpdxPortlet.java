@@ -177,12 +177,21 @@ public abstract class SpdxPortlet {
         return packageInfos;
     }
 
-    public static void updateSPDX(ActionRequest request, ActionResponse response, User user, String releaseId) throws TException {
-        String spdxDocumentData = request.getParameter(SPDXDocument._Fields.TYPE.toString());
-        String documentCreationInfoData = request.getParameter(SPDXDocument._Fields.SPDX_DOCUMENT_CREATION_INFO_ID.toString());
-        String packageInfoData = request.getParameter(SPDXDocument._Fields.SPDX_PACKAGE_INFO_IDS.toString());
+    public static void updateSPDX(ActionRequest request, ActionResponse response, User user, String releaseId, boolean addNew) throws TException {
+        String spdxDocumentData;
+        String documentCreationInfoData;
+        String packageInfoData;
         String spdxDocumentId = "";
 
+        if (addNew) {
+            spdxDocumentData = (String) request.getAttribute(SPDXDocument._Fields.TYPE.toString());
+            documentCreationInfoData = (String) request.getAttribute(SPDXDocument._Fields.SPDX_DOCUMENT_CREATION_INFO_ID.toString());
+            packageInfoData = (String) request.getAttribute(SPDXDocument._Fields.SPDX_PACKAGE_INFO_IDS.toString());
+        } else {
+            spdxDocumentData = request.getParameter(SPDXDocument._Fields.TYPE.toString());
+            documentCreationInfoData = request.getParameter(SPDXDocument._Fields.SPDX_DOCUMENT_CREATION_INFO_ID.toString());
+            packageInfoData = request.getParameter(SPDXDocument._Fields.SPDX_PACKAGE_INFO_IDS.toString());
+        }
         if (!isNullOrEmpty(spdxDocumentData)) {
             SPDXDocument spdx = parseSPDXDocumentFromRequest(spdxDocumentData);
             SPDXDocumentService.Iface spdxClient = new ThriftClients().makeSPDXClient();
