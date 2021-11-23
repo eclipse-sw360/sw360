@@ -8,7 +8,7 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-FROM maven:3.6.3-openjdk-11-slim as builder
+FROM maven:3.8-eclipse-temurin-11 AS builder
 
 WORKDIR /app/build/sw360
 
@@ -26,7 +26,7 @@ RUN ./scripts/docker-config/install_scripts/build_couchdb_lucene.sh
 RUN ./scripts/docker-config/install_scripts/download_liferay_and_dependencies.sh
 
 
-FROM ubuntu:20.04
+FROM eclipse-temurin:11-jre
 
 WORKDIR /app/
 
@@ -55,7 +55,5 @@ RUN ./install-thrift.sh
 RUN ./install_init_postgres_script.sh
 
 RUN ./install_configure_couchdb.sh
-
-RUN DEBIAN_FRONTEND=noninteractive apt-get install openjdk-11-jdk -y --no-install-recommends
 
 ENTRYPOINT ./entry_point.sh && bash
