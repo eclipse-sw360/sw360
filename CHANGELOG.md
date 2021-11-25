@@ -4,6 +4,91 @@ This is the changelog file of the sw360 project. It starts with the first releas
 
 https://github.com/sw360/sw360portal/releases
 
+## sw360-14.0.0-M1
+
+This tag covers many corrections/bug fixes after the 13.4 release.
+
+This release provides features, muliple bug fixes for release 13.4, for example, new REST endpoints, new functions in the UI and changelog enable/disable from sw360.properties.
+
+### Migrations
+
+For existing installations, a data migration is required. Please go to the readme file in scripts/migrations to see more information:
+
+https://github.com/eclipse/sw360/blob/master/scripts/migrations/README.md
+
+For running the migrations scripts, you will need python and the couchdb package. Please note that you will need to change manually in the python file: the DRYRUN variable and the couchdb URL (if that is not on localhost or requires password or both).
+
+### Credits
+
+The following github users have contributed to the source code since the last release (in alphabetical order):
+
+```
+Abdul Kapti <abdul.kapti@siemens-healthineers.com>
+Anupam Ghosh <anupam.ghosh@siemens.com>
+Jaideep Palit <jaideep.palit@siemens.com>
+Kouki Hama <kouki1.hama@toshiba.co.jp>
+Michael C. Jaeger <michael.c.jaeger@siemens.com>
+ravi110336 <kumar.ravindra@siemens.com>
+Shi Qiu <shi1.qiu@toshiba.co.jp>
+Smruti Prakash Sahoo <smruti.sahoo@siemens.com>
+Tran Vu Quan <quan1.tranvu@toshiba.co.jp>
+```
+
+Please note that also many other persons usually contribute to the project with reviews, testing, documentations, conversations or presentations.
+
+### Features
+
+* `e1923ac3` feat(UI): import OSADL obligation information and update screen of Adding new obligation
+* `2b6b9a9d` feat(UI): CLI file clean up assistant
+* `3702de56` feat(rest): Added rest api to create duplicate of project
+* `8ff2748f` feat(RestAPI):Update the attachment status with the approver/rejecter Name and Group.
+* `e3d8122a` feat(ProjectUI): Add new values to Obligation status
+* `3bab5e99` feat(ui): Display,update vulnerability for linked projects in project details view
+* `8d1f96ff` feat(log): Added output processing of the change log
+* `a873ad83` feat(ReleaseUI): License to SourceFile Mapping
+* `533ace69` feat(rest): Add Rest API for linking release to release
+
+### Corrections
+
+* `ea72ce63` fix(ui): Fixed redirect page from Release Edit page to Release Details page
+* `ce9d9550` fix(changelog):Fixed the file permission issue for sw360 changelog.
+* `9ef38314` fix(rest): Change base url of health api from /actuator to /
+* `843f1f8d` fix(rest): Get component by name case insensitive
+* `96a59335` fix(rest): Create duplicate project clearing state should always be open and not copied
+* `fc1f1e39` fix(sw360ChangeLog):Configure the sw360ChangeLog path.
+* `d27527d3` fix(docker): Fixed cannot upload attachment more than 1 MB by Rest Api
+* `46e6eb18` fix(views): Optimize views for components
+* `2e8a9cc8` fix(views): Optimize views for releases
+* `21682a3a` fix(views): Optimize views to load large projects
+* `65719867` fix(rest): Fixed hateoas link not showing correct protocol
+* `0ed91d75` fix(ui): Links in ReadmeOss as HTMl are not rendered properly
+* `edeb13d2` fix(ui): fix the bug that attachments usages in project cannot show other line
+* `5bff785f` fix(rest): Update project vulnerabilities
+* `0202f9df` fix(rest): Fixed projects loading issue in REST
+* `62d8887b` fix(UI):Component details not shown for the Security Admin Role.
+* `1db9afda` fix(rest): Added new parameter luceneSearch to Get Project List Api, to get project list based on lucene search
+* `3305fc6b` fix(Japanese) : Update and modify Japanese translations
+* `2f85cf70` fix(projects): Fixed thrift timeout by optimizing projects loading
+* `aa8574eb` fix(upgradeVersion): Updated resource server properties for Spring 2.X
+* `a0f1861b` fix(upgrade version): fixed the test cases failure issue when generating the rest docs.
+* `033d912a` fix(upgradeVersion): Fixed Test case for authorization server with spring boot version upgrade   * Refactored code and removed commented lines
+* `71bf74bc` fix(upgradeVersion):Upgrade version.
+* `2e98d07d` fix(RestAPI):500 Internal server error from releases API.
+* `eb6192bc` fix(ui): Cleanup moderation request on deleting project/release/component
+* `57e08173` fix(ui): Changes in External urls in Project are not registered in Moderation Request. Closed Moderation Request doesnot show Proposed changes
+* `8b5ffecc` fix(Rest):make SW360 REST API Get Releases by Name Case-Insensitive.
+* `97a72951` fix(DBTestsFail): Migrating databasetest.properties to couchdb-test.properties.
+* `6c3c51ec` fix(log): Fix indentation issue in source code.
+* `4ab50904` fix(MyProjectErrorMessage):update the error message in UI for the project which is not accessible.
+* `d2f22b80` fix(ui): Fixed js error while  merge component/release with null additional data
+* `9c4d2f0d` fix(rest): Added exception processing for authorization
+* `af443442` fix(script): add password and user in couchdb-lucene.ini
+* `318d0923` fix(docker):Update couchdb3.1 ubuntu20.04 liferay7.3.4 postgresql12
+* `5ec1df6a` fix(ci) added new files to license check script
+* `26dc7333` fix(ui): Fixed create/update users with uppercase email or externalid
+* `db1c1a97` fix(ui): User should be able to edit group of project
+
+
 ## sw360-13.4.0-M1
 
 This tag covers many corrections and bug fixes after the 13.3 release. Th eproductive use of 13.3 has revealed a number of issues resulting from the big persistence layer switch.
