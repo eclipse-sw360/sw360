@@ -1540,4 +1540,16 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     public int getMyAccessibleProjects(User user) {
         return repository.getMyAccessibleProjectsCount(user);
     }
+
+    public ProjectData searchByGroup(String group, User user) {
+        return repository.searchByGroup(group, user);
+    }
+
+    public ProjectData searchByTag(String tag, User user) {
+        return repository.searchByTag(tag, user);
+    }
+
+    public ProjectData searchByType(String type, User user) {
+        return repository.searchByType(type, user);
+    }
 }

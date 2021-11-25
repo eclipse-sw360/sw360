@@ -39,6 +39,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectData;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -234,6 +235,24 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return sw360ProjectClient.searchByName(name, sw360User);
     }
 
+    public List<Project> searchProjectByGroup(String group, User sw360User) throws TException {
+        final ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        ProjectData projectData = sw360ProjectClient.searchByGroup(group, sw360User);
+        return getAllRequiredProjects(projectData, sw360User);
+    }
+
+    public List<Project> searchProjectByTag(String tag, User sw360User) throws TException {
+        final ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        ProjectData projectData = sw360ProjectClient.searchByTag(tag, sw360User);
+        return getAllRequiredProjects(projectData, sw360User);
+    }
+
+    public List<Project> searchProjectByType(String type, User sw360User) throws TException {
+        final ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        ProjectData projectData = sw360ProjectClient.searchByType(type, sw360User);
+        return getAllRequiredProjects(projectData, sw360User);
+    }
+
     public Set<String> getReleaseIds(String projectId, User sw360User, String transitive) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         if (Boolean.parseBoolean(transitive)) {
@@ -405,5 +424,18 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             throws TException {
         SW360Utils.copyLinkedObligationsForClonedProject(createDuplicateProject, sw360Project, getThriftProjectClient(),
                 user);
+    }
+
+    private List<Project> getAllRequiredProjects(ProjectData projectData, User sw360User) throws TException {
+        List<Project> listOfProjects = projectData.getFirst250Projects();
+        List<String> projectIdsOfRemainingProject = projectData.getProjectIdsOfRemainingProject();
+        if (CommonUtils.isNotEmpty(projectIdsOfRemainingProject)) {
+            for (String id : projectIdsOfRemainingProject) {
+                Project projectForUserById = getProjectForUserById(id, sw360User);
+                listOfProjects.add(projectForUserById);
+            }
+
+        }
+        return listOfProjects;
     }
 }

@@ -77,6 +77,11 @@ struct ProjectProjectRelationship {
     2: optional bool enableSvm = true;
 }
 
+struct ProjectData {
+    1: required i32 totalNumberOfProjects,
+    2: required list<Project> first250Projects,
+    3: optional list<string> projectIdsOfRemainingProject
+}
 struct Project {
 
     // General information
@@ -271,6 +276,21 @@ service ProjectService {
      * list of projects which are visible to the `user` and match the `name`
      */
     list<Project> searchByName(1: string name, 2: User user);
+
+    /**
+     * project data which are visible to the `user` and match the `group`
+     */
+    ProjectData searchByGroup(1: string group, 2: User user) throws (1: SW360Exception exp);
+
+    /**
+     * project data which are visible to the `user` and match the `tag`
+     */
+    ProjectData searchByTag(1: string tag, 2: User user) throws (1: SW360Exception exp);
+ 
+    /**
+     * project data which are visible to the `user` and match the `type`
+     */
+    ProjectData searchByType(1: string type, 2: User user) throws (1: SW360Exception exp);
 
     /**
      * list of short project summaries which are visible to the `user` and have `id` in releaseIdToUsage
