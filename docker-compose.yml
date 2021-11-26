@@ -1,0 +1,50 @@
+# Copyright BMW CarIT GmbH, 2021.
+#
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+
+version: '3.7'
+
+services:
+  sw360:
+    image: 'sw360:latest'
+    env_file:
+      - ./scripts/docker-config/default.docker.env
+    build:
+      context: .
+    container_name: sw360
+    depends_on:
+      - postgresdb
+      - couchdb
+    ports:
+      - "8080:8080"
+      - "11311:11311"
+    stdin_open: true
+    tty: true
+    volumes:
+      - ${SW360_DATA}/data/document_library:/app/sw360/data/document_library
+      - ${SW360_DATA}/etc:/etc/sw360
+  postgresdb:
+    image: 'postgres:13'
+    restart: always
+    volumes:
+      - ${POSTGRES_DATA_DIR}:/var/lib/postgresql/data/
+    env_file:
+      - ./scripts/docker-config/default.docker.env
+    ports:
+      - '5438:5432'
+    logging:
+      options:
+        max-size: 10m
+        max-file: "2"
+  couchdb:
+    image: couchdb
+    ports:
+      - 5984:5984
+    env_file:
+      - ./scripts/docker-config/default.docker.env
+    volumes:
+      - ${COUCHDB_DATA_DIR}:/opt/couchdb/data

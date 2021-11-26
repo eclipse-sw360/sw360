@@ -14,17 +14,17 @@
     <proxies>
         <proxy>
             <id>http-proxy</id>
-            <active>false</active>
+            <active>$PROXY_ENABLED</active>
             <protocol>http</protocol>
-            <host>ip_address</host>
-            <port>10</port>
+            <host>$PROXY_HTTP_HOST</host>
+            <port>$PROXY_PORT</port>
        </proxy>
        <proxy>
             <id>https-proxy</id>
-            <active>false</active>
+            <active>$PROXY_ENABLED</active>
             <protocol>https</protocol>
-            <host>ip_address</host>
-            <port>10</port>
+            <host>$PROXY_HTTPS_HOST</host>
+            <port>$PROXY_PORT</port>
         </proxy>
     </proxies>
 </settings>

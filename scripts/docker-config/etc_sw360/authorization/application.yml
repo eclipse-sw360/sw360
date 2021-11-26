@@ -14,7 +14,7 @@ server:
 
 # Connection to the couch databases. Will be used to store client credentials
 couchdb:
-  url: http://localhost:5984
+  url: http://couchdb:5984
   database: sw360oauthclients
   # if your couchdb does not use authentication, pls just don't use the settings for username and password
   username: admin

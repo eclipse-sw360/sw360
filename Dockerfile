@@ -1,5 +1,6 @@
 #
 # Copyright Siemens AG, 2020. Part of the SW360 Portal Project.
+# Copyright BMW CarIT GmbH, 2021.
 #
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
@@ -10,50 +11,126 @@
 
 FROM maven:3.8-eclipse-temurin-11 AS builder
 
-WORKDIR /app/build/sw360
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    automake \
+    bison \
+    build-essential \
+    curl \
+    flex \
+    git \
+    libboost-dev \
+    libboost-test-dev \
+    libboost-program-options-dev \
+    libevent-dev \
+    libtool \
+    libssl-dev \
+    pkg-config \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY . .
+# Configure proxy script
+COPY .tmp/mvn-proxy-settings.xml /root/.m2/settings.xml
 
-RUN ./scripts/install-thrift.sh
+#-------------------------------------
+# Thrift
+FROM builder AS thriftbuild
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get install git -y --no-install-recommends \
- && DEBIAN_FRONTEND=noninteractive apt-get install wget -y --no-install-recommends
+COPY deps/thrift-*.tar.gz /deps/
+COPY ./scripts/docker-config/install_scripts/build_thrift.sh build_thrift.sh
 
-RUN mvn -s /app/build/sw360/scripts/docker-config/mvn-proxy-settings.xml clean package -P deploy -Dtest=org.eclipse.sw360.rest.resourceserver.restdocs.* -DfailIfNoTests=false -Dbase.deploy.dir=. -Dliferay.deploy.dir=/app/build/sw360/deployables/deploy -Dbackend.deploy.dir=/app/build/sw360/deployables/webapps -Drest.deploy.dir=/app/build/sw360/deployables/webapps
+RUN ./build_thrift.sh \
+    && rm -rf /deps
 
-RUN ./scripts/docker-config/install_scripts/build_couchdb_lucene.sh
+#-------------------------------------
+# Couchdb-Lucene
+FROM builder as clucenebuild
 
-RUN ./scripts/docker-config/install_scripts/download_liferay_and_dependencies.sh
+COPY deps/couchdb* /deps/
+COPY ./scripts/docker-config/install_scripts/build_couchdb_lucene.sh build_clucene.sh
+
+RUN ./build_clucene.sh \
+    && rm -rf /deps
 
 
-FROM eclipse-temurin:11-jre
+#-------------------------------------
+# Main base container
+# We need use JDK, JRE is not enough as Liferay do runtime changes and require javac
+FROM eclipse-temurin:11-jdk as imagebase
 
 WORKDIR /app/
 
-USER root
+ARG LIFERAY_SOURCE="liferay-ce-portal-tomcat-7.3.4-ga5-20200811154319029.tar.gz"
 
-COPY ./scripts/install-thrift.sh .
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        tzdata \
+        gnupg2 \
+        && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /app/build/sw360/liferay-ce-portal-7.3.4-ga5 /app/liferay-ce-portal-7.3.4-ga5
+COPY deps/jars/* /deps/jars/
+COPY deps/liferay-ce* /deps/
 
-COPY --from=builder /app/build/sw360/deployables/webapps /app/liferay-ce-portal-7.3.4-ga5/tomcat-9.0.33/webapps
+COPY --from=thriftbuild /thrift-bin.tar.gz .
+RUN tar xzf thrift-bin.tar.gz -C / \
+    && rm thrift-bin.tar.gz
 
-COPY --from=builder /app/build/sw360/deployables/deploy /app/liferay-ce-portal-7.3.4-ga5/deploy
+# Unpack liferay as sw360 and link current tomcat version
+# to tomcat to make future proof updates
+RUN mkdir sw360 \
+    && tar xzf /deps/$LIFERAY_SOURCE -C sw360 --strip-components=1 \
+    && cp /deps/jars/* sw360/deploy \ 
+    && ln -s /app/sw360/tomcat-* /app/sw360/tomcat \
+    && rm -rf /deps
 
-COPY ./scripts/docker-config/portal-ext.properties /app/liferay-ce-portal-7.3.4-ga5
+COPY --from=clucenebuild /couchdb-lucene.war /app/sw360/tomcat/webapps/
 
-COPY ./scripts/docker-config/etc_sw360 /etc/sw360/
+#-------------------------------------
+# SW360
+# We build sw360 and create real image after everything is ready
+# So when decide to use as development, only this last stage
+# is triggered by buildkit images
 
-COPY ./scripts/docker-config/install_scripts .
+FROM builder AS sw360build
 
-COPY ./scripts/docker-config/setenv.sh /app/liferay-ce-portal-7.3.4-ga5/tomcat-9.0.33/bin
+COPY --from=thriftbuild /thrift-bin.tar.gz /deps/
+COPY .tmp/mvn-proxy-settings.xml /root/.m2/settings.xml
+RUN tar xzf /deps/thrift-bin.tar.gz -C /
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install  tzdata  -y --no-install-recommends
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        mkdocs \
+        python3-pip \
+        python3-wheel \
+        && rm -rf /var/lib/apt/lists/* \
+        && pip install mkdocs-material
 
-RUN ./install-thrift.sh
+COPY deps/sw360.tar /deps/
 
-RUN ./install_init_postgres_script.sh
+RUN tar xf /deps/sw360.tar \
+    && cd sw360 \
+    && mvn clean package \
+    -P deploy -Dtest=org.eclipse.sw360.rest.resourceserver.restdocs.* \
+    -DfailIfNoTests=false \
+    -Dbase.deploy.dir=. \
+    -Dliferay.deploy.dir=/sw360_deploy \
+    -Dbackend.deploy.dir=/sw360_tomcat_webapps \
+    -Drest.deploy.dir=/sw360_tomcat_webapps \
+    -Dhelp-docs=true \
+    && rm -rf /deps
 
-RUN ./install_configure_couchdb.sh
+# And the main final
+FROM imagebase
 
-ENTRYPOINT ./entry_point.sh && bash
+COPY --from=sw360build /sw360_deploy/* /app/sw360/deploy
+COPY --from=sw360build /sw360_tomcat_webapps/* /app/sw360/tomcat/webapps/
+COPY ./scripts/docker-config/portal-ext.properties /app/sw360
+# We will copy the scripts on entrypoint to persists, otherwise volume will override it
+COPY ./scripts/docker-config/etc_sw360 /etc_sw360
+COPY ./scripts/docker-config/entry_point.sh .
+COPY ./scripts/docker-config/setenv.sh /app/sw360/tomcat/bin
+
+STOPSIGNAL SIGQUIT
+
+ENTRYPOINT ./entry_point.sh
+

@@ -12,16 +12,26 @@
 # applies required patch and builds the war file.
 # -----------------------------------------------------------------------------
 
-build_couchdb_lucene() {
-  wget https://github.com/rnewson/couchdb-lucene/archive/v2.1.0.tar.gz -O couchdb-lucene.tar.gz
-  tar -xzf couchdb-lucene.tar.gz
-  cd couchdb-lucene-2.1.0
-  sed -i "s/allowLeadingWildcard=false/allowLeadingWildcard=true/" ./src/main/resources/couchdb-lucene.ini
-  sed -i "s/localhost:5984/admin:password@localhost:5984/" ./src/main/resources/couchdb-lucene.ini
-  wget https://raw.githubusercontent.com/sw360/sw360vagrant/master/shared/couchdb-lucene.patch
-  patch -p1 < couchdb-lucene.patch
-  mvn -s /app/build/sw360/scripts/docker-config/mvn-proxy-settings.xml clean install war:war
-  cp ./target/*.war /app/build/sw360/deployables/webapps/couchdb-lucene.war
-}
+VERSION=${THRIFT_VERSION:-2.1.0}
+CLUCENE_SOURCE="deps/couchdb-lucene-$VERSION.tar.gz"
+BUILDDIR=$(mktemp -d)
 
-build_couchdb_lucene
+[ ! -f "$CLUCENE_SOURCE" ] && exit 1
+[ ! -f "deps/couchdb-lucene.patch" ] && exit 1
+
+tar -xzf "$CLUCENE_SOURCE" --strip-components=1 -C "$BUILDDIR"
+cp deps/couchdb-lucene.patch "$BUILDDIR"
+
+cd "$BUILDDIR" || exit 1
+
+# Replace defaults
+sed -i "s/allowLeadingWildcard=false/allowLeadingWildcard=true/" ./src/main/resources/couchdb-lucene.ini
+sed -i "s/localhost:5984/admin:password@localhost:5984/" ./src/main/resources/couchdb-lucene.ini
+
+patch -p1 < couchdb-lucene.patch
+mvn clean install war:war
+cp ./target/*.war /couchdb-lucene.war
+
+# We remove the build dir to avoid keep the docker layer big
+cd || return
+rm -rf "$BUILDDIR"

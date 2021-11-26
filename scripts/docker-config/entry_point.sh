@@ -1,6 +1,7 @@
 #!/bin/bash
 # -----------------------------------------------------------------------------
 # Copyright Siemens AG, 2020. Part of the SW360 Portal Project.
+# Copyright BMW CarIT GmbH 2021
 #
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
@@ -9,28 +10,41 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 # This script is executed on startup of Docker container.
-# (execution of docker run cmd) starts couchdb, postgres and tomcat.
+# (execution of docker run cmd) starts couchdb and tomcat.
 # -----------------------------------------------------------------------------
 
+set -e
+
+wait_couchdb() {
+  # Wait for it to be up
+  until curl --noproxy couchdb -s http://couchdb:5984 >/dev/null 2>&1; do
+      sleep 1
+  done
+
+  # Couchdb docker no cluster
+  curl --noproxy couchdb -X PUT http://admin:password@couchdb:5984/_users
+  curl --noproxy couchdb -X PUT http://admin:password@couchdb:5984/_replicator
+  curl --noproxy couchdb -X PUT http://admin:password@couchdb:5984/_global_changes
+}
+
 start_sw360() {
-  /etc/init.d/couchdb restart
-  /etc/init.d/postgresql restart
-  cd /app/liferay-ce-portal-7.3.4-ga5/tomcat-9.0.33/bin/
+  # Init internal couchdb
+  #/etc/init.d/couchdb restart
+
+  cd /app/sw360/tomcat/bin/
   rm -rf ./indexes/*
   ./startup.sh
   tail_logs
 }
 
 stop_sw360() {
-  /app/liferay-ce-portal-7.3.4-ga5/tomcat-9.0.33/bin/shutdown.sh
-  tail -f --lines=500 /app/liferay-ce-portal-7.3.4-ga5/tomcat-9.0.33/logs/catalina.out &
+  /app/sw360/tomcat/bin/shutdown.sh
+  tail -f --lines=500 /app/sw360/tomcat/logs/catalina.out &
   sleep 20
   pkill -9 -f tail
   pkill -9 -f tomcat
-  cd /app/liferay-ce-portal-7.3.4-ga5/tomcat-9.0.33/webapps/
-  rm -rf *.war
-  /etc/init.d/couchdb stop
-  /etc/init.d/postgresql stop
+  rm -rf /app/sw360/tomcat/webapps/*.war
+
   echo "###############################################################################################################"
   echo "# SW360 server has stopped successfully."
   echo "# Logged into sw360 container."
@@ -42,10 +56,19 @@ stop_sw360() {
 
 tail_logs()
 {
-  tail -f --lines=500 /app/liferay-ce-portal-7.3.4-ga5/tomcat-9.0.33/logs/catalina.out &
-  read -r user_input
-  pkill -9 -f tail
+  tail -f --lines=500 /app/sw360/tomcat/logs/catalina.out &
 }
 
+# We catch the container end and call the termination
+trap 'stop_sw360' SIGTERM TERM SIGINT INT EXIT WINCH SIGWINCH
+
+# Copy etc scripts if not here yet
+if [ ! -f /etc/sw360/sw360.properties ]; then
+  cp -av /etc_sw360/* /etc/sw360/
+fi
+
+wait_couchdb
 start_sw360
-stop_sw360
+
+# Wait main container shut down
+wait $!
