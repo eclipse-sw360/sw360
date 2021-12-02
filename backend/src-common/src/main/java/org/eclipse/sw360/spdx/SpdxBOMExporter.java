@@ -18,6 +18,7 @@ import org.eclipse.sw360.datahandler.thrift.spdx.otherlicensinginformationdetect
 import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelements.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.*;
 import org.spdx.rdfparser.InvalidSPDXAnalysisException;
 import org.spdx.rdfparser.SpdxDocumentContainer;
@@ -50,6 +51,14 @@ import java.net.URISyntaxException;
 import java.util.*;
 import java.io.FileInputStream;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForSPDXDocument.*;
 public class SpdxBOMExporter {
     private static final Logger log = LogManager.getLogger(SpdxBOMExporter.class);
     private final SpdxBOMExporterSink sink;
@@ -61,45 +70,183 @@ public class SpdxBOMExporter {
 
     public RequestSummary exportSPDXFile(String releaseId, String outputFormat) throws SW360Exception, MalformedURLException, InvalidSPDXAnalysisException {
         RequestSummary requestSummary = new RequestSummary();
-        SpdxDocument doc = null;
-        List<String> message = new LinkedList<String>();
-        try {
-            log.info("Creating SpdxDocument object from sw360spdx...");
-            doc = createSpdxDocumentFromSw360Spdx(releaseId);
-            message = doc.verify();
-            requestSummary.setMessage(String.join("|||", message));
-        } catch (Exception e) {
-            log.error("Error create SpdxDocument: " + e.getMessage());
-            requestSummary.setMessage(e.getMessage());
-            return requestSummary.setRequestStatus(RequestStatus.FAILURE);
-        }
+        // SpdxDocument doc = null;
+        // List<String> message = new LinkedList<String>();
+        // try {
+        //     log.info("Creating SpdxDocument object from sw360spdx...");
+        //     doc = createSpdxDocumentFromSw360Spdx(releaseId);
+        //     message = doc.verify();
+        //     requestSummary.setMessage(String.join("|||", message));
+        // } catch (Exception e) {
+        //     log.error("Error create SpdxDocument: " + e.getMessage());
+        //     requestSummary.setMessage(e.getMessage());
+        //     return requestSummary.setRequestStatus(RequestStatus.FAILURE);
+        // }
 
         final String targetFileName = releaseId + "." + outputFormat.toLowerCase();
         log.info("Export to file: " + targetFileName);
-
-        if (outputFormat.equals("SPDX")) {
-            convertSpdxDocumentToTagFile(doc, targetFileName);
-            return requestSummary.setRequestStatus(RequestStatus.SUCCESS);
-        }
-
-        String sourceFileName = releaseId + ".spdx";
-        File sourceFile = convertSpdxDocumentToTagFile(doc, sourceFileName);
-        if (outputFormat.equals("RDF")) {
-            convertTagToRdf(sourceFile, targetFileName);
+        
+        if (outputFormat.equals("JSON")) {
+            creteSPDXJsonFomatFromSW360SPDX(releaseId);
+            requestSummary.setMessage("Message for verifing SPDX file");
             return requestSummary.setRequestStatus(RequestStatus.SUCCESS);
         } else {
-            // todo: can update when no need temporary file .rdf
-            try {
-                String rdfFileName = releaseId+".rdf";
-                convertTagToRdf(sourceFile, rdfFileName);
-                SpdxConverter.convert(rdfFileName, targetFileName);
-                return requestSummary.setRequestStatus(RequestStatus.SUCCESS);
-            } catch (SpdxConverterException e) {
-                e.printStackTrace();
-            }
+            log.info("No suppprt format" + outputFormat.toLowerCase() + ". It is will be updated");
         }
 
+
+        // if (outputFormat.equals("SPDX")) {
+        //     convertSpdxDocumentToTagFile(doc, targetFileName);
+        //     return requestSummary.setRequestStatus(RequestStatus.SUCCESS);
+        // }
+
+        // String sourceFileName = releaseId + ".spdx";
+        // File sourceFile = convertSpdxDocumentToTagFile(doc, sourceFileName);
+        // if (outputFormat.equals("RDF")) {
+        //     convertTagToRdf(sourceFile, targetFileName);
+        //     return requestSummary.setRequestStatus(RequestStatus.SUCCESS);
+        // } else {
+        //     // todo: can update when no need temporary file .rdf
+        //     try {
+        //         String rdfFileName = releaseId+".rdf";
+        //         convertTagToRdf(sourceFile, rdfFileName);
+        //         SpdxConverter.convert(rdfFileName, targetFileName);
+        //         return requestSummary.setRequestStatus(RequestStatus.SUCCESS);
+        //     } catch (SpdxConverterException e) {
+        //         e.printStackTrace();
+        //     }
+        // }
+
         return requestSummary.setRequestStatus(RequestStatus.FAILURE);
+    }
+
+    private boolean creteSPDXJsonFomatFromSW360SPDX(String releaseId) throws SW360Exception {
+        final SPDXDocument sw360SPDXDocument = getSpdxDocumentFromRelease(releaseId);
+        final PackageInformation sw360PackageInfo = getPackageInformationFromSpdxDocument(sw360SPDXDocument.getId());
+        final DocumentCreationInformation sw360CreationInfo = getDocCreationInfoFromSpdxDocument(sw360SPDXDocument.getId());
+        // creating JSONObject
+        JSONObject SPDXJson = new JSONObject();
+
+        Map<String, String> m = new LinkedHashMap<>();
+        JSONParser parser = new JSONParser();
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+        objectMapper.addMixInAnnotations(Annotations.class, AnnotationsMixin.class);
+        objectMapper.addMixInAnnotations(CheckSum.class, CheckSumMixin.class);
+        objectMapper.addMixInAnnotations(ExternalReference.class, ExternalReferenceMixin.class);
+        objectMapper.addMixInAnnotations(PackageInformation.class, PackageInformationMixin.class);
+        objectMapper.addMixInAnnotations(ExternalDocumentReferences.class, ExternalDocumentReferencesMixin.class);
+        objectMapper.addMixInAnnotations(SnippetInformation.class, SnippetInformationMixin.class);
+        objectMapper.addMixInAnnotations(SnippetRange.class, SnippetRangeMixin.class);
+        objectMapper.addMixInAnnotations(RelationshipsBetweenSPDXElements.class, RelationshipsBetweenSPDXElementsMixin.class);
+        objectMapper.addMixInAnnotations(OtherLicensingInformationDetected.class, OtherLicensingInformationDetectedMixin.class);
+        objectMapper.addMixInAnnotations(PackageVerificationCode.class, PackageVerificationCodeMixin.class);
+
+
+        try {
+            // put package infomation to SPDX json
+            JSONArray SPDXPackageInfo = new JSONArray();
+            JSONObject SW360SPDXPackageInfo = (JSONObject) parser.parse(objectMapper.writeValueAsString(sw360PackageInfo));
+            SW360SPDXPackageInfo.put("hasFiles", "Need to update");
+
+            JSONObject packageVerificationCode = new JSONObject();
+            JSONObject sw360packageVerificationCode = (JSONObject) parser.parse(objectMapper.writeValueAsString(sw360PackageInfo.getPackageVerificationCode()));
+            packageVerificationCode.put("packageVerificationCodeExcludedFiles", sw360packageVerificationCode.get("excludedFiles"));
+            packageVerificationCode.put("packageVerificationCodeValue", sw360packageVerificationCode.get("value"));
+            SW360SPDXPackageInfo.remove("packageVerificationCode");
+            SW360SPDXPackageInfo.put("packageVerificationCode", packageVerificationCode);
+
+            SPDXPackageInfo.add(SW360SPDXPackageInfo);
+            SPDXJson.put("packages", SPDXPackageInfo);
+
+            // put document creation infomation to SPDX json
+            // todo:
+            // comment -> documentComment
+
+            JSONObject SW360SPDXCreationInfo = (JSONObject) parser.parse(objectMapper.writeValueAsString(sw360CreationInfo));
+            System.out.println(SW360SPDXCreationInfo.toJSONString());
+            Set<String> keys = new HashSet<>(Arrays.asList("spdxVersion", "dataLicense", "SPDXID", "name", "documentNamespace", "externalDocumentRefs",
+            "documentComment"));
+
+            for (String key : keys) {
+                SPDXJson.put(key, SW360SPDXCreationInfo.get(key));
+            }
+
+            JSONObject creationInfo = new JSONObject();
+            creationInfo.put("comment", SW360SPDXCreationInfo.get("creatorComment"));
+            creationInfo.put("created", SW360SPDXCreationInfo.get("created"));
+            creationInfo.put("licenseListVersion", SW360SPDXCreationInfo.get("licenseListVersion"));
+
+            JSONArray SW360SPDXCreationInfoCreator = (JSONArray) parser.parse(objectMapper.writeValueAsString(sw360CreationInfo.getCreator()));
+            JSONArray creators = new JSONArray();
+            SW360SPDXCreationInfoCreator.forEach(item -> {
+                JSONObject obj = (JSONObject) item;
+                String type = (String) obj.get("type");
+                String value = (String) obj.get("value");
+                creators.add(type + ": " +value);
+            });
+            creationInfo.put("creators", creators);
+            SPDXJson.put("creationInfo", creationInfo);
+
+
+            // put spdx document to SPDX json
+            JSONObject SW360SPDXDocument = (JSONObject) parser.parse(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(sw360SPDXDocument));
+            System.out.println("----------------------------- SW360SPDXDocument Json: \n" +SW360SPDXDocument.toJSONString());
+            Set<String> keys1 = new HashSet<>(Arrays.asList("snippets", "relationships"));
+            
+            JSONArray snippets = (JSONArray) parser.parse(objectMapper.writeValueAsString(sw360SPDXDocument.getSnippets()));
+            snippets.forEach(item -> {
+                JSONObject snippet = (JSONObject) item;
+                JSONArray ranges = new JSONArray();
+
+                JSONArray snippetRanges = (JSONArray) snippet.get("snippetRanges");
+                snippetRanges.forEach(item1 -> {
+                    JSONObject rangeElement = (JSONObject) item1;
+                    JSONObject range = new JSONObject();
+                    if (rangeElement.get("rangeType").equals("LINE")) {
+                        JSONObject startPointer = new JSONObject();
+                        startPointer.put("lineNumber", rangeElement.get("startPointer"));
+                        startPointer.put("reference", rangeElement.get("reference"));
+                        range.put("startPointer", startPointer);
+
+                        JSONObject endPointer = new JSONObject();
+                        endPointer.put("lineNumber", rangeElement.get("endPointer"));
+                        endPointer.put("reference", rangeElement.get("reference"));
+                        range.put("endPointer", endPointer);
+                    } else {
+                        JSONObject startPointer = new JSONObject();
+                        startPointer.put("offset", rangeElement.get("startPointer"));
+                        startPointer.put("reference", rangeElement.get("reference"));
+                        range.put("startPointer", startPointer);
+
+                        JSONObject endPointer = new JSONObject();
+                        endPointer.put("offset", rangeElement.get("endPointer"));
+                        endPointer.put("reference", rangeElement.get("reference"));
+                        range.put("endPointer", endPointer);
+                    }
+                    ranges.add(range);
+                });
+                snippet.remove("snippetRanges");
+                snippet.put("ranges", ranges);
+            });
+            SPDXJson.put("snippets", snippets);
+
+            SPDXJson.put("relationships", (JSONArray) parser.parse(objectMapper.writeValueAsString(sw360SPDXDocument.getRelationships())));
+            SPDXJson.put("annotations", (JSONArray) parser.parse(objectMapper.writeValueAsString(sw360SPDXDocument.getAnnotations())));
+            SPDXJson.put("hasExtractedLicensingInfos", (JSONArray) parser.parse(objectMapper.writeValueAsString(sw360SPDXDocument.getOtherLicensingInformationDetecteds())));
+
+            PrintWriter pw = new PrintWriter(releaseId+".json");
+            pw.write(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(SPDXJson));
+            System.out.println("------- SPDX JSON -------:\n"  +objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(SPDXJson));
+
+            pw.flush();
+            pw.close();
+        } catch (ParseException | JsonProcessingException | FileNotFoundException e) {
+            log.error("Can not convert SW360 SPDX Document to Json");
+            e.printStackTrace();
+        }
+
+        return true;
     }
 
     private File convertSpdxDocumentToTagFile(SpdxDocument doc, String tagFileName) {
