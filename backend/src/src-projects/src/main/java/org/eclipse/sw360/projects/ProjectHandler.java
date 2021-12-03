@@ -25,6 +25,7 @@ import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectData;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
@@ -121,6 +122,30 @@ public class ProjectHandler implements ProjectService.Iface {
         assertUser(user);
 
         return handler.searchByName(name, user);
+    }
+
+    @Override
+    public ProjectData searchByGroup(String group, User user) throws SW360Exception {
+        assertNotEmpty(group);
+        assertUser(user);
+
+        return handler.searchByGroup(group, user);
+    }
+
+    @Override
+    public ProjectData searchByTag(String tag, User user) throws SW360Exception {
+        assertNotEmpty(tag);
+        assertUser(user);
+
+        return handler.searchByTag(tag, user);
+    }
+
+    @Override
+    public ProjectData searchByType(String type, User user) throws SW360Exception {
+        assertNotEmpty(type);
+        assertUser(user);
+
+        return handler.searchByType(type, user);
     }
 
     @Override

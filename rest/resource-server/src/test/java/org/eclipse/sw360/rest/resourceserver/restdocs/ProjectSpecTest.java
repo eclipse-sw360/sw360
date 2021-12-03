@@ -276,6 +276,9 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.getProjectForUserById(eq(projectForAtt.getId()), anyObject())).willReturn(projectForAtt);
         given(this.projectServiceMock.searchLinkingProjects(eq(project.getId()), anyObject())).willReturn(usedByProjectList);
         given(this.projectServiceMock.searchProjectByName(eq(project.getName()), anyObject())).willReturn(projectListByName);
+        given(this.projectServiceMock.searchProjectByTag(anyObject(), anyObject())).willReturn(new ArrayList<Project>(projectList));
+        given(this.projectServiceMock.searchProjectByType(anyObject(), anyObject())).willReturn(new ArrayList<Project>(projectList));
+        given(this.projectServiceMock.searchProjectByGroup(anyObject(), anyObject())).willReturn(new ArrayList<Project>(projectList));
         given(this.projectServiceMock.refineSearch(anyObject(), anyObject())).willReturn(projectListByName);
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), anyObject(), eq("false"))).willReturn(releaseIds);
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), anyObject(), eq("true"))).willReturn(releaseIdsTransitive);
