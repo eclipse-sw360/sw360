@@ -2031,11 +2031,10 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         if (paginationParameters.getSortingColumn().isPresent()) {
             sortParam = paginationParameters.getSortingColumn().get();
             if (sortParam == 1 && Integer.valueOf(paginationParameters.getEcho()) == 1) {
-                pageData.setSortColumnNumber(-1);
+                sortParam = -1;
             }
-        } else {
-            pageData.setSortColumnNumber(sortParam);
         }
+        pageData.setSortColumnNumber(sortParam);
 
         Map<PaginationData, List<Component>> pageDataComponentList = getFilteredComponentList(request, pageData);
 
