@@ -42,6 +42,8 @@ import org.eclipse.sw360.mail.MailUtil;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.spdx.SpdxBOMExporter;
+import org.eclipse.sw360.spdx.SpdxBOMExporterSink;
 import org.eclipse.sw360.spdx.SpdxBOMImporter;
 import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
 import org.spdx.rdfparser.InvalidSPDXAnalysisException;
@@ -1526,4 +1528,22 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         clearingStatusList.add(row);
         return row;
     }
+
+    public RequestSummary exportSBom(User user, String projectId, String outputFormat, String projectUrl) throws SW360Exception {
+        RequestSummary requestSummary = new RequestSummary();
+
+        try {
+            final SpdxBOMExporterSink spdxBOMExporterSink = new SpdxBOMExporterSink(user, this, componentDatabaseHandler);
+            final SpdxBOMExporter spdxBOMExporter = new SpdxBOMExporter(spdxBOMExporterSink);
+            try {
+                return spdxBOMExporter.exportProjectSBomFile(user, projectId, outputFormat, projectUrl);
+            } catch (InvalidSPDXAnalysisException e) {
+                e.printStackTrace();
+            }
+        } catch (IOException e) {
+            throw new SW360Exception(e.getMessage());
+        }
+        return requestSummary.setRequestStatus(RequestStatus.FAILURE);
+    }
+
 }

@@ -285,7 +285,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         try {
             if (outputFormat.equals("RDF")) {
                 Files.delete(Paths.get(releaseId + ".spdx"));
-            } else if (!outputFormat.equals("SPDX")) {
+            } else if (outputFormat.equals("SPDX")) {
                 Files.delete(Paths.get(releaseId + ".spdx"));
                 Files.delete(Paths.get(releaseId + ".rdf"));
             }

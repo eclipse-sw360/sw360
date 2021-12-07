@@ -446,4 +446,10 @@ service ProjectService {
      * get clearing state information for list view
      */
     list<map<string,string>> getClearingStateInformationForListView(1:string projectId, 2: User user) throws (1: SW360Exception exp);
+
+
+    /**
+     * parse a bom file and write the information to SW360
+     **/
+    RequestSummary exportSBom(1: User user, 2:string projectId, 3:string outputFormat, 4:string projectUrl);
 }

@@ -374,4 +374,15 @@ public class ProjectHandler implements ProjectService.Iface {
         assertNotNull(projectId);
         return handler.getClearingStateInformationForListView(projectId,user);
     }
+
+    @Override
+    public RequestSummary exportSBom(User user, String projectId, String outputFormat, String projectUrl) throws TException {
+        assertUser(user);
+        assertId(projectId);
+        assertNotEmpty(outputFormat);
+        assertValidUrl(projectUrl);
+        return handler.exportSBom(user, projectId, outputFormat, projectUrl);
+    }
+
+
 }

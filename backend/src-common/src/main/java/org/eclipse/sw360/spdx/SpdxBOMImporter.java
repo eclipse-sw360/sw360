@@ -11,6 +11,7 @@
  */
 package org.eclipse.sw360.spdx;
 
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -40,6 +41,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.InputStream;
+import java.lang.reflect.Array;
 import java.net.MalformedURLException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -829,5 +831,10 @@ public class SpdxBOMImporter {
 
     private String[] verifyOrSetDefault(String[] values) {
         return (values != null && values.length > 0) ? values : new String[0];
+    }
+
+
+    private <T> T[] verifyOrSetDefault(T[] values) {
+        return (values != null && values.length > 0) ? values : (T[]) Array.newInstance(values.getClass(), 0);
     }
 }

@@ -75,9 +75,13 @@ import javax.portlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URLConnection;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.*;
@@ -244,6 +248,10 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             addLicenseToLinkedReleases(request, response);
         } else if (isGenericAction(action)) {
             dealWithGenericAction(request, response, action);
+        } else if (action.equals("export-project-sbom")) {
+            exportSBom(request, response);
+        } else if (action.equals("download-project-sbom")) {
+            downloadSBom(request, response);
         } else if (PortalConstants.LOAD_CHANGE_LOGS.equals(action) || PortalConstants.VIEW_CHANGE_LOGS.equals(action)) {
             ChangeLogsPortletUtils changeLogsPortletUtilsPortletUtils = PortletUtils.getChangeLogsPortletUtils(thriftClients);
             JSONObject dataForChangeLogs = changeLogsPortletUtilsPortletUtils.serveResourceForChangeLogs(request,
@@ -274,6 +282,71 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             request.setAttribute(LICENSE_OBLIGATION_DATA, loadLicenseObligation(request));
             include("/html/projects/includes/projects/licenseObligations.jsp", request, response,
                     PortletRequest.RESOURCE_PHASE);
+        }
+    }
+
+    private void downloadSBom(ResourceRequest request, ResourceResponse response) {
+        final ProjectService.Iface projectClient = thriftClients.makeProjectClient();
+        String projectId = request.getParameter(PortalConstants.PROJECT_ID);
+        String outputFormat = "RDF"; //request.getParameter(PortalConstants.WHAT);
+        User user = UserCacheHolder.getUserFromRequest(request);
+        String filename = projectId + "." + outputFormat.toLowerCase();
+        String exportFileName = null;
+
+        if (PortalConstants.ACTION_CANCEL.equals(request.getParameter(PortalConstants.ACTION_CANCEL))) {
+            deleteFileExport(outputFormat, projectId, filename);
+            return;
+        }
+
+        try {
+            log.info("Download SPDX file");
+            Project project = projectClient.getProjectById(projectId, user);
+            exportFileName = project.getName().replaceAll("[\\/:*?\"<>|\\s]","_")
+                + "_" + project.getVersion().replaceAll("[\\/:*?\"<>|\\s]","_")
+                + "_" + SW360Utils.getCreatedOn() + "." + outputFormat.toLowerCase();
+            InputStream inputStream = new FileInputStream(filename);
+            PortletResponseUtil.sendFile(request, response, exportFileName, inputStream, CONTENT_TYPE_OPENXML_SPREADSHEET);
+            log.info("Download SPDX file success !!!");
+        } catch (IOException | TException e) {
+            log.error("Failed to download SPDX file.", e);
+            e.printStackTrace();
+        }
+        deleteFileExport(outputFormat, projectId, filename);
+    }
+
+
+    private void exportSBom(ResourceRequest request, ResourceResponse response) {
+        final ProjectService.Iface projectClient = thriftClients.makeProjectClient();
+        String projectId = request.getParameter(PROJECT_ID);
+        LiferayPortletURL projectUrl = createDetailLinkTemplate(request);
+        projectUrl.setParameter(PROJECT_ID, projectId);
+        projectUrl.setParameter(PAGENAME, PAGENAME_DETAIL);
+        String outputFormat = request.getParameter(PortalConstants.WHAT);
+        User user = UserCacheHolder.getUserFromRequest(request);
+        System.out.println("inside export sbom for preoject");
+        try {
+            final RequestSummary requestSummary = projectClient.exportSBom(user, projectId, outputFormat, projectUrl.toString());
+            renderRequestSummary(request, response, requestSummary);
+        } catch (TException e) {
+            log.error("Failed to export SPDX file.", e);
+            e.printStackTrace();
+        }
+    }
+
+
+    // delete file after user download
+    private void deleteFileExport(String outputFormat, String releaseId, String filename) {
+        try {
+            if (outputFormat.equals("RDF")) {
+                Files.delete(Paths.get(releaseId + ".spdx"));
+            } else if (outputFormat.equals("SPDX")) {
+                Files.delete(Paths.get(releaseId + ".spdx"));
+                Files.delete(Paths.get(releaseId + ".rdf"));
+            }
+            Files.delete(Paths.get(filename));
+        } catch (IOException e) {
+                e.printStackTrace();
+                log.error("Failed to delete files.");
         }
     }
 

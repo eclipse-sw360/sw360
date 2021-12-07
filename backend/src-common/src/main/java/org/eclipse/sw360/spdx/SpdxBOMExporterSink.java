@@ -25,6 +25,7 @@ import org.eclipse.sw360.datahandler.db.spdx.packageinfo.SpdxPackageInfoDatabase
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import java.net.MalformedURLException;
@@ -50,6 +51,10 @@ public class SpdxBOMExporterSink {
 
     public SPDXDocument getSPDXDocument(String id)  throws SW360Exception {
         return spdxDocumentDatabaseHandler.getSPDXDocumentById(id, user);
+    }
+
+    public Project getProject(String id) throws SW360Exception {
+        return projectDatabaseHandler.getProjectById(id, user);
     }
 
     public Release getRelease(String id) throws SW360Exception {

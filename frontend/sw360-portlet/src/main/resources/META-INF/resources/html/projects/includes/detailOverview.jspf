@@ -18,6 +18,7 @@
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.LOAD_OBLIGATIONS_VIEW%>"/>
     <portlet:param name="<%=PortalConstants.DOCUMENT_ID%>" value="${docid}"/>
 </portlet:resourceURL>
+<div class="dialogs auto-dialogs"></div>
 <div class="container" style="display: none;">
 	<div class="row">
 		<div class="col-3 sidebar">
@@ -71,9 +72,21 @@
 									<liferay-ui:message key="edit.project" />
 								</button>
 							</div>
-                                                        <div class="btn-group" role="group">
-                                                            <button type="button" class="btn btn-secondary" id="linkToProjectButton"><liferay-ui:message key="link.to.projects" /></button>
-                                                        </div>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-secondary" id="linkToProjectButton"><liferay-ui:message key="link.to.projects" /></button>
+                            </div>
+                            <div id="sbomBtnExportGroup" class="btn-group" role="group">
+                                <button id="btnExport" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <liferay-ui:message key="export.sbom" />
+                                    <clay:icon symbol="caret-bottom" />
+                                </button>
+                                <div class="dropdown-menu" aria-labelledby="btnExport">
+                                    <button class="dropdown-item export-sbom" type="button" data-type="SPDX" data-project-id="${project.id}">Tag</button>
+                                    <button class="dropdown-item export-sbom" type="button" data-type="RDF" data-project-id="${project.id}">RDF/XML</button>
+                                    <button class="dropdown-item export-sbom" type="button" data-type="JSON" data-project-id="${project.id}">JSON</button>
+                                    <button class="dropdown-item export-sbom" type="button" data-type="XLS" data-project-id="${project.id}">XLS</button>
+                                </div>
+                            </div>
 							 <div class="list-group-companion" data-belong-to="tab-licenseClearing">
 								<div class="nav nav-pills justify-content-center bg-light font-weight-bold d-inline-flex" id="pills-tab" role="tablist">
 									<a class="nav-item nav-link active" id="pills-tree-tab" data-toggle="pill" href="#pills-treeView" role="tab" aria-controls="pills-treeView" aria-selected="true">
@@ -244,24 +257,117 @@
 
 <jsp:include page="/html/projects/includes/searchProjects.jsp" />
 
-<div class="dialogs auto-dialogs"></div>
-
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
 	document.title = $("<span></span>").html("<sw360:ProjectName project="${project}"/> - " + document.title).text();
 
-	require(['jquery', 'modules/listgroup', 'utils/link'], function($, listgroup, linkutil) {
+	require(['jquery', 'modules/listgroup', 'utils/link', 'modules/button', 'modules/listgroup', 'modules/dialog'], function($, listgroup, linkutil,  button, listgroup, dialog) {
 		listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
 	    if (window.history.replaceState) {
 	        window.history.replaceState(null, document.title, linkutil.to('project', 'show', "${project.id}"));
 	    }
-	});
-	
+        var portletURL
+	$('#sbomBtnExportGroup button.dropdown-item').on('click', function(event) {
+        $('#btnExport').prop('disabled', true)
+        var $dialog;
+        var projectId = $(event.currentTarget).data().projectId;
+        var type = $(event.currentTarget).data('type');
+
+        function downloadFileExport (callback) {
+            $('#confirmDialog').hide()
+            $('#confirmDialog').modal('hide');
+            var portletURLDownload = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>')
+                .setParameter('<%=PortalConstants.ACTION%>', 'download-project-sbom')
+                .setParameter('<%=PortalConstants.WHAT%>', type)
+                .setParameter('<%=PortalConstants.PROJECT_ID%>', projectId);
+            window.location.href = portletURLDownload.toString();
+        }
+
+        $.ajax({
+            url: exportSBom(type, projectId),
+            cache: false,
+            dataType: "json",
+        }).done(function (data) {
+            $('#btnExport').prop('disabled', false)
+            $dialog = dialog.confirm(
+                null,
+                'question-circle',
+                '<liferay-ui:message key="export.sbom" />',
+                '<p><liferay-ui:message key="no.warning.error.export.sbom" />' +
+                '<p style="display: none;"><liferay-ui:message key="export.sbom.have.some.warning" />:' +
+                '<p style="display: none;"><liferay-ui:message key="export.sbom.have.some.error" />:' +
+                '<div style="display: none;" class="alert alert-warning" id="verifySPDX"></div>',
+                '<liferay-ui:message key="export" />',
+                {},
+                function(submit, callback) {
+                    downloadFileExport(callback);
+                }
+            );
+            $('#confirmDialog button.btn.btn-primary').prop('disabled', true)
+            var log = data.message.replaceAll('|||','<br/> - ')
+            if (log != null) {
+                $('#confirmDialog > div > div > div.modal-body > p:nth-child(1)').attr("style","display: none;")
+                $('#verifySPDX').attr("style","overflow: auto; max-height: 20rem;")
+                $('#verifySPDX').append("<strong> - " +log+ "</strong>")
+            }
+            if (data.result == 'SUCCESS') {
+                $('#confirmDialog > div > div > div.modal-body > p:nth-child(2)').attr("style","color: orange;")
+                $('#confirmDialog > div > div > div.modal-body > div.alert').removeClass('alert-warning').addClass('alert-success');
+                $('#confirmDialog button.btn.btn-primary').prop('disabled', false)
+                cancelExport()
+            } else {
+                $('#confirmDialog > div > div > div.modal-body > p:nth-child(3)').attr("style","color: red;")
+            }
+        });
+
+        function cancelExport() {
+            var portletURLCancel = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>')
+                    .setParameter('<%=PortalConstants.ACTION%>', 'download-project-sbom')
+                    .setParameter('<%=PortalConstants.WHAT%>', type)
+                    .setParameter('<%=PortalConstants.PROJECT_ID%>', projectId)
+                    .setParameter('<%=PortalConstants.ACTION_CANCEL%>', 'action_cancel');
+            $('#confirmDialog > div > div > div.modal-footer > button.btn.btn-light').on('click', function(event) {
+                $.ajax({
+                    url: portletURLCancel.toString(),
+                    cache: false,
+                })
+            })
+            $('#confirmDialog > div > div > div.modal-header > button').on('click', function(event) {
+                $.ajax({
+                    url: portletURLCancel.toString(),
+                    cache: false,
+                })
+            })
+        }
+    });
+
+    // Export Spreadsheet action
+    function exportSBom(type, projectId){
+        portletURL = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>')
+                .setParameter('<%=PortalConstants.ACTION%>', 'export-project-sbom')
+                .setParameter('<%=PortalConstants.WHAT%>', type)
+                .setParameter('<%=PortalConstants.PROJECT_ID%>', projectId);
+        return portletURL.toString()
+    }
+    function doAjax(url, successCallback, errorCallback) {
+        $.ajax({
+            type: 'POST',
+            url: url,
+            success: function (data) {
+                successCallback(data);
+            },
+            error: function () {
+                errorCallback();
+            }
+        });
+    }
 	$.ajax({
         url: '<%=obligationviewurl%>',
         type: "GET",
         success: function(result){
             $("#tab-Obligations").html("").append(result);
       }});
+    });
+
 </script>

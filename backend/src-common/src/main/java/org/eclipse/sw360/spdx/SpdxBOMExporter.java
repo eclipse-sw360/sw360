@@ -11,15 +11,18 @@
 package org.eclipse.sw360.spdx;
 
 import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.spdx.annotations.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.otherlicensinginformationdetected.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelements.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.*;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.*;
+import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.spdx.rdfparser.InvalidSPDXAnalysisException;
 import org.spdx.rdfparser.SpdxDocumentContainer;
 import org.spdx.rdfparser.model.*;
@@ -34,11 +37,16 @@ import org.spdx.tools.TagToRDF;
 
 import org.spdx.tag.CommonCode;
 import org.spdx.rdfparser.license.ExtractedLicenseInfo;
+import org.spdx.rdfparser.license.LicenseInfoFactory;
+import org.spdx.rdfparser.license.SpdxListedLicense;
+import org.spdx.rdfparser.license.SpdxNoAssertionLicense;
 import org.spdx.rdfparser.SpdxPackageVerificationCode;
 import org.spdx.rdfparser.SpdxRdfConstants;
 import org.spdx.rdfparser.license.AnyLicenseInfo;
+import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.thrift.TException;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -49,6 +57,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
+
 import java.io.FileInputStream;
 
 import org.json.simple.JSONArray;
@@ -58,7 +67,11 @@ import org.json.simple.parser.ParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+
+import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForSPDXDocument.*;
+
 public class SpdxBOMExporter {
     private static final Logger log = LogManager.getLogger(SpdxBOMExporter.class);
     private final SpdxBOMExporterSink sink;
@@ -68,24 +81,53 @@ public class SpdxBOMExporter {
         this.sink = sink;
     }
 
+    public RequestSummary exportProjectSBomFile(User user, String projectId, String outputFormat, String projectUrl) throws SW360Exception, MalformedURLException, InvalidSPDXAnalysisException {
+        RequestSummary requestSummary = new RequestSummary();
+        String sourceFileName = projectId + ".spdx";
+        SpdxDocument spdxDoc = null;
+        Project project = sink.getProject(projectId);
+        final String targetFileName = projectId + "." + outputFormat.toLowerCase();
+        try {
+            spdxDoc = createSpdxDocumentFromProject(project, projectUrl);
+            File sourceFile = convertSpdxDocumentToTagFile(spdxDoc, sourceFileName);
+            convertTagToRdf(sourceFile, targetFileName);
+            requestSummary.setMessage("Your SPDX rdf/xml SBOM is ready to download. Please click Export to download!");
+            return requestSummary.setRequestStatus(RequestStatus.SUCCESS);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return requestSummary.setRequestStatus(RequestStatus.FAILURE);
+    }
+
     public RequestSummary exportSPDXFile(String releaseId, String outputFormat) throws SW360Exception, MalformedURLException, InvalidSPDXAnalysisException {
         RequestSummary requestSummary = new RequestSummary();
-        // SpdxDocument doc = null;
-        // List<String> message = new LinkedList<String>();
-        // try {
-        //     log.info("Creating SpdxDocument object from sw360spdx...");
-        //     doc = createSpdxDocumentFromSw360Spdx(releaseId);
-        //     message = doc.verify();
-        //     requestSummary.setMessage(String.join("|||", message));
-        // } catch (Exception e) {
-        //     log.error("Error create SpdxDocument: " + e.getMessage());
-        //     requestSummary.setMessage(e.getMessage());
-        //     return requestSummary.setRequestStatus(RequestStatus.FAILURE);
-        // }
+        SpdxDocument doc = null;
+        List<String> message = new LinkedList<String>();
+        try {
+            log.info("Creating SpdxDocument object from sw360spdx...");
+            doc = createSpdxDocumentFromSw360Spdx(releaseId);
+            message = doc.verify();
+            requestSummary.setMessage(String.join("|||", message));
+        } catch (Exception e) {
+            log.error("Error create SpdxDocument: " + e.getMessage());
+            requestSummary.setMessage(e.getMessage());
+            return requestSummary.setRequestStatus(RequestStatus.FAILURE);
+        }
 
         final String targetFileName = releaseId + "." + outputFormat.toLowerCase();
         log.info("Export to file: " + targetFileName);
-        
+
+        if (outputFormat.equals("SPDX")) {
+            convertSpdxDocumentToTagFile(doc, targetFileName);
+            return requestSummary.setRequestStatus(RequestStatus.SUCCESS);
+        }
+        String sourceFileName = releaseId + ".spdx";
+        File sourceFile = convertSpdxDocumentToTagFile(doc, sourceFileName);
+        if (outputFormat.equals("RDF")) {
+            String rdfFileName = releaseId + ".rdf";
+            convertTagToRdf(sourceFile, rdfFileName);
+            return requestSummary.setRequestStatus(RequestStatus.SUCCESS);
+        }
         if (outputFormat.equals("JSON")) {
             creteSPDXJsonFomatFromSW360SPDX(releaseId);
             requestSummary.setMessage("Message for verifing SPDX file");
@@ -93,30 +135,6 @@ public class SpdxBOMExporter {
         } else {
             log.info("No suppprt format" + outputFormat.toLowerCase() + ". It is will be updated");
         }
-
-
-        // if (outputFormat.equals("SPDX")) {
-        //     convertSpdxDocumentToTagFile(doc, targetFileName);
-        //     return requestSummary.setRequestStatus(RequestStatus.SUCCESS);
-        // }
-
-        // String sourceFileName = releaseId + ".spdx";
-        // File sourceFile = convertSpdxDocumentToTagFile(doc, sourceFileName);
-        // if (outputFormat.equals("RDF")) {
-        //     convertTagToRdf(sourceFile, targetFileName);
-        //     return requestSummary.setRequestStatus(RequestStatus.SUCCESS);
-        // } else {
-        //     // todo: can update when no need temporary file .rdf
-        //     try {
-        //         String rdfFileName = releaseId+".rdf";
-        //         convertTagToRdf(sourceFile, rdfFileName);
-        //         SpdxConverter.convert(rdfFileName, targetFileName);
-        //         return requestSummary.setRequestStatus(RequestStatus.SUCCESS);
-        //     } catch (SpdxConverterException e) {
-        //         e.printStackTrace();
-        //     }
-        // }
-
         return requestSummary.setRequestStatus(RequestStatus.FAILURE);
     }
 
@@ -127,20 +145,19 @@ public class SpdxBOMExporter {
         // creating JSONObject
         JSONObject SPDXJson = new JSONObject();
 
-        Map<String, String> m = new LinkedHashMap<>();
         JSONParser parser = new JSONParser();
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
-        objectMapper.addMixInAnnotations(Annotations.class, AnnotationsMixin.class);
-        objectMapper.addMixInAnnotations(CheckSum.class, CheckSumMixin.class);
-        objectMapper.addMixInAnnotations(ExternalReference.class, ExternalReferenceMixin.class);
-        objectMapper.addMixInAnnotations(PackageInformation.class, PackageInformationMixin.class);
-        objectMapper.addMixInAnnotations(ExternalDocumentReferences.class, ExternalDocumentReferencesMixin.class);
-        objectMapper.addMixInAnnotations(SnippetInformation.class, SnippetInformationMixin.class);
-        objectMapper.addMixInAnnotations(SnippetRange.class, SnippetRangeMixin.class);
-        objectMapper.addMixInAnnotations(RelationshipsBetweenSPDXElements.class, RelationshipsBetweenSPDXElementsMixin.class);
-        objectMapper.addMixInAnnotations(OtherLicensingInformationDetected.class, OtherLicensingInformationDetectedMixin.class);
-        objectMapper.addMixInAnnotations(PackageVerificationCode.class, PackageVerificationCodeMixin.class);
+        objectMapper.addMixIn(Annotations.class, AnnotationsMixin.class);
+        objectMapper.addMixIn(CheckSum.class, CheckSumMixin.class);
+        objectMapper.addMixIn(ExternalReference.class, ExternalReferenceMixin.class);
+        objectMapper.addMixIn(PackageInformation.class, PackageInformationMixin.class);
+        objectMapper.addMixIn(ExternalDocumentReferences.class, ExternalDocumentReferencesMixin.class);
+        objectMapper.addMixIn(SnippetInformation.class, SnippetInformationMixin.class);
+        objectMapper.addMixIn(SnippetRange.class, SnippetRangeMixin.class);
+        objectMapper.addMixIn(RelationshipsBetweenSPDXElements.class, RelationshipsBetweenSPDXElementsMixin.class);
+        objectMapper.addMixIn(OtherLicensingInformationDetected.class, OtherLicensingInformationDetectedMixin.class);
+        objectMapper.addMixIn(PackageVerificationCode.class, PackageVerificationCodeMixin.class);
 
 
         try {
@@ -336,6 +353,77 @@ public class SpdxBOMExporter {
 		}
     }
 
+    private User getUserByEmail(String email) {
+        UserService.Iface client = new ThriftClients().makeUserClient();
+        try {
+            return client.getByEmail(email);
+        } catch (TException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private final String MITCopyRight = "The above copyright notice and this permission notice (including the next paragraph) shall be included in all copies or substantial portions of the Software.";
+
+    private SpdxDocument createSpdxDocumentFromProject(Project project, String projectUrl) throws SW360Exception, InvalidSPDXAnalysisException {
+        SpdxDocumentContainer documentContainer = new SpdxDocumentContainer(projectUrl, "SPDX-2.2");
+        SpdxDocument spdxDocument = documentContainer.getSpdxDocument();
+        spdxDocument.setSpecVersion("SPDX-2.2");
+
+        Optional<SpdxListedLicense> dataLicense = getSpdxLicense("CC0-1.0");
+        spdxDocument.setDataLicense(dataLicense.get());
+        String projectName = new StringBuilder(project.getName().replaceAll(" ", "-")).append(StringUtils.isNotBlank(project.getVersion()) ? "-"+ project.getVersion() : "").toString();
+        spdxDocument.setName(projectName);
+        User user = getUserByEmail(project.getCreatedBy());
+        String[] creators = {"Person: " + SW360Utils.printFullname(user)};
+        spdxDocument.getCreationInfo().setCreators(creators);
+        spdxDocument.getCreationInfo().setCreated(project.getCreatedOn()+"T01:16:48Z");
+        SpdxNoAssertionLicense concludedLicense = new SpdxNoAssertionLicense();
+        SpdxNoAssertionLicense declaredLicense = new SpdxNoAssertionLicense();
+        List<Relationship> spdxProjectRelations = new ArrayList<>();
+        SpdxPackage projectPackage = new SpdxPackage(project.getName().replaceAll(" ", "-"), null, null, null,
+                concludedLicense, null, MITCopyRight, null, declaredLicense, null, project.getDescription(), projectUrl, null, null, null, null, null, null, null, null, project.getVersion(), false, null);
+        Relationship relationship = new Relationship(projectPackage, RelationshipType.DESCRIBES, "");
+        projectPackage.setId("SPDXRef-"+project.getName().replaceAll(" ", "-"));
+        spdxProjectRelations.add(relationship);
+        Set<String> releaseIds = new HashSet<String>();
+        if (!CommonUtils.isNullOrEmptyMap(project.getReleaseIdToUsage()) && CommonUtils.isNotEmpty(project.getReleaseIdToUsage().keySet())) {
+            releaseIds = project.getReleaseIdToUsage().keySet();
+        }
+        ComponentService.Iface client = new ThriftClients().makeComponentClient();
+        List<Release> releases = new ArrayList<Release>();
+        try {
+            releases = client.getReleasesByIdsForExport(releaseIds);
+        } catch (TException e) {
+            e.printStackTrace();
+        }
+        for (Release release : releases) {
+            // String releaseVersion = StringUtils.isNotBlank(release.getVersion()) ? "-"+ release.getVersion() : "";
+            // String releaseName = release.getName() + releaseVersion;
+            //            SpdxPackage releasePackage = new SpdxPackage(releaseName, null, null, null,
+            //                    concludedLicense, null, Apache2CopyRight, null, declaredLicense, null, null, "https://github.com/spdx", null, null, null, null, null, null, null, null, release.getVersion(), false, null);
+            //            Relationship releaseRelationship = new Relationship(releasePackage, RelationshipType.CONTAINS, "");
+            //            releasePackage.setId("SPDXRef-"+release.getName().replaceAll(" ", "-"));
+            //            projectPackage.addRelationship(releaseRelationship);
+
+            // new approach
+            SpdxDocument doc = createSpdxDocumentFromSw360Spdx(release.getId());
+            SpdxPackage pkg = doc.getSpdxPackage();
+            List<Relationship> relations = Arrays.asList(pkg.getRelationships());
+            String relationshipComment = "";
+            for (Relationship relation : relations) {
+                if (relation.getRelationshipType().equals(RelationshipType.CONTAINS)) {
+                    relationshipComment = relation.getComment();
+                }
+            }
+            Relationship newRel = new Relationship(pkg, RelationshipType.CONTAINS, relationshipComment);
+            projectPackage.addRelationship(newRel);
+        }
+        spdxDocument.setRelationships(spdxProjectRelations.toArray(Relationship[]::new));
+        //spdxDocument.setRelationships(spdxProjectRelations.toArray(Relationship[]::new));
+        return spdxDocument;
+    }
+
     private SpdxDocument createSpdxDocumentFromSw360Spdx(String releaseId) throws SW360Exception, InvalidSPDXAnalysisException {
         final SPDXDocument sw360SPDXDocument = getSpdxDocumentFromRelease(releaseId);
 
@@ -430,9 +518,9 @@ public class SpdxBOMExporter {
 
     private Relationship[] createSpdxRelationshipsFromSw360Relationships(Set<RelationshipsBetweenSPDXElements> sw360Relationships, String SPDXDocId) throws InvalidSPDXAnalysisException {
         List<Relationship> spdxRelationships = new ArrayList<>();
-        List<RelationshipsBetweenSPDXElements> list = new ArrayList(sw360Relationships);
+        List<RelationshipsBetweenSPDXElements> list = new ArrayList<RelationshipsBetweenSPDXElements>(sw360Relationships);
         Collections.reverse(list);
-        Set<RelationshipsBetweenSPDXElements> resultSet = new LinkedHashSet(list);
+        Set<RelationshipsBetweenSPDXElements> resultSet = new LinkedHashSet<RelationshipsBetweenSPDXElements>(list);
         boolean checkIsPackageInfo = false;
 
         for (RelationshipsBetweenSPDXElements sw360Relationship : resultSet) {
@@ -508,6 +596,17 @@ public class SpdxBOMExporter {
         return spdxExtractedLicenseInfo.toArray(ExtractedLicenseInfo[]::new);
     }
 
+    protected static Optional<SpdxListedLicense> getSpdxLicense(String licenseId) {
+        final SpdxListedLicense listedLicenseById;
+        try {
+            listedLicenseById = LicenseInfoFactory.getListedLicenseById(licenseId);
+        } catch (InvalidSPDXAnalysisException e) {
+            log.warn("Failed to find SpdxListedLicense with id: " + licenseId);
+            return Optional.empty();
+        }
+        return Optional.of(listedLicenseById);
+    }
+
     private SpdxDocument createSpdxDocumentCreationInfoFromSw360DocumentCreationInfo(String sw360SpdxDocId, SPDXDocument sw360SPDXDocument) throws SW360Exception, InvalidSPDXAnalysisException {
         DocumentCreationInformation sw360DocumentCreationInformation = getDocCreationInfoFromSpdxDocument(sw360SpdxDocId);
 
@@ -521,8 +620,9 @@ public class SpdxBOMExporter {
 
         spdxDocument.setSpecVersion(sw360DocumentCreationInformation.getSpdxVersion());
 
-        ExtractedLicenseInfo dataLicense = new ExtractedLicenseInfo(sw360DocumentCreationInformation.getDataLicense(), "");
-        spdxDocument.setDataLicense(existedLicense(dataLicense));
+        Optional<SpdxListedLicense> dataLicense = getSpdxLicense(sw360DocumentCreationInformation.getDataLicense());
+        // ExtractedLicenseInfo dataLicense = new ExtractedLicenseInfo(sw360DocumentCreationInformation.getDataLicense(), "");
+        spdxDocument.setDataLicense(dataLicense.get());
 
         // todo: can not set a file ID for an SPDX element already in an RDF Model. You must create a new SPDX File with this ID.
         // spdxDocument.setId(sw360DocumentCreationInformation.getSPDXID());
@@ -579,7 +679,7 @@ public class SpdxBOMExporter {
         spdxPackage.setFilesAnalyzed(sw360PackageInfo.isFilesAnalyzed());
 
         SpdxPackageVerificationCode packageVerificationCode = new SpdxPackageVerificationCode(sw360PackageInfo.getPackageVerificationCode().getValue(),
-        sw360PackageInfo.getPackageVerificationCode().getExcludedFiles().toArray(String[]::new));
+        CommonUtils.nullToEmptySet(sw360PackageInfo.getPackageVerificationCode().getExcludedFiles()).toArray(String[]::new));
         spdxPackage.setPackageVerificationCode(packageVerificationCode);
 
         List<org.spdx.rdfparser.model.Checksum> checksums = new ArrayList<>();
@@ -607,7 +707,10 @@ public class SpdxBOMExporter {
         ExtractedLicenseInfo licenseDeclared = new ExtractedLicenseInfo(sw360PackageInfo.getLicenseDeclared(), "");
         spdxPackage.setLicenseDeclared(existedLicense(licenseDeclared));
 
-        spdxPackage.setLicenseComment(sw360PackageInfo.getLicenseComments());
+        Optional<SpdxListedLicense> spdxLicenseDeclared = getSpdxLicense(licenseDeclared.getLicenseId());
+        spdxPackage.setLicenseDeclared(spdxLicenseDeclared.isPresent() ? spdxLicenseDeclared.get() : null);
+
+        spdxPackage.setLicenseComments(sw360PackageInfo.getLicenseComments());
 
         spdxPackage.setCopyrightText(sw360PackageInfo.getCopyrightText());
 
