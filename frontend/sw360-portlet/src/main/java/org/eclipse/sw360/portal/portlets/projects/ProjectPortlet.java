@@ -2437,7 +2437,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         ObligationList obligation = new ObligationList();
         Map<String, ObligationStatusInfo> obligationStatusMap = Maps.newHashMap();
 
-        boolean obligationPresent=true;
         try {
             releases = getLinkedReleases(CommonUtils.getNullToEmptyKeyset(project.getReleaseIdToUsage()), user);
                 if (CommonUtils.isNotNullEmptyOrWhitespace(project.getLinkedObligationId())) {
@@ -2466,6 +2465,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         final Set<Release> excludedReleases = Sets.newHashSet();
         final List<LicenseInfoParsingResult> licenseInfoWithObligations = Lists.newArrayList();
         final LicenseInfoService.Iface licenseClient = thriftClients.makeLicenseInfoClient();
+        List<Obligation> componentObligations = new ArrayList<>();
 
         for (Release release : releases) {
             List<Attachment> filteredAttachments = SW360Utils.getApprovedClxAttachmentForRelease(release);
@@ -2488,6 +2488,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                     List<LicenseInfoParsingResult> licenseResults = licenseClient.getLicenseInfoForAttachment(release, attachmentContentId, false, user);
 
                     List<ObligationParsingResult> obligationResults = licenseClient.getObligationsForAttachment(release, attachmentContentId, user);
+                    if (CommonUtils.isNotEmpty(obligationResults)) {
+                        componentObligations = obligationResults.get(0).getComponentObligations();
+                    }
 
                     if (CommonUtils.allAreNotEmpty(licenseResults, obligationResults) && obligationResults.get(0).getObligationsAtProjectSize() > 0) {
                         licenseInfoWithObligations.add(licenseClient.createLicenseToObligationMapping(licenseResults.get(0), obligationResults.get(0)));
@@ -2498,11 +2501,29 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 }
             }
         }
+        Map<String, ObligationStatusInfo> compObligationsFromAdmin = (Map<String, ObligationStatusInfo>) request.getAttribute(COMPONENT_OBLIGATIONS);
+        Map<String, ObligationStatusInfo> compObligationsFrmCLI = new HashMap<>();
+        for(Obligation o : componentObligations) {
+            String key = CommonUtils.isNotNullEmptyOrWhitespace(o.getTitle())? o.getTitle() : o.getText();
+            ObligationStatusInfo oblStsInf = new ObligationStatusInfo();
+            if (compObligationsFromAdmin.containsKey(key)) {
+                oblStsInf = compObligationsFromAdmin.get(key);
+                oblStsInf.setText(o.getText());
+            } else {
+                oblStsInf = new ObligationStatusInfo();
+                oblStsInf.setComment(o.getComments());
+                oblStsInf.setObligationLevel(ObligationLevel.COMPONENT_OBLIGATION);
+                oblStsInf.setText(o.getText());
+            }
+            compObligationsFrmCLI.put(key, oblStsInf);
+        }
+        compObligationsFromAdmin.putAll(compObligationsFrmCLI);
 
         try {
             LicenseObligationsStatusInfo licenseObligation = licenseClient.getProjectObligationStatus(obligationStatusMap,
                     licenseInfoWithObligations, releaseIdToAcceptedCLI);
             obligationStatusMap = licenseObligation.getObligationStatusMap();
+            obligationStatusMap.putAll(compObligationsFromAdmin);
 
             request.setAttribute(APPROVED_OBLIGATIONS_COUNT, getFulfilledObligationsCount(obligationStatusMap));
             request.setAttribute(EXCLUDED_RELEASES, excludedReleases);

@@ -23,6 +23,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationAtProject;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationParsingResult;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationInfoRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
@@ -36,6 +37,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -59,6 +61,7 @@ public class CLIParser extends AbstractCLIParser {
     private static final String OBLIGATIONS_XPATH = "/ComponentLicenseInformation/Obligation";
     private static final String CLI_ROOT_ELEMENT_NAME = "ComponentLicenseInformation";
     private static final String CLI_ROOT_XPATH = "/ComponentLicenseInformation";
+    private static final String COMPONENT_LEVEL_XPATH = "/ComponentLicenseInformation/AssessmentSummary";
     private static final String CLI_ROOT_ELEMENT_NAMESPACE = null;
 
     public CLIParser(AttachmentConnector attachmentConnector, AttachmentContentProvider attachmentContentProvider) {
@@ -99,6 +102,7 @@ public class CLIParser extends AbstractCLIParser {
             Document doc = getDocument(attachmentStream);
             result.setSha1Hash(getSha1Hash(doc));
             result.setObligationsAtProject(getObligations(doc));
+            result.setComponentObligations(getComponentObligations(doc));
             result.setAttachmentContentId(attachment.getAttachmentContentId());
             result.setStatus(ObligationInfoRequestStatus.SUCCESS);
         } catch (ParserConfigurationException | IOException | XPathExpressionException | SAXException | SW360Exception e) {
@@ -157,6 +161,16 @@ public class CLIParser extends AbstractCLIParser {
     private Set<String> getCopyrights(Document doc) throws XPathExpressionException {
         NodeList copyrightNodes = getNodeListByXpath(doc, COPYRIGHTS_XPATH);
         return nodeListToStringSet(copyrightNodes);
+    }
+
+    private List<Obligation> getComponentObligations(Document doc) throws XPathExpressionException {
+        NodeList componentLevelOblNodes = getNodeListByXpath(doc, COMPONENT_LEVEL_XPATH);
+        List<Obligation> obligations = new ArrayList<>();
+        for (int i = 0; i < componentLevelOblNodes.getLength(); i++) {
+            Node node = componentLevelOblNodes.item(i);
+            obligations.addAll(getComponentObligationFromAssesmentSummarryNode(node));
+        }
+        return obligations;
     }
 
     private Map<String, Set<String>> getCopyrightsWithFileHash(Document doc) throws XPathExpressionException {

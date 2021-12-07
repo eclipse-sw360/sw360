@@ -11,6 +11,7 @@
 include "users.thrift"
 include "components.thrift"
 include "projects.thrift"
+include "licenses.thrift"
 
 namespace java org.eclipse.sw360.datahandler.thrift.licenseinfo
 namespace php sw360.thrift.licenseinfo
@@ -20,6 +21,7 @@ typedef components.Attachment Attachment
 typedef users.User User
 typedef projects.Project Project
 typedef projects.ObligationStatusInfo ObligationStatusInfo
+typedef licenses.Obligation Obligation
 
 enum LicenseInfoRequestStatus{
     SUCCESS = 0,
@@ -93,6 +95,7 @@ struct ObligationParsingResult {
     4: optional Release release,
     5: optional string attachmentContentId,
     6: optional string sha1Hash,
+    7: optional list<Obligation> componentObligations
 }
 
 struct ObligationAtProject {

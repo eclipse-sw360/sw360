@@ -233,20 +233,21 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
         var obligText = "<sw360:out value='${projectObligations.text}' stripNewlines='false' jsQuoting='true'/>";
         obligText = obligText.replace(/[\r\n]/g, '<br>');
         obligText = obligText.replace(/\t/g, '&ensp;&ensp;&ensp;&ensp;');
-        obligationJSON.push({
-            "obligation": "<sw360:out value='${entry.key}'/>",
-            "licenseLinks": licenseLinks,
-            "releaseLinks": releaseLinks,
-            "status": '<sw360:DisplayEnumOptions type="<%=ObligationStatus.class%>" selected="${projectObligations.status}" />',
-            /* "action": "${projectObligations.action}", */
-            "type": "<sw360:DisplayEnum value='${projectObligations.obligationType}'/>",
-            "level": "${projectObligations.obligationLevel}",
-            "id": "<sw360:out value='${projectObligations.id}'/>",
-            "comment": "<sw360:out value='${projectObligations.comment}'/>",
-            "text": '<p style="overflow: auto; max-height: 20rem;">'+obligText+'</p>',
-            "modifiedBy": "${projectObligations.modifiedBy}",
-            "modifiedOn": "${projectObligations.modifiedOn}"
-        });
+        <core_rt:if test="${projectObligations.obligationLevel ne 'COMPONENT_OBLIGATION'}">
+            obligationJSON.push({
+              "obligation": "<sw360:out value='${entry.key}'/>",
+              "licenseLinks": licenseLinks,
+              "releaseLinks": releaseLinks,
+              "status": '<sw360:DisplayEnumOptions type="<%=ObligationStatus.class%>" selected="${projectObligations.status}" />',
+              "type": "<sw360:DisplayEnum value='${projectObligations.obligationType}'/>",
+              "level": "${projectObligations.obligationLevel}",
+              "id": "<sw360:out value='${projectObligations.id}'/>",
+              "comment": "<sw360:out value='${projectObligations.comment}'/>",
+              "text": '<p style="overflow: auto; max-height: 20rem;">'+obligText+'</p>',
+              "modifiedBy": "${projectObligations.modifiedBy}",
+              "modifiedOn": "${projectObligations.modifiedOn}"
+            });
+        </core_rt:if>
     </core_rt:forEach >
 
     /* create table */
@@ -806,7 +807,7 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
 
       /* collect all the component obligation status */
       function compUpdateObligations(event, data, node, config) {
-          updateprojectCompOrgObligations(event, data, node, config, "<%=ObligationLevel.COMPONENT_OBLIGATION%>",compTable, compDataMap);
+          updateCompObligations(event, data, node, config, "<%=ObligationLevel.COMPONENT_OBLIGATION%>", compDataMap);
       }
       /* collect all the org obligation status */
       function orgUpdateObligations(event, data, node, config) {
@@ -830,7 +831,42 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
 
           otherObligTable.rows().every(function (rowIdx, tableLoop, rowLoop) {
               let rowData = this.data(),
-                  mapKey = $.parseHTML(rowData.text)[0].nodeValue,
+                  mapKey = $.parseHTML(rowData.obligation)[0].nodeValue,
+                  ids = [];
+              let mapValue = {};
+              if (otherDataMap.has(mapKey)) {
+                  $node = $(this.node()),
+                  mapValue.status = $node.find('select.obl_status option:selected').val();
+                  mapValue.comment = $node.find("input.obl_comment").val();
+                  mapValue.id=rowData.id;
+                  let type=$node.find("td.obl_type").text().trim();
+                  mapValue.obligationType=type.length==0?"<%=ObligationType.OBLIGATION%>":type.toUpperCase();
+                  mapValue.modifiedOn = date;
+                  mapValue.obligationLevel = level;
+                  obligationMap.set(mapKey, mapValue);
+              }
+          });
+
+          let projJsonObject = {};
+          for (const [key, value] of obligationMap.entries()) {
+              projJsonObject[key] = value;
+          }
+          jsonObject = Object.assign(projJsonObject, jsonObject);
+          obligationMap.clear();
+      }
+
+      function updateCompObligations(event, data, node, config, level, otherDataMap) {
+          let btnData = node.data(),
+              date = new Date().toISOString().split('T')[0],
+              obligationMap = new Map();
+
+          if (otherDataMap.size < 1) {
+              return;
+          }
+
+          compTable.rows().every(function (rowIdx, tableLoop, rowLoop) {
+              let rowData = this.data(),
+                  mapKey = $.parseHTML(rowData.obligation)[0].nodeValue,
                   ids = [];
               let mapValue = {};
               if (otherDataMap.has(mapKey)) {
@@ -883,7 +919,7 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
           let $tr = thisObj.closest("tr");
           if (!$tr.hasClass('orphan')) {
               // get obligatoin topic/text from second column (index -> 1) in table.
-              projectCompOrgObligationDataMap.set($.parseHTML($tr.attr('data-text'))[0].nodeValue, '');
+              projectCompOrgObligationDataMap.set($.parseHTML($tr.find('td:eq(1)').text())[0].nodeValue, '');
           }
       }
 

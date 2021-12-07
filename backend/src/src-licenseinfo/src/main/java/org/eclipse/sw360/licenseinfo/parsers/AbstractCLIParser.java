@@ -16,6 +16,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -23,6 +24,8 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationAtProject;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -54,6 +57,8 @@ import static org.eclipse.sw360.datahandler.common.SW360Constants.OBLIGATION_TOP
  * @author: alex.borodin@evosoft.com
  */
 public abstract class AbstractCLIParser extends LicenseInfoParser {
+    private static final String FOUND = "Found";
+    private static final String NONE = "None";
     public static final String LICENSE_CONTENT_ELEMENT_NAME = "Content";
     private static final String LICENSE_ACKNOWLEDGEMENTS_ELEMENT_NAME = "Acknowledgements";
     private static final String SOURCE_FILES_ELEMENT_NAME = "Files";
@@ -72,6 +77,66 @@ public abstract class AbstractCLIParser extends LicenseInfoParser {
     private static final String OBLIGATION_TOPIC_ELEMENT_NAME = "Topic";
     private static final String OBLIGATION_TEXT_ELEMENT_NAME = "Text";
     private static final String OBLIGATION_LICENSE_ELEMENT_NAME = "Licenses";
+
+    private static final String GENERAL_ASSESMENT_SUMMARY_ELEMENT_NAME = "GeneralAssessment";
+    private static final String CRITICALFILESFOUND_EMEMENT_NAME = "CriticalFilesFound";
+    private static final String DEPENDENCYNOTES_EMEMENT_NAME = "DependencyNotes";
+    private static final String EXPORTRESTRICTIONSFOUND__EMEMENT_NAME = "ExportRestrictionsFound";
+    private static final String USAGERESTRICTIONSFOUND_EMEMENT_NAME = "UsageRestrictionsFound";
+    private static final String ADDITIONALNOTES_EMEMENT_NAME = "AdditionalNotes";
+
+    protected List<Obligation> getComponentObligationFromAssesmentSummarryNode(Node node) {
+        List<Obligation> obligations = new ArrayList<Obligation>();
+        NodeList childNodes = node.getChildNodes();
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            Obligation obl = new Obligation();
+            obl.setObligationLevel(ObligationLevel.COMPONENT_OBLIGATION);
+            String nodeName = childNodes.item(i).getNodeName();
+            String textContent = childNodes.item(i).getTextContent();
+            if (nodeName.equalsIgnoreCase(CRITICALFILESFOUND_EMEMENT_NAME)) {
+                obl.setTitle(SW360Constants.CRITICALFILESFOUND_OBLIGATION_TITLE);
+                if (textContent.strip().equalsIgnoreCase(NONE.strip())) {
+                    obl.setText(SW360Constants.NO_CRITICAL_FILES_FOUND);
+                } else {
+                    obl.setText(SW360Constants.CRITICAL_FILES_FOUND);
+                }
+
+            } else if (nodeName.equalsIgnoreCase(DEPENDENCYNOTES_EMEMENT_NAME)) {
+                obl.setTitle(SW360Constants.DEPENDENCY_NOTES);
+                if (textContent.strip().equalsIgnoreCase(SW360Constants.SOURCE_DEPENDENCIES_FOUND.strip())) {
+                    obl.setText(SW360Constants.SOURCE_DEPENDENCIES_FOUND_TEXT);
+                } else if (textContent.strip().equalsIgnoreCase(SW360Constants.BINARY_DEPENDENCIES_FOUND.strip())) {
+                    obl.setText(SW360Constants.BINARY_DEPENDENCIES_FOUND_TEXT);
+                } else {
+                    obl.setText(SW360Constants.NO_DEPENDENCIES_FOUND_TEXT);
+                }
+
+            } else if (nodeName.equalsIgnoreCase(EXPORTRESTRICTIONSFOUND__EMEMENT_NAME)) {
+                obl.setTitle(SW360Constants.EXPORT_RESTRICTIONS_TITLE);
+                if (textContent.strip().equalsIgnoreCase(FOUND.strip())) {
+                    obl.setText(SW360Constants.EXPORT_RESTRICTIONS_FOUND_TEXT);
+                } else {
+                    obl.setText(SW360Constants.EXPORT_RESTRICTIONS_NOT_FOUND_TEXT);
+                }
+
+            } else if (nodeName.equalsIgnoreCase(USAGERESTRICTIONSFOUND_EMEMENT_NAME)) {
+                obl.setTitle(SW360Constants.USAGE_RESTRICTIONS_TITLE);
+                if (textContent.strip().equalsIgnoreCase(FOUND.strip())) {
+                    obl.setText(SW360Constants.USAGE_RESTRICTIONS_FOUND_TEXT);
+                } else {
+                    obl.setText(SW360Constants.USAGE_RESTRICTIONS_NOT_FOUND_TEXT);
+                }
+            } else if (nodeName.equalsIgnoreCase(GENERAL_ASSESMENT_SUMMARY_ELEMENT_NAME)) {
+                obl.setTitle(childNodes.item(i).getNodeName()).setText(childNodes.item(i).getTextContent());
+            } else if (nodeName.equalsIgnoreCase(ADDITIONALNOTES_EMEMENT_NAME)) {
+                obl.setTitle(nodeName).setText(childNodes.item(i).getTextContent());
+            } else {
+                continue;
+            }
+            obligations.add(obl);
+        }
+        return obligations;
+    }
 
     public AbstractCLIParser(AttachmentConnector attachmentConnector, AttachmentContentProvider attachmentContentProvider) {
         super(attachmentConnector, attachmentContentProvider);

@@ -72,6 +72,21 @@ public class SW360Constants {
     public static final String TYPE_VULNERABILITYDTO = "vulDTO";
     public static final String TYPE_OBLIGATIONELEMENT = "obligationElement";
     public static final String TYPE_OBLIGATIONNODE = "obligationNode";
+    public static final String CRITICALFILESFOUND_OBLIGATION_TITLE = "Source / binary integration notes:";
+    public static final String NO_CRITICAL_FILES_FOUND = "no critical files found, source code and binaries can be used as is";
+    public static final String CRITICAL_FILES_FOUND = "critical files found, source code needs to be adapted and binaries possibly re-built";
+    public static final String DEPENDENCY_NOTES = "Dependency notes:";
+    public static final String SOURCE_DEPENDENCIES_FOUND = "SourceDependenciesFound";
+    public static final String BINARY_DEPENDENCIES_FOUND = "BinaryDependenciesFound";
+    public static final String SOURCE_DEPENDENCIES_FOUND_TEXT = "dependencies found in source code (see obligations)";
+    public static final String BINARY_DEPENDENCIES_FOUND_TEXT = "dependencies found in binaries (see obligations)";
+    public static final String NO_DEPENDENCIES_FOUND_TEXT = "no dependencies found, neither in source code nor in binaries";
+    public static final String EXPORT_RESTRICTIONS_TITLE = "Export restrictions by copyright owner:";
+    public static final String EXPORT_RESTRICTIONS_FOUND_TEXT = "Export restrictions found (see obligations)";
+    public static final String EXPORT_RESTRICTIONS_NOT_FOUND_TEXT = "no export restrictions found";
+    public static final String USAGE_RESTRICTIONS_TITLE = "Restrictions for use by copyright owner (e.g. not for Nuclear Power):";
+    public static final String USAGE_RESTRICTIONS_FOUND_TEXT = "restrictions for use found (see obligations)";
+    public static final String USAGE_RESTRICTIONS_NOT_FOUND_TEXT = "no restrictions for use found";
 
     /**
      * Hashmap containing the name field for each type.

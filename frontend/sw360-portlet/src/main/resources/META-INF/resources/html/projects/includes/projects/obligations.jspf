@@ -204,20 +204,22 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
         var obligText = "<sw360:out value='${projectObligations.text}' stripNewlines='false' jsQuoting='true'/>";
         obligText = obligText.replace(/[\r\n]/g, '<br>');
         obligText = obligText.replace(/\t/g, '&ensp;&ensp;&ensp;&ensp;');
-        obligationJSON.push({
-            "obligation": "<sw360:out value='${entry.key}'/>",
-            "lIds": licenseIds.join(', <br>'),
-            "rIds": releaseIds,
-            "rNames": releaseNames.join(', <br>'),
-            "status": "<sw360:DisplayEnum value='${projectObligations.status}'/>",
-            /* "action": '${projectObligations.action}', */
-            "type": "<sw360:DisplayEnum value='${projectObligations.obligationType}'/>",
-            "id": "<sw360:out value='${projectObligations.id}'/>",
-            "comment": "<sw360:out value='${projectObligations.comment}'/>",
-            "text": '<p style="overflow: auto; max-height: 20rem;">'+obligText+'</p>',
-            "modifiedBy": '${projectObligations.modifiedBy}',
-            "modifiedOn": '${projectObligations.modifiedOn}'
-        });
+        <core_rt:if test="${projectObligations.obligationLevel ne 'COMPONENT_OBLIGATION'}">
+            obligationJSON.push({
+                "obligation": "<sw360:out value='${entry.key}'/>",
+                "lIds": licenseIds.join(', <br>'),
+                "rIds": releaseIds,
+                "rNames": releaseNames.join(', <br>'),
+                "status": "<sw360:DisplayEnum value='${projectObligations.status}'/>",
+                /* "action": '${projectObligations.action}', */
+                "type": "<sw360:DisplayEnum value='${projectObligations.obligationType}'/>",
+                "id": "<sw360:out value='${projectObligations.id}'/>",
+                "comment": "<sw360:out value='${projectObligations.comment}'/>",
+                "text": '<p style="overflow: auto; max-height: 20rem;">'+obligText+'</p>',
+                "modifiedBy": '${projectObligations.modifiedBy}',
+                "modifiedOn": '${projectObligations.modifiedOn}'
+            });
+        </core_rt:if>
     </core_rt:forEach >
 
     /* create table */
@@ -358,7 +360,7 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
         "modifiedOn": '${projOblig.value.modifiedOn}'
     });
     </core_rt:forEach >
-    
+
     /* create table */
     var projectTable = datatables.create('#project-obligationsDetailTable', {
         "data": projectObligationJSON,
@@ -432,20 +434,23 @@ require(['jquery', 'bridges/datatables', 'utils/render'], function ($, datatable
     });
 
     //Comp Obligation
-    <core_rt:forEach items="${componentLevelObligations}" var="compOblig" varStatus="loop">
-      var obligText = "<sw360:out value='${compOblig.value.text}' stripNewlines='false' jsQuoting='true'/>";
-      obligText = obligText.replace(/[\r\n]/g, '<br>');
-      obligText = obligText.replace(/\t/g, '&ensp;&ensp;&ensp;&ensp;');
-      compObligationJSON.push({
-        "obligation": "<sw360:out value='${compOblig.key}'/>",
-        "status": "<sw360:DisplayEnum value='${compOblig.value.status}'/>",
-        "type": "<sw360:DisplayEnum value='${compOblig.value.obligationType}'/>",
-        "id": "<sw360:out value='${compOblig.value.id}'/>",
-        "comment": "<sw360:out value='${compOblig.value.comment}'/>",
-        "text": '<p style="overflow: auto; max-height: 20rem;">'+obligText+'</p>',
-        "modifiedBy": '${compOblig.value.modifiedBy}',
-        "modifiedOn": '${compOblig.value.modifiedOn}'
-      });
+    <core_rt:forEach items="${obligationData.linkedObligationStatus}" var="entry" varStatus="loop">
+        <core_rt:set var="componentObligations" value="${entry.value}" />
+        var obligText = "<sw360:out value='${componentObligations.text}' stripNewlines='false' jsQuoting='true'/>";
+        obligText = obligText.replace(/[\r\n]/g, '<br>');
+        obligText = obligText.replace(/\t/g, '&ensp;&ensp;&ensp;&ensp;');
+        <core_rt:if test="${componentObligations.obligationLevel eq 'COMPONENT_OBLIGATION'}">
+            compObligationJSON.push({
+              "obligation": "<sw360:out value='${entry.key}'/>",
+              "status": "<sw360:DisplayEnum value='${componentObligations.status}'/>",
+              "type": "<sw360:DisplayEnum value='${componentObligations.obligationType}'/>",
+              "id": "<sw360:out value='${componentObligations.id}'/>",
+              "comment": "<sw360:out value='${componentObligations.comment}'/>",
+              "text": '<p style="overflow: auto; max-height: 20rem;">'+obligText+'</p>',
+              "modifiedBy": '${componentObligations.modifiedBy}',
+              "modifiedOn": '${componentObligations.modifiedOn}'
+          });
+        </core_rt:if>
     </core_rt:forEach >
     
     /* create table */
