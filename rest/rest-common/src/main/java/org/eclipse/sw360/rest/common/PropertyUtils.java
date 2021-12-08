@@ -14,13 +14,13 @@ import java.util.Properties;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 
 public class PropertyUtils {
-    private static final String SPRING_CONFIG_LOCATIION_KEY = "spring.config.location";
+    private static final String SPRING_CONFIG_ADDITIONAL_LOCATION_KEY = "spring.config.additional-location";
     
     public static Properties createDefaultProperties(String applicationName) {
         Properties properties = new Properties();
 
-        if(System.getProperty(SPRING_CONFIG_LOCATIION_KEY) == null) {
-            properties.setProperty(SPRING_CONFIG_LOCATIION_KEY,
+        if(System.getProperty(SPRING_CONFIG_ADDITIONAL_LOCATION_KEY) == null) {
+            properties.setProperty(SPRING_CONFIG_ADDITIONAL_LOCATION_KEY,
                 "file:" + CommonUtils.SYSTEM_CONFIGURATION_PATH + "/" + applicationName + "/");
         }
 
