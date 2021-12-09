@@ -15,10 +15,22 @@
        * UI can be accessed - `http://localhost:8090`
        * CouchDB can be accessed on port `5985` Ex - `curl -X GET http://localhost:5985/sw360db/{doc_id}`
        * Postgresql can be accessed on port `5435` Ex - `psql -h localhost -p 5435 -U postgres` , `Default pwd` - `postgrespwd`
-* SW360 UI and REST can be accessed from `http://localhost:8090` . Open SW360 UI and perform [initial configurations](https://github.com/eclipse/sw360/wiki/Deploy-Liferay7.3). Save image of the container once all configurations done, using `docker commit`
-*  Docker commit and Clean Exit
-    * Press `ENTER` in the terminal from where `docker run` was executed .Wait for some time, it will initiate shutdown procedure for tomcat.
-    *  Tomcat shutdown logs will start loading, wait till it's completed.
-    * `docker commit container-id sw360configured`  -  create docker image from container
-    * `docker stop old_container_id`  - stop old container
-    * Start new configured container - `docker run -it -p 8090:8080 -p 5985:5984 -p 5435:5432 sw360configured`
+* Perform initial configuration of SW360
+  * SW360 UI and REST can be accessed from `http://localhost:8090`. 
+  * Open SW360 UI and perform [initial configurations](https://github.com/eclipse/sw360/wiki/Deploy-Liferay7.3). 
+* Create new image of the running and configured SW360 container once all configurations done, using `docker commit`
+    * Press `ENTER` in the terminal from where `docker run` was executed .Wait for some time, it will initiate shutdown procedure for tomcat. Tomcat shutdown logs will start loading, wait till it's completed.
+    * Open another terminal window and type `docker ps` in order to get the container ID of the running SW360 container. The result should look like
+```
+CONTAINER ID   IMAGE     COMMAND                  CREATED        STATUS        PORTS                                                                    NAMES
+b5a5b75dd81b   sw360     "/bin/sh -c './entry…"   16 hours ago   Up 16 hours   0.0.0.0:5435->5432/tcp, 0.0.0.0:5985->5984/tcp, 0.0.0.0:8090->8080/tcp   upbeat_jemison
+```
+   * Create a new docker image from the state of your running SW360 container with `docker commit CONTAINER ID sw360configured`
+   * Check if the new image `sw360configured`is available with `docker images`. You should have an output like
+```
+REPOSITORY            TAG       IMAGE ID       CREATED          SIZE
+sw360configured       latest    d41cfb273751   48 seconds ago   6.86GB
+...
+```
+   * Now you can stop the old SW360 container with `docker stop CONTAINER ID`
+   * And start newly configured container with `docker run -it -p 8090:8080 -p 5985:5984 -p 5435:5432 sw360configured`
