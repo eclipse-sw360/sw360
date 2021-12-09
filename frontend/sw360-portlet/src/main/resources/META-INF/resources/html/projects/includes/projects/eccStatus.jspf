@@ -37,7 +37,8 @@
                     "3": "<sw360:out value="${linkedItem.release.creatorDepartment}"/>",
                     "4": '<sw360:DisplayUserEmail email="${linkedItem.release.eccInformation.assessorContactPerson}" bare="true"/>',
                     "5": "<sw360:out value="${linkedItem.release.eccInformation.assessorDepartment}"/>",
-                    "6": "<sw360:out value="${linkedItem.release.eccInformation.assessmentDate}"/>"
+                    "6": "<sw360:out value="${linkedItem.release.eccInformation.assessmentDate}"/>",
+                    "7": "<sw360:out value="${linkedItem.release.eccInformation.ECCN}"/>"
                 });
             </core_rt:forEach>
 
@@ -50,13 +51,14 @@
                     {title: "<liferay-ui:message key="creator.group" />"},
                     {title: "<liferay-ui:message key="ecc.assessor" />"},
                     {title: "<liferay-ui:message key="ecc.assessor.group" />"},
-                    {title: "<liferay-ui:message key="ecc.assessment.date" />"}
+                    {title: "<liferay-ui:message key="ecc.assessment.date" />"},
+                    {title: "<liferay-ui:message key="eccn" />"}
                 ],
                 language: {
                     url: "<liferay-ui:message key="datatables.lang" />",
                     loadingRecords: "<liferay-ui:message key="loading" />"
                 }
-            }, [0, 1, 2, 3, 4, 5, 6], undefined, true);
+            }, [0, 1, 2, 3, 4, 5, 6, 7], undefined, true);
         }
 
         function exportReleasesSpreadsheet() {
