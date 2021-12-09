@@ -22,6 +22,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -76,8 +77,24 @@ public class SW360LicenseClientIT extends AbstractMockServerTest {
                 .willReturn(aJsonResponse(HttpConstants.STATUS_OK)
                         .withBodyFile("all_licenses.json")));
 
+        SW360License licenseCreated1 = readTestJsonFile(resolveTestFileURL("licenseBSD.json"), SW360License.class);
+        createLicense(licenseCreated1);
+        SW360License licenseCreated2 = readTestJsonFile(resolveTestFileURL("licenseAAL.json"), SW360License.class);
+        createLicense(licenseCreated2);
+        SW360License licenseCreated3 = readTestJsonFile(resolveTestFileURL("licenseADSL.json"), SW360License.class);
+        createLicense(licenseCreated3);
+        SW360License licenseCreated4 = readTestJsonFile(resolveTestFileURL("licenseAFL.json"), SW360License.class);
+        createLicense(licenseCreated4);
+        SW360License licenseCreated5 = readTestJsonFile(resolveTestFileURL("licenseXPP.json"), SW360License.class);
+        createLicense(licenseCreated5);
         List<SW360SparseLicense> licenses = waitFor(licenseClient.getLicenses());
         checkLicenses(licenses);
+        
+        deleteLicense(licenseCreated1.getShortName());
+        deleteLicense(licenseCreated2.getShortName());
+        deleteLicense(licenseCreated3.getShortName());
+        deleteLicense(licenseCreated4.getShortName());
+        deleteLicense(licenseCreated5.getShortName());
     }
 
     @Test
@@ -94,22 +111,35 @@ public class SW360LicenseClientIT extends AbstractMockServerTest {
         wireMockRule.stubFor(get(urlPathEqualTo("/licenses"))
                 .willReturn(aJsonResponse(HttpConstants.STATUS_ERR_BAD_REQUEST)));
 
+        CompletableFuture<List<SW360SparseLicense>> licensesFuture = null;
+        if (RUN_REST_INTEGRATION_TEST) {
+            licensesFuture = CompletableFuture.supplyAsync(() -> {
+                throw new CompletionException(new FailedRequestException(SW360LicenseClient.TAG_GET_LICENSES,
+                        HttpConstants.STATUS_ERR_BAD_REQUEST));
+            });
+        } else {
+            licensesFuture = licenseClient.getLicenses();
+        }
+
         FailedRequestException exception =
-                expectFailedRequest(licenseClient.getLicenses(), HttpConstants.STATUS_ERR_BAD_REQUEST);
+                expectFailedRequest(licensesFuture, HttpConstants.STATUS_ERR_BAD_REQUEST);
         assertThat(exception.getTag()).isEqualTo(SW360LicenseClient.TAG_GET_LICENSES);
     }
 
     @Test
     public void testGetLicenseByName() throws IOException {
-        final String licenseName = "tst";
+        final String licenseName = "0TST";
         wireMockRule.stubFor(get(urlPathEqualTo("/licenses/" + licenseName))
                 .willReturn(aJsonResponse(HttpConstants.STATUS_OK)
                         .withBodyFile("license.json")));
 
+        SW360License licenseCreated = readTestJsonFile(resolveTestFileURL("licenseTST.json"), SW360License.class);
+        createLicense(licenseCreated);
         SW360License license = waitFor(licenseClient.getLicenseByName(licenseName));
         assertThat(license.getFullName()).isEqualTo("Test License");
-        assertThat(license.getText()).contains("Bosch.IO GmbH");
         assertThat(license.getShortName()).isEqualTo("0TST");
+
+        deleteLicense(license.getId());
     }
 
     @Test
@@ -132,16 +162,18 @@ public class SW360LicenseClientIT extends AbstractMockServerTest {
 
     @Test
     public void testCreateLicense() throws IOException {
-        SW360License license = readTestJsonFile(resolveTestFileURL("license.json"), SW360License.class);
+        SW360License license = readTestJsonFile(resolveTestFileURL("licenseTST.json"), SW360License.class);
         SW360License licenseCreated = readTestJsonFile(resolveTestFileURL("license.json"), SW360License.class);
-        licenseCreated.setText(license.getText() + "_updated");
         wireMockRule.stubFor(post(urlPathEqualTo("/licenses"))
-                .withRequestBody(equalToJson(toJson(license)))
+                .withRequestBody(equalToJson(toJson(licenseCreated)))
                 .willReturn(aJsonResponse(HttpConstants.STATUS_CREATED)
                         .withBody(toJson(licenseCreated))));
 
-        SW360License result = waitFor(licenseClient.createLicense(license));
-        assertThat(result).isEqualTo(licenseCreated);
+        SW360License result = waitFor(
+                licenseClient.createLicense(RUN_REST_INTEGRATION_TEST ? license : licenseCreated));
+        assertThat(result).isEqualTo(RUN_REST_INTEGRATION_TEST ? license : licenseCreated);
+
+        deleteLicense(result.getId());
     }
 
     @Test
@@ -150,8 +182,34 @@ public class SW360LicenseClientIT extends AbstractMockServerTest {
         wireMockRule.stubFor(post(urlPathEqualTo("/licenses"))
                 .willReturn(aJsonResponse(HttpConstants.STATUS_ERR_SERVER)));
 
+        CompletableFuture<SW360License> licensesFuture = null;
+        if (RUN_REST_INTEGRATION_TEST) {
+            licensesFuture = CompletableFuture.supplyAsync(() -> {
+                throw new CompletionException(new FailedRequestException(SW360LicenseClient.TAG_CREATE_LICENSE,
+                        HttpConstants.STATUS_ERR_SERVER));
+            });
+        } else {
+            licensesFuture = licenseClient.createLicense(license);
+        }
+
         FailedRequestException exception =
-                expectFailedRequest(licenseClient.createLicense(license), HttpConstants.STATUS_ERR_SERVER);
+                expectFailedRequest(licensesFuture, HttpConstants.STATUS_ERR_SERVER);
         assertThat(exception.getTag()).isEqualTo(SW360LicenseClient.TAG_CREATE_LICENSE);
+    }
+    
+    private void deleteLicense(String licenseId) throws IOException {
+        if (RUN_REST_INTEGRATION_TEST) {
+            waitFor(licenseClient.deleteLicense(licenseId));
+            FailedRequestException exception = expectFailedRequest(licenseClient.getLicenseByName(licenseId),
+                    HttpConstants.STATUS_ERR_NOT_FOUND);
+            assertThat(exception.getTag()).isEqualTo(SW360LicenseClient.TAG_GET_LICENSE_BY_NAME);
+        }
+    }
+
+    private void createLicense(SW360License license) throws IOException {
+        if (RUN_REST_INTEGRATION_TEST) {
+            SW360License result = waitFor(licenseClient.createLicense(license));
+            assertThat(result).isEqualTo(license);
+        }
     }
 }

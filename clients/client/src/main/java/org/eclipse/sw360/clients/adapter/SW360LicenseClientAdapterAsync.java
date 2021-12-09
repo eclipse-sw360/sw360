@@ -70,4 +70,14 @@ public interface SW360LicenseClientAdapterAsync {
      * @return a future with the newly created license
      */
     CompletableFuture<SW360License> createLicense(SW360License license);
+
+    /**
+     * Deletes the license with the given ID. It
+     * inspects the {@link StatusCode} returned by SW360 and throws an
+     * exception if the operation was not successful.
+     *
+     * @return status code of request
+     * @param licenseId of the license to delete
+     */
+    CompletableFuture<Integer> deleteLicense(String licenseId);
 }

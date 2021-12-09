@@ -72,4 +72,15 @@ public interface SW360LicenseClientAdapter {
      * @throws SW360ClientException if an error occurs
      */
     SW360License createLicense(SW360License license);
+
+    /**
+     * Deletes the License with the given ID. It
+     * inspects the {@link StatusCode} returned by SW360 and throws an
+     * exception if the operation was not successful.
+     *
+     * @param licenseId of the License to delete
+     * @return status code of request
+     * @throws SW360ClientException if the vulnerability could not be deleted
+     */
+    Integer deleteLicense(String licenseId);
 }

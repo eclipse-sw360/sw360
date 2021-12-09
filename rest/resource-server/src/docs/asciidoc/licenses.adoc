@@ -76,3 +76,14 @@ include::{snippets}/should_document_unlink_obligation/curl-request.adoc[]
 
 ===== Example response
 include::{snippets}/should_document_unlink_obligation/http-response.adoc[]
+
+[[resources-license-delete]]
+==== Delete a single license
+
+A `DELETE` request will delete a single license.
+
+===== Example request
+include::{snippets}/should_document_delete_license/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_delete_license/http-response.adoc[]

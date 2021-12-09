@@ -204,7 +204,7 @@ public class SW360AttachmentClientIT extends AbstractMockServerTest {
         SW360AttachmentAwareClient.AttachmentProcessor<SW360Project> processor = stream ->
                 objectMapper.readValue(stream, SW360Project.class);
         wireMockRule.stubFor(get(urlPathEqualTo(itemRef + "/attachments/" + attachmentID))
-                .withHeader(HttpConstants.HEADER_ACCEPT, equalTo(HttpConstants.CONTENT_OCTET_STREAM))
+                .withHeader(HttpConstants.HEADER_ACCEPT, equalTo(HttpConstants.CONTENT_ALL_STREAM))
                 .willReturn(aJsonResponse(HttpConstants.STATUS_OK)
                         .withBodyFile(testFile)));
 

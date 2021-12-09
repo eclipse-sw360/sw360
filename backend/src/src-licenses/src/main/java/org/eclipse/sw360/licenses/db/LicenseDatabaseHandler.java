@@ -145,7 +145,7 @@ public class LicenseDatabaseHandler {
         License license = licenseRepository.get(id);
 
         if (license == null) {
-            throw new SW360Exception("No license details found in the database for id " + id + ".");
+            throw new SW360Exception("No license details found in the database for id " + id + ".").setErrorCode(404);
         }
 
         fillLicenseForOrganisation(organisation, license);

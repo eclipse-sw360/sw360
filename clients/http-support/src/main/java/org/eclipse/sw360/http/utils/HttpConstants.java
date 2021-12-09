@@ -118,6 +118,11 @@ public final class HttpConstants {
     public static final String CONTENT_OCTET_STREAM = "application/octet-stream";
 
     /**
+     * Constant for the content type application/octet-stream.
+     */
+    public static final String CONTENT_ALL_STREAM = "application/*";
+
+    /**
      * Constant for the content type application/json.
      */
     public static final String CONTENT_JSON = "application/json";
