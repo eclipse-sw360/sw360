@@ -74,4 +74,6 @@ jobs:
       run: bash scripts/sw360BackendRestDockerConfig/scripts/createUserAndOauthClient.sh
 
     - name: Run Client Itegration Test for Rest Api
-      run: mvn clean install --no-transfer-progress -DRunRestIntegrationTest=true
+      run: |
+        cd clients
+        mvn clean install --no-transfer-progress -DRunRestIntegrationTest=true

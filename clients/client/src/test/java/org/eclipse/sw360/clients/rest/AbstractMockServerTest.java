@@ -28,9 +28,9 @@ import org.eclipse.sw360.http.utils.HttpConstants;
 import org.eclipse.sw360.clients.auth.AccessToken;
 import org.eclipse.sw360.clients.auth.AccessTokenProvider;
 import org.eclipse.sw360.clients.auth.SW360AuthenticationClient;
+import org.eclipse.sw360.clients.config.CommonUtils;
 import org.eclipse.sw360.clients.config.SW360ClientConfig;
 import org.eclipse.sw360.clients.rest.resource.SW360HalResource;
-import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 
