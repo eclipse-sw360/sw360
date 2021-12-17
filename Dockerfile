@@ -46,12 +46,24 @@ RUN ./build_thrift.sh \
 # Couchdb-Lucene
 FROM builder as clucenebuild
 
+ARG CLUCENE_VERSION=2.1.0
+
+WORKDIR /build
+
 COPY deps/couchdb* /deps/
-COPY ./scripts/docker-config/install_scripts/build_couchdb_lucene.sh build_clucene.sh
 
-RUN ./build_clucene.sh \
+# Prepare source code
+RUN --mount=type=tmpfs,target=/build \
+    --mount=type=cache,target=/root/.m2,rw,sharing=locked \
+    tar -C /build -xvf /deps/couchdb-lucene-$CLUCENE_VERSION.tar.gz --strip-components=1 \
+    && cd /build \
+    && patch -p1 < /deps/couchdb-lucene.patch \
+    && sed -i "s/allowLeadingWildcard=false/allowLeadingWildcard=true/" src/main/resources/couchdb-lucene.ini \
+    && sed -i "s/localhost:5984/$COUCHDB_USER:$COUCHDB_PASSWORD@couchdb:5984/" ./src/main/resources/couchdb-lucene.ini \
+    && mvn dependency:go-offline \
+    && mvn install war:war \
+    && cp ./target/*.war /couchdb-lucene.war \
     && rm -rf /deps
-
 
 #-------------------------------------
 # Main base container
@@ -105,11 +117,14 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked apt-get update \
         && rm -rf /var/lib/apt/lists/* \
         && pip install mkdocs-material
 
+
 COPY deps/sw360.tar /deps/
 
-RUN tar xf /deps/sw360.tar \
-    && cd sw360 \
-    && mvn clean package \
+RUN --mount=type=tmpfs,target=/build \
+    --mount=type=cache,target=/root/.m2,rw,sharing=locked \
+    tar -C /build -xf /deps/sw360.tar \
+    && cd /build/sw360 \
+    && mvn package \
     -P deploy -Dtest=org.eclipse.sw360.rest.resourceserver.restdocs.* \
     -DfailIfNoTests=false \
     -Dbase.deploy.dir=. \
