@@ -36,10 +36,14 @@ COPY .tmp/mvn-proxy-settings.xml /root/.m2/settings.xml
 # Thrift
 FROM builder AS thriftbuild
 
+ARG THRIFT_VERSION=0.14.0
+
 COPY deps/thrift-*.tar.gz /deps/
 COPY ./scripts/docker-config/install_scripts/build_thrift.sh build_thrift.sh
 
-RUN ./build_thrift.sh \
+RUN --mount=type=tmpfs,target=/build \
+    tar -xzf "deps/thrift-$THRIFT_VERSION.tar.gz" --strip-components=1 -C /build \
+    && ./build_thrift.sh \
     && rm -rf /deps
 
 #-------------------------------------
