@@ -612,11 +612,11 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         String outputGenerator = request.getParameter(PortalConstants.LICENSE_INFO_SELECTED_OUTPUT_FORMAT);
         String selectedTemplate = request.getParameter("tmplate");
         boolean isOnlyApprovedAttachmentSelected = Boolean.parseBoolean(request.getParameter(PortalConstants.ONLY_APPROVED));
-        String fileName = "";
+        String fileNameWithOrg = "";
         if(CommonUtils.isNotNullEmptyOrWhitespace(CLEARING_REPORT_TEMPLATE_TO_FILENAMEMAPPING) && CommonUtils.isNotNullEmptyOrWhitespace(selectedTemplate)) {
-            Map<String, String> tmplateToFileName = Arrays.stream(PortalConstants.CLEARING_REPORT_TEMPLATE_TO_FILENAMEMAPPING.split(","))
+            Map<String, String> orgToTemplate = Arrays.stream(PortalConstants.CLEARING_REPORT_TEMPLATE_TO_FILENAMEMAPPING.split(","))
                     .collect(Collectors.toMap(k -> k.split(":")[0], v -> v.split(":")[1]));
-            fileName = tmplateToFileName.get(selectedTemplate);
+            fileNameWithOrg = orgToTemplate.get(selectedTemplate) + "::" + selectedTemplate;
         }
         User user = UserCacheHolder.getUserFromRequest(request);
         ProjectService.Iface projClient = thriftClients.makeProjectClient();
@@ -631,7 +631,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         }
         if (YES.equals(isEmptyFile)) {
             try {
-                downloadEmptyLicenseInfo(request, response, project, user, outputGenerator, fileName);
+                downloadEmptyLicenseInfo(request, response, project, user, outputGenerator, fileNameWithOrg);
                 return;
             } catch (IOException | TException e) {
                 log.error("Error getting empty licenseInfo file for project with id " + projectId + " and generator " + outputGenerator, e);
@@ -706,7 +706,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         try {
             final LicenseInfoService.Iface licenseInfoClient = thriftClients.makeLicenseInfoClient();
             LicenseInfoFile licenseInfoFile = licenseInfoClient.getLicenseInfoFile(project, user, outputGenerator,
-                    releaseIdsToSelectedAttachmentIds, excludedLicensesPerAttachmentId, externalIds, fileName);
+                    releaseIdsToSelectedAttachmentIds, excludedLicensesPerAttachmentId, externalIds, fileNameWithOrg);
 
             saveLicenseInfoAttachmentUsages(project, user, filteredSelectedAttachmentIdsWithPath,
                     excludedLicensesPerAttachmentIdWithPath, includeConcludedLicenseList,
@@ -719,10 +719,10 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         }
     }
 
-    private void downloadEmptyLicenseInfo(ResourceRequest request, ResourceResponse response, Project project, User user, String outputGenerator, String fileName) throws TException, IOException {
+    private void downloadEmptyLicenseInfo(ResourceRequest request, ResourceResponse response, Project project, User user, String outputGenerator, String fileNameWithOrg) throws TException, IOException {
         final LicenseInfoService.Iface licenseInfoClient = thriftClients.makeLicenseInfoClient();
         LicenseInfoFile licenseInfoFile = licenseInfoClient.getLicenseInfoFile(project, user, outputGenerator,
-                Collections.emptyMap(), Collections.emptyMap(), "", fileName);
+                Collections.emptyMap(), Collections.emptyMap(), "", fileNameWithOrg);
         sendLicenseInfoResponse(request, response, project, licenseInfoFile);
     }
 
@@ -1859,7 +1859,11 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                     mappedProjectLinks = mappedProjectLinks.stream()
                             .filter(projectLink -> projectLink.getId().equals(id)).collect(Collectors.toList());
                 }
-
+                long cliCount = mappedProjectLinks.stream().flatMap(pl -> CommonUtils.nullToEmptyCollection(pl.getLinkedReleases()).stream()).filter(rl -> CommonUtils.isNotEmpty(rl.getAttachments())).count();
+                request.setAttribute("isDownloadDisabled", "false");
+                if (cliCount == 0) {
+                    request.setAttribute("isDownloadDisabled", "true");
+                }
                 request.setAttribute(PROJECT_LIST, mappedProjectLinks);
                 request.setAttribute(PortalConstants.RELATIONSHIPS, fetchReleaseRelationships(mappedProjectLinks));
                 request.setAttribute(PortalConstants.PROJECT_RELEASE_TO_RELATION, fetchProjectReleaseToRelation(mappedProjectLinks));

@@ -202,6 +202,10 @@ public class CommonUtils {
         return in != null ? in.toString() : "";
     }
 
+    public static String nullToNAString(Object in) {
+        return in != null ? in.toString() : "N.A";
+    }
+
     public static Set<String> splitToSet(String value) {
         return ImmutableSet.copyOf(COMMA_SPLITTER.split(value));
     }

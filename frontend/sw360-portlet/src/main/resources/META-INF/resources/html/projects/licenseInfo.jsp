@@ -49,12 +49,24 @@
                  type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo>"
                  scope="request"/>
 </c:catch>
+<core_rt:set var = "isProjectClearingReport" value = "onlyClearingReport"/>
+<core_rt:set var = "isDisabled" value = "isDownloadDisabled"/>
 <core_rt:if test="${empty attributeNotFoundException}">
     <div class="container" style="display: none;">
 	<div class="row">
-            <div class="col portlet-title left text-truncate" title="<liferay-ui:message key="generate.license.information" />">
-                <liferay-ui:message key="generate.license.information" />
-            </div>
+        <core_rt:choose>
+            <core_rt:when test="${onlyClearingReport}">
+                <div class="col portlet-title left text-truncate" title="<liferay-ui:message key="create.project.clearing.report" />">
+                    <liferay-ui:message key="create.project.clearing.report" />
+                </div>
+            </core_rt:when>
+            <core_rt:otherwise>
+                <div class="col portlet-title left text-truncate" title="<liferay-ui:message key="generate.license.information" />">
+                    <liferay-ui:message key="generate.license.information" />
+                </div>
+            </core_rt:otherwise>
+        </core_rt:choose>
+
             <div class="col portlet-title text-truncate" title="${sw360:printProjectName(project)}">
                 <sw360:ProjectName project="${project}"/>
             </div>
@@ -147,11 +159,14 @@
 					</c:if>
 					<c:if test="${onlyClearingReport eq 'true' and not empty clearingReportTemplate[0]}">
 						<label for="OrganisationSelection" class="font-weight-bold h3"><liferay-ui:message key="templates" />:</label>
+						<c:set var="group" value="${project.businessUnit}" />
 						<c:forEach var="clRepTemp" items="${clearingReportTemplate}">
 							<c:set var="org" value="${fn:split(clRepTemp, ':')}" />
+							<c:if test="${org[0] eq 'Default' or org[0] eq group}">
 							<div class="radio form-check">
 								<label><input type="radio" name="org" value="${org[0]}" checked>${org[0]}</label>
 							</div>
+							</c:if>
 						</c:forEach>
 					</c:if>
 					<c:if test="${onlyClearingReport eq 'true' and not empty  tmpFormat[0]}">
@@ -180,6 +195,7 @@ require(['jquery', 'modules/dialog'], function($, dialog) {
     var onlyClearingReport = '${onlyClearingReport}';
     let downloadEmptyTemplate = '${showSessionError}';
     var outputFormat = '${lcInfoSelectedOutputFormat}';
+    let isDownloadDisabled = '${isDownloadDisabled}';
 
     var url = window.location.href;
     var searchKey = "&"+"<portlet:namespace/><%=PortalConstants.SHOW_ATTACHMENT_MISSING_ERROR%>";
@@ -209,6 +225,10 @@ require(['jquery', 'modules/dialog'], function($, dialog) {
 
     $('#selectVariantAndDownload').on('click', selectVariantAndSubmit);
     function selectVariantAndSubmit(){
+        if (isDownloadDisabled) {
+            console.log('You cannot download Product Clearing Report, because project does not have any release with CLI file!');
+            //return;
+        }
         dialog.open('#downloadLicenseInfoDialog','',function(submit, callback) {
             callback(true);
         });

@@ -31,12 +31,10 @@ import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
-import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -51,7 +49,6 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -81,7 +78,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.MultiValueMap;
@@ -105,21 +101,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.wrapThriftOptionalReplacement;
-import static org.eclipse.sw360.datahandler.common.WrappedException.wrapException;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.*;
@@ -731,14 +719,15 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 			StringUtils.isBlank(projectVersion) ? "" : "-" + projectVersion, timestamp,
 			outputFormatInfo.getFileExtension());
 
-        String fileName = "";
+        String fileNameWithOrg = "";
         if (CommonUtils.isNotNullEmptyOrWhitespace(template) && CommonUtils.isNotNullEmptyOrWhitespace(REPORT_FILENAME_MAPPING)) {
             Map<String, String> orgToTemplate = Arrays.stream(REPORT_FILENAME_MAPPING.split(","))
                     .collect(Collectors.toMap(k -> k.split(":")[0], v -> v.split(":")[1]));
-            fileName = orgToTemplate.get(template);
+            // fileName = orgToTemplate.get(template);
+            fileNameWithOrg = orgToTemplate.get(template) + "::" + template;
         }
 
-        final LicenseInfoFile licenseInfoFile = licenseInfoService.getLicenseInfoFile(sw360Project, sw360User, outputGeneratorClassNameWithVariant, selectedReleaseAndAttachmentIds, excludedLicensesPerAttachments, externalIds, fileName);
+        final LicenseInfoFile licenseInfoFile = licenseInfoService.getLicenseInfoFile(sw360Project, sw360User, outputGeneratorClassNameWithVariant, selectedReleaseAndAttachmentIds, excludedLicensesPerAttachments, externalIds, fileNameWithOrg);
         byte[] byteContent = licenseInfoFile.bufferForGeneratedOutput().array();
         response.setContentType(outputFormatInfo.getMimeType());
         response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", filename));

@@ -25,7 +25,7 @@ import java.util.UUID;
 
 public class DocxUtils {
 
-    public static final int FONT_SIZE = 10;
+    public static final int FONT_SIZE = 12;
     public static final String ALERT_COLOR = "e95850";
     public static final String FONT_FAMILY = "Calibri";
     public static final String STYLE_HEADING = "Heading2";
@@ -85,6 +85,12 @@ public class DocxUtils {
         addFormattedText(run, text, "Arial", 9, false, null);
     }
 
+    public static void addFormattedTextInTableCell(XWPFTableCell cell, String text, boolean isBold, String rrggbbColor) {
+        XWPFParagraph cellParagraph = cell.getParagraphs().get(0);
+        XWPFRun run = cellParagraph.createRun();
+        addFormattedText(run, text, "Arial", 9, isBold, rrggbbColor);
+    }
+
     public static void addFormattedText(XWPFRun run, String text, String fontFamily, int fontSize, boolean bold, String rrggbbColor) {
         run.setFontSize(fontSize);
         run.setFontFamily(fontFamily);
@@ -106,6 +112,10 @@ public class DocxUtils {
     public static void replaceText(XWPFDocument document, String placeHolder, String replaceText) {
         for (XWPFHeader header : document.getHeaderList()) {
             replaceAllBodyElements(header.getBodyElements(), placeHolder, replaceText);
+        }
+
+        for (XWPFFooter footer : document.getFooterList()) {
+            replaceAllBodyElements(footer.getBodyElements(), placeHolder, replaceText);
         }
 
         replaceAllBodyElements(document.getBodyElements(), placeHolder, replaceText);

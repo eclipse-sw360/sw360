@@ -12,6 +12,7 @@
 package org.eclipse.sw360.licenseinfo.outputGenerators;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.jena.ext.com.google.common.collect.Sets;
 import org.apache.poi.xwpf.usermodel.*;
 import org.apache.poi.xwpf.usermodel.XWPFTable.XWPFBorderType;
 import org.apache.thrift.TException;
@@ -43,30 +44,28 @@ import org.openxmlformats.schemas.wordprocessingml.x2006.main.STMerge;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.STUnderline;
 
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyString;
-import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.licenseinfo.outputGenerators.DocxUtils.*;
 
 public class DocxGenerator extends OutputGenerator<byte[]> {
     private static final String NO_ORGANISATION_OBLIGATIONS = "No Organisation Obligations.";
     private static final String NO_PROJECT_OBLIGATIONS = "No Project Obligations.";
     private static final String NO_COMPONENT_OBLIGATIONS = "No Component Obligations.";
+    private static final String OSS = "OSS";
+    private static final String COTS = "COTS";
     private static final int TABLE_WIDTH = 8800;
     private static final String CAPTION_EXTID_TABLE_VALUE = "External Identifiers for this Product:";
     private static final String CAPTION_EXTID_TABLE = "$caption-extid-table";
     private static final String EXTERNAL_ID_TABLE = "$external-id-table";
-    private static final String README_OSS_TEXT= "$readme-OSS-text";
     private static final String UNKNOWN_LICENSE_NAME = "Unknown license name";
     private static final String UNKNOWN_FILE_NAME = "Unknown file name";
     private static final String UNKNOWN_LICENSE = "Unknown";
@@ -107,6 +106,7 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         ByteArrayOutputStream docxOutputStream = new ByteArrayOutputStream();
         Optional<byte[]> docxTemplateFile;
         XWPFDocument xwpfDocument;
+        String org = "";
         try {
             switch (getOutputVariant()) {
                 case DISCLOSURE:
@@ -129,6 +129,13 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                     if (CommonUtils.isNullEmptyOrWhitespace(fileName)) {
                         docxTemplateFile = CommonUtils.loadResource(DocxGenerator.class, DOCX_TEMPLATE_REPORT_FILE);
                     } else {
+                        if (fileName.contains("::")) {
+                            String[] array = fileName.split("::");
+                            fileName = array[0];
+                            if (!array[1].equalsIgnoreCase("default")) {
+                                org = array[1];
+                            }
+                        }
                         docxTemplateFile = CommonUtils.loadResource(DocxGenerator.class,
                                 System.getProperty("file.separator") + fileName + "." + DOCX_OUTPUT_TYPE);
                     }
@@ -142,7 +149,8 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                             true,
                             obligationResults,
                             user,
-                            obligationsStatus
+                            obligationsStatus,
+                            org
                         );
                     } else {
                         throw new SW360Exception("Could not load the template for xwpf document: " + DOCX_TEMPLATE_REPORT_FILE);
@@ -259,9 +267,11 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         String licenseInfoHeaderText,
         boolean includeObligations,
         Collection<ObligationParsingResult> obligationResults,
-        User user, Map<String, ObligationStatusInfo> obligationsStatus) throws XmlException, TException {
+        User user, Map<String, ObligationStatusInfo> obligationsStatus, String org) throws XmlException, TException {
 
-            String businessUnit = project.getBusinessUnit();
+            // String businessUnit = project.getBusinessUnit();
+            String babl = CommonUtils.nullToEmptyMap(project.getAdditionalData()).get("BA BL");
+            String businessUnit = CommonUtils.isNotNullEmptyOrWhitespace(babl) ? babl : project.getBusinessUnit();
             String projectName = project.getName();
             String projectVersion = project.getVersion();
             String clearingSummaryText = project.getClearingSummary();
@@ -274,50 +284,232 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
             // extract licenses that appear at least ADDITIONAL_REQ_THRESHOLD times
             Set<String> mostLicenses = extractMostCommonLicenses(obligationResults, ADDITIONAL_REQ_THRESHOLD);
 
-            fillOwnerGroup(document, project);
-            fillAttendeesTable(document, project);
-
             replaceText(document, "$bunit", CommonUtils.nullToEmptyString(businessUnit));
             replaceText(document, "$license-info-header", CommonUtils.nullToEmptyString(licenseInfoHeaderText));
             replaceText(document, "$project-name", CommonUtils.nullToEmptyString(projectName));
             replaceText(document, "$project-version", CommonUtils.nullToEmptyString(projectVersion));
-            replaceText(document, "$clearing-summary-text", CommonUtils.nullToEmptyString(clearingSummaryText));
-            replaceText(document, "$special-risks-oss-addition-text", CommonUtils.nullToEmptyString(specialRisksOSSText));
+            replaceText(document, "$clearing-summary-text", CommonUtils.nullToNAString(clearingSummaryText));
+            replaceText(document, "$special-risks-oss-addition-text", CommonUtils.nullToNAString(specialRisksOSSText));
             replaceText(document, "$general-risks-3rd-party-text", CommonUtils.nullToEmptyString(generalRisks3rdPartyText));
             replaceText(document, "$special-risks-3rd-party-text", CommonUtils.nullToEmptyString(specialRisks3rdPartyText));
-            replaceText(document, "$delivery-channels-text", CommonUtils.nullToEmptyString(deliveryChannelsText));
-            replaceText(document, "$remarks-additional-requirements-text", CommonUtils.nullToEmptyString(remarksAdditionalRequirementsText));
-            replaceText(document, "$product-description", CommonUtils.nullToEmptyString(projectDescription));
+            replaceText(document, "$delivery-channels-text", CommonUtils.nullToNAString(deliveryChannelsText));
+            replaceText(document, "$remarks-additional-requirements-text", CommonUtils.nullToNAString(remarksAdditionalRequirementsText));
+            replaceText(document, "$product-description", CommonUtils.nullToNAString(projectDescription));
+
+            // New fields
+            String projectOwner = CommonUtils.isNotNullEmptyOrWhitespace(project.getProjectOwner()) ? project.getProjectOwner() : project.createdBy;
+            UserService.Iface userClient = new ThriftClients().makeUserClient();
+            User manager = null;
+            User owner = null;
+            if (CommonUtils.isNotNullEmptyOrWhitespace(project.getProjectResponsible())) {
+                manager = userClient.getByEmail(project.getProjectResponsible());
+            }
+            if (CommonUtils.isNotNullEmptyOrWhitespace(project.getProjectOwner())) {
+                owner = userClient.getByEmail(projectOwner);
+            }
+            replaceText(document, "$project-owner", CommonUtils.nullToNAString(SW360Utils.printFullname(owner)));
+            replaceText(document, "$project-manager", CommonUtils.nullToNAString(SW360Utils.printFullname(manager)));
+            replaceText(document, "$project-created-on", CommonUtils.nullToNAString(project.createdOn));
+            replaceText(document, "$project-created-by", CommonUtils.nullToNAString(project.createdBy));
+            replaceText(document, "$project-type", CommonUtils.nullToNAString(project.getType()));
+            replaceText(document, "$project-tag", CommonUtils.nullToNAString(project.getTag()));
+            replaceText(document, "$project-domain", CommonUtils.nullToNAString(project.getDomain()));
+            replaceText(document, "$project-lead", CommonUtils.nullToNAString(project.getLeadArchitect()));
+            replaceText(document, "$project-sec-responsible", CommonUtils.nullToNAString(String.join(",\n", CommonUtils.nullToEmptySet(project.getSecurityResponsibles()))));
+            replaceText(document, "$clearing-state", CommonUtils.nullToNAString(project.getClearingState()));
+            replaceText(document, "$clearing-team", CommonUtils.nullToNAString(project.getClearingTeam()));
+            replaceText(document, "$project-state", CommonUtils.nullToNAString(project.getState()));
 
             String readme_oss = "Is generated by the Clearing office and provided in sw360 as attachment of the Project. It is stored here:";
             replaceText(document, "$readme-OSS-text", CommonUtils.nullToEmptyString(readme_oss));
             replaceText(document, "$list_comma_sep_licenses_above_threshold", String.join(", ", mostLicenses));
 
             if (CommonUtils.isNullOrEmptyCollection(projectLicenseInfoResults)) {
+                if (CommonUtils.isNotNullEmptyOrWhitespace(org)) {
+                    replaceText(document, "$error-msg", "Either there is no releases based on your selection or \n no CLI found in selected releases or \n the selected project does not contain any release");
+                    fillComponentsTable(document, projectLicenseInfoResults, 8);
+                    fillLinkedObligations(document, obligationsStatus, projectLicenseInfoResults);
+                    return;
+                }
                 printErrorForNoRelease(document, projectLicenseInfoResults);
                 return;
             } else {
+                replaceText(document, "$error-msg", "");
                 projectLicenseInfoResults = projectLicenseInfoResults.stream().filter(Objects::nonNull)
                     .sorted(Comparator.comparing(li -> getComponentShortName(li), String.CASE_INSENSITIVE_ORDER))
                     .collect(Collectors.toList());
             }
-
-            fillSpecialOSSRisksTable(document, project, obligationResults);
-            fillDevelopmentDetailsTable(document, project, user, projectLicenseInfoResults);
-            fillOverview3rdPartyComponentTable(document, projectLicenseInfoResults);
             List<Obligation> obligations = SW360Utils.getObligations();
-            fillProjectComponentOrganisationObligationsTable(document, obligationsStatus, obligations,
-                    ObligationLevel.ORGANISATION_OBLIGATION, COMMON_RULES_TABLE_INDEX, NO_ORGANISATION_OBLIGATIONS);
-            fillProjectComponentOrganisationObligationsTable(document, obligationsStatus, obligations, 
-                    ObligationLevel.PROJECT_OBLIGATION, PROJECT_OBLIGATIONS_TABLE_INDEX, NO_PROJECT_OBLIGATIONS);
-            fillProjectComponentOrganisationObligationsTable(document, obligationsStatus, obligations, 
-                    ObligationLevel.COMPONENT_OBLIGATION, COMPONENT_OBLIGATIONS_TABLE_INDEX, NO_COMPONENT_OBLIGATIONS);
-            fillComponentObligationsTable(document, obligationResults, mostLicenses, project);
+            if (CommonUtils.isNotNullEmptyOrWhitespace(org)) {
+                fillComponentsTable(document, projectLicenseInfoResults, 8);
+                fillLinkedObligations(document, obligationsStatus, projectLicenseInfoResults);
+                fillProjectComponentOrganisationObligationsTable(document, obligationsStatus, obligations,
+                        ObligationLevel.ORGANISATION_OBLIGATION, 15, NO_ORGANISATION_OBLIGATIONS, true);
+                fillProjectComponentOrganisationObligationsTable(document, obligationsStatus, obligations,
+                        ObligationLevel.PROJECT_OBLIGATION, 16, NO_PROJECT_OBLIGATIONS, true);
+                fillProjectComponentOrganisationObligationsTable(document, obligationsStatus, obligations,
+                        ObligationLevel.COMPONENT_OBLIGATION, 17, NO_COMPONENT_OBLIGATIONS, true);
+            } else {
+                fillOwnerGroup(document, project);
+                fillAttendeesTable(document, project);
+                fillSpecialOSSRisksTable(document, project, obligationResults);
+                fillDevelopmentDetailsTable(document, project, user, projectLicenseInfoResults);
+                fillOverview3rdPartyComponentTable(document, projectLicenseInfoResults);
+                fillProjectComponentOrganisationObligationsTable(document, obligationsStatus, obligations,
+                        ObligationLevel.ORGANISATION_OBLIGATION, COMMON_RULES_TABLE_INDEX, NO_ORGANISATION_OBLIGATIONS, false);
+                fillProjectComponentOrganisationObligationsTable(document, obligationsStatus, obligations,
+                        ObligationLevel.PROJECT_OBLIGATION, PROJECT_OBLIGATIONS_TABLE_INDEX, NO_PROJECT_OBLIGATIONS, false);
+                fillProjectComponentOrganisationObligationsTable(document, obligationsStatus, obligations,
+                        ObligationLevel.COMPONENT_OBLIGATION, COMPONENT_OBLIGATIONS_TABLE_INDEX, NO_COMPONENT_OBLIGATIONS, false);
+                fillComponentObligationsTable(document, obligationResults, mostLicenses, project);
 
-            fillLinkedObligations(document, obligationsStatus);
-            // because of the impossible API component subsections must be the last thing in the docx file
-            // the rest of the sections must be generated after this
-            writeComponentSubsections(document, projectLicenseInfoResults, obligationResults);
+                fillLinkedObligations(document, obligationsStatus);
+                // because of the impossible API component subsections must be the last thing in the docx file
+                // the rest of the sections must be generated after this
+                writeComponentSubsections(document, projectLicenseInfoResults, obligationResults);
+            }
+    }
+
+    private void fillComponentsTable(XWPFDocument document, Collection<LicenseInfoParsingResult> projectLicenseInfoResults, int tableIndex) throws XmlException {
+        XWPFTable ossTable = document.getTables().get(8);
+        XWPFTable cotsTable = document.getTables().get(10);
+        XWPFTable othersTable = document.getTables().get(11);
+        boolean isOss = false, isCots = false, isOthers = false;
+        final int[] tableRow = new int[] { 1, 1, 1 }; // index 0 for oss table, index 1 for cots table and 2 for others table
+        for (LicenseInfoParsingResult result : projectLicenseInfoResults) {
+            if (result.getStatus() != LicenseInfoRequestStatus.SUCCESS) {
+                continue;
+            }
+            XWPFTableRow row;
+            if (OSS.equalsIgnoreCase(result.getComponentType())) {
+                row = ossTable.insertNewTableRow(tableRow[0]++);
+                isOss = true;
+            } else if (COTS.equalsIgnoreCase(result.getComponentType())) {
+                row = cotsTable.insertNewTableRow(tableRow[1]++);
+                isCots = true;
+            } else {
+                row = othersTable.insertNewTableRow(tableRow[2]++);
+                isOthers = true;
+            }
+            //XWPFTableRow
+            LicenseInfo licenseInfo = result.getLicenseInfo();
+            addFormattedTextInTableCell(row.addNewTableCell(), result.getName());
+            XWPFParagraph versionParagraph = row.addNewTableCell().getParagraphs().get(0);
+            addHyperlink(versionParagraph, result.getVersion(), result.getRelease().getId());
+
+            Set<String> globalLicenses = new HashSet<String>();
+            Set<String> otherLicenses = new HashSet<String>();
+            for (LicenseNameWithText lic : licenseInfo.getLicenseNamesWithTexts()) {
+                if (lic != null && "global".equalsIgnoreCase(lic.getType())) {
+                    globalLicenses.add(lic.getLicenseName());
+                }
+                if (lic != null && CommonUtils.nullToEmptyString(lic.getType()).toLowerCase().contains("other")) {
+                    otherLicenses.add(lic.getLicenseName());
+                }
+            }
+            addFormattedTextInTableCell(row.addNewTableCell(), String.join(",\n", globalLicenses));
+            addFormattedTextInTableCell(row.addNewTableCell(), String.join(",\n", otherLicenses));
+        }
+
+        if (!isOss) {
+            fillEmptyLinkedObligations(ossTable, tableRow, 0, "No Linked OSS Components.");
+        }
+        if (!isCots) {
+            fillEmptyLinkedObligations(cotsTable, tableRow, 1, "No Linked COTS Components.");
+        }
+        if (!isOthers) {
+            fillEmptyLinkedObligations(othersTable, tableRow, 2, "No Linked Components of Other type.");
+        }
+        setTableBorders(ossTable);
+        setTableBorders(cotsTable);
+        setTableBorders(othersTable);
+    }
+
+    private void fillLinkedObligations(XWPFDocument document, Map<String, ObligationStatusInfo> obligationsStatus, Collection<LicenseInfoParsingResult> projectLicenseInfoResults) {
+        XWPFTable ossOblgtnTable = document.getTables().get(12);
+        XWPFTable cotsoblgtnTable = document.getTables().get(13);
+        XWPFTable othersOblgtnTable = document.getTables().get(14);
+        final int[] obligationTableRow = new int[] { 1, 1, 1 }; // index 0 for oss table, index 1 for cots table and 2 for others table
+        Set<String> ossRelease = Sets.newHashSet(), cotsRelease = Sets.newHashSet(), otherRelease = Sets.newHashSet();
+        boolean isOss = false, isCots = false, isOthers = false;
+        final Map<String, String> releaseIdToComponentTypeMap = projectLicenseInfoResults.stream().collect(Collectors.toMap(e -> e.getRelease().getId(), e -> e.getComponentType(), (e1, e2) -> e1));
+
+        if (!obligationsStatus.isEmpty()) {
+            for (Map.Entry<String,ObligationStatusInfo> map: obligationsStatus.entrySet()) {
+                ObligationStatusInfo osi = map.getValue();
+                Set<Release> releases = osi.getReleases();
+                if (null != releases) {
+                    //Set<String> releaseNames = osi.getReleases().stream().map(SW360Utils::printName).collect(Collectors.toSet());
+                    XWPFTableRow ossRow = null;
+                    XWPFTableRow cotsRow = null;
+                    XWPFTableRow othersRow = null;
+                    String relName = "";
+                    for (Release rel : releases) {
+                        relName = SW360Utils.printName(rel);
+                        String compType = releaseIdToComponentTypeMap.get(rel.getId());
+                        if (OSS.equalsIgnoreCase(compType)) {
+                            isOss = true;
+                            fillCellsInObligationTableRow(ossOblgtnTable, ossRow, relName, map.getKey(), obligationTableRow, 0, osi);
+                            ossRelease.add(relName);
+                        } else if (COTS.equalsIgnoreCase(compType)) {
+                            isCots = true;
+                            fillCellsInObligationTableRow(cotsoblgtnTable, cotsRow, relName, map.getKey(), obligationTableRow, 1, osi);
+                            cotsRelease.add(relName);
+                        } else {
+                            isOthers = true;
+                            fillCellsInObligationTableRow(othersOblgtnTable, othersRow, relName, map.getKey(), obligationTableRow, 2, osi);
+                            otherRelease.add(relName);
+                        }
+                    }
+                }
+            }
+            if (!isOss) {
+                fillEmptyLinkedObligations(ossOblgtnTable, obligationTableRow, 0, "No Linked Obligations in OSS components.");
+                replaceText(document, "$oss-release", "No Linked OSS components with obligations.");
+            } else {
+                replaceText(document, "$oss-release", String.join(",\n", ossRelease));
+            }
+            if (!isCots) {
+                fillEmptyLinkedObligations(cotsoblgtnTable, obligationTableRow, 1, "No Linked Obligations in COTS components.");
+                replaceText(document, "$cots-release", "No Linked COTS components with obligations.");
+            } else {
+                replaceText(document, "$cots-release", String.join(",\n", cotsRelease));
+            }
+            if (!isOthers) {
+                fillEmptyLinkedObligations(othersOblgtnTable, obligationTableRow, 2, "No Linked Obligations in components of Other type.");
+                replaceText(document, "$other-release", "No Linked Obligations in components of Other type.");
+            } else {
+                replaceText(document, "$other-release", String.join(",\n", otherRelease));
+            }
+        } else {
+            fillEmptyLinkedObligations(ossOblgtnTable, obligationTableRow, 0, "No Linked Obligations in OSS components.");
+            fillEmptyLinkedObligations(cotsoblgtnTable, obligationTableRow, 1, "No Linked Obligations in COTS components.");
+            fillEmptyLinkedObligations(othersOblgtnTable, obligationTableRow, 2, "No Linked Obligations in components of Other type.");
+            replaceText(document, "$oss-release", "No Linked OSS components with obligations.");
+            replaceText(document, "$cots-release", "No Linked COTS components with obligations.");
+            replaceText(document, "$other-release", "No Linked Obligations in components of Other type.");
+        }
+        setTableBorders(ossOblgtnTable);
+        setTableBorders(cotsoblgtnTable);
+        setTableBorders(othersOblgtnTable);
+    }
+
+    private void fillCellsInObligationTableRow(XWPFTable table, XWPFTableRow row, String relName, String topic, int[] tableRow, int index, ObligationStatusInfo osi) {
+        if (null == row) {
+            row = table.insertNewTableRow(tableRow[index]++);
+            addFormattedTextInTableCell(row.addNewTableCell(), topic);
+            addFormattedTextInTableCell(row.addNewTableCell(), String.join(", \n", osi.getLicenseIds()));
+            addFormattedTextInTableCell(row.addNewTableCell(), relName);
+            addFormattedTextInTableCell(row.addNewTableCell(), ThriftEnumUtils.enumToString(osi.getStatus()));
+        } else {
+            addFormattedTextInTableCell(row.getTableCells().get(2), ", \n" + relName);
+        }
+    }
+
+    private void fillEmptyLinkedObligations(XWPFTable table, int[] tableRow, int index, String message) {
+        XWPFTableRow textRow = table.createRow();
+        addFormattedTextInTableCell(textRow.getCell(0), message, true, "FF0000");
+        mergeColumns(table, tableRow[index]++, 0, textRow.getCtRow().sizeOfTcArray() - 1);
     }
 
     private void fillOwnerGroup(XWPFDocument document, Project project) throws XmlException, TException {
@@ -579,8 +771,8 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                 .collect(Collectors.toSet());
     }
 
-    private void fillProjectComponentOrganisationObligationsTable(XWPFDocument document,Map<String, ObligationStatusInfo> obligationsStatusAtProject,
-            List<Obligation> obligations,ObligationLevel oblLevel,int tableIndex,String emptyTableText) {
+    private void fillProjectComponentOrganisationObligationsTable(XWPFDocument document, Map<String, ObligationStatusInfo> obligationsStatusAtProject,
+            List<Obligation> obligations, ObligationLevel oblLevel, int tableIndex, String emptyTableText, boolean isOrgPresent) {
 
         XWPFTable table = document.getTables().get(tableIndex);
         final int[] currentRow = new int[] { 0 };
@@ -594,27 +786,32 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                 currentRow[0] = currentRow[0] + 1;
                 XWPFTableRow row = table.insertNewTableRow(currentRow[0]);
                 addFormattedTextInTableCell(row.addNewTableCell(), o.getKey());
-                addFormattedTextInTableCell(row.addNewTableCell(), ThriftEnumUtils.enumToString(osi.getStatus()));
-                addFormattedTextInTableCell(row.addNewTableCell(),
-                        nullToEmptyString(ThriftEnumUtils.enumToString(osi.getObligationType())));
-                addFormattedTextInTableCell(row.addNewTableCell(), nullToEmptyString(osi.getId()));
-                addFormattedTextInTableCell(row.addNewTableCell(), nullToEmptyString(osi.getComment()));
-                currentRow[0] = currentRow[0] + 1;
-                XWPFTableRow textRow = table.createRow();
-                addFormattedTextInTableCell(textRow.getCell(0), osi.getText());
-                mergeColumns(table, currentRow[0], 0, textRow.getCtRow().sizeOfTcArray() - 1);
+                if (isOrgPresent) {
+                    addFormattedTextInTableCell(row.addNewTableCell(),
+                            nullToEmptyString(ThriftEnumUtils.enumToString(osi.getObligationType())));
+                    addFormattedTextInTableCell(row.addNewTableCell(), ThriftEnumUtils.enumToString(osi.getStatus()));
+                } else {
+                    addFormattedTextInTableCell(row.addNewTableCell(), ThriftEnumUtils.enumToString(osi.getStatus()));
+                    addFormattedTextInTableCell(row.addNewTableCell(),
+                            nullToEmptyString(ThriftEnumUtils.enumToString(osi.getObligationType())));
+                    addFormattedTextInTableCell(row.addNewTableCell(), nullToEmptyString(osi.getId()));
+                    addFormattedTextInTableCell(row.addNewTableCell(), nullToEmptyString(osi.getComment()));
+                    currentRow[0] = currentRow[0] + 1;
+                    XWPFTableRow textRow = table.createRow();
+                    addFormattedTextInTableCell(textRow.getCell(0), osi.getText());
+                    mergeColumns(table, currentRow[0], 0, textRow.getCtRow().sizeOfTcArray() - 1);
+                }
             });
         } else {
             currentRow[0] = currentRow[0] + 1;
             XWPFTableRow textRow = table.createRow();
-            addFormattedTextInTableCell(textRow.getCell(0), emptyTableText);
+            addFormattedTextInTableCell(textRow.getCell(0), emptyTableText, true, "FF0000");
             mergeColumns(table, currentRow[0], 0, textRow.getCtRow().sizeOfTcArray() - 1);
         }
         setTableBorders(table);
     }
 
     private void fillComponentObligationsTable(XWPFDocument document, Collection<ObligationParsingResult> obligationResults, Set<String> mostLicenses, Project project) throws XmlException, SW360Exception {
-        final int[] currentRow = new int[] { 0, 0 };
         final  Map<String, Map<String, String>> licenseIdToOblTopicText = new HashMap<String, Map<String, String>>();
 
         obligationResults.stream()
@@ -647,8 +844,6 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
     private void printSecondTableOnwards(XWPFDocument document, XmlCursor cursor, Map.Entry<String, Map<String, String>> entr, Project project) {
         XWPFTable table = document.insertNewTbl(cursor);
         Map<String, String> tctxt = entr.getValue();
-        int noOfRows = tctxt.size();
-        final int[] currentRow = new int[]{noOfRows};
 
         XWPFTableRow row = table.getRow(0);
         addFormattedTextInTableCell(row.getCell(0), "Obligation");
@@ -674,7 +869,6 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         Map.Entry<String, Map<String, String>> entr1 = entry.iterator().next();
         Map<String, String> tctxt = entr1.getValue();
         Map.Entry<String, String> topictxt = tctxt.entrySet().iterator().next();
-        final int[] currentRow = new int[]{1};
 
         final XWPFTable table = document.getTables().get(ADDITIONAL_REQ_TABLE_INDEX);
         XWPFTableRow row = table.insertNewTableRow(1);
