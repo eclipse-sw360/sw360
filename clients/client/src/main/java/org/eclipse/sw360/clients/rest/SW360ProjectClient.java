@@ -14,6 +14,7 @@
 package org.eclipse.sw360.clients.rest;
 
 import org.eclipse.sw360.http.RequestBuilder;
+import org.eclipse.sw360.http.utils.HttpConstants;
 import org.eclipse.sw360.http.utils.HttpUtils;
 import org.eclipse.sw360.clients.auth.AccessTokenProvider;
 import org.eclipse.sw360.clients.config.SW360ClientConfig;
@@ -51,6 +52,11 @@ public class SW360ProjectClient extends SW360Client {
      * Tag for the request to update an existing project.
      */
     static final String TAG_UPDATE_PROJECT = "patch_update_project";
+
+    /**
+     * Tag for the request to delete an existing project.
+     */
+    static final String TAG_DELETE_PROJECT = "delete_project";
 
     /**
      * Tag for the query that adds releases to a project.
@@ -131,6 +137,21 @@ public class SW360ProjectClient extends SW360Client {
                         .uri(resourceUrl(PROJECTS_ENDPOINT, projectId, SW360Attributes.PROJECT_RELEASES))
                         .body(body -> body.json(releases)),
                 HttpUtils.nullProcessor(), TAG_ADD_RELEASES_TO_PROJECT);
+    }
+
+    /**
+     * Triggers a DELETE operation for the project identified by the given
+     * IDs.
+     *
+     * @param projectId of the project to delete
+     * @return a future with the status code {@code Integer} returned by the
+     * server
+     */
+    public CompletableFuture<Integer> deleteProject(String projectId) {
+        String url = resourceUrl(PROJECTS_ENDPOINT, projectId);
+        return executeRequest(builder -> builder.uri(url).method(RequestBuilder.Method.DELETE),
+                HttpUtils.checkResponse(response -> response.statusCode(), HttpUtils.hasStatus(HttpConstants.STATUS_OK), TAG_DELETE_PROJECT),
+                TAG_DELETE_PROJECT);
     }
 
     /**

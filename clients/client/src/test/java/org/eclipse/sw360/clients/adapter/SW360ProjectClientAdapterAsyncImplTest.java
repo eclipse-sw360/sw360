@@ -10,42 +10,46 @@
  */
 package org.eclipse.sw360.clients.adapter;
 
-import org.eclipse.sw360.clients.rest.SW360ProjectClient;
-import org.eclipse.sw360.clients.rest.resource.SW360Visibility;
-import org.eclipse.sw360.clients.rest.resource.projects.ProjectSearchParams;
-import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectType;
-import org.eclipse.sw360.clients.rest.resource.releases.SW360SparseRelease;
-import org.eclipse.sw360.clients.utils.SW360ClientException;
-import org.eclipse.sw360.clients.rest.resource.LinkObjects;
-import org.eclipse.sw360.clients.rest.resource.Self;
-import org.eclipse.sw360.clients.rest.resource.projects.SW360Project;
-import org.eclipse.sw360.clients.rest.resource.releases.SW360Release;
-import org.eclipse.sw360.clients.rest.resource.releases.SW360ReleaseLinkObjects;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.eclipse.sw360.clients.utils.FutureUtils.block;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
+import org.eclipse.sw360.clients.rest.SW360ProjectClient;
+import org.eclipse.sw360.clients.rest.resource.LinkObjects;
+import org.eclipse.sw360.clients.rest.resource.SW360Visibility;
+import org.eclipse.sw360.clients.rest.resource.Self;
+import org.eclipse.sw360.clients.rest.resource.projects.ProjectSearchParams;
+import org.eclipse.sw360.clients.rest.resource.projects.SW360Project;
+import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectType;
+import org.eclipse.sw360.clients.rest.resource.releases.SW360Release;
+import org.eclipse.sw360.clients.rest.resource.releases.SW360ReleaseLinkObjects;
+import org.eclipse.sw360.clients.rest.resource.releases.SW360SparseRelease;
+import org.eclipse.sw360.clients.utils.SW360ClientException;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
 
 public class SW360ProjectClientAdapterAsyncImplTest {
     private static final String PROJECT_VERSION = "1.0-projectVersion";
     private static final String PROJECT_NAME = "projectName";
     private final String PROJECT_LAST_INDEX = "12345";
+    private static final String PROJECT_ID = "projectId";
 
     private SW360ProjectClientAdapterAsync projectClientAdapter;
 
@@ -182,6 +186,19 @@ public class SW360ProjectClientAdapterAsyncImplTest {
         block(projectClientAdapter.addSW360ReleasesToSW360Project(PROJECT_LAST_INDEX, releases));
 
         verify(projectClient, atLeastOnce()).addReleasesToProject(eq(PROJECT_LAST_INDEX), any());
+    }
+
+    @Test
+    public void testDeleteProject() {
+        Map<String, Integer> responses = new HashMap<String, Integer>();
+        responses.put(PROJECT_ID, 200);
+        when(projectClient.deleteProject(Mockito.anyObject()))
+                .thenReturn(CompletableFuture.completedFuture(200));
+
+        Integer responseCode = block(projectClientAdapter.deleteProject(PROJECT_ID));
+
+        assertThat(responseCode).isEqualTo(200);
+        verify(projectClient).deleteProject(PROJECT_ID);
     }
 
     private void checkGetLinkedReleases(boolean transitive) {

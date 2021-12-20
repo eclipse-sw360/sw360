@@ -88,6 +88,11 @@ class SW360ProjectClientAdapterAsyncImpl implements SW360ProjectClientAdapterAsy
         return getProjectClient().getLinkedReleases(projectId, transitive);
     }
 
+    @Override
+    public CompletableFuture<Integer> deleteProject(String projectId) {
+        return getProjectClient().deleteProject(projectId);
+    }
+
     /**
      * Validates the given project entity and then executes an action on it.
      * All mandatory properties must have been set. If this is the case, the

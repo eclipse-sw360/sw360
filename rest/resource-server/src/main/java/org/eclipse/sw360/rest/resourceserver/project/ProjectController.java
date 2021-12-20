@@ -274,6 +274,13 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         return new ResponseEntity<>(userHalResource, HttpStatus.OK);
     }
 
+    @RequestMapping(value = PROJECTS_URL + "/{id}", method = RequestMethod.DELETE)
+    public ResponseEntity deleteProject(@PathVariable("id") String id) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        projectService.deleteProject(id, sw360User);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = PROJECTS_URL, method = RequestMethod.POST)
     public ResponseEntity createProject(@RequestBody Map<String, Object> reqBodyMap)

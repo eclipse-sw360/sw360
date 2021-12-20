@@ -57,6 +57,8 @@ public class Sw360LicenseService {
         } catch (SW360Exception exp) {
             if (exp.getErrorCode() == 404) {
                 throw new ResourceNotFoundException(exp.getWhy());
+            } else {
+                throw new RuntimeException(exp.getWhy());
             }
         }
         return license;

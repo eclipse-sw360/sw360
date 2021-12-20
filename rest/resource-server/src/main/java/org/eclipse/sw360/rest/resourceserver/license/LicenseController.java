@@ -82,7 +82,7 @@ public class LicenseController implements ResourceProcessor<RepositoryLinksResou
     
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = LICENSES_URL + "/{id:.+}", method = RequestMethod.DELETE)
-    public ResponseEntity<Resource<License>> deleteLicense(
+    public ResponseEntity deleteLicense(
             @PathVariable("id") String id) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         licenseService.deleteLicenseById(id, sw360User);
