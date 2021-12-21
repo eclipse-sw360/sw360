@@ -1,4 +1,6 @@
-# Steps to use SW360 Docker
+# SW360 Docker
+
+## Building
 
 * Install Docker and docker-compose.
 * Build docker compose
@@ -18,7 +20,7 @@
 
     The config file looks like this:
 
-    ```sh
+    ```ini
     # scripts/docker-config/default.docker.env
     POSTGRES_USER=liferay
     POSTGRES_PASSWORD=liferay
@@ -41,30 +43,42 @@
 
     To build under proxy system, add this options on your custom env file:
 
-    ```sh
+    ```ini
     PROXY_ENABLED=true
     PROXY_HTTP_HOST=<your_http_proxy_ip>
     PROXY_HTTPS_HOST=<your_https_proxy_ip>
     PROXY_PORT=<your_port>
     ```
 
-* Running the image
+## Running the image
 
-    To run the resulting compose just do:
+* Run the resulting image:
 
     ```sh
     docker-compose -env-file scripts/docker-config/default.docker.env up
     ```
 
-    or with your custom env file
+* With custom env file
 
     ```sh
     docker-compose --env-file <myenvfile> up
     ```
 
-* *Nginx* config for reverse proxy and X-Frame issues
+    You can add **-d** parameter at end of line to sgtart in daemon mode and see the logs with the following command:
 
-    For nginx, assuming you are using standard 8080 localhost port for you sw360, this is a simple configuration for root webserver under Ubuntu.
+    ```sh
+    docker logs -f sw360
+    ```
+
+## Extra configurations
+
+SW360 image runs without internal web server and is assigned to be SSL as default, so using port **8080** directly will cause CSS to be scrambled, since internally redirections will be passed to inexistent localhost port **443**. 
+
+Here's some extra configurations that can be useful
+
+* *Nginx* config for reverse proxy and X-Frame issues on on host machine ( not docker )
+
+    For nginx, assuming you are using default config for your sw360, this is a simple configuration for root web server under Ubuntu.
 
     ```nginx
         location / {
@@ -80,4 +94,29 @@
         }
     ```
 
-    ***WARNING*** - Cross frame is enable and open for development purposes. If you intend to use the above config in production, remember to properly secure the webserver.
+    ***WARNING*** - X-frame is enabled wide open for development purposes. If you intend to use the above config in production, remember to properly secure the web server.
+
+* Make http only **port 8080** default
+
+    Modify the following line on your portal-ext.properties to http:
+
+    ```ini
+    web.server.protocol=http
+    ```
+
+* Liferay by default for security reasons do not allow redirect for unknown ips/domains, mostly on admin modules, so is necessary to add your domain or ip to the redirect allowed lists in portal-ext.properties.
+A not proper redirect can see in logs
+
+    **IP based** - The list of ips is separated by comma
+    ```
+    redirect.url.security.mode=ip
+    redirect.url.ips.allowed=127.0.0.1,172.17.0.1,...
+
+    ```
+
+    **Domain based** - The list domains is separated by comma
+    ```
+    redirect.url.security.mode=domain
+    redirect.url.domain.allowed=exampler.com,*.wildcard.com
+
+    ```

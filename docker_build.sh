@@ -39,5 +39,11 @@ COMPOSE_DOCKER_CLI_BUILD=1
 DOCKER_BUILDKIT=1
 export DOCKER_BUILDKIT COMPOSE_DOCKER_CLI_BUILD
 
+# Copy portal-ext to be mounted as bind and persist
+[ ! -f "$SW360_DATA"/portal-ext.properties ]; then 
+    mkdir -p "$SW360_DATA"
+    cp scripts/docker-config/portal-ext.properties "$SW360_DATA"
+fi
+
 #shellcheck disable=SC2086
 docker-compose ${OVERRIDE_ENV} -f "$GIT_ROOT"/docker-compose.yml build

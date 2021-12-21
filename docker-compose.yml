@@ -27,6 +27,7 @@ services:
     volumes:
       - ${SW360_DATA}/data/document_library:/app/sw360/data/document_library
       - ${SW360_DATA}/etc:/etc/sw360
+      - ${SW360_DATA}/portal-ext.properties:/app/sw360/portal-ext.properties
   postgresdb:
     image: 'postgres:13'
     restart: always

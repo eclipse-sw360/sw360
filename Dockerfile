@@ -143,7 +143,7 @@ FROM imagebase
 
 COPY --from=sw360build /sw360_deploy/* /app/sw360/deploy
 COPY --from=sw360build /sw360_tomcat_webapps/* /app/sw360/tomcat/webapps/
-COPY ./scripts/docker-config/portal-ext.properties /app/sw360
+
 # We will copy the scripts on entrypoint to persists, otherwise volume will override it
 COPY ./scripts/docker-config/etc_sw360 /etc_sw360
 COPY ./scripts/docker-config/entry_point.sh .
