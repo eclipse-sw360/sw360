@@ -37,7 +37,7 @@ dependencies=(
 
 download_dependency() {
   if [ ! -f "$(basename "$1")" ]; then
-    curl -O -J -L "$1"
+    curl -k -O -J -L "$1"
   fi
 }
 

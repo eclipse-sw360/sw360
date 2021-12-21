@@ -53,7 +53,7 @@
     To run the resulting compose just do:
 
     ```sh
-    docker-compose up
+    docker-compose -env-file scripts/docker-config/default.docker.env up
     ```
 
     or with your custom env file
