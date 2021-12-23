@@ -72,9 +72,22 @@
 
 ## Extra configurations
 
-SW360 image runs without internal web server and is assigned to be SSL as default, so using port **8080** directly will cause CSS to be scrambled, since internally redirections will be passed to inexistent localhost port **443**. 
+By defaut, docker image of SW360 runs without internal web server and is assigned to be SSL as default. This is configured on *portal-ext.properties*
 
-Here's some extra configurations that can be useful
+Here's some extra configurations that can be useful to fix some details.
+
+* CSS layout looks wrong
+    If you do not use an external web server with redirection ( see below ), you may find the main CSS theme scrambled ( not properly loaded )
+
+    This happens because current Liferay used version try to access the theme using only canonical hostname, without the port assigned, so leading to an invalid CSS url.
+
+    To fix, you will need to change *portal-ext.properties* in data directory ( or your assigned data directory ) with the following extra value:
+
+    ```ini
+    web.server.host=<your ip/host of docker>:<port>
+    ```
+    This will tell liferay where is your real host instead of trying to guess the wrong host.
+
 
 * *Nginx* config for reverse proxy and X-Frame issues on on host machine ( not docker )
 
