@@ -77,6 +77,7 @@ By defaut, docker image of SW360 runs without internal web server and is assigne
 Here's some extra configurations that can be useful to fix some details.
 
 * CSS layout looks wrong
+
     If you do not use an external web server with redirection ( see below ), you may find the main CSS theme scrambled ( not properly loaded )
 
     This happens because current Liferay used version try to access the theme using only canonical hostname, without the port assigned, so leading to an invalid CSS url.
