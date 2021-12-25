@@ -27,6 +27,7 @@
 
 <core_rt:set var = "updateProjectVulnerabilitiesURL" scope = "request" value = "updateProjectVulnerabilitiesURL"/>
 <core_rt:set var = "updateVulnerabilityRatings" scope = "request" value = "updateVulnerabilityRatings"/>
+<jsp:useBean id="isCrDisabledForProjectBU" type="java.lang.Boolean" scope="request"/>
 <div class="container" style="display: none;">
 	<div class="row">
 		<div class="col-3 sidebar">
@@ -122,6 +123,7 @@
 										</div>
 									</div>
 								</div>
+								<core_rt:if test='${not isCrDisabledForProjectBU}'>
 								<div class="btn-group" role="group" id="clearingRequest">
 									<button id="createClearingRequestBtn" type="button" class="btn btn-secondary <core_rt:if test="${not empty project.clearingRequestId}">d-none</core_rt:if>"
 									    <core_rt:if test = "${(project.clearingState eq 'CLOSED') || !writeAccessUser}">
@@ -135,6 +137,7 @@
 										<liferay-ui:message key="view.clearing.request" />
 									</button>
 								</div>
+								</core_rt:if>
 							</div>
 							<div class="list-group-companion" data-belong-to="tab-attachmentUsages">
 								<core_rt:if test="${writeAccessUser}">

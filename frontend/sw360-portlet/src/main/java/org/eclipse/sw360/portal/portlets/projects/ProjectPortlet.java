@@ -70,7 +70,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
-import org.apache.thrift.protocol.TSimpleJSONProtocol;
 import org.jetbrains.annotations.NotNull;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 
@@ -87,6 +86,7 @@ import java.util.Map.Entry;
 import java.util.function.*;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Strings.nullToEmpty;
@@ -1518,6 +1518,12 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 request.setAttribute(CUSTOM_FIELD_PREFERRED_CLEARING_DATE_LIMIT, dateLimit);
                 ModerationService.Iface modClient = thriftClients.makeModerationClient();
                 Integer criticalCount = modClient.getCriticalClearingRequestCount();
+                request.setAttribute(IS_CLEARING_REQUEST_DISABLED_FOR_PROJECT_BU, false);
+                Set<String> groupsWithCrDisabled = Stream.of(PortalConstants.DISABLE_CLEARING_REQUEST_FOR_PROJECT_WITH_GROUPS.toLowerCase().split(",")).collect(Collectors.toSet());
+                if (CommonUtils.isNotEmpty(groupsWithCrDisabled) && groupsWithCrDisabled.contains(project.getBusinessUnit().toLowerCase())
+                        && Objects.isNull(project.getClearingRequestId())) {
+                    request.setAttribute(IS_CLEARING_REQUEST_DISABLED_FOR_PROJECT_BU, true);
+                }
                 request.setAttribute(CRITICAL_CR_COUNT, criticalCount);
                 request.setAttribute(LIST_VULNERABILITY_WITH_VIEW_SIZE_FRIENDLY_URL,
                         ProjectPortletUtils.createProjectPortletUrlWithViewSizeFriendlyUrl(request, id));
@@ -2804,6 +2810,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
     public JSONArray getProjectData(List<Project> projectList, PaginationParameters projectParameters, ResourceRequest request) {
         List<Project> sortedProjects = sortProjectList(projectList, projectParameters);
+        Set<String> groupsWithCrDisabled = Stream.of(PortalConstants.DISABLE_CLEARING_REQUEST_FOR_PROJECT_WITH_GROUPS.toLowerCase().split(",")).collect(Collectors.toSet());
+        boolean isNotEmpty = CommonUtils.isNotEmpty(groupsWithCrDisabled);
         int count = PortletUtils.getProjectDataCount(projectParameters, projectList.size());
         Map<String, Set<String>> filterMap = loadFilterMapFromRequest(request);
         final int start = filterMap.isEmpty() ? 0 : projectParameters.getDisplayStart();
@@ -2824,6 +2832,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             jsonObject.put("lProjSize", String.valueOf(project.getLinkedProjectsSize()));
             jsonObject.put("lRelsSize", String.valueOf(project.getReleaseIdToUsageSize()));
             jsonObject.put("attsSize", String.valueOf(project.getAttachmentsSize()));
+            if (isNotEmpty && groupsWithCrDisabled.contains(project.getBusinessUnit().toLowerCase()) && Objects.isNull(project.getClearingRequestId())) {
+                jsonObject.put("isCrDisabledForProjectBU", true);
+            }
             jsonObject.put(IS_PROJECT_MEMBER,
                     SW360Utils.isModeratorOrCreator(project, UserCacheHolder.getUserFromRequest(request)));
             projectData.put(jsonObject);

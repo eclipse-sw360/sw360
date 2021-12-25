@@ -47,7 +47,9 @@
 
 <c:set var="pageName" value="<%= request.getParameter("pagename") %>" />
 
-<%@include file="/html/projects/includes/projects/clearingRequest.jspf" %>
+<core_rt:if test='${not isCrDisabledForProjectBU}'>
+    <%@include file="/html/projects/includes/projects/clearingRequest.jspf" %>
+</core_rt:if>
 
 <jsp:useBean id="projectList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.projects.ProjectLink>"
              scope="request"/>
