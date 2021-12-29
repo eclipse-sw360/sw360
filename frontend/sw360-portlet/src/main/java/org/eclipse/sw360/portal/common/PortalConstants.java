@@ -70,6 +70,7 @@ public class PortalConstants {
     public static final String NO_FILTER = "noFilter";
     public static final String KEY_SEARCH_TEXT = "searchtext";
     public static final String KEY_SEARCH_FILTER_TEXT = "searchfilter";
+    public static final String SUBMIT_SEARCH = "submitSearch";
     public static final String DOCUMENT_ID = "documentID";
     public static final String PAGENAME = "pagename";
     public static final String PAGENAME_DETAIL = "detail";
