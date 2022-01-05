@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/bash -x
+
 # -----------------------------------------------------------------------------
 # Copyright BMW CarIT GmbH 2021
 #
@@ -19,31 +20,26 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 # Download dependencies outside container
 "$GIT_ROOT"/scripts/docker-config/download_dependencies.sh
 
+# Set local SW360 DATA
+SW360_DATA=./data/sw360
+
 # To avoid excessive copy, we will export the git archive of the sources to deps
 git archive --output=deps/sw360.tar --format=tar --prefix=sw360/ HEAD
-
-set -a
-# shellcheck disable=1091
-. "$GIT_ROOT"/scripts/docker-config/default.docker.env
-if [ -n "$SW360_ENV" ]; then
-    OVERRIDE_ENV="--env-file ${SW360_ENV}"
-    # shellcheck disable=1090
-    . "$SW360_ENV"
-fi
-set +a
-
-mkdir -p .tmp
-envsubst <scripts/docker-config/mvn-proxy-settings.xml > .tmp/mvn-proxy-settings.xml
 
 COMPOSE_DOCKER_CLI_BUILD=1
 DOCKER_BUILDKIT=1
 export DOCKER_BUILDKIT COMPOSE_DOCKER_CLI_BUILD
 
 # Copy portal-ext to be mounted as bind and persist
-[ ! -f "$SW360_DATA"/portal-ext.properties ]; then 
+if [ ! -f "$SW360_DATA"/portal-ext.properties ]; then
     mkdir -p "$SW360_DATA"
     cp scripts/docker-config/portal-ext.properties "$SW360_DATA"
 fi
 
-#shellcheck disable=SC2086
-docker-compose ${OVERRIDE_ENV} -f "$GIT_ROOT"/docker-compose.yml build
+if [ -n "$FOSSOLOGY" ]; then
+    #shellcheck disable=SC2086
+    docker-compose -f "$GIT_ROOT"/fossology-docker-compose.yml build
+else
+    #shellcheck disable=SC2086
+    docker-compose -f "$GIT_ROOT"/docker-compose.yml build
+fi

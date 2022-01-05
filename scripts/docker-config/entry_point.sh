@@ -28,8 +28,8 @@ wait_couchdb() {
 }
 
 start_sw360() {
-  # Init internal couchdb
-  #/etc/init.d/couchdb restart
+  # Copy properties if not there yet
+  [ ! -f /app/sw360/portal-ext.properties ] && cp /app/templates/portal-ext.properties /app/sw360/portal-ext.properties
 
   cd /app/sw360/tomcat/bin/
   rm -rf ./indexes/*

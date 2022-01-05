@@ -18,6 +18,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked apt-get update \
     build-essential \
     curl \
     flex \
+    gettext-base \
     git \
     libboost-dev \
     libboost-test-dev \
@@ -110,7 +111,9 @@ COPY --from=clucenebuild /couchdb-lucene.war /app/sw360/tomcat/webapps/
 FROM builder AS sw360build
 
 COPY --from=thriftbuild /thrift-bin.tar.gz /deps/
-COPY .tmp/mvn-proxy-settings.xml /root/.m2/settings.xml
+COPY scripts/docker-config/mvn-proxy-settings.xml /tmp
+RUN envsubst </tmp/mvn-proxy-settings.xml > root/.m2/settings.xml
+
 RUN tar xzf /deps/thrift-bin.tar.gz -C /
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked apt-get update \
@@ -148,6 +151,7 @@ COPY --from=sw360build /sw360_tomcat_webapps/* /app/sw360/tomcat/webapps/
 COPY ./scripts/docker-config/etc_sw360 /etc_sw360
 COPY ./scripts/docker-config/entry_point.sh .
 COPY ./scripts/docker-config/setenv.sh /app/sw360/tomcat/bin
+COPY ./scripts/docker-config/portal-ext.properties /app/templates/portal-ext.properties
 
 STOPSIGNAL SIGQUIT
 

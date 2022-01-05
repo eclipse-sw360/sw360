@@ -24,8 +24,8 @@
 
     The script will download all dependencies in the deps folder.
 
-    Docker compose for sw360 relies on environment file to setup postgres, couchdb ands sw360 containers.
-    The default environment file is under `scripts/docker-config/default.docker.env`
+    Docker compose for sw360 are configured with default entries on docker-compose.yml.
+    The default sample environment file is under `scripts/docker-config/default.docker.env`
 
     The config file looks like this:
 
@@ -42,11 +42,11 @@
     SW360_DATA=./data/sw360
     ```
 
-    By default, data for postgres, couchdb and sw360 document will be persisted under `data` on current directory. If you want to override this pass a `SW360_ENV` to a copy of the above env file, with your modifications like this:
+    By default, data for postgres, couchdb and sw360 document will be persisted under `data` on current directory. 
 
-    ```sh
-    SW360_ENV=<mynew_env> ./docker_build.sh
-    ```
+    If you want to override all configs, copy `scripts/docker-config/default.docker.env` to project roota as `.env` file and alter for your needs.
+
+    Then just rebuild the project
 
 * Proxy setup
 
@@ -59,12 +59,26 @@
     PROXY_PORT=<your_port>
     ```
 
+### Fossology
+
+If you want to add Fossology in the mix, add FOSSOLOGY=1 on the build:
+
+```sh
+FOSSOLOGY=1 ./docker_build.sh
+```
+
 ## Running the image
 
 * Run the resulting image:
 
     ```sh
-    docker-compose -env-file scripts/docker-config/default.docker.env up
+    docker-compose up
+    ```
+
+    or with fossology ( see above build instructions )
+
+    ```sh
+    docker-compose -f fossology-docker-compose.yml up
     ```
 
 * With custom env file
@@ -73,7 +87,7 @@
     docker-compose --env-file <myenvfile> up
     ```
 
-    You can add **-d** parameter at end of line to sgtart in daemon mode and see the logs with the following command:
+    You can add **-d** parameter at end of line to start in daemon mode and see the logs with the following command:
 
     ```sh
     docker logs -f sw360

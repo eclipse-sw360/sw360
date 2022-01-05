@@ -48,3 +48,4 @@ jgiven-reports/
 deps
 data
 .tmp
+.env
