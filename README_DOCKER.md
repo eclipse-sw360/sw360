@@ -1,5 +1,14 @@
 # SW360 Docker
 
+### Table of Contents
+
+[Building](#building)
+
+[Running the Image](#running-the-image)
+
+[Extra Configurations](#extra-configurations)
+
+
 ## Building
 
 * Install Docker and docker-compose.
@@ -76,61 +85,65 @@ By defaut, docker image of SW360 runs without internal web server and is assigne
 
 Here's some extra configurations that can be useful to fix some details.
 
-* CSS layout looks wrong
+### CSS layout looks wrong
 
-    If you do not use an external web server with redirection ( see below ), you may find the main CSS theme scrambled ( not properly loaded )
+If you do not use an external web server with redirection ( see below ), you may find the main CSS theme scrambled ( not properly loaded )
 
-    This happens because current Liferay used version try to access the theme using only canonical hostname, without the port assigned, so leading to an invalid CSS url.
+This happens because current Liferay used version try to access the theme using only canonical hostname, without the port assigned, so leading to an invalid CSS url.
 
-    To fix, you will need to change *portal-ext.properties* in data directory ( or your assigned data directory ) with the following extra value:
+To fix, you will need to change *portal-ext.properties* in data directory ( or your assigned data directory ) with the following extra value:
 
-    ```ini
-    web.server.host=<your ip/host of docker>:<port>
-    ```
-    This will tell liferay where is your real host instead of trying to guess the wrong host.
+```ini
+web.server.host=<your ip/host of docker>:<port>
+```
+
+This will tell liferay where is your real host instead of trying to guess the wrong host.
 
 
-* *Nginx* config for reverse proxy and X-Frame issues on on host machine ( not docker )
+### Nginx config for reverse proxy and X-Frame issues on on host machine ( not docker )
 
-    For nginx, assuming you are using default config for your sw360, this is a simple configuration for root web server under Ubuntu.
+For nginx, assuming you are using default config for your sw360, this is a simple configuration for root web server under Ubuntu.
 
-    ```nginx
-        location / {
-            resolver 127.0.0.11 valid=30s;
-            proxy_pass http://localhost:8080/;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header Host $http_host;
-            proxy_set_header X-Forwarded-Proto https;
-            proxy_redirect off;
-            proxy_read_timeout 3600s;
-            proxy_hide_header X-Frame-Options;
-            add_header X-Frame-Options "ALLOWALL";
-        }
-    ```
+```nginx
+     location / {
+         resolver 127.0.0.11 valid=30s;
+         proxy_pass http://localhost:8080/;
+         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+         proxy_set_header Host $http_host;
+         proxy_set_header X-Forwarded-Proto https;
+         proxy_redirect off;
+         proxy_read_timeout 3600s;
+         proxy_hide_header X-Frame-Options;
+         add_header X-Frame-Options "ALLOWALL";
+     }
+```
 
-    ***WARNING*** - X-frame is enabled wide open for development purposes. If you intend to use the above config in production, remember to properly secure the web server.
+***WARNING*** - X-frame is enabled wide open for development purposes. If you intend to use the above config in production, remember to properly secure the web server.
 
-* Make http only **port 8080** default
+### Make http only **port 8080** default
 
-    Modify the following line on your portal-ext.properties to http:
+Modify the following line on your portal-ext.properties to http:
 
-    ```ini
-    web.server.protocol=http
-    ```
+```ini
+web.server.protocol=http
+```
 
-* Liferay by default for security reasons do not allow redirect for unknown ips/domains, mostly on admin modules, so is necessary to add your domain or ip to the redirect allowed lists in portal-ext.properties.
+### Liferay Redirects
+
+Liferay by default for security reasons do not allow redirect for unknown ips/domains, mostly on admin modules, so is necessary to add your domain or ip to the redirect allowed lists in portal-ext.properties.
+    
 A not proper redirect can see in logs
 
-    **IP based** - The list of ips is separated by comma
-    ```
-    redirect.url.security.mode=ip
-    redirect.url.ips.allowed=127.0.0.1,172.17.0.1,...
+**IP based** - The list of ips is separated by comma
 
-    ```
+```
+redirect.url.security.mode=ip
+redirect.url.ips.allowed=127.0.0.1,172.17.0.1,...
+```
 
-    **Domain based** - The list domains is separated by comma
-    ```
-    redirect.url.security.mode=domain
-    redirect.url.domain.allowed=exampler.com,*.wildcard.com
-
-    ```
+**Domain based** - The list domains is separated by comma
+    
+```
+redirect.url.security.mode=domain
+redirect.url.domain.allowed=exampler.com,*.wildcard.com
+```
