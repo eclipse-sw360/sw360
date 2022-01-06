@@ -356,8 +356,8 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
     }
 
 
-    public List<Project> getAccessibleProjectsSummary(User user) {
-        return makeSummaryFromFullDocs(SummaryType.SUMMARY, getAccessibleProjects(user));
+    public List<Project> getAccessibleProjectsSummary(User user, VendorRepository vendorRepository) {
+        return makeSummaryFromFullDocs(SummaryType.SUMMARY, getAccessibleProjects(user, vendorRepository));
     }
 
     public Map<PaginationData, List<Project>> getAccessibleProjectsSummary(User user, PaginationData pageData) {
@@ -482,7 +482,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
     }
 
     @NotNull
-    public Set<Project> getAccessibleProjects(User user) {
+    public Set<Project> getAccessibleProjects(User user, VendorRepository vendorRepository) {
         /** This implementation requires multiple DB requests and has its logic distributed in multiple places **/
 //        final Set<Project> buProjects = new HashSet<>(getBUProjects(organisation));
 //        final Set<Project> myProjects = getMyProjects(user);
@@ -493,7 +493,10 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
          *  this is to refactor if say an enum value gets renamed...
          * **/
         final List<Project> all = getAll();
-        return all.stream().filter(ProjectPermissions.isVisible(user)::test).collect(Collectors.toSet());
+        return all.stream().filter(ProjectPermissions.isVisible(user)::test).map(project -> {
+            vendorRepository.fillVendor(project);
+            return project;
+        }).collect(Collectors.toSet());
     }
 
     public List<Project> searchByName(String name, User user) {

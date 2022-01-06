@@ -209,6 +209,7 @@
 		            <div class="tab-content">
 		                <div id="tab-Summary" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Summary'}">active show</core_rt:if>" >
 		                    <%@include file="/html/projects/includes/projects/summary.jspf" %>
+                            <%@include file="/html/projects/includes/vendors/vendorDetail.jspf" %>
 		                    <core_rt:set var="documentName"><sw360:ProjectName project="${project}"/></core_rt:set>
 		                    <%@include file="/html/utils/includes/usingProjectsTable.jspf" %>
 		                    <%@include file="/html/utils/includes/usingComponentsTable.jspf"%>

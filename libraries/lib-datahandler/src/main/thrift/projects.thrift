@@ -42,6 +42,7 @@ typedef sw360.AddDocumentRequestSummary AddDocumentRequestSummary
 typedef licenses.Obligation Obligation
 typedef licenses.ObligationType ObligationType
 typedef licenses.ObligationLevel ObligationLevel
+typedef vendors.Vendor Vendor
 
 const string CLEARING_TEAM_UNKNOWN = "Unknown"
 
@@ -157,6 +158,8 @@ struct Project {
 
     // Urls for the project
     201: optional map<string, string> externalUrls,
+    202: optional Vendor vendor,
+    203: optional string vendorId,
 }
 
 struct ProjectLink {

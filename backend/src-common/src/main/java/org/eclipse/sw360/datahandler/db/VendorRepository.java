@@ -18,6 +18,7 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 
 import com.cloudant.client.api.model.DesignDocument.MapReduce;
@@ -48,6 +49,18 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
         }
     }
 
+    public void fillVendor(Project project) {
+        if (project.isSetVendorId()) {
+            final String vendorId = project.getVendorId();
+            if (!isNullOrEmpty(vendorId)) {
+                final Vendor vendor = get(vendorId);
+                if (vendor != null)
+                    project.setVendor(vendor);
+            }
+            project.unsetVendorId();
+        }
+    }
+    
     public void fillVendor(Release release) {
         if (release.isSetVendorId()) {
             final String vendorId = release.getVendorId();

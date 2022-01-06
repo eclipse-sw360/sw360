@@ -184,7 +184,9 @@ public class JacksonCustomizations {
                 "setClearingRequestId",
                 "externalUrlsSize",
                 "setExternalUrls",
-                "externalUrls"
+                "externalUrls",
+                "setVendor",
+                "setVendorId"
         })
         static abstract class ProjectMixin extends Project {
 

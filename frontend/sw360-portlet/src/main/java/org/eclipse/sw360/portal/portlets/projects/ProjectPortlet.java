@@ -50,6 +50,7 @@ import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.exporter.ProjectExporter;
 import org.eclipse.sw360.exporter.ReleaseExporter;
@@ -57,6 +58,7 @@ import org.eclipse.sw360.portal.common.*;
 import org.eclipse.sw360.portal.common.datatables.PaginationParser;
 import org.eclipse.sw360.portal.common.datatables.data.PaginationParameters;
 import org.eclipse.sw360.portal.portlets.FossologyAwarePortlet;
+import org.eclipse.sw360.portal.portlets.components.ComponentPortletUtils;
 import org.eclipse.sw360.portal.portlets.moderation.ModerationPortletUtils;
 import org.eclipse.sw360.portal.users.LifeRayUserSession;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
@@ -276,7 +278,56 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             prepareVulnerabilitiesView(request, response);
             include("/html/projects/includes/projects/vulnerabilities.jsp", request, response,
                     PortletRequest.RESOURCE_PHASE);
+        } else if (VIEW_VENDOR.equals(action)) {
+            serveViewVendor(request, response);
+        } else if (ADD_VENDOR.equals(action)) {
+            serveAddVendor(request, response);
         }
+    }
+
+    private void serveViewVendor(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
+        String what = request.getParameter(PortalConstants.WHAT);
+        String where = request.getParameter(PortalConstants.WHERE);
+
+        if ("vendorSearch".equals(what)) {
+            renderVendorSearch(request, response, where);
+        }
+    }
+
+    private void serveAddVendor(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
+        final Vendor vendor = new Vendor();
+        ComponentPortletUtils.updateVendorFromRequest(request, vendor);
+
+        try {
+            VendorService.Iface client = thriftClients.makeVendorClient();
+            String vendorId = client.addVendor(vendor);
+            JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+            jsonObject.put("id", vendorId);
+            try {
+                writeJSON(request, response, jsonObject);
+            } catch (IOException e) {
+                log.error("Problem rendering VendorId", e);
+            }
+        } catch (TException e) {
+            log.error("Error adding vendor", e);
+        }
+    }
+
+    private void renderVendorSearch(ResourceRequest request, ResourceResponse response, String searchText) throws IOException, PortletException {
+        List<Vendor> vendors = null;
+        try {
+            VendorService.Iface client = thriftClients.makeVendorClient();
+            if (isNullOrEmpty(searchText)) {
+                vendors = client.getAllVendors();
+            } else {
+                vendors = client.searchVendors(searchText);
+            }
+        } catch (TException e) {
+            log.error("Error searching vendors", e);
+        }
+
+        request.setAttribute("vendorsSearch", nullToEmptyList(vendors));
+        include("/html/components/ajax/vendorSearch.jsp", request, response, PortletRequest.RESOURCE_PHASE);
     }
 
     private void prepareVulnerabilitiesView(ResourceRequest request, ResourceResponse response) {
@@ -974,6 +1025,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             List<Project> projects = getFilteredProjectList(request);
             if (!isNullOrEmpty(projectId)) {
                 Project project = projects.stream().filter(p -> p.getId().equals(projectId)).findFirst().get();
+                fillVendor(project);
                 filename = String.format("project-%s-%s-%s.xlsx", project.getName(), project.getVersion(), SW360Utils.getCreatedOn());
             }
             ProjectExporter exporter = new ProjectExporter(
@@ -1437,6 +1489,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 project = getWithFilledClearingStateSummary(project, user);
                 Map<String, String> sortedAdditionalData = getSortedMap(project.getAdditionalData(), true);
                 project.setAdditionalData(sortedAdditionalData);
+                fillVendor(project);
                 request.setAttribute(PROJECT, project);
                 request.setAttribute(PARENT_PROJECT_PATH, project.getId());
                 setAttachmentsInRequest(request, project);
@@ -1472,6 +1525,19 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 log.error("Error fetching project from backend!", e);
                 setSW360SessionError(request, ErrorMessages.ERROR_GETTING_PROJECT);
             }
+        }
+    }
+
+    private void fillVendor(Project project) {
+        if (!isNullOrEmpty(project.getVendorId()) && project.isSetVendorId()) {
+            VendorService.Iface client = thriftClients.makeVendorClient();
+            Vendor vendor = null;
+            try {
+                vendor = client.getByID(project.getVendorId());
+            } catch (TException e) {
+                log.error("Error fetching vendor from backend!", e);
+            }
+            project.setVendor(vendor);
         }
     }
 
