@@ -21,6 +21,10 @@ wait_couchdb() {
       sleep 1
   done
 
+  # Check id atabase is already created
+  error=$(curl --noproxy couchdb --head http://admin:password@couchdb:5984/_bla | head -n 1 | cut -d' ' -f2)
+  [ ! "$error" == "404" ] && return
+
   # Couchdb docker no cluster
   curl --noproxy couchdb -X PUT http://admin:password@couchdb:5984/_users
   curl --noproxy couchdb -X PUT http://admin:password@couchdb:5984/_replicator
@@ -28,9 +32,6 @@ wait_couchdb() {
 }
 
 start_sw360() {
-  # Copy properties if not there yet
-  [ ! -f /app/sw360/portal-ext.properties ] && cp /app/templates/portal-ext.properties /app/sw360/portal-ext.properties
-
   cd /app/sw360/tomcat/bin/
   rm -rf ./indexes/*
   ./startup.sh
@@ -38,20 +39,12 @@ start_sw360() {
 }
 
 stop_sw360() {
+  echo "###############################################################################################################"
+  echo "# Stopping SW360 server"
+  echo "###############################################################################################################"
+  
   /app/sw360/tomcat/bin/shutdown.sh
-  tail -f --lines=500 /app/sw360/tomcat/logs/catalina.out &
-  sleep 20
-  pkill -9 -f tail
-  pkill -9 -f tomcat
-  rm -rf /app/sw360/tomcat/webapps/*.war
-
-  echo "###############################################################################################################"
-  echo "# SW360 server has stopped successfully."
-  echo "# Logged into sw360 container."
-  echo "# In order to save state of sw360 create an image(using docker commit) of the current running container."
-  echo "# Execute 'sh /app/entry_point.sh' to start sw360 again."
-  echo "# Enter 'exit' to log out."
-  echo "###############################################################################################################"
+  rm /app/sw360/tomcat/webapps/*.war
 }
 
 tail_logs()
@@ -61,11 +54,6 @@ tail_logs()
 
 # We catch the container end and call the termination
 trap 'stop_sw360' SIGTERM TERM SIGINT INT EXIT WINCH SIGWINCH
-
-# Copy etc scripts if not here yet
-if [ ! -f /etc/sw360/sw360.properties ]; then
-  cp -av /etc_sw360/* /etc/sw360/
-fi
 
 wait_couchdb
 start_sw360

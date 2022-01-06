@@ -27,10 +27,9 @@ COMPOSE_DOCKER_CLI_BUILD=1
 DOCKER_BUILDKIT=1
 export DOCKER_BUILDKIT COMPOSE_DOCKER_CLI_BUILD
 
-if [ -n "$FOSSOLOGY" ]; then
-    #shellcheck disable=SC2086
-    docker-compose -f "$GIT_ROOT"/fossology-docker-compose.yml build
-else
-    #shellcheck disable=SC2086
-    docker-compose -f "$GIT_ROOT"/docker-compose.yml build
-fi
+[ -n "$FOSSOLOGY" ] && extra_args="-f $GIT_ROOT/fossology-docker-compose.yml"
+[ -n "$VERBOSE" ] && verbose="--progress=plain"
+
+#shellcheck disable=SC2086
+docker-compose -f "$GIT_ROOT"/docker-compose.yml $extra_args build $verbose
+

@@ -11,7 +11,9 @@
 
 FROM maven:3.8-eclipse-temurin-11 AS builder
 
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked apt-get update \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     automake \
     bison \
@@ -27,13 +29,16 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked apt-get update \
     libtool \
     libssl-dev \
     pkg-config \
+    procps \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
-# Configure proxy script
-COPY .tmp/mvn-proxy-settings.xml /root/.m2/settings.xml
+# Prepare proxy for maven
+COPY scripts/docker-config/mvn-proxy-settings.xml /tmp
+RUN mkdir -p /root/.m2 \
+    && envsubst </tmp/mvn-proxy-settings.xml > /root/.m2/settings.xml
 
-#-------------------------------------
+#--------------------------------------------------------------------------------------------------
 # Thrift
 FROM builder AS thriftbuild
 
@@ -47,7 +52,7 @@ RUN --mount=type=tmpfs,target=/build \
     && ./build_thrift.sh \
     && rm -rf /deps
 
-#-------------------------------------
+#--------------------------------------------------------------------------------------------------
 # Couchdb-Lucene
 FROM builder as clucenebuild
 
@@ -68,41 +73,10 @@ RUN --mount=type=tmpfs,target=/build \
     && mvn dependency:go-offline \
     && mvn install war:war \
     && cp ./target/*.war /couchdb-lucene.war \
+
     && rm -rf /deps
 
-#-------------------------------------
-# Main base container
-# We need use JDK, JRE is not enough as Liferay do runtime changes and require javac
-FROM eclipse-temurin:11-jdk as imagebase
-
-WORKDIR /app/
-
-ARG LIFERAY_SOURCE="liferay-ce-portal-tomcat-7.3.4-ga5-20200811154319029.tar.gz"
-
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        tzdata \
-        gnupg2 \
-        && rm -rf /var/lib/apt/lists/*
-
-COPY deps/jars/* /deps/jars/
-COPY deps/liferay-ce* /deps/
-
-COPY --from=thriftbuild /thrift-bin.tar.gz .
-RUN tar xzf thrift-bin.tar.gz -C / \
-    && rm thrift-bin.tar.gz
-
-# Unpack liferay as sw360 and link current tomcat version
-# to tomcat to make future proof updates
-RUN mkdir sw360 \
-    && tar xzf /deps/$LIFERAY_SOURCE -C sw360 --strip-components=1 \
-    && cp /deps/jars/* sw360/deploy \ 
-    && ln -s /app/sw360/tomcat-* /app/sw360/tomcat \
-    && rm -rf /deps
-
-COPY --from=clucenebuild /couchdb-lucene.war /app/sw360/tomcat/webapps/
-
-#-------------------------------------
+#--------------------------------------------------------------------------------------------------
 # SW360
 # We build sw360 and create real image after everything is ready
 # So when decide to use as development, only this last stage
@@ -110,13 +84,14 @@ COPY --from=clucenebuild /couchdb-lucene.war /app/sw360/tomcat/webapps/
 
 FROM builder AS sw360build
 
+# Copy thrft from builder
 COPY --from=thriftbuild /thrift-bin.tar.gz /deps/
-COPY scripts/docker-config/mvn-proxy-settings.xml /tmp
-RUN envsubst </tmp/mvn-proxy-settings.xml > root/.m2/settings.xml
-
 RUN tar xzf /deps/thrift-bin.tar.gz -C /
 
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked apt-get update \
+# Install mkdocs to generate documentation
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         mkdocs \
         python3-pip \
@@ -124,7 +99,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked apt-get update \
         && rm -rf /var/lib/apt/lists/* \
         && pip install mkdocs-material
 
-
+# Copy the exported sw360 directory
 COPY deps/sw360.tar /deps/
 
 RUN --mount=type=tmpfs,target=/build \
@@ -141,19 +116,67 @@ RUN --mount=type=tmpfs,target=/build \
     -Dhelp-docs=true \
     && rm -rf /deps
 
-# And the main final
+
+#--------------------------------------------------------------------------------------------------
+# Base container
+# We need use JDK, JRE is not enough as Liferay do runtime changes and require javac
+FROM eclipse-temurin:11-jdk as imagebase
+
+WORKDIR /app/
+
+ARG LIFERAY_SOURCE="liferay-ce-portal-tomcat-7.3.4-ga5-20200811154319029.tar.gz"
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        ca-certificates \
+        gnupg2 \
+        lsof \
+        openssh-client \
+        tzdata \
+        vim \
+        unzip \
+        zip \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY deps/jars/* /deps/jars/
+COPY deps/liferay-ce* /deps/
+
+COPY --from=thriftbuild /thrift-bin.tar.gz .
+RUN tar xzf thrift-bin.tar.gz -C / \
+    && rm thrift-bin.tar.gz
+
+# Unpack liferay as sw360 and link current tomcat version
+# to tomcat to make future proof updates
+RUN mkdir sw360 \
+    && tar xzf /deps/$LIFERAY_SOURCE -C sw360 --strip-components=1 \
+    && cp /deps/jars/* sw360/deploy \ 
+    && ln -s /app/sw360/tomcat-* /app/sw360/tomcat \
+    && rm -rf /deps
+
+#--------------------------------------------------------------------------------------------------
+# SW360 Final image
+
 FROM imagebase
+
+ENV LIFERAY_HOME=/app/sw360
 
 COPY --from=sw360build /sw360_deploy/* /app/sw360/deploy
 COPY --from=sw360build /sw360_tomcat_webapps/* /app/sw360/tomcat/webapps/
+COPY --from=clucenebuild /couchdb-lucene.war /app/sw360/tomcat/webapps/
 
-# We will copy the scripts on entrypoint to persists, otherwise volume will override it
-COPY ./scripts/docker-config/etc_sw360 /etc_sw360
-COPY ./scripts/docker-config/entry_point.sh .
+# Copy tomcat base files
 COPY ./scripts/docker-config/setenv.sh /app/sw360/tomcat/bin
+
+# Copy liferay/sw360 config files
 COPY ./scripts/docker-config/portal-ext.properties /app/sw360/portal-ext.properties
+COPY ./scripts/docker-config/etc_sw360 /etc/sw360
+COPY ./scripts/docker-config/entry_point.sh /app/entry_point.sh
 
-STOPSIGNAL SIGQUIT
+STOPSIGNAL SIGINT
 
-ENTRYPOINT ./entry_point.sh
+WORKDIR /app/sw360
+
+ENTRYPOINT [ "/app/entry_point.sh" ]
 

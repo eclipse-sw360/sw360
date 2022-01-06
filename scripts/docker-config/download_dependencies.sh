@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # -----------------------------------------------------------------------------
 # Copyright Siemens AG, 2020. Part of the SW360 Portal Project.
 # Copyright BMW CarIT GmbH. 2021
@@ -11,6 +12,8 @@
 #
 # This script downloads liferay and OSGi modules.
 # -----------------------------------------------------------------------------
+
+SW360_DEPS_DIR="${SW360_DEPS_DIR:-deps}"
 
 jar_dependencies=(
   https://search.maven.org/remotecontent?filepath=commons-codec/commons-codec/1.12/commons-codec-1.12.jar
@@ -42,7 +45,7 @@ download_dependency() {
 }
 
 # Main deps
-mkdir -p deps && cd deps || exit 1
+mkdir -p "$SW360_DEPS_DIR" && cd "$SW360_DEPS_DIR" || exit 1
 for dep in "${dependencies[@]}"; do
   download_dependency "$dep"
 done

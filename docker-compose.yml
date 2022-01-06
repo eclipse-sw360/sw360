@@ -6,6 +6,8 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 
+version: '3.8'
+
 services:
   sw360:
     image: 'sw360:latest'
@@ -21,23 +23,26 @@ services:
     stdin_open: true
     tty: true
     volumes:
-      - ./data/sw360/etc:/etc/sw360
+      - etc:/etc/sw360
+      - webapps:/app/sw360/tomcat/webapps
       - ./config:/app/sw360/config
+
   postgresdb:
     image: 'postgres:13'
-    restart: always
+    restart: unless-stopped
     environment:
       - POSTGRES_USER=liferay
       - POSTGRES_PASSWORD=liferay
       - POSTGRES_DB=lportal
     volumes:
-      - ./data/postgres:/var/lib/postgresql/data/
+      - postgres:/var/lib/postgresql/data/
     ports:
       - '5438:5432'
     logging:
       options:
         max-size: 10m
         max-file: "2"
+
   couchdb:
     image: couchdb
     environment:
@@ -47,4 +52,10 @@ services:
     ports:
       - 5984:5984
     volumes:
-      - ./data/couchdb:/opt/couchdb/data
+      - couchdb:/opt/couchdb/data
+      
+volumes:
+  postgres:
+  couchdb:
+  webapps:
+  etc:

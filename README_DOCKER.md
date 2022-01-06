@@ -34,19 +34,17 @@
     POSTGRES_USER=liferay
     POSTGRES_PASSWORD=liferay
     POSTGRES_DB=lportal
-    POSTGRES_DATA_DIR=./data/postgres
     COUCHDB_USER=admin
     COUCHDB_PASSWORD=password
     COUCHDB_CREATE_DATABASE=yes
-    COUCHDB_DATA_DIR=./data/couchdb
     SW360_DATA=./data/sw360
     ```
 
     By default, data for postgres, couchdb and sw360 document will be persisted under `data` on current directory. 
 
-    If you want to override all configs, copy `scripts/docker-config/default.docker.env` to project roota as `.env` file and alter for your needs.
+    If you want to override all configs, copy `scripts/docker-config/default.docker.env` to project root as `.env` file and alter for your needs.
 
-    Then just rebuild the project
+    Then just rebuild the project with -env_file option
 
 * Proxy setup
 
@@ -78,7 +76,7 @@ FOSSOLOGY=1 ./docker_build.sh
     or with fossology ( see above build instructions )
 
     ```sh
-    docker-compose -f fossology-docker-compose.yml up
+    docker-compose -f docker-compose.yml -f fossology-docker-compose.yml up
     ```
 
 * With custom env file
@@ -93,9 +91,9 @@ FOSSOLOGY=1 ./docker_build.sh
     docker logs -f sw360
     ```
 
-## Extra configurations
+## Configurations
 
-By defaut, docker image of SW360 runs without internal web server and is assigned to be SSL as default. This is configured on *portal-ext.properties*
+By default, docker image of SW360 runs without internal web server and is assigned to be SSL as default. This is configured on *portal-ext.properties*
 
 Here's some extra configurations that can be useful to fix some details.
 
@@ -103,9 +101,9 @@ Here's some extra configurations that can be useful to fix some details.
 
 The config file __portal-ext.properties__ overrides a second file that can be created to add a custom configuration with all data related to your necessities.
 
-This file is called __sw360-portal-ext.properties__
+This file is called __portal-sw360.properties__
 
-To add your custom configs, create this file under config dir on project root like this ( or with your favorit editor):
+To add your custom configs, create this file under config dir on project root like this ( or with your favorite editor):
 
 ```sh
 cd <sw360_source>
@@ -113,7 +111,7 @@ mkdir config
 cat "company.default.name=MYCOMPANY" > config/sw360-portal-ext.properties
 ```
 
-Docker compose with treat config as a binded volume dir and will expose to application.
+Docker compose with treat config as a bind volume dir and will expose to application.
 
 ### CSS layout looks wrong
 
@@ -128,7 +126,6 @@ web.server.host=<your ip/host of docker>:<port>
 ```
 
 This will tell liferay where is your real host instead of trying to guess the wrong host.
-
 
 ### Nginx config for reverse proxy and X-Frame issues on on host machine ( not docker )
 
@@ -150,17 +147,17 @@ For nginx, assuming you are using default config for your sw360, this is a simpl
 
 ***WARNING*** - X-frame is enabled wide open for development purposes. If you intend to use the above config in production, remember to properly secure the web server.
 
-### Make http only **port 8080** default
+### Make https only **port 443** default
 
-Modify the following line on your portal-ext.properties to http:
+Modify the following line on your custom __portal-sw360.properties__ to https:
 
 ```ini
-web.server.protocol=http
+web.server.protocol=https
 ```
 
 ### Liferay Redirects
 
-Liferay by default for security reasons do not allow redirect for unknown ips/domains, mostly on admin modules, so is necessary to add your domain or ip to the redirect allowed lists in portal-ext.properties.
+Liferay by default for security reasons do not allow redirect for unknown ips/domains, mostly on admin modules, so is necessary to add your domain or ip to the redirect allowed lists in custom __portal-sw360.properties__.
     
 A not proper redirect can see in logs
 
@@ -175,5 +172,5 @@ redirect.url.ips.allowed=127.0.0.1,172.17.0.1,...
     
 ```
 redirect.url.security.mode=domain
-redirect.url.domain.allowed=exampler.com,*.wildcard.com
+redirect.url.domain.allowed=example.com,*.wildcard.com
 ```
