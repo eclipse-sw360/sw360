@@ -99,6 +99,22 @@ By defaut, docker image of SW360 runs without internal web server and is assigne
 
 Here's some extra configurations that can be useful to fix some details.
 
+## Customize portal-ext
+
+The config file __portal-ext.properties__ overrides a second file that can be created to add a custom configuration with all data related to your necessities.
+
+This file is called __sw360-portal-ext.properties__
+
+To add your custom configs, create this file under config dir on project root like this ( or with your favorit editor):
+
+```sh
+cd <sw360_source>
+mkdir config
+cat "company.default.name=MYCOMPANY" > config/sw360-portal-ext.properties
+```
+
+Docker compose with treat config as a binded volume dir and will expose to application.
+
 ### CSS layout looks wrong
 
 If you do not use an external web server with redirection ( see below ), you may find the main CSS theme scrambled ( not properly loaded )

@@ -47,5 +47,6 @@ jgiven-reports/
 # Ignore docker local files
 deps
 data
+config
 .tmp
 .env

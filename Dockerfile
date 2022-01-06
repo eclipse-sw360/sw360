@@ -151,7 +151,7 @@ COPY --from=sw360build /sw360_tomcat_webapps/* /app/sw360/tomcat/webapps/
 COPY ./scripts/docker-config/etc_sw360 /etc_sw360
 COPY ./scripts/docker-config/entry_point.sh .
 COPY ./scripts/docker-config/setenv.sh /app/sw360/tomcat/bin
-COPY ./scripts/docker-config/portal-ext.properties /app/templates/portal-ext.properties
+COPY ./scripts/docker-config/portal-ext.properties /app/sw360/portal-ext.properties
 
 STOPSIGNAL SIGQUIT
 

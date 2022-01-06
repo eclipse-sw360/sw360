@@ -21,9 +21,8 @@ services:
     stdin_open: true
     tty: true
     volumes:
-      - ./data/sw360/data/document_library:/app/sw360/data/document_library
       - ./data/sw360/etc:/etc/sw360
-      - ./data/sw360/portal-ext.properties:/app/sw360/portal-ext.properties
+      - ./config:/app/sw360/config
   postgresdb:
     image: 'postgres:13'
     restart: always

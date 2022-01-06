@@ -20,21 +20,12 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 # Download dependencies outside container
 "$GIT_ROOT"/scripts/docker-config/download_dependencies.sh
 
-# Set local SW360 DATA
-SW360_DATA=./data/sw360
-
 # To avoid excessive copy, we will export the git archive of the sources to deps
 git archive --output=deps/sw360.tar --format=tar --prefix=sw360/ HEAD
 
 COMPOSE_DOCKER_CLI_BUILD=1
 DOCKER_BUILDKIT=1
 export DOCKER_BUILDKIT COMPOSE_DOCKER_CLI_BUILD
-
-# Copy portal-ext to be mounted as bind and persist
-if [ ! -f "$SW360_DATA"/portal-ext.properties ]; then
-    mkdir -p "$SW360_DATA"
-    cp scripts/docker-config/portal-ext.properties "$SW360_DATA"
-fi
 
 if [ -n "$FOSSOLOGY" ]; then
     #shellcheck disable=SC2086
