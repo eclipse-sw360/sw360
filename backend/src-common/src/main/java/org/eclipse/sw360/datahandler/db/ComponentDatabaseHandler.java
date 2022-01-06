@@ -1029,6 +1029,10 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         } else if (isMainlineStateDisabled) {
             updated.setMainlineState(current.getMainlineState());
         }
+
+        if (updated.getMainlineState() == null) {
+            updated.setMainlineState(MainlineState.OPEN);
+        }
     }
 
     private boolean changeWouldResultInDuplicate(Release before, Release after) {
