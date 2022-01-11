@@ -75,6 +75,7 @@ import java.util.*;
 import static org.eclipse.sw360.datahandler.thrift.MainlineState.MAINLINE;
 import static org.eclipse.sw360.datahandler.thrift.MainlineState.OPEN;
 import static org.eclipse.sw360.datahandler.thrift.ReleaseRelationship.CONTAINED;
+import static org.mockito.ArgumentMatchers.anyObject;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.eq;
@@ -85,6 +86,7 @@ import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuild
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.requestParameters;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -143,7 +145,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.attachmentServiceMock.getResourcesFromList(anyObject())).willReturn(new Resources<>(attachmentResources));
         given(this.attachmentServiceMock.uploadAttachment(anyObject(), anyObject(), anyObject())).willReturn(attachment);
         given(this.attachmentServiceMock.updateAttachment(anyObject(), anyObject(), anyObject(), anyObject())).willReturn(att2);
-
+        Mockito.doNothing().when(projectServiceMock).deleteProject(anyObject(), anyObject());
         Mockito.doNothing().when(projectServiceMock).copyLinkedObligationsForClonedProject(anyObject(), anyObject(),
                 anyObject());
 
@@ -1443,6 +1445,15 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                      fieldWithPath("page.number").description("Number of the current page")
                                      )
                              ));
+    }
+
+    @Test
+    public void should_document_delete_project() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(delete("/api/projects/" + project.getId())
+                .header("Authorization", "Bearer " + accessToken)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk());
     }
 
     private void add_patch_releases(MockHttpServletRequestBuilder requestBuilder) throws Exception {

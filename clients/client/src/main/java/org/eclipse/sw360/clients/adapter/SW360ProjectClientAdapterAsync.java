@@ -96,4 +96,14 @@ public interface SW360ProjectClientAdapterAsync {
      * @return a future with the list with the found release entities
      */
     CompletableFuture<List<SW360SparseRelease>> getLinkedReleases(String projectId, boolean transitive);
+
+    /**
+     * Deletes the project with the given ID. It
+     * inspects the {@link StatusCode} returned by SW360 and throws an
+     * exception if the operation was not successful.
+     *
+     * @return status code of request
+     * @param projectId of the project to delete
+     */
+    CompletableFuture<Integer> deleteProject(String projectId);
 }

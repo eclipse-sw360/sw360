@@ -15,6 +15,7 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenses.*;
 import org.eclipse.sw360.datahandler.thrift.CustomProperties;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -160,7 +161,7 @@ public class LicenseHandler implements LicenseService.Iface {
      * Get a single license by providing its ID, with obligations filtered for the given organisation
      */
     @Override
-    public License getByID(String id, String organisation) throws TException {
+    public License getByID(String id, String organisation) throws SW360Exception {
         assertNotEmpty(id);
         assertNotEmpty(organisation);
 

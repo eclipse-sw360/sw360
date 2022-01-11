@@ -23,6 +23,7 @@ typedef sw360.DocumentState DocumentState
 typedef sw360.CustomProperties CustomProperties
 typedef sw360.RequestSummary RequestSummary
 typedef sw360.Quadratic Quadratic
+typedef sw360.SW360Exception SW360Exception
 typedef i32 int
 
 
@@ -136,7 +137,7 @@ service LicenseService {
      * Get a single license by providing its ID, filled with license type, risks and obligations containing obligations and whitelists
      * filtered for the given organisation
      **/
-    License getByID(1:string id, 2: string organisation);
+    License getByID(1:string id, 2: string organisation) throws (1: SW360Exception exp);
 
     /**
       * Get a single license by providing its ID, filled with license type and obligations containing obligations and whitelists

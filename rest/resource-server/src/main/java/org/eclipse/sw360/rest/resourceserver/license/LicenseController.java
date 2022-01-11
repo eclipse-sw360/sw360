@@ -79,7 +79,16 @@ public class LicenseController implements ResourceProcessor<RepositoryLinksResou
         HalResource<License> licenseHalResource = createHalLicense(sw360License);
         return new ResponseEntity<>(licenseHalResource, HttpStatus.OK);
     }
-
+    
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = LICENSES_URL + "/{id:.+}", method = RequestMethod.DELETE)
+    public ResponseEntity deleteLicense(
+            @PathVariable("id") String id) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        licenseService.deleteLicenseById(id, sw360User);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+    
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = LICENSES_URL, method = RequestMethod.POST)
     public ResponseEntity<Resource<License>> createLicense(

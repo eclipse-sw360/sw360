@@ -10,20 +10,6 @@
  */
 package org.eclipse.sw360.clients.adapter;
 
-import org.eclipse.sw360.http.utils.FailedRequestException;
-import org.eclipse.sw360.http.utils.HttpConstants;
-import org.eclipse.sw360.clients.rest.SW360LicenseClient;
-import org.eclipse.sw360.clients.rest.resource.licenses.SW360License;
-import org.eclipse.sw360.clients.rest.resource.licenses.SW360SparseLicense;
-import org.eclipse.sw360.clients.utils.FutureUtils;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.sw360.clients.utils.FutureUtils.block;
 import static org.mockito.Mockito.atLeastOnce;
@@ -31,8 +17,27 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+
+import org.eclipse.sw360.clients.rest.SW360LicenseClient;
+import org.eclipse.sw360.clients.rest.resource.licenses.SW360License;
+import org.eclipse.sw360.clients.rest.resource.licenses.SW360SparseLicense;
+import org.eclipse.sw360.clients.utils.FutureUtils;
+import org.eclipse.sw360.http.utils.FailedRequestException;
+import org.eclipse.sw360.http.utils.HttpConstants;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
 public class SW360LicenseClientAdapterAsyncImplTest {
     private static final String LICENSE_NAME = "licenseName";
+
+    private static final String LICENSE_ID = "licenseId";
 
     private SW360LicenseClientAdapterAsync licenseClientAdapter;
 
@@ -100,6 +105,19 @@ public class SW360LicenseClientAdapterAsyncImplTest {
 
         SW360License result = block(licenseClientAdapter.createLicense(licenseTemplate));
         assertThat(result).isEqualTo(licenseCreated);
+    }
+
+    @Test
+    public void testDeleteLicense() {
+        Map<String, Integer> responses = new HashMap<String, Integer>();
+        responses.put(LICENSE_ID, 200);
+        when(licenseClient.deleteLicense(Mockito.anyObject()))
+                .thenReturn(CompletableFuture.completedFuture(200));
+
+        Integer responseCode = block(licenseClientAdapter.deleteLicense(LICENSE_ID));
+
+        assertThat(responseCode).isEqualTo(200);
+        verify(licenseClient).deleteLicense(LICENSE_ID);
     }
 
     private SW360License prepareLicenseClientGetLicenseByName() {

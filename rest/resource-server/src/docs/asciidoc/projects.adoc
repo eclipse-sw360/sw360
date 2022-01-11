@@ -406,6 +406,17 @@ include::{snippets}/should_document_update_project/curl-request.adoc[]
 ===== Example response
 include::{snippets}/should_document_update_project/http-response.adoc[]
 
+[[resources-projects-delete]]
+==== Delete a project
+
+A `DELETE` request will delete a project.
+
+===== Example request
+include::{snippets}/should_document_delete_project/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_delete_project/http-response.adoc[]
+
 [[resources-project-link-releases]]
 ==== Link Releases to the project
 

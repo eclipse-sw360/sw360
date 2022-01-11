@@ -92,4 +92,15 @@ public interface SW360ProjectClientAdapter {
      * @return a list with the found release entities
      */
     List<SW360SparseRelease> getLinkedReleases(String projectId, boolean transitive);
+
+    /**
+     * Deletes the project with the given ID. It
+     * inspects the {@link StatusCode} returned by SW360 and throws an
+     * exception if the operation was not successful.
+     *
+     * @param projectId of the project to delete
+     * @return status code of request
+     * @throws SW360ClientException if the project could not be deleted
+     */
+    Integer deleteProject(String projectId);
 }

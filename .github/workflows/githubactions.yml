@@ -43,17 +43,37 @@ jobs:
         sudo apt-get update -qq
         sudo sed -i 's/^couchdb.user\s*=/& '${COUCHDB_USER}'/' build-configuration/test-resources/couchdb-test.properties
         sudo sed -i 's/^couchdb.password\s*=/& '${COUCHDB_PASSWORD}'/' build-configuration/test-resources/couchdb-test.properties
+        sudo mkdir /etc/sw360
+        sudo cp ./scripts/sw360BackendRestDockerConfig/etc_sw360/couchdb-test.properties /etc/sw360/
 
     - name: Verify license headers
       run: |
         chmod +x .github/testForLicenseHeaders.sh
         bash .github/testForLicenseHeaders.sh
 
-    - name: Install Thrift
+    - name: Install Thrift and mkdocs
       run: |
         sudo apt-get update
+        sudo apt-get install python3
+        sudo apt-get install python3-pip
+        sudo pip3 install mkdocs
+        sudo pip3 install mkdocs-material
         chmod +x scripts/install-thrift.sh
         bash scripts/install-thrift.sh --no-cleanup
 
     - name: Build SW360
-      run: mvn package --no-transfer-progress
+      run: mvn clean package --no-transfer-progress -P deploy -Dhelp-docs=true -Dbase.deploy.dir=. -Dliferay.deploy.dir=/home/runner/work/sw360/sw360/deploy -Dbackend.deploy.dir=/home/runner/work/sw360/sw360/webapps -Drest.deploy.dir=/home/runner/work/sw360/sw360/webapps
+
+    - name: Deploy Backend and Rest Server
+      run: |
+        sudo docker build -t sw360backendrest -f sw360BackendRest.Dockerfile .
+        sudo docker run -dt --network=host sw360backendrest
+        bash scripts/sw360BackendRestDockerConfig/scripts/checkDeploymentIsSuccess.sh
+
+    - name: Create users and oauth client
+      run: bash scripts/sw360BackendRestDockerConfig/scripts/createUserAndOauthClient.sh
+
+    - name: Run Client Itegration Test for Rest Api
+      run: |
+        cd clients
+        mvn clean install --no-transfer-progress -DRunRestIntegrationTest=true

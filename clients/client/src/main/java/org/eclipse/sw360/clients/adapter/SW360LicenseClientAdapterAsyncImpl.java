@@ -54,4 +54,9 @@ class SW360LicenseClientAdapterAsyncImpl implements SW360LicenseClientAdapterAsy
     public CompletableFuture<SW360License> createLicense(SW360License license) {
         return getLicenseClient().createLicense(license);
     }
+
+    @Override
+    public CompletableFuture<Integer> deleteLicense(String licenseId) {
+        return getLicenseClient().deleteLicense(licenseId);
+    }
 }

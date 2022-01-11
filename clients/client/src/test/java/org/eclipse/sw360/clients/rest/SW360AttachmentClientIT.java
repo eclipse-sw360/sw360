@@ -13,9 +13,15 @@ package org.eclipse.sw360.clients.rest;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.sw360.http.utils.FailedRequestException;
 import org.eclipse.sw360.http.utils.HttpConstants;
+import org.eclipse.sw360.clients.adapter.SW360ComponentClientAdapterAsync;
+import org.eclipse.sw360.clients.adapter.SW360ConnectionFactory;
+import org.eclipse.sw360.clients.adapter.SW360ReleaseClientAdapterAsync;
 import org.eclipse.sw360.clients.rest.resource.Self;
 import org.eclipse.sw360.clients.rest.resource.attachments.SW360Attachment;
 import org.eclipse.sw360.clients.rest.resource.attachments.SW360AttachmentType;
+import org.eclipse.sw360.clients.rest.resource.components.ComponentSearchParams;
+import org.eclipse.sw360.clients.rest.resource.components.SW360Component;
+import org.eclipse.sw360.clients.rest.resource.components.SW360SparseComponent;
 import org.eclipse.sw360.clients.rest.resource.projects.SW360Project;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360Release;
 import org.junit.Before;
@@ -31,7 +37,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aMultipart;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -47,6 +55,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.sw360.http.utils.HttpUtils.waitFor;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assume.assumeFalse;
 
 public class SW360AttachmentClientIT extends AbstractMockServerTest {
 
@@ -55,10 +65,23 @@ public class SW360AttachmentClientIT extends AbstractMockServerTest {
 
     private SW360ReleaseClient attachmentClient;
 
+    private SW360ComponentClient componentClient;
+    private static final String FILE_COMPONENT = "component.json";
+
     @Before
     public void setUp() {
-        attachmentClient = new SW360ReleaseClient(createClientConfig(), createMockTokenProvider());
-        prepareAccessTokens(attachmentClient.getTokenProvider(), CompletableFuture.completedFuture(ACCESS_TOKEN));
+        if (RUN_REST_INTEGRATION_TEST) {
+            SW360ConnectionFactory scf = new SW360ConnectionFactory();
+            SW360ReleaseClientAdapterAsync releaseClientAsync = scf.newConnection(createClientConfig())
+                    .getReleaseAdapterAsync();
+            attachmentClient = releaseClientAsync.getReleaseClient();
+            SW360ComponentClientAdapterAsync componentClientAsync = scf.newConnection(createClientConfig())
+                    .getComponentAdapterAsync();
+            componentClient = componentClientAsync.getComponentClient();
+        } else {
+            attachmentClient = new SW360ReleaseClient(createClientConfig(), createMockTokenProvider());
+            prepareAccessTokens(attachmentClient.getTokenProvider(), CompletableFuture.completedFuture(ACCESS_TOKEN));
+        }
     }
 
     /**
@@ -75,33 +98,73 @@ public class SW360AttachmentClientIT extends AbstractMockServerTest {
 
     @Test
     public void testUploadAttachment() throws URISyntaxException, IOException {
-        String urlPath = "/releases/rel1234567890";
-        String selfUrl = "https://some.uri.to.be.replaced" + urlPath;
-        Path attachmentPath = Paths.get(resolveTestFileURL("license.json").toURI());
-        byte[] attachmentContent = Files.readAllBytes(attachmentPath);
-        SW360Attachment attachment = new SW360Attachment(attachmentPath, SW360AttachmentType.DOCUMENT);
-        SW360Release release = new SW360Release();
-        release.getLinks().setSelf(new Self(selfUrl));
+        if(!RUN_REST_INTEGRATION_TEST) {
+            String urlPath = "/releases/rel1234567890";
+            String selfUrl = "https://some.uri.to.be.replaced" + urlPath;
+            Path attachmentPath = Paths.get(resolveTestFileURL("license.json").toURI());
+            byte[] attachmentContent = Files.readAllBytes(attachmentPath);
+            SW360Attachment attachment = new SW360Attachment(attachmentPath, SW360AttachmentType.DOCUMENT);
+            SW360Release release = new SW360Release();
+            release.getLinks().setSelf(new Self(selfUrl));
 
-        wireMockRule.stubFor(post(urlPathEqualTo(urlPath + "/attachments"))
-                .withMultipartRequestBody(
-                        aMultipart()
-                                .withName("attachment")
-                                .withHeader("Content-Type", containing("application/json"))
-                                .withBody(equalToJson(toJson(attachment)))
-                )
-                .withMultipartRequestBody(
-                        aMultipart()
-                                .withName("file")
-                                .withBody(binaryEqualTo(attachmentContent))
-                ).willReturn(aJsonResponse(HttpConstants.STATUS_OK)
-                        .withBody(toJson(release))));
+            wireMockRule.stubFor(post(urlPathEqualTo(urlPath + "/attachments"))
+                    .withMultipartRequestBody(
+                            aMultipart()
+                                    .withName("attachment")
+                                    .withHeader("Content-Type", containing("application/json"))
+                                    .withBody(equalToJson(toJson(attachment)))
+                    )
+                    .withMultipartRequestBody(
+                            aMultipart()
+                                    .withName("file")
+                                    .withBody(binaryEqualTo(attachmentContent))
+                    ).willReturn(aJsonResponse(HttpConstants.STATUS_OK)
+                            .withBody(toJson(release))));
 
-        SW360Release modifiedRelease =
-                waitFor(attachmentClient.uploadAndAttachAttachment(release, attachmentPath,
-                        SW360AttachmentType.DOCUMENT));
-        assertThat(modifiedRelease).isEqualTo(release);
-        wireMockRule.verify(postRequestedFor(urlPathEqualTo(urlPath + "/attachments")));
+            SW360Release modifiedRelease =
+                    waitFor(attachmentClient.uploadAndAttachAttachment(release, attachmentPath,
+                            SW360AttachmentType.DOCUMENT));
+            assertThat(modifiedRelease).isEqualTo(release);
+            wireMockRule.verify(postRequestedFor(urlPathEqualTo(urlPath + "/attachments")));
+        } else {
+            cleanupComponent();
+            SW360Component component = componentFromJsonForIntegrationTest();
+            SW360Component createdComponent = waitFor(componentClient.createComponent(component));
+            SW360Release sw360Release = new SW360Release();
+            sw360Release.setComponentId(createdComponent.getId());
+            sw360Release.setVersion("1.1");
+            SW360Release release = waitFor(attachmentClient.createRelease(sw360Release));
+            Path attachmentPath = Paths.get(resolveTestFileURL("license.json").toURI());
+            SW360Release modifiedRelease =
+                    waitFor(attachmentClient.uploadAndAttachAttachment(release, attachmentPath,
+                            SW360AttachmentType.DOCUMENT));
+            assertEquals(modifiedRelease.getEmbedded().getAttachments().size(), 1);
+            cleanupRelease(release);
+        }
+    }
+
+    private void cleanupRelease(SW360Release release) throws IOException {
+        waitFor(attachmentClient.deleteReleases(Collections.singleton(release.getId())));
+    }
+
+    /**
+     * Returns a component instance that was read from the test JSON file.
+     *
+     * @return the component read from JSON
+     * @throws IOException if an error occurs
+     */
+    private static SW360Component componentFromJsonForIntegrationTest() throws IOException {
+        return readTestJsonFile(resolveTestFileURLForRealDB(FILE_COMPONENT), SW360Component.class);
+    }
+
+    private void cleanupComponent() throws IOException {
+        PagingResult<SW360SparseComponent> allComponentsWithPaging = waitFor(
+                componentClient.search(ComponentSearchParams.ALL_COMPONENTS.builder().build()));
+        List<SW360SparseComponent> allComponents = allComponentsWithPaging.getResult();
+        List<String> componentIds = allComponents.stream().map(x -> x.getId()).collect(Collectors.toList());
+        if (!componentIds.isEmpty()) {
+            waitFor(componentClient.deleteComponents(componentIds));
+        }
     }
 
     @Test
@@ -115,7 +178,8 @@ public class SW360AttachmentClientIT extends AbstractMockServerTest {
     }
 
     @Test
-    public void testUploadAttachmentError() throws URISyntaxException {
+    public void testUploadAttachmentError() throws URISyntaxException, IOException {
+        assumeFalse(RUN_REST_INTEGRATION_TEST);
         String urlPath = "/releases/rel1234567890";
         String selfUrl = wireMockRule.baseUrl() + urlPath;
         Path attachmentPath = Paths.get(resolveTestFileURL("license.json").toURI());
@@ -132,6 +196,7 @@ public class SW360AttachmentClientIT extends AbstractMockServerTest {
 
     @Test
     public void testProcessAttachment() throws IOException {
+        assumeFalse(RUN_REST_INTEGRATION_TEST);
         final String attachmentID = "test-attachment-id";
         final String itemRef = "/testComponent";
         final String testFile = "project.json";
@@ -139,7 +204,7 @@ public class SW360AttachmentClientIT extends AbstractMockServerTest {
         SW360AttachmentAwareClient.AttachmentProcessor<SW360Project> processor = stream ->
                 objectMapper.readValue(stream, SW360Project.class);
         wireMockRule.stubFor(get(urlPathEqualTo(itemRef + "/attachments/" + attachmentID))
-                .withHeader(HttpConstants.HEADER_ACCEPT, equalTo(HttpConstants.CONTENT_OCTET_STREAM))
+                .withHeader(HttpConstants.HEADER_ACCEPT, equalTo(HttpConstants.CONTENT_ALL_STREAM))
                 .willReturn(aJsonResponse(HttpConstants.STATUS_OK)
                         .withBodyFile(testFile)));
 
@@ -164,7 +229,8 @@ public class SW360AttachmentClientIT extends AbstractMockServerTest {
     }
 
     @Test
-    public void testProcessAttachmentNoContent() throws IOException {
+    public void testProcessAttachmentNoContent() throws IOException, URISyntaxException {
+        assumeFalse(RUN_REST_INTEGRATION_TEST);
         final String attachmentId = "no-content-attachment";
         SW360AttachmentAwareClient.AttachmentProcessor<byte[]> processor = stream -> {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -180,21 +246,40 @@ public class SW360AttachmentClientIT extends AbstractMockServerTest {
     }
 
     @Test
-    public void testDeleteAttachments() throws IOException {
-        String urlPath = "/releases/rel1234567890";
-        String selfUrl = "https://some.uri.to.be.replaced" + urlPath;
-        SW360Release release = readTestJsonFile(resolveTestFileURL("release.json"), SW360Release.class);
-        release.getLinks().setSelf(new Self(selfUrl));
-        SW360Release releaseUpdated = readTestJsonFile(resolveTestFileURL("release.json"), SW360Release.class);
-        releaseUpdated.getEmbedded().setAttachments(null);
-        String attachId1 = "at-first-to-delete";
-        String attachId2 = "at-second-to-delete";
-        wireMockRule.stubFor(delete(urlPathEqualTo(urlPath + "/attachments/" + attachId1 + "," + attachId2))
-                .willReturn(aJsonResponse(HttpConstants.STATUS_OK)
-                        .withBody(toJson(releaseUpdated))));
+    public void testDeleteAttachments() throws IOException, URISyntaxException {
+        if(!RUN_REST_INTEGRATION_TEST) {
+            String urlPath = "/releases/rel1234567890";
+            String selfUrl = "https://some.uri.to.be.replaced" + urlPath;
+            SW360Release release = readTestJsonFile(resolveTestFileURL("release.json"), SW360Release.class);
+            release.getLinks().setSelf(new Self(selfUrl));
+            SW360Release releaseUpdated = readTestJsonFile(resolveTestFileURL("release.json"), SW360Release.class);
+            releaseUpdated.getEmbedded().setAttachments(null);
+            String attachId1 = "at-first-to-delete";
+            String attachId2 = "at-second-to-delete";
+            wireMockRule.stubFor(delete(urlPathEqualTo(urlPath + "/attachments/" + attachId1 + "," + attachId2))
+                    .willReturn(aJsonResponse(HttpConstants.STATUS_OK)
+                            .withBody(toJson(releaseUpdated))));
 
-        SW360Release result = waitFor(attachmentClient.deleteAttachments(release, Arrays.asList(attachId1, attachId2)));
-        assertThat(result).isEqualTo(releaseUpdated);
+            SW360Release result = waitFor(attachmentClient.deleteAttachments(release, Arrays.asList(attachId1, attachId2)));
+            assertThat(result).isEqualTo(releaseUpdated);
+        } else {
+            cleanupComponent();
+            SW360Component component = componentFromJsonForIntegrationTest();
+            SW360Component createdComponent = waitFor(componentClient.createComponent(component));
+            SW360Release sw360Release = new SW360Release();
+            sw360Release.setComponentId(createdComponent.getId());
+            sw360Release.setVersion("1.1");
+            SW360Release release = waitFor(attachmentClient.createRelease(sw360Release));
+            Path attachmentPath = Paths.get(resolveTestFileURL("license.json").toURI());
+            SW360Release modifiedRelease =
+                    waitFor(attachmentClient.uploadAndAttachAttachment(release, attachmentPath,
+                            SW360AttachmentType.DOCUMENT));
+            assertEquals(modifiedRelease.getEmbedded().getAttachments().size(), 1);
+            String attachmentId = modifiedRelease.getEmbedded().getAttachments().stream().findFirst().get().getId();
+            SW360Release result = waitFor(attachmentClient.deleteAttachments(release, Arrays.asList(attachmentId)));
+            assertEquals(result.getEmbedded().getAttachments().size(), 0);
+            cleanupRelease(release);
+        }
     }
 
     @Test

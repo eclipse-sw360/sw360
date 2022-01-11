@@ -16,13 +16,16 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.stereotype.Service;
 
@@ -48,7 +51,28 @@ public class Sw360LicenseService {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
         // TODO Kai Tödter 2017-01-26
         // What is the semantics of the second parameter (organization)?
-        return sw360LicenseClient.getByID(licenseId, "?");
+        License license = null;
+        try {
+            license = sw360LicenseClient.getByID(licenseId, "?");
+        } catch (SW360Exception exp) {
+            if (exp.getErrorCode() == 404) {
+                throw new ResourceNotFoundException(exp.getWhy());
+            } else {
+                throw new RuntimeException(exp.getWhy());
+            }
+        }
+        return license;
+    }
+
+    public void deleteLicenseById(String licenseId, User user) throws TException {
+        LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+        RequestStatus deleteLicenseStatus = sw360LicenseClient.deleteLicense(licenseId, user);
+
+        if (deleteLicenseStatus == RequestStatus.IN_USE) {
+            throw new HttpMessageNotReadableException("Unable to delete license. License is in Use");
+        } else if (deleteLicenseStatus == RequestStatus.FAILURE) {
+            throw new RuntimeException("Unable to delete License");
+        }
     }
 
     public License createLicense(License license, User sw360User) throws TException {

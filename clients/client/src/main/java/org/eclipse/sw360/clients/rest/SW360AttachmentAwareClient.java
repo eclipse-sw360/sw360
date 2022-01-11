@@ -131,7 +131,7 @@ public abstract class SW360AttachmentAwareClient<T extends SW360HalResource<?, ?
                                                       AttachmentProcessor<? extends S> processor) {
         String url = itemHref + "/attachments/" + attachmentId;
         return executeRequest(builder -> builder.uri(resolveAgainstBase(url).toString())
-                        .header(HttpConstants.HEADER_ACCEPT, HttpConstants.CONTENT_OCTET_STREAM),
+                        .header(HttpConstants.HEADER_ACCEPT, "application/*"),
                 response ->
                         processor.processAttachmentStream(response.bodyStream()), TAG_DOWNLOAD_ATTACHMENT);
     }

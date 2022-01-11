@@ -10,8 +10,11 @@
  */
 package org.eclipse.sw360.clients.rest;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
@@ -25,6 +28,7 @@ import org.eclipse.sw360.http.utils.HttpConstants;
 import org.eclipse.sw360.clients.auth.AccessToken;
 import org.eclipse.sw360.clients.auth.AccessTokenProvider;
 import org.eclipse.sw360.clients.auth.SW360AuthenticationClient;
+import org.eclipse.sw360.clients.config.CommonUtils;
 import org.eclipse.sw360.clients.config.SW360ClientConfig;
 import org.eclipse.sw360.clients.rest.resource.SW360HalResource;
 import org.junit.BeforeClass;
@@ -33,6 +37,8 @@ import org.junit.Rule;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Collection;
+import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
@@ -85,12 +91,43 @@ public class AbstractMockServerTest {
     /**
      * A valid access token that can be used by tests.
      */
-    protected static final AccessToken ACCESS_TOKEN = new AccessToken("a_valid_token");
+    protected static AccessToken ACCESS_TOKEN = new AccessToken("a_valid_token");
 
     /**
      * The mapper for JSON serialization.
      */
     protected static ObjectMapper objectMapper;
+
+    public static String REST_BASE_URL;
+
+    private static String OAUTH_BASE_URL;
+
+    private static String USERNAME;
+
+    private static String USER_PASSWORD;
+
+    private static String OAUTH_CLIENT_ID;
+
+    private static String OAUTH_CLIENT_SECRET;
+
+    public static String OAUTH_TOKEN;
+
+    public static boolean RUN_REST_INTEGRATION_TEST;
+
+    private static final String PROPERTIES_FILE_PATH = "/couchdb-test.properties";
+
+    static {
+        Properties props = CommonUtils.loadProperties(AbstractMockServerTest.class, PROPERTIES_FILE_PATH);
+        RUN_REST_INTEGRATION_TEST = Boolean.parseBoolean(
+                System.getProperty("RunRestIntegrationTest", props.getProperty("run_rest_integration_test", "false")));
+        REST_BASE_URL = props.getProperty("rest_base_url", "http://localhost:8080/resource/api");
+        OAUTH_BASE_URL = props.getProperty("oauth_base_url", "http://localhost:8080/authorization/oauth");
+        USERNAME = props.getProperty("username", "admin@sw360.org");
+        USER_PASSWORD = props.getProperty("user_password", "dummy_password");
+        OAUTH_CLIENT_ID = props.getProperty("oauth_client_id", "");
+        OAUTH_CLIENT_SECRET = props.getProperty("oauth_client_secret", "");
+        OAUTH_TOKEN = props.getProperty("oauth_token", "");
+    }
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(options().dynamicPort());
@@ -180,6 +217,19 @@ public class AbstractMockServerTest {
     }
 
     /**
+     * Returns a URL to the test file with the given name. The file is
+     * looked up in the /files/integrationtest/ directory of the Wiremock server.
+     *
+     * @param name the name of the desired test file
+     * @return the URL to the test file specified
+     */
+    protected static URL resolveTestFileURLForRealDB(String name) {
+        URL url = AbstractMockServerTest.class.getResource("/__files/integrationtest/" + name);
+        assertThat(url).isNotNull();
+        return url;
+    }
+
+    /**
      * Parses a JSON file specified by the given URL and returns its
      * de-serialized content.
      *
@@ -191,6 +241,21 @@ public class AbstractMockServerTest {
      */
     protected static <T> T readTestJsonFile(URL url, Class<T> type) throws IOException {
         return objectMapper.readValue(url, type);
+    }
+
+    /**
+     * Parses a JSON file specified by the given URL and returns its
+     * de-serialized content.
+     *
+     * @param url  the URL pointing to the file
+     * @param typeReference the class representing the content type
+     * @param <T>  the content type
+     * @return the de-serialized content representation
+     * @throws IOException if an error occurs
+     */
+    protected static <T> List<T> readTestJsonFile(URL url, TypeReference<List<T>> typeReference)
+            throws JsonParseException, JsonMappingException, IOException {
+        return objectMapper.readValue(url, typeReference);
     }
 
     /**
@@ -275,8 +340,13 @@ public class AbstractMockServerTest {
         HttpClientConfig httpClientConfig = HttpClientConfig.basicConfig();
         HttpClient httpClient = clientFactory.newHttpClient(httpClientConfig);
 
-        return SW360ClientConfig.createConfig(wireMockRule.baseUrl(), wireMockRule.url(TOKEN_ENDPOINT),
-                USER, PASSWORD, CLIENT_ID, CLIENT_PASSWORD, USER_TOKEN, httpClient, objectMapper);
+        if (RUN_REST_INTEGRATION_TEST) {
+            return SW360ClientConfig.createConfig(REST_BASE_URL, OAUTH_BASE_URL, USERNAME, USER_PASSWORD,
+                    OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET, OAUTH_TOKEN, httpClient, objectMapper);
+        }
+
+        return SW360ClientConfig.createConfig(wireMockRule.baseUrl(), wireMockRule.url(TOKEN_ENDPOINT), USER, PASSWORD,
+                CLIENT_ID, CLIENT_PASSWORD, USER_TOKEN, httpClient, objectMapper);
     }
 
     /**

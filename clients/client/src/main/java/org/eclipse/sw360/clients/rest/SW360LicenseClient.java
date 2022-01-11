@@ -13,6 +13,7 @@
 package org.eclipse.sw360.clients.rest;
 
 import org.eclipse.sw360.http.RequestBuilder;
+import org.eclipse.sw360.http.utils.HttpConstants;
 import org.eclipse.sw360.http.utils.HttpUtils;
 import org.eclipse.sw360.clients.config.SW360ClientConfig;
 import org.eclipse.sw360.clients.auth.AccessTokenProvider;
@@ -45,6 +46,11 @@ public class SW360LicenseClient extends SW360Client {
      * Tag for the request to create a new license.
      */
     static final String TAG_CREATE_LICENSE = "post_create_license";
+
+    /**
+     * Tag for the request to delete a license.
+     */
+    static final String TAG_DELETE_LICENSE = "delete_license";
 
     private static final String LICENSES_ENDPOINT = "licenses";
 
@@ -99,4 +105,20 @@ public class SW360LicenseClient extends SW360Client {
                                 .body(bodyBuilder -> bodyBuilder.json(license)),
                 SW360License.class, TAG_CREATE_LICENSE);
     }
+
+    /**
+     * Triggers a DELETE operation for the License identified by the given
+     * IDs.
+     *
+     * @param licenseId of the License to delete
+     * @return a future with the status code {@code Integer} returned by the
+     * server
+     */
+    public CompletableFuture<Integer> deleteLicense(String licenseId) {
+        String url = resourceUrl(LICENSES_ENDPOINT, licenseId);
+        return executeRequest(builder -> builder.uri(url).method(RequestBuilder.Method.DELETE),
+                HttpUtils.checkResponse(response -> response.statusCode(), HttpUtils.hasStatus(HttpConstants.STATUS_OK), TAG_DELETE_LICENSE),
+                TAG_DELETE_LICENSE);
+    }
+
 }

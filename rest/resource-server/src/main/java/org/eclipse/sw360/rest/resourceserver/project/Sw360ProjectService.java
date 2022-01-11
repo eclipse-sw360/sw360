@@ -38,6 +38,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
+import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectData;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
@@ -213,13 +214,14 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return requestStatus;
     }
 
-    public RequestStatus deleteProject(Project project, User sw360User) throws TException {
+    public void deleteProject(String projectId, User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        RequestStatus requestStatus = sw360ProjectClient.deleteProject(project.getId(), sw360User);
-        if (requestStatus != RequestStatus.SUCCESS) {
-            throw new RuntimeException("sw360 project with name '" + project.getName() + " cannot be deleted.");
+        RequestStatus requestStatus = sw360ProjectClient.deleteProject(projectId, sw360User);
+        if (requestStatus == RequestStatus.IN_USE) {
+            throw new HttpMessageNotReadableException("Unable to delete project. Project is in Use");
+        } else if (requestStatus != RequestStatus.SUCCESS) {
+            throw new RuntimeException("sw360 project with id '" + projectId + " cannot be deleted.");
         }
-        return requestStatus;
     }
 
     public void deleteAllProjects(User sw360User) throws TException {
@@ -260,6 +262,9 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             return releaseClearingStatusData.stream().map(r -> r.release.getId()).collect(Collectors.toSet());
         } else {
             final Project project = getProjectForUserById(projectId, sw360User);
+            if (project.getReleaseIdToUsage() == null) {
+                return new HashSet<String>();
+            }
             return project.getReleaseIdToUsage().keySet();
         }
     }

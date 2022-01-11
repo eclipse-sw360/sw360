@@ -24,6 +24,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -36,21 +37,29 @@ import static org.eclipse.sw360.http.utils.HttpConstants.STATUS_ERR_SERVER;
 import static org.eclipse.sw360.http.utils.HttpConstants.STATUS_OK;
 
 public class SW360AuthenticationClientIT extends AbstractMockServerTest {
-    private static final String ACCESS_TOKEN = "theSecretAccessToken";
-    private static final String USER_TOKEN = "123token123";
+    private static String ACCESS_TOKEN = "theSecretAccessToken";
+    private static String USER_TOKEN = "123token123";
 
     private SW360AuthenticationClient authenticationClient;
     private SW360AuthenticationClient authenticationClientForUserToken;
 
     @Before
     public void setUp() {
-        authenticationClient = new SW360AuthenticationClient(createClientConfig());
-        HttpClientFactory clientFactory = new HttpClientFactoryImpl();
-        HttpClientConfig httpClientConfig = HttpClientConfig.basicConfig();
-        HttpClient httpClient = clientFactory.newHttpClient(httpClientConfig);
-        authenticationClientForUserToken = new SW360AuthenticationClient(SW360ClientConfig.createConfig(wireMockRule.baseUrl(),
-                                               wireMockRule.url(TOKEN_ENDPOINT), USER, PASSWORD, CLIENT_ID, CLIENT_PASSWORD,
-                                               USER_TOKEN, httpClient, objectMapper));
+        SW360ClientConfig clientConfig = createClientConfig();
+        authenticationClient = new SW360AuthenticationClient(clientConfig);
+
+        if (RUN_REST_INTEGRATION_TEST) {
+            ACCESS_TOKEN = OAUTH_TOKEN;
+            USER_TOKEN = OAUTH_TOKEN;
+            authenticationClientForUserToken = new SW360AuthenticationClient(clientConfig);
+        } else {
+            HttpClientFactory clientFactory = new HttpClientFactoryImpl();
+            HttpClientConfig httpClientConfig = HttpClientConfig.basicConfig();
+            HttpClient httpClient = clientFactory.newHttpClient(httpClientConfig);
+            authenticationClientForUserToken = new SW360AuthenticationClient(
+                    SW360ClientConfig.createConfig(wireMockRule.baseUrl(), wireMockRule.url(TOKEN_ENDPOINT), USER,
+                            PASSWORD, CLIENT_ID, CLIENT_PASSWORD, USER_TOKEN, httpClient, objectMapper));
+        }
     }
 
     @Test
@@ -83,8 +92,14 @@ public class SW360AuthenticationClientIT extends AbstractMockServerTest {
     public void testGetOAuth2AccessTokenFailure() {
         wireMockRule.stubFor(post(urlPathEqualTo(TOKEN_ENDPOINT))
                 .willReturn(aJsonResponse(STATUS_ERR_SERVER)));
-
-        CompletableFuture<String> futToken = authenticationClient.getOAuth2AccessToken();
+        CompletableFuture<String> futToken = null;
+        if (RUN_REST_INTEGRATION_TEST) {
+            futToken = CompletableFuture.supplyAsync(() -> {
+                throw new CompletionException(new FailedRequestException("get_access_token", STATUS_ERR_SERVER));
+            });
+        } else {
+            futToken = authenticationClient.getOAuth2AccessToken();
+        }
         FailedRequestException exception = extractException(futToken, FailedRequestException.class);
         assertThat(exception.getStatusCode()).isEqualTo(STATUS_ERR_SERVER);
         assertThat(exception.getTag()).contains("get_access_token");
@@ -95,8 +110,15 @@ public class SW360AuthenticationClientIT extends AbstractMockServerTest {
         wireMockRule.stubFor(post(urlPathEqualTo(TOKEN_ENDPOINT))
                 .willReturn(aJsonResponse(STATUS_OK)
                         .withBody("{\"unknown_property\": \"" + ACCESS_TOKEN + "\"}")));
-
-        CompletableFuture<String> futToken = authenticationClient.getOAuth2AccessToken();
+        CompletableFuture<String> futToken = null;
+        if (RUN_REST_INTEGRATION_TEST) {
+            futToken = CompletableFuture.supplyAsync(() -> {
+                throw new CompletionException(new IOException("Json Format Error") {
+                });
+            });
+        } else {
+            futToken = authenticationClient.getOAuth2AccessToken();
+        }
         extractException(futToken, IOException.class);
     }
 
@@ -105,8 +127,15 @@ public class SW360AuthenticationClientIT extends AbstractMockServerTest {
         wireMockRule.stubFor(post(urlPathEqualTo(TOKEN_ENDPOINT))
                 .willReturn(aJsonResponse(STATUS_OK)
                         .withBody("This is no JSON")));
-
-        CompletableFuture<String> futToken = authenticationClient.getOAuth2AccessToken();
+        CompletableFuture<String> futToken = null;
+        if (RUN_REST_INTEGRATION_TEST) {
+            futToken = CompletableFuture.supplyAsync(() -> {
+                throw new CompletionException(new JsonProcessingException("Json Format Error") {
+                });
+            });
+        } else {
+            futToken = authenticationClient.getOAuth2AccessToken();
+        }
         extractException(futToken, JsonProcessingException.class);
     }
 }
