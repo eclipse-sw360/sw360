@@ -100,4 +100,22 @@ public interface SW360Connection {
      * @return the asynchronous adapter for projects
      */
     SW360ProjectClientAdapterAsync getProjectAdapterAsync();
+
+    /**
+     * Returns an adapter object for the synchronous interaction with the
+     * <em>vulnerabilities</em> endpoint of SW360. With this adapter vulnerabilities 
+     * and releaseVulnerabilityRelation can be created, updated, deleted.
+     *
+     * @return the synchronous adapter for vulnerabilities
+     */
+    SW360VulnerabilityClientAdapter getVulnerabilityAdapter();
+    
+    /**
+     * Returns an adapter object for the asynchronous interaction with the
+     * <em>vulnerabilities</em> endpoint of SW360. With this adapter vulnerabilities 
+     * and releaseVulnerabilityRelation can be created, updated, deleted.
+     *
+     * @return the asynchronous adapter for vulnerabilities
+     */
+    SW360VulnerabilityClientAdapterAsync getVulnerabilityAdapterAsync();
 }
