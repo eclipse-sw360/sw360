@@ -19,12 +19,5 @@
             <host>$PROXY_HTTP_HOST</host>
             <port>$PROXY_PORT</port>
        </proxy>
-       <proxy>
-            <id>https-proxy</id>
-            <active>$PROXY_ENABLED</active>
-            <protocol>https</protocol>
-            <host>$PROXY_HTTPS_HOST</host>
-            <port>$PROXY_PORT</port>
-        </proxy>
     </proxies>
 </settings>

@@ -28,8 +28,13 @@ DOCKER_BUILDKIT=1
 export DOCKER_BUILDKIT COMPOSE_DOCKER_CLI_BUILD
 
 [ -n "$FOSSOLOGY" ] && extra_args="-f $GIT_ROOT/fossology-docker-compose.yml"
-[ -n "$VERBOSE" ] && verbose="--progress=plain"
+[ -n "$VERBOSE" ] && docker_verbose="--progress=plain"
 
 #shellcheck disable=SC2086
-docker-compose -f "$GIT_ROOT"/docker-compose.yml $extra_args build $verbose
+docker-compose \
+    --file "$GIT_ROOT"/docker-compose.yml \
+    $extra_args \
+    build \
+    --build-arg BUILDKIT_INLINE_CACHE=1
+    $docker_verbose
 

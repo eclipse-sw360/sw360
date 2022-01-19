@@ -35,8 +35,9 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 # Prepare proxy for maven
 COPY scripts/docker-config/mvn-proxy-settings.xml /tmp
-RUN mkdir -p /root/.m2 \
-    && envsubst </tmp/mvn-proxy-settings.xml > /root/.m2/settings.xml
+COPY scripts/docker-config/set_proxy.sh /tmp
+
+RUN chmod +x /tmp/set_proxy.sh
 
 #--------------------------------------------------------------------------------------------------
 # Thrift
@@ -65,7 +66,8 @@ COPY deps/couchdb* /deps/
 # Prepare source code
 RUN --mount=type=tmpfs,target=/build \
     --mount=type=cache,target=/root/.m2,rw,sharing=locked \
-    tar -C /build -xvf /deps/couchdb-lucene-$CLUCENE_VERSION.tar.gz --strip-components=1 \
+    tar -C /build -xf /deps/couchdb-lucene-$CLUCENE_VERSION.tar.gz --strip-components=1 \
+    && /tmp/set_proxy.sh \
     && cd /build \
     && patch -p1 < /deps/couchdb-lucene.patch \
     && sed -i "s/allowLeadingWildcard=false/allowLeadingWildcard=true/" src/main/resources/couchdb-lucene.ini \
