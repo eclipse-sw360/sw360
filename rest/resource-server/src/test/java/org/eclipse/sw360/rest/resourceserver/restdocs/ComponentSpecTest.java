@@ -389,7 +389,10 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:releases").description("An array of all component releases with version and link to their <<resources-releases,Releases resource>>"),
                                 subsectionWithPath("_embedded.sw360:moderators").description("An array of all component moderators with email and link to their <<resources-user-get,User resource>>"),
                                 subsectionWithPath("_embedded.sw360:vendors").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),
-                                subsectionWithPath("_embedded.sw360:attachments").description("An array of all component attachments and link to their <<resources-attachment-get,Attachment resource>>")
+                                subsectionWithPath("_embedded.sw360:attachments").description("An array of all component attachments and link to their <<resources-attachment-get,Attachment resource>>"),
+                                fieldWithPath("visbility").description("The visibility type of the component"),
+                                fieldWithPath("setVisbility").description("The visibility of the component"),
+                                fieldWithPath("setBusinessUnit").description("Whether or not a business unit is set for the component")
                         )));
     }
 
@@ -422,7 +425,10 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("description").description("The component description"),
                                 fieldWithPath("createdOn").description("The date the component was created"),
                                 subsectionWithPath("_embedded.createdBy").description("The user who created this component"),
-                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("visbility").description("The visibility type of the component"),
+                                fieldWithPath("setVisbility").description("The visibility of the component"),
+                                fieldWithPath("setBusinessUnit").description("Whether or not a business unit is set for the component")
                         )));
     }
 
@@ -643,7 +649,10 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                         subsectionWithPath("_embedded.sw360:releases").description("An array of all component releases with version and link to their <<resources-releases,Releases resource>>"),
                         subsectionWithPath("_embedded.sw360:moderators").description("An array of all component moderators with email and link to their <<resources-user-get,User resource>>"),
                         subsectionWithPath("_embedded.sw360:vendors").description("An array of all component vendors with ful name and link to their <<resources-vendor-get,Vendor resource>>"),
-                        subsectionWithPath("_embedded.sw360:attachments").description("An array of all component attachments and link to their <<resources-attachment-get,Attachment resource>>")
+                        subsectionWithPath("_embedded.sw360:attachments").description("An array of all component attachments and link to their <<resources-attachment-get,Attachment resource>>"),
+                        fieldWithPath("visbility").description("The visibility type of the component"),
+                        fieldWithPath("setVisbility").description("The visibility of the component"),
+                        fieldWithPath("setBusinessUnit").description("Whether or not a business unit is set for the component")
                 ));
     }
 }

@@ -232,10 +232,25 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return releases;
     }
 
+    public List<Release> getAccessibleReleaseSummary(User user) throws TException {
+        return getAccessibleReleaseList(getReleaseSummary(), user);
+    }
+
     public List<Release> getRecentReleases() {
         return releaseRepository.getRecentReleases();
     }
-
+    
+    public List<Release> getRecentReleasesWithAccessibility(User user) {
+        List<Release> releaseList = releaseRepository.getRecentReleases();
+        for (Release release : releaseList) {
+            release.setPermissions(makePermission(release, user).getPermissionMap());
+            for (RequestedAction action : RequestedAction.values()) {
+                release.getPermissions().put(action, isReleaseActionAllowed(release, user, action));
+            }
+        }
+        return releaseList;
+    }
+    
     public List<Component> getSubscribedComponents(String user) {
         return componentRepository.getSubscribedComponents(user);
     }
@@ -253,6 +268,10 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return releaseRepository.getReleasesFromVendorIds(ids);
     }
 
+    public List<Release> getAccessibleReleasesFromVendorIds(Set<String> ids, User user) {
+        return getAccessibleReleaseList(releaseRepository.getReleasesFromVendorIds(ids), user);
+    }
+    
     public Set<Release> getReleasesByVendorId(String vendorId) {
         return releaseRepository.getReleasesByVendorId(vendorId);
     }
@@ -305,6 +324,15 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return component;
     }
 
+    public Component getAccessibleComponent(String id, User user) throws SW360Exception {
+        Component component = getComponent(id, user);
+        Map<RequestedAction, Boolean> permissions = component.getPermissions();
+        if (!permissions.get(RequestedAction.READ)) {
+            throw fail(403, "Could not fetch component because access is denied! id=" + id);
+        }
+        return component;
+    }
+
     public Release getRelease(String id, User user) throws SW360Exception {
         Release release = releaseRepository.get(id);
 
@@ -320,6 +348,14 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         ensureEccInformationIsSet(release);
 
+        return release;
+    }
+
+    public Release getAccessibleRelease(String id, User user) throws SW360Exception {
+        Release release = getRelease(id, user);
+        if (!isReleaseActionAllowed(release, user, RequestedAction.READ)) {
+            throw fail(403, "Could not access the release! id=" + id);
+        }
         return release;
     }
 
@@ -642,7 +678,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private boolean duplicateAttachmentExist(Component component) {
-    	if(component.attachments != null && !component.attachments.isEmpty()) {
+        if(component.attachments != null && !component.attachments.isEmpty()) {
             return AttachmentConnector.isDuplicateAttachment(component.attachments);
         }
         return false;
@@ -1652,12 +1688,54 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return getLinkedReleases(project.getReleaseIdToUsage(), visitedIds);
     }
 
+    List<ReleaseLink> getLinkedReleasesWithAccessibility(Project project, Deque<String> visitedIds, User user) {
+        List<ReleaseLink> releaseLinkList = getLinkedReleases(project.getReleaseIdToUsage(), visitedIds);
+        if (!CommonUtils.isNullOrEmptyCollection(releaseLinkList)) {
+            for (ReleaseLink releaseLink : releaseLinkList) {
+                Release release = releaseRepository.get(releaseLink.getId());
+                releaseLink.setAccessible(isReleaseActionAllowed(release, user, RequestedAction.READ));
+            }
+        }
+        return releaseLinkList;
+    }
+
     private List<ReleaseLink> getLinkedReleases(Map<String, ?> relations, Deque<String> visitedIds) {
         return iterateReleaseRelationShips(relations, null, visitedIds);
     }
 
     public List<ReleaseLink> getLinkedReleases(Map<String, ?> relations) {
         return getLinkedReleases(relations, new ArrayDeque<>());
+    }
+
+    public List<ReleaseLink> getLinkedReleasesWithAccessibility(Map<String, ?> relations, User user) {
+        List<ReleaseLink> releaseLinkList = getLinkedReleases(relations, new ArrayDeque<>());
+        if (!CommonUtils.isNullOrEmptyCollection(releaseLinkList)) {
+            for (ReleaseLink releaseLink : releaseLinkList) {
+                Release release = releaseRepository.get(releaseLink.getId());
+                releaseLink.setAccessible(isReleaseActionAllowed(release, user, RequestedAction.READ));
+            }
+        }
+        return releaseLinkList;
+    }
+    
+    public boolean isReleaseActionAllowed(Release release, User user, RequestedAction action) {
+        boolean isAllowed = false;
+        switch (action) {
+            case READ:
+                boolean isComponentAccessible = false;
+                String componentId = release.getComponentId();
+                if (CommonUtils.isNotNullEmptyOrWhitespace(componentId)) {
+                    Component component = componentRepository.get(componentId);
+                    isComponentAccessible = makePermission(component, user).isActionAllowed(RequestedAction.READ);
+                }
+                isAllowed = isComponentAccessible && makePermission(release, user).isActionAllowed(RequestedAction.READ);
+                break;
+            
+             default:
+                isAllowed = makePermission(release, user).isActionAllowed(action);
+                break;
+        }
+        return isAllowed;
     }
 
     public List<Release> getAllReleases() {
@@ -1746,10 +1824,28 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return releaseRepository.searchByNamePrefix(name);
     }
 
+    public List<Release> searchAccessibleReleasesByText(ReleaseSearchHandler searchHandler, String searchText, User user){
+        return getAccessibleReleaseList(searchHandler.search(searchText), user);
+    }
+
     public List<Release> getReleases(Set<String> ids) {
         return releaseRepository.makeSummary(SummaryType.SHORT, ids);
     }
 
+    public List<Release> getAccessibleReleases(Set<String> ids, User user) {
+        return getAccessibleReleaseList(releaseRepository.makeSummary(SummaryType.SHORT, ids), user);
+    }
+    
+    private List<Release> getAccessibleReleaseList(List<Release> releaseList, User user) {
+        List<Release> resultList = new ArrayList<Release>();
+        for (Release release : releaseList) {
+            if (isReleaseActionAllowed(release, user, RequestedAction.READ)) {
+                resultList.add(release);
+            }
+        }
+        return resultList;
+    }
+    
     public Set<Component> searchComponentsByExternalIds(Map<String, Set<String>> externalIds) {
         return componentRepository.searchByExternalIds(externalIds);
     }
@@ -1770,6 +1866,17 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public List<Release> getDetailedReleasesForExport(Set<String> ids) {
         return releaseRepository.makeSummary(SummaryType.DETAILED_EXPORT_SUMMARY, ids, true);
+    }
+
+    public List<Release> getDetailedReleasesWithAccessibilityForExport(Set<String> ids, User user) {
+        List<Release> releaseList = releaseRepository.makeSummary(SummaryType.DETAILED_EXPORT_SUMMARY, ids);
+        for (Release release : releaseList) {
+            release.setPermissions(makePermission(release, user).getPermissionMap());
+            for (RequestedAction action : RequestedAction.values()) {
+                release.getPermissions().put(action, isReleaseActionAllowed(release, user, action));
+            }
+        }
+        return releaseList;
     }
 
     public List<Release> getFullReleases(Set<String> ids) {
@@ -1857,6 +1964,15 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return component;
     }
 
+    public Component getAccessibleComponentForEdit(String id, User user) throws SW360Exception {
+        Component component = getComponentForEdit(id, user);
+        Map<RequestedAction, Boolean> permissions = component.getPermissions();
+        if (!permissions.get(RequestedAction.READ)) {
+            throw fail(403, "Could not fetch component for edit, because access is denied! id=" + id);
+        }
+        return component;
+    }
+
     public Release getReleaseForEdit(String id, User user) throws SW360Exception {
         List<ModerationRequest> moderationRequestsForDocumentId = moderator.getModerationRequestsForDocumentId(id);
 
@@ -1888,6 +2004,14 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return release;
     }
 
+    public Release getAccessibleReleaseForEdit(String id, User user) throws SW360Exception {
+        Release release = getReleaseForEdit(id, user);
+        if (!isReleaseActionAllowed(release, user, RequestedAction.READ)) {
+            throw fail(403, "Could not access the release for edit! id=" + id);
+        }
+        return release;
+    }
+
     public String getCyclicLinkedReleasePath(Release release, User user) throws TException {
         return DatabaseHandlerUtil.getCyclicLinkedPath(release, this, user);
     }
@@ -1900,10 +2024,26 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return componentRepository.getUsingComponents(releaseId);
     }
 
+    public Set<Component> getUsingComponentsWithAccessibility(String releaseId, User user) {
+        Set<Component> componentSet = componentRepository.getUsingComponents(releaseId);
+        for (Component component : componentSet) {
+            makePermission(component, user).fillPermissions();
+        }
+        return componentSet;
+    }
+
     public Set<Component> getUsingComponents(Set<String> releaseIds) {
         return componentRepository.getUsingComponents(releaseIds);
     }
 
+    public Set<Component> getUsingComponentsWithAccessibility(Set<String> releaseIds, User user) {
+        Set<Component> componentSet = componentRepository.getUsingComponents(releaseIds);
+        for (Component component : componentSet) {
+            makePermission(component, user).fillPermissions();
+        }
+        return componentSet;
+    }
+    
     public Set<Component> getComponentsByDefaultVendorId(String vendorId) {
         return componentRepository.getComponentsByDefaultVendorId(vendorId);
     }
@@ -1982,10 +2122,33 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return componentRepository.getRecentComponentsSummary(limit, user);
     }
 
+    public List<Component> getAccessibleRecentComponentsSummary(int limit, User user) {
+        List<Component> allComponentList = componentRepository.getRecentComponentsSummary(-1, user);
+        List<Component> componentList = new ArrayList<Component>();
+        int componentNumber = 0;
+        for (Component component : allComponentList) {
+            if (0 <= limit) {
+                if (limit == componentNumber) {
+                    break;
+                }
+            }
+            if (makePermission(component, user).isActionAllowed(RequestedAction.READ)){
+                componentList.add(component);
+                componentNumber++;
+            }
+        }
+        return componentList;
+    }
+
     public int getTotalComponentsCount() {
         return componentRepository.getDocumentCount();
     }
 
+    public int getAccessibleTotalComponentsCount(User user) {
+        List<Component> componentList = getAccessibleRecentComponentsSummary(-1, user);
+        return componentList.size();
+    }
+    
     public List<Release> getReferencingReleases(String releaseId) {
         return releaseRepository.getReferencingReleases(releaseId);
     }

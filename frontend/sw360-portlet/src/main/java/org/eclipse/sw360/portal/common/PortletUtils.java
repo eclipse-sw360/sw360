@@ -180,6 +180,8 @@ public class PortletUtils {
             return getProjectTypeFromString(value);
         else if (field == Project._Fields.VISBILITY)
             return getVisibilityFromString(value);
+        else if (field == Component._Fields.VISBILITY)
+            return getVisibilityFromString(value);
         else if (field == User._Fields.USER_GROUP)
             return getUserGroupFromString(value);
         else if (field == EccInformation._Fields.ECC_STATUS)

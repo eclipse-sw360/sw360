@@ -12,12 +12,14 @@ package org.eclipse.sw360.exporter.helper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.common.WrappedException.WrappedSW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.components.*;
+import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.exporter.utils.SubTable;
@@ -28,7 +30,7 @@ import java.util.stream.Collectors;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.fieldValueAsString;
-import static org.eclipse.sw360.datahandler.common.SW360Utils.putReleaseNamesInMap;
+import static org.eclipse.sw360.datahandler.common.SW360Utils.putAccessibleReleaseNamesInMap;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exception;
 import static org.eclipse.sw360.exporter.ReleaseExporter.*;
 
@@ -102,8 +104,14 @@ public class ReleaseHelper implements ExporterHelper<Release> {
     @Override
     public SubTable makeRows(Release release) throws SW360Exception {
         List<String> row = new ArrayList<>();
-        for (Release._Fields renderedField : RELEASE_RENDERED_FIELDS) {
-            addFieldValueToRow(row, renderedField, release);
+        if (release.isSetPermissions() && release.getPermissions().get(RequestedAction.READ)) {
+            for (Release._Fields renderedField : RELEASE_RENDERED_FIELDS) {
+                addFieldValueToRow(row, renderedField, release);
+            }
+        } else {
+            for (Release._Fields renderedField : RELEASE_RENDERED_FIELDS) {
+                addInaccessibleFieldValueToRow(row, renderedField, release);
+            }
         }
         return new SubTable(row);
     }
@@ -184,6 +192,51 @@ public class ReleaseHelper implements ExporterHelper<Release> {
         }
     }
 
+    private void addInaccessibleFieldValueToRow(List<String> row, Release._Fields field, Release release) throws SW360Exception {
+        switch (field) {
+            case NAME:
+                row.add(SW360Utils.INACCESSIBLE_RELEASE);
+                break;
+            case COMPONENT_ID:
+                //component id
+                row.add("");
+                // component type
+                row.add("");
+                // project origin and project mainline state only if wanted
+                if (addAdditionalData()) {
+                    //Project names
+                    row.add("");
+                    // Mainline states
+                    row.add("");
+                }
+                //component categories
+                row.add("");
+                break;
+
+            case VENDOR:
+                addVendorToRow(null, row);
+                break;
+            case COTS_DETAILS:
+                addCotsDetailsToRow(null, row);
+                break;
+            case CLEARING_INFORMATION:
+                addClearingInformationToRow(null, row);
+                break;
+            case ECC_INFORMATION:
+                addEccInformationToRow(null, row);
+                break;
+            case RELEASE_ID_TO_RELATIONSHIP:
+                addReleaseIdToRelationShipToRow(null, row);
+                break;
+            case ATTACHMENTS:
+                String size = Integer.toString(0);
+                row.add(size);
+                break;
+            default:
+                row.add("");
+        }
+    }
+
     private void addVendorToRow(Vendor vendor, List<String> row) throws SW360Exception {
         try {
             Vendor.metaDataMap
@@ -247,8 +300,8 @@ public class ReleaseHelper implements ExporterHelper<Release> {
 
     private void addReleaseIdToRelationShipToRow(Map<String, ReleaseRelationship> releaseIdToRelationship, List<String> row) throws SW360Exception {
         if (releaseIdToRelationship != null) {
-            row.add(fieldValueAsString(putReleaseNamesInMap(releaseIdToRelationship, getReleases(releaseIdToRelationship
-                    .keySet()))));
+            row.add(fieldValueAsString(putAccessibleReleaseNamesInMap(releaseIdToRelationship, getReleases(releaseIdToRelationship
+                    .keySet()), user, ReleaseRelationship.UNKNOWN)));
         } else {
             row.add("");
         }
@@ -284,7 +337,7 @@ public class ReleaseHelper implements ExporterHelper<Release> {
         }
         List<Release> releasesByIdsForExport;
         try {
-            releasesByIdsForExport = cClient.getReleasesByIdsForExport(nullToEmptySet(ids));
+            releasesByIdsForExport = cClient.getReleasesWithAccessibilityByIdsForExport(nullToEmptySet(ids), user);
         } catch (TException e) {
             throw new SW360Exception("Error fetching release information");
         }

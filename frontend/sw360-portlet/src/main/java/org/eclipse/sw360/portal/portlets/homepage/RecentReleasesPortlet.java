@@ -11,8 +11,9 @@ package org.eclipse.sw360.portal.portlets.homepage;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
-
+import org.eclipse.sw360.portal.users.UserCacheHolder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
@@ -52,9 +53,10 @@ public class RecentReleasesPortlet extends Sw360Portlet {
     @Override
     public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
         List<Release> releases=null;
+        User user = UserCacheHolder.getUserFromRequest(request);
 
         try {
-            releases = thriftClients.makeComponentClient().getRecentReleases();
+            releases = thriftClients.makeComponentClient().getRecentReleasesWithAccessibility(user);
         } catch (TException e) {
             log.error("Could not fetch recent components from backend", e);
         }

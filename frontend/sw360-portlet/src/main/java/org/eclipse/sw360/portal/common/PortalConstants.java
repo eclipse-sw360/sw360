@@ -159,6 +159,7 @@ public class PortalConstants {
     public static final Set<String> COMPONENT_EXTERNAL_ID_KEYS;
     public static final String SOURCE_COMPONENT = "srcComponent";
     public static final String TARGET_COMPONENT = "targetComponent";
+    public static final String COMPONENT_VISIBILITY_RESTRICTION = "componentVisibilityRestriction";
 
     //! Specialized keys for releases
     public static final String RELEASE_ID = "releaseId";
@@ -254,6 +255,7 @@ public class PortalConstants {
     public static final String PROJECT_LIST = "projectList";
     public static final String ALL_SUB_PROJECT_LINK = "allSubProjectLink";
     public static final String RELEASE_LIST = "releaseList";
+    public static final String TOTAL_INACCESSIBLE_ROWS = "totalInaccessibleRows";
     public static final String PROJECT_SEARCH = "projectSearch";
     public static final String RELEASE_SEARCH = "releaseSearch";
     public static final String RELEASE_SEARCH_BY_VENDOR = "releaseSearchByVendor";
@@ -641,6 +643,7 @@ public class PortalConstants {
     public static final String ONLY_APPROVED = "onlyApproved";
     public static final String PREDEFINED_TAGS;
     public static final boolean SSO_LOGIN_ENABLED;
+    public static final boolean IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED;
 
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);
@@ -680,6 +683,8 @@ public class PortalConstants {
         CLEARING_REPORT_TEMPLATE_FORMAT = props.getProperty("org.eclipse.sw360.licensinfo.projectclearing.templateformat", "docx");
         PREDEFINED_TAGS = props.getProperty("project.tag", "[]");
         SSO_LOGIN_ENABLED = Boolean.parseBoolean(props.getProperty("sso.login.enabled", "false"));
+        IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED = Boolean.parseBoolean(
+            System.getProperty("RunComponentVisibilityRestrictionTest", props.getProperty("component.visibility.restriction.enabled", "false")));
     }
 
     private PortalConstants() {

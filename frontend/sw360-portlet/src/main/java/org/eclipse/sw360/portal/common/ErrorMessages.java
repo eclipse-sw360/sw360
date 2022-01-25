@@ -29,6 +29,8 @@ public class ErrorMessages {
     public static final String DUPLICATE_ATTACHMENT = "Multiple attachments with same name or content cannot be present in attachment list.";
     public static final String ERROR_GETTING_PROJECT = "Error fetching project from backend.";
     public static final String ERROR_GETTING_COMPONENT = "Error fetching component from backend.";
+    public static final String ERROR_COMPONENT_NOT_ACCESSIBLE  = "This component is restricted and / or not accessible.";
+    public static final String ERROR_RELEASE_OR_COMPONENT_NOT_ACCESSIBLE  = "This release or related components are restricted and / or not accessible.";
     public static final String ERROR_GETTING_LICENSE = "No license details found in the database for given license id.";
     public static final String ERROR_GETTING_RELEASE = "Error fetching release from backend.";
     public static final String LICENSE_USED_BY_RELEASE =  "Request could not be processed, as license is used by at least one release!";
@@ -90,6 +92,8 @@ public class ErrorMessages {
             .add(DOCUMENT_NOT_AVAILABLE)
             .add(ERROR_GETTING_PROJECT)
             .add(ERROR_GETTING_COMPONENT)
+            .add(ERROR_COMPONENT_NOT_ACCESSIBLE)
+            .add(ERROR_RELEASE_OR_COMPONENT_NOT_ACCESSIBLE)
             .add(ERROR_GETTING_RELEASE)
             .add(ERROR_GETTING_LICENSE)
             .add(LICENSE_SHORTNAME_TAKEN)

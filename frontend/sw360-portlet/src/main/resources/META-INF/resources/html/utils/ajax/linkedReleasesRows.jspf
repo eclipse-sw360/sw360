@@ -17,25 +17,43 @@
 </core_rt:if>
 
 <core_rt:forEach items="${releaseList}" var="releaseLink" varStatus="loop">
-    <tr id="releaseLinkRow${loop.count}" data-tt-id="${releaseLink.nodeId}" data-tt-branch="${releaseLink.hasSubreleases}"
-        <core_rt:if test="${true}">data-tt-parent-id="${parent_branch_id}"</core_rt:if>
-        <core_rt:if test="${empty parent_branch_id and not empty releaseLink.parentNodeId}">data-tt-parent-id="${releaseLink.parentNodeId}"</core_rt:if>
-    >
-        <td>
-            <a href="<sw360:DisplayReleaseLink releaseId="${releaseLink.id}" bare="true" scopeGroupId="${concludedScopeGroupId}" />">
-                <sw360:out value="${releaseLink.longName}"/>
-            </a>
-        </td>
-        <td>
-            <sw360:DisplayEnum value="${releaseLink.releaseRelationship}"/>
-        </td>
-        <td>
-            <core_rt:if test="${releaseLink.setLicenseIds}">
-                <sw360:DisplayCollection value="${releaseLink.licenseIds}" />
-            </core_rt:if>
-        </td>
-        <td>
-            <sw360:DisplayEnum value="${releaseLink.clearingState}"/>
-        </td>
-    </tr>
+    
+    <core_rt:choose>
+        <core_rt:when test="${releaseLink.accessible}">
+            <tr id="releaseLinkRow${loop.count}" data-tt-id="${releaseLink.nodeId}" data-tt-branch="${releaseLink.hasSubreleases}"
+                <core_rt:if test="${true}">data-tt-parent-id="${parent_branch_id}"</core_rt:if>
+                <core_rt:if test="${empty parent_branch_id and not empty releaseLink.parentNodeId}">data-tt-parent-id="${releaseLink.parentNodeId}"</core_rt:if>
+            >
+                <td>
+                    <a href="<sw360:DisplayReleaseLink releaseId="${releaseLink.id}" bare="true" scopeGroupId="${concludedScopeGroupId}" />">
+                        <sw360:out value="${releaseLink.longName}"/>
+                    </a>
+                </td>
+                <td>
+                    <sw360:DisplayEnum value="${releaseLink.releaseRelationship}"/>
+                </td>
+                <td>
+                    <core_rt:if test="${releaseLink.setLicenseIds}">
+                        <sw360:DisplayCollection value="${releaseLink.licenseIds}" />
+                    </core_rt:if>
+                </td>
+                <td>
+                    <sw360:DisplayEnum value="${releaseLink.clearingState}"/>
+                </td>
+            </tr>
+        </core_rt:when>
+        <core_rt:otherwise>
+            <tr id="releaseLinkRow${loop.count}" data-tt-id="releaseLinkRowId${loop.count}" data-tt-branch="${false}"
+                <core_rt:if test="${true}">data-tt-parent-id="${parent_branch_id}"</core_rt:if>
+                <core_rt:if test="${empty parent_branch_id and not empty releaseLink.parentNodeId}">data-tt-parent-id="${releaseLink.parentNodeId}"</core_rt:if>
+            >
+                <td>
+                    <liferay-ui:message key="inaccessible.release" />
+                </td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+        </core_rt:otherwise>
+    </core_rt:choose>
 </core_rt:forEach>

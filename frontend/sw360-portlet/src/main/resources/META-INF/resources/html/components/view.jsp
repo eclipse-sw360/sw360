@@ -34,6 +34,8 @@
 <jsp:useBean id="mainLicenseIds" class="java.lang.String" scope="request"/>
 <jsp:useBean id="name" class="java.lang.String" scope="request"/>
 <jsp:useBean id="totalRows" type="java.lang.Integer" scope="request"/>
+<jsp:useBean id="businessUnit" class="java.lang.String" scope="request"/>
+<jsp:useBean id="componentVisibilityRestriction" class="java.lang.Boolean" scope="request"/>
 
 <core_rt:set var="programmingLanguages" value='<%=PortalConstants.PROGRAMMING_LANGUAGES%>'/>
 <core_rt:set var="operatingSystemsAutoC" value='<%=PortalConstants.OPERATING_SYSTEMS%>'/>
@@ -65,13 +67,13 @@
 </liferay-portlet:renderURL>
 
 <div class="container" style="display: none;">
-	<div class="row">
-		<div class="col-3 sidebar">
-			<div class="card-deck">
-				<div id="searchInput" class="card">
-					<div class="card-header">
-						<liferay-ui:message key="advanced.search" />
-					</div>
+  <div class="row">
+    <div class="col-3 sidebar">
+      <div class="card-deck">
+        <div id="searchInput" class="card">
+          <div class="card-header">
+            <liferay-ui:message key="advanced.search" />
+          </div>
                     <div class="card-body">
                         <form action="<%=applyFiltersURL%>" method="post">
                             <div class="form-group">
@@ -91,6 +93,20 @@
                                     <sw360:DisplayEnumOptions type="<%=ComponentType.class%>" selectedName="${componentType}" useStringValues="true"/>
                                 </select>
                             </div>
+                            <core_rt:if test="${componentVisibilityRestriction}">
+                                <div class="form-group">
+                                    <label for="group"><liferay-ui:message key="group" /></label>
+                                    <select class="form-control form-control-sm" id="group" name="<portlet:namespace/><%=Component._Fields.BUSINESS_UNIT%>">
+                                        <option value=""
+                                                <core_rt:if test="${empty businessUnit}"> selected="selected"</core_rt:if>></option>
+                                        <core_rt:forEach items="${organizations}" var="org">
+                                            <option value="${org.name}"
+                                                    <core_rt:if test="${org.name == businessUnit}"> selected="selected"</core_rt:if>
+                                            ><sw360:out value="${org.name}"/></option>
+                                        </core_rt:forEach>
+                                    </select>
+                                </div>
+                            </core_rt:if>
                             <div class="form-group">
                                 <label for="languages"><liferay-ui:message key="languages" /></label>
                                 <input type="text" class="form-control form-control-sm" name="<portlet:namespace/><%=Component._Fields.LANGUAGES%>"
@@ -143,44 +159,44 @@
                                     value="<sw360:out value="${endDate}"/>" pattern="\d{4}-\d{2}-\d{2}" />
                             </div>
                             <button type="submit" class="btn btn-primary btn-sm btn-block"><liferay-ui:message key="search" /></button>
-				        </form>
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="col">
+                </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col">
             <div class="row portlet-toolbar">
-				<div class="col-auto">
-					<div class="btn-toolbar" role="toolbar">
+        <div class="col-auto">
+          <div class="btn-toolbar" role="toolbar">
                         <div class="btn-group" role="group">
-							<button type="button" class="btn btn-primary" onclick="window.location.href='<%=addComponentURL%>'"><liferay-ui:message key="add.component" /></button>
-							<button type="button" class="btn btn-secondary" data-action="import-spdx-bom"><liferay-ui:message key="import.spdx.bom" /></button>
-						</div>
-						<div id="btnExportGroup" class="btn-group" role="group">
-							<button id="btnExport" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-						        <liferay-ui:message key="export.spreadsheet" />
-						        <clay:icon symbol="caret-bottom" />
-						    </button>
-						    <div class="dropdown-menu" aria-labelledby="btnExport">
-						      <a class="dropdown-item" href="#" data-type="componentOnly"><liferay-ui:message key="components.only" /></a>
-						      <a class="dropdown-item" href="#" data-type="componentWithReleases"><liferay-ui:message key="components.with.releases" /></a>
-						    </div>
-						</div>
-					</div>
-				</div>
+              <button type="button" class="btn btn-primary" onclick="window.location.href='<%=addComponentURL%>'"><liferay-ui:message key="add.component" /></button>
+              <button type="button" class="btn btn-secondary" data-action="import-spdx-bom"><liferay-ui:message key="import.spdx.bom" /></button>
+            </div>
+            <div id="btnExportGroup" class="btn-group" role="group">
+              <button id="btnExport" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <liferay-ui:message key="export.spreadsheet" />
+                    <clay:icon symbol="caret-bottom" />
+                </button>
+                <div class="dropdown-menu" aria-labelledby="btnExport">
+                  <a class="dropdown-item" href="#" data-type="componentOnly"><liferay-ui:message key="components.only" /></a>
+                  <a class="dropdown-item" href="#" data-type="componentWithReleases"><liferay-ui:message key="components.with.releases" /></a>
+                </div>
+            </div>
+          </div>
+        </div>
                 <div class="col portlet-title text-truncate" title="<liferay-ui:message key="components" /> (${totalRows})">
-					<liferay-ui:message key="components" />(<span id="componentCounter">${totalRows}</span>)
-				</div>
+          <liferay-ui:message key="components" />(<span id="componentCounter">${totalRows}</span>)
+        </div>
             </div>
 
             <div class="row">
                 <div class="col">
-			        <table id="componentsTable" class="table table-bordered"></table>
+              <table id="componentsTable" class="table table-bordered"></table>
                 </div>
             </div>
 
-		</div>
-	</div>
+    </div>
+  </div>
 </div>
 <%@ include file="/html/utils/includes/pageSpinner.jspf" %>
 
@@ -284,13 +300,19 @@
                 return portletUrl
                     .replace('<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_PAGENAME%>', page)
                     .replace('<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_LICENSE_ID%>', id);
-	        }
+          }
 
             // create and render data table
             function createComponentsTable() {
                 let columns = [
                     {"title": "<liferay-ui:message key="vendor" />", data: "vndrs", render: {display: renderVendorNames}},
-                    {"title": "<liferay-ui:message key="component.name" />", data: "name", render: {display: renderComponentNameLink}},
+                    {"title": "<liferay-ui:message key="component.name" />", data: function(row){
+                        if(row.isAccessible) {
+                            return row["name"];
+                        } else {
+                            return "<liferay-ui:message key="inaccessible.component" />";
+                        }
+                    }, render: {display: renderComponentNameLink}},
                     {"title": "<liferay-ui:message key="main.licenses" />", data: "lics", render: {display: renderLicenseLink}},
                     {"title": "<liferay-ui:message key="component.type" />", data: "cType"},
                     {"title": "<liferay-ui:message key="actions" />", data: "id", render: {display: renderComponentActions}, className: 'two actions', orderable: false }
@@ -321,30 +343,38 @@
             }
 
             function renderComponentActions(id, type, row) {
-                var $actions = $('<div>', {
-				    'class': 'actions'
-                    }),
-                    $editAction = render.linkTo(
-                        makeComponentUrl(id, '<%=PortalConstants.PAGENAME_EDIT%>'),
-                        "",
-                        '<svg class="lexicon-icon" title="<liferay-ui:message key="edit" />"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>'
-                    ),
-                    $deleteAction = $('<svg>', {
-                        'class': 'delete lexicon-icon',
-                        'data-component-id': id,
-                        'data-component-name': row.name,
-                        'data-component-release-count': row.lRelsSize,
-                        'data-component-attachment-count': row.attsSize,
-                    });
-            
-                $deleteAction.append($('<title>Delete</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
-
-                $actions.append($editAction, $deleteAction);
-                return $actions[0].outerHTML;
+                if(row.isAccessible) {
+                    var $actions = $('<div>', {
+                        'class': 'actions'
+                        }),
+                        $editAction = render.linkTo(
+                            makeComponentUrl(id, '<%=PortalConstants.PAGENAME_EDIT%>'),
+                            "",
+                            '<svg class="lexicon-icon" title="<liferay-ui:message key="edit" />"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/></svg>'
+                        ),
+                        $deleteAction = $('<svg>', {
+                            'class': 'delete lexicon-icon',
+                            'data-component-id': id,
+                            'data-component-name': row.name,
+                            'data-component-release-count': row.lRelsSize,
+                            'data-component-attachment-count': row.attsSize,
+                        });
+                    
+                    $deleteAction.append($('<title>Delete</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
+                    
+                    $actions.append($editAction, $deleteAction);
+                    return $actions[0].outerHTML;
+                } else {
+                    return "";
+                }
             }
 
             function renderComponentNameLink(name, type, row) {
-                return render.linkTo(replaceFriendlyUrlParameter('<%=friendlyComponentURL%>', row.id, '<%=PortalConstants.PAGENAME_DETAIL%>'), name);
+                if(row.isAccessible) {
+                    return render.linkTo(replaceFriendlyUrlParameter('<%=friendlyComponentURL%>', row.id, '<%=PortalConstants.PAGENAME_DETAIL%>'), name);
+                } else {
+                    return "<liferay-ui:message key="inaccessible.component" />";
+                }
             }
 
             function renderLicenseLink(lics, type, row) {
@@ -424,7 +454,7 @@
 
                 if (numberOfReleases > 0) {
                     dialog.warn(
-						'<liferay-ui:message key="the.component.x.cannot.be.deleted.since.it.contains.y.releases.please.delete.the.releases.first" />',
+            '<liferay-ui:message key="the.component.x.cannot.be.deleted.since.it.contains.y.releases.please.delete.the.releases.first" />',
                         {
                             name: name,
                             releaseCount: numberOfReleases

@@ -10,6 +10,7 @@
 
 <%@ page import="org.eclipse.sw360.datahandler.thrift.components.ComponentType" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.components.Component" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.Visibility" %>
 <core_rt:set var="preferredCountryCodes" value='<%=PortalConstants.PREFERRED_COUNTRY_CODES%>'/>
 
 <table class="table edit-table three-columns" id="ComponentGeneralInfo">
@@ -97,6 +98,37 @@
             </div>
         </td>
     </tr>
+    <core_rt:choose>
+        <core_rt:when test="${componentVisibilityRestriction}">
+            <!--  if Component visibility restriction is eabled. -->
+            <tr>
+                <td>
+                    <div class="form-group">
+                        <label class="mandatory" for="componentvisibility"><liferay-ui:message key="component.visibility" /></label>
+                        <select class="form-control" id="componentvisibility"
+                                name="<portlet:namespace/><%=Component._Fields.VISBILITY%>"
+                                required
+                        >
+                            <sw360:DisplayEnumOptions type="<%=Visibility.class%>" selected="${component.visbility}"/>
+                        </select>
+                        <div class="invalid-feedback">
+                            <liferay-ui:message key="please.select.the.component.visibility" />
+                        </div>
+                        <small class="form-text">
+                            <sw360:DisplayEnumInfo type="<%=Visibility.class%>"/>
+                            <liferay-ui:message key="learn.more.about.component.visibilities" />
+                        </small>
+                    </div>
+                </td>
+                <td></td>
+                <td></td>
+            </tr>
+        </core_rt:when>
+        <core_rt:otherwise>
+            <!--  if Component visibility restriction is disabled. -->
+        </core_rt:otherwise>
+    </core_rt:choose>
+    
     <tr>
         <td colspan="3">
             <div class="form-group">
@@ -108,51 +140,116 @@
     </tr>
 </table>
 
-<table class="table edit-table three-columns" id="RolesData">
-    <thead>
-        <tr>
-            <th colspan="3" class="headlabel"><liferay-ui:message key="roles" /></th>
-        </tr>
-    </thead>
-    <tr>
-        <td>
-            <sw360:DisplayUserEdit email="${component.componentOwner}"
-                                   id="<%=Component._Fields.COMPONENT_OWNER.toString()%>"
-                                   description="component.owner" multiUsers="false"/>
-        </td>
-        <td>
-            <div class="form-group">
-                <label for="ownerAccountingUnit"><liferay-ui:message key="owner.accounting.unit" /></label>
-                <input class="form-control" id="ownerAccountingUnit" name="<portlet:namespace/><%=Component._Fields.OWNER_ACCOUNTING_UNIT%>" type="text"
-                    placeholder="<liferay-ui:message key="enter.owner.accounting.unit" />" value="<sw360:out value="${component.ownerAccountingUnit}"/>"/>
-            </div>
-        </td>
-        <td>
-            <div class="form-group">
-                <label for="ownerGroup"><liferay-ui:message key="owner.billing.group" /></label>
-                <input class="form-control" id="ownerGroup" name="<portlet:namespace/><%=Component._Fields.OWNER_GROUP%>" type="text"
-                    placeholder="<liferay-ui:message key="enter.owners.billing.group" />" value="<sw360:out value="${component.ownerGroup}"/>"/>
-            </div>
-        </td>
-    </tr>
-    <tr>
-        <td>
-            <div class="form-group">
-                <label for="ownerCountry"><liferay-ui:message key="owner.country" /></label>
-                <select class="form-control" id="ownerCountry"
-                        name="<portlet:namespace/><%=Component._Fields.OWNER_COUNTRY%>">
-                        <sw360:DisplayCountryCodeSelection selected='${component.ownerCountry}' preferredCountryCodes='${preferredCountryCodes}'/>
-                </select>
-            </div>
-        </td>
-        <td>
-            <sw360:DisplayUserEdit emails="${component.moderators}" id="<%=Component._Fields.MODERATORS.toString()%>"
-                                   description="moderators" multiUsers="true" readonly="false"/>
-        </td>
-        <td>
-        </td>
-    </tr>
-</table>
+<core_rt:choose>
+    <core_rt:when test="${componentVisibilityRestriction}">
+        <!--  if Component visibility restriction is eabled. -->
+        
+        <table class="table edit-table three-columns" id="RolesData">
+            <thead>
+               <tr>
+                    <th colspan="3" class="headlabel"><liferay-ui:message key="roles" /></th>
+                </tr>
+            </thead>
+            <tr>
+                <td>
+                    <div class="form-group">
+                        <label class="mandatory" for="group"><liferay-ui:message key="group" /></label>
+                        <input id="group" class="form-control" name="<portlet:namespace/><%=Component._Fields.BUSINESS_UNIT%>" type="text"
+                            placeholder="<liferay-ui:message key="enter.group" />" required
+                            value="<sw360:out value="${component.businessUnit}"/>"/>
+                        <div class="invalid-feedback">
+                                <liferay-ui:message key="please.enter.a.group" />
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <sw360:DisplayUserEdit email="${component.componentOwner}"
+                                           id="<%=Component._Fields.COMPONENT_OWNER.toString()%>"
+                                           description="component.owner" multiUsers="false"/>
+                </td>
+                <td>
+                    <div class="form-group">
+                        <label for="ownerAccountingUnit"><liferay-ui:message key="owner.accounting.unit" /></label>
+                        <input class="form-control" id="ownerAccountingUnit" name="<portlet:namespace/><%=Component._Fields.OWNER_ACCOUNTING_UNIT%>" type="text"
+                            placeholder="<liferay-ui:message key="enter.owner.accounting.unit" />" value="<sw360:out value="${component.ownerAccountingUnit}"/>"/>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <div class="form-group">
+                        <label for="ownerGroup"><liferay-ui:message key="owner.billing.group" /></label>
+                        <input class="form-control" id="ownerGroup" name="<portlet:namespace/><%=Component._Fields.OWNER_GROUP%>" type="text"
+                            placeholder="<liferay-ui:message key="enter.owners.billing.group" />" value="<sw360:out value="${component.ownerGroup}"/>"/>
+                    </div>
+                </td>
+                <td>
+                    <div class="form-group">
+                        <label for="ownerCountry"><liferay-ui:message key="owner.country" /></label>
+                        <select class="form-control" id="ownerCountry"
+                                name="<portlet:namespace/><%=Component._Fields.OWNER_COUNTRY%>">
+                                <sw360:DisplayCountryCodeSelection selected='${component.ownerCountry}' preferredCountryCodes='${preferredCountryCodes}'/>
+                        </select>
+                    </div>
+                </td>
+                <td>
+                    <sw360:DisplayUserEdit emails="${component.moderators}" id="<%=Component._Fields.MODERATORS.toString()%>"
+                                           description="moderators" multiUsers="true" readonly="false"/>
+                </td>
+            </tr>
+        </table>
+
+    </core_rt:when>
+    <core_rt:otherwise>
+        <!--  if Component visibility restriction is disabled. -->
+        
+        <table class="table edit-table three-columns" id="RolesData">
+            <thead>
+               <tr>
+                    <th colspan="3" class="headlabel"><liferay-ui:message key="roles" /></th>
+                </tr>
+            </thead>
+            <tr>
+                <td>
+                    <sw360:DisplayUserEdit email="${component.componentOwner}"
+                                           id="<%=Component._Fields.COMPONENT_OWNER.toString()%>"
+                                           description="component.owner" multiUsers="false"/>
+                </td>
+                <td>
+                    <div class="form-group">
+                        <label for="ownerAccountingUnit"><liferay-ui:message key="owner.accounting.unit" /></label>
+                        <input class="form-control" id="ownerAccountingUnit" name="<portlet:namespace/><%=Component._Fields.OWNER_ACCOUNTING_UNIT%>" type="text"
+                            placeholder="<liferay-ui:message key="enter.owner.accounting.unit" />" value="<sw360:out value="${component.ownerAccountingUnit}"/>"/>
+                    </div>
+                </td>
+                <td>
+                    <div class="form-group">
+                        <label for="ownerGroup"><liferay-ui:message key="owner.billing.group" /></label>
+                        <input class="form-control" id="ownerGroup" name="<portlet:namespace/><%=Component._Fields.OWNER_GROUP%>" type="text"
+                            placeholder="<liferay-ui:message key="enter.owners.billing.group" />" value="<sw360:out value="${component.ownerGroup}"/>"/>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <div class="form-group">
+                        <label for="ownerCountry"><liferay-ui:message key="owner.country" /></label>
+                        <select class="form-control" id="ownerCountry"
+                                name="<portlet:namespace/><%=Component._Fields.OWNER_COUNTRY%>">
+                                <sw360:DisplayCountryCodeSelection selected='${component.ownerCountry}' preferredCountryCodes='${preferredCountryCodes}'/>
+                        </select>
+                    </div>
+                </td>
+                <td>
+                    <sw360:DisplayUserEdit emails="${component.moderators}" id="<%=Component._Fields.MODERATORS.toString()%>"
+                                           description="moderators" multiUsers="true" readonly="false"/>
+                </td>
+                <td></td>
+            </tr>
+        </table>
+        
+    </core_rt:otherwise>
+</core_rt:choose>
 
 <core_rt:set var="keys" value="<%=PortalConstants.COMPONENT_ROLES%>"/>
 <core_rt:set var="mapTitle" value="Additional Roles"/>

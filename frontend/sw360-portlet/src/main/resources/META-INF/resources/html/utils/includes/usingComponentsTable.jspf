@@ -9,6 +9,10 @@
   ~ SPDX-License-Identifier: EPL-2.0
 --%>
 
+<%@ page import="org.eclipse.sw360.datahandler.thrift.users.RequestedAction" %>
+
+<c:set var="READ" value="<%=RequestedAction.READ%>"/>
+
 <core_rt:if test="${usingComponents != null  && usingComponents.size()>0}">
     <h4>${documentName} <liferay-ui:message key="is.used.by.the.following.components" /></h4>
 
@@ -29,21 +33,38 @@
         </thead>
         <tbody>
             <core_rt:forEach var="component" items="${usingComponents}" varStatus="loop">
-                <tr>
-                    <td>
-                        <sw360:DisplayCollection value="${component.vendorNames}"/>
-                    </td>
-                    <td>
-                        <sw360:DisplayComponentLink component="${component}"/>
-                    </td>
-                    <td>
-                        <sw360:DisplayLicenseCollection licenseIds="${component.mainLicenseIds}"
-                                                    scopeGroupId="${pageContext.getAttribute('scopeGroupId')}"/>
-                    </td>
-                    <td>
-                        <sw360:DisplayEnum value="${component.componentType}"/>
-                    </td>
-                </tr>
+                <core_rt:choose>
+                    <core_rt:when test="${component.permissions == null || component.permissions[READ]}">
+                        <tr>
+                            <td>
+                                <sw360:DisplayCollection value="${component.vendorNames}"/>
+                            </td>
+                            <td>
+                                <sw360:DisplayComponentLink component="${component}"/>
+                            </td>
+                            <td>
+                                <sw360:DisplayLicenseCollection licenseIds="${component.mainLicenseIds}"
+                                                            scopeGroupId="${pageContext.getAttribute('scopeGroupId')}"/>
+                            </td>
+                            <td>
+                                <sw360:DisplayEnum value="${component.componentType}"/>
+                            </td>
+                        </tr>
+                    </core_rt:when>
+                    <core_rt:otherwise>
+                        <tr>
+                            <td>
+                            </td>
+                            <td>
+                                <liferay-ui:message key="inaccessible.component" />
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                        </tr>
+                    </core_rt:otherwise>
+                </core_rt:choose>
             </core_rt:forEach>
         </tbody>
     </table>

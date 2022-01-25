@@ -9,8 +9,11 @@
  */
 package org.eclipse.sw360.datahandler.permissions;
 
+import java.util.Properties;
 import java.util.Set;
 
+import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
@@ -30,6 +33,15 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
  */
 public class PermissionUtils {
 
+    public static final String PROPERTIES_FILE_PATH = "/sw360.properties";
+    public static final boolean IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED;
+    
+    static {
+        Properties props = CommonUtils.loadProperties(DatabaseSettings.class, PROPERTIES_FILE_PATH);
+        IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED = Boolean.parseBoolean(
+            System.getProperty("RunComponentVisibilityRestrictionTest", props.getProperty("component.visibility.restriction.enabled", "false")));
+    }
+    
     public static boolean isNormalUser(User user) {
         return isInGroup(user, UserGroup.USER);
     }

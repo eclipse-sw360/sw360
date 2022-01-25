@@ -62,7 +62,7 @@ jobs:
         bash scripts/install-thrift.sh --no-cleanup
 
     - name: Build SW360
-      run: mvn clean package --no-transfer-progress -P deploy -Dhelp-docs=true -Dbase.deploy.dir=. -Dliferay.deploy.dir=/home/runner/work/sw360/sw360/deploy -Dbackend.deploy.dir=/home/runner/work/sw360/sw360/webapps -Drest.deploy.dir=/home/runner/work/sw360/sw360/webapps
+      run: mvn clean package --no-transfer-progress -P deploy -Dhelp-docs=true -Dbase.deploy.dir=. -Dliferay.deploy.dir=/home/runner/work/sw360/sw360/deploy -Dbackend.deploy.dir=/home/runner/work/sw360/sw360/webapps -Drest.deploy.dir=/home/runner/work/sw360/sw360/webapps -DRunComponentVisibilityRestrictionTest=false
 
     - name: Deploy Backend and Rest Server
       run: |

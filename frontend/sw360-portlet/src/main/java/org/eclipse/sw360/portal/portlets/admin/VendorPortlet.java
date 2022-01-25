@@ -138,13 +138,14 @@ public class VendorPortlet extends Sw360Portlet {
 
         if (!isNullOrEmpty(id)) {
             try {
+                final User user = UserCacheHolder.getUserFromRequest(request);
                 VendorService.Iface vendorClient = thriftClients.makeVendorClient();
                 Vendor vendor = vendorClient.getByID(id);
                 request.setAttribute(VENDOR, vendor);
 
 
                 final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
-                final List<Release> releasesFromVendorIds = componentClient.getReleasesFromVendorIds(Sets.newHashSet(id));
+                final List<Release> releasesFromVendorIds = componentClient.getAccessibleReleasesFromVendorIds(Sets.newHashSet(id), user);
 
                 request.setAttribute(RELEASE_LIST, releasesFromVendorIds);
             } catch (TException e) {

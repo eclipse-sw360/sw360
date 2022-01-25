@@ -21,6 +21,7 @@ typedef sw360.RequestStatus RequestStatus
 typedef sw360.RequestSummary RequestSummary
 typedef sw360.AddDocumentRequestSummary AddDocumentRequestSummary
 typedef sw360.DocumentState DocumentState
+typedef sw360.Visibility Visibility
 typedef sw360.ReleaseRelationship ReleaseRelationship
 typedef sw360.MainlineState MainlineState
 typedef sw360.ProjectReleaseRelationship ProjectReleaseRelationship
@@ -307,6 +308,8 @@ struct Component {
     28: optional string ownerGroup,
     29: optional string ownerCountry,
     30: optional map<string,set<string>> roles, //customized roles with set of mail addresses
+    80: optional Visibility visbility = sw360.Visibility.EVERYONE,
+    81: optional string businessUnit,
 
     // information from external data sources
     31: optional  map<string, string> externalIds,
@@ -363,7 +366,8 @@ struct ReleaseLink{
     100: optional set<string> licenseIds,
     101: optional set<string> licenseNames,
     102: optional string comment,
-    103: optional set<string> otherLicenseIds
+    103: optional set<string> otherLicenseIds,
+    104: optional bool accessible = true
 }
 
 struct ReleaseClearingStatusData {
@@ -371,6 +375,7 @@ struct ReleaseClearingStatusData {
     2: optional ComponentType componentType,
     3: optional string projectNames, // comma separated list of project names for display; possibly abbreviated
     4: optional string mainlineStates, // comma separated list of mainline states for display; possibly abbreviated
+    5: optional bool accessible = true
 }
 
 service ComponentService {
@@ -397,9 +402,21 @@ service ComponentService {
     map<PaginationData, list<Component>> getRecentComponentsSummaryWithPagination(1: User user, 2: PaginationData pageData);
 
     /**
+     * summary of up to `limit` components reverse ordered by `createdOn`. Negative `limit` will result in
+     * all components being returned.
+     * They are only the components which are visible to user.
+     **/
+    list<Component> getAccessibleRecentComponentsSummary(1: i32 limit, 2: User user);
+
+    /**
      * total number of components in the DB, irrespective of whether the user may see them or not
      **/
     i32 getTotalComponentsCount(1: User user);
+
+    /**
+     * total number of accessible components in the DB, irrespective of whether the user may see them or not
+     **/
+    i32 getAccessibleTotalComponentsCount(1: User user);
 
     /**
      * short summary of all releases visible to user
@@ -407,14 +424,35 @@ service ComponentService {
     list<Release> getReleaseSummary(1: User user);
 
     /**
+     * short summary of all accessible releases.
+     **/
+    list<Release> getAccessibleReleaseSummary(1: User user);
+    
+    /**
      * search components in database that match subQueryRestrictions
      **/
     list<Component> refineSearch(1: string text, 2: map<string, set<string>> subQueryRestrictions);
 
     /**
+     * search components in database that match subQueryRestrictions
+     * They are only the components which are visible to user.
+     **/
+    list<Component> refineSearchAccessibleComponents(1: string text, 2: map<string, set<string>> subQueryRestrictions, 3: User user);
+
+    /**
+     * search components with the accessibility in database that match subQueryRestrictions
+     **/
+    list<Component> refineSearchWithAccessibility(1: string text, 2: map<string, set<string>> subQueryRestrictions, 3: User user);
+
+    /**
      * global search function to list releases which match the text argument
      */
     list<Release> searchReleases(1: string text);
+
+    /**
+     * global search function to list accessible releases which match the text argument
+     */
+    list<Release> searchAccessibleReleases(1: string text, 2: User user);
 
     /**
      * get short summary of release by release name prefix
@@ -441,6 +479,11 @@ service ComponentService {
      **/
     list<Release> getRecentReleases();
 
+    /**
+     * information for home portlet
+     **/
+    list<Release> getRecentReleasesWithAccessibility(1: User user);
+
     // Component CRUD support
     /**
      * add component to database with user as creator,
@@ -455,9 +498,22 @@ service ComponentService {
 
     /**
      * get component from database filled with releases and permissions for user
+     * They are only the components which are visible to user.
+     **/
+    Component getAccessibleComponentById(1: string id, 2: User user) throws (1: SW360Exception exp);
+
+    /**
+     * get component from database filled with releases and permissions for user
      * with moderation request of user applied if such request exists
      **/
     Component getComponentByIdForEdit(1: string id, 2: User user);
+
+    /**
+     * get component from database filled with releases and permissions for user
+     * with moderation request of user applied if such request exists
+     * They are only the components which are visible to user.
+     **/
+    Component getAccessibleComponentByIdForEdit(1: string id, 2: User user) throws (1: SW360Exception exp);
 
     /**
      * update component in database if user has permissions
@@ -503,10 +559,21 @@ service ComponentService {
     Release getReleaseById(1: string id, 2: User user) throws (1: SW360Exception exp);
 
      /**
+      * get accessible release from database filled with vendor and permissions for user
+      **/
+    Release getAccessibleReleaseById(1: string id, 2: User user) throws (1: SW360Exception exp);
+
+     /**
        * get release from database filled with vendor and permissions for user
        * with moderation request of user applied if such request exists
        **/
     Release getReleaseByIdForEdit(1: string id, 2: User user);
+
+    /**
+       * get accessible release from database filled with vendor and permissions for user
+       * with moderation request of user applied if such request exists
+       **/
+    Release getAccessibleReleaseByIdForEdit(1: string id, 2: User user) throws (1: SW360Exception exp);
 
     /**
       * get short summary of all releases specified by ids
@@ -514,9 +581,19 @@ service ComponentService {
     list<Release> getReleasesByIdsForExport(1: set<string> ids);
 
     /**
+      * get short summary with accessibility of all releases specified by ids
+      **/
+    list<Release> getReleasesWithAccessibilityByIdsForExport(1: set<string> ids, 2: User user);
+
+    /**
       * get short summary of all releases specified by ids, user is not used
       **/
     list<Release> getReleasesById(1: set<string> ids, 2: User user);
+
+    /**
+      * get short summary of all accessible releases specified by ids, user is not used
+      **/
+    list<Release> getAccessibleReleasesById(1: set<string> ids, 2: User user);
 
     /**
       * get summary of all releases specified by ids, user is not used
@@ -537,6 +614,11 @@ service ComponentService {
       * get short summary of all releases with vendor specified by ids
       **/
     list<Release> getReleasesFromVendorIds(1: set<string> ids);
+
+    /**
+      * get short summary of accessible releases with vendor specified by ids
+      **/
+    list<Release> getAccessibleReleasesFromVendorIds(1: set<string> ids, 2: User user);
 
     /**
       * get full release documents with the specifed vendor id
@@ -597,10 +679,20 @@ service ComponentService {
     set <Component> getUsingComponentsForRelease(1: string releaseId );
 
     /**
+     * get components with accessibility belonging to linked releases of the release specified by releaseId
+     **/
+    set <Component> getUsingComponentsWithAccessibilityForRelease(1: string releaseId, 2: User user);
+
+    /**
      * get components belonging to linked releases of the releases specified by releaseId
      **/
     set <Component> getUsingComponentsForComponent(1: set <string> releaseId );
 
+    /**
+     * get components with accessibility belonging to linked releases of the releases specified by releaseId
+     **/
+    set <Component> getUsingComponentsWithAccessibilityForComponent(1: set <string> releaseId, 2: User user);
+    
     /**
      * get components using the given vendor id
      */
@@ -674,9 +766,19 @@ service ComponentService {
     list<ReleaseLink> getLinkedReleases(1: map<string, ProjectReleaseRelationship> relations);
 
     /**
+     *  make releaseLinks with accessibility from linked releases of a project in order to display project
+     **/
+    list<ReleaseLink> getLinkedReleasesWithAccessibility(1: map<string, ProjectReleaseRelationship> relations, 2: User user);
+
+    /**
      *  make releaseLinks from linked releases of a release in order to display in release detail view
      **/
     list<ReleaseLink> getLinkedReleaseRelations(1: map<string, ReleaseRelationship> relations);
+
+    /**
+     *  make releaseLinks with accessibility from linked releases of a release in order to display in release detail view
+     **/
+    list<ReleaseLink> getLinkedReleaseRelationsWithAccessibility(1: map<string, ReleaseRelationship> relations, 2: User user);
 
     /**
      * get all attachmentContentIds of attachments of projects, components and releases

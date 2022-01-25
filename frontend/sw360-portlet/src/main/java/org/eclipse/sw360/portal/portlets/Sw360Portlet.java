@@ -395,13 +395,13 @@ abstract public class Sw360Portlet extends MVCPortlet {
         try {
             ComponentService.Iface componentClient = thriftClients.makeComponentClient();
             if (isNullOrEmpty(searchText)) {
-                return componentClient.getReleaseSummary(user);
+                return componentClient.getAccessibleReleaseSummary(user);
             } else {
-                List<Release> searchResult = componentClient.searchReleases(searchText);
+                List<Release> searchResult = componentClient.searchAccessibleReleases(searchText, user);
                 final VendorService.Iface vendorClient = thriftClients.makeVendorClient();
                 List<String> vendorIds = vendorClient.searchVendorIds(searchText);
                 if (vendorIds != null && vendorIds.size() > 0) {
-                    searchResult.addAll(componentClient.getReleasesFromVendorIds(Sets.newHashSet(vendorIds)));
+                    searchResult.addAll(componentClient.getAccessibleReleasesFromVendorIds(Sets.newHashSet(vendorIds), user));
                 }
                 return searchResult;
             }

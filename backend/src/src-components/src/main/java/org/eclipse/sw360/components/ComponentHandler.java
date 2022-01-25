@@ -89,11 +89,23 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     @Override
+    public List<Component> getAccessibleRecentComponentsSummary(int limit, User user) throws TException
+    {
+        return handler.getAccessibleRecentComponentsSummary(limit, user);
+    }
+
+    @Override
     public int getTotalComponentsCount(User user) throws TException {
         assertUser(user);
         return handler.getTotalComponentsCount();
     }
 
+    @Override
+    public int getAccessibleTotalComponentsCount(User user) throws TException {
+        assertUser(user);
+        return handler.getAccessibleTotalComponentsCount(user);
+    }
+    
     @Override
     public List<Release> getReleaseSummary(User user) throws TException {
         assertUser(user);
@@ -102,8 +114,25 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     @Override
+    public List<Release> getAccessibleReleaseSummary(User user) throws TException {
+        assertUser(user);
+
+        return handler.getAccessibleReleaseSummary(user);
+    }
+    
+    @Override
     public List<Component> refineSearch(String text, Map<String, Set<String>> subQueryRestrictions) throws TException {
         return componentSearchHandler.search(text, subQueryRestrictions);
+    }
+
+    @Override
+    public List<Component> refineSearchAccessibleComponents(String text, Map<String,Set<String>> subQueryRestrictions, User user) throws TException {
+        return componentSearchHandler.searchAccessibleComponents(text, subQueryRestrictions, user);
+    }
+
+    @Override
+    public List<Component> refineSearchWithAccessibility(String text, Map<String,Set<String>> subQueryRestrictions, User user) throws TException {
+        return componentSearchHandler.searchWithAccessibility(text, subQueryRestrictions, user);
     }
 
     @Override
@@ -118,6 +147,11 @@ public class ComponentHandler implements ComponentService.Iface {
         return releaseSearchHandler.search(searchText);
     }
 
+    @Override
+    public List<Release> searchAccessibleReleases(String searchText, User user) throws TException {
+        return handler.searchAccessibleReleasesByText(releaseSearchHandler, searchText, user) ;
+    }
+    
     @Override
     public List<Release> searchReleaseByNamePrefix(String name) throws TException {
         return handler.searchReleaseByNamePrefix(name);
@@ -142,6 +176,11 @@ public class ComponentHandler implements ComponentService.Iface {
         return handler.getRecentReleases();
     }
 
+    @Override
+    public List<Release> getRecentReleasesWithAccessibility(User user) throws TException {
+        return handler.getRecentReleasesWithAccessibility(user);
+    }
+    
     ////////////////////////////
     // GET INDIVIDUAL OBJECTS //
     ////////////////////////////
@@ -155,6 +194,14 @@ public class ComponentHandler implements ComponentService.Iface {
         handler.addSelectLogs(component, user);
         return component;
     }
+    
+    @Override
+    public Component getAccessibleComponentById(String id, User user) throws SW360Exception {
+        assertId(id);
+        assertUser(user);
+
+        return handler.getAccessibleComponent(id, user);
+    }
 
     @Override
     public Component getComponentByIdForEdit(String id, User user) throws TException {
@@ -162,6 +209,14 @@ public class ComponentHandler implements ComponentService.Iface {
         assertUser(user);
 
         return handler.getComponentForEdit(id, user);
+    }
+
+    @Override
+    public Component getAccessibleComponentByIdForEdit(String id, User user) throws SW360Exception {
+        assertId(id);
+        assertUser(user);
+
+        return handler.getAccessibleComponentForEdit(id, user);
     }
 
     @Override
@@ -175,6 +230,14 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     @Override
+    public Release getAccessibleReleaseById(String id, User user) throws SW360Exception {
+        assertId(id);
+        assertUser(user);
+
+        return handler.getAccessibleRelease(id, user);
+    }
+
+    @Override
     public Release getReleaseByIdForEdit(String id, User user) throws TException {
         assertId(id);
         assertUser(user);
@@ -183,11 +246,26 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     @Override
+    public Release getAccessibleReleaseByIdForEdit(String id, User user) throws SW360Exception {
+        assertId(id);
+        assertUser(user);
+
+        return handler.getAccessibleReleaseForEdit(id, user);
+    }
+    
+    @Override
     public List<Release> getReleasesByIdsForExport(Set<String> ids) throws TException {
         assertNotNull(ids);
         return handler.getDetailedReleasesForExport(ids);
     }
 
+    @Override
+    public List<Release> getReleasesWithAccessibilityByIdsForExport(Set<String> ids, User user) throws TException {
+        assertNotNull(ids);
+        assertUser(user);
+        return handler.getDetailedReleasesWithAccessibilityForExport(ids, user);
+    }
+    
     @Override
     public List<Release> getReleasesById(Set<String> ids, User user) throws TException {
         assertUser(user);
@@ -195,6 +273,13 @@ public class ComponentHandler implements ComponentService.Iface {
         return handler.getReleases(ids);
     }
 
+    @Override
+    public List<Release> getAccessibleReleasesById(Set<String> ids, User user) throws TException {
+        assertUser(user);
+        assertNotNull(ids);
+        return handler.getAccessibleReleases(ids, user);
+    }
+    
     @Override
     public List<Release> getFullReleasesById(Set<String> ids, User user) throws TException {
         assertUser(user);
@@ -221,6 +306,11 @@ public class ComponentHandler implements ComponentService.Iface {
         return handler.getReleasesFromVendorIds(ids);
     }
 
+    @Override
+    public List<Release> getAccessibleReleasesFromVendorIds(Set<String> ids, User user) throws TException {
+        return handler.getAccessibleReleasesFromVendorIds(ids, user);
+    }
+    
     @Override
     public Set<Release> getReleasesByVendorId(String vendorId) throws TException {
         return handler.getReleasesByVendorId(vendorId);
@@ -365,10 +455,20 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     @Override
+    public Set<Component> getUsingComponentsWithAccessibilityForRelease(String releaseId, User user) throws TException {
+        return handler.getUsingComponentsWithAccessibility(releaseId, user);
+    }
+    
+    @Override
     public Set<Component> getUsingComponentsForComponent(Set<String> releaseIds) throws TException {
         return handler.getUsingComponents(releaseIds);
     }
 
+    @Override
+    public Set<Component> getUsingComponentsWithAccessibilityForComponent(Set<String> releaseIds, User user) throws TException {
+        return handler.getUsingComponentsWithAccessibility(releaseIds, user);
+    }
+    
     @Override
     public Set<Component> getComponentsByDefaultVendorId(String defaultVendorId) throws TException {
         return handler.getComponentsByDefaultVendorId(defaultVendorId);
@@ -460,8 +560,20 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     @Override
+    public List<ReleaseLink> getLinkedReleasesWithAccessibility(Map<String, ProjectReleaseRelationship> relations, User user) throws TException {
+        assertNotNull(relations);
+
+        return handler.getLinkedReleasesWithAccessibility(relations, user);
+    }
+    
+    @Override
     public List<ReleaseLink> getLinkedReleaseRelations(Map<String, ReleaseRelationship> relations) throws TException {
         return handler.getLinkedReleases(relations);
+    }
+
+    @Override
+    public List<ReleaseLink> getLinkedReleaseRelationsWithAccessibility(Map<String, ReleaseRelationship> relations, User user) throws TException {
+        return handler.getLinkedReleasesWithAccessibility(relations, user);
     }
 
     @Override
