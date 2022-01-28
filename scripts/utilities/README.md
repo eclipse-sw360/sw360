@@ -28,6 +28,7 @@ To execute it is recommended to do this in the following order:
       1. `fieldName` = *"field_to_be_migrated"*
       2. `oldValue` = *"old_value"*
       3. `newValue` = *"new_value"*
+      4. `isStartsWith` = *"False/True"*
 - `004_recompute_clearing_state_of_release.py`
     - Script to recompute clearing state of release.
 
