@@ -1,0 +1,68 @@
+<!-- top bar -->
+<div class="sw-top-bar mat-elevation-z6" fxLayout="column">
+    <div fxLayout="row" fxLayoutAlign="space-between center" class="xx" fxFlex>
+        <div class="topbar-margin-left" fxLayout="row" fxLayoutGap="0.5em" fxLayoutAlign="start center">
+            <button mat-icon-button (click)="showSidebar = !showSidebar">
+                <mat-icon class="menu-icon">menu</mat-icon>
+            </button>
+            <div class="title-font">SW360</div>
+        </div>
+        <div class="topbar-margin-right">
+            <button mat-mini-fab color="secondary" class="mat-elevation-z1">
+                <mat-icon>perm_identity</mat-icon>
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<!-- title bar -->
+<div class="sw-title-bar mat-elevation-z3" fxLayout="row" fxLayoutAlign="start center">
+    <div [ngClass]="{
+        'content-with-sidebar': showSidebar,
+        'content-without-sidebar': !showSidebar
+    }">
+        <span class="sw-title-bar-title">{{ title }}</span>
+    </div>
+</div>
+
+<!-- left sidebar -->
+<div class="sidebar" *ngIf="showSidebar">
+    <mat-nav-list role="menubar" fxLayout="column" fxLayoutAlign="start start" fxLayoutGap="0.5em">
+       <a mat-list-item [routerLink]="['components']">Components</a>
+       <a mat-list-item [routerLink]="['projects']">Projects</a>
+    </mat-nav-list>
+</div>
+
+<!-- content -->
+<div class="content" [ngClass]="{
+    'content-with-sidebar': showSidebar,
+    'content-without-sidebar': !showSidebar
+}">
+    <sw-login *ngIf="!isAuth"></sw-login>
+    <sw-message></sw-message>
+    <router-outlet *ngIf="isAuth"></router-outlet>
+</div>
+
+
+
+
+
+
+<!--
+<mat-toolbar class="header mat-elevation-z4" color="primary">
+    <span>SW360 Prototype</span>
+</mat-toolbar>
+<div>
+    <div fxLayout="column" fxLayoutAlign="start start" fxLayoutGap="0.5em">
+        <a mat-button [routerLink]="['projects']">Projects</a>
+        <a mat-button [routerLink]="['projects/:id']">Projects/:id</a>
+        <a mat-button [routerLink]="['components/create']">Create Component</a>
+    </div>
+
+    <div>
+        <span>{{ title }}</span>
+        <router-outlet></router-outlet>
+    </div>
+</div>
+-->

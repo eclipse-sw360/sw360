@@ -1,0 +1,49 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "BASE_URL/component",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "string",
+            "readOnly": true,
+            "client": {
+                "enumMap": null,
+                "title": null,
+                "description": null,
+                "visible": false,
+                "tooltip": null,
+                "group": null,
+                "editable": false,
+                "formType": null,
+                "formError": null,
+                "filterable": false,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "email": {
+            "type": "string",
+            "client": {
+                "enumMap": null,
+                "title": "Email",
+                "description": "email description",
+                "visible": true,
+                "tooltip": "email tooltip",
+                "group": "General",
+                "editable": true,
+                "formType": "input",
+                "formError": "Email is required",
+                "filterable": true,
+                "sortable": true,
+                "pattern": null,
+                "resourceType": null
+            }
+        }
+    },
+    "required": [
+        "name",
+        "categories",
+        "componentType"
+    ]
+}

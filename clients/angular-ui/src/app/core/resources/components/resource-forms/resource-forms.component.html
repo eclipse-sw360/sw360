@@ -1,0 +1,134 @@
+<div *ngFor="let group of groups; let i = index; let first = first; let last = last;">
+    <form [formGroup]="group.formGroup">
+        <h1>{{ group.groupName }}</h1>
+        <div class="formControls" fxLayout="row wrap" fxLayoutGap="3em">
+            <ng-container *ngFor="let resourceProperty of group.resourceProperties">
+
+                <!-- input || textarea -->
+                <div *ngIf="resourceProperty.formType === 'input' || resourceProperty.formType === 'textarea'">
+                    <mat-form-field [matTooltip]="resourceProperty.tooltip" [matTooltipPosition]="'right'" matTooltipShowDelay="200">
+                        <input *ngIf="resourceProperty.formType === 'input'" matInput [formControlName]="resourceProperty.property" [placeholder]="resourceProperty.title"
+                            [required]="resourceProperty.required">
+                        <textarea *ngIf="resourceProperty.formType === 'textarea'" matInput [formControlName]="resourceProperty.property" [placeholder]="resourceProperty.title"
+                            [required]="resourceProperty.required"></textarea>
+                        <mat-error *ngIf="resourceProperty.formError">{{ resourceProperty.formError }}</mat-error>
+                        <mat-hint *ngIf="resourceProperty.description">{{ resourceProperty.description }}</mat-hint>
+                    </mat-form-field>
+                </div>
+
+                <!-- resourceType -->
+                <div *ngIf="resourceProperty.resourceType" class="mat-form-field">
+                    <!-- selectMany -->
+                    <sw-table-dialog *ngIf="resourceProperty.formType === 'selectMany'" [title]="resourceProperty.title" [description]="resourceProperty.description"
+                        [resourceType]="resourceProperty.resourceType" selectionType="checkbox" ($selectedResources)="doSomething(resourceProperty, $event)">
+                    </sw-table-dialog>
+
+                    <!-- selectOne -->
+                    <sw-table-dialog *ngIf="resourceProperty.formType === 'selectOne'" [title]="resourceProperty.title" [description]="resourceProperty.description"
+                        [resourceType]="resourceProperty.resourceType" selectionType="radio" ($selectedResources)="doSomething(resourceProperty, $event)">
+                    </sw-table-dialog>
+
+                    <mat-chip-list>
+                        <mat-chip *ngFor="let resource of collectionPropertyValues[resourceProperty.property]" [selectable]="true" [removable]="true"
+                            (removed)="remove(resource, resourceProperty)">
+                            <!-- TODO: other resource types -->
+                            <ng-container *ngIf="resource.type === 'user'">{{ resource.email }}</ng-container>
+                            <mat-icon matChipRemove>cancel</mat-icon>
+                        </mat-chip>
+                    </mat-chip-list>
+                </div>
+
+                <!-- enumMap selectOne -->
+                <div *ngIf="resourceProperty.enumMap && resourceProperty.formType !== 'map'">
+                    <mat-form-field [matTooltip]="resourceProperty.tooltip" [matTooltipPosition]="'right'" matTooltipShowDelay="200">
+                        <mat-select [formControlName]="resourceProperty.property" [placeholder]="resourceProperty.title" [required]="resourceProperty.required">
+                            <mat-option *ngFor="let kv of resourceProperty.enumMap | mapToIterable" [value]="kv.key">
+                                {{ kv.value }}
+                            </mat-option>
+                        </mat-select>
+                        <mat-error *ngIf="resourceProperty.formError">{{ resourceProperty.formError }}</mat-error>
+                        <mat-hint *ngIf="resourceProperty.description">{{ resourceProperty.description }}</mat-hint>
+                    </mat-form-field>
+                </div>
+
+                <!-- TODO: enumMap selectMany -->
+
+                <!-- TODO: enumMap : string map -->
+                <!-- <div *ngIf="resourceProperty.enumMap && resourceProperty.formType === 'map'" style="background: red" class="full-width">
+                    <div>{{ resourceProperty.title }}</div>
+                    <div fxLayoutGap="3em">
+                        <mat-form-field [matTooltip]="resourceProperty.tooltip" [matTooltipPosition]="'right'" matTooltipShowDelay="200">
+                            <mat-select [formControlName]="resourceProperty.property" [placeholder]="resourceProperty.title" [required]="resourceProperty.required">
+                                <mat-option *ngFor="let kv of resourceProperty.enumMap | mapToIterable" [value]="kv.key">
+                                    {{ kv.value }}
+                                </mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="resourceProperty.formError">{{ resourceProperty.formError }}</mat-error>
+                            <mat-hint *ngIf="resourceProperty.description">{{ resourceProperty.description }}</mat-hint>
+                        </mat-form-field>
+                        <mat-form-field>
+                            <input matInput [formControlName]="resourceProperty.property + mapValueExtension" placeholder="Value">
+                        </mat-form-field>
+                    </div>
+                    <button mat-button>Add</button>
+                </div> -->
+
+                <!-- string : string map -->
+                <!-- <div *ngIf="!resourceProperty.enumMap && resourceProperty.formType === 'map'" class="full-width">
+                    <div>{{ resourceProperty.title }}</div>
+
+                    <div *ngIf="mapProperties[resourceProperty.property]">
+                        <div fxLayoutAlign="start center" fxLayout="row" *ngFor="let kv of mapProperties[resourceProperty.property] | mapToIterable">
+                            <div>{{ kv.key }}: {{ kv.value }}</div>
+                            <button mat-icon-button (click)="removeFromMap(resourceProperty.property, kv.key)">
+                                <mat-icon>delete</mat-icon>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div fxLayoutGap="3em">
+                        <mat-form-field>
+                            <input matInput [formControlName]="resourceProperty.property" placeholder="Key">
+                        </mat-form-field>
+                        <mat-form-field>
+                            <input matInput [formControlName]="resourceProperty.property + mapValueExtension" placeholder="Value">
+                        </mat-form-field>
+                    </div>
+                    <button mat-button (click)="addToMap(resourceProperty.property, resourceProperty.property + mapValueExtension)">Add</button>
+                </div> -->
+
+                <!-- string array -->
+                <div *ngIf="resourceProperty.formType === 'array'">
+                    <mat-form-field>
+                        <mat-chip-list #chipList [formControlName]="resourceProperty.property" [required]="resourceProperty.required">
+                            <mat-chip *ngFor="let value of collectionPropertyValues[resourceProperty.property]" [selectable]="true" [removable]="true"
+                                (removed)="remove(value, resourceProperty)">
+                                {{ value }}
+                                <mat-icon matChipRemove>cancel</mat-icon>
+                            </mat-chip>
+                            <input [placeholder]="resourceProperty.title" [matChipInputFor]="chipList" [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                                [matChipInputAddOnBlur]="addOnBlur" (matChipInputTokenEnd)="addToArray($event, resourceProperty)">
+                        </mat-chip-list>
+                        <mat-error *ngIf="resourceProperty.formError">{{ resourceProperty.formError }}</mat-error>
+                        <mat-hint *ngIf="resourceProperty.description">{{ resourceProperty.description }}</mat-hint>
+                    </mat-form-field>
+                </div>
+
+                <!-- date -->
+                <div *ngIf="resourceProperty.formType === 'date'">
+                    <mat-form-field [matTooltip]="resourceProperty.tooltip" [matTooltipPosition]="'right'" matTooltipShowDelay="200">
+                        <input matInput [formControlName]="resourceProperty.property" [matDatepicker]="picker" [required]="resourceProperty.required"
+                            [placeholder]="resourceProperty.title">
+                        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                        <mat-datepicker #picker></mat-datepicker>
+                        <mat-error *ngIf="resourceProperty.formError">{{ resourceProperty.formError }}</mat-error>
+                        <mat-hint *ngIf="resourceProperty.description">{{ resourceProperty.description }}</mat-hint>
+                    </mat-form-field>
+                </div>
+
+            </ng-container>
+        </div>
+    </form>
+</div>
+<mat-error *ngIf="!valid">The form is invalid. Please fix all above highlighted fields before submitting.</mat-error>
+<button mat-raised-button (click)="submit()">Submit</button>

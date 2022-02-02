@@ -1,0 +1,42 @@
+<mat-card-title>Users</mat-card-title>
+<div fxLayout="row" fxLayoutGap="1em">
+    <mat-card fxFlex>
+        <mat-card-subtitle>Owner Group</mat-card-subtitle>
+        <mat-card-content>{{ element.ownerGroup }} (
+            <a href="">xyz@xyz.com</a>)</mat-card-content>
+        <mat-card-subtitle>Project Responsible</mat-card-subtitle>
+        <mat-card-content>{{ element.projectResponsible }} (
+            <a href="">xyz@xyz.com</a>)</mat-card-content>
+        <mat-card-subtitle>Lead Architect</mat-card-subtitle>
+        <mat-card-content>{{ element.leadArchitect }} (
+            <a href="">xyz@xyz.com</a>)</mat-card-content>
+        <mat-card-subtitle>Project Owner</mat-card-subtitle>
+        <mat-card-content>{{ element.projectOwner }} (
+            <a href="">xyz@xyz.com</a>)</mat-card-content>
+    </mat-card>
+    <mat-card fxFlex>
+        <mat-card-subtitle>Owner Accounting Unit</mat-card-subtitle>
+        <mat-card-content>{{ element.ownerAccountingUnit }} (
+            <a href="">xyz@xyz.com</a>)</mat-card-content>
+        <mat-card-subtitle>Clearing Team</mat-card-subtitle>
+        <mat-card-content>{{ element.clearingTeam }} (
+            <a href="">xyz@xyz.com</a>)</mat-card-content>
+    </mat-card>
+    <mat-card fxFlex>
+        <mat-card-subtitle>Moderators</mat-card-subtitle>
+        <mat-card-content fxLayout="column" fxLayoutGap="0.7em">
+            <div>Hans Wans (
+                <a href="">xyz@xyz.com</a>)</div>
+            <div>Hermann Divedeep (
+                <a href="">xyz@xyz.com</a>)</div>
+            <div>Hermann Divedeep Divedeep Divedeep (
+                <a href="">xyz@xyz.com</a>)</div>
+            <!--
+                <div>Hermann Divedeep (<a href="">xyz@xyz.com</a>)</div>
+                <div>Hermann Divedeep (<a href="">xyz@xyz.com</a>)</div>
+                <div>Hermann Divedeep (<a href="">xyz@xyz.com</a>)</div>
+                <div>Hermann Divedeep (<a href="">xyz@xyz.com</a>)</div>
+                -->
+        </mat-card-content>
+    </mat-card>
+</div>

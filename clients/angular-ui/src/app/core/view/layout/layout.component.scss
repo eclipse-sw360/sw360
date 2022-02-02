@@ -1,0 +1,84 @@
+$sw-top-bar-height: 6em;
+$sw-title-bar-height: 3.3em;
+$top-content-distance:
+    $sw-top-bar-height + $sw-title-bar-height;
+$sidebar-width: 14em;
+$content-padding: 1rem;
+
+:host {
+    display: block;
+    min-width: 1280px;
+}
+
+.sw-top-bar {
+    position: fixed;
+    top: 0;
+    z-index: 100;
+    width: 100%;
+    background: white;
+    color: black;
+    height: $sw-top-bar-height;
+}
+
+.menu-icon {
+    color: darkgrey;
+}
+
+.sw-title-bar {
+    position: fixed;
+    top: $sw-top-bar-height;
+    z-index: 99;
+    // TODO: choose resource colors
+    background: #FF9999;
+    background: rgb(185, 255, 192);
+    background: #9fe9ff;
+    // background: #98EDFF;
+    // background: #FFFF7F;
+    height: $sw-title-bar-height;
+    width: 100%;
+}
+
+.sw-title-bar-title {
+    font-size: 1.35em;
+    padding: 0 $content-padding;
+    font-weight: 500;
+}
+
+.sidebar {
+    position: fixed;
+    top: $top-content-distance;
+    width: $sidebar-width;
+    height: 100%;
+    background: #fafafa;
+    // border-right: 1px solid #eee;
+    margin-right: 1em;
+    z-index: 98;
+    font-weight: bold;
+}
+
+.content {
+    margin-top: calc(#{$top-content-distance} + 1em);
+    padding: 0 $content-padding;
+    // background: red;
+    margin-bottom: 3em;
+}
+
+.content-with-sidebar {
+    margin-left: $sidebar-width;
+}
+
+.content-without-sidebar {
+    margin-left: 2em;
+}
+
+.topbar-margin-left {
+    margin-left: 1em;
+}
+
+.topbar-margin-right {
+    margin-right: 1.5em;
+}
+
+.title-font {
+    font-size: 1.6em;
+}

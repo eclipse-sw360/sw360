@@ -1,0 +1,115 @@
+{
+    "_embedded": {
+        "sw360:components": [
+            {
+                "name": "ATest: NEU: 0.08803711501037048",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/components/50a3a4d84bfa038a7fb3e8b0ba0286f3"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.1673646589597344",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/components/50a3a4d84bfa038a7fb3e8b0ba0295c5"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.17352711288339706",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/components/50a3a4d84bfa038a7fb3e8b0ba02a1e0"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.21214630176456462",
+                "componentType": "INTERNAL",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/components/50a3a4d84bfa038a7fb3e8b0ba02fe87"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.2801951407172152",
+                "componentType": "INTERNAL",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/components/50a3a4d84bfa038a7fb3e8b0ba02bcce"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.32063663256468566",
+                "componentType": "INTERNAL",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/components/50a3a4d84bfa038a7fb3e8b0ba02e535"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.32604894399032514",
+                "componentType": "INTERNAL",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/components/e682e456d3a227540b4445184e0024bf"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.36206798078466007",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/components/50a3a4d84bfa038a7fb3e8b0ba027c3e"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.41110738386305035",
+                "componentType": "FREESOFTWARE",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/components/50a3a4d84bfa038a7fb3e8b0ba02caa2"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.4165029091464594",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/components/50a3a4d84bfa038a7fb3e8b0ba027201"
+                    }
+                }
+            }
+        ]
+    },
+    "_links": {
+        "first": {
+            "href": "http://localhost:8080/resource/api/components?page=0&page_entries=10"
+        },
+        "next": {
+            "href": "http://localhost:8080/resource/api/components?page=1&page_entries=10"
+        },
+        "last": {
+            "href": "http://localhost:8080/resource/api/components?page=2&page_entries=10"
+        },
+        "curies": [
+            {
+                "href": "http://localhost:8080/resource/docs/{rel}.html",
+                "name": "sw360",
+                "templated": true
+            }
+        ]
+    },
+    "page": {
+        "size": 10,
+        "totalElements": 29,
+        "totalPages": 3,
+        "number": 0
+    }
+}

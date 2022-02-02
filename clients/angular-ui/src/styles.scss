@@ -1,0 +1,26 @@
+@import "~@angular/material/prebuilt-themes/indigo-pink.css";
+// @import 'material-icons/iconfont/material-icons.scss';
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-size: 14px;
+    font-family: 'Roboto', sans-serif;
+}
+
+// TODO: no global mat !important pls :)
+.mat-card-subtitle {
+    margin-bottom: 8px !important;
+}
+
+.active, .selected {
+    background: rgba(255,255,0,0.5);
+}

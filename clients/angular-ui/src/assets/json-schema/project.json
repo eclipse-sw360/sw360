@@ -1,0 +1,738 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "BASE_URL/component",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "string",
+            "readOnly": true,
+            "client": {
+                "enumMap": null,
+                "title": null,
+                "description": null,
+                "visible": false,
+                "tooltip": null,
+                "group": null,
+                "editable": false,
+                "formType": null,
+                "formError": null,
+                "filterable": false,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "type": {
+            "type": "string",
+            "readOnly": true,
+            "client": {
+                "enumMap": null,
+                "title": null,
+                "description": null,
+                "visible": false,
+                "tooltip": null,
+                "group": null,
+                "editable": false,
+                "formType": null,
+                "formError": null,
+                "filterable": false,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "revision": {
+            "type": "string",
+            "readOnly": true,
+            "client": {
+                "enumMap": null,
+                "title": "Revision",
+                "description": "revision description",
+                "visible": true,
+                "tooltip": "revision tooltip",
+                "group": "General",
+                "editable": false,
+                "formType": null,
+                "formError": null,
+                "filterable": false,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "name": {
+            "type": "string",
+            "client": {
+                "enumMap": null,
+                "title": "Name",
+                "description": "name description",
+                "visible": true,
+                "tooltip": "name tooltip",
+                "group": "General",
+                "editable": true,
+                "formType": "input",
+                "formError": "Name is required",
+                "filterable": true,
+                "sortable": true,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "description": {
+            "type": "string",
+            "client": {
+                "enumMap": null,
+                "title": "Description",
+                "description": "description description",
+                "visible": true,
+                "tooltip": "description tooltip",
+                "group": "General",
+                "editable": true,
+                "formType": "textarea",
+                "formError": null,
+                "filterable": false,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "createdOn": {
+            "type": "string",
+            "readOnly": true,
+            "client": {
+                "enumMap": null,
+                "title": "Created On",
+                "description": "createdOn description",
+                "visible": true,
+                "tooltip": null,
+                "group": "General",
+                "editable": false,
+                "formType": null,
+                "formError": null,
+                "filterable": true,
+                "sortable": true,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "attachments": {
+            "type": "array",
+            "items": {
+                "$ref": "BASE_URL/attachment"
+            },
+            "readOnly": true,
+            "client": {
+                "enumMap": null,
+                "title": "Attachments",
+                "descrption": "attachments description",
+                "visible": true,
+                "tooltip": null,
+                "group": "Attachments",
+                "editable": true,
+                "formType": "embedded",
+                "formError": null,
+                "filterable": false,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": "attachment"
+            }
+        },
+        "componentType": {
+            "type": "string",
+            "oneOf": [
+                {
+                    "enum": [
+                        "INTERNAL",
+                        "OSS",
+                        "COTS",
+                        "FREESOFTWARE",
+                        "INNER_SOURCE",
+                        "SERVICE"
+                    ]
+                }
+            ],
+            "client": {
+                "enumMap": {
+                    "INTERNAL": "Internal",
+                    "OSS": "OSS",
+                    "COTS": "COTS",
+                    "FREESOFTWARE": "Free Software",
+                    "INNER_SOURCE": "Inner Source",
+                    "SERVICE": "Service"
+                },
+                "title": "Component Type",
+                "description": "componentType description",
+                "visible": true,
+                "group": "General",
+                "editable": true,
+                "formType": "selectOne",
+                "formError": "componentType form error",
+                "tooltip": "componentType tooltip",
+                "filterable": true,
+                "sortable": true,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "createdBy": {
+            "type": "string",
+            "readOnly": true,
+            "client": {
+                "enumMap": null,
+                "title": "Created By",
+                "description": "createdBy description",
+                "visible": true,
+                "tooltip": null,
+                "group": "General",
+                "editable": false,
+                "formType": null,
+                "formError": null,
+                "filterable": true,
+                "sortable": true,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "subscribers": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "readOnly": true,
+            "client": {
+                "enumMap": null,
+                "title": "Component Type",
+                "description": "componentType description",
+                "visible": true,
+                "tooltip": "subscribers tooltip",
+                "group": "Users",
+                "editable": false,
+                "formType": null,
+                "formError": null,
+                "filterable": false,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "moderators": {
+            "type": "array",
+            "items": {
+                "$ref": "BASE_URL/user"
+            },
+            "client": {
+                "enumMap": null,
+                "title": "Moderators",
+                "description": "moderators description",
+                "visible": true,
+                "tooltip": "moderators tooltip",
+                "group": "Users",
+                "editable": true,
+                "formType": "selectMany",
+                "formError": null,
+                "filterable": false,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": "user"
+            }
+        },
+        "componentOwner": {
+            "type": "string",
+            "oneOf": [
+                {
+                    "$ref": "BASE_URL/user"
+                }
+            ],
+            "client": {
+                "enumMap": null,
+                "title": "Component Owner",
+                "description": "componentOwner description",
+                "visible": true,
+                "tooltip": "componentOwner tooltip",
+                "group": "Users",
+                "editable": true,
+                "formType": "selectOne",
+                "formError": null,
+                "filterable": true,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": "user"
+            }
+        },
+        "ownerAccountingUnit": {
+            "type": "string",
+            "client": {
+                "enumMap": null,
+                "title": "Owner Accounting Unit",
+                "description": "ownerAccountingUnit description",
+                "visible": true,
+                "tooltip": "ownerAccountingUnit tooltip",
+                "group": "Users",
+                "editable": true,
+                "formType": "input",
+                "formError": null,
+                "filterable": true,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "ownerGroup": {
+            "type": "string",
+            "client": {
+                "enumMap": null,
+                "title": "Owner Group",
+                "description": "ownerGroup description",
+                "visible": true,
+                "tooltip": "ownerGroup tooltip",
+                "group": "Users",
+                "editable": true,
+                "formType": "input",
+                "formError": null,
+                "filterable": true,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "ownerCountry": {
+            "type": "string",
+            "client": {
+                "enumMap": null,
+                "title": "Owner Country",
+                "description": "ownerCountry description",
+                "visible": true,
+                "tooltip": "ownerCountry tooltip",
+                "group": "Users",
+                "editable": true,
+                "formType": "input",
+                "formError": null,
+                "filterable": true,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "externalIds": {
+            "type": "object",
+            "patternProperties": {
+                ".{1,}": {
+                    "type": "string"
+                }
+            },
+            "readOnly": true,
+            "client": {
+                "enumMap": null,
+                "title": "External ID's",
+                "description": "externalIds description",
+                "visible": true,
+                "tooltip": "externalIds tooltip",
+                "group": "General",
+                "editable": true,
+                "formType": "map",
+                "formError": null,
+                "filterable": false,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "roles": {
+            "type": "object",
+            "patternProperties": {
+                ".{1,}": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "oneOf": [
+                {
+                    "enum": [
+                        "Contributor",
+                        "Expert",
+                        "Committer"
+                    ]
+                }
+            ],
+            "client": {
+                "enumMap": {
+                    "Contributor": "Contributor",
+                    "Expert": "Expert",
+                    "Committer": "Committer"
+                },
+                "title": "Roles",
+                "description": "roles description",
+                "visible": true,
+                "tooltip": "roles tooltip",
+                "group": "Users",
+                "editable": true,
+                "formType": "map",
+                "formError": null,
+                "filterable": false,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "releaseIds": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "client": {
+                "enumMap": null,
+                "title": "Release ID's",
+                "description": "releaseIds descrption",
+                "visible": true,
+                "tooltip": "releaseIds tooltip",
+                "group": "Releases",
+                "editable": true,
+                "formType": "array",
+                "formError": null,
+                "filterable": false,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "releases": {
+            "type": "array",
+            "items": {
+                "$ref": "BASE_URL/release"
+            },
+            "readOnly": true,
+            "client": {
+                "enumMap": null,
+                "title": "Releases",
+                "description": "releases description",
+                "visible": true,
+                "tooltip": "releases tooltip",
+                "group": "Releases",
+                "editable": true,
+                "formType": "embedded",
+                "formError": null,
+                "filterable": false,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": "release"
+            }
+        },
+        "mainLicenseIds": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "readOnly": true,
+            "client": {
+                "enumMap": null,
+                "title": "Main License ID's",
+                "description": "mainLicenseIds descrption",
+                "visible": true,
+                "tooltip": "mainLicenseIds tooltip",
+                "group": "General",
+                "editable": true,
+                "formType": "array",
+                "formError": null,
+                "filterable": false,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "categories": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "client": {
+                "enumMap": null,
+                "title": "Categories",
+                "description": "categories description",
+                "visible": true,
+                "tooltip": "categories tooltip",
+                "group": "General",
+                "editable": true,
+                "formType": "array",
+                "formError": "At least one category.",
+                "filterable": false,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "languages": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "client": {
+                "enumMap": null,
+                "title": "Languages",
+                "description": "languages description",
+                "visible": true,
+                "tooltip": "languages tooltip",
+                "group": "General",
+                "editable": true,
+                "formType": "array",
+                "formError": null,
+                "filterable": false,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "softwarePlatforms": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "client": {
+                "enumMap": null,
+                "title": "Software Platforms",
+                "description": "softwarePlatforms description",
+                "visible": true,
+                "tooltip": "softwarePlatforms tooltip",
+                "group": "General",
+                "editable": true,
+                "formType": "array",
+                "formError": null,
+                "filterable": false,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "operatingSystems": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "client": {
+                "enumMap": null,
+                "title": "Operating Systems",
+                "description": "operatingSystems description",
+                "visible": true,
+                "tooltip": "operatingSystems tooltip",
+                "group": "General",
+                "editable": true,
+                "formType": "array",
+                "formError": null,
+                "filterable": false,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "vendorNames": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "client": {
+                "enumMap": null,
+                "title": "Vendor Names",
+                "description": "vendorNames description",
+                "visible": true,
+                "tooltip": "vendorNames tooltip",
+                "group": "General",
+                "editable": true,
+                "formType": "array",
+                "formError": null,
+                "filterable": false,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "homepage": {
+            "type": "string",
+            "format": "uri",
+            "client": {
+                "enumMap": null,
+                "title": "Homepage",
+                "description": "homepage description",
+                "visible": true,
+                "tooltip": "homepage tooltip",
+                "group": "General",
+                "editable": true,
+                "formType": "input",
+                "formError": null,
+                "filterable": false,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "mailinglist": {
+            "type": "string",
+            "format": "uri",
+            "client": {
+                "enumMap": null,
+                "title": "Mailing List",
+                "description": "mailinglist description",
+                "visible": true,
+                "tooltip": "mailinglist tooltip",
+                "group": "General",
+                "editable": true,
+                "formType": "input",
+                "formError": null,
+                "filterable": false,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "wiki": {
+            "type": "string",
+            "format": "uri",
+            "client": {
+                "enumMap": null,
+                "title": "Wiki",
+                "description": "wiki description",
+                "visible": true,
+                "tooltip": "wiki tooltip",
+                "group": "General",
+                "editable": true,
+                "formType": "input",
+                "formError": null,
+                "filterable": false,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "blog": {
+            "type": "string",
+            "format": "uri",
+            "client": {
+                "enumMap": null,
+                "title": "Blog",
+                "description": "blog description",
+                "visible": true,
+                "tooltip": "blog tooltip",
+                "group": "General",
+                "editable": true,
+                "formType": "input",
+                "formError": null,
+                "filterable": false,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "wikipedia": {
+            "type": "string",
+            "format": "uri",
+            "client": {
+                "enumMap": null,
+                "title": "Wikipedia",
+                "description": "wikipedia description",
+                "visible": true,
+                "tooltip": "wikipedia tooltip",
+                "group": "General",
+                "editable": true,
+                "formType": "input",
+                "formError": null,
+                "filterable": false,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "openHub": {
+            "type": "string",
+            "format": "uri",
+            "client": {
+                "enumMap": null,
+                "title": "Open Hub",
+                "description": "openHub description",
+                "visible": true,
+                "tooltip": "openHub tooltip",
+                "group": "General",
+                "editable": true,
+                "formType": "input",
+                "formError": null,
+                "filterable": false,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "documentState": {
+            "type": "object",
+            "properties": {
+                "isOriginalDocument": {
+                    "type": "boolean"
+                },
+                "moderationState": {
+                    "type": "string",
+                    "oneOf": [
+                        {
+                            "enum": [
+                                "PENDING",
+                                "APPROVED",
+                                "REJECTED",
+                                "INPROGRESS"
+                            ]
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "isOriginalDocument"
+            ],
+            "readOnly": true,
+            "client": {
+                "enumMap": {
+                    "PENDING": "Pending",
+                    "APPROVED": "Approved",
+                    "REJECTED": "Rejected",
+                    "INPROGRESS": "In progress"
+                },
+                "title": null,
+                "description": null,
+                "visible": false,
+                "tooltip": null,
+                "group": null,
+                "editable": false,
+                "formType": null,
+                "formError": null,
+                "filterable": false,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": null
+            }
+        },
+        "permissions": {
+            "type": "object",
+            "patternProperties": {
+                ".{1,}": {
+                    "type": "boolean"
+                }
+            },
+            "readOnly": true,
+            "client": {
+                "enumMap": null,
+                "title": null,
+                "description": null,
+                "visible": false,
+                "tooltip": null,
+                "group": null,
+                "editable": false,
+                "formType": null,
+                "formError": null,
+                "filterable": false,
+                "sortable": false,
+                "pattern": null,
+                "resourceType": null
+            }
+        }
+    },
+    "required": [
+        "name",
+        "categories",
+        "componentType"
+    ]
+}

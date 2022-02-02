@@ -1,0 +1,159 @@
+<!-- Settings -->
+<div fxLayout="row" fxLayoutGap="1em" fxLayoutAlign="space-between center">
+    <div fxLayout="row" fxLayoutGap="1em" fxLayoutAlign="start center">
+        <!-- TODO: implement (not supported by API yet) -->
+        <div>
+            <mat-form-field class="search">
+                <input matInput placeholder="Search">
+            </mat-form-field>
+        </div>
+        <div fxLayout="row" fxLayoutGap="0.5em">
+            <div>
+                <button mat-button (click)="showFilter = !showFilter" [ngClass]="{ 'active': showFilter }">
+                    <mat-icon>filter_list</mat-icon>
+                    <span class="action-button">Filter</span>
+                </button>
+            </div>
+            <!-- Actions -->
+            <ng-container *ngIf="showActions">
+                <div *ngFor="let action of actions">
+                    <button mat-button (click)="action.action(resourceType, selectedResources)" *ngIf="action.oneSelected && oneSelected">
+                        <mat-icon *ngIf="action.matIconString">{{ action.matIconString }}</mat-icon>
+                        <span class="action-button">{{ action.title }}</span>
+                    </button>
+                    <button mat-button (click)="action.action(resourceType, selectedResources)" *ngIf="action.manySelected && manySelected">
+                        <mat-icon *ngIf="action.matIconString">{{ action.matIconString }}</mat-icon>
+                        <span class="action-button">{{ action.title }}</span>
+                    </button>
+                    <button mat-button (click)="action.action(resourceType, selectedResources)" *ngIf="action.noneSelected && noneSelected">
+                        <mat-icon *ngIf="action.matIconString">{{ action.matIconString }}</mat-icon>
+                        <span class="action-button">{{ action.title }}</span>
+                    </button>
+                </div>
+            </ng-container>
+        </div>
+    </div>
+    <div>
+        <sw-property-dialog (checkedProperties)="updateResourceProperties($event)" [properties]="resourceProperties"></sw-property-dialog>
+    </div>
+</div>
+
+<!-- TODO: Filter -->
+<div *ngIf="showFilter" class="filter-host">
+    <div fxLayoutGap="1em">
+        <button mat-raised-button (click)="addFilter()">
+            <mat-icon>add</mat-icon>
+            <span class="action-button">Add Filter</span>
+        </button>
+        <button mat-raised-button (click)="removeAllFilters()" *ngIf="filterFormKeys.length > 0">
+            <mat-icon>delete</mat-icon>
+            <span class="action-button">Remove All</span>
+        </button>
+    </div>
+    <form [formGroup]="filterFormGroup" style="margin:0.5em 0" *ngIf="filterFormKeys.length > 0">
+        <div fxLayout="row wrap" fxLayoutGap="1em">
+            <div *ngFor="let key of filterFormKeys" fxLayoutGap="1em">
+                <mat-form-field>
+                    <mat-select [formControlName]="key">
+                        <ng-container *ngFor="let rp of resourceProperties">
+                            <mat-option *ngIf="rp.filterable" [value]="rp.property">{{ rp.title }}</mat-option>
+                        </ng-container>
+                    </mat-select>
+                </mat-form-field>
+                <mat-form-field>
+                    <input matInput [formControlName]="key + filterInputFormAddition">
+                </mat-form-field>
+                <button mat-icon-button (click)="removeFilter(key)">
+                    <mat-icon>delete</mat-icon>
+                </button>
+            </div>
+        </div>
+    </form>
+    <button mat-raised-button (click)="updateRequestFilters()" *ngIf="filterFormKeys.length > 0 && filterFormGroup.valid">Apply Filters</button>
+    <mat-error *ngIf="!filterFormGroup.valid">All filters must define a filter property and value.</mat-error>
+</div>
+
+<!-- Table -->
+<table>
+    <thead>
+        <tr>
+            <!-- Select -->
+            <th>
+                <mat-checkbox *ngIf="selectionType === 'checkbox'" [checked]="allSelected" [indeterminate]="(manySelected || oneSelected) && !allSelected && !noneSelected"
+                    color="primary" (change)="selectAll($event)">
+                </mat-checkbox>
+            </th>
+            <!-- Columns -->
+            <ng-container *ngFor="let property of resourceProperties">
+                <th *ngIf="property.checked">
+                    <div fxLayout="row" fxLayoutAlign="start center">
+                        <div>{{ property.title }}</div>
+                        <div *ngIf="property.sortable">
+                            <div [ngStyle]="{'margin-left': '0.5em'}">
+                                <button mat-icon-button (click)="sort(property)" [ngClass]="{ 'active': property.sorted }">
+                                    <mat-icon *ngIf="property.sorted && property.sortDirection === 'desc'">keyboard_arrow_down</mat-icon>
+                                    <mat-icon *ngIf="property.sorted && property.sortDirection === 'asc'">keyboard_arrow_up</mat-icon>
+                                    <mat-icon *ngIf="!property.sorted">remove</mat-icon>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </th>
+            </ng-container>
+            <!-- Actions -->
+            <th *ngIf="showActions"></th>
+        </tr>
+    </thead>
+
+    <tbody>
+        <!-- <tr *ngFor="let resource of resources" [ngClass]="{ 'selected': resource.selected }"> -->
+        <tr *ngFor="let resource of resources" [ngClass]="{ 'selected': resource.selected }">
+            <!-- Row -->
+            <ng-container *ngIf="!resource.open">
+                <!-- Select -->
+                <td>
+                    <mat-checkbox *ngIf="selectionType === 'checkbox'" [checked]="resource.selected" color="primary" (change)="toggleSelect($event, resource)"></mat-checkbox>
+                    <mat-radio-button *ngIf="selectionType === 'radio'" color="primary" (click)="toggleRadio(resource)"></mat-radio-button>
+                </td>
+
+                <!-- Columns -->
+                <td *ngFor="let data of resource.data" (click)="toggleDetail(resource)">{{ data }}</td>
+
+                <!-- Actions -->
+                <td *ngIf="showActions">
+                    <div fxLayout="row" fxLayoutAlign="end start">
+                        <button mat-icon-button [matMenuTriggerFor]="menu">
+                            <mat-icon>more_vert</mat-icon>
+                        </button>
+                        <mat-menu #menu="matMenu">
+                            <ng-container *ngFor="let action of actions">
+                                <button mat-menu-item *ngIf="!action.noneSelected" (click)="invoceRowAction(action.action, resource)">
+                                    <mat-icon *ngIf="action.matIconString">{{ action.matIconString }}</mat-icon>
+                                    <span class="action-button">{{ action.title }}</span>
+                                </button>
+                            </ng-container>
+                        </mat-menu>
+                    </div>
+                </td>
+            </ng-container>
+
+            <!-- Detail -->
+            <td *ngIf="resource.open" colspan="100">
+                <!-- TODO: nicer -->
+                <div [style.margin]="'0.7em 0'" fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="1em">
+                    <mat-checkbox [checked]="resource.selected" color="primary" (change)="toggleSelect($event, resource)"></mat-checkbox>
+                    <button mat-button (click)="goToResource(resource)">Open</button>
+                    <button mat-button (click)="toggleDetail(resource)">Close</button>
+                </div>
+                <!-- TODO: other resource types -->
+                <sw-project *ngIf="resourceType === 'project'"></sw-project>
+                <sw-component *ngIf="resourceType === 'component'" [selflink]="resource._links.self.href"></sw-component>
+                <button mat-button (click)="toggleDetail(resource)" [style.margin]="'1em 0'">Close</button>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<mat-paginator [length]="pagination?.length" [pageSize]="pagination?.pageSize" [pageSizeOptions]="pagination?.pageSizeOptions"
+    [showFirstLastButtons]="pagination?.showFirstLastButtons" (page)="page($event)">
+</mat-paginator>

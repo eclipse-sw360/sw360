@@ -1,0 +1,24 @@
+<div fxLayout="row" fxLayoutAlign="space-between start" class="t">
+    <div>
+        <mat-card-title>Ornia Crotheise</mat-card-title>
+        <mat-card-subtitle>Version 4.1.3</mat-card-subtitle>
+    </div>
+    <div fxLayout="row">
+        <!-- <button mat-raised-button color="accent">Accent</button> -->
+        <button mat-button color="primary">Edit</button>
+        <!-- <button mat-button color="warn">Delete</button> -->
+        <button mat-icon-button>
+            <mat-icon>more_horiz</mat-icon>
+        </button>
+    </div>
+</div>
+<div fxLayout="row" fxLayoutGap="1em" class="t">
+    <sw-project-state fxFlex [element]="element"></sw-project-state>
+    <sw-project-details fxFlex [element]="element"></sw-project-details>
+</div>
+<sw-project-users [element]="element"></sw-project-users>
+<!-- 
+<div fxLayout="row" fxLayoutGap="1em" class="t">
+    <mat-card><sw-project-details [element]="element"></sw-project-details></mat-card>
+</div>
+-->

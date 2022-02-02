@@ -1,0 +1,18 @@
+<div fxLayout="row" fxLayoutAlign="space-between start" class="t">
+    <div>
+        <div>
+            <mat-card-title>{{ data?.name }}</mat-card-title>
+        </div>
+        <mat-card-subtitle>{{ data?.componentType }}</mat-card-subtitle>
+    </div>
+    <div fxLayout="row">
+        <!-- <button mat-raised-button color="accent">Accent</button> -->
+        <button mat-button color="primary">Edit</button>
+        <!-- <button mat-button color="warn">Delete</button> -->
+        <button mat-icon-button>
+            <mat-icon>more_horiz</mat-icon>
+        </button>
+    </div>
+</div>
+
+{{ data | json }}

@@ -1,0 +1,45 @@
+// Settings
+///////////
+.search {
+    width: 15em;
+}
+.action-button {
+    margin-left: 0.7em;
+}
+
+// Table
+////////
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+th {
+    background: #eee;
+}
+tr {
+    cursor: pointer;
+}
+td {
+    color: #444;
+    background: rgba(255,255,255,0.80);
+    height: 3.5em;
+}
+th, td {
+    padding: 0.2em 1em;
+    border-bottom: 1px solid rgba(30,30,30,0.08);
+    text-align: left;
+}
+th {
+    padding: 0.4em 1em;
+}
+::ng-deep.mat-checkbox-inner-container {
+    height: 1.3em !important;
+    width: 1.3em !important;
+}
+
+.filter-host {
+    // background: #fefefe;
+    padding: 1em;
+    border: 1px solid #aaa;
+    margin: 0.2em 0 1em 0;
+}

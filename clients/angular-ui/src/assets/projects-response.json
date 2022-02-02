@@ -1,0 +1,346 @@
+{
+    "_embedded": {
+        "sw360:components": [
+            {
+                "name": "ATest: NEU: 0.08803711501037048",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/components/50a3a4d84bfa038a7fb3e8b0ba0286f3"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.1673646589597344",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/components/50a3a4d84bfa038a7fb3e8b0ba0295c5"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.17352711288339706",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/components/50a3a4d84bfa038a7fb3e8b0ba02a1e0"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.21214630176456462",
+                "componentType": "INTERNAL",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/components/50a3a4d84bfa038a7fb3e8b0ba02fe87"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.2801951407172152",
+                "componentType": "INTERNAL",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/components/50a3a4d84bfa038a7fb3e8b0ba02bcce"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.32063663256468566",
+                "componentType": "INTERNAL",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/components/50a3a4d84bfa038a7fb3e8b0ba02e535"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.32604894399032514",
+                "componentType": "INTERNAL",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/components/e682e456d3a227540b4445184e0024bf"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.36206798078466007",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/components/50a3a4d84bfa038a7fb3e8b0ba027c3e"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.41110738386305035",
+                "componentType": "FREESOFTWARE",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/components/50a3a4d84bfa038a7fb3e8b0ba02caa2"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.4165029091464594",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/components/50a3a4d84bfa038a7fb3e8b0ba027201"
+                    }
+                }
+            }
+        ]
+    },
+    "_links": {
+        "first": {
+            "href": "http://localhost:8080/resource/api/components?page=0&page_entries=10"
+        },
+        "next": {
+            "href": "http://localhost:8080/resource/api/components?page=1&page_entries=10"
+        },
+        "last": {
+            "href": "http://localhost:8080/resource/api/components?page=2&page_entries=10"
+        },
+        "curies": [
+            {
+                "href": "http://localhost:8080/resource/docs/{rel}.html",
+                "name": "sw360",
+                "templated": true
+            }
+        ]
+    },
+    "page": {
+        "size": 10,
+        "totalElements": 29,
+        "totalPages": 3,
+        "number": 0
+    }
+}
+resource.service.ts: 67 {
+    "_embedded": {
+        "sw360:projects": [
+            {
+                "name": "ATest: NEU: 0.372319714392106",
+                "projectType": "CUSTOMER",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/projects/50a3a4d84bfa038a7fb3e8b0ba010771"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.17730999730435282",
+                "projectType": "CUSTOMER",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/projects/50a3a4d84bfa038a7fb3e8b0ba01a1a6"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.9001791797102978",
+                "projectType": "CUSTOMER",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/projects/50a3a4d84bfa038a7fb3e8b0ba0124e3"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.4275688272185285",
+                "projectType": "CUSTOMER",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/projects/50a3a4d84bfa038a7fb3e8b0ba00df78"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.379813333589464",
+                "projectType": "CUSTOMER",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/projects/50a3a4d84bfa038a7fb3e8b0ba01dfa9"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.694403686999858",
+                "projectType": "CUSTOMER",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/projects/50a3a4d84bfa038a7fb3e8b0ba00fa9d"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.5673696430651032",
+                "projectType": "CUSTOMER",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/projects/50a3a4d84bfa038a7fb3e8b0ba01d92e"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.7156136002033924",
+                "projectType": "CUSTOMER",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/projects/50a3a4d84bfa038a7fb3e8b0ba01c374"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.7152031669381289",
+                "projectType": "CUSTOMER",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/projects/50a3a4d84bfa038a7fb3e8b0ba011ba2"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.007835170074911968",
+                "projectType": "CUSTOMER",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/projects/50a3a4d84bfa038a7fb3e8b0ba02d577"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.5873115951587282",
+                "projectType": "CUSTOMER",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/projects/50a3a4d84bfa038a7fb3e8b0ba012ab7"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.6751853573490418",
+                "projectType": "CUSTOMER",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/projects/50a3a4d84bfa038a7fb3e8b0ba01c894"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.10226057640038766",
+                "projectType": "CUSTOMER",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/projects/50a3a4d84bfa038a7fb3e8b0ba0115d4"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.3582289867514179",
+                "projectType": "CUSTOMER",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/projects/50a3a4d84bfa038a7fb3e8b0ba011ad3"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.33692744014602005",
+                "projectType": "CUSTOMER",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/projects/50a3a4d84bfa038a7fb3e8b0ba01a7b1"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.5707806257776868",
+                "projectType": "CUSTOMER",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/projects/50a3a4d84bfa038a7fb3e8b0ba01b700"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.20092132757155534",
+                "projectType": "CUSTOMER",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/projects/50a3a4d84bfa038a7fb3e8b0ba01c991"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.12080878419101326",
+                "projectType": "CUSTOMER",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/projects/50a3a4d84bfa038a7fb3e8b0ba00edbf"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.5412004525428811",
+                "projectType": "CUSTOMER",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/projects/50a3a4d84bfa038a7fb3e8b0ba0137a6"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.41695883052265814",
+                "projectType": "CUSTOMER",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/projects/50a3a4d84bfa038a7fb3e8b0ba00d386"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.7212692951854889",
+                "projectType": "CUSTOMER",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/projects/50a3a4d84bfa038a7fb3e8b0ba00c66a"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.16789009579602898",
+                "projectType": "CUSTOMER",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/projects/50a3a4d84bfa038a7fb3e8b0ba02da56"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.8147609683773813",
+                "projectType": "CUSTOMER",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/projects/50a3a4d84bfa038a7fb3e8b0ba00dc6a"
+                    }
+                }
+            },
+            {
+                "name": "ATest: NEU: 0.7598362437152777",
+                "projectType": "CUSTOMER",
+                "_links": {
+                    "self": {
+                        "href": "http://localhost:8080/resource/api/projects/50a3a4d84bfa038a7fb3e8b0ba01086f"
+                    }
+                }
+            }
+        ]
+    },
+    "_links": {
+        "curies": [
+            {
+                "href": "http://localhost:8080/resource/docs/{rel}.html",
+                "name": "sw360",
+                "templated": true
+            }
+        ]
+    }
+}

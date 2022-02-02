@@ -1,0 +1,28 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "BASE_URL/component",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string",
+            "client": {
+                "enumMap": null,
+                "title": "Name",
+                "description": "name description",
+                "visible": true,
+                "tooltip": "name tooltip",
+                "group": "General",
+                "editable": true,
+                "formType": "input",
+                "formError": "Name is required",
+                "filterable": true,
+                "sortable": true,
+                "pattern": null,
+                "resourceType": null
+            }
+        }
+    },
+    "required": [
+        "name"
+    ]
+}
