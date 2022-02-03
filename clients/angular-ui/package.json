@@ -1,7 +1,7 @@
 {
   "name": "sw360app",
   "version": "0.0.0",
-  "license": "MIT",
+  "license": "EPL-2.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
