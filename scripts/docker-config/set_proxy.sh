@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 # Copyright BMW CarIT GmbH, 2021.
 #
@@ -16,5 +16,5 @@ if [ -n "$HTTP_PROXY" ]; then
     export PROXY_ENABLED PROXY_HTTP_HOST PROXY_HTTPS_HOST PROXY_PORT
 
     [ ! -d /root/.m2 ] && mkdir -p /root/.m2
-    envsubst </tmp/mvn-proxy-settings.xml > /root/.m2/settings.xml
+    envsubst </etc/mvn-proxy-settings.xml > /root/.m2/settings.xml
 fi

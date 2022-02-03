@@ -34,10 +34,9 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && rm -rf /var/lib/apt/lists/*
 
 # Prepare proxy for maven
-COPY scripts/docker-config/mvn-proxy-settings.xml /tmp
-COPY scripts/docker-config/set_proxy.sh /tmp
-
-RUN chmod +x /tmp/set_proxy.sh
+COPY scripts/docker-config/mvn-proxy-settings.xml /etc
+COPY scripts/docker-config/set_proxy.sh /usr/local/bin/setup_maven_proxy
+RUN chmod a+x /usr/local/bin/setup_maven_proxy
 
 #--------------------------------------------------------------------------------------------------
 # Thrift
@@ -62,20 +61,18 @@ ARG CLUCENE_VERSION=2.1.0
 WORKDIR /build
 
 COPY deps/couchdb* /deps/
+COPY ./scripts/docker-config/couchdb-lucene.ini /deps
 
 # Prepare source code
 RUN --mount=type=tmpfs,target=/build \
     --mount=type=cache,target=/root/.m2,rw,sharing=locked \
-    tar -C /build -xf /deps/couchdb-lucene-$CLUCENE_VERSION.tar.gz --strip-components=1 \
-    && /tmp/set_proxy.sh \
-    && cd /build \
+    tar -C /build -xvf /deps/couchdb-lucene-$CLUCENE_VERSION.tar.gz --strip-components=1 \
     && patch -p1 < /deps/couchdb-lucene.patch \
-    && sed -i "s/allowLeadingWildcard=false/allowLeadingWildcard=true/" src/main/resources/couchdb-lucene.ini \
-    && sed -i "s/localhost:5984/$COUCHDB_USER:$COUCHDB_PASSWORD@couchdb:5984/" ./src/main/resources/couchdb-lucene.ini \
+    && cp /deps/couchdb-lucene.ini ./src/main/resources/couchdb-lucene.ini \
+    && setup_maven_proxy \
     && mvn dependency:go-offline \
     && mvn install war:war \
     && cp ./target/*.war /couchdb-lucene.war \
-
     && rm -rf /deps
 
 #--------------------------------------------------------------------------------------------------
@@ -95,11 +92,11 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        mkdocs \
-        python3-pip \
-        python3-wheel \
-        && rm -rf /var/lib/apt/lists/* \
-        && pip install mkdocs-material
+    mkdocs \
+    python3-pip \
+    python3-wheel \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install mkdocs-material
 
 # Copy the exported sw360 directory
 COPY deps/sw360.tar /deps/
@@ -108,6 +105,7 @@ RUN --mount=type=tmpfs,target=/build \
     --mount=type=cache,target=/root/.m2,rw,sharing=locked \
     tar -C /build -xf /deps/sw360.tar \
     && cd /build/sw360 \
+    && setup_maven_proxy \
     && mvn package \
     -P deploy -Dtest=org.eclipse.sw360.rest.resourceserver.restdocs.* \
     -DfailIfNoTests=false \
@@ -131,14 +129,14 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        ca-certificates \
-        gnupg2 \
-        lsof \
-        openssh-client \
-        tzdata \
-        vim \
-        unzip \
-        zip \
+    ca-certificates \
+    gnupg2 \
+    lsof \
+    openssh-client \
+    tzdata \
+    vim \
+    unzip \
+    zip \
     && rm -rf /var/lib/apt/lists/*
 
 COPY deps/jars/* /deps/jars/

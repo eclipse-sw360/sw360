@@ -35,6 +35,6 @@ docker-compose \
     --file "$GIT_ROOT"/docker-compose.yml \
     $extra_args \
     build \
-    --build-arg BUILDKIT_INLINE_CACHE=1
-    $docker_verbose
-
+    --build-arg BUILDKIT_INLINE_CACHE=1 \
+    $docker_verbose \
+    "$@"
