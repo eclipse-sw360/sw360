@@ -28,6 +28,7 @@ services:
     volumes:
       - etc:/etc/sw360
       - webapps:/app/sw360/tomcat/webapps
+      - document_library:/app/sw360/data/document_library
       - ./config:/app/sw360/config
   postgresdb:
     image: 'postgres:13'
@@ -57,7 +58,8 @@ services:
       - couchdb:/opt/couchdb/data
 
 volumes:
-  postgres: null
-  couchdb: null
-  webapps: null
-  etc: null
+  postgres:
+  couchdb:
+  etc:
+  webapps:
+  document_library:
