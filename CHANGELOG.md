@@ -4,6 +4,61 @@ This is the changelog file of the sw360 project. It starts with the first releas
 
 https://github.com/sw360/sw360portal/releases
 
+
+## sw360-15.0.0-M1
+
+This tag covers many corrections/bug fixes after the 14.0 release.
+
+This release provides features, muliple bug fixes for release 14.0, for example, new REST endpoints, new integration test suite.
+
+### Credits
+
+The following github users have contributed to the source code since the last release (in alphabetical order):
+
+```
+Anupam Ghosh <anupam.ghosh@siemens.com>
+dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+Gaurav Mishra <gmishx@gmail.com>
+He, Albert <albert.he@sap.com>
+Jaideep Palit <jaideep.palit@siemens.com>
+ravi110336 <kumar.ravindra@siemens.com>
+Smruti Prakash Sahoo <smruti.sahoo@siemens.com>
+```
+
+Please note that also many other persons usually contribute to the project with reviews, testing, documentations, conversations or presentations.
+
+### Features
+
+* `9807d381` feat(ui): Added new Clearing State and Attachment Type
+* `77f06a6e` feat(ci): Remove dependency of commonsIO from client
+* `be212373` feat(ci): Fixed Attachment test cases
+* `bf43f889` feat(ci): Fixed Release test cases
+* `790c935f` feat(ci): Fixed component test cases
+* `32ae085f` feat(ci): Run Client Integration Test for rest api on DB
+* `77f49ec2` feat(ui): Added new column for ECCN in ECC status tab of project details view
+* `8ed3c68d` feat(AttachmentTypeUI):Add a new attachment type Security Assessment.
+* `2e593adf` feat(client): Added Java Client Apis for vulnerability endpoints.
+
+### Corrections
+
+* `2b562699` fix(ci): Fixed vulnerability IT testcases
+* `854c6453` fix(release): Fixed mainline state is empty when creating a release by ui or rest
+* `be26f6ca` fix(ci): Fixed Project Client Testcases
+* `e06eb192` fix(ci): Fixed License Testcases
+* `2261b62f` fix(script): Fixed deployment status check after spring boot updat
+* `02ecfe6f` Fix default config not working issue
+* `30e404bd` Fix component list sorting error
+* `f6337094` fix(rest): Optimize rest api for get project by tag, type, group
+
+### Infrastructure
+
+* `376d5b94` chore(deps): bump log4j-core from 2.17.0 to 2.17.1
+* `4fc46d41` chore(deps): bump log4j-core from 2.16.0 to 2.17.0
+* `c386b4c6` log4j version upgrade to 2.16.0(log4j-vulnerability)
+* `b8ebd682` chore(rel): Changing back to 14.1.0-SNAPSHOT
+* `0368ae99` chore(readme): Update release badge to latest
+
+
 ## sw360-14.0.0-M1
 
 This tag covers many corrections/bug fixes after the 13.4 release.
@@ -140,6 +195,7 @@ Please note that also many other persons usually contribute to the project with 
 * `f0aa5cbf` fix(ui/rest): Issue fetching releases by external ids and null value in external id breaks the release view
 * `baaa9f42` fix(search): search releases while linking to project
 * `00083ea8` fix(backend): Issues with boolean and timestamp field deserialization and get attachment info REST
+
 
 ## sw360-13.3.0-M1
 
