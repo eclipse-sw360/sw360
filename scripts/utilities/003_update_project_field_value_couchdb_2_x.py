@@ -39,6 +39,7 @@ db = couch[DBNAME]
 fieldName = "field_to_be_migrated"
 oldValue = "old_value"
 newValue = "new_value"
+isStartsWith = False
 
 # ----------------------------------------
 # queries
@@ -47,11 +48,44 @@ newValue = "new_value"
 # get all the projects with oldValue
 projects_all_query = {"selector": {"type": {"$eq": "project"}, fieldName: {"$eq": oldValue}}, "limit": 200000}
 
+# get all the projects with oldValue with partial string
+projects_all_query_regex = {"selector": {"type": {"$eq": "project"}, fieldName: {"$regex": oldValue}}, "limit": 200000}
+
 # ---------------------------------------
 # functions
 # ---------------------------------------
 
-def run():
+def withRegex():
+    log = {}
+    log['updatedProjects'] = []
+    print 'Getting all projects with ' + fieldName + ' starting with ' + oldValue
+    projects_all_regex = db.find(projects_all_query_regex)
+    print 'Received ' + str(len(projects_all_regex)) + ' projects'
+    log['totalCount'] = len(projects_all_regex)
+
+    for project in projects_all_regex:
+        value = project.get(fieldName)
+        if value.startswith(oldValue):
+            value = value.replace(oldValue, newValue, 1)
+        project[fieldName] = value
+        print '\tUpdating project ID -> ' + project.get('_id') + ', Project Name -> ' + project.get('name')
+        updatedProject = {}
+        updatedProject['id'] = project.get('_id')
+        updatedProject['name'] = project.get('name')
+        log['updatedProjects'].append(updatedProject)
+        if not DRY_RUN:
+            db.save(project)
+    resultFile = open('003_update_project_field_value_couchdb_2_x.log', 'w')
+    json.dump(log, resultFile, indent = 4, sort_keys = True)
+    resultFile.close()
+
+    print '\n'
+    print '------------------------------------------'
+    print 'Total Projects with ' + fieldName + ' starts with ' + oldValue + ': ' + str(len(projects_all_regex))
+    print '------------------------------------------'
+    print 'Please check log file "003_update_project_field_value_couchdb_2_x.log" in this directory for details'
+
+def withoutRegEx():
     log = {}
     log['updatedProjects'] = []
     print 'Getting all projects with ' + fieldName + ' as ' + oldValue
@@ -78,6 +112,12 @@ def run():
     print '------------------------------------------'
     print 'Please check log file "003_update_project_field_value_couchdb_2_x.log" in this directory for details'
     print '------------------------------------------'
+
+def run():
+    if isStartsWith:
+        withRegex()
+    else:
+        withoutRegEx()
 
 # --------------------------------
 
