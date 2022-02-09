@@ -182,7 +182,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public List<Project> getAccessibleProjectsSummary(User user) {
-        return repository.getAccessibleProjectsSummary(user);
+        return repository.getAccessibleProjectsSummary(user, vendorRepository);
     }
 
     public Map<PaginationData, List<Project>> getAccessibleProjectsSummary(User user, PaginationData pageData) {
@@ -281,7 +281,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         if(!makePermission(project, user).isActionAllowed(RequestedAction.READ)) {
             throw fail(403, "User: %s is not allowed to view the requested project: %s", user.getEmail(), project.getId());
         }
-
+        vendorRepository.fillVendor(project);
         return project;
     }
 
@@ -360,7 +360,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         project.createdOn = getCreatedOn();
         project.businessUnit = getBUFromOrganisation(user.getDepartment());
         setRequestedDateAndTrimComment(project, null, user);
-
+        project.unsetVendor();
         // Add project to database and return ID
         repository.add(project);
 
@@ -410,6 +410,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             project.setAttachments( getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), project.getAttachments()) );
             setReleaseRelations(project, user, actual);
             updateProjectDependentLinkedFields(project, actual);
+            project.unsetVendor();
             repository.update(project);
 
             List<ChangeLogs> referenceDocLogList=new LinkedList<>();
@@ -495,6 +496,11 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         if (isValidDependentIds && project.isSetLinkedObligationId()) {
             String obligationId = project.getLinkedObligationId();
             isValidDependentIds = DatabaseHandlerUtil.isAllIdInSetExists(Sets.newHashSet(obligationId), obligationRepository);
+        }
+
+        if (isValidDependentIds && CommonUtils.isNotNullEmptyOrWhitespace(project.getVendorId())) {
+            isValidDependentIds = DatabaseHandlerUtil.isAllIdInSetExists(Sets.newHashSet(project.getVendorId()),
+                    vendorRepository);
         }
         return isValidDependentIds;
     }
@@ -936,7 +942,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public Set<Project> getAccessibleProjects(User user) {
-        return repository.getAccessibleProjects(user);
+        return repository.getAccessibleProjects(user, vendorRepository);
     }
 
     public Map<String, List<String>> getDuplicateProjects() {

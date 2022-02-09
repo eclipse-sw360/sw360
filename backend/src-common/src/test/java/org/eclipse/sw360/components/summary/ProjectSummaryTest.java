@@ -16,6 +16,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
+import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -85,6 +86,9 @@ public class ProjectSummaryTest {
                     break;
                 case EXTERNAL_URLS:
                     project.externalUrls = Collections.emptyMap();
+                    break;
+                case VENDOR:
+                    project.vendor = new Vendor("short", "full", "http://vendor.com");
                     break;
                 default: //most fields are string
                     project.setFieldValue(renderedField, "asd");

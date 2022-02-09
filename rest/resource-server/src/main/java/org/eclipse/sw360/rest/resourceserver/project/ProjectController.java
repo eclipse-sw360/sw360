@@ -54,6 +54,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityCheckStatus;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
@@ -952,6 +953,13 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         if (sw360Project.getContributors() != null) {
             Set<String> contributors = sw360Project.getContributors();
             restControllerHelper.addEmbeddedContributors(halProject, contributors);
+        }
+
+        if (sw360Project.getVendor() != null) {
+            Vendor vendor = sw360Project.getVendor();
+            HalResource<Vendor> vendorHalResource = restControllerHelper.addEmbeddedVendor(vendor.getFullname());
+            halProject.addEmbeddedResource("sw360:vendors", vendorHalResource);
+            sw360Project.setVendor(null);
         }
 
         return halProject;

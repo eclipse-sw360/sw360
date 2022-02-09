@@ -129,6 +129,9 @@
                 </select>
             </div>
         </td>
+        <td>
+            <sw360:DisplayVendorEdit id="<%=Project._Fields.VENDOR_ID.toString()%>" vendor="${project.vendor}" label="vendor"/>
+        </td>
     </tr>
     <tr>
         <td>
