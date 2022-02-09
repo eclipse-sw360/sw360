@@ -61,6 +61,7 @@ public class SearchPortlet extends Sw360Portlet {
         String searchtext = request.getParameter(KEY_SEARCH_TEXT);
         String[] typeMaskArray = request.getParameterValues(TYPE_MASK);
         String searchQuery = PortalUtil.getOriginalServletRequest(PortalUtil.getHttpServletRequest(request)).getParameter("q");
+        String submitSearch = request.getParameter(SUBMIT_SEARCH);
 
         List<String> typeMask;
         if (typeMaskArray != null) { // premature optimization would add && typeMaskArray.length<6
@@ -70,8 +71,12 @@ public class SearchPortlet extends Sw360Portlet {
             log.info("typeMask set to emptyList");
         }
 
-        if (isNullOrEmpty(searchtext)) {
-            searchtext = searchQuery;
+        if (isNullOrEmpty(searchtext) && !isNullOrEmpty(submitSearch)) {
+            if (isNullOrEmpty(searchQuery)) {
+                searchtext = " ";
+            } else {
+                searchtext = searchQuery;
+            }
         }
         searchtext = Strings.nullToEmpty(searchtext);
 
@@ -82,6 +87,10 @@ public class SearchPortlet extends Sw360Portlet {
         } catch (TException e) {
             log.error("Search could not be performed!", e);
             searchResults = Collections.emptyList();
+        }
+
+        if (isNullOrEmpty(request.getParameter(KEY_SEARCH_TEXT))) {
+            searchtext = "";
         }
 
         // Set the results

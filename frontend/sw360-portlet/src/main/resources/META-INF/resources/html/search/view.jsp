@@ -20,6 +20,7 @@
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 
 <portlet:renderURL var="edit">
+    <portlet:param name="<%=PortalConstants.SUBMIT_SEARCH%>" value='<%=PortalConstants.SUBMIT_SEARCH%>'/>
 </portlet:renderURL>
 
 <jsp:useBean id="searchtext" type="java.lang.String" scope="request"/>
