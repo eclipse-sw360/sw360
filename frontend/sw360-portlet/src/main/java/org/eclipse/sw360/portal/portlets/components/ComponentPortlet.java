@@ -2110,8 +2110,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         pageData.setSortColumnNumber(sortParam);
 
         Map<PaginationData, List<Component>> pageDataComponentList = getFilteredComponentList(request, pageData);
-
-        JSONArray jsonComponents = getComponentData(pageDataComponentList.values().iterator().next(), paginationParameters);
+        Map<String, Set<String>> filterMap = getComponentFilterMap(request);
+        JSONArray jsonComponents = getComponentData(pageDataComponentList.values().iterator().next(), paginationParameters, filterMap);
         JSONObject jsonResult = createJSONObject();
         jsonResult.put(DATATABLE_RECORDS_TOTAL, pageDataComponentList.keySet().iterator().next().getTotalRowCount());
         jsonResult.put(DATATABLE_RECORDS_FILTERED, pageDataComponentList.keySet().iterator().next().getTotalRowCount());
@@ -2186,13 +2186,15 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         }
     }
 
-    public JSONArray getComponentData(List<Component> componentList, PaginationParameters componentParameters) {
+    public JSONArray getComponentData(List<Component> componentList, PaginationParameters componentParameters,
+            Map<String, Set<String>> filterMap) {
         List<Component> sortedComponents = sortComponentList(componentList, componentParameters);
         int count = getComponentDataCount(componentParameters, componentList.size());
         VendorService.Iface vendorClient = thriftClients.makeVendorClient();
+        final int start = filterMap.isEmpty() ? 0 : componentParameters.getDisplayStart();
 
         JSONArray componentData = createJSONArray();
-        for (int i = 0; i < count; i++) {
+        for (int i = start; i < count; i++) {
             JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
             Component comp = sortedComponents.get(i);
             
